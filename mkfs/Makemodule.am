@@ -1,0 +1,5 @@
+mksquashfs_SOURCES = mkfs/mksquashfs.c mkfs/options.c mkfs/options.h
+mksquashfs_SOURCES += include/squashfs.h
+mksquashfs_LDADD = libfstree.a
+
+bin_PROGRAMS += mksquashfs
