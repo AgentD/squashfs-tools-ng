@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
+#include "compress.h"
 #include "squashfs.h"
 #include "options.h"
 #include "config.h"
@@ -221,6 +222,7 @@ static void process_defaults(options_t *opt, char *subopts)
 
 void process_command_line(options_t *opt, int argc, char **argv)
 {
+	bool have_compressor;
 	int i;
 
 	opt->def_uid = 0;
@@ -241,11 +243,22 @@ void process_command_line(options_t *opt, int argc, char **argv)
 
 		switch (i) {
 		case 'c':
+			have_compressor = false;
+
 			for (i = SQFS_COMP_MIN; i <= SQFS_COMP_MAX; ++i) {
 				if (strcmp(compressors[i], optarg) == 0) {
-					opt->compressor = i;
-					break;
+					if (compressor_exists(i)) {
+						have_compressor = true;
+						opt->compressor = i;
+						break;
+					}
 				}
+			}
+
+			if (!have_compressor) {
+				fprintf(stderr, "Unsupported compressor '%s'\n",
+					optarg);
+				exit(EXIT_FAILURE);
 			}
 			break;
 		case 'b':
@@ -268,8 +281,10 @@ void process_command_line(options_t *opt, int argc, char **argv)
 
 			fputs("Available compressors:\n", stdout);
 
-			for (i = SQFS_COMP_MIN; i <= SQFS_COMP_MAX; ++i)
-				printf("\t%s\n", compressors[i]);
+			for (i = SQFS_COMP_MIN; i <= SQFS_COMP_MAX; ++i) {
+				if (compressor_exists(i))
+					printf("\t%s\n", compressors[i]);
+			}
 
 			exit(EXIT_SUCCESS);
 		case 'V':

@@ -2,4 +2,22 @@ libfstree_a_SOURCES = lib/fstree/fstree.c lib/fstree/fstree_from_file.c
 libfstree_a_SOURCES += lib/fstree/fstree_sort.c
 libfstree_a_SOURCES += include/fstree.h
 
-noinst_LIBRARIES += libfstree.a
+libcompress_a_SOURCES = lib/comp/compressor.c lib/comp/internal.h
+libcompress_a_CFLAGS = $(AM_CFLAGS)
+libcompress_a_CPPFLAGS = $(AM_CPPFLAGS)
+
+if WITH_ZLIB
+libcompress_a_SOURCES += lib/comp/zlib.c
+
+libcompress_a_CFLAGS += $(ZLIB_CFLAGS)
+libcompress_a_CPPFLAGS += -DWITH_ZLIB
+endif
+
+if WITH_LZMA
+libcompress_a_SOURCES += lib/comp/lzma.c
+
+libcompress_a_CFLAGS += $(XZ_CFLAGS)
+libcompress_a_CPPFLAGS += -DWITH_LZMA
+endif
+
+noinst_LIBRARIES += libfstree.a libcompress.a
