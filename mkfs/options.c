@@ -263,7 +263,8 @@ void process_command_line(options_t *opt, int argc, char **argv)
 			break;
 		case 'b':
 			opt->blksz = read_number("Block size", optarg,
-						 1024, 0xFFFFFFFF);
+						 SQFS_META_BLOCK_SIZE,
+						 0xFFFFFFFF);
 			break;
 		case 'B':
 			opt->devblksz = read_number("Device block size", optarg,
