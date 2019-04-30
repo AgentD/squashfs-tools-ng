@@ -50,6 +50,8 @@ typedef struct {
 	int file_block_count;
 	file_info_t *frag_list;
 	size_t frag_offset;
+
+	compressor_t *cmp;
 } sqfs_info_t;
 
 void process_command_line(options_t *opt, int argc, char **argv);
@@ -67,5 +69,7 @@ void meta_writer_destroy(meta_writer_t *m);
 int meta_writer_flush(meta_writer_t *m);
 
 int meta_writer_append(meta_writer_t *m, const void *data, size_t size);
+
+int write_data_to_image(sqfs_info_t *info);
 
 #endif /* MKSQUASHFS_H */

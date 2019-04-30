@@ -68,13 +68,25 @@ int main(int argc, char **argv)
 
 	print_tree(0, info.fs.root);
 
-	if (sqfs_super_write(&info))
+	info.cmp = compressor_create(info.super.compression_id, true,
+				     info.super.block_size);
+	if (info.cmp == NULL) {
+		fputs("Error creating compressor\n", stderr);
 		goto out_outfd;
+	}
+
+	if (write_data_to_image(&info))
+		goto out_cmp;
+
+	if (sqfs_super_write(&info))
+		goto out_cmp;
 
 	if (sqfs_padd_file(&info))
-		goto out_fstree;
+		goto out_cmp;
 
 	status = EXIT_SUCCESS;
+out_cmp:
+	info.cmp->destroy(info.cmp);
 out_fstree:
 	fstree_cleanup(&info.fs);
 out_outfd:
