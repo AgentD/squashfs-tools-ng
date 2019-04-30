@@ -28,14 +28,6 @@ typedef struct {
 } options_t;
 
 typedef struct {
-	uint8_t data[SQFS_META_BLOCK_SIZE + 2];
-	size_t offset;
-	size_t block_offset;
-	int outfd;
-	compressor_t *cmp;
-} meta_writer_t;
-
-typedef struct {
 	int outfd;
 	options_t opt;
 	sqfs_super_t super;
@@ -61,14 +53,6 @@ int sqfs_super_init(sqfs_info_t *info);
 int sqfs_padd_file(sqfs_info_t *info);
 
 int sqfs_super_write(sqfs_info_t *info);
-
-meta_writer_t *meta_writer_create(int fd, compressor_t *cmp);
-
-void meta_writer_destroy(meta_writer_t *m);
-
-int meta_writer_flush(meta_writer_t *m);
-
-int meta_writer_append(meta_writer_t *m, const void *data, size_t size);
 
 int write_data_to_image(sqfs_info_t *info);
 
