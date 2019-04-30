@@ -35,13 +35,30 @@ typedef struct {
 	compressor_t *cmp;
 } meta_writer_t;
 
+typedef struct {
+	int outfd;
+	options_t opt;
+	sqfs_super_t super;
+	fstree_t fs;
+	void *block;
+	void *fragment;
+
+	sqfs_fragment_t *fragments;
+	size_t num_fragments;
+	size_t max_fragments;
+
+	int file_block_count;
+	file_info_t *frag_list;
+	size_t frag_offset;
+} sqfs_info_t;
+
 void process_command_line(options_t *opt, int argc, char **argv);
 
-int sqfs_super_init(sqfs_super_t *s, const options_t *opt);
+int sqfs_super_init(sqfs_info_t *info);
 
-int sqfs_padd_file(sqfs_super_t *s, const options_t *opt, int outfd);
+int sqfs_padd_file(sqfs_info_t *info);
 
-int sqfs_super_write(const sqfs_super_t *super, int outfd);
+int sqfs_super_write(sqfs_info_t *info);
 
 meta_writer_t *meta_writer_create(int fd, compressor_t *cmp);
 

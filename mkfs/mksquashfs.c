@@ -36,47 +36,48 @@ static void print_tree(int level, tree_node_t *node)
 
 int main(int argc, char **argv)
 {
-	int outfd, status = EXIT_FAILURE;
-	sqfs_super_t super;
-	options_t opt;
-	fstree_t fs;
+	int status = EXIT_FAILURE;
+	sqfs_info_t info;
 
-	process_command_line(&opt, argc, argv);
+	memset(&info, 0, sizeof(info));
 
-	if (sqfs_super_init(&super, &opt) != 0)
+	process_command_line(&info.opt, argc, argv);
+
+	if (sqfs_super_init(&info) != 0)
 		return EXIT_FAILURE;
 
-	outfd = open(opt.outfile, opt.outmode, 0644);
-	if (outfd < 0) {
-		perror(opt.outfile);
+	info.outfd = open(info.opt.outfile, info.opt.outmode, 0644);
+	if (info.outfd < 0) {
+		perror(info.opt.outfile);
 		return EXIT_FAILURE;
 	}
 
-	if (sqfs_super_write(&super, outfd))
+	if (sqfs_super_write(&info))
 		goto out_outfd;
 
-	if (fstree_init(&fs, opt.blksz, opt.def_mtime, opt.def_mode,
-			opt.def_uid, opt.def_gid)) {
+	if (fstree_init(&info.fs, info.opt.blksz, info.opt.def_mtime,
+			info.opt.def_mode, info.opt.def_uid,
+			info.opt.def_gid)) {
 		goto out_outfd;
 	}
 
-	if (fstree_from_file(&fs, opt.infile))
+	if (fstree_from_file(&info.fs, info.opt.infile))
 		goto out_fstree;
 
-	fstree_sort(&fs);
+	fstree_sort(&info.fs);
 
-	print_tree(0, fs.root);
+	print_tree(0, info.fs.root);
 
-	if (sqfs_super_write(&super, outfd))
+	if (sqfs_super_write(&info))
 		goto out_outfd;
 
-	if (sqfs_padd_file(&super, &opt, outfd))
+	if (sqfs_padd_file(&info))
 		goto out_fstree;
 
 	status = EXIT_SUCCESS;
 out_fstree:
-	fstree_cleanup(&fs);
+	fstree_cleanup(&info.fs);
 out_outfd:
-	close(outfd);
+	close(info.outfd);
 	return status;
 }

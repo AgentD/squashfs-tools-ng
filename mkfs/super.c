@@ -4,52 +4,52 @@
 
 #include <endian.h>
 
-int sqfs_super_init(sqfs_super_t *s, const options_t *opt)
+int sqfs_super_init(sqfs_info_t *info)
 {
 	unsigned int i;
 
-	if (opt->blksz & (opt->blksz - 1)) {
+	if (info->opt.blksz & (info->opt.blksz - 1)) {
 		fputs("Block size must be a power of 2!\n", stderr);
 		return -1;
 	}
 
-	if (opt->blksz < 8192 || opt->blksz >= (1 << 24)) {
+	if (info->opt.blksz < 8192 || info->opt.blksz >= (1 << 24)) {
 		fputs("Block size must be between 8k and 1M\n", stderr);
 		return -1;
 	}
 
-	memset(s, 0, sizeof(*s));
-	s->magic = SQFS_MAGIC;
-	s->modification_time = opt->def_mtime;
-	s->block_size = opt->blksz;
-	s->compression_id = opt->compressor;
-	s->flags = SQFS_FLAG_NO_FRAGMENTS | SQFS_FLAG_NO_XATTRS;
-	s->version_major = SQFS_VERSION_MAJOR;
-	s->version_minor = SQFS_VERSION_MINOR;
-	s->bytes_used = sizeof(*s);
-	s->id_table_start = 0xFFFFFFFFFFFFFFFFUL;
-	s->xattr_id_table_start = 0xFFFFFFFFFFFFFFFFUL;
-	s->inode_table_start = 0xFFFFFFFFFFFFFFFFUL;
-	s->directory_table_start = 0xFFFFFFFFFFFFFFFFUL;
-	s->fragment_table_start = 0xFFFFFFFFFFFFFFFFUL;
-	s->export_table_start = 0xFFFFFFFFFFFFFFFFUL;
+	memset(&info->super, 0, sizeof(info->super));
+	info->super.magic = SQFS_MAGIC;
+	info->super.modification_time = info->opt.def_mtime;
+	info->super.block_size = info->opt.blksz;
+	info->super.compression_id = info->opt.compressor;
+	info->super.flags = SQFS_FLAG_NO_FRAGMENTS | SQFS_FLAG_NO_XATTRS;
+	info->super.version_major = SQFS_VERSION_MAJOR;
+	info->super.version_minor = SQFS_VERSION_MINOR;
+	info->super.bytes_used = sizeof(info->super);
+	info->super.id_table_start = 0xFFFFFFFFFFFFFFFFUL;
+	info->super.xattr_id_table_start = 0xFFFFFFFFFFFFFFFFUL;
+	info->super.inode_table_start = 0xFFFFFFFFFFFFFFFFUL;
+	info->super.directory_table_start = 0xFFFFFFFFFFFFFFFFUL;
+	info->super.fragment_table_start = 0xFFFFFFFFFFFFFFFFUL;
+	info->super.export_table_start = 0xFFFFFFFFFFFFFFFFUL;
 
-	for (i = opt->blksz; i != 0x01; i >>= 1)
-		s->block_log += 1;
+	for (i = info->opt.blksz; i != 0x01; i >>= 1)
+		info->super.block_log += 1;
 
 	return 0;
 }
 
-int sqfs_padd_file(sqfs_super_t *s, const options_t *opt, int outfd)
+int sqfs_padd_file(sqfs_info_t *info)
 {
-	size_t padd_sz = s->bytes_used % opt->devblksz;
+	size_t padd_sz = info->super.bytes_used % info->opt.devblksz;
 	uint8_t *buffer;
 	ssize_t ret;
 
 	if (padd_sz == 0)
 		return 0;
 
-	padd_sz = opt->devblksz - padd_sz;
+	padd_sz = info->opt.devblksz - padd_sz;
 
 	buffer = calloc(1, padd_sz);
 	if (buffer == NULL) {
@@ -57,7 +57,7 @@ int sqfs_padd_file(sqfs_super_t *s, const options_t *opt, int outfd)
 		return -1;
 	}
 
-	ret = write_retry(outfd, buffer, padd_sz);
+	ret = write_retry(info->outfd, buffer, padd_sz);
 
 	if (ret < 0) {
 		perror("Error padding squashfs image to page size");
@@ -75,35 +75,35 @@ int sqfs_padd_file(sqfs_super_t *s, const options_t *opt, int outfd)
 	return 0;
 }
 
-int sqfs_super_write(const sqfs_super_t *super, int outfd)
+int sqfs_super_write(sqfs_info_t *info)
 {
 	sqfs_super_t copy;
 	ssize_t ret;
 
-	copy.magic = htole32(super->magic);
-	copy.inode_count = htole32(super->inode_count);
-	copy.modification_time = htole32(super->modification_time);
-	copy.block_size = htole32(super->block_size);
-	copy.fragment_entry_count = htole32(super->fragment_entry_count);
-	copy.compression_id = htole16(super->compression_id);
-	copy.block_log = htole16(super->block_log);
-	copy.flags = htole16(super->flags);
-	copy.id_count = htole16(super->id_count);
-	copy.version_major = htole16(super->version_major);
-	copy.version_minor = htole16(super->version_minor);
-	copy.root_inode_ref = htole64(super->root_inode_ref);
-	copy.bytes_used = htole64(super->bytes_used);
-	copy.id_table_start = htole64(super->id_table_start);
-	copy.xattr_id_table_start = htole64(super->xattr_id_table_start);
-	copy.inode_table_start = htole64(super->inode_table_start);
-	copy.directory_table_start = htole64(super->directory_table_start);
-	copy.fragment_table_start = htole64(super->fragment_table_start);
-	copy.export_table_start = htole64(super->export_table_start);
+	copy.magic = htole32(info->super.magic);
+	copy.inode_count = htole32(info->super.inode_count);
+	copy.modification_time = htole32(info->super.modification_time);
+	copy.block_size = htole32(info->super.block_size);
+	copy.fragment_entry_count = htole32(info->super.fragment_entry_count);
+	copy.compression_id = htole16(info->super.compression_id);
+	copy.block_log = htole16(info->super.block_log);
+	copy.flags = htole16(info->super.flags);
+	copy.id_count = htole16(info->super.id_count);
+	copy.version_major = htole16(info->super.version_major);
+	copy.version_minor = htole16(info->super.version_minor);
+	copy.root_inode_ref = htole64(info->super.root_inode_ref);
+	copy.bytes_used = htole64(info->super.bytes_used);
+	copy.id_table_start = htole64(info->super.id_table_start);
+	copy.xattr_id_table_start = htole64(info->super.xattr_id_table_start);
+	copy.inode_table_start = htole64(info->super.inode_table_start);
+	copy.directory_table_start = htole64(info->super.directory_table_start);
+	copy.fragment_table_start = htole64(info->super.fragment_table_start);
+	copy.export_table_start = htole64(info->super.export_table_start);
 
-	if (lseek(outfd, 0, SEEK_SET) == (off_t)-1)
+	if (lseek(info->outfd, 0, SEEK_SET) == (off_t)-1)
 		goto fail_seek;
 
-	ret = write_retry(outfd, &copy, sizeof(copy));
+	ret = write_retry(info->outfd, &copy, sizeof(copy));
 
 	if (ret < 0) {
 		perror("squashfs writing super block");
@@ -116,7 +116,7 @@ int sqfs_super_write(const sqfs_super_t *super, int outfd)
 		return -1;
 	}
 
-	if (lseek(outfd, 0, SEEK_END) == (off_t)-1)
+	if (lseek(info->outfd, 0, SEEK_END) == (off_t)-1)
 		goto fail_seek;
 
 	return 0;
