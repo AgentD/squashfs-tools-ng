@@ -48,12 +48,6 @@ typedef struct {
 
 void process_command_line(options_t *opt, int argc, char **argv);
 
-int sqfs_super_init(sqfs_info_t *info);
-
-int sqfs_padd_file(sqfs_info_t *info);
-
-int sqfs_super_write(sqfs_info_t *info);
-
 int write_data_to_image(sqfs_info_t *info);
 
 #endif /* MKSQUASHFS_H */

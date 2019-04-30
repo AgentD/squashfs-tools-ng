@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "mksquashfs.h"
+#include "util.h"
 
 static void print_tree(int level, tree_node_t *node)
 {
@@ -34,6 +35,41 @@ static void print_tree(int level, tree_node_t *node)
 	}
 }
 
+static int padd_file(sqfs_info_t *info)
+{
+	size_t padd_sz = info->super.bytes_used % info->opt.devblksz;
+	uint8_t *buffer;
+	ssize_t ret;
+
+	if (padd_sz == 0)
+		return 0;
+
+	padd_sz = info->opt.devblksz - padd_sz;
+
+	buffer = calloc(1, padd_sz);
+	if (buffer == NULL) {
+		perror("padding output file to block size");
+		return -1;
+	}
+
+	ret = write_retry(info->outfd, buffer, padd_sz);
+
+	if (ret < 0) {
+		perror("Error padding squashfs image to page size");
+		free(buffer);
+		return -1;
+	}
+
+	if ((size_t)ret < padd_sz) {
+		fputs("Truncated write trying to padd squashfs image\n",
+		      stderr);
+		return -1;
+	}
+
+	free(buffer);
+	return 0;
+}
+
 int main(int argc, char **argv)
 {
 	int status = EXIT_FAILURE;
@@ -43,8 +79,10 @@ int main(int argc, char **argv)
 
 	process_command_line(&info.opt, argc, argv);
 
-	if (sqfs_super_init(&info) != 0)
+	if (sqfs_super_init(&info.super, info.opt.blksz, info.opt.def_mtime,
+			    info.opt.compressor)) {
 		return EXIT_FAILURE;
+	}
 
 	info.outfd = open(info.opt.outfile, info.opt.outmode, 0644);
 	if (info.outfd < 0) {
@@ -52,7 +90,7 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	if (sqfs_super_write(&info))
+	if (sqfs_super_write(&info.super, info.outfd))
 		goto out_outfd;
 
 	if (fstree_init(&info.fs, info.opt.blksz, info.opt.def_mtime,
@@ -78,10 +116,10 @@ int main(int argc, char **argv)
 	if (write_data_to_image(&info))
 		goto out_cmp;
 
-	if (sqfs_super_write(&info))
+	if (sqfs_super_write(&info.super, info.outfd))
 		goto out_cmp;
 
-	if (sqfs_padd_file(&info))
+	if (padd_file(&info))
 		goto out_cmp;
 
 	status = EXIT_SUCCESS;

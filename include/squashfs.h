@@ -3,6 +3,7 @@
 #define SQUASHFS_H
 
 #include <stdint.h>
+#include <stddef.h>
 
 #define SQFS_MAGIC 0x73717368
 #define SQFS_VERSION_MAJOR 4
@@ -173,5 +174,10 @@ typedef enum {
 	SQFS_INODE_EXT_FIFO = 13,
 	SQFS_INODE_EXT_SOCKET = 14,
 } E_SQFS_INODE_TYPE;
+
+int sqfs_super_init(sqfs_super_t *super, size_t block_size, uint32_t mtime,
+		    E_SQFS_COMPRESSOR compressor);
+
+int sqfs_super_write(sqfs_super_t *super, int fd);
 
 #endif /* SQUASHFS_H */
