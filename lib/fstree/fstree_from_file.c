@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "fstree.h"
+#include "util.h"
 
 #include <sys/sysmacros.h>
 #include <sys/types.h>
@@ -253,9 +254,9 @@ static void trim_line(char *line)
 static int handle_line(fstree_t *fs, const char *filename,
 		       size_t line_num, char *line)
 {
-	const char *path, *extra = NULL, *msg = NULL;
+	const char *extra = NULL, *msg = NULL;
 	unsigned int mode = 0, uid = 0, gid = 0, x;
-	char keyword[16];
+	char keyword[16], *path;
 	size_t i;
 
 	/* isolate keyword */
@@ -287,6 +288,9 @@ static int handle_line(fstree_t *fs, const char *filename,
 	line[i++] = '\0';
 	while (isspace(line[i]))
 		++i;
+
+	if (canonicalize_name(path) || *path == '\0')
+		goto fail_ent;
 
 	/* mode */
 	if (!isdigit(line[i]))
