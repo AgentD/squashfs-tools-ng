@@ -84,10 +84,13 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
+	if (id_table_init(&info.idtbl))
+		return EXIT_FAILURE;
+
 	info.outfd = open(info.opt.outfile, info.opt.outmode, 0644);
 	if (info.outfd < 0) {
 		perror(info.opt.outfile);
-		return EXIT_FAILURE;
+		goto out_idtbl;
 	}
 
 	if (sqfs_super_write(&info.super, info.outfd))
@@ -129,5 +132,7 @@ out_fstree:
 	fstree_cleanup(&info.fs);
 out_outfd:
 	close(info.outfd);
+out_idtbl:
+	id_table_cleanup(&info.idtbl);
 	return status;
 }

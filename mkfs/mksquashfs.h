@@ -4,6 +4,7 @@
 
 #include "squashfs.h"
 #include "compress.h"
+#include "id_table.h"
 #include "fstree.h"
 #include "config.h"
 
@@ -42,6 +43,8 @@ typedef struct {
 	int file_block_count;
 	file_info_t *frag_list;
 	size_t frag_offset;
+
+	id_table_t idtbl;
 
 	compressor_t *cmp;
 } sqfs_info_t;
