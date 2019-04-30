@@ -6,6 +6,9 @@ libcompress_a_SOURCES = lib/comp/compressor.c lib/comp/internal.h
 libcompress_a_CFLAGS = $(AM_CFLAGS)
 libcompress_a_CPPFLAGS = $(AM_CPPFLAGS)
 
+libutil_a_SOURCES = lib/util/canonicalize_name.c lib/util/write_retry.c
+libutil_a_SOURCES += lib/util/read_retry.c include/util.h
+
 if WITH_ZLIB
 libcompress_a_SOURCES += lib/comp/zlib.c
 
@@ -20,4 +23,4 @@ libcompress_a_CFLAGS += $(XZ_CFLAGS)
 libcompress_a_CPPFLAGS += -DWITH_LZMA
 endif
 
-noinst_LIBRARIES += libfstree.a libcompress.a
+noinst_LIBRARIES += libfstree.a libcompress.a libutil.a
