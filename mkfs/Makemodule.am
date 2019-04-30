@@ -1,7 +1,5 @@
 mksquashfs_SOURCES = mkfs/mksquashfs.c mkfs/mksquashfs.h
-mksquashfs_SOURCES += mkfs/options.c mkfs/options.h
-mksquashfs_SOURCES += mkfs/meta_writer.c mkfs/meta_writer.h
-mksquashfs_SOURCES += mkfs/super.c
+mksquashfs_SOURCES += mkfs/options.c mkfs/meta_writer.c mkfs/super.c
 mksquashfs_SOURCES += include/squashfs.h
 mksquashfs_LDADD = libfstree.a libcompress.a libutil.a
 

@@ -1,8 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "compress.h"
-#include "squashfs.h"
-#include "options.h"
-#include "config.h"
+#include "mksquashfs.h"
 
 #include <stdlib.h>
 #include <getopt.h>
