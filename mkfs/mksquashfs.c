@@ -1,14 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "squashfs.h"
-#include "options.h"
-#include "fstree.h"
-
-#include <sys/sysmacros.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <stdio.h>
-#include <ctype.h>
+#include "mksquashfs.h"
 
 static void print_tree(int level, tree_node_t *node)
 {
@@ -43,28 +34,49 @@ static void print_tree(int level, tree_node_t *node)
 	}
 }
 
-
 int main(int argc, char **argv)
 {
+	int outfd, status = EXIT_FAILURE;
+	sqfs_super_t super;
 	options_t opt;
 	fstree_t fs;
 
 	process_command_line(&opt, argc, argv);
 
-	if (fstree_init(&fs, opt.blksz, opt.def_mtime, opt.def_mode,
-			opt.def_uid, opt.def_gid)) {
+	if (sqfs_super_init(&super, &opt) != 0)
+		return EXIT_FAILURE;
+
+	outfd = open(opt.outfile, opt.outmode, 0644);
+	if (outfd < 0) {
+		perror(opt.outfile);
 		return EXIT_FAILURE;
 	}
 
-	if (fstree_from_file(&fs, opt.infile)) {
-		fstree_cleanup(&fs);
-		return EXIT_FAILURE;
+	if (sqfs_super_write(&super, outfd))
+		goto out_outfd;
+
+	if (fstree_init(&fs, opt.blksz, opt.def_mtime, opt.def_mode,
+			opt.def_uid, opt.def_gid)) {
+		goto out_outfd;
 	}
+
+	if (fstree_from_file(&fs, opt.infile))
+		goto out_fstree;
 
 	fstree_sort(&fs);
 
 	print_tree(0, fs.root);
 
+	if (sqfs_super_write(&super, outfd))
+		goto out_outfd;
+
+	if (sqfs_padd_file(&super, &opt, outfd))
+		goto out_fstree;
+
+	status = EXIT_SUCCESS;
+out_fstree:
 	fstree_cleanup(&fs);
-	return EXIT_SUCCESS;
+out_outfd:
+	close(outfd);
+	return status;
 }
