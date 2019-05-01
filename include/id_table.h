@@ -22,4 +22,7 @@ int id_table_id_to_index(id_table_t *tbl, uint32_t id, uint16_t *out);
 int id_table_write(id_table_t *tbl, int outfd, sqfs_super_t *super,
 		   compressor_t *cmp);
 
+int id_table_read(id_table_t *tbl, int fd, sqfs_super_t *super,
+		   compressor_t *cmp);
+
 #endif /* ID_TABLE_H */

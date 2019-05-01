@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "squashfs.h"
 #include "compress.h"
+#include "id_table.h"
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -14,6 +15,7 @@ int main(int argc, char **argv)
 	int fd, status = EXIT_FAILURE;
 	sqfs_super_t super;
 	compressor_t *cmp;
+	id_table_t idtbl;
 
 	if (argc != 2) {
 		fprintf(stderr, "Usage: %s <filename>\n", __progname);
@@ -56,8 +58,16 @@ int main(int argc, char **argv)
 	if (cmp == NULL)
 		goto out;
 
-	status = EXIT_SUCCESS;
+	if (id_table_init(&idtbl))
+		goto out_cmp;
 
+	if (id_table_read(&idtbl, fd, &super, cmp))
+		goto out_idtbl;
+
+	status = EXIT_SUCCESS;
+out_idtbl:
+	id_table_cleanup(&idtbl);
+out_cmp:
 	cmp->destroy(cmp);
 out:
 	close(fd);
