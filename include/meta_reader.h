@@ -23,4 +23,9 @@ int meta_reader_seek(meta_reader_t *m, uint64_t block_start,
 
 int meta_reader_read(meta_reader_t *m, void *data, size_t size);
 
+sqfs_inode_generic_t *meta_reader_read_inode(meta_reader_t *ir,
+					     sqfs_super_t *super,
+					     uint64_t block_start,
+					     size_t offset);
+
 #endif /* META_READER_H */

@@ -57,26 +57,38 @@ typedef struct {
 
 typedef struct {
 	uint32_t nlink;
-} sqfs_inode_ipc_t;
-
-typedef struct {
-	uint32_t nlink;
 	uint32_t devno;
 	uint32_t xattr_idx;
 } sqfs_inode_dev_ext_t;
 
 typedef struct {
 	uint32_t nlink;
+} sqfs_inode_ipc_t;
+
+typedef struct {
+	uint32_t nlink;
+	uint32_t xattr_idx;
+} sqfs_inode_ipc_ext_t;
+
+typedef struct {
+	uint32_t nlink;
 	uint32_t target_size;
-	uint8_t target[];
+	/*uint8_t target[];*/
 } sqfs_inode_slink_t;
+
+typedef struct {
+	uint32_t nlink;
+	uint32_t target_size;
+	/*uint8_t target[];*/
+	uint32_t xattr_idx;
+} sqfs_inode_slink_ext_t;
 
 typedef struct {
 	uint32_t blocks_start;
 	uint32_t fragment_index;
 	uint32_t fragment_offset;
 	uint32_t file_size;
-	uint32_t block_sizes[];
+	/*uint32_t block_sizes[];*/
 } sqfs_inode_file_t;
 
 typedef struct {
@@ -87,7 +99,7 @@ typedef struct {
 	uint32_t fragment_idx;
 	uint32_t fragment_offset;
 	uint32_t xattr_idx;
-	uint32_t block_sizes[];
+	/*uint32_t block_sizes[];*/
 } sqfs_inode_file_ext_t;
 
 typedef struct {
@@ -108,18 +120,25 @@ typedef struct {
 	uint32_t xattr_idx;
 } sqfs_inode_dir_ext_t;
 
-typedef union {
-	sqfs_inode_t inode;
+typedef struct {
+	sqfs_inode_t base;
+	char *slink_target;
+	uint32_t *block_sizes;
 
 	union {
 		sqfs_inode_dev_t dev;
 		sqfs_inode_dev_ext_t dev_ext;
+		sqfs_inode_ipc_t ipc;
+		sqfs_inode_ipc_ext_t ipc_ext;
 		sqfs_inode_slink_t slink;
+		sqfs_inode_slink_ext_t slink_ext;
 		sqfs_inode_file_t file;
 		sqfs_inode_file_ext_t file_ext;
 		sqfs_inode_dir_t dir;
 		sqfs_inode_dir_ext_t dir_ext;
 	} data;
+
+	uint8_t extra[];
 } sqfs_inode_generic_t;
 
 typedef struct {

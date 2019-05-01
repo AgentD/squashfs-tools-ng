@@ -13,7 +13,7 @@ libsquashfs_a_SOURCES += lib/sqfs/id_table.c include/id_table.h
 libsquashfs_a_SOURCES += lib/sqfs/table.c include/table.h
 libsquashfs_a_SOURCES += lib/sqfs/read_super.c lib/sqfs/meta_reader.c
 libsquashfs_a_SOURCES += include/meta_reader.h lib/sqfs/id_table_write.c
-libsquashfs_a_SOURCES += lib/sqfs/id_table_read.c
+libsquashfs_a_SOURCES += lib/sqfs/id_table_read.c lib/sqfs/read_inode.c
 
 libutil_a_SOURCES = lib/util/canonicalize_name.c lib/util/write_retry.c
 libutil_a_SOURCES += lib/util/read_retry.c include/util.h
