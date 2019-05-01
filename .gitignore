@@ -19,3 +19,4 @@ config.h
 *.a
 *~
 mksquashfs
+unsquashfs

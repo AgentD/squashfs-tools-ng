@@ -10,3 +10,4 @@ EXTRA_DIST = autogen.sh LICENSE
 
 include lib/Makemodule.am
 include mkfs/Makemodule.am
+include unpack/Makemodule.am

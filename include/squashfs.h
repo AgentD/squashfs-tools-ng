@@ -184,4 +184,6 @@ int sqfs_super_init(sqfs_super_t *super, size_t block_size, uint32_t mtime,
 
 int sqfs_super_write(sqfs_super_t *super, int fd);
 
+int sqfs_super_read(sqfs_super_t *super, int fd);
+
 #endif /* SQUASHFS_H */

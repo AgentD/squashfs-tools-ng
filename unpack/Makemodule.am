@@ -1,0 +1,12 @@
+unsquashfs_SOURCES = unpack/unsquashfs.c
+unsquashfs_LDADD = libsquashfs.a libfstree.a libcompress.a libutil.a
+
+if WITH_LZMA
+unsquashfs_LDADD += $(XZ_LIBS)
+endif
+
+if WITH_ZLIB
+unsquashfs_LDADD += $(ZLIB_LIBS)
+endif
+
+bin_PROGRAMS += unsquashfs
