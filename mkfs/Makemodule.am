@@ -1,5 +1,5 @@
 mksquashfs_SOURCES = mkfs/mksquashfs.c mkfs/mksquashfs.h mkfs/block.c
-mksquashfs_SOURCES += mkfs/options.c
+mksquashfs_SOURCES += mkfs/options.c mkfs/meta.c
 mksquashfs_LDADD = libsquashfs.a libfstree.a libcompress.a libutil.a
 
 if WITH_LZMA

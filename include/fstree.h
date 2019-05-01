@@ -33,10 +33,15 @@ struct dir_info_t {
 
 struct tree_node_t {
 	tree_node_t *next;
+	tree_node_t *parent;
 	char *name;
 	uint32_t uid;
 	uint32_t gid;
 	uint16_t mode;
+
+	uint64_t inode_ref;
+	uint32_t inode_num;
+	int type;
 
 	union {
 		dir_info_t *dir;

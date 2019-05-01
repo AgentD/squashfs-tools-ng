@@ -119,6 +119,9 @@ int main(int argc, char **argv)
 	if (write_data_to_image(&info))
 		goto out_cmp;
 
+	if (sqfs_write_inodes(&info))
+		goto out_cmp;
+
 	if (sqfs_super_write(&info.super, info.outfd))
 		goto out_cmp;
 

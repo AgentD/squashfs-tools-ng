@@ -57,6 +57,10 @@ typedef struct {
 
 typedef struct {
 	uint32_t nlink;
+} sqfs_inode_ipc_t;
+
+typedef struct {
+	uint32_t nlink;
 	uint32_t devno;
 	uint32_t xattr_idx;
 } sqfs_inode_dev_ext_t;

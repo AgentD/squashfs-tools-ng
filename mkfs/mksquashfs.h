@@ -45,6 +45,7 @@ typedef struct {
 	size_t frag_offset;
 
 	id_table_t idtbl;
+	size_t inode_counter;
 
 	compressor_t *cmp;
 } sqfs_info_t;
@@ -52,5 +53,7 @@ typedef struct {
 void process_command_line(options_t *opt, int argc, char **argv);
 
 int write_data_to_image(sqfs_info_t *info);
+
+int sqfs_write_inodes(sqfs_info_t *info);
 
 #endif /* MKSQUASHFS_H */

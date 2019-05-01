@@ -29,6 +29,7 @@ static tree_node_t *mknode(tree_node_t *parent, const char *name,
 	if (parent != NULL) {
 		n->next = parent->data.dir->children;
 		parent->data.dir->children = n;
+		n->parent = parent;
 	}
 
 	n->uid = uid;
