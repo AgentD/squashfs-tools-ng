@@ -1,12 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "squashfs.h"
-#include "compress.h"
-#include "id_table.h"
-
-#include <stdlib.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <fcntl.h>
+#include "unsquashfs.h"
 
 extern const char *__progname;
 

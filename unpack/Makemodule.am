@@ -1,4 +1,5 @@
-unsquashfs_SOURCES = unpack/unsquashfs.c
+unsquashfs_SOURCES = unpack/unsquashfs.c unpack/tree_node_from_inode.c
+unsquashfs_SOURCES += unpack/unsquashfs.h
 unsquashfs_LDADD = libsquashfs.a libfstree.a libcompress.a libutil.a
 
 if WITH_LZMA
