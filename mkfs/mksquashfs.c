@@ -122,6 +122,15 @@ int main(int argc, char **argv)
 	if (sqfs_write_inodes(&info))
 		goto out_cmp;
 
+	if (sqfs_write_fragment_table(info.outfd, &info.super,
+				      info.fragments, info.num_fragments,
+				      info.cmp))
+		goto out_cmp;
+
+	if (sqfs_write_ids(info.outfd, &info.super, info.idtbl.ids,
+			   info.idtbl.num_ids, info.cmp))
+		goto out_cmp;
+
 	if (sqfs_super_write(&info.super, info.outfd))
 		goto out_cmp;
 
@@ -130,6 +139,7 @@ int main(int argc, char **argv)
 
 	status = EXIT_SUCCESS;
 out_cmp:
+	free(info.fragments);
 	info.cmp->destroy(info.cmp);
 out_fstree:
 	fstree_cleanup(&info.fs);

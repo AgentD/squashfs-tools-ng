@@ -9,6 +9,7 @@ libcompress_a_CPPFLAGS = $(AM_CPPFLAGS)
 libsquashfs_a_SOURCES = include/meta_writer.h include/squashfs.h
 libsquashfs_a_SOURCES += lib/sqfs/meta_writer.c lib/sqfs/super.c
 libsquashfs_a_SOURCES += lib/sqfs/id_table.c include/id_table.h
+libsquashfs_a_SOURCES += lib/sqfs/table.c include/table.h
 
 libutil_a_SOURCES = lib/util/canonicalize_name.c lib/util/write_retry.c
 libutil_a_SOURCES += lib/util/read_retry.c include/util.h

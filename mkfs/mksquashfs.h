@@ -7,6 +7,7 @@
 #include "id_table.h"
 #include "fstree.h"
 #include "config.h"
+#include "table.h"
 
 #include <unistd.h>
 #include <stdlib.h>
