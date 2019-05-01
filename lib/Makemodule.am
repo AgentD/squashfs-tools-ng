@@ -3,6 +3,7 @@ libfstree_a_SOURCES += lib/fstree/fstree_sort.c
 libfstree_a_SOURCES += include/fstree.h
 
 libcompress_a_SOURCES = lib/comp/compressor.c lib/comp/internal.h
+libcompress_a_SOURCES += include/compress.h
 libcompress_a_CFLAGS = $(AM_CFLAGS)
 libcompress_a_CPPFLAGS = $(AM_CPPFLAGS)
 
