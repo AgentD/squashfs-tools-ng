@@ -6,9 +6,9 @@
 #include <endian.h>
 #include <stdio.h>
 
-static int sqfs_write_table(int outfd, sqfs_super_t *super, const void *data,
-			    size_t entsize, size_t count, uint64_t *startblock,
-			    compressor_t *cmp)
+int sqfs_write_table(int outfd, sqfs_super_t *super, const void *data,
+		     size_t entsize, size_t count, uint64_t *startblock,
+		     compressor_t *cmp)
 {
 	size_t ent_per_blocks = SQFS_META_BLOCK_SIZE / entsize;
 	uint64_t blocks[count / ent_per_blocks + 1];
@@ -61,34 +61,4 @@ static int sqfs_write_table(int outfd, sqfs_super_t *super, const void *data,
 fail:
 	meta_writer_destroy(m);
 	return -1;
-}
-
-int sqfs_write_fragment_table(int outfd, sqfs_super_t *super,
-			      sqfs_fragment_t *fragments, size_t count,
-			      compressor_t *cmp)
-{
-	super->fragment_entry_count = count;
-
-	return sqfs_write_table(outfd, super, fragments, sizeof(fragments[0]),
-				count, &super->fragment_table_start, cmp);
-}
-
-int sqfs_write_ids(int outfd, sqfs_super_t *super, uint32_t *id_tbl,
-		   size_t count, compressor_t *cmp)
-{
-	size_t i;
-	int ret;
-
-	for (i = 0; i < count; ++i)
-		id_tbl[i] = htole32(id_tbl[i]);
-
-	super->id_count = count;
-
-	ret = sqfs_write_table(outfd, super, id_tbl, sizeof(id_tbl[0]),
-			       count, &super->id_table_start, cmp);
-
-	for (i = 0; i < count; ++i)
-		id_tbl[i] = htole32(id_tbl[i]);
-
-	return ret;
 }

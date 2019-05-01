@@ -8,11 +8,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
-int sqfs_write_fragment_table(int outfd, sqfs_super_t *super,
-			      sqfs_fragment_t *fragments, size_t count,
-			      compressor_t *cmp);
-
-int sqfs_write_ids(int outfd, sqfs_super_t *super, uint32_t *id_tbl,
-		   size_t count, compressor_t *cmp);
+int sqfs_write_table(int outfd, sqfs_super_t *super, const void *data,
+		     size_t entsize, size_t count, uint64_t *startblock,
+		     compressor_t *cmp);
 
 #endif /* TABLE_H */

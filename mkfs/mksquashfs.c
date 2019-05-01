@@ -2,39 +2,6 @@
 #include "mksquashfs.h"
 #include "util.h"
 
-static void print_tree(int level, tree_node_t *node)
-{
-	tree_node_t *n;
-	int i;
-
-	for (i = 1; i < level; ++i) {
-		fputs("|  ", stdout);
-	}
-
-	if (level)
-		fputs("+- ", stdout);
-
-	if (S_ISDIR(node->mode)) {
-		fprintf(stdout, "%s/ (%u, %u, 0%o)\n", node->name,
-			node->uid, node->gid, node->mode & 07777);
-
-		for (n = node->data.dir->children; n != NULL; n = n->next) {
-			print_tree(level + 1, n);
-		}
-
-		if (node->data.dir->children != NULL) {
-			for (i = 0; i < level; ++i)
-				fputs("|  ", stdout);
-
-			if (level)
-				fputc('\n', stdout);
-		}
-	} else {
-		fprintf(stdout, "%s (%u, %u, 0%o)\n", node->name,
-			node->uid, node->gid, node->mode & 07777);
-	}
-}
-
 static int padd_file(sqfs_info_t *info)
 {
 	size_t padd_sz = info->super.bytes_used % info->opt.devblksz;
@@ -107,8 +74,6 @@ int main(int argc, char **argv)
 
 	fstree_sort(&info.fs);
 
-	print_tree(0, info.fs.root);
-
 	info.cmp = compressor_create(info.super.compression_id, true,
 				     info.super.block_size);
 	if (info.cmp == NULL) {
@@ -122,13 +87,15 @@ int main(int argc, char **argv)
 	if (sqfs_write_inodes(&info))
 		goto out_cmp;
 
-	if (sqfs_write_fragment_table(info.outfd, &info.super,
-				      info.fragments, info.num_fragments,
-				      info.cmp))
-		goto out_cmp;
+	info.super.fragment_entry_count = info.num_fragments;
 
-	if (sqfs_write_ids(info.outfd, &info.super, info.idtbl.ids,
-			   info.idtbl.num_ids, info.cmp))
+	if (sqfs_write_table(info.outfd, &info.super, info.fragments,
+			     sizeof(info.fragments[0]), info.num_fragments,
+			     &info.super.fragment_table_start, info.cmp)) {
+		goto out_cmp;
+	}
+
+	if (id_table_write(&info.idtbl, info.outfd, &info.super, info.cmp))
 		goto out_cmp;
 
 	if (sqfs_super_write(&info.super, info.outfd))
