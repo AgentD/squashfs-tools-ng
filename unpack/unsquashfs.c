@@ -8,7 +8,7 @@ int main(int argc, char **argv)
 	int fd, status = EXIT_FAILURE;
 	sqfs_super_t super;
 	compressor_t *cmp;
-	id_table_t idtbl;
+	fstree_t fs;
 
 	if (argc != 2) {
 		fprintf(stderr, "Usage: %s <filename>\n", __progname);
@@ -51,15 +51,11 @@ int main(int argc, char **argv)
 	if (cmp == NULL)
 		goto out;
 
-	if (id_table_init(&idtbl))
+	if (read_fstree(&fs, fd, &super, cmp))
 		goto out_cmp;
 
-	if (id_table_read(&idtbl, fd, &super, cmp))
-		goto out_idtbl;
-
 	status = EXIT_SUCCESS;
-out_idtbl:
-	id_table_cleanup(&idtbl);
+	fstree_cleanup(&fs);
 out_cmp:
 	cmp->destroy(cmp);
 out:
