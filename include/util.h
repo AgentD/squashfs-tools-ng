@@ -10,4 +10,6 @@ ssize_t write_retry(int fd, void *data, size_t size);
 
 ssize_t read_retry(int fd, void *buffer, size_t size);
 
+void print_version(void);
+
 #endif /* UTIL_H */

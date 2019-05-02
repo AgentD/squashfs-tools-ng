@@ -18,6 +18,7 @@ libsquashfs_a_SOURCES += lib/sqfs/readdir.c
 
 libutil_a_SOURCES = lib/util/canonicalize_name.c lib/util/write_retry.c
 libutil_a_SOURCES += lib/util/read_retry.c include/util.h
+libutil_a_SOURCES += lib/util/print_version.c
 
 if WITH_ZLIB
 libcompress_a_SOURCES += lib/comp/zlib.c

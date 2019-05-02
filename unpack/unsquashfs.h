@@ -7,10 +7,14 @@
 #include "compress.h"
 #include "id_table.h"
 #include "fstree.h"
+#include "config.h"
+#include "util.h"
 
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <getopt.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
 
@@ -20,5 +24,7 @@ tree_node_t *tree_node_from_inode(sqfs_inode_generic_t *inode,
 				  size_t block_size);
 
 int read_fstree(fstree_t *out, int fd, sqfs_super_t *super, compressor_t *cmp);
+
+void list_files(tree_node_t *node);
 
 #endif /* UNSQUASHFS_H */
