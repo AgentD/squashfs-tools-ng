@@ -39,16 +39,44 @@ UL_WARN_ADD([-pedantic])
 
 AC_SUBST([WARN_CFLAGS])
 
+##### config options #####
+
+AC_ARG_WITH([zlib],
+	[AS_HELP_STRING([--without-zlib],
+			[Build without zlib compression support])],
+	[case "${withval}" in
+	yes) AM_CONDITIONAL([WITH_ZLIB], [true]) ;;
+	no)  AM_CONDITIONAL([WITH_ZLIB], [false]) ;;
+	*) AC_MSG_ERROR([bad value ${withval} for --without-zlib]) ;;
+	esac],
+	[AM_CONDITIONAL([WITH_ZLIB], [true])])
+
+AC_ARG_WITH([lzma],
+	[AS_HELP_STRING([--without-lzma],
+			[Build without lzma compression support])],
+	[case "${withval}" in
+	yes) AM_CONDITIONAL([WITH_LZMA], [true]) ;;
+	no)  AM_CONDITIONAL([WITH_LZMA], [false]) ;;
+	*) AC_MSG_ERROR([bad value ${withval} for --without-lzma]) ;;
+	esac],
+	[AM_CONDITIONAL([WITH_LZMA], [true])])
+
 ##### search for dependencies #####
 
-have_zlib="no"
-have_lzma="no"
+need_zlib="no"
+need_lzma="no"
 
-PKG_CHECK_MODULES(ZLIB, [zlib], [have_zlib="yes"], [])
-PKG_CHECK_MODULES(XZ, [liblzma >= 5.0.0], [have_lzma="yes"], [])
+AM_COND_IF([WITH_ZLIB], [need_zlib="yes"])
+AM_COND_IF([WITH_LZMA], [need_lzma="yes"])
 
-AM_CONDITIONAL([WITH_ZLIB], [test "x$have_zlib" == "xyes"])
-AM_CONDITIONAL([WITH_LZMA], [test "x$have_lzma" == "xyes"])
+if test "x$need_zlib" = "xyes"; then
+	PKG_CHECK_MODULES(ZLIB, [zlib], [], [AC_MSG_ERROR([cannot find zlib])])
+fi
+
+if test "x$need_lzma" = "xyes"; then
+	PKG_CHECK_MODULES(XZ, [liblzma >= 5.0.0], [],
+			      [AC_MSG_ERROR([cannot find lzma])])
+fi
 
 ##### generate output #####
 
