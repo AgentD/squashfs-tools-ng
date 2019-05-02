@@ -28,4 +28,8 @@ sqfs_inode_generic_t *meta_reader_read_inode(meta_reader_t *ir,
 					     uint64_t block_start,
 					     size_t offset);
 
+int meta_reader_read_dir_header(meta_reader_t *m, sqfs_dir_header_t *hdr);
+
+sqfs_dir_entry_t *meta_reader_read_dir_ent(meta_reader_t *m);
+
 #endif /* META_READER_H */
