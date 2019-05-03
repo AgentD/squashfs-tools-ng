@@ -12,11 +12,18 @@ static struct option long_opts[] = {
 	{ "list", required_argument, NULL, 'l' },
 	{ "cat", required_argument, NULL, 'c' },
 	{ "unpack-root", required_argument, NULL, 'u' },
+	{ "no-dev", no_argument, NULL, 'D' },
+	{ "no-sock", no_argument, NULL, 'S' },
+	{ "no-fifo", no_argument, NULL, 'F' },
+	{ "no-slink", no_argument, NULL, 'L' },
+	{ "no-empty-dir", no_argument, NULL, 'E' },
+	{ "chmod", no_argument, NULL, 'C' },
+	{ "chown", no_argument, NULL, 'O' },
 	{ "help", no_argument, NULL, 'h' },
 	{ "version", no_argument, NULL, 'V' },
 };
 
-static const char *short_opts = "l:c:u:hV";
+static const char *short_opts = "l:c:u:DSFLCOEhV";
 
 static const char *help_string =
 "Usage: %s [OPTIONS] <squashfs-file>\n"
@@ -29,7 +36,17 @@ static const char *help_string =
 "  --cat, -c <path>      If the specified path is a regular file in the,\n"
 "                        image, dump its contents to stdout.\n"
 "  --unpack-root <path>  Unpack the contents of the filesystem into the\n"
-"                        specified path\n"
+"                        specified path.\n"
+"  --no-dev, -D          Do not unpack device special files.\n"
+"  --no-sock, -S         Do not unpack socket files.\n"
+"  --no-fifo, -F         Do not unpack named pipes.\n"
+"  --no-slink, -L        Do not unpack symbolic links.\n"
+"  --no-empty-dir, -E    Do not unpack directories that would end up empty.\n"
+"  --chmod, -C           Change permission flags of unpacked files to those\n"
+"                        store in the squashfs image.\n"
+"  --chown, -O           Change ownership of unpacked files to the UID/GID\n"
+"                        set in the squashfs iamge.\n"
+"\n"
 "  --help, -h            Print help text and exit.\n"
 "  --version, -V         Print version information and exit.\n"
 "\n";
@@ -92,7 +109,7 @@ static char *get_path(char *old, const char *arg)
 
 int main(int argc, char **argv)
 {
-	int i, fd, status = EXIT_FAILURE, op = OP_NONE;
+	int i, fd, status = EXIT_FAILURE, op = OP_NONE, unpack_flags = 0;
 	const char *unpack_root = NULL;
 	frag_reader_t *frag = NULL;
 	char *cmdpath = NULL;
@@ -107,6 +124,27 @@ int main(int argc, char **argv)
 			break;
 
 		switch (i) {
+		case 'D':
+			unpack_flags |= UNPACK_NO_DEVICES;
+			break;
+		case 'S':
+			unpack_flags |= UNPACK_NO_SOCKETS;
+			break;
+		case 'F':
+			unpack_flags |= UNPACK_NO_FIFO;
+			break;
+		case 'L':
+			unpack_flags |= UNPACK_NO_SLINKS;
+			break;
+		case 'C':
+			unpack_flags |= UNPACK_CHMOD;
+			break;
+		case 'O':
+			unpack_flags |= UNPACK_CHOWN;
+			break;
+		case 'E':
+			unpack_flags |= UNPACK_NO_EMPTY;
+			break;
 		case 'c':
 			op = OP_CAT;
 			cmdpath = get_path(cmdpath, optarg);
@@ -178,7 +216,7 @@ int main(int argc, char **argv)
 	if (cmp == NULL)
 		goto out_fd;
 
-	if (read_fstree(&fs, fd, &super, cmp))
+	if (read_fstree(&fs, fd, &super, cmp, unpack_flags))
 		goto out_cmp;
 
 	switch (op) {
@@ -226,7 +264,7 @@ int main(int argc, char **argv)
 		}
 
 		if (restore_fstree(unpack_root, fs.root, cmp, super.block_size,
-				   frag, fd)) {
+				   frag, fd, unpack_flags)) {
 			goto out_fs;
 		}
 		break;

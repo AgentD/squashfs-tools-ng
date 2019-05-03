@@ -3,14 +3,14 @@
 
 static int restore_directory(int dirfd, tree_node_t *n, compressor_t *cmp,
 			     size_t block_size, frag_reader_t *frag,
-			     int sqfsfd)
+			     int sqfsfd, int flags)
 {
 	int fd;
 
 	for (n = n->data.dir->children; n != NULL; n = n->next) {
 		switch (n->mode & S_IFMT) {
 		case S_IFDIR:
-			if (mkdirat(dirfd, n->name, n->mode) &&
+			if (mkdirat(dirfd, n->name, 0755) &&
 			    errno != EEXIST) {
 				fprintf(stderr, "mkdir %s: %s\n",
 					n->name, strerror(errno));
@@ -25,7 +25,7 @@ static int restore_directory(int dirfd, tree_node_t *n, compressor_t *cmp,
 			}
 
 			if (restore_directory(fd, n, cmp, block_size,
-					      frag, sqfsfd)) {
+					      frag, sqfsfd, flags)) {
 				close(fd);
 				return -1;
 			}
@@ -42,7 +42,8 @@ static int restore_directory(int dirfd, tree_node_t *n, compressor_t *cmp,
 			break;
 		case S_IFSOCK:
 		case S_IFIFO:
-			if (mknodat(dirfd, n->name, n->mode, 0)) {
+			if (mknodat(dirfd, n->name,
+				    (n->mode & S_IFMT) | 0700, 0)) {
 				fprintf(stderr, "creating %s: %s\n",
 					n->name, strerror(errno));
 				return -1;
@@ -50,7 +51,8 @@ static int restore_directory(int dirfd, tree_node_t *n, compressor_t *cmp,
 			break;
 		case S_IFBLK:
 		case S_IFCHR:
-			if (mknodat(dirfd, n->name, n->mode, n->data.devno)) {
+			if (mknodat(dirfd, n->name, (n->mode & S_IFMT),
+				    n->data.devno)) {
 				fprintf(stderr, "creating device %s: %s\n",
 					n->name, strerror(errno));
 				return -1;
@@ -58,7 +60,7 @@ static int restore_directory(int dirfd, tree_node_t *n, compressor_t *cmp,
 			break;
 		case S_IFREG:
 			fd = openat(dirfd, n->name,
-				    O_WRONLY | O_CREAT | O_EXCL, n->mode);
+				    O_WRONLY | O_CREAT | O_EXCL, 0600);
 			if (fd < 0) {
 				fprintf(stderr, "creating %s: %s\n",
 					n->name, strerror(errno));
@@ -76,13 +78,32 @@ static int restore_directory(int dirfd, tree_node_t *n, compressor_t *cmp,
 		default:
 			break;
 		}
+
+		if (flags & UNPACK_CHOWN) {
+			if (fchownat(dirfd, n->name, n->uid, n->gid,
+				     AT_SYMLINK_NOFOLLOW)) {
+				fprintf(stderr, "chown %s: %s\n",
+					n->name, strerror(errno));
+				return -1;
+			}
+		}
+
+		if (flags & UNPACK_CHMOD) {
+			if (fchmodat(dirfd, n->name, n->mode,
+				     AT_SYMLINK_NOFOLLOW)) {
+				fprintf(stderr, "chmod %s: %s\n",
+					n->name, strerror(errno));
+				return -1;
+			}
+		}
 	}
 
 	return 0;
 }
 
 int restore_fstree(const char *rootdir, tree_node_t *root, compressor_t *cmp,
-		   size_t block_size, frag_reader_t *frag, int sqfsfd)
+		   size_t block_size, frag_reader_t *frag, int sqfsfd,
+		   int flags)
 {
 	int dirfd;
 
@@ -95,7 +116,8 @@ int restore_fstree(const char *rootdir, tree_node_t *root, compressor_t *cmp,
 		return -1;
 	}
 
-	if (restore_directory(dirfd, root, cmp, block_size, frag, sqfsfd)) {
+	if (restore_directory(dirfd, root, cmp, block_size, frag,
+			      sqfsfd, flags)) {
 		close(dirfd);
 		return -1;
 	}
