@@ -3,6 +3,7 @@
 #define UNSQUASHFS_H
 
 #include "meta_reader.h"
+#include "frag_reader.h"
 #include "squashfs.h"
 #include "compress.h"
 #include "id_table.h"
@@ -26,5 +27,8 @@ tree_node_t *tree_node_from_inode(sqfs_inode_generic_t *inode,
 int read_fstree(fstree_t *out, int fd, sqfs_super_t *super, compressor_t *cmp);
 
 void list_files(tree_node_t *node);
+
+int extract_file(file_info_t *fi, compressor_t *cmp, size_t block_size,
+		 frag_reader_t *frag, int sqfsfd, int outfd);
 
 #endif /* UNSQUASHFS_H */

@@ -1,8 +1,15 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "unsquashfs.h"
 
+enum {
+	OP_NONE = 0,
+	OP_LS,
+	OP_CAT,
+};
+
 static struct option long_opts[] = {
 	{ "list", required_argument, NULL, 'l' },
+	{ "cat", required_argument, NULL, 'c' },
 	{ "help", no_argument, NULL, 'h' },
 	{ "version", no_argument, NULL, 'V' },
 };
@@ -17,6 +24,8 @@ static const char *help_string =
 "Possible options:\n"
 "  --list, -l <path>  Produce a directory listing for a given path in the\n"
 "                     squashfs image.\n"
+"  --cat, -c <path>   If the specified path is a regular file in the image,\n"
+"                     dump its contents to stdout.\n"
 "  --help, -h         Print help text and exit.\n"
 "  --version, -V      Print version information and exit.\n"
 "\n";
@@ -56,12 +65,35 @@ static tree_node_t *find_node(tree_node_t *n, const char *path)
 	return n;
 }
 
+static char *get_path(char *old, const char *arg)
+{
+	char *path;
+
+	free(old);
+
+	path = strdup(arg);
+	if (path == NULL) {
+		perror("processing arguments");
+		exit(EXIT_FAILURE);
+	}
+
+	if (canonicalize_name(path)) {
+		fprintf(stderr, "Invalid path: %s\n", arg);
+		free(path);
+		exit(EXIT_FAILURE);
+	}
+
+	return path;
+}
+
 int main(int argc, char **argv)
 {
-	int i, fd, status = EXIT_FAILURE;
-	char *lspath = NULL;
+	int i, fd, status = EXIT_FAILURE, op = OP_NONE;
+	frag_reader_t *frag = NULL;
+	char *cmdpath = NULL;
 	sqfs_super_t super;
 	compressor_t *cmp;
+	tree_node_t *n;
 	fstree_t fs;
 
 	for (;;) {
@@ -70,22 +102,13 @@ int main(int argc, char **argv)
 			break;
 
 		switch (i) {
+		case 'c':
+			op = OP_CAT;
+			cmdpath = get_path(cmdpath, optarg);
+			break;
 		case 'l':
-			if (optarg != NULL) {
-				free(lspath);
-
-				lspath = strdup(optarg ? optarg : "");
-				if (lspath == NULL) {
-					perror("processing arguments");
-					return EXIT_FAILURE;
-				}
-
-				if (canonicalize_name(lspath)) {
-					fprintf(stderr, "Invalid pth: %s\n",
-						optarg);
-					goto out_cmd;
-				}
-			}
+			op = OP_LS;
+			cmdpath = get_path(cmdpath, optarg);
 			break;
 		case 'h':
 			printf(help_string, __progname);
@@ -100,10 +123,14 @@ int main(int argc, char **argv)
 		}
 	}
 
+	if (op == OP_NONE) {
+		fputs("No opteration specified\n", stderr);
+		goto fail_arg;
+	}
+
 	if (optind >= argc) {
-		fprintf(stderr, "Usage: %s [OPTIONS] <filename>\n",
-			__progname);
-		goto out_cmd;
+		fputs("Missing image argument\n", stderr);
+		goto fail_arg;
 	}
 
 	fd = open(argv[optind], O_RDONLY);
@@ -145,29 +172,57 @@ int main(int argc, char **argv)
 	if (read_fstree(&fs, fd, &super, cmp))
 		goto out_cmp;
 
-	if (lspath != NULL) {
-		tree_node_t *n = find_node(fs.root, lspath);
-
+	switch (op) {
+	case OP_LS:
+		n = find_node(fs.root, cmdpath);
 		if (n == NULL) {
-			perror(lspath);
+			perror(cmdpath);
 			goto out_fs;
 		}
 
 		list_files(n);
+		break;
+	case OP_CAT:
+		n = find_node(fs.root, cmdpath);
+		if (n == NULL) {
+			perror(cmdpath);
+			goto out_fs;
+		}
+
+		if (!S_ISREG(n->mode)) {
+			fprintf(stderr, "/%s: not a regular file\n", cmdpath);
+			goto out_fs;
+		}
+
+		if (super.fragment_entry_count > 0 &&
+		    super.fragment_table_start < super.bytes_used &&
+		    !(super.flags & SQFS_FLAG_NO_FRAGMENTS)) {
+			frag = frag_reader_create(&super, fd, cmp);
+			if (frag == NULL)
+				goto out_fs;
+		}
+
+		if (extract_file(n->data.file, cmp, super.block_size,
+				 frag, fd, STDOUT_FILENO)) {
+			goto out_fs;
+		}
+		break;
 	}
 
 	status = EXIT_SUCCESS;
 out_fs:
+	if (frag != NULL)
+		frag_reader_destroy(frag);
 	fstree_cleanup(&fs);
 out_cmp:
 	cmp->destroy(cmp);
 out_fd:
 	close(fd);
 out_cmd:
-	free(lspath);
+	free(cmdpath);
 	return status;
 fail_arg:
 	fprintf(stderr, "Try `%s --help' for more information.\n", __progname);
-	free(lspath);
+	free(cmdpath);
 	return EXIT_FAILURE;
 }
