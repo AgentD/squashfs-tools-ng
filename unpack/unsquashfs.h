@@ -31,4 +31,7 @@ void list_files(tree_node_t *node);
 int extract_file(file_info_t *fi, compressor_t *cmp, size_t block_size,
 		 frag_reader_t *frag, int sqfsfd, int outfd);
 
+int restore_fstree(const char *rootdir, tree_node_t *root, compressor_t *cmp,
+		   size_t block_size, frag_reader_t *frag, int sqfsfd);
+
 #endif /* UNSQUASHFS_H */

@@ -5,16 +5,18 @@ enum {
 	OP_NONE = 0,
 	OP_LS,
 	OP_CAT,
+	OP_UNPACK,
 };
 
 static struct option long_opts[] = {
 	{ "list", required_argument, NULL, 'l' },
 	{ "cat", required_argument, NULL, 'c' },
+	{ "unpack-root", required_argument, NULL, 'u' },
 	{ "help", no_argument, NULL, 'h' },
 	{ "version", no_argument, NULL, 'V' },
 };
 
-static const char *short_opts = "l:hV";
+static const char *short_opts = "l:c:u:hV";
 
 static const char *help_string =
 "Usage: %s [OPTIONS] <squashfs-file>\n"
@@ -22,12 +24,14 @@ static const char *help_string =
 "View or extract the contents of a squashfs image.\n"
 "\n"
 "Possible options:\n"
-"  --list, -l <path>  Produce a directory listing for a given path in the\n"
-"                     squashfs image.\n"
-"  --cat, -c <path>   If the specified path is a regular file in the image,\n"
-"                     dump its contents to stdout.\n"
-"  --help, -h         Print help text and exit.\n"
-"  --version, -V      Print version information and exit.\n"
+"  --list, -l <path>     Produce a directory listing for a given path in the\n"
+"                        squashfs image.\n"
+"  --cat, -c <path>      If the specified path is a regular file in the,\n"
+"                        image, dump its contents to stdout.\n"
+"  --unpack-root <path>  Unpack the contents of the filesystem into the\n"
+"                        specified path\n"
+"  --help, -h            Print help text and exit.\n"
+"  --version, -V         Print version information and exit.\n"
 "\n";
 
 extern const char *__progname;
@@ -89,6 +93,7 @@ static char *get_path(char *old, const char *arg)
 int main(int argc, char **argv)
 {
 	int i, fd, status = EXIT_FAILURE, op = OP_NONE;
+	const char *unpack_root = NULL;
 	frag_reader_t *frag = NULL;
 	char *cmdpath = NULL;
 	sqfs_super_t super;
@@ -109,6 +114,10 @@ int main(int argc, char **argv)
 		case 'l':
 			op = OP_LS;
 			cmdpath = get_path(cmdpath, optarg);
+			break;
+		case 'u':
+			op = OP_UNPACK;
+			unpack_root = optarg;
 			break;
 		case 'h':
 			printf(help_string, __progname);
@@ -204,6 +213,20 @@ int main(int argc, char **argv)
 
 		if (extract_file(n->data.file, cmp, super.block_size,
 				 frag, fd, STDOUT_FILENO)) {
+			goto out_fs;
+		}
+		break;
+	case OP_UNPACK:
+		if (super.fragment_entry_count > 0 &&
+		    super.fragment_table_start < super.bytes_used &&
+		    !(super.flags & SQFS_FLAG_NO_FRAGMENTS)) {
+			frag = frag_reader_create(&super, fd, cmp);
+			if (frag == NULL)
+				goto out_fs;
+		}
+
+		if (restore_fstree(unpack_root, fs.root, cmp, super.block_size,
+				   frag, fd)) {
 			goto out_fs;
 		}
 		break;
