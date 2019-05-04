@@ -4,11 +4,11 @@ unsquashfs_SOURCES += unpack/list_files.c unpack/extract_file.c
 unsquashfs_SOURCES += unpack/restore_fstree.c
 unsquashfs_LDADD = libsquashfs.a libfstree.a libcompress.a libutil.a
 
-if WITH_LZMA
+if WITH_XZ
 unsquashfs_LDADD += $(XZ_LIBS)
 endif
 
-if WITH_ZLIB
+if WITH_GZIP
 unsquashfs_LDADD += $(ZLIB_LIBS)
 endif
 

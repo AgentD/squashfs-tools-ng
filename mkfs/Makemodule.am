@@ -2,11 +2,11 @@ mksquashfs_SOURCES = mkfs/mksquashfs.c mkfs/mksquashfs.h mkfs/block.c
 mksquashfs_SOURCES += mkfs/options.c mkfs/meta.c
 mksquashfs_LDADD = libsquashfs.a libfstree.a libcompress.a libutil.a
 
-if WITH_LZMA
+if WITH_XZ
 mksquashfs_LDADD += $(XZ_LIBS)
 endif
 
-if WITH_ZLIB
+if WITH_GZIP
 mksquashfs_LDADD += $(ZLIB_LIBS)
 endif
 

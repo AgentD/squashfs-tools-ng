@@ -41,41 +41,41 @@ AC_SUBST([WARN_CFLAGS])
 
 ##### config options #####
 
-AC_ARG_WITH([zlib],
-	[AS_HELP_STRING([--without-zlib],
-			[Build without zlib compression support])],
+AC_ARG_WITH([gzip],
+	[AS_HELP_STRING([--without-gzip],
+			[Build without gzip compression support])],
 	[case "${withval}" in
-	yes) AM_CONDITIONAL([WITH_ZLIB], [true]) ;;
-	no)  AM_CONDITIONAL([WITH_ZLIB], [false]) ;;
-	*) AC_MSG_ERROR([bad value ${withval} for --without-zlib]) ;;
+	yes) AM_CONDITIONAL([WITH_GZIP], [true]) ;;
+	no)  AM_CONDITIONAL([WITH_GZIP], [false]) ;;
+	*) AC_MSG_ERROR([bad value ${withval} for --without-gzip]) ;;
 	esac],
-	[AM_CONDITIONAL([WITH_ZLIB], [true])])
+	[AM_CONDITIONAL([WITH_GZIP], [true])])
 
-AC_ARG_WITH([lzma],
-	[AS_HELP_STRING([--without-lzma],
-			[Build without lzma compression support])],
+AC_ARG_WITH([xz],
+	[AS_HELP_STRING([--without-xz],
+			[Build without xz compression support])],
 	[case "${withval}" in
-	yes) AM_CONDITIONAL([WITH_LZMA], [true]) ;;
-	no)  AM_CONDITIONAL([WITH_LZMA], [false]) ;;
-	*) AC_MSG_ERROR([bad value ${withval} for --without-lzma]) ;;
+	yes) AM_CONDITIONAL([WITH_XZ], [true]) ;;
+	no)  AM_CONDITIONAL([WITH_XZ], [false]) ;;
+	*) AC_MSG_ERROR([bad value ${withval} for --without-xz]) ;;
 	esac],
-	[AM_CONDITIONAL([WITH_LZMA], [true])])
+	[AM_CONDITIONAL([WITH_XZ], [true])])
 
 ##### search for dependencies #####
 
 need_zlib="no"
-need_lzma="no"
+need_xz="no"
 
-AM_COND_IF([WITH_ZLIB], [need_zlib="yes"])
-AM_COND_IF([WITH_LZMA], [need_lzma="yes"])
+AM_COND_IF([WITH_GZIP], [need_zlib="yes"])
+AM_COND_IF([WITH_XZ], [need_xz="yes"])
 
 if test "x$need_zlib" = "xyes"; then
 	PKG_CHECK_MODULES(ZLIB, [zlib], [], [AC_MSG_ERROR([cannot find zlib])])
 fi
 
-if test "x$need_lzma" = "xyes"; then
+if test "x$need_xz" = "xyes"; then
 	PKG_CHECK_MODULES(XZ, [liblzma >= 5.0.0], [],
-			      [AC_MSG_ERROR([cannot find lzma])])
+			      [AC_MSG_ERROR([cannot find xz sdk])])
 fi
 
 ##### generate output #####

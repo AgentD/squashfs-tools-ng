@@ -6,11 +6,11 @@
 typedef compressor_t *(*compressor_fun_t)(bool compress, size_t block_size);
 
 static compressor_fun_t compressors[SQFS_COMP_MAX + 1] = {
-#ifdef WITH_ZLIB
-	[SQFS_COMP_GZIP] = create_zlib_compressor,
+#ifdef WITH_GZIP
+	[SQFS_COMP_GZIP] = create_gzip_compressor,
 #endif
-#ifdef WITH_LZMA
-	[SQFS_COMP_XZ] = create_lzma_compressor,
+#ifdef WITH_XZ
+	[SQFS_COMP_XZ] = create_xz_compressor,
 #endif
 };
 

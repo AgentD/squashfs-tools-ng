@@ -21,18 +21,18 @@ libutil_a_SOURCES = lib/util/canonicalize_name.c lib/util/write_retry.c
 libutil_a_SOURCES += lib/util/read_retry.c include/util.h
 libutil_a_SOURCES += lib/util/print_version.c lib/util/mkdir_p.c
 
-if WITH_ZLIB
-libcompress_a_SOURCES += lib/comp/zlib.c
+if WITH_GZIP
+libcompress_a_SOURCES += lib/comp/gzip.c
 
 libcompress_a_CFLAGS += $(ZLIB_CFLAGS)
-libcompress_a_CPPFLAGS += -DWITH_ZLIB
+libcompress_a_CPPFLAGS += -DWITH_GZIP
 endif
 
-if WITH_LZMA
-libcompress_a_SOURCES += lib/comp/lzma.c
+if WITH_XZ
+libcompress_a_SOURCES += lib/comp/xz.c
 
 libcompress_a_CFLAGS += $(XZ_CFLAGS)
-libcompress_a_CPPFLAGS += -DWITH_LZMA
+libcompress_a_CPPFLAGS += -DWITH_XZ
 endif
 
 noinst_LIBRARIES += libfstree.a libcompress.a libutil.a libsquashfs.a
