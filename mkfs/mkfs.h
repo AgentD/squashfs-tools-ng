@@ -25,6 +25,7 @@ typedef struct {
 	int compressor;
 	int blksz;
 	int devblksz;
+	bool quiet;
 	const char *infile;
 	const char *outfile;
 } options_t;

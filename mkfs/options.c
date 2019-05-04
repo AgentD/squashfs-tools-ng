@@ -17,11 +17,12 @@ static struct option long_opts[] = {
 	{ "dev-block-size", required_argument, NULL, 'B' },
 	{ "defaults", required_argument, NULL, 'd' },
 	{ "force", no_argument, NULL, 'f' },
+	{ "quiet", no_argument, NULL, 'q' },
 	{ "version", no_argument, NULL, 'V' },
 	{ "help", no_argument, NULL, 'h' },
 };
 
-static const char *short_opts = "c:b:B:d:fhV";
+static const char *short_opts = "c:b:B:d:fqhV";
 
 enum {
 	DEF_UID = 0,
@@ -97,6 +98,7 @@ static const char *help_string =
 "                                 mtime=<value>  0 if not set.\n"
 "\n"
 "  --force, -f                 Overwrite the output file if it exists.\n"
+"  --quiet, -q                 Do not print out progress reports.\n"
 "  --help, -h                  Print help text and exit.\n"
 "  --version, -V               Print version information and exit.\n"
 "\n";
@@ -259,6 +261,9 @@ void process_command_line(options_t *opt, int argc, char **argv)
 			break;
 		case 'f':
 			opt->outmode = O_WRONLY | O_CREAT | O_TRUNC;
+			break;
+		case 'q':
+			opt->quiet = true;
 			break;
 		case 'h':
 			printf(help_string, __progname,

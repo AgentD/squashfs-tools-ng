@@ -175,18 +175,36 @@ fail_trunc:
 	goto fail;
 }
 
-static int find_and_process_files(sqfs_info_t *info, tree_node_t *n)
+static void print_name(tree_node_t *n)
+{
+	if (n->parent != NULL) {
+		print_name(n->parent);
+		fputc('/', stdout);
+	}
+
+	fputs(n->name, stdout);
+}
+
+static int find_and_process_files(sqfs_info_t *info, tree_node_t *n,
+				  bool quiet)
 {
 	if (S_ISDIR(n->mode)) {
 		for (n = n->data.dir->children; n != NULL; n = n->next) {
-			if (find_and_process_files(info, n))
+			if (find_and_process_files(info, n, quiet))
 				return -1;
 		}
 		return 0;
 	}
 
-	if (S_ISREG(n->mode))
+	if (S_ISREG(n->mode)) {
+		if (!quiet) {
+			fputs("packing ", stdout);
+			print_name(n);
+			fputc('\n', stdout);
+		}
+
 		return process_file(info, n->data.file);
+	}
 
 	return 0;
 }
@@ -218,7 +236,7 @@ int write_data_to_image(sqfs_info_t *info)
 		return -1;
 	}
 
-	ret = find_and_process_files(info, info->fs.root);
+	ret = find_and_process_files(info, info->fs.root, info->opt.quiet);
 
 	free(info->block);
 	free(info->fragment);

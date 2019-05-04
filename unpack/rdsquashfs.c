@@ -20,11 +20,12 @@ static struct option long_opts[] = {
 	{ "no-empty-dir", no_argument, NULL, 'E' },
 	{ "chmod", no_argument, NULL, 'C' },
 	{ "chown", no_argument, NULL, 'O' },
+	{ "quiet", no_argument, NULL, 'q' },
 	{ "help", no_argument, NULL, 'h' },
 	{ "version", no_argument, NULL, 'V' },
 };
 
-static const char *short_opts = "l:c:u:p:DSFLCOEhV";
+static const char *short_opts = "l:c:u:p:DSFLCOEqhV";
 
 static const char *help_string =
 "Usage: %s [OPTIONS] <squashfs-file>\n"
@@ -48,7 +49,8 @@ static const char *help_string =
 "  --chmod, -C           Change permission flags of unpacked files to those\n"
 "                        store in the squashfs image.\n"
 "  --chown, -O           Change ownership of unpacked files to the UID/GID\n"
-"                        set in the squashfs iamge.\n"
+"                        set in the squashfs image.\n"
+"  --quiet, -q           Do not print out progress while unpacking.\n"
 "\n"
 "  --help, -h            Print help text and exit.\n"
 "  --version, -V         Print version information and exit.\n"
@@ -200,6 +202,9 @@ int main(int argc, char **argv)
 			break;
 		case 'p':
 			cmdpath = get_path(cmdpath, optarg);
+			break;
+		case 'q':
+			info.flags |= UNPACK_QUIET;
 			break;
 		case 'h':
 			printf(help_string, __progname);

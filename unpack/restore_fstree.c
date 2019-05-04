@@ -1,9 +1,25 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "rdsquashfs.h"
 
+static void print_name(tree_node_t *n)
+{
+	if (n->parent != NULL) {
+		print_name(n->parent);
+		fputc('/', stdout);
+	}
+
+	fputs(n->name, stdout);
+}
+
 static int create_node(int dirfd, tree_node_t *n, unsqfs_info_t *info)
 {
 	int fd;
+
+	if (!(info->flags & UNPACK_QUIET)) {
+		fputs("unpacking ", stdout);
+		print_name(n);
+		fputc('\n', stdout);
+	}
 
 	switch (n->mode & S_IFMT) {
 	case S_IFDIR:

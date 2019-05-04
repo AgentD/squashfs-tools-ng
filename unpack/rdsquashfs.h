@@ -27,6 +27,7 @@ enum UNPACK_FLAGS {
 	UNPACK_NO_EMPTY = 0x10,
 	UNPACK_CHMOD = 0x20,
 	UNPACK_CHOWN = 0x40,
+	UNPACK_QUIET = 0x80,
 };
 
 typedef struct {
