@@ -1,0 +1,87 @@
+
+ About
+ *****
+
+This directory contains the source code of a collection of tools for working
+with SquashFS file systems.
+
+The `gensquashfs` program takes as input a file listing similar to the
+program `gen_init_cpio` in the Linux kernel source tree and produces a
+SquashFS image.
+
+The input list precisely specifies the directory structure, all permission bits
+and all UIDs & GIDs of who owns what.
+
+The tool doesn't care if the directories, symlinks, device special files,
+etc... actually exist when packing a SquashFS image. The only thing that
+really has to exist are the input _files_ that can be placed arbitrarily in
+the file system by specifying input and target locations.
+
+All directory entries are sorted by name and processed sequentially. All time
+stamps in the SquashFS image are set to a command line specified value (or 0
+by default). Thus the entire process should be deterministic, i.e. same input
+produces byte-for-byte the same output.
+
+
+The `rdsquashfs` program can read a SquashFS image and produce file listings,
+extract individual files or entire sub trees of the image to a desired
+location.
+
+
+ Why not use the official squashfs-tools?
+ ****************************************
+
+The mksquashfs utility is semi-broken and generally a PITA to work with.
+
+For the typically use case of SquashFS (i.e. as rootfs for a live distro or an
+embedded system), it should be blindingly obvious that I might want to micro
+manage what goes into the file system, that UIDs/GIDs of the host system are
+garbage inside the image and that setting the desired permissions (e.g. suid)
+or SELinux labels on the input is completely out of the question. Also, it
+would be really cool if the whole thing was reproducible.
+
+All of this seems to have been an afterthought with mksquashfs. Some of it can
+be achieved with exclusion options, "pseudo files" or "filters" (a completely
+undocumented feature that not even `--help` tells you about).
+
+My main gripes with mksquashfs were the following:
+
+ - I need to precisely replicate the entire filesystem for packing, even tough
+   the only thing actually needed are in theory the regular files.
+ - Files in the input FS but not in the pseudo file are still packed
+   but with garbage UID/GID from the host system.
+ - When I want files that are not owned by root, the root inode will get
+   garbage UID/GID from the host system and there is no way to change this.
+ - mtime is read from the input file system and there is no way to override it.
+ - Data is packed by a thread pool, i.e. in a non-deterministic way.
+ - Extended attributes are read from the input file system, i.e. the only way
+   to get SELinux labels into the SquashFS filesystem is to set them on the
+   input data.
+
+That's at least what I can think of right now from the top of my head.
+
+It would be preferable to fix mksquashfs itself, but the source code is a
+horrid dumpster fire. It turned out to be easier to understand the structure
+of SquashFS by reading the available documentation plus kernel source and
+implementing the desired feature set from scratch.
+
+Furthermore, upstream seems to be unmaintained at the moment and the mailing
+list appears to be about as dead as SourceForge that hosts it.
+
+
+ Limitations
+ ***********
+
+The entire code base is at the moment fairly fresh and has been hacked together
+in a weekend or two. So naturally, the feature set it implements is currently
+quite limited.
+
+At the moment, the following things are still missing:
+
+ - extended attributes
+ - sparse files
+ - hard links
+ - NFS export tables
+ - compressor options
+ - compressors other than XZ and GZIP (i.e. lzo, lz4, zstd, *maybe* lzma1?)
+ - support for extracting SquashFS < 4.0

@@ -6,7 +6,7 @@ AM_CFLAGS = $(WARN_CFLAGS)
 noinst_LIBRARIES =
 bin_PROGRAMS =
 
-EXTRA_DIST = autogen.sh LICENSE
+EXTRA_DIST = autogen.sh LICENSE README
 
 include lib/Makemodule.am
 include mkfs/Makemodule.am
