@@ -55,4 +55,6 @@ int extract_file(file_info_t *fi, unsqfs_info_t *info, int outfd);
 int restore_fstree(const char *rootdir, tree_node_t *root,
 		   unsqfs_info_t *info);
 
+void describe_tree(tree_node_t *root, const char *unpack_root);
+
 #endif /* RDSQUASHFS_H */

@@ -6,18 +6,20 @@ enum {
 	OP_LS,
 	OP_CAT,
 	OP_UNPACK,
+	OP_DESCRIBE,
 };
 
 static struct option long_opts[] = {
 	{ "list", required_argument, NULL, 'l' },
 	{ "cat", required_argument, NULL, 'c' },
-	{ "unpack-root", required_argument, NULL, 'u' },
-	{ "unpack-path", required_argument, NULL, 'p' },
+	{ "unpack-root", required_argument, NULL, 'p' },
+	{ "unpack-path", required_argument, NULL, 'u' },
 	{ "no-dev", no_argument, NULL, 'D' },
 	{ "no-sock", no_argument, NULL, 'S' },
 	{ "no-fifo", no_argument, NULL, 'F' },
 	{ "no-slink", no_argument, NULL, 'L' },
 	{ "no-empty-dir", no_argument, NULL, 'E' },
+	{ "describe", no_argument, NULL, 'd' },
 	{ "chmod", no_argument, NULL, 'C' },
 	{ "chown", no_argument, NULL, 'O' },
 	{ "quiet", no_argument, NULL, 'q' },
@@ -25,7 +27,7 @@ static struct option long_opts[] = {
 	{ "version", no_argument, NULL, 'V' },
 };
 
-static const char *short_opts = "l:c:u:p:DSFLCOEqhV";
+static const char *short_opts = "l:c:u:p:DSFLCOEdqhV";
 
 static const char *help_string =
 "Usage: %s [OPTIONS] <squashfs-file>\n"
@@ -33,27 +35,34 @@ static const char *help_string =
 "View or extract the contents of a squashfs image.\n"
 "\n"
 "Possible options:\n"
-"  --list, -l <path>     Produce a directory listing for a given path in the\n"
-"                        squashfs image.\n"
-"  --cat, -c <path>      If the specified path is a regular file in the,\n"
-"                        image, dump its contents to stdout.\n"
-"  --unpack-root <path>  Unpack the contents of the filesystem into the\n"
-"                        specified path.\n"
-"  --unpack-path <path>  If specified, unpack this sub directory from the\n"
-"                        image instead of the filesystem root.\n"
-"  --no-dev, -D          Do not unpack device special files.\n"
-"  --no-sock, -S         Do not unpack socket files.\n"
-"  --no-fifo, -F         Do not unpack named pipes.\n"
-"  --no-slink, -L        Do not unpack symbolic links.\n"
-"  --no-empty-dir, -E    Do not unpack directories that would end up empty.\n"
-"  --chmod, -C           Change permission flags of unpacked files to those\n"
-"                        store in the squashfs image.\n"
-"  --chown, -O           Change ownership of unpacked files to the UID/GID\n"
-"                        set in the squashfs image.\n"
-"  --quiet, -q           Do not print out progress while unpacking.\n"
 "\n"
-"  --help, -h            Print help text and exit.\n"
-"  --version, -V         Print version information and exit.\n"
+"  --list, -l <path>         Produce a directory listing for a given path in\n"
+"                            the squashfs image.\n"
+"  --cat, -c <path>          If the specified path is a regular file in the,\n"
+"                            image, dump its contents to stdout.\n"
+"  --unpack-path, -u <path>  Unpack this sub directory from the image. To\n"
+"                            unpack everything, simply specify /.\n"
+"  --describe, -d            Produce a file listing from the image.\n"
+"\n"
+"  --unpack-root, -p <path>  If used with --unpack-path, this is where the\n"
+"                            data unpacked to. If used with --describe, this\n"
+"                            is used as a prefix for the input path of\n"
+"                            regular files.\n"
+"\n"
+"  --no-dev, -D              Do not unpack device special files.\n"
+"  --no-sock, -S             Do not unpack socket files.\n"
+"  --no-fifo, -F             Do not unpack named pipes.\n"
+"  --no-slink, -L            Do not unpack symbolic links.\n"
+"  --no-empty-dir, -E        Do not unpack directories that would end up\n"
+"                            empty after applying the above rules.\n"
+"  --chmod, -C               Change permission flags of unpacked files to\n"
+"                            those store in the squashfs image.\n"
+"  --chown, -O               Change ownership of unpacked files to the\n"
+"                            UID/GID set in the squashfs image.\n"
+"  --quiet, -q               Do not print out progress while unpacking.\n"
+"\n"
+"  --help, -h                Print help text and exit.\n"
+"  --version, -V             Print version information and exit.\n"
 "\n";
 
 extern const char *__progname;
@@ -192,15 +201,18 @@ int main(int argc, char **argv)
 			op = OP_CAT;
 			cmdpath = get_path(cmdpath, optarg);
 			break;
+		case 'd':
+			op = OP_DESCRIBE;
+			break;
 		case 'l':
 			op = OP_LS;
 			cmdpath = get_path(cmdpath, optarg);
 			break;
-		case 'u':
-			op = OP_UNPACK;
+		case 'p':
 			unpack_root = optarg;
 			break;
-		case 'p':
+		case 'u':
+			op = OP_UNPACK;
 			cmdpath = get_path(cmdpath, optarg);
 			break;
 		case 'q':
@@ -303,14 +315,10 @@ int main(int argc, char **argv)
 			goto out_fs;
 		break;
 	case OP_UNPACK:
-		if (cmdpath == NULL) {
-			n = fs.root;
-		} else {
-			n = find_node(fs.root, cmdpath);
-			if (n == NULL) {
-				perror(cmdpath);
-				goto out_fs;
-			}
+		n = find_node(fs.root, cmdpath);
+		if (n == NULL) {
+			perror(cmdpath);
+			goto out_fs;
 		}
 
 		if (load_fragment_table(&info, &super))
@@ -321,6 +329,9 @@ int main(int argc, char **argv)
 
 		if (restore_fstree(unpack_root, n, &info))
 			goto out_fs;
+		break;
+	case OP_DESCRIBE:
+		describe_tree(fs.root, unpack_root);
 		break;
 	}
 

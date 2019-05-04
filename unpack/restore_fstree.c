@@ -117,27 +117,32 @@ int restore_fstree(const char *rootdir, tree_node_t *root, unsqfs_info_t *info)
 	if (mkdir_p(rootdir))
 		return -1;
 
-	dirfd = open(rootdir, O_RDONLY | O_DIRECTORY);
-	if (dirfd < 0) {
-		perror(rootdir);
-		return -1;
+	if (rootdir == NULL) {
+		dirfd = AT_FDCWD;
+	} else {
+		dirfd = open(rootdir, O_RDONLY | O_DIRECTORY);
+		if (dirfd < 0) {
+			perror(rootdir);
+			return -1;
+		}
 	}
 
 	if (S_ISDIR(root->mode)) {
 		for (n = root->data.dir->children; n != NULL; n = n->next) {
-			if (create_node(dirfd, n, info)) {
-				close(dirfd);
-				return -1;
-			}
+			if (create_node(dirfd, n, info))
+				goto fail;
 		}
 		return 0;
 	}
 
-	if (create_node(dirfd, root, info)) {
-		close(dirfd);
-		return -1;
-	}
+	if (create_node(dirfd, root, info))
+		goto fail;
 
-	close(dirfd);
+	if (dirfd != AT_FDCWD)
+		close(dirfd);
 	return 0;
+fail:
+	if (dirfd != AT_FDCWD)
+		close(dirfd);
+	return -1;
 }

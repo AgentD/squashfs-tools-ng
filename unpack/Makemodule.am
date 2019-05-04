@@ -1,7 +1,7 @@
 rdsquashfs_SOURCES = unpack/rdsquashfs.c unpack/tree_node_from_inode.c
 rdsquashfs_SOURCES += unpack/rdsquashfs.h unpack/read_fstree.c
 rdsquashfs_SOURCES += unpack/list_files.c unpack/extract_file.c
-rdsquashfs_SOURCES += unpack/restore_fstree.c
+rdsquashfs_SOURCES += unpack/restore_fstree.c unpack/describe.c
 rdsquashfs_LDADD = libsquashfs.a libfstree.a libcompress.a libutil.a
 
 if WITH_XZ
