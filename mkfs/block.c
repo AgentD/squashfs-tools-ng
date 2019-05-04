@@ -6,22 +6,26 @@ static int write_block(file_info_t *fi, sqfs_info_t *info)
 {
 	size_t idx, bs;
 	ssize_t ret;
+	void *ptr;
 
 	idx = info->file_block_count++;
 	bs = info->super.block_size;
 
-	ret = info->cmp->do_block(info->cmp, info->block, bs);
+	ret = info->cmp->do_block(info->cmp, info->block, bs,
+				  info->scratch, bs);
 	if (ret < 0)
 		return -1;
 
 	if (ret > 0) {
+		ptr = info->scratch;
 		bs = ret;
 		fi->blocksizes[idx] = bs;
 	} else {
+		ptr = info->block;
 		fi->blocksizes[idx] = bs | (1 << 24);
 	}
 
-	ret = write_retry(info->outfd, info->block, bs);
+	ret = write_retry(info->outfd, ptr, bs);
 	if (ret < 0) {
 		perror("writing to output file");
 		return -1;
@@ -41,8 +45,8 @@ static int flush_fragments(sqfs_info_t *info)
 	size_t newsz, size;
 	file_info_t *fi;
 	uint64_t offset;
+	void *new, *ptr;
 	ssize_t ret;
-	void *new;
 
 	if (info->num_fragments == info->max_fragments) {
 		newsz = info->max_fragments ? info->max_fragments * 2 : 16;
@@ -64,7 +68,8 @@ static int flush_fragments(sqfs_info_t *info)
 	for (fi = info->frag_list; fi != NULL; fi = fi->frag_next)
 		fi->fragment = info->num_fragments;
 
-	ret = info->cmp->do_block(info->cmp, info->fragment, size);
+	ret = info->cmp->do_block(info->cmp, info->fragment, size,
+				  info->scratch, info->super.block_size);
 	if (ret < 0)
 		return -1;
 
@@ -72,16 +77,18 @@ static int flush_fragments(sqfs_info_t *info)
 	info->fragments[info->num_fragments].pad0 = 0;
 
 	if (ret > 0) {
+		ptr = info->scratch;
 		size = ret;
 		info->fragments[info->num_fragments].size = htole32(size);
 	} else {
+		ptr = info->fragment;
 		info->fragments[info->num_fragments].size =
 			htole32(size | (1 << 24));
 	}
 
 	info->num_fragments += 1;
 
-	ret = write_retry(info->outfd, info->fragment, size);
+	ret = write_retry(info->outfd, ptr, size);
 	if (ret < 0) {
 		perror("writing to output file");
 		return -1;
@@ -203,12 +210,22 @@ int write_data_to_image(sqfs_info_t *info)
 		return -1;
 	}
 
+	info->scratch = malloc(info->super.block_size);
+	if (info->scratch == NULL) {
+		perror("allocating scratch buffer");
+		free(info->block);
+		free(info->fragment);
+		return -1;
+	}
+
 	ret = find_and_process_files(info, info->fs.root);
 
 	free(info->block);
 	free(info->fragment);
+	free(info->scratch);
 
 	info->block = NULL;
 	info->fragment = NULL;
+	info->scratch = NULL;
 	return ret;
 }

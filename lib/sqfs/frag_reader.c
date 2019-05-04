@@ -42,12 +42,15 @@ static int precache_block(frag_reader_t *f, size_t i)
 	}
 
 	if (compressed) {
-		ret = f->cmp->do_block(f->cmp, f->buffer, size);
+		ret = f->cmp->do_block(f->cmp, f->buffer, size,
+				       f->buffer + f->block_size, f->block_size);
 
 		if (ret <= 0) {
 			fputs("extracting fragment failed\n", stderr);
 			return -1;
 		}
+
+		memmove(f->buffer, f->buffer + f->block_size, ret);
 	}
 
 	f->current_index = i;
@@ -73,7 +76,7 @@ frag_reader_t *frag_reader_create(sqfs_super_t *super, int fd,
 		++blockcount;
 
 	/* pre allocate all the stuff */
-	f = calloc(1, sizeof(*f) + super->block_size);
+	f = calloc(1, sizeof(*f) + super->block_size * 2);
 	if (f == NULL)
 		goto fail_rd;
 

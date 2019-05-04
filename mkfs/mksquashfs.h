@@ -36,6 +36,7 @@ typedef struct {
 	fstree_t fs;
 	void *block;
 	void *fragment;
+	void *scratch;
 
 	sqfs_fragment_t *fragments;
 	size_t num_fragments;

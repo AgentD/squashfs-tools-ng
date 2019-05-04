@@ -17,8 +17,8 @@ int sqfs_super_init(sqfs_super_t *super, size_t block_size, uint32_t mtime,
 		return -1;
 	}
 
-	if (block_size < 8192 || block_size >= (1 << 24)) {
-		fputs("Block size must be between 8k and 1M\n", stderr);
+	if (block_size < 4096 || block_size >= (1 << 24)) {
+		fputs("Block size must be between 4k and 1M\n", stderr);
 		return -1;
 	}
 

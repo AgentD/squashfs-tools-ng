@@ -12,7 +12,8 @@
 typedef struct compressor_t compressor_t;
 
 struct compressor_t {
-	ssize_t (*do_block)(compressor_t *cmp, uint8_t *block, size_t outsize);
+	ssize_t (*do_block)(compressor_t *cmp, const uint8_t *in, size_t size,
+			    uint8_t *out, size_t outsize);
 
 	void (*destroy)(compressor_t *stream);
 };

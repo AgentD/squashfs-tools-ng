@@ -79,12 +79,18 @@ int meta_reader_seek(meta_reader_t *m, uint64_t block_start, size_t offset)
 		goto fail_trunc;
 
 	if (compressed) {
-		ret = m->cmp->do_block(m->cmp, m->data, size);
+		ret = m->cmp->do_block(m->cmp, m->data, size,
+				       m->scratch, sizeof(m->scratch));
 
 		if (ret <= 0) {
 			fputs("error uncompressing meta data block\n", stderr);
 			return -1;
 		}
+
+		memcpy(m->data, m->scratch, ret);
+
+		if ((size_t)ret < sizeof(m->data))
+			memset(m->data + ret, 0, sizeof(m->data) - ret);
 	}
 
 	return 0;

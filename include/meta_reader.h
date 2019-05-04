@@ -12,6 +12,7 @@ typedef struct {
 	int fd;
 	compressor_t *cmp;
 	uint8_t data[SQFS_META_BLOCK_SIZE];
+	uint8_t scratch[SQFS_META_BLOCK_SIZE];
 } meta_reader_t;
 
 meta_reader_t *meta_reader_create(int fd, compressor_t *cmp);

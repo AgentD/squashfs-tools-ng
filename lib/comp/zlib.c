@@ -14,7 +14,6 @@ typedef struct {
 	bool compress;
 
 	size_t block_size;
-	uint8_t buffer[];
 } zlib_compressor_t;
 
 static void zlib_destroy(compressor_t *base)
@@ -30,7 +29,8 @@ static void zlib_destroy(compressor_t *base)
 	free(zlib);
 }
 
-static ssize_t zlib_do_block(compressor_t *base, uint8_t *block, size_t size)
+static ssize_t zlib_do_block(compressor_t *base, const uint8_t *in,
+			     size_t size, uint8_t *out, size_t outsize)
 {
 	zlib_compressor_t *zlib = (zlib_compressor_t *)base;
 	size_t written;
@@ -47,10 +47,10 @@ static ssize_t zlib_do_block(compressor_t *base, uint8_t *block, size_t size)
 		return -1;
 	}
 
-	zlib->strm.next_in = (void *)block;
+	zlib->strm.next_in = (void *)in;
 	zlib->strm.avail_in = size;
-	zlib->strm.next_out = zlib->buffer;
-	zlib->strm.avail_out = zlib->block_size;
+	zlib->strm.next_out = out;
+	zlib->strm.avail_out = outsize;
 
 	if (zlib->compress) {
 		ret = deflate(&zlib->strm, Z_FINISH);
@@ -64,7 +64,6 @@ static ssize_t zlib_do_block(compressor_t *base, uint8_t *block, size_t size)
 		if (zlib->compress && written >= size)
 			return 0;
 
-		memcpy(block, zlib->buffer, written);
 		return (ssize_t)written;
 	}
 
@@ -78,7 +77,7 @@ static ssize_t zlib_do_block(compressor_t *base, uint8_t *block, size_t size)
 
 compressor_t *create_zlib_compressor(bool compress, size_t block_size)
 {
-	zlib_compressor_t *zlib = calloc(1, sizeof(*zlib) + block_size);
+	zlib_compressor_t *zlib = calloc(1, sizeof(*zlib));
 	compressor_t *base = (compressor_t *)zlib;
 	int ret;
 

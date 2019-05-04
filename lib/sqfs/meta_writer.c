@@ -30,23 +30,27 @@ void meta_writer_destroy(meta_writer_t *m)
 int meta_writer_flush(meta_writer_t *m)
 {
 	ssize_t ret, count;
+	void *ptr;
 
 	if (m->offset == 0)
 		return 0;
 
-	ret = m->cmp->do_block(m->cmp, m->data + 2, m->offset);
+	ret = m->cmp->do_block(m->cmp, m->data + 2, m->offset,
+			       m->scratch + 2, sizeof(m->scratch) - 2);
 	if (ret < 0)
 		return -1;
 
 	if (ret > 0) {
-		((uint16_t *)m->data)[0] = htole16(ret);
+		((uint16_t *)m->scratch)[0] = htole16(ret);
 		count = ret + 2;
+		ptr = m->scratch;
 	} else {
 		((uint16_t *)m->data)[0] = htole16(m->offset | 0x8000);
 		count = m->offset + 2;
+		ptr = m->data;
 	}
 
-	ret = write_retry(m->outfd, m->data, count);
+	ret = write_retry(m->outfd, ptr, count);
 
 	if (ret < 0) {
 		perror("writing meta data");

@@ -9,12 +9,11 @@
 
 typedef struct {
 	compressor_t base;
-
 	size_t block_size;
-	uint8_t buffer[];
 } lzma_compressor_t;
 
-static ssize_t lzma_comp_block(compressor_t *base, uint8_t *block, size_t size)
+static ssize_t lzma_comp_block(compressor_t *base, const uint8_t *in,
+			       size_t size, uint8_t *out, size_t outsize)
 {
 	lzma_compressor_t *lzma = (lzma_compressor_t *)base;
 	lzma_filter filters[5];
@@ -36,16 +35,10 @@ static ssize_t lzma_comp_block(compressor_t *base, uint8_t *block, size_t size)
 	filters[1].options = NULL;
 
 	ret = lzma_stream_buffer_encode(filters, LZMA_CHECK_CRC32, NULL,
-					block, size, lzma->buffer,
-					&written, lzma->block_size);
+					in, size, out, &written, outsize);
 
-	if (ret == LZMA_OK) {
-		if (written >= size)
-			return 0;
-
-		memcpy(block, lzma->buffer, size);
-		return written;
-	}
+	if (ret == LZMA_OK)
+		return (written >= size) ? 0 : written;
 
 	if (ret != LZMA_BUF_ERROR) {
 		fputs("lzma block compress failed\n", stderr);
@@ -55,24 +48,21 @@ static ssize_t lzma_comp_block(compressor_t *base, uint8_t *block, size_t size)
 	return 0;
 }
 
-static ssize_t lzma_uncomp_block(compressor_t *base, uint8_t *block,
-				 size_t size)
+static ssize_t lzma_uncomp_block(compressor_t *base, const uint8_t *in,
+				 size_t size, uint8_t *out, size_t outsize)
 {
-	lzma_compressor_t *lzma = (lzma_compressor_t *)base;
 	uint64_t memlimit = 32 * 1024 * 1024;
 	size_t dest_pos = 0;
 	size_t src_pos = 0;
 	lzma_ret ret;
+	(void)base;
 
 	ret = lzma_stream_buffer_decode(&memlimit, 0, NULL,
-					block, &src_pos, size,
-					lzma->buffer, &dest_pos,
-					lzma->block_size);
+					in, &src_pos, size,
+					out, &dest_pos, outsize);
 
-	if (ret == LZMA_OK && size == src_pos) {
-		memcpy(block, lzma->buffer, dest_pos);
+	if (ret == LZMA_OK && size == src_pos)
 		return (ssize_t)dest_pos;
-	}
 
 	fputs("lzma block extract failed\n", stderr);
 	return -1;
@@ -85,7 +75,7 @@ static void lzma_destroy(compressor_t *base)
 
 compressor_t *create_lzma_compressor(bool compress, size_t block_size)
 {
-	lzma_compressor_t *lzma = calloc(1, sizeof(*lzma) + block_size);
+	lzma_compressor_t *lzma = calloc(1, sizeof(*lzma));
 	compressor_t *base = (compressor_t *)lzma;
 
 	if (lzma == NULL) {

@@ -6,11 +6,12 @@
 #include "squashfs.h"
 
 typedef struct {
-	uint8_t data[SQFS_META_BLOCK_SIZE + 2];
 	size_t offset;
 	size_t block_offset;
 	int outfd;
 	compressor_t *cmp;
+	uint8_t data[SQFS_META_BLOCK_SIZE + 2];
+	uint8_t scratch[SQFS_META_BLOCK_SIZE + 2];
 } meta_writer_t;
 
 meta_writer_t *meta_writer_create(int fd, compressor_t *cmp);

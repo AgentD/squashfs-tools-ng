@@ -4,18 +4,19 @@
 int extract_file(file_info_t *fi, compressor_t *cmp, size_t block_size,
 		 frag_reader_t *frag, int sqfsfd, int outfd)
 {
+	void *buffer, *scratch, *ptr;
 	size_t i, count, fragsz;
 	bool compressed;
-	void *buffer;
 	uint32_t bs;
 	ssize_t ret;
 
-	buffer = malloc(block_size);
+	buffer = malloc(block_size * 2);
 	if (buffer == NULL) {
 		perror("allocating scratch buffer");
 		return -1;
 	}
 
+	scratch = (char *)buffer + block_size;
 	count = fi->size / block_size;
 
 	if (count > 0) {
@@ -39,14 +40,18 @@ int extract_file(file_info_t *fi, compressor_t *cmp, size_t block_size,
 				goto fail_trunc;
 
 			if (compressed) {
-				ret = cmp->do_block(cmp, buffer, bs);
+				ret = cmp->do_block(cmp, buffer, bs,
+						    scratch, block_size);
 				if (ret <= 0)
 					goto fail;
 
 				bs = ret;
+				ptr = scratch;
+			} else {
+				ptr = buffer;
 			}
 
-			ret = write_retry(outfd, buffer, bs);
+			ret = write_retry(outfd, ptr, bs);
 			if (ret < 0)
 				goto fail_wr;
 
