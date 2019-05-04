@@ -12,6 +12,7 @@ static struct option long_opts[] = {
 	{ "list", required_argument, NULL, 'l' },
 	{ "cat", required_argument, NULL, 'c' },
 	{ "unpack-root", required_argument, NULL, 'u' },
+	{ "unpack-path", required_argument, NULL, 'p' },
 	{ "no-dev", no_argument, NULL, 'D' },
 	{ "no-sock", no_argument, NULL, 'S' },
 	{ "no-fifo", no_argument, NULL, 'F' },
@@ -23,7 +24,7 @@ static struct option long_opts[] = {
 	{ "version", no_argument, NULL, 'V' },
 };
 
-static const char *short_opts = "l:c:u:DSFLCOEhV";
+static const char *short_opts = "l:c:u:p:DSFLCOEhV";
 
 static const char *help_string =
 "Usage: %s [OPTIONS] <squashfs-file>\n"
@@ -37,6 +38,8 @@ static const char *help_string =
 "                        image, dump its contents to stdout.\n"
 "  --unpack-root <path>  Unpack the contents of the filesystem into the\n"
 "                        specified path.\n"
+"  --unpack-path <path>  If specified, unpack this sub directory from the\n"
+"                        image instead of the filesystem root.\n"
 "  --no-dev, -D          Do not unpack device special files.\n"
 "  --no-sock, -S         Do not unpack socket files.\n"
 "  --no-fifo, -F         Do not unpack named pipes.\n"
@@ -157,6 +160,9 @@ int main(int argc, char **argv)
 			op = OP_UNPACK;
 			unpack_root = optarg;
 			break;
+		case 'p':
+			cmdpath = get_path(cmdpath, optarg);
+			break;
 		case 'h':
 			printf(help_string, __progname);
 			status = EXIT_SUCCESS;
@@ -255,6 +261,16 @@ int main(int argc, char **argv)
 		}
 		break;
 	case OP_UNPACK:
+		if (cmdpath == NULL) {
+			n = fs.root;
+		} else {
+			n = find_node(fs.root, cmdpath);
+			if (n == NULL) {
+				perror(cmdpath);
+				goto out_fs;
+			}
+		}
+
 		if (super.fragment_entry_count > 0 &&
 		    super.fragment_table_start < super.bytes_used &&
 		    !(super.flags & SQFS_FLAG_NO_FRAGMENTS)) {
@@ -263,7 +279,7 @@ int main(int argc, char **argv)
 				goto out_fs;
 		}
 
-		if (restore_fstree(unpack_root, fs.root, cmp, super.block_size,
+		if (restore_fstree(unpack_root, n, cmp, super.block_size,
 				   frag, fd, unpack_flags)) {
 			goto out_fs;
 		}
