@@ -1,0 +1,126 @@
+.TH GENSQUASHFS "1" "May 2019" "generate squashfs images" "User Commands"
+.SH NAME
+gensquashfs \- generate squashfs images
+.SH SYNOPSIS
+.B gensquashfs
+[\fI\,OPTIONS\/\fR] \fI\,<file-list> <squashfs-file>\/\fR
+.SH DESCRIPTION
+The first argument is a file containing a listing of all entries to include
+in the squashfs image.
+.PP
+The second argument is the file name of the SquashFS image to generate.
+.SH OPTIONS
+.TP
+\fB\-\-compressor\fR, \fB\-c\fR <name>
+Select the compressor to use (defaults to 'xz').
+Run \fBgensquashfs \-\-help\fR to get a list of all available compressors.
+.TP
+\fB\-\-block\-size\fR, \fB\-b\fR <size>
+Block size to use for Squashfs image.
+Defaults to 131072.
+.TP
+\fB\-\-dev\-block\-size\fR, \fB\-B\fR <size>
+Device block size to padd the image to.
+Defaults to 4096.
+.TP
+\fB\-\-defaults\fR, \fB\-d\fR <options>
+A comma seperated list of default values for
+implicitly created directories.
+The following values can be set:
+.TS
+tab(;) allbox;
+l l
+l l
+l l
+l l
+l l
+rd.
+\fBOption\fR;\fBDefault\fR
+uid=<value>;0
+gid=<value>;0
+mode=<value>;0755
+mtime=<value>;0
+.TE
+.TP
+.TP
+\fB\-\-force\fR, \fB\-f\fR
+Overwrite the output file if it exists.
+.TP
+\fB\-\-quiet\fR, \fB\-q\fR
+Do not print out progress reports.
+.TP
+\fB\-\-help\fR, \fB\-h\fR
+Print help text and exit.
+.TP
+\fB\-\-version\fR, \fB\-V\fR
+Print version information and exit.
+.SH INPUT FILE FORMAT
+The input file contains a simple, newline separated list that describe the
+files to be included in the squashfs image:
+.PP
+.in +4n
+.nf
+# a comment
+file <path> <mode> <uid> <gid> [<location>]
+dir <path> <mode> <uid> <gid>
+nod <path> <mode> <uid> <gid> <dev_type> <maj> <min>
+slink <path> <mode> <uid> <gid> <target>
+pipe <path> <mode> <uid> <gid>
+sock <path> <mode> <uid> <gid>
+.fi
+.in
+
+.TS
+tab(;) allbox;
+l l
+l l
+l l
+l l
+l l
+l l
+l l
+l l
+l l
+rd.
+<path>;Absolute path of the entry in the image.
+<location>;T{
+Optional location of the input file. Can be specified
+relative to the description file. If omitted, the
+image path is used, relative to the description file.
+T}
+<target>;Symlink target.
+<mode>;Mode/permissions of the entry.
+<uid>;Numeric user id.
+<gid>;Numeric group id.
+<dev_type>;Device type (b=block, c=character).
+<maj>;Major number of a device special file.
+<min>;Minor number of a device special file.
+.TE
+
+.PP
+Example:
+.PP
+.in +4n
+.nf
+# A simple squashfs image
+dir /dev 0755 0 0
+nod /dev/console 0600 0 0 c 5 1
+dir /root 0700 0 0
+dir /sbin 0755 0 0
+
+# Add a file. Input is relative to this listing.
+file /sbin/init 0755 0 0 ../init/sbin/init
+
+# Read from ./bin/bash.
+# /bin is created implicitly with default attributes.
+file /bin/bash 0755 0 0
+.fi
+.in
+.SH AUTHOR
+Written by David Oberhollenzer.
+.SH COPYRIGHT
+Copyright \(co 2019 David Oberhollenzer
+License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>.
+.br
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.

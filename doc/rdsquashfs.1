@@ -1,0 +1,76 @@
+.TH RDSQUASHFS "1" "May 2019" "inspect SquashFS filesystems" "User Commands"
+.SH NAME
+rdsquashfs \- tool to examine or uncompress SquashFS filesystems
+.SH SYNOPSIS
+.B rdsquashfs
+[\fI\,OPTIONS\/\fR] \fI\,<squashfs-file>\/\fR
+.SH DESCRIPTION
+View or extract the contents of a squashfs image.
+.PP
+The following options can be used to specify what operation to perform. One
+of those has to be present:
+.TP
+\fB\-\-list\fR, \fB\-l\fR <path>
+Produce a directory listing similar to \fBls \-l\fR for a given path in
+the SquashFS image.
+.TP
+\fB\-\-cat\fR, \fB\-c\fR <path>
+If the specified path is a regular file in the image, extract it and dump
+its contents to stdout.
+.TP
+\fB\-\-unpack\-path\fR, \fB\-u\fR <path>
+Unpack the specified sub directory from the image. To unpack everything,
+simply specify /.
+.TP
+\fB\-\-describe\fR, \fB\-d\fR
+Produce a file listing from the image.
+.PP
+The following options can be used to control the behaviour of the specified
+operation:
+.TP
+\fB\-\-unpack\-root\fR, \fB\-p\fR <path>
+If used with \fB\-\-unpack\-path\fR, this is where the
+data is unpacked to. If used with \fB\-\-describe\fR, this
+is used as a prefix for the input path of
+regular files.
+.TP
+\fB\-\-no\-dev\fR, \fB\-D\fR
+Do not unpack device special files.
+.TP
+\fB\-\-no\-sock\fR, \fB\-S\fR
+Do not unpack socket files.
+.TP
+\fB\-\-no\-fifo\fR, \fB\-F\fR
+Do not unpack named pipes.
+.TP
+\fB\-\-no\-slink\fR, \fB\-L\fR
+Do not unpack symbolic links.
+.TP
+\fB\-\-no\-empty\-dir\fR, \fB\-E\fR
+Do not unpack directories that would end up
+empty after applying the above rules.
+.TP
+\fB\-\-chmod\fR, \fB\-C\fR
+Change permission flags of unpacked files to
+those store in the SquashFS image.
+.TP
+\fB\-\-chown\fR, \fB\-O\fR
+Change ownership of unpacked files to the
+UID/GID set in the SquashFS image.
+.TP
+\fB\-\-quiet\fR, \fB\-q\fR
+Do not print out progress while unpacking.
+.TP
+\fB\-\-help\fR, \fB\-h\fR
+Print help text and exit.
+.TP
+\fB\-\-version\fR, \fB\-V\fR
+Print version information and exit.
+.SH AUTHOR
+Written by David Oberhollenzer.
+.SH COPYRIGHT
+Copyright \(co 2019 David Oberhollenzer
+License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>.
+.br
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.

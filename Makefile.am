@@ -5,6 +5,7 @@ AM_CFLAGS = $(WARN_CFLAGS)
 
 noinst_LIBRARIES =
 bin_PROGRAMS =
+dist_man1_MANS = doc/gensquashfs.1 doc/rdsquashfs.1
 
 EXTRA_DIST = autogen.sh LICENSE README
 
