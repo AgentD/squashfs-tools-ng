@@ -88,8 +88,10 @@ static int add_device(fstree_t *fs, const char *filename, size_t line_num,
 	while (isdigit(*extra))
 		maj = maj * 10 + *(extra++) - '0';
 
-	if (*(extra++) != ':')
+	if (!isspace(*extra))
 		goto fail_devno;
+	while (isspace(*extra))
+		++extra;
 
 	if (!isdigit(*extra))
 		goto fail_devno;
@@ -223,7 +225,7 @@ static const struct {
 	{ "slink", add_slink },
 	{ "nod", add_device },
 	{ "pipe", add_pipe },
-	{ "pipe", add_socket },
+	{ "sock", add_socket },
 	{ "file", add_file },
 };
 
