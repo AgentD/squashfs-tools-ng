@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "mksquashfs.h"
+#include "mkfs.h"
 #include "util.h"
 
 static int write_block(file_info_t *fi, sqfs_info_t *info)

@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#ifndef UNSQUASHFS_H
-#define UNSQUASHFS_H
+#ifndef RDSQUASHFS_H
+#define RDSQUASHFS_H
 
 #include "meta_reader.h"
 #include "frag_reader.h"
@@ -46,4 +46,4 @@ int restore_fstree(const char *rootdir, tree_node_t *root, compressor_t *cmp,
 		   size_t block_size, frag_reader_t *frag, int sqfsfd,
 		   int flags);
 
-#endif /* UNSQUASHFS_H */
+#endif /* RDSQUASHFS_H */

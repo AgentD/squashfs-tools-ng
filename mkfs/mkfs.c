@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "mksquashfs.h"
+#include "mkfs.h"
 #include "util.h"
 
 static int padd_file(sqfs_info_t *info)

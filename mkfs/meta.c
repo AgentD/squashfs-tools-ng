@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "meta_writer.h"
-#include "mksquashfs.h"
+#include "mkfs.h"
 #include "util.h"
 
 #include <assert.h>

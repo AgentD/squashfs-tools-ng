@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "unsquashfs.h"
+#include "rdsquashfs.h"
 
 #include <sys/sysmacros.h>
 

@@ -18,5 +18,5 @@ config.h
 *.o
 *.a
 *~
-mksquashfs
-unsquashfs
+gensquashfs
+rdsquashfs

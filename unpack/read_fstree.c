@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "unsquashfs.h"
+#include "rdsquashfs.h"
 
 
 static int should_skip(int type, int flags)

@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "unsquashfs.h"
+#include "rdsquashfs.h"
 
 static int restore_directory(int dirfd, tree_node_t *n, compressor_t *cmp,
 			     size_t block_size, frag_reader_t *frag,

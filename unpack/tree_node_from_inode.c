@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "unsquashfs.h"
+#include "rdsquashfs.h"
 
 static size_t compute_size(sqfs_inode_generic_t *inode, const char *name,
 			   size_t block_size)

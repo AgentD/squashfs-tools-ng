@@ -1,13 +1,13 @@
-mksquashfs_SOURCES = mkfs/mksquashfs.c mkfs/mksquashfs.h mkfs/block.c
-mksquashfs_SOURCES += mkfs/options.c mkfs/meta.c
-mksquashfs_LDADD = libsquashfs.a libfstree.a libcompress.a libutil.a
+gensquashfs_SOURCES = mkfs/mkfs.c mkfs/mkfs.h mkfs/block.c
+gensquashfs_SOURCES += mkfs/options.c mkfs/meta.c
+gensquashfs_LDADD = libsquashfs.a libfstree.a libcompress.a libutil.a
 
 if WITH_XZ
-mksquashfs_LDADD += $(XZ_LIBS)
+gensquashfs_LDADD += $(XZ_LIBS)
 endif
 
 if WITH_GZIP
-mksquashfs_LDADD += $(ZLIB_LIBS)
+gensquashfs_LDADD += $(ZLIB_LIBS)
 endif
 
-bin_PROGRAMS += mksquashfs
+bin_PROGRAMS += gensquashfs

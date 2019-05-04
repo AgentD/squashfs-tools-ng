@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#ifndef MKSQUASHFS_H
-#define MKSQUASHFS_H
+#ifndef MKFS_H
+#define MKFS_H
 
 #include "squashfs.h"
 #include "compress.h"
@@ -58,4 +58,4 @@ int write_data_to_image(sqfs_info_t *info);
 
 int sqfs_write_inodes(sqfs_info_t *info);
 
-#endif /* MKSQUASHFS_H */
+#endif /* MKFS_H */
