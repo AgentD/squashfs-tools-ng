@@ -35,6 +35,9 @@ typedef struct {
 	frag_reader_t *frag;
 	int sqfsfd;
 	int flags;
+
+	void *buffer;
+	void *scratch;
 } unsqfs_info_t;
 
 tree_node_t *tree_node_from_inode(sqfs_inode_generic_t *inode,

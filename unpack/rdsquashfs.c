@@ -110,6 +110,23 @@ static char *get_path(char *old, const char *arg)
 	return path;
 }
 
+static int alloc_buffers(unsqfs_info_t *info, sqfs_super_t *super)
+{
+	info->buffer = malloc(super->block_size);
+	if (info->buffer == NULL) {
+		perror("allocating block buffer");
+		return -1;
+	}
+
+	info->scratch = malloc(super->block_size);
+	if (info->scratch == NULL) {
+		perror("allocating scrtach buffer for extracting blocks");
+		return -1;
+	}
+
+	return 0;
+}
+
 static int load_fragment_table(unsqfs_info_t *info, sqfs_super_t *super)
 {
 	if (super->fragment_entry_count == 0)
@@ -274,6 +291,9 @@ int main(int argc, char **argv)
 		if (load_fragment_table(&info, &super))
 			goto out_fs;
 
+		if (alloc_buffers(&info, &super))
+			goto out_fs;
+
 		if (extract_file(n->data.file, &info, STDOUT_FILENO))
 			goto out_fs;
 		break;
@@ -289,6 +309,9 @@ int main(int argc, char **argv)
 		}
 
 		if (load_fragment_table(&info, &super))
+			goto out_fs;
+
+		if (alloc_buffers(&info, &super))
 			goto out_fs;
 
 		if (restore_fstree(unpack_root, n, &info))
@@ -307,6 +330,8 @@ out_fd:
 	close(info.sqfsfd);
 out_cmd:
 	free(cmdpath);
+	free(info.buffer);
+	free(info.scratch);
 	return status;
 fail_arg:
 	fprintf(stderr, "Try `%s --help' for more information.\n", __progname);

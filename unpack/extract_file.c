@@ -3,19 +3,12 @@
 
 int extract_file(file_info_t *fi, unsqfs_info_t *info, int outfd)
 {
-	void *buffer, *scratch, *ptr;
 	size_t i, count, fragsz;
 	bool compressed;
 	uint32_t bs;
 	ssize_t ret;
+	void *ptr;
 
-	buffer = malloc(info->block_size * 2);
-	if (buffer == NULL) {
-		perror("allocating scratch buffer");
-		return -1;
-	}
-
-	scratch = (char *)buffer + info->block_size;
 	count = fi->size / info->block_size;
 
 	if (count > 0) {
@@ -31,7 +24,7 @@ int extract_file(file_info_t *fi, unsqfs_info_t *info, int outfd)
 			if (bs > info->block_size)
 				goto fail_bs;
 
-			ret = read_retry(info->sqfsfd, buffer, bs);
+			ret = read_retry(info->sqfsfd, info->buffer, bs);
 			if (ret < 0)
 				goto fail_rd;
 
@@ -39,16 +32,17 @@ int extract_file(file_info_t *fi, unsqfs_info_t *info, int outfd)
 				goto fail_trunc;
 
 			if (compressed) {
-				ret = info->cmp->do_block(info->cmp, buffer, bs,
-							  scratch,
+				ret = info->cmp->do_block(info->cmp,
+							  info->buffer, bs,
+							  info->scratch,
 							  info->block_size);
 				if (ret <= 0)
-					goto fail;
+					return -1;
 
 				bs = ret;
-				ptr = scratch;
+				ptr = info->scratch;
 			} else {
-				ptr = buffer;
+				ptr = info->buffer;
 			}
 
 			ret = write_retry(outfd, ptr, bs);
@@ -64,11 +58,12 @@ int extract_file(file_info_t *fi, unsqfs_info_t *info, int outfd)
 
 	if (fragsz > 0) {
 		if (frag_reader_read(info->frag, fi->fragment,
-				     fi->fragment_offset, buffer, fragsz)) {
-			goto fail;
+				     fi->fragment_offset, info->buffer,
+				     fragsz)) {
+			return -1;
 		}
 
-		ret = write_retry(outfd, buffer, fragsz);
+		ret = write_retry(outfd, info->buffer, fragsz);
 		if (ret < 0)
 			goto fail_wr;
 
@@ -76,27 +71,23 @@ int extract_file(file_info_t *fi, unsqfs_info_t *info, int outfd)
 			goto fail_wr_trunc;
 	}
 
-	free(buffer);
 	return 0;
 fail_seek:
 	perror("seek on squashfs");
-	goto fail;
+	return -1;
 fail_wr:
 	perror("writing uncompressed block");
-	goto fail;
+	return -1;
 fail_wr_trunc:
 	fputs("writing uncompressed block: truncated write\n", stderr);
-	goto fail;
+	return -1;
 fail_rd:
 	perror("reading from squashfs");
-	goto fail;
+	return -1;
 fail_trunc:
 	fputs("reading from squashfs: unexpected end of file\n", stderr);
-	goto fail;
+	return -1;
 fail_bs:
 	fputs("found compressed block larger than block size\n", stderr);
-	goto fail;
-fail:
-	free(buffer);
 	return -1;
 }
