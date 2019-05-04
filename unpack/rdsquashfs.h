@@ -29,21 +29,26 @@ enum UNPACK_FLAGS {
 	UNPACK_CHOWN = 0x40,
 };
 
+typedef struct {
+	compressor_t *cmp;
+	size_t block_size;
+	frag_reader_t *frag;
+	int sqfsfd;
+	int flags;
+} unsqfs_info_t;
+
 tree_node_t *tree_node_from_inode(sqfs_inode_generic_t *inode,
 				  const id_table_t *idtbl,
 				  const char *name,
 				  size_t block_size);
 
-int read_fstree(fstree_t *out, int fd, sqfs_super_t *super, compressor_t *cmp,
-		int flags);
+int read_fstree(fstree_t *out, sqfs_super_t *super, unsqfs_info_t *info);
 
 void list_files(tree_node_t *node);
 
-int extract_file(file_info_t *fi, compressor_t *cmp, size_t block_size,
-		 frag_reader_t *frag, int sqfsfd, int outfd);
+int extract_file(file_info_t *fi, unsqfs_info_t *info, int outfd);
 
-int restore_fstree(const char *rootdir, tree_node_t *root, compressor_t *cmp,
-		   size_t block_size, frag_reader_t *frag, int sqfsfd,
-		   int flags);
+int restore_fstree(const char *rootdir, tree_node_t *root,
+		   unsqfs_info_t *info);
 
 #endif /* RDSQUASHFS_H */

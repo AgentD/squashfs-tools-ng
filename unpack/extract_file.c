@@ -1,8 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "rdsquashfs.h"
 
-int extract_file(file_info_t *fi, compressor_t *cmp, size_t block_size,
-		 frag_reader_t *frag, int sqfsfd, int outfd)
+int extract_file(file_info_t *fi, unsqfs_info_t *info, int outfd)
 {
 	void *buffer, *scratch, *ptr;
 	size_t i, count, fragsz;
@@ -10,17 +9,17 @@ int extract_file(file_info_t *fi, compressor_t *cmp, size_t block_size,
 	uint32_t bs;
 	ssize_t ret;
 
-	buffer = malloc(block_size * 2);
+	buffer = malloc(info->block_size * 2);
 	if (buffer == NULL) {
 		perror("allocating scratch buffer");
 		return -1;
 	}
 
-	scratch = (char *)buffer + block_size;
-	count = fi->size / block_size;
+	scratch = (char *)buffer + info->block_size;
+	count = fi->size / info->block_size;
 
 	if (count > 0) {
-		if (lseek(sqfsfd, fi->startblock, SEEK_SET) == (off_t)-1)
+		if (lseek(info->sqfsfd, fi->startblock, SEEK_SET) == (off_t)-1)
 			goto fail_seek;
 
 		for (i = 0; i < count; ++i) {
@@ -29,10 +28,10 @@ int extract_file(file_info_t *fi, compressor_t *cmp, size_t block_size,
 			compressed = (bs & (1 << 24)) == 0;
 			bs &= (1 << 24) - 1;
 
-			if (bs > block_size)
+			if (bs > info->block_size)
 				goto fail_bs;
 
-			ret = read_retry(sqfsfd, buffer, bs);
+			ret = read_retry(info->sqfsfd, buffer, bs);
 			if (ret < 0)
 				goto fail_rd;
 
@@ -40,8 +39,9 @@ int extract_file(file_info_t *fi, compressor_t *cmp, size_t block_size,
 				goto fail_trunc;
 
 			if (compressed) {
-				ret = cmp->do_block(cmp, buffer, bs,
-						    scratch, block_size);
+				ret = info->cmp->do_block(info->cmp, buffer, bs,
+							  scratch,
+							  info->block_size);
 				if (ret <= 0)
 					goto fail;
 
@@ -60,11 +60,11 @@ int extract_file(file_info_t *fi, compressor_t *cmp, size_t block_size,
 		}
 	}
 
-	fragsz = fi->size % block_size;
+	fragsz = fi->size % info->block_size;
 
 	if (fragsz > 0) {
-		if (frag_reader_read(frag, fi->fragment, fi->fragment_offset,
-				     buffer, fragsz)) {
+		if (frag_reader_read(info->frag, fi->fragment,
+				     fi->fragment_offset, buffer, fragsz)) {
 			goto fail;
 		}
 

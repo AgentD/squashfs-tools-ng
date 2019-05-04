@@ -112,14 +112,15 @@ static char *get_path(char *old, const char *arg)
 
 int main(int argc, char **argv)
 {
-	int i, fd, status = EXIT_FAILURE, op = OP_NONE, unpack_flags = 0;
+	int i, status = EXIT_FAILURE, op = OP_NONE;
 	const char *unpack_root = NULL;
-	frag_reader_t *frag = NULL;
 	char *cmdpath = NULL;
+	unsqfs_info_t info;
 	sqfs_super_t super;
-	compressor_t *cmp;
 	tree_node_t *n;
 	fstree_t fs;
+
+	memset(&info, 0, sizeof(info));
 
 	for (;;) {
 		i = getopt_long(argc, argv, short_opts, long_opts, NULL);
@@ -128,25 +129,25 @@ int main(int argc, char **argv)
 
 		switch (i) {
 		case 'D':
-			unpack_flags |= UNPACK_NO_DEVICES;
+			info.flags |= UNPACK_NO_DEVICES;
 			break;
 		case 'S':
-			unpack_flags |= UNPACK_NO_SOCKETS;
+			info.flags |= UNPACK_NO_SOCKETS;
 			break;
 		case 'F':
-			unpack_flags |= UNPACK_NO_FIFO;
+			info.flags |= UNPACK_NO_FIFO;
 			break;
 		case 'L':
-			unpack_flags |= UNPACK_NO_SLINKS;
+			info.flags |= UNPACK_NO_SLINKS;
 			break;
 		case 'C':
-			unpack_flags |= UNPACK_CHMOD;
+			info.flags |= UNPACK_CHMOD;
 			break;
 		case 'O':
-			unpack_flags |= UNPACK_CHOWN;
+			info.flags |= UNPACK_CHOWN;
 			break;
 		case 'E':
-			unpack_flags |= UNPACK_NO_EMPTY;
+			info.flags |= UNPACK_NO_EMPTY;
 			break;
 		case 'c':
 			op = OP_CAT;
@@ -186,13 +187,13 @@ int main(int argc, char **argv)
 		goto fail_arg;
 	}
 
-	fd = open(argv[optind], O_RDONLY);
-	if (fd < 0) {
+	info.sqfsfd = open(argv[optind], O_RDONLY);
+	if (info.sqfsfd < 0) {
 		perror(argv[optind]);
 		goto out_cmd;
 	}
 
-	if (sqfs_super_read(&super, fd))
+	if (sqfs_super_read(&super, info.sqfsfd))
 		goto out_fd;
 
 	if ((super.version_major != SQFS_VERSION_MAJOR) ||
@@ -218,12 +219,15 @@ int main(int argc, char **argv)
 		goto out_fd;
 	}
 
-	cmp = compressor_create(super.compression_id, false, super.block_size);
-	if (cmp == NULL)
+	info.cmp = compressor_create(super.compression_id, false,
+				     super.block_size);
+	if (info.cmp == NULL)
 		goto out_fd;
 
-	if (read_fstree(&fs, fd, &super, cmp, unpack_flags))
+	if (read_fstree(&fs, &super, &info))
 		goto out_cmp;
+
+	info.block_size = super.block_size;
 
 	switch (op) {
 	case OP_LS:
@@ -250,15 +254,14 @@ int main(int argc, char **argv)
 		if (super.fragment_entry_count > 0 &&
 		    super.fragment_table_start < super.bytes_used &&
 		    !(super.flags & SQFS_FLAG_NO_FRAGMENTS)) {
-			frag = frag_reader_create(&super, fd, cmp);
-			if (frag == NULL)
+			info.frag = frag_reader_create(&super, info.sqfsfd,
+						       info.cmp);
+			if (info.frag == NULL)
 				goto out_fs;
 		}
 
-		if (extract_file(n->data.file, cmp, super.block_size,
-				 frag, fd, STDOUT_FILENO)) {
+		if (extract_file(n->data.file, &info, STDOUT_FILENO))
 			goto out_fs;
-		}
 		break;
 	case OP_UNPACK:
 		if (cmdpath == NULL) {
@@ -274,27 +277,26 @@ int main(int argc, char **argv)
 		if (super.fragment_entry_count > 0 &&
 		    super.fragment_table_start < super.bytes_used &&
 		    !(super.flags & SQFS_FLAG_NO_FRAGMENTS)) {
-			frag = frag_reader_create(&super, fd, cmp);
-			if (frag == NULL)
+			info.frag = frag_reader_create(&super, info.sqfsfd,
+						       info.cmp);
+			if (info.frag == NULL)
 				goto out_fs;
 		}
 
-		if (restore_fstree(unpack_root, n, cmp, super.block_size,
-				   frag, fd, unpack_flags)) {
+		if (restore_fstree(unpack_root, n, &info))
 			goto out_fs;
-		}
 		break;
 	}
 
 	status = EXIT_SUCCESS;
 out_fs:
-	if (frag != NULL)
-		frag_reader_destroy(frag);
+	if (info.frag != NULL)
+		frag_reader_destroy(info.frag);
 	fstree_cleanup(&fs);
 out_cmp:
-	cmp->destroy(cmp);
+	info.cmp->destroy(info.cmp);
 out_fd:
-	close(fd);
+	close(info.sqfsfd);
 out_cmd:
 	free(cmdpath);
 	return status;

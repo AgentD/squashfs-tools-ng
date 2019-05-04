@@ -114,8 +114,7 @@ static int fill_dir(meta_reader_t *ir, meta_reader_t *dr, tree_node_t *root,
 	return 0;
 }
 
-int read_fstree(fstree_t *out, int fd, sqfs_super_t *super, compressor_t *cmp,
-		int flags)
+int read_fstree(fstree_t *out, sqfs_super_t *super, unsqfs_info_t *info)
 {
 	sqfs_inode_generic_t *root;
 	meta_reader_t *ir, *dr;
@@ -124,18 +123,18 @@ int read_fstree(fstree_t *out, int fd, sqfs_super_t *super, compressor_t *cmp,
 	int status = -1;
 	size_t offset;
 
-	ir = meta_reader_create(fd, cmp);
+	ir = meta_reader_create(info->sqfsfd, info->cmp);
 	if (ir == NULL)
 		return -1;
 
-	dr = meta_reader_create(fd, cmp);
+	dr = meta_reader_create(info->sqfsfd, info->cmp);
 	if (dr == NULL)
 		goto out_ir;
 
 	if (id_table_init(&idtbl))
 		goto out_dr;
 
-	if (id_table_read(&idtbl, fd, super, cmp))
+	if (id_table_read(&idtbl, info->sqfsfd, super, info->cmp))
 		goto out_id;
 
 	block_start = super->root_inode_ref >> 16;
@@ -166,7 +165,7 @@ int read_fstree(fstree_t *out, int fd, sqfs_super_t *super, compressor_t *cmp,
 	if (out->root == NULL)
 		goto out_id;
 
-	if (fill_dir(ir, dr, out->root, super, &idtbl, flags))
+	if (fill_dir(ir, dr, out->root, super, &idtbl, info->flags))
 		goto fail_fs;
 
 	fstree_sort(out);

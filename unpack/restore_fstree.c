@@ -1,9 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "rdsquashfs.h"
 
-static int create_node(int dirfd, tree_node_t *n, compressor_t *cmp,
-		       size_t block_size, frag_reader_t *frag,
-		       int sqfsfd, int flags)
+static int create_node(int dirfd, tree_node_t *n, unsqfs_info_t *info)
 {
 	int fd;
 
@@ -23,8 +21,7 @@ static int create_node(int dirfd, tree_node_t *n, compressor_t *cmp,
 		}
 
 		for (n = n->data.dir->children; n != NULL; n = n->next) {
-			if (create_node(fd, n, cmp, block_size, frag, sqfsfd,
-					flags)) {
+			if (create_node(fd, n, info)) {
 				close(fd);
 				return -1;
 			}
@@ -65,8 +62,7 @@ static int create_node(int dirfd, tree_node_t *n, compressor_t *cmp,
 			return -1;
 		}
 
-		if (extract_file(n->data.file, cmp, block_size,
-				 frag, sqfsfd, fd)) {
+		if (extract_file(n->data.file, info, fd)) {
 			close(fd);
 			return -1;
 		}
@@ -77,7 +73,7 @@ static int create_node(int dirfd, tree_node_t *n, compressor_t *cmp,
 		break;
 	}
 
-	if (flags & UNPACK_CHOWN) {
+	if (info->flags & UNPACK_CHOWN) {
 		if (fchownat(dirfd, n->name, n->uid, n->gid,
 			     AT_SYMLINK_NOFOLLOW)) {
 			fprintf(stderr, "chown %s: %s\n",
@@ -86,7 +82,7 @@ static int create_node(int dirfd, tree_node_t *n, compressor_t *cmp,
 		}
 	}
 
-	if (flags & UNPACK_CHMOD) {
+	if (info->flags & UNPACK_CHMOD) {
 		if (fchmodat(dirfd, n->name, n->mode,
 			     AT_SYMLINK_NOFOLLOW)) {
 			fprintf(stderr, "chmod %s: %s\n",
@@ -97,9 +93,7 @@ static int create_node(int dirfd, tree_node_t *n, compressor_t *cmp,
 	return 0;
 }
 
-int restore_fstree(const char *rootdir, tree_node_t *root, compressor_t *cmp,
-		   size_t block_size, frag_reader_t *frag, int sqfsfd,
-		   int flags)
+int restore_fstree(const char *rootdir, tree_node_t *root, unsqfs_info_t *info)
 {
 	tree_node_t *n;
 	int dirfd;
@@ -115,8 +109,7 @@ int restore_fstree(const char *rootdir, tree_node_t *root, compressor_t *cmp,
 
 	if (S_ISDIR(root->mode)) {
 		for (n = root->data.dir->children; n != NULL; n = n->next) {
-			if (create_node(dirfd, n, cmp, block_size, frag,
-					sqfsfd, flags)) {
+			if (create_node(dirfd, n, info)) {
 				close(dirfd);
 				return -1;
 			}
@@ -124,7 +117,7 @@ int restore_fstree(const char *rootdir, tree_node_t *root, compressor_t *cmp,
 		return 0;
 	}
 
-	if (create_node(dirfd, root, cmp, block_size, frag, sqfsfd, flags)) {
+	if (create_node(dirfd, root, info)) {
 		close(dirfd);
 		return -1;
 	}
