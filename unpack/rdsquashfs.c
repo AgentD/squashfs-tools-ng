@@ -260,13 +260,6 @@ int main(int argc, char **argv)
 		goto out_fd;
 	}
 
-	if (super.flags & SQFS_FLAG_COMPRESSOR_OPTIONS) {
-		fputs("Image has been built with compressor options.\n"
-		      "This is not yet supported.\n",
-		      stderr);
-		goto out_fd;
-	}
-
 	if (!compressor_exists(super.compression_id)) {
 		fputs("Image uses a compressor that has not been built in\n",
 		      stderr);
@@ -277,6 +270,11 @@ int main(int argc, char **argv)
 				     super.block_size);
 	if (info.cmp == NULL)
 		goto out_fd;
+
+	if (super.flags & SQFS_FLAG_COMPRESSOR_OPTIONS) {
+		if (info.cmp->read_options(info.cmp, info.sqfsfd))
+			goto out_cmp;
+	}
 
 	if (read_fstree(&fs, &super, &info))
 		goto out_cmp;

@@ -39,7 +39,7 @@ static int padd_file(sqfs_info_t *info)
 
 int main(int argc, char **argv)
 {
-	int status = EXIT_FAILURE;
+	int status = EXIT_FAILURE, ret;
 	sqfs_info_t info;
 
 	memset(&info, 0, sizeof(info));
@@ -79,6 +79,15 @@ int main(int argc, char **argv)
 	if (info.cmp == NULL) {
 		fputs("Error creating compressor\n", stderr);
 		goto out_outfd;
+	}
+
+	ret = info.cmp->write_options(info.cmp, info.outfd);
+	if (ret < 0)
+		goto out_cmp;
+
+	if (ret > 0) {
+		info.super.flags |= SQFS_FLAG_COMPRESSOR_OPTIONS;
+		info.super.bytes_used += ret;
 	}
 
 	if (write_data_to_image(&info))

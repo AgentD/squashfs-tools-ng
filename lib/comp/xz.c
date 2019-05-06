@@ -12,6 +12,21 @@ typedef struct {
 	size_t block_size;
 } xz_compressor_t;
 
+static int xz_write_options(compressor_t *base, int fd)
+{
+	(void)base;
+	(void)fd;
+	return 0;
+}
+
+static int xz_read_options(compressor_t *base, int fd)
+{
+	(void)base;
+	(void)fd;
+	fputs("xz extra options are not yet implemented\n", stderr);
+	return -1;
+}
+
 static ssize_t xz_comp_block(compressor_t *base, const uint8_t *in,
 			       size_t size, uint8_t *out, size_t outsize)
 {
@@ -86,5 +101,7 @@ compressor_t *create_xz_compressor(bool compress, size_t block_size)
 	xz->block_size = block_size;
 	base->destroy = xz_destroy;
 	base->do_block = compress ? xz_comp_block : xz_uncomp_block;
+	base->write_options = xz_write_options;
+	base->read_options = xz_read_options;
 	return base;
 }

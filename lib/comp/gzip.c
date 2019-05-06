@@ -29,6 +29,21 @@ static void gzip_destroy(compressor_t *base)
 	free(gzip);
 }
 
+static int gzip_write_options(compressor_t *base, int fd)
+{
+	(void)base;
+	(void)fd;
+	return 0;
+}
+
+static int gzip_read_options(compressor_t *base, int fd)
+{
+	(void)base;
+	(void)fd;
+	fputs("gzip extra options are not yet implemented\n", stderr);
+	return -1;
+}
+
 static ssize_t gzip_do_block(compressor_t *base, const uint8_t *in,
 			     size_t size, uint8_t *out, size_t outsize)
 {
@@ -90,6 +105,8 @@ compressor_t *create_gzip_compressor(bool compress, size_t block_size)
 	gzip->block_size = block_size;
 	base->do_block = gzip_do_block;
 	base->destroy = gzip_destroy;
+	base->write_options = gzip_write_options;
+	base->read_options = gzip_read_options;
 
 	if (compress) {
 		ret = deflateInit(&gzip->strm, Z_BEST_COMPRESSION);

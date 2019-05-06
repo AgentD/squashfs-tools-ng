@@ -14,6 +14,21 @@ typedef struct {
 	uint8_t buffer[LZO1X_999_MEM_COMPRESS];
 } lzo_compressor_t;
 
+static int lzo_write_options(compressor_t *base, int fd)
+{
+	(void)base;
+	(void)fd;
+	return 0;
+}
+
+static int lzo_read_options(compressor_t *base, int fd)
+{
+	(void)base;
+	(void)fd;
+	fputs("lzo extra options are not yet implemented\n", stderr);
+	return -1;
+}
+
 static ssize_t lzo_comp_block(compressor_t *base, const uint8_t *in,
 			      size_t size, uint8_t *out, size_t outsize)
 {
@@ -67,5 +82,7 @@ compressor_t *create_lzo_compressor(bool compress, size_t block_size)
 
 	base->destroy = lzo_destroy;
 	base->do_block = compress ? lzo_comp_block : lzo_uncomp_block;
+	base->write_options = lzo_write_options;
+	base->read_options = lzo_read_options;
 	return base;
 }

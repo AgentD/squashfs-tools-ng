@@ -19,6 +19,26 @@ typedef struct compressor_t compressor_t;
  */
 struct compressor_t {
 	/**
+	 * @brief Write compressor options to the output file if necessary
+	 *
+	 * @param cmp A pointer to the compressor object
+	 * @param fd  The file descriptor to write to
+	 *
+	 * @return The number of bytes written or -1 on failure
+	 */
+	int (*write_options)(compressor_t *cmp, int fd);
+
+	/**
+	 * @brief Read compressor options to the input file
+	 *
+	 * @param cmp A pointer to the compressor object
+	 * @param fd  The file descriptor to write to
+	 *
+	 * @return Zero on success, -1 on failure
+	 */
+	int (*read_options)(compressor_t *cmp, int fd);
+
+	/**
 	 * @brief Compress or uncompress a chunk of data
 	 *
 	 * @param cmp     A pointer to the compressor object
