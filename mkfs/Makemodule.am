@@ -14,4 +14,8 @@ if WITH_LZO
 gensquashfs_LDADD += $(LZO_LIBS)
 endif
 
+if WITH_LZ4
+gensquashfs_LDADD += $(LZ4_LIBS)
+endif
+
 bin_PROGRAMS += gensquashfs

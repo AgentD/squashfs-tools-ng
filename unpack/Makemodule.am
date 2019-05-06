@@ -16,4 +16,8 @@ if WITH_LZO
 rdsquashfs_LDADD += $(LZO_LIBS)
 endif
 
+if WITH_LZ4
+rdsquashfs_LDADD += $(LZ4_LIBS)
+endif
+
 bin_PROGRAMS += rdsquashfs
