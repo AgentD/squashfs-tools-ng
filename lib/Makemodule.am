@@ -35,4 +35,11 @@ libcompress_a_CFLAGS += $(XZ_CFLAGS)
 libcompress_a_CPPFLAGS += -DWITH_XZ
 endif
 
+if WITH_LZO
+libcompress_a_SOURCES += lib/comp/lzo.c
+
+libcompress_a_CFLAGS += $(LZO_CFLAGS)
+libcompress_a_CPPFLAGS += -DWITH_LZO
+endif
+
 noinst_LIBRARIES += libfstree.a libcompress.a libutil.a libsquashfs.a

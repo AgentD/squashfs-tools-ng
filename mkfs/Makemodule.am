@@ -10,4 +10,8 @@ if WITH_GZIP
 gensquashfs_LDADD += $(ZLIB_LIBS)
 endif
 
+if WITH_LZO
+gensquashfs_LDADD += $(LZO_LIBS)
+endif
+
 bin_PROGRAMS += gensquashfs

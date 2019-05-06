@@ -61,13 +61,25 @@ AC_ARG_WITH([xz],
 	esac],
 	[AM_CONDITIONAL([WITH_XZ], [true])])
 
+AC_ARG_WITH([lzo],
+	[AS_HELP_STRING([--without-lzo],
+			[Build without lzo compression support])],
+	[case "${withval}" in
+	yes) AM_CONDITIONAL([WITH_LZO], [true]) ;;
+	no)  AM_CONDITIONAL([WITH_LZO], [false]) ;;
+	*) AC_MSG_ERROR([bad value ${withval} for --without-lzo]) ;;
+	esac],
+	[AM_CONDITIONAL([WITH_LZO], [true])])
+
 ##### search for dependencies #####
 
 need_zlib="no"
 need_xz="no"
+need_lzo="no"
 
 AM_COND_IF([WITH_GZIP], [need_zlib="yes"])
 AM_COND_IF([WITH_XZ], [need_xz="yes"])
+AM_COND_IF([WITH_LZO], [need_lzo="yes"])
 
 if test "x$need_zlib" = "xyes"; then
 	PKG_CHECK_MODULES(ZLIB, [zlib], [], [AC_MSG_ERROR([cannot find zlib])])
@@ -76,6 +88,16 @@ fi
 if test "x$need_xz" = "xyes"; then
 	PKG_CHECK_MODULES(XZ, [liblzma >= 5.0.0], [],
 			      [AC_MSG_ERROR([cannot find xz sdk])])
+fi
+
+if test "x$need_lzo" = "xyes"; then
+	AC_ARG_VAR([LZO_CFLAGS], [C compiler flags for lzo])
+	AC_ARG_VAR([LZO_LIBS], [linker flags for lzo])
+	AC_CHECK_LIB([lzo2], [lzo1x_1_15_compress], [LZO_LIBS="-llzo2"],
+		[AC_CHECK_LIB([lzo],[lzo1x_1_15_compress],[LZO_LIBS="-llzo"],
+			[AC_MSG_ERROR([cannot find lzo library])]
+		)]
+	)
 fi
 
 ##### generate output #####

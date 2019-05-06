@@ -12,6 +12,9 @@ static compressor_fun_t compressors[SQFS_COMP_MAX + 1] = {
 #ifdef WITH_XZ
 	[SQFS_COMP_XZ] = create_xz_compressor,
 #endif
+#ifdef WITH_LZO
+	[SQFS_COMP_LZO] = create_lzo_compressor,
+#endif
 };
 
 bool compressor_exists(E_SQFS_COMPRESSOR id)
