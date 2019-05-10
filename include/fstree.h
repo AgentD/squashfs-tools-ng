@@ -8,10 +8,43 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#include "str_table.h"
+
+#define FSTREE_XATTR_KEY_BUCKETS 31
+#define FSTREE_XATTR_VALUE_BUCKETS 511
+
 typedef struct tree_node_t tree_node_t;
 typedef struct file_info_t file_info_t;
 typedef struct dir_info_t dir_info_t;
 typedef struct fstree_t fstree_t;
+typedef struct tree_xattr_t tree_xattr_t;
+
+/**
+ * @struct tree_xattr_t
+ *
+ * @brief Encapsulates a set of key-value pairs attached to a @ref tree_node_t
+ */
+struct tree_xattr_t {
+	size_t num_attr;
+	size_t max_attr;
+
+	/**
+	 * @brief Back reference to the tree node this was created for
+	 */
+	tree_node_t *owner;
+
+	/**
+	 * @brief linked list pointer of list of attributes in @ref fstree_t
+	 */
+	tree_xattr_t *next;
+
+	/**
+	 * @brief An array with pairs of key-value tupples
+	 *
+	 * Each key-value tupple is encoded as (key << 32) | value.
+	 */
+	uint64_t ref[];
+};
 
 /**
  * @struct file_info_t
@@ -131,6 +164,11 @@ struct tree_node_t {
 	 */
 	char *name;
 
+	/**
+	 * @brief A pointer to an extended attribute array or NULL if unused
+	 */
+	tree_xattr_t *xattr;
+
 	uint32_t uid;
 	uint32_t gid;
 	uint16_t mode;
@@ -211,7 +249,11 @@ struct fstree_t {
 	uint32_t default_mtime;
 	size_t block_size;
 
+	str_table_t xattr_keys;
+	str_table_t xattr_values;
+
 	tree_node_t *root;
+	tree_xattr_t *xattr;
 };
 
 /**
@@ -291,6 +333,32 @@ tree_node_t *fstree_add(fstree_t *fs, const char *path, uint16_t mode,
 tree_node_t *fstree_add_file(fstree_t *fs, const char *path, uint16_t mode,
 			     uint32_t uid, uint32_t gid, uint64_t filesz,
 			     const char *input);
+
+/**
+ * @brief Add an extended attribute key value pair to a tree node
+ *
+ * @memberof fstree_t
+ *
+ * @param fs    A pointer to the fstree object
+ * @param node  A pointer to the tree node to attach attributes to
+ * @param key   The xattr key with namespace prefix
+ * @param value The xattr value string
+ *
+ * @return Zero on success, -1 on failure (prints error to stderr)
+ */
+int fstree_add_xattr(fstree_t *fs, tree_node_t *node,
+		     const char *key, const char *value);
+
+/**
+ * @brief Remove dupliciate xattr listings
+ *
+ * @memberof fstree_t
+ *
+ * If two tree nodes have pointers to distinct @ref tree_xattr_t listings that
+ * turn out to be equivalent, throw one of the two away and make both nodes
+ * point to the same instance.
+ */
+void fstree_xattr_deduplicate(fstree_t *fs);
 
 /**
  * @brief Load an fstree from a text file describing it
