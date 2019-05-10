@@ -388,4 +388,16 @@ int fstree_from_file(fstree_t *fs, const char *filename);
  */
 void fstree_sort(fstree_t *fs);
 
+/**
+ * @brief Add labels from an SELinux labeling file to all tree nodes
+ *
+ * @memberof fstree_t
+ *
+ * @param fs       A pointer to an fstree object
+ * @param filename The name of the SELinux context file
+ *
+ * @return Zero on success, -1 on failure
+ */
+int fstree_relabel_selinux(fstree_t *fs, const char *filename);
+
 #endif /* FSTREE_H */

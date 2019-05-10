@@ -81,17 +81,29 @@ AC_ARG_WITH([lz4],
 	esac],
 	[AM_CONDITIONAL([WITH_LZ4], [true])])
 
+AC_ARG_WITH([selinux],
+	[AS_HELP_STRING([--without-selinux],
+			[Build without SELinux label file support])],
+	[case "${withval}" in
+	yes) AM_CONDITIONAL([WITH_SELINUX], [true]) ;;
+	no)  AM_CONDITIONAL([WITH_SELINUX], [false]) ;;
+	*) AC_MSG_ERROR([bad value ${withval} for --without-selinux]) ;;
+	esac],
+	[AM_CONDITIONAL([WITH_SELINUX], [true])])
+
 ##### search for dependencies #####
 
 need_zlib="no"
 need_xz="no"
 need_lzo="no"
 need_lz4="no"
+need_selinux="no"
 
 AM_COND_IF([WITH_GZIP], [need_zlib="yes"])
 AM_COND_IF([WITH_XZ], [need_xz="yes"])
 AM_COND_IF([WITH_LZO], [need_lzo="yes"])
 AM_COND_IF([WITH_LZ4], [need_lz4="yes"])
+AM_COND_IF([WITH_SELINUX], [need_selinux="yes"])
 
 if test "x$need_zlib" = "xyes"; then
 	PKG_CHECK_MODULES(ZLIB, [zlib], [], [AC_MSG_ERROR([cannot find zlib])])
@@ -115,6 +127,16 @@ fi
 if test "x$need_lz4" = "xyes"; then
 	PKG_CHECK_MODULES(LZ4, [liblz4], [],
 			       [AC_MSG_ERROR([cannot lz4 library])])
+fi
+
+if test "x$need_selinux" = "xyes"; then
+	PKG_CHECK_MODULES(LIBSELINUX, [libselinux], [],
+				      [AC_MSG_ERROR([cannot find libselinux])])
+
+	AC_CHECK_HEADERS([selinux/selinux.h], [],
+			 [AC_MSG_ERROR([cannot find SELinux system headers])])
+	AC_CHECK_HEADERS([selinux/label.h], [],
+			 [AC_MSG_ERROR([cannot find SELinux system headers])])
 fi
 
 ##### generate output #####

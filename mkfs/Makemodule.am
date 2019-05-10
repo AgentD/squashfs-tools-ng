@@ -18,4 +18,8 @@ if WITH_LZ4
 gensquashfs_LDADD += $(LZ4_LIBS)
 endif
 
+if WITH_SELINUX
+gensquashfs_LDADD += $(LIBSELINUX_LIBS)
+endif
+
 bin_PROGRAMS += gensquashfs
