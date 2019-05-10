@@ -18,11 +18,18 @@ static struct option long_opts[] = {
 	{ "defaults", required_argument, NULL, 'd' },
 	{ "force", no_argument, NULL, 'f' },
 	{ "quiet", no_argument, NULL, 'q' },
+#ifdef WITH_SELINUX
+	{ "selinux", required_argument, NULL, 's' },
+#endif
 	{ "version", no_argument, NULL, 'V' },
 	{ "help", no_argument, NULL, 'h' },
 };
 
+#ifdef WITH_SELINUX
+static const char *short_opts = "s:c:b:B:d:fqhV";
+#else
 static const char *short_opts = "c:b:B:d:fqhV";
+#endif
 
 enum {
 	DEF_UID = 0,
@@ -97,6 +104,10 @@ static const char *help_string =
 "                                 mode=<value>   0755 if not set.\n"
 "                                 mtime=<value>  0 if not set.\n"
 "\n"
+#ifdef WITH_SELINUX
+"  --selinux, s <file>         Specify an SELinux label file to get context\n"
+"                              attributes from.\n"
+#endif
 "  --force, -f                 Overwrite the output file if it exists.\n"
 "  --quiet, -q                 Do not print out progress reports.\n"
 "  --help, -h                  Print help text and exit.\n"
@@ -265,6 +276,11 @@ void process_command_line(options_t *opt, int argc, char **argv)
 		case 'q':
 			opt->quiet = true;
 			break;
+#ifdef WITH_SELINUX
+		case 's':
+			opt->selinux = optarg;
+			break;
+#endif
 		case 'h':
 			printf(help_string, __progname,
 			       SQFS_DEFAULT_BLOCK_SIZE, SQFS_DEVBLK_SIZE);

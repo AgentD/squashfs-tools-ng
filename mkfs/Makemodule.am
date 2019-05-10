@@ -1,6 +1,7 @@
 gensquashfs_SOURCES = mkfs/mkfs.c mkfs/mkfs.h mkfs/block.c
 gensquashfs_SOURCES += mkfs/options.c mkfs/meta.c
 gensquashfs_LDADD = libsquashfs.a libfstree.a libcompress.a libutil.a
+gensquashfs_CPPFLAGS = $(AM_CPPFLAGS)
 
 if WITH_XZ
 gensquashfs_LDADD += $(XZ_LIBS)
@@ -19,6 +20,7 @@ gensquashfs_LDADD += $(LZ4_LIBS)
 endif
 
 if WITH_SELINUX
+gensquashfs_CPPFLAGS += -DWITH_SELINUX
 gensquashfs_LDADD += $(LIBSELINUX_LIBS)
 endif
 

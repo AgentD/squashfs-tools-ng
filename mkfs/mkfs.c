@@ -72,6 +72,15 @@ int main(int argc, char **argv)
 	if (fstree_from_file(&info.fs, info.opt.infile))
 		goto out_fstree;
 
+#ifdef WITH_SELINUX
+	if (info.opt.selinux != NULL) {
+		if (fstree_relabel_selinux(&info.fs, info.opt.selinux))
+			goto out_fstree;
+	}
+#endif
+
+	fstree_xattr_deduplicate(&info.fs);
+
 	fstree_sort(&info.fs);
 
 	info.cmp = compressor_create(info.super.compression_id, true,

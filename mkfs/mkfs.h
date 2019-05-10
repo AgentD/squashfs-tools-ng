@@ -28,6 +28,7 @@ typedef struct {
 	bool quiet;
 	const char *infile;
 	const char *outfile;
+	const char *selinux;
 } options_t;
 
 typedef struct {
