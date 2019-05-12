@@ -6,6 +6,43 @@
 #include <assert.h>
 #include <endian.h>
 
+typedef struct {
+	tree_node_t *node;
+	uint32_t block;
+	uint32_t offset;
+} idx_ref_t;
+
+typedef struct {
+	size_t num_nodes;
+	size_t max_nodes;
+	idx_ref_t idx_nodes[];
+} dir_index_t;
+
+static int dir_index_grow(dir_index_t **index)
+{
+	size_t size = sizeof(dir_index_t) + sizeof(idx_ref_t) * 10;
+	void *new;
+
+	if (*index == NULL) {
+		new = calloc(1, size);
+	} else {
+		if ((*index)->num_nodes < (*index)->max_nodes)
+			return 0;
+
+		size += sizeof(idx_ref_t) * (*index)->num_nodes;
+		new = realloc(*index, size);
+	}
+
+	if (new == NULL) {
+		perror("creating directory index");
+		return -1;
+	}
+
+	*index = new;
+	(*index)->max_nodes += 10;
+	return 0;
+}
+
 static size_t hard_link_count(tree_node_t *n)
 {
 	size_t count;
@@ -22,12 +59,12 @@ static size_t hard_link_count(tree_node_t *n)
 	return 1;
 }
 
-static int write_dir(meta_writer_t *dm, dir_info_t *dir)
+static int write_dir(meta_writer_t *dm, dir_info_t *dir, dir_index_t **index)
 {
+	size_t i, size, count;
 	sqfs_dir_header_t hdr;
 	sqfs_dir_entry_t ent;
 	tree_node_t *c, *d;
-	size_t i, count;
 
 	c = dir->children;
 	dir->size = 0;
@@ -37,17 +74,39 @@ static int write_dir(meta_writer_t *dm, dir_info_t *dir)
 
 	while (c != NULL) {
 		count = 0;
+		size = dm->offset;
 
 		for (d = c; d != NULL; d = d->next) {
 			if ((d->inode_ref >> 16) != (c->inode_ref >> 16))
 				break;
 			if ((d->inode_num - c->inode_num) > 0xFFFF)
 				break;
+
+			size += sizeof(ent) + strlen(c->name);
+
+			if (size > SQFS_META_BLOCK_SIZE) {
+				if (count > 0) {
+					break;
+				} else {
+					size %= SQFS_META_BLOCK_SIZE;
+				}
+			}
+
 			count += 1;
 		}
 
 		if (count > SQFS_MAX_DIR_ENT)
 			count = SQFS_MAX_DIR_ENT;
+
+		if (index != NULL) {
+			if (dir_index_grow(index))
+				return -1;
+
+			i = (*index)->num_nodes++;
+			(*index)->idx_nodes[i].node = c;
+			(*index)->idx_nodes[i].block = dm->block_offset;
+			(*index)->idx_nodes[i].offset = dm->offset;
+		}
 
 		hdr.count = htole32(count - 1);
 		hdr.start_block = htole32(c->inode_ref >> 16);
@@ -80,6 +139,7 @@ static int write_dir(meta_writer_t *dm, dir_info_t *dir)
 static int write_inode(sqfs_info_t *info, meta_writer_t *im, meta_writer_t *dm,
 		       tree_node_t *node)
 {
+	dir_index_t *diridx = NULL;
 	uint16_t uid_idx, gid_idx;
 	file_info_t *fi = NULL;
 	dir_info_t *di = NULL;
@@ -108,11 +168,14 @@ static int write_inode(sqfs_info_t *info, meta_writer_t *im, meta_writer_t *dm,
 		di = node->data.dir;
 		node->type = SQFS_INODE_DIR;
 
-		if (write_dir(dm, di))
+		if (write_dir(dm, di, &diridx))
 			return -1;
 
 		if ((di->start_block) > 0xFFFFFFFFUL || di->size > 0xFFFF) {
 			node->type = SQFS_INODE_EXT_DIR;
+		} else {
+			free(diridx);
+			diridx = NULL;
 		}
 		break;
 	case S_IFREG:
@@ -135,8 +198,10 @@ static int write_inode(sqfs_info_t *info, meta_writer_t *im, meta_writer_t *dm,
 	base.mod_time = htole32(info->opt.def_mtime);
 	base.inode_number = htole32(node->inode_num);
 
-	if (meta_writer_append(im, &base, sizeof(base)))
+	if (meta_writer_append(im, &base, sizeof(base))) {
+		free(diridx);
 		return -1;
+	}
 
 	switch (node->type) {
 	case SQFS_INODE_FIFO:
@@ -210,18 +275,46 @@ static int write_inode(sqfs_info_t *info, meta_writer_t *im, meta_writer_t *dm,
 		return meta_writer_append(im, &dir, sizeof(dir));
 	}
 	case SQFS_INODE_EXT_DIR: {
+		sqfs_dir_index_t idx;
+		size_t i;
 		sqfs_inode_dir_ext_t ext = {
 			.nlink = htole32(hard_link_count(node)),
 			.size = htole32(node->data.dir->size),
 			.start_block = htole32(node->data.dir->start_block),
 			.parent_inode = node->parent ?
 				htole32(node->parent->inode_num) : htole32(1),
-			.inodex_count = htole32(0),
+			.inodex_count = htole32(diridx->num_nodes - 1),
 			.offset = htole16(node->data.dir->block_offset),
 			.xattr_idx = htole32(0xFFFFFFFF),
 		};
 
-		return meta_writer_append(im, &ext, sizeof(ext));
+		if (meta_writer_append(im, &ext, sizeof(ext))) {
+			free(diridx);
+			return -1;
+		}
+
+		for (i = 0; i < diridx->num_nodes; ++i) {
+			idx.index = htole32(diridx->idx_nodes[i].offset);
+			idx.start_block = htole32(diridx->idx_nodes[i].block);
+
+			idx.size = strlen(diridx->idx_nodes[i].node->name) - 1;
+			idx.size = htole32(idx.size);
+
+			if (meta_writer_append(im, &idx, sizeof(idx))) {
+				free(diridx);
+				return -1;
+			}
+
+			if (meta_writer_append(im,
+					       diridx->idx_nodes[i].node->name,
+					       le32toh(idx.size) + 1)) {
+				free(diridx);
+				return -1;
+			}
+		}
+
+		free(diridx);
+		break;
 	}
 	default:
 		assert(0);

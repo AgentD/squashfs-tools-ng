@@ -155,6 +155,13 @@ typedef struct {
 	uint8_t name[];
 } sqfs_dir_entry_t;
 
+typedef struct {
+	uint32_t index;
+	uint32_t start_block;
+	uint32_t size;
+	uint8_t name[];
+} sqfs_dir_index_t;
+
 typedef enum {
 	SQFS_COMP_GZIP = 1,
 	SQFS_COMP_LZMA = 2,
