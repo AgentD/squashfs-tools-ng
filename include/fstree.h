@@ -29,6 +29,11 @@ struct tree_xattr_t {
 	size_t max_attr;
 
 	/**
+	 * @brief Incremental index within all xattr blocks
+	 */
+	size_t index;
+
+	/**
 	 * @brief Back reference to the tree node this was created for
 	 */
 	tree_node_t *owner;
@@ -348,6 +353,15 @@ tree_node_t *fstree_add_file(fstree_t *fs, const char *path, uint16_t mode,
  */
 int fstree_add_xattr(fstree_t *fs, tree_node_t *node,
 		     const char *key, const char *value);
+
+/**
+ * @brief Recompute index number of all xattr blocks
+ *
+ * @memberof fstree_t
+ *
+ * @param fs A pointer to the fstree object
+ */
+void fstree_xattr_reindex(fstree_t *fs);
 
 /**
  * @brief Remove dupliciate xattr listings

@@ -152,11 +152,31 @@ static int write_inode(sqfs_info_t *info, meta_writer_t *im, meta_writer_t *dm,
 	info->super.inode_count += 1;
 
 	switch (node->mode & S_IFMT) {
-	case S_IFSOCK: node->type = SQFS_INODE_SOCKET; break;
-	case S_IFIFO: node->type = SQFS_INODE_FIFO; break;
-	case S_IFLNK: node->type = SQFS_INODE_SLINK; break;
-	case S_IFBLK: node->type = SQFS_INODE_BDEV; break;
-	case S_IFCHR: node->type = SQFS_INODE_CDEV; break;
+	case S_IFSOCK:
+		node->type = SQFS_INODE_SOCKET;
+		if (node->xattr != NULL)
+			node->type = SQFS_INODE_EXT_SOCKET;
+		break;
+	case S_IFIFO:
+		node->type = SQFS_INODE_FIFO;
+		if (node->xattr != NULL)
+			node->type = SQFS_INODE_EXT_FIFO;
+		break;
+	case S_IFLNK:
+		node->type = SQFS_INODE_SLINK;
+		if (node->xattr != NULL)
+			node->type = SQFS_INODE_EXT_SLINK;
+		break;
+	case S_IFBLK:
+		node->type = SQFS_INODE_BDEV;
+		if (node->xattr != NULL)
+			node->type = SQFS_INODE_EXT_BDEV;
+		break;
+	case S_IFCHR:
+		node->type = SQFS_INODE_CDEV;
+		if (node->xattr != NULL)
+			node->type = SQFS_INODE_EXT_CDEV;
+		break;
 	case S_IFDIR:
 		di = node->data.dir;
 		node->type = SQFS_INODE_DIR;
@@ -164,7 +184,8 @@ static int write_inode(sqfs_info_t *info, meta_writer_t *im, meta_writer_t *dm,
 		if (write_dir(dm, di, &diridx))
 			return -1;
 
-		if ((di->start_block) > 0xFFFFFFFFUL || di->size > 0xFFFF) {
+		if ((di->start_block) > 0xFFFFFFFFUL || di->size > 0xFFFF ||
+		    (node->xattr != NULL && di->size != 0)) {
 			node->type = SQFS_INODE_EXT_DIR;
 		} else {
 			free(diridx);
@@ -176,7 +197,7 @@ static int write_inode(sqfs_info_t *info, meta_writer_t *im, meta_writer_t *dm,
 		node->type = SQFS_INODE_FILE;
 
 		if (fi->startblock > 0xFFFFFFFFUL || fi->size > 0xFFFFFFFFUL ||
-		    hard_link_count(node) > 1) {
+		    hard_link_count(node) > 1 || node->xattr != NULL) {
 			node->type = SQFS_INODE_EXT_FILE;
 		}
 		break;
@@ -205,6 +226,18 @@ static int write_inode(sqfs_info_t *info, meta_writer_t *im, meta_writer_t *dm,
 
 		return meta_writer_append(im, &ipc, sizeof(ipc));
 	}
+	case SQFS_INODE_EXT_FIFO:
+	case SQFS_INODE_EXT_SOCKET: {
+		sqfs_inode_ipc_ext_t ipc = {
+			.nlink = hard_link_count(node),
+			.xattr_idx = htole32(0xFFFFFFFF),
+		};
+
+		if (node->xattr != NULL)
+			ipc.xattr_idx = htole32(node->xattr->index);
+
+		return meta_writer_append(im, &ipc, sizeof(ipc));
+	}
 	case SQFS_INODE_SLINK: {
 		sqfs_inode_slink_t slink = {
 			.nlink = htole32(hard_link_count(node)),
@@ -219,6 +252,26 @@ static int write_inode(sqfs_info_t *info, meta_writer_t *im, meta_writer_t *dm,
 		}
 		break;
 	}
+	case SQFS_INODE_EXT_SLINK: {
+		sqfs_inode_slink_t slink = {
+			.nlink = htole32(hard_link_count(node)),
+			.target_size = htole32(strlen(node->data.slink_target)),
+		};
+		uint32_t xattr = htole32(0xFFFFFFFF);
+
+		if (node->xattr != NULL)
+			xattr = htole32(node->xattr->index);
+
+		if (meta_writer_append(im, &slink, sizeof(slink)))
+			return -1;
+		if (meta_writer_append(im, node->data.slink_target,
+				       le32toh(slink.target_size))) {
+			return -1;
+		}
+		if (meta_writer_append(im, &xattr, sizeof(xattr)))
+			return -1;
+		break;
+	}
 	case SQFS_INODE_BDEV:
 	case SQFS_INODE_CDEV: {
 		sqfs_inode_dev_t dev = {
@@ -228,6 +281,20 @@ static int write_inode(sqfs_info_t *info, meta_writer_t *im, meta_writer_t *dm,
 
 		return meta_writer_append(im, &dev, sizeof(dev));
 	}
+	case SQFS_INODE_EXT_BDEV:
+	case SQFS_INODE_EXT_CDEV: {
+		sqfs_inode_dev_ext_t dev = {
+			.nlink = htole32(hard_link_count(node)),
+			.devno = htole32(node->data.devno),
+			.xattr_idx = htole32(0xFFFFFFFF),
+		};
+
+		if (node->xattr != NULL)
+			dev.xattr_idx = htole32(node->xattr->index);
+
+		return meta_writer_append(im, &dev, sizeof(dev));
+	}
+
 	case SQFS_INODE_EXT_FILE: {
 		sqfs_inode_file_ext_t ext = {
 			.blocks_start = htole64(fi->startblock),
@@ -238,6 +305,9 @@ static int write_inode(sqfs_info_t *info, meta_writer_t *im, meta_writer_t *dm,
 			.fragment_offset = htole32(fi->fragment_offset),
 			.xattr_idx = htole32(0xFFFFFFFF),
 		};
+
+		if (node->xattr != NULL)
+			ext.xattr_idx = htole32(node->xattr->index);
 
 		if (meta_writer_append(im, &ext, sizeof(ext)))
 			return -1;
@@ -280,6 +350,9 @@ static int write_inode(sqfs_info_t *info, meta_writer_t *im, meta_writer_t *dm,
 			.offset = htole16(node->data.dir->block_offset),
 			.xattr_idx = htole32(0xFFFFFFFF),
 		};
+
+		if (node->xattr != NULL)
+			ext.xattr_idx = htole32(node->xattr->index);
 
 		if (meta_writer_append(im, &ext, sizeof(ext))) {
 			free(diridx);

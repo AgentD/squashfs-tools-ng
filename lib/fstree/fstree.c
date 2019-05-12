@@ -260,6 +260,15 @@ static int cmp_u64(const void *lhs, const void *rhs)
 	return l < r ? -1 : (l > r ? 1 : 0);
 }
 
+void fstree_xattr_reindex(fstree_t *fs)
+{
+	tree_xattr_t *it;
+	size_t index = 0;
+
+	for (it = fs->xattr; it != NULL; it = it->next)
+		it->index = index++;
+}
+
 void fstree_xattr_deduplicate(fstree_t *fs)
 {
 	tree_xattr_t *it, *it1, *prev;
@@ -293,6 +302,8 @@ void fstree_xattr_deduplicate(fstree_t *fs)
 			it = it->next;
 		}
 	}
+
+	fstree_xattr_reindex(fs);
 }
 
 int fstree_init(fstree_t *fs, size_t block_size, uint32_t mtime,
