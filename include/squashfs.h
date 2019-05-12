@@ -13,6 +13,8 @@
 #define SQFS_DEVBLK_SIZE 4096
 #define SQFS_MAX_DIR_ENT 256
 
+#define SQFS_DIR_TYPE_MOD 8
+
 typedef struct {
 	uint32_t magic;
 	uint32_t inode_count;

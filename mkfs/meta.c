@@ -121,7 +121,7 @@ static int write_dir(meta_writer_t *dm, dir_info_t *dir, dir_index_t **index)
 		for (i = 0; i < count; ++i) {
 			ent.offset = htole16(c->inode_ref & 0x0000FFFF);
 			ent.inode_number = htole16(c->inode_num - d->inode_num);
-			ent.type = htole16(c->type);
+			ent.type = htole16(c->type % SQFS_DIR_TYPE_MOD);
 			ent.size = htole16(strlen(c->name) - 1);
 			dir->size += sizeof(ent) + strlen(c->name);
 
