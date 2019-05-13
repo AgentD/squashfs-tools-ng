@@ -164,6 +164,30 @@ typedef struct {
 	uint8_t name[];
 } sqfs_dir_index_t;
 
+typedef struct {
+	uint16_t type;
+	uint16_t size;
+	uint8_t key[];
+} sqfs_xattr_entry_t;
+
+typedef struct {
+	uint32_t size;
+	uint8_t value[];
+} sqfs_xattr_value_t;
+
+typedef struct {
+	uint64_t xattr;
+	uint32_t count;
+	uint32_t size;
+} sqfs_xattr_id_t;
+
+typedef struct {
+	uint64_t xattr_table_start;
+	uint32_t xattr_ids;
+	uint32_t unused;
+} sqfs_xattr_id_table_t;
+
+
 typedef enum {
 	SQFS_COMP_GZIP = 1,
 	SQFS_COMP_LZMA = 2,
@@ -206,6 +230,15 @@ typedef enum {
 	SQFS_INODE_EXT_FIFO = 13,
 	SQFS_INODE_EXT_SOCKET = 14,
 } E_SQFS_INODE_TYPE;
+
+typedef enum {
+	SQUASHFS_XATTR_USER = 0,
+	SQUASHFS_XATTR_TRUSTED = 1,
+	SQUASHFS_XATTR_SECURITY = 2,
+
+	SQUASHFS_XATTR_FLAG_OOL = 0x100,
+	SQUASHFS_XATTR_PREFIX_MASK = 0xFF,
+} E_SQFS_XATTR_TYPE;
 
 int sqfs_super_init(sqfs_super_t *super, size_t block_size, uint32_t mtime,
 		    E_SQFS_COMPRESSOR compressor);

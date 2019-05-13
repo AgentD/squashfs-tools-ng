@@ -116,6 +116,9 @@ int main(int argc, char **argv)
 	if (id_table_write(&info.idtbl, info.outfd, &info.super, info.cmp))
 		goto out_cmp;
 
+	if (write_xattr(&info))
+		goto out_cmp;
+
 	if (sqfs_super_write(&info.super, info.outfd))
 		goto out_cmp;
 

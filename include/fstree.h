@@ -28,6 +28,10 @@ struct tree_xattr_t {
 	size_t num_attr;
 	size_t max_attr;
 
+	uint32_t block;
+	uint32_t offset;
+	uint32_t size;
+
 	/**
 	 * @brief Incremental index within all xattr blocks
 	 */

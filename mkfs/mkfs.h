@@ -60,4 +60,6 @@ int write_data_to_image(sqfs_info_t *info);
 
 int sqfs_write_inodes(sqfs_info_t *info);
 
+int write_xattr(sqfs_info_t *info);
+
 #endif /* MKFS_H */
