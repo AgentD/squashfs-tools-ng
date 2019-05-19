@@ -190,7 +190,8 @@ static sqfs_inode_generic_t *read_inode_slink_ext(meta_reader_t *ir,
 
 		out->data.slink_ext.xattr_idx = le32toh(xattr);
 	}
-	return 0;
+
+	return out;
 }
 
 sqfs_inode_generic_t *meta_reader_read_inode(meta_reader_t *ir,
