@@ -22,6 +22,9 @@ stamps in the SquashFS image are set to a command line specified value (or 0
 by default). Thus the entire process should be deterministic, i.e. same input
 produces byte-for-byte the same output.
 
+In addition to the `gen_init_cpio` style file listing, an SELinux labeling
+file can be specified to add SELinux tags.
+
 
 The `rdsquashfs` program can read a SquashFS image and produce file listings,
 extract individual files or entire sub trees of the image to a desired
@@ -79,6 +82,12 @@ quite limited.
 At the moment, the following things are still missing:
 
  - extended attributes
+    - currently limited to SELinux labeling only
+    - internally, all key strings and all value strings are deduplicated.
+    - the entire set xattrs per inode is deduplicated.
+    - The key/value strings data are repeated again when writing it out.
+    - SquashFS also supports deduplicating values through "out of line"
+      storage but this is currently not used yet.
  - sparse files
  - hard links
  - NFS export tables
