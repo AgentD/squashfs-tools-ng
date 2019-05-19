@@ -74,7 +74,7 @@ static int write_dir(meta_writer_t *dm, dir_info_t *dir, dir_index_t **index)
 
 	while (c != NULL) {
 		count = 0;
-		size = dm->offset;
+		size = (dm->offset + sizeof(hdr)) % SQFS_META_BLOCK_SIZE;
 
 		for (d = c; d != NULL; d = d->next) {
 			if ((d->inode_ref >> 16) != (c->inode_ref >> 16))
@@ -84,13 +84,8 @@ static int write_dir(meta_writer_t *dm, dir_info_t *dir, dir_index_t **index)
 
 			size += sizeof(ent) + strlen(c->name);
 
-			if (size > SQFS_META_BLOCK_SIZE) {
-				if (count > 0) {
-					break;
-				} else {
-					size %= SQFS_META_BLOCK_SIZE;
-				}
-			}
+			if (count > 0 && size > SQFS_META_BLOCK_SIZE)
+				break;
 
 			count += 1;
 		}
@@ -98,15 +93,13 @@ static int write_dir(meta_writer_t *dm, dir_info_t *dir, dir_index_t **index)
 		if (count > SQFS_MAX_DIR_ENT)
 			count = SQFS_MAX_DIR_ENT;
 
-		if (index != NULL) {
-			if (dir_index_grow(index))
-				return -1;
+		if (dir_index_grow(index))
+			return -1;
 
-			i = (*index)->num_nodes++;
-			(*index)->idx_nodes[i].node = c;
-			(*index)->idx_nodes[i].block = dm->block_offset;
-			(*index)->idx_nodes[i].offset = dm->offset;
-		}
+		i = (*index)->num_nodes++;
+		(*index)->idx_nodes[i].node = c;
+		(*index)->idx_nodes[i].block = dm->block_offset;
+		(*index)->idx_nodes[i].offset = dm->offset;
 
 		hdr.count = htole32(count - 1);
 		hdr.start_block = htole32(c->inode_ref >> 16);
@@ -294,8 +287,11 @@ static int write_inode(sqfs_info_t *info, meta_writer_t *im, meta_writer_t *dm,
 		}
 
 		for (i = 0; i < diridx->num_nodes; ++i) {
-			idx.index = htole32(diridx->idx_nodes[i].offset);
 			idx.start_block = htole32(diridx->idx_nodes[i].block);
+
+			idx.index = diridx->idx_nodes[i].offset;
+			idx.index -= node->data.dir->block_offset;
+			idx.index = htole32(idx.index);
 
 			idx.size = strlen(diridx->idx_nodes[i].node->name) - 1;
 			idx.size = htole32(idx.size);
