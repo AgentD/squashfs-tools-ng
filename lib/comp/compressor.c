@@ -20,6 +20,9 @@ static compressor_fun_t compressors[SQFS_COMP_MAX + 1] = {
 #ifdef WITH_LZ4
 	[SQFS_COMP_LZ4] = create_lz4_compressor,
 #endif
+#ifdef WITH_ZSTD
+	[SQFS_COMP_ZSTD] = create_zstd_compressor,
+#endif
 };
 
 int generic_write_options(int fd, const void *data, size_t size)

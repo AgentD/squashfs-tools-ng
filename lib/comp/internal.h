@@ -16,4 +16,6 @@ compressor_t *create_lzo_compressor(bool compress, size_t block_size);
 
 compressor_t *create_lz4_compressor(bool compress, size_t block_size);
 
+compressor_t *create_zstd_compressor(bool compress, size_t block_size);
+
 #endif /* INTERNAL_H */

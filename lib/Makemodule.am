@@ -52,6 +52,13 @@ libcompress_a_CFLAGS += $(LZ4_CFLAGS)
 libcompress_a_CPPFLAGS += -DWITH_LZ4
 endif
 
+if WITH_ZSTD
+libcompress_a_SOURCES += lib/comp/zstd.c
+
+libcompress_a_CFLAGS += $(ZSTD_CFLAGS)
+libcompress_a_CPPFLAGS += -DWITH_ZSTD
+endif
+
 if WITH_SELINUX
 libfstree_a_SOURCES += lib/fstree/selinux.c
 

@@ -19,6 +19,10 @@ if WITH_LZ4
 gensquashfs_LDADD += $(LZ4_LIBS)
 endif
 
+if WITH_ZSTD
+gensquashfs_LDADD += $(ZSTD_LIBS)
+endif
+
 if WITH_SELINUX
 gensquashfs_CPPFLAGS += -DWITH_SELINUX
 gensquashfs_LDADD += $(LIBSELINUX_LIBS)

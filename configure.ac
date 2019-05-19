@@ -81,6 +81,16 @@ AC_ARG_WITH([lz4],
 	esac],
 	[AM_CONDITIONAL([WITH_LZ4], [true])])
 
+AC_ARG_WITH([zstd],
+	[AS_HELP_STRING([--without-zstd],
+			[Build without zstd compression support])],
+	[case "${withval}" in
+	yes) AM_CONDITIONAL([WITH_ZSTD], [true]) ;;
+	no)  AM_CONDITIONAL([WITH_ZSTD], [false]) ;;
+	*) AC_MSG_ERROR([bad value ${withval} for --without-zstd]) ;;
+	esac],
+	[AM_CONDITIONAL([WITH_ZSTD], [true])])
+
 AC_ARG_WITH([selinux],
 	[AS_HELP_STRING([--without-selinux],
 			[Build without SELinux label file support])],
@@ -97,12 +107,14 @@ need_zlib="no"
 need_xz="no"
 need_lzo="no"
 need_lz4="no"
+need_zstd="no"
 need_selinux="no"
 
 AM_COND_IF([WITH_GZIP], [need_zlib="yes"])
 AM_COND_IF([WITH_XZ], [need_xz="yes"])
 AM_COND_IF([WITH_LZO], [need_lzo="yes"])
 AM_COND_IF([WITH_LZ4], [need_lz4="yes"])
+AM_COND_IF([WITH_ZSTD], [need_zstd="yes"])
 AM_COND_IF([WITH_SELINUX], [need_selinux="yes"])
 
 if test "x$need_zlib" = "xyes"; then
@@ -127,6 +139,11 @@ fi
 if test "x$need_lz4" = "xyes"; then
 	PKG_CHECK_MODULES(LZ4, [liblz4], [],
 			       [AC_MSG_ERROR([cannot lz4 library])])
+fi
+
+if test "x$need_zstd" = "xyes"; then
+	PKG_CHECK_MODULES(ZSTD, [libzstd], [],
+			      	[AC_MSG_ERROR([cannot zstd library])])
 fi
 
 if test "x$need_selinux" = "xyes"; then

@@ -92,5 +92,4 @@ At the moment, the following things are still missing:
  - hard links
  - NFS export tables
  - compressor options
- - zstd and *maybe* lzma1 compressors
  - support for extracting SquashFS < 4.0
