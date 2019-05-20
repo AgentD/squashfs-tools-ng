@@ -97,7 +97,9 @@ static int write_dir(meta_writer_t *dm, dir_info_t *dir, dir_index_t **index)
 		for (d = c; d != NULL; d = d->next) {
 			if ((d->inode_ref >> 16) != (c->inode_ref >> 16))
 				break;
-			if ((d->inode_num - c->inode_num) > 0xFFFF)
+
+			/* XXX: difference is actually signed */
+			if ((d->inode_num - c->inode_num) > 0x7FFF)
 				break;
 
 			size += sizeof(ent) + strlen(c->name);
