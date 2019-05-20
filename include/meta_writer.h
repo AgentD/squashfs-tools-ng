@@ -7,69 +7,24 @@
 
 typedef struct meta_writer_t meta_writer_t;
 
-/**
- * @brief Create a meta data writer
- *
- * @memberof meta_writer_t
- *
- * @note This function internally prints error message to stderr on failure
- *
- * @param fd  The underlying file descriptor to write from
- * @param cmp A pointer to a compressor to use for compressing the data
- *
- * @return A pointer to a meta data writer, NULL on failure
- */
+/* Create a meta data reader using a given compressor to compress data.
+   Internally prints error message to stderr on failure. */
 meta_writer_t *meta_writer_create(int fd, compressor_t *cmp);
 
-/**
- * @brief Destroy a meta data writer and free all memory used by it
- *
- * @memberof meta_writer_t
- *
- * @param m A pointer to a meta data reader
- */
 void meta_writer_destroy(meta_writer_t *m);
 
-/**
- * @brief Flush the currently unfinished meta data block to disk
- *
- * @memberof meta_writer_t
- *
- * @note This function internally prints error message to stderr on failure
- *
- * If data has been collected in the block buffer but it is not complete yet,
- * this function tries to compress it and write it out anyway and reset the
- * internal counters.
- *
- * @param m A pointer to a meta data reader
- *
- * @return Zero on success, -1 on failure
- */
+/* Compress and flush the currently unfinished block to disk. Returns 0 on
+   success, internally prints error message to stderr on failure */
 int meta_writer_flush(meta_writer_t *m);
 
-/**
- * @brief Append data to the current meta data block
- *
- * @memberof meta_writer_t
- *
- * @note This function internally prints error message to stderr on failure
- *
- * This function appends the input data to an internal meta data buffer. If
- * the internal buffer is full, it is compressed and written to disk using
- * @ref meta_writer flush, i.e. the function allows for transparent writing
- * across meta data blocks.
- *
- * @param m    A pointer to a meta data reader
- * @param data A pointer to the data block to append
- * @param size The number of bytes to read from the data blob
- *
- * @return Zero on success, -1 on failure
- */
+/* Returns 0 on success. Prints error message to stderr on failure. */
 int meta_writer_append(meta_writer_t *m, const void *data, size_t size);
 
+/* Query the current block start position and offset within the block */
 void meta_writer_get_position(const meta_writer_t *m, uint64_t *block_start,
 			      uint32_t *offset);
 
+/* Reset all internal state, including the current block start position. */
 void meta_writer_reset(meta_writer_t *m);
 
 #endif /* META_WRITER_H */

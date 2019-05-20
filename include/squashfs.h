@@ -240,11 +240,14 @@ typedef enum {
 	SQUASHFS_XATTR_PREFIX_MASK = 0xFF,
 } E_SQFS_XATTR_TYPE;
 
+/* Returns 0 on success. Prints error messages to stderr on failure. */
 int sqfs_super_init(sqfs_super_t *super, size_t block_size, uint32_t mtime,
 		    E_SQFS_COMPRESSOR compressor);
 
+/* Returns 0 on success. Prints error messages to stderr on failure. */
 int sqfs_super_write(sqfs_super_t *super, int fd);
 
+/* Returns 0 on success. Prints error messages to stderr on failure. */
 int sqfs_super_read(sqfs_super_t *super, int fd);
 
 #endif /* SQUASHFS_H */
