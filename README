@@ -17,13 +17,12 @@ etc... actually exist when packing a SquashFS image. The only thing that
 really has to exist are the input _files_ that can be placed arbitrarily in
 the file system by specifying input and target locations.
 
+An SELinux labeling file can be specified to add SELinux tags.
+
 All directory entries are sorted by name and processed sequentially. All time
 stamps in the SquashFS image are set to a command line specified value (or 0
 by default). Thus the entire process should be deterministic, i.e. same input
 produces byte-for-byte the same output.
-
-In addition to the `gen_init_cpio` style file listing, an SELinux labeling
-file can be specified to add SELinux tags.
 
 
 The `rdsquashfs` program can read a SquashFS image and produce file listings,
@@ -36,7 +35,7 @@ location.
 
 The mksquashfs utility is semi-broken and generally a PITA to work with.
 
-For the typically use case of SquashFS (i.e. as rootfs for a live distro or an
+For the typical use case of SquashFS (i.e. as rootfs for a live distro or an
 embedded system), it should be blindingly obvious that I might want to micro
 manage what goes into the file system, that UIDs/GIDs of the host system are
 garbage inside the image and that setting the desired permissions (e.g. suid)
@@ -75,21 +74,20 @@ list appears to be about as dead as SourceForge that hosts it.
  Limitations
  ***********
 
-The entire code base is at the moment fairly fresh and has been hacked together
-in a weekend or two. So naturally, the feature set it implements is currently
-quite limited.
+At the moment, the following things still require some work:
 
-At the moment, the following things are still missing:
-
+ - documentation
+ - testing
  - extended attributes
     - currently limited to SELinux labeling only
-    - internally, all key strings and all value strings are deduplicated.
-    - the entire set xattrs per inode is deduplicated.
-    - The key/value strings data are repeated again when writing it out.
-    - SquashFS also supports deduplicating values through "out of line"
+    - rdsquashfs ignores them entirely
+    - SquashFS supports deduplicating values through "out of line"
       storage but this is currently not used yet.
- - sparse files
- - hard links
- - NFS export tables
- - compressor options
- - support for extracting SquashFS < 4.0
+    - empty directories cannot have xattrs. The way I understand it, this is a
+      design flaw in SquashFS. I hope I'm missing something here.
+ - sparse files (not implemented yet)
+ - hard links (not implemented yet; do we even want this?)
+ - NFS export tables (not implemented yet)
+ - compressor options (stub code exists, implementation missing, command line
+   not implemented yet)
+
