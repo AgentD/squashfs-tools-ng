@@ -11,6 +11,7 @@
 
 typedef struct {
 	compressor_t base;
+	bool high_compression;
 } lz4_compressor_t;
 
 typedef struct {
@@ -19,14 +20,15 @@ typedef struct {
 } lz4_options;
 
 #define LZ4LEGACY 1
+#define LZ4_FLAG_HC 0x01
 
 static int lz4_write_options(compressor_t *base, int fd)
 {
+	lz4_compressor_t *lz4 = (lz4_compressor_t *)base;
 	lz4_options opt = {
 		.version = htole32(LZ4LEGACY),
-		.flags = htole32(0),
+		.flags = htole32(lz4->high_compression ? LZ4_FLAG_HC : 0),
 	};
-	(void)base;
 
 	return generic_write_options(fd, &opt, sizeof(opt));
 }
@@ -53,10 +55,16 @@ static int lz4_read_options(compressor_t *base, int fd)
 static ssize_t lz4_comp_block(compressor_t *base, const uint8_t *in,
 			      size_t size, uint8_t *out, size_t outsize)
 {
+	lz4_compressor_t *lz4 = (lz4_compressor_t *)base;
 	int ret;
-	(void)base;
 
-	ret = LZ4_compress_default((void *)in, (void *)out, size, outsize);
+	if (lz4->high_compression) {
+		ret = LZ4_compress_HC((void *)in, (void *)out,
+				      size, outsize, LZ4HC_CLEVEL_MAX);
+	} else {
+		ret = LZ4_compress_default((void *)in, (void *)out,
+					   size, outsize);
+	}
 
 	if (ret < 0) {
 		fputs("internal error in lz4 compressor\n", stderr);
@@ -99,6 +107,19 @@ compressor_t *create_lz4_compressor(bool compress, size_t block_size,
 		return NULL;
 	}
 
+	lz4->high_compression = false;
+
+	if (options != NULL) {
+		if (strcmp(options, "hc") == 0) {
+			lz4->high_compression = true;
+		} else {
+			fputs("Unsupported extra options for lz4 "
+			      "compressor.\n", stderr);
+			free(lz4);
+			return NULL;
+		}
+	}
+
 	base->destroy = lz4_destroy;
 	base->do_block = compress ? lz4_comp_block : lz4_uncomp_block;
 	base->write_options = lz4_write_options;
@@ -108,4 +129,10 @@ compressor_t *create_lz4_compressor(bool compress, size_t block_size,
 
 void compressor_lz4_print_help(void)
 {
+	fputs("Available options for lz4 compressor:\n"
+	      "\n"
+	      "    hc    If present, use slower but better compressing\n"
+	      "          variant of lz4.\n"
+	      "\n",
+	      stdout);
 }
