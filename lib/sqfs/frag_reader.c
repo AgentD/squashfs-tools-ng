@@ -8,6 +8,18 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+struct frag_reader_t {
+	sqfs_fragment_t *tbl;
+	size_t num_fragments;
+
+	int fd;
+	compressor_t *cmp;
+	size_t block_size;
+	size_t used;
+	size_t current_index;
+	uint8_t buffer[];
+};
+
 static int precache_block(frag_reader_t *f, size_t i)
 {
 	bool compressed;

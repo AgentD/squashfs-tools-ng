@@ -8,18 +8,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-/* A simple interface for accessing fragments in a SquashFS image */
-typedef struct {
-	sqfs_fragment_t *tbl;
-	size_t num_fragments;
-
-	int fd;
-	compressor_t *cmp;
-	size_t block_size;
-	size_t used;
-	size_t current_index;
-	uint8_t buffer[];
-} frag_reader_t;
+typedef struct frag_reader_t frag_reader_t;
 
 /* Reads and decodes the fragment table from the image. Cleans up after itself
    and prints error messages to stderr on the way if it fails. */
