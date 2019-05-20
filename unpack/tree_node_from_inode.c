@@ -72,7 +72,6 @@ tree_node_t *tree_node_from_inode(sqfs_inode_generic_t *inode,
 	out->uid = idtbl->ids[inode->base.uid_idx];
 	out->gid = idtbl->ids[inode->base.gid_idx];
 	out->mode = inode->base.mode;
-	out->type = inode->base.type;
 	out->inode_num = inode->base.inode_number;
 	out->name = (char *)out->payload;
 

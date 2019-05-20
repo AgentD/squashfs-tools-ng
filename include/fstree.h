@@ -133,20 +133,6 @@ struct tree_node_t {
 	/* Inode number. Generated on the fly when writing inodes. */
 	uint32_t inode_num;
 
-	/* SquashFS inode type used for this tree node.
-
-	   Generated on the fly when writing inodes. It can't be easily
-	   determined in advance since it depends also on the size of the
-	   node, which means for directories the size of the directory
-	   entries once written to disk.
-
-	   All code that actually processes tree nodes should use the mode
-	   field instead (mode & S_IFMT gives us the node type). It is stored
-	   here when generating inodes since we need it later on to generate
-	   directory entries.
-	*/
-	int type;
-
 	/* Type specific data. Pointers are into payload area blow. */
 	union {
 		dir_info_t *dir;

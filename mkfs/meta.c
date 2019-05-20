@@ -18,6 +18,21 @@ typedef struct {
 	idx_ref_t idx_nodes[];
 } dir_index_t;
 
+static int get_type(mode_t mode)
+{
+	switch (mode & S_IFMT) {
+	case S_IFSOCK: return SQFS_INODE_SOCKET;
+	case S_IFIFO:  return SQFS_INODE_FIFO;
+	case S_IFLNK:  return SQFS_INODE_SLINK;
+	case S_IFBLK:  return SQFS_INODE_BDEV;
+	case S_IFCHR:  return SQFS_INODE_CDEV;
+	case S_IFDIR:  return SQFS_INODE_DIR;
+	case S_IFREG:  return SQFS_INODE_FILE;
+	default:
+		assert(0);
+	}
+}
+
 static int dir_index_grow(dir_index_t **index)
 {
 	size_t size = sizeof(dir_index_t) + sizeof(idx_ref_t) * 10;
@@ -119,7 +134,7 @@ static int write_dir(meta_writer_t *dm, dir_info_t *dir, dir_index_t **index)
 		for (i = 0; i < count; ++i) {
 			ent.offset = htole16(c->inode_ref & 0x0000FFFF);
 			ent.inode_number = htole16(c->inode_num - d->inode_num);
-			ent.type = htole16(c->type % SQFS_DIR_TYPE_MOD);
+			ent.type = htole16(get_type(c->mode));
 			ent.size = htole16(strlen(c->name) - 1);
 			dir->size += sizeof(ent) + strlen(c->name);
 
@@ -144,6 +159,7 @@ static int write_inode(sqfs_info_t *info, meta_writer_t *im, meta_writer_t *dm,
 	uint32_t bs, offset;
 	sqfs_inode_t base;
 	uint64_t i, block;
+	int type;
 
 	if (id_table_id_to_index(&info->idtbl, node->uid, &uid_idx))
 		return -1;
@@ -157,61 +173,35 @@ static int write_inode(sqfs_info_t *info, meta_writer_t *im, meta_writer_t *dm,
 
 	info->super.inode_count += 1;
 
-	switch (node->mode & S_IFMT) {
-	case S_IFSOCK:
-		node->type = SQFS_INODE_SOCKET;
-		if (node->xattr != NULL)
-			node->type = SQFS_INODE_EXT_SOCKET;
-		break;
-	case S_IFIFO:
-		node->type = SQFS_INODE_FIFO;
-		if (node->xattr != NULL)
-			node->type = SQFS_INODE_EXT_FIFO;
-		break;
-	case S_IFLNK:
-		node->type = SQFS_INODE_SLINK;
-		if (node->xattr != NULL)
-			node->type = SQFS_INODE_EXT_SLINK;
-		break;
-	case S_IFBLK:
-		node->type = SQFS_INODE_BDEV;
-		if (node->xattr != NULL)
-			node->type = SQFS_INODE_EXT_BDEV;
-		break;
-	case S_IFCHR:
-		node->type = SQFS_INODE_CDEV;
-		if (node->xattr != NULL)
-			node->type = SQFS_INODE_EXT_CDEV;
-		break;
-	case S_IFDIR:
+	type = get_type(node->mode);
+
+	if (node->xattr != NULL)
+		type = SQFS_INODE_EXT_TYPE(type);
+
+	if (S_ISDIR(node->mode)) {
 		di = node->data.dir;
-		node->type = SQFS_INODE_DIR;
 
 		if (write_dir(dm, di, &diridx))
 			return -1;
 
 		if ((di->start_block) > 0xFFFFFFFFUL || di->size > 0xFFFF ||
 		    (node->xattr != NULL && di->size != 0)) {
-			node->type = SQFS_INODE_EXT_DIR;
+			type = SQFS_INODE_EXT_DIR;
 		} else {
+			type = SQFS_INODE_DIR;
 			free(diridx);
 			diridx = NULL;
 		}
-		break;
-	case S_IFREG:
+	} else if (S_ISREG(node->mode)) {
 		fi = node->data.file;
-		node->type = SQFS_INODE_FILE;
 
 		if (fi->startblock > 0xFFFFFFFFUL || fi->size > 0xFFFFFFFFUL ||
-		    hard_link_count(node) > 1 || node->xattr != NULL) {
-			node->type = SQFS_INODE_EXT_FILE;
+		    hard_link_count(node) > 1) {
+			type = SQFS_INODE_EXT_FILE;
 		}
-		break;
-	default:
-		assert(0);
 	}
 
-	base.type = htole16(node->type);
+	base.type = htole16(type);
 	base.mode = htole16(node->mode);
 	base.uid_idx = htole16(uid_idx);
 	base.gid_idx = htole16(gid_idx);
@@ -223,7 +213,7 @@ static int write_inode(sqfs_info_t *info, meta_writer_t *im, meta_writer_t *dm,
 		return -1;
 	}
 
-	switch (node->type) {
+	switch (type) {
 	case SQFS_INODE_FIFO:
 	case SQFS_INODE_SOCKET: {
 		sqfs_inode_ipc_t ipc = {
