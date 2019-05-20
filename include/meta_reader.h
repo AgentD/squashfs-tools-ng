@@ -5,47 +5,7 @@
 #include "compress.h"
 #include "squashfs.h"
 
-/**
- * @struct meta_reader_t
- *
- * @brief Abstracts away I/O on SquashFS meta data
- */
-typedef struct {
-	/**
-	 * @brief The location of the current block in the file
-	 */
-	uint64_t block_offset;
-
-	/**
-	 * @brief The location of the next block after the current one
-	 */
-	uint64_t next_block;
-
-	/**
-	 * @brief A byte offset into the uncompressed data of the current block
-	 */
-	size_t offset;
-
-	/**
-	 * @brief The underlying file descriptor to read from
-	 */
-	int fd;
-
-	/**
-	 * @brief A pointer to the compressor to use for extracting data
-	 */
-	compressor_t *cmp;
-
-	/**
-	 * @brief The raw data read from the input file
-	 */
-	uint8_t data[SQFS_META_BLOCK_SIZE];
-
-	/**
-	 * @brief The uncompressed data read from the input file
-	 */
-	uint8_t scratch[SQFS_META_BLOCK_SIZE];
-} meta_reader_t;
+typedef struct meta_reader_t meta_reader_t;
 
 /**
  * @brief Create a meta data reader

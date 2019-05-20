@@ -7,6 +7,29 @@
 #include <string.h>
 #include <stdio.h>
 
+struct meta_reader_t {
+	/* The location of the current block in the image */
+	uint64_t block_offset;
+
+	/* The location of the next block after the current one */
+	uint64_t next_block;
+
+	/* A byte offset into the uncompressed data of the current block */
+	size_t offset;
+
+	/* The underlying file descriptor to read from */
+	int fd;
+
+	/* A pointer to the compressor to use for extracting data */
+	compressor_t *cmp;
+
+	/* The raw data read from the input file */
+	uint8_t data[SQFS_META_BLOCK_SIZE];
+
+	/* The uncompressed data read from the input file */
+	uint8_t scratch[SQFS_META_BLOCK_SIZE];
+};
+
 meta_reader_t *meta_reader_create(int fd, compressor_t *cmp)
 {
 	meta_reader_t *m = calloc(1, sizeof(*m));

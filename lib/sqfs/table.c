@@ -11,9 +11,10 @@ int sqfs_write_table(int outfd, sqfs_super_t *super, const void *data,
 		     compressor_t *cmp)
 {
 	size_t ent_per_blocks = SQFS_META_BLOCK_SIZE / entsize;
-	uint64_t blocks[count / ent_per_blocks + 1];
+	uint64_t blocks[count / ent_per_blocks + 1], block;
 	size_t i, blkidx = 0, tblsize;
 	meta_writer_t *m;
+	uint32_t offset;
 	ssize_t ret;
 
 	/* Write actual data. Whenever we cross a block boundary, remember
@@ -23,8 +24,10 @@ int sqfs_write_table(int outfd, sqfs_super_t *super, const void *data,
 		return -1;
 
 	for (i = 0; i < count; ++i) {
-		if (blkidx == 0 || m->block_offset > blocks[blkidx - 1])
-			blocks[blkidx++] = m->block_offset;
+		meta_writer_get_position(m, &block, &offset);
+
+		if (blkidx == 0 || block > blocks[blkidx - 1])
+			blocks[blkidx++] = block;
 
 		if (meta_writer_append(m, data, entsize))
 			goto fail;
@@ -38,7 +41,8 @@ int sqfs_write_table(int outfd, sqfs_super_t *super, const void *data,
 	for (i = 0; i < blkidx; ++i)
 		blocks[i] = htole64(blocks[i] + super->bytes_used);
 
-	super->bytes_used += m->block_offset;
+	meta_writer_get_position(m, &block, &offset);
+	super->bytes_used += block;
 	meta_writer_destroy(m);
 
 	/* write new index table */

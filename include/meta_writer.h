@@ -5,42 +5,7 @@
 #include "compress.h"
 #include "squashfs.h"
 
-/**
- * @struct meta_writer_t
- *
- * @brief Abstracts away I/O on SquashFS meta data
- */
-typedef struct {
-	/**
-	 * @brief A byte offset into the uncompressed data of the current block
-	 */
-	size_t offset;
-
-	/**
-	 * @brief The location of the current block in the file
-	 */
-	size_t block_offset;
-
-	/**
-	 * @brief The underlying file descriptor to write to
-	 */
-	int outfd;
-
-	/**
-	 * @brief A pointer to the compressor to use for compressing the data
-	 */
-	compressor_t *cmp;
-
-	/**
-	 * @brief The raw data chunk that data is appended to
-	 */
-	uint8_t data[SQFS_META_BLOCK_SIZE + 2];
-
-	/**
-	 * @brief Scratch buffer for compressing data
-	 */
-	uint8_t scratch[SQFS_META_BLOCK_SIZE + 2];
-} meta_writer_t;
+typedef struct meta_writer_t meta_writer_t;
 
 /**
  * @brief Create a meta data writer
@@ -101,5 +66,10 @@ int meta_writer_flush(meta_writer_t *m);
  * @return Zero on success, -1 on failure
  */
 int meta_writer_append(meta_writer_t *m, const void *data, size_t size);
+
+void meta_writer_get_position(const meta_writer_t *m, uint64_t *block_start,
+			      uint32_t *offset);
+
+void meta_writer_reset(meta_writer_t *m);
 
 #endif /* META_WRITER_H */

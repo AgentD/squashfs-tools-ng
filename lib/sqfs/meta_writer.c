@@ -8,6 +8,26 @@
 #include <unistd.h>
 #include <stdio.h>
 
+struct meta_writer_t {
+	/* A byte offset into the uncompressed data of the current block */
+	size_t offset;
+
+	/* The location of the current block in the file */
+	size_t block_offset;
+
+	/* The underlying file descriptor to write to */
+	int outfd;
+
+	/* A pointer to the compressor to use for compressing the data */
+	compressor_t *cmp;
+
+	/* The raw data chunk that data is appended to */
+	uint8_t data[SQFS_META_BLOCK_SIZE + 2];
+
+	/* Scratch buffer for compressing data */
+	uint8_t scratch[SQFS_META_BLOCK_SIZE + 2];
+};
+
 meta_writer_t *meta_writer_create(int fd, compressor_t *cmp)
 {
 	meta_writer_t *m = calloc(1, sizeof(*m));
@@ -94,4 +114,17 @@ int meta_writer_append(meta_writer_t *m, const void *data, size_t size)
 		return meta_writer_flush(m);
 
 	return 0;
+}
+
+void meta_writer_get_position(const meta_writer_t *m, uint64_t *block_start,
+			      uint32_t *offset)
+{
+	*block_start = m->block_offset;
+	*offset = m->offset;
+}
+
+void meta_writer_reset(meta_writer_t *m)
+{
+	m->block_offset = 0;
+	m->offset = 0;
 }

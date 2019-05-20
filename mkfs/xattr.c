@@ -89,12 +89,13 @@ static int write_kv_pairs(sqfs_info_t *info, meta_writer_t *mw,
 
 int write_xattr(sqfs_info_t *info)
 {
-	uint64_t kv_start, id_start, *tbl;
+	uint64_t kv_start, id_start, block, *tbl;
 	size_t i = 0, count = 0, blocks;
 	sqfs_xattr_id_table_t idtbl;
 	sqfs_xattr_id_t id_ent;
 	meta_writer_t *mw;
 	tree_xattr_t *it;
+	uint32_t offset;
 	ssize_t ret;
 
 	if (info->fs.xattr == NULL)
@@ -108,8 +109,7 @@ int write_xattr(sqfs_info_t *info)
 	kv_start = info->super.bytes_used;
 
 	for (it = info->fs.xattr; it != NULL; it = it->next) {
-		it->block = mw->block_offset;
-		it->offset = mw->offset;
+		meta_writer_get_position(mw, &it->block, &it->offset);
 		it->size = 0;
 
 		if (write_kv_pairs(info, mw, it))
@@ -121,8 +121,10 @@ int write_xattr(sqfs_info_t *info)
 	if (meta_writer_flush(mw))
 		goto fail_mw;
 
-	info->super.bytes_used += mw->block_offset;
-	mw->block_offset = 0;
+	meta_writer_get_position(mw, &block, &offset);
+	meta_writer_reset(mw);
+
+	info->super.bytes_used += block;
 
 	/* allocate location table */
 	blocks = (count * sizeof(id_ent)) / SQFS_META_BLOCK_SIZE;
@@ -138,8 +140,8 @@ int write_xattr(sqfs_info_t *info)
 	}
 
 	/* write ID table referring to key value pairs, record offsets */
-	id_start = mw->block_offset;
-	tbl[i++] = htole64(info->super.bytes_used + id_start);
+	id_start = 0;
+	tbl[i++] = htole64(info->super.bytes_used);
 
 	for (it = info->fs.xattr; it != NULL; it = it->next) {
 		id_ent.xattr = htole64((it->block << 16) | it->offset);
@@ -149,8 +151,10 @@ int write_xattr(sqfs_info_t *info)
 		if (meta_writer_append(mw, &id_ent, sizeof(id_ent)))
 			goto fail_tbl;
 
-		if (mw->block_offset != id_start) {
-			id_start = mw->block_offset;
+		meta_writer_get_position(mw, &block, &offset);
+
+		if (block != id_start) {
+			id_start = block;
 			tbl[i++] = htole64(info->super.bytes_used + id_start);
 		}
 	}
@@ -158,8 +162,8 @@ int write_xattr(sqfs_info_t *info)
 	if (meta_writer_flush(mw))
 		goto fail_tbl;
 
-	info->super.bytes_used += mw->block_offset;
-	mw->block_offset = 0;
+	meta_writer_get_position(mw, &block, &offset);
+	info->super.bytes_used += block;
 
 	/* write offset table */
 	idtbl.xattr_table_start = htole64(kv_start);

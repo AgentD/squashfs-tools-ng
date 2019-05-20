@@ -65,16 +65,19 @@ static int write_dir(meta_writer_t *dm, dir_info_t *dir, dir_index_t **index)
 	sqfs_dir_header_t hdr;
 	sqfs_dir_entry_t ent;
 	tree_node_t *c, *d;
+	uint32_t offset;
+	uint64_t block;
 
 	c = dir->children;
 	dir->size = 0;
 
-	dir->start_block = dm->block_offset;
-	dir->block_offset = dm->offset;
+	meta_writer_get_position(dm, &dir->start_block, &dir->block_offset);
 
 	while (c != NULL) {
+		meta_writer_get_position(dm, &block, &offset);
+
 		count = 0;
-		size = (dm->offset + sizeof(hdr)) % SQFS_META_BLOCK_SIZE;
+		size = (offset + sizeof(hdr)) % SQFS_META_BLOCK_SIZE;
 
 		for (d = c; d != NULL; d = d->next) {
 			if ((d->inode_ref >> 16) != (c->inode_ref >> 16))
@@ -96,10 +99,12 @@ static int write_dir(meta_writer_t *dm, dir_info_t *dir, dir_index_t **index)
 		if (dir_index_grow(index))
 			return -1;
 
+		meta_writer_get_position(dm, &block, &offset);
+
 		i = (*index)->num_nodes++;
 		(*index)->idx_nodes[i].node = c;
-		(*index)->idx_nodes[i].block = dm->block_offset;
-		(*index)->idx_nodes[i].offset = dm->offset;
+		(*index)->idx_nodes[i].block = block;
+		(*index)->idx_nodes[i].offset = offset;
 
 		hdr.count = htole32(count - 1);
 		hdr.start_block = htole32(c->inode_ref >> 16);
@@ -136,9 +141,9 @@ static int write_inode(sqfs_info_t *info, meta_writer_t *im, meta_writer_t *dm,
 	uint16_t uid_idx, gid_idx;
 	file_info_t *fi = NULL;
 	dir_info_t *di = NULL;
+	uint32_t bs, offset;
 	sqfs_inode_t base;
-	uint32_t bs;
-	uint64_t i;
+	uint64_t i, block;
 
 	if (id_table_id_to_index(&info->idtbl, node->uid, &uid_idx))
 		return -1;
@@ -146,7 +151,8 @@ static int write_inode(sqfs_info_t *info, meta_writer_t *im, meta_writer_t *dm,
 	if (id_table_id_to_index(&info->idtbl, node->gid, &gid_idx))
 		return -1;
 
-	node->inode_ref = (im->block_offset << 16) | im->offset;
+	meta_writer_get_position(im, &block, &offset);
+	node->inode_ref = (block << 16) | offset;
 	node->inode_num = info->inode_counter++;
 
 	info->super.inode_count += 1;
@@ -433,6 +439,9 @@ static int write_child_inodes(sqfs_info_t *info, meta_writer_t *im,
 int sqfs_write_inodes(sqfs_info_t *info)
 {
 	meta_writer_t *im, *dm;
+	uint8_t buffer[1024];
+	uint32_t offset;
+	uint64_t block;
 	size_t diff;
 	ssize_t ret;
 	FILE *tmp;
@@ -470,11 +479,13 @@ int sqfs_write_inodes(sqfs_info_t *info)
 
 	info->super.root_inode_ref = info->fs.root->inode_ref;
 
+	meta_writer_get_position(im, &block, &offset);
 	info->super.inode_table_start = info->super.bytes_used;
-	info->super.bytes_used += im->block_offset;
+	info->super.bytes_used += block;
 
 	info->super.directory_table_start = info->super.bytes_used;
-	info->super.bytes_used += dm->block_offset;
+	meta_writer_get_position(dm, &block, &offset);
+	info->super.bytes_used += block;
 
 	if (lseek(tmpfd, 0, SEEK_SET) == (off_t)-1) {
 		perror("rewind on directory temp file");
@@ -482,7 +493,7 @@ int sqfs_write_inodes(sqfs_info_t *info)
 	}
 
 	for (;;) {
-		ret = read_retry(tmpfd, dm->data, sizeof(dm->data));
+		ret = read_retry(tmpfd, buffer, sizeof(buffer));
 
 		if (ret < 0) {
 			perror("read from temp file");
@@ -492,7 +503,7 @@ int sqfs_write_inodes(sqfs_info_t *info)
 			break;
 
 		diff = ret;
-		ret = write_retry(info->outfd, dm->data, diff);
+		ret = write_retry(info->outfd, buffer, diff);
 
 		if (ret < 0) {
 			perror("write to image file");
