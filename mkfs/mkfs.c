@@ -41,6 +41,7 @@ int main(int argc, char **argv)
 {
 	int status = EXIT_FAILURE, ret;
 	sqfs_info_t info;
+	uint64_t start;
 
 	memset(&info, 0, sizeof(info));
 
@@ -109,9 +110,11 @@ int main(int argc, char **argv)
 
 	if (sqfs_write_table(info.outfd, &info.super, info.fragments,
 			     sizeof(info.fragments[0]), info.num_fragments,
-			     &info.super.fragment_table_start, info.cmp)) {
+			     &start, info.cmp)) {
 		goto out_cmp;
 	}
+
+	info.super.fragment_table_start = start;
 
 	if (id_table_write(&info.idtbl, info.outfd, &info.super, info.cmp))
 		goto out_cmp;
