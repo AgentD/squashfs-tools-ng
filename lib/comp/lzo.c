@@ -69,7 +69,8 @@ static void lzo_destroy(compressor_t *base)
 	free(base);
 }
 
-compressor_t *create_lzo_compressor(bool compress, size_t block_size)
+compressor_t *create_lzo_compressor(bool compress, size_t block_size,
+				    char *options)
 {
 	lzo_compressor_t *lzo = calloc(1, sizeof(*lzo));
 	compressor_t *base = (compressor_t *)lzo;
@@ -85,4 +86,8 @@ compressor_t *create_lzo_compressor(bool compress, size_t block_size)
 	base->write_options = lzo_write_options;
 	base->read_options = lzo_read_options;
 	return base;
+}
+
+void compressor_lzo_print_help(void)
+{
 }

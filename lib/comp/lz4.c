@@ -87,7 +87,8 @@ static void lz4_destroy(compressor_t *base)
 	free(base);
 }
 
-compressor_t *create_lz4_compressor(bool compress, size_t block_size)
+compressor_t *create_lz4_compressor(bool compress, size_t block_size,
+				    char *options)
 {
 	lz4_compressor_t *lz4 = calloc(1, sizeof(*lz4));
 	compressor_t *base = (compressor_t *)lz4;
@@ -103,4 +104,8 @@ compressor_t *create_lz4_compressor(bool compress, size_t block_size)
 	base->write_options = lz4_write_options;
 	base->read_options = lz4_read_options;
 	return base;
+}
+
+void compressor_lz4_print_help(void)
+{
 }

@@ -5,7 +5,10 @@
 #include "internal.h"
 #include "util.h"
 
-typedef compressor_t *(*compressor_fun_t)(bool compress, size_t block_size);
+typedef compressor_t *(*compressor_fun_t)(bool compress, size_t block_size,
+					  char *options);
+
+typedef void (*compressor_help_fun_t)(void);
 
 static compressor_fun_t compressors[SQFS_COMP_MAX + 1] = {
 #ifdef WITH_GZIP
@@ -22,6 +25,24 @@ static compressor_fun_t compressors[SQFS_COMP_MAX + 1] = {
 #endif
 #ifdef WITH_ZSTD
 	[SQFS_COMP_ZSTD] = create_zstd_compressor,
+#endif
+};
+
+static const compressor_help_fun_t helpfuns[SQFS_COMP_MAX + 1] = {
+#ifdef WITH_GZIP
+	[SQFS_COMP_GZIP] = compressor_gzip_print_help,
+#endif
+#ifdef WITH_XZ
+	[SQFS_COMP_XZ] = compressor_xz_print_help,
+#endif
+#ifdef WITH_LZO
+	[SQFS_COMP_LZO] = compressor_lzo_print_help,
+#endif
+#ifdef WITH_LZ4
+	[SQFS_COMP_LZ4] = compressor_lz4_print_help,
+#endif
+#ifdef WITH_ZSTD
+	[SQFS_COMP_ZSTD] = compressor_zstd_print_help,
 #endif
 };
 
@@ -85,7 +106,7 @@ bool compressor_exists(E_SQFS_COMPRESSOR id)
 }
 
 compressor_t *compressor_create(E_SQFS_COMPRESSOR id, bool compress,
-				size_t block_size)
+				size_t block_size, char *options)
 {
 	if (id < SQFS_COMP_MIN || id > SQFS_COMP_MAX)
 		return NULL;
@@ -93,5 +114,16 @@ compressor_t *compressor_create(E_SQFS_COMPRESSOR id, bool compress,
 	if (compressors[id] == NULL)
 		return NULL;
 
-	return compressors[id](compress, block_size);
+	return compressors[id](compress, block_size, options);
+}
+
+void compressor_print_help(E_SQFS_COMPRESSOR id)
+{
+	if (id < SQFS_COMP_MIN || id > SQFS_COMP_MAX)
+		return;
+
+	if (compressors[id] == NULL)
+		return;
+
+	helpfuns[id]();
 }

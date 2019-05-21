@@ -29,6 +29,7 @@ typedef struct {
 	const char *infile;
 	const char *outfile;
 	const char *selinux;
+	char *comp_extra;
 } options_t;
 
 typedef struct {

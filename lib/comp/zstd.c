@@ -69,7 +69,8 @@ static void zstd_destroy(compressor_t *base)
 	free(zstd);
 }
 
-compressor_t *create_zstd_compressor(bool compress, size_t block_size)
+compressor_t *create_zstd_compressor(bool compress, size_t block_size,
+				     char *options)
 {
 	zstd_compressor_t *zstd = calloc(1, sizeof(*zstd));
 	compressor_t *base = (compressor_t *)zstd;
@@ -92,4 +93,8 @@ compressor_t *create_zstd_compressor(bool compress, size_t block_size)
 	base->write_options = zstd_write_options;
 	base->read_options = zstd_read_options;
 	return base;
+}
+
+void compressor_zstd_print_help(void)
+{
 }

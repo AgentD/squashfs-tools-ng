@@ -16,6 +16,7 @@ static struct option long_opts[] = {
 	{ "block-size", required_argument, NULL, 'b' },
 	{ "dev-block-size", required_argument, NULL, 'B' },
 	{ "defaults", required_argument, NULL, 'd' },
+	{ "comp-extra", required_argument, NULL, 'X' },
 	{ "force", no_argument, NULL, 'f' },
 	{ "quiet", no_argument, NULL, 'q' },
 #ifdef WITH_SELINUX
@@ -26,9 +27,9 @@ static struct option long_opts[] = {
 };
 
 #ifdef WITH_SELINUX
-static const char *short_opts = "s:c:b:B:d:fqhV";
+static const char *short_opts = "s:X:c:b:B:d:fqhV";
 #else
-static const char *short_opts = "c:b:B:d:fqhV";
+static const char *short_opts = "X:c:b:B:d:fqhV";
 #endif
 
 enum {
@@ -91,6 +92,9 @@ static const char *help_string =
 "\n"
 "  --compressor, -c <name>     Select the compressor to use.\n"
 "                              directories (defaults to 'xz').\n"
+"  --comp-extra, -X <options>  A comma seperated list of extra options for\n"
+"                              the selected compressor. Specify 'help' to\n"
+"                              get a list of available options.\n"
 "  --block-size, -b <size>     Block size to use for Squashfs image.\n"
 "                              Defaults to %u.\n"
 "  --dev-block-size, -B <size> Device block size to padd the image to.\n"
@@ -275,6 +279,9 @@ void process_command_line(options_t *opt, int argc, char **argv)
 			break;
 		case 'q':
 			opt->quiet = true;
+			break;
+		case 'X':
+			opt->comp_extra = optarg;
 			break;
 #ifdef WITH_SELINUX
 		case 's':

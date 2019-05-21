@@ -45,6 +45,8 @@ bool compressor_exists(E_SQFS_COMPRESSOR id);
 /* block_size is the configured block size for the SquashFS image. Needed
    by some compressors to set internal defaults. */
 compressor_t *compressor_create(E_SQFS_COMPRESSOR id, bool compress,
-				size_t block_size);
+				size_t block_size, char *options);
+
+void compressor_print_help(E_SQFS_COMPRESSOR id);
 
 #endif /* COMPRESS_H */

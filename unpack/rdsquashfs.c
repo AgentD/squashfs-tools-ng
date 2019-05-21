@@ -267,7 +267,7 @@ int main(int argc, char **argv)
 	}
 
 	info.cmp = compressor_create(super.compression_id, false,
-				     super.block_size);
+				     super.block_size, NULL);
 	if (info.cmp == NULL)
 		goto out_fd;
 

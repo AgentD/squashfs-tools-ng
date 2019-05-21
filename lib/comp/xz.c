@@ -88,7 +88,8 @@ static void xz_destroy(compressor_t *base)
 	free(base);
 }
 
-compressor_t *create_xz_compressor(bool compress, size_t block_size)
+compressor_t *create_xz_compressor(bool compress, size_t block_size,
+				   char *options)
 {
 	xz_compressor_t *xz = calloc(1, sizeof(*xz));
 	compressor_t *base = (compressor_t *)xz;
@@ -104,4 +105,8 @@ compressor_t *create_xz_compressor(bool compress, size_t block_size)
 	base->write_options = xz_write_options;
 	base->read_options = xz_read_options;
 	return base;
+}
+
+void compressor_xz_print_help(void)
+{
 }

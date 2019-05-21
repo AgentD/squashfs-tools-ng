@@ -90,7 +90,8 @@ static ssize_t gzip_do_block(compressor_t *base, const uint8_t *in,
 	return 0;
 }
 
-compressor_t *create_gzip_compressor(bool compress, size_t block_size)
+compressor_t *create_gzip_compressor(bool compress, size_t block_size,
+				     char *options)
 {
 	gzip_compressor_t *gzip = calloc(1, sizeof(*gzip));
 	compressor_t *base = (compressor_t *)gzip;
@@ -121,4 +122,8 @@ compressor_t *create_gzip_compressor(bool compress, size_t block_size)
 	}
 
 	return base;
+}
+
+void compressor_gzip_print_help(void)
+{
 }
