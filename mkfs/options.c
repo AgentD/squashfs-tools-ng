@@ -308,6 +308,11 @@ void process_command_line(options_t *opt, int argc, char **argv)
 		}
 	}
 
+	if (opt->comp_extra != NULL && strcmp(opt->comp_extra, "help") == 0) {
+		compressor_print_help(opt->compressor);
+		exit(EXIT_SUCCESS);
+	}
+
 	if ((optind + 1) >= argc) {
 		fputs("Missing arguments: input and output files.\n", stderr);
 		goto fail_arg;

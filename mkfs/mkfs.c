@@ -47,12 +47,6 @@ int main(int argc, char **argv)
 
 	process_command_line(&info.opt, argc, argv);
 
-	if (info.opt.comp_extra != NULL &&
-	    strcmp(info.opt.comp_extra, "help") == 0) {
-		compressor_print_help(info.opt.compressor);
-		return EXIT_SUCCESS;
-	}
-
 	if (sqfs_super_init(&info.super, info.opt.blksz, info.opt.def_mtime,
 			    info.opt.compressor)) {
 		return EXIT_FAILURE;
