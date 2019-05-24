@@ -88,6 +88,3 @@ At the moment, the following things still require some work:
  - sparse files (not implemented yet)
  - hard links (not implemented yet; do we even want this?)
  - NFS export tables (not implemented yet)
- - compressor options (stub code exists, implementation missing, command line
-   not implemented yet)
-

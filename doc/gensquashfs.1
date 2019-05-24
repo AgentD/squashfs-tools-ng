@@ -15,6 +15,10 @@ The second argument is the file name of the SquashFS image to generate.
 Select the compressor to use (defaults to 'xz').
 Run \fBgensquashfs \-\-help\fR to get a list of all available compressors.
 .TP
+\fB\-\-comp\-extra\fR, \fB\-X\fR <options>
+A comma seperated list of extra options for the selected compressor. Specify
+\fBhelp\fR to get a list of available options.
+.TP
 \fB\-\-block\-size\fR, \fB\-b\fR <size>
 Block size to use for Squashfs image.
 Defaults to 131072.
