@@ -9,12 +9,19 @@
 #include "config.h"
 #include "table.h"
 
+#include <assert.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <fcntl.h>
 #include <errno.h>
+
+typedef enum {
+	PACK_NONE,
+	PACK_FILE,
+	PACK_DIR,
+} E_PACK_MODE;
 
 typedef struct {
 	unsigned int def_uid;
@@ -30,6 +37,7 @@ typedef struct {
 	const char *outfile;
 	const char *selinux;
 	char *comp_extra;
+	E_PACK_MODE mode;
 } options_t;
 
 typedef struct {

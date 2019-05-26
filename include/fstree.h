@@ -229,6 +229,13 @@ void fstree_xattr_deduplicate(fstree_t *fs);
  */
 int fstree_from_file(fstree_t *fs, const char *filename);
 
+/*
+  Recursively scan a directory and generate a file system tree from it.
+
+  Returns 0 on success, prints errors to stderr.
+ */
+int fstree_from_dir(fstree_t *fs, const char *path);
+
 /* Lexicographically sort all directory contents. */
 void fstree_sort(fstree_t *fs);
 

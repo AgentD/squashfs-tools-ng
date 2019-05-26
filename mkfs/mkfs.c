@@ -70,8 +70,18 @@ int main(int argc, char **argv)
 		goto out_outfd;
 	}
 
-	if (fstree_from_file(&info.fs, info.opt.infile))
-		goto out_fstree;
+	switch (info.opt.mode) {
+	case PACK_FILE:
+		if (fstree_from_file(&info.fs, info.opt.infile))
+			goto out_fstree;
+		break;
+	case PACK_DIR:
+		if (fstree_from_dir(&info.fs, info.opt.infile))
+			goto out_fstree;
+		break;
+	default:
+		assert(0);
+	}
 
 #ifdef WITH_SELINUX
 	if (info.opt.selinux != NULL) {

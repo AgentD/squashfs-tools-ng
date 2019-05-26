@@ -17,6 +17,8 @@ static struct option long_opts[] = {
 	{ "dev-block-size", required_argument, NULL, 'B' },
 	{ "defaults", required_argument, NULL, 'd' },
 	{ "comp-extra", required_argument, NULL, 'X' },
+	{ "pack-file", required_argument, NULL, 'F' },
+	{ "pack-dir", required_argument, NULL, 'D' },
 	{ "force", no_argument, NULL, 'f' },
 	{ "quiet", no_argument, NULL, 'q' },
 #ifdef WITH_SELINUX
@@ -27,9 +29,9 @@ static struct option long_opts[] = {
 };
 
 #ifdef WITH_SELINUX
-static const char *short_opts = "s:X:c:b:B:d:fqhV";
+static const char *short_opts = "s:F:D:X:c:b:B:d:fqhV";
 #else
-static const char *short_opts = "X:c:b:B:d:fqhV";
+static const char *short_opts = "F:D:X:c:b:B:d:fqhV";
 #endif
 
 enum {
@@ -50,48 +52,18 @@ static const char *defaults[] = {
 extern char *__progname;
 
 static const char *help_string =
-"Usage: %s [OPTIONS] <file-list> <squashfs-file>\n"
-"\n"
-"<file-list> is a file containing newline separated entries that describe\n"
-"the files to be included in the squashfs image:\n"
-"\n"
-"# a comment\n"
-"file <path> <mode> <uid> <gid> [<location>]\n"
-"dir <path> <mode> <uid> <gid>\n"
-"nod <path> <mode> <uid> <gid> <dev_type> <maj> <min>\n"
-"slink <path> <mode> <uid> <gid> <target>\n"
-"pipe <path> <mode> <uid> <gid>\n"
-"sock <path> <mode> <uid> <gid>\n"
-"\n"
-"<path>       Absolute path of the entry in the image.\n"
-"<location>   If given, location of the input file. Either absolute or relative\n"
-"             to the description file. If omitted, the image path is used,\n"
-"             relative to the description file.\n"
-"<target>     Symlink target.\n"
-"<mode>       Mode/permissions of the entry.\n"
-"<uid>        Numeric user id.\n"
-"<gid>        Numeric group id.\n"
-"<dev_type>   Device type (b=block, c=character).\n"
-"<maj>        Major number of a device special file.\n"
-"<min>        Minor number of a device special file.\n"
-"\n"
-"Example:\n"
-"# A simple squashfs image\n"
-"dir /dev 0755 0 0\n"
-"nod /dev/console 0600 0 0 c 5 1\n"
-"dir /root 0700 0 0\n"
-"dir /sbin 0755 0 0\n"
-"\n"
-"# Add a file. Input is relative to this listing.\n"
-"file /sbin/init 0755 0 0 ../init/sbin/init\n"
-"\n"
-"# Read from ./bin/bash. /bin is created implicitly with default attributes.\n"
-"file /bin/bash 0755 0 0"
+"Usage: %s [OPTIONS...] <squashfs-file>\n"
 "\n"
 "Possible options:\n"
 "\n"
+"  --pack-file, -F <file>      Use a `gen_init_cpio` style description file.\n"
+"                              The file format is specified below.\n"
+"  --pack-dir, -D <directory>  Pack the contents of the given directory into\n"
+"                              a SquashFS image. The directory becomes the\n"
+"                              root of the file system.\n"
 "  --compressor, -c <name>     Select the compressor to use.\n"
-"                              directories (defaults to 'xz').\n"
+"                              A list of available compressors is below.\n"
+"                              Defaults to 'xz'.\n"
 "  --comp-extra, -X <options>  A comma seperated list of extra options for\n"
 "                              the selected compressor. Specify 'help' to\n"
 "                              get a list of available options.\n"
@@ -116,7 +88,44 @@ static const char *help_string =
 "  --quiet, -q                 Do not print out progress reports.\n"
 "  --help, -h                  Print help text and exit.\n"
 "  --version, -V               Print version information and exit.\n"
-"\n";
+"\n"
+"When using the pack file option, the given file is expected to contain\n"
+"newline separated entries that describe the files to be included in the\n"
+"SquashFS image. The following entry types can be specified:\n"
+"\n"
+"# a comment\n"
+"file <path> <mode> <uid> <gid> [<location>]\n"
+"dir <path> <mode> <uid> <gid>\n"
+"nod <path> <mode> <uid> <gid> <dev_type> <maj> <min>\n"
+"slink <path> <mode> <uid> <gid> <target>\n"
+"pipe <path> <mode> <uid> <gid>\n"
+"sock <path> <mode> <uid> <gid>\n"
+"\n"
+"<path>       Absolute path of the entry in the image.\n"
+"<location>   If given, location of the input file. Either absolute or relative\n"
+"             to the description file. If omitted, the image path is used,\n"
+"             relative to the description file.\n"
+"<target>     Symlink target.\n"
+"<mode>       Mode/permissions of the entry.\n"
+"<uid>        Numeric user id.\n"
+"<gid>        Numeric group id.\n"
+"<dev_type>   Device type (b=block, c=character).\n"
+"<maj>        Major number of a device special file.\n"
+"<min>        Minor number of a device special file.\n"
+"\n"
+"Example:\n"
+"    # A simple squashfs image\n"
+"    dir /dev 0755 0 0\n"
+"    nod /dev/console 0600 0 0 c 5 1\n"
+"    dir /root 0700 0 0\n"
+"    dir /sbin 0755 0 0\n"
+"    \n"
+"    # Add a file. Input is relative to this listing.\n"
+"    file /sbin/init 0755 0 0 ../init/sbin/init\n"
+"    \n"
+"    # Read from bin/bash relative to the listing. Implicitly create /bin.\n"
+"    file /bin/bash 0755 0 0"
+"\n\n";
 
 static const char *compressors[] = {
 	[SQFS_COMP_GZIP] = "gzip",
@@ -237,6 +246,7 @@ void process_command_line(options_t *opt, int argc, char **argv)
 	opt->devblksz = SQFS_DEVBLK_SIZE;
 	opt->infile = NULL;
 	opt->outfile = NULL;
+	opt->mode = PACK_NONE;
 
 	for (;;) {
 		i = getopt_long(argc, argv, short_opts, long_opts, NULL);
@@ -283,6 +293,14 @@ void process_command_line(options_t *opt, int argc, char **argv)
 		case 'X':
 			opt->comp_extra = optarg;
 			break;
+		case 'F':
+			opt->mode = PACK_FILE;
+			opt->infile = optarg;
+			break;
+		case 'D':
+			opt->mode = PACK_DIR;
+			opt->infile = optarg;
+			break;
 #ifdef WITH_SELINUX
 		case 's':
 			opt->selinux = optarg;
@@ -313,12 +331,16 @@ void process_command_line(options_t *opt, int argc, char **argv)
 		exit(EXIT_SUCCESS);
 	}
 
-	if ((optind + 1) >= argc) {
-		fputs("Missing arguments: input and output files.\n", stderr);
+	if (opt->mode == PACK_NONE) {
+		fputs("No input file or directory specified.\n", stderr);
 		goto fail_arg;
 	}
 
-	opt->infile = argv[optind++];
+	if (optind >= argc) {
+		fputs("No output file specified.\n", stderr);
+		goto fail_arg;
+	}
+
 	opt->outfile = argv[optind++];
 	return;
 fail_arg:
