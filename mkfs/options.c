@@ -128,10 +128,11 @@ static const char *help_string =
 "    dir /root 0700 0 0\n"
 "    dir /sbin 0755 0 0\n"
 "    \n"
-"    # Add a file. Input is relative to this listing.\n"
+"    # Add a file. Input is relative to listing or pack dir.\n"
 "    file /sbin/init 0755 0 0 ../init/sbin/init\n"
 "    \n"
-"    # Read from bin/bash relative to the listing. Implicitly create /bin.\n"
+"    # Read bin/bash, relative to listing or pack dir.\n"
+"    # Implicitly create /bin.\n"
 "    file /bin/bash 0755 0 0"
 "\n\n";
 

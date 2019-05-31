@@ -1,15 +1,24 @@
-.TH GENSQUASHFS "1" "May 2019" "generate squashfs images" "User Commands"
+.TH GENSQUASHFS "1" "June 2019" "generate squashfs images" "User Commands"
 .SH NAME
 gensquashfs \- generate squashfs images
 .SH SYNOPSIS
 .B gensquashfs
-[\fI\,OPTIONS\/\fR] \fI\,<file-list> <squashfs-file>\/\fR
+[\fI\,OPTIONS\/\fR] <squashfs-file>\/\fR
 .SH DESCRIPTION
-The first argument is a file containing a listing of all entries to include
-in the squashfs image.
-.PP
-The second argument is the file name of the SquashFS image to generate.
+Generate a SquashFS image.
 .SH OPTIONS
+.TP
+\fB\-\-pack\-file\fR, \fB\-F\fR <file>
+Use a \fBgen_init_cpio\fR style description file. The file format is specified
+below. If \fB\-\-pack\-dir\fR is used, input file paths are relative to the
+pack directory, otherwise they are relative to the directory the pack file
+is in.
+.TP
+\fB\-\-pack\-dir\fR, \fB\-D\fR <directory>
+If \fB\-\-pack\-file\fR is used, this is the root path relative to which to
+read files. If no pack file is specified, pack the contents of the given
+directory into a SquashFS image. The directory becomes the root of the file
+system.
 .TP
 \fB\-\-compressor\fR, \fB\-c\fR <name>
 Select the compressor to use (defaults to 'xz').
@@ -92,9 +101,9 @@ l l
 rd.
 <path>;Absolute path of the entry in the image.
 <location>;T{
-Optional location of the input file. Can be specified
-relative to the description file. If omitted, the
-image path is used, relative to the description file.
+Optional location of the input file. Can be specified relative to either the
+description file or the pack directory. If omitted, the image path is used
+as a relative path.
 T}
 <target>;Symlink target.
 <mode>;Mode/permissions of the entry.
@@ -116,10 +125,10 @@ nod /dev/console 0600 0 0 c 5 1
 dir /root 0700 0 0
 dir /sbin 0755 0 0
 
-# Add a file. Input is relative to this listing.
+# Add a file. Input is relative to pack dir or listing path
 file /sbin/init 0755 0 0 ../init/sbin/init
 
-# Read from ./bin/bash.
+# Read from ./bin/bash relative to pack dir or listing path
 # /bin is created implicitly with default attributes.
 file /bin/bash 0755 0 0
 .fi
