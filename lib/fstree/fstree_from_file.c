@@ -4,6 +4,7 @@
 
 #include <sys/sysmacros.h>
 #include <sys/types.h>
+#include <unistd.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
@@ -163,37 +164,16 @@ static int add_file(fstree_t *fs, const char *filename, size_t line_num,
 		    const char *path, uint16_t mode, uint32_t uid,
 		    uint32_t gid, const char *extra)
 {
-	char *infile = NULL;
 	tree_node_t *node;
-	const char *ptr;
 	struct stat sb;
-	int ret;
 
-	ptr = strrchr(filename, '/');
-
-	if (extra == NULL || *extra == '\0') {
-		if (ptr == NULL) {
-			extra = path;
-		} else {
-			ret = asprintf(&infile, "%.*s/%s",
-				       (int)(filename - ptr), filename, path);
-			if (ret < 0)
-				goto fail_asprintf;
-		}
-	} else if (*extra != '/' && ptr != NULL) {
-		ret = asprintf(&infile, "%.*s/%s",
-			       (int)(filename - ptr), filename, extra);
-		if (ret < 0)
-			goto fail_asprintf;
-	}
-
-	if (infile != NULL)
-		extra = infile;
+	if (extra == NULL || *extra == '\0')
+		extra = path;
 
 	if (stat(extra, &sb) != 0) {
 		fprintf(stderr, "%s: %zu: stat %s: %s\n", filename, line_num,
 			extra, strerror(errno));
-		goto fail;
+		return -1;
 	}
 
 	node = fstree_add_file(fs, path, mode, uid, gid, sb.st_size, extra);
@@ -201,18 +181,10 @@ static int add_file(fstree_t *fs, const char *filename, size_t line_num,
 	if (node == NULL) {
 		fprintf(stderr, "%s: %zu: adding %s as %s: %s\n",
 			filename, line_num, extra, path, strerror(errno));
-		goto fail;
+		return -1;
 	}
 
-	free(infile);
 	return 0;
-fail:
-	free(infile);
-	return -1;
-fail_asprintf:
-	fprintf(stderr, "%s: %zu: pasting together file path: %s\n",
-		filename, line_num, strerror(errno));
-	return -1;
 }
 
 static const struct {
@@ -394,12 +366,32 @@ int fstree_from_file(fstree_t *fs, const char *filename)
 {
 	FILE *fp = fopen(filename, "rb");
 	size_t n, line_num = 0;
+	const char *ptr;
 	ssize_t ret;
 	char *line;
 
 	if (fp == NULL) {
 		perror(filename);
 		return -1;
+	}
+
+	ptr = strrchr(filename, '/');
+
+	if (ptr != NULL) {
+		line = strndup(filename, ptr - filename);
+		if (line == NULL) {
+			perror("composing root path");
+			return -1;
+		}
+
+		if (chdir(line)) {
+			perror(line);
+			free(line);
+			return -1;
+		}
+
+		free(line);
+		line = NULL;
 	}
 
 	for (;;) {
