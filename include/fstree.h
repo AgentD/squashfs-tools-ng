@@ -220,14 +220,16 @@ void fstree_xattr_deduplicate(fstree_t *fs);
 
 /*
   Parses the file format accepted by gensquashfs and produce a file system
-  tree from it.
+  tree from it. File input paths are interpreted as relative to the given
+  root dir. If rootdir is NULL, use the path where the input file is as root
+  dir. The function actually chdirs into the root dir.
 
   On failure, an error report with filename and line number is written
   to stderr.
 
   Returns 0 on success.
  */
-int fstree_from_file(fstree_t *fs, const char *filename);
+int fstree_from_file(fstree_t *fs, const char *filename, const char *rootdir);
 
 /*
   Recursively scan a directory and generate a file system tree from it.

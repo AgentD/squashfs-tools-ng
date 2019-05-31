@@ -17,12 +17,6 @@
 #include <fcntl.h>
 #include <errno.h>
 
-typedef enum {
-	PACK_NONE,
-	PACK_FILE,
-	PACK_DIR,
-} E_PACK_MODE;
-
 typedef struct {
 	unsigned int def_uid;
 	unsigned int def_gid;
@@ -34,10 +28,10 @@ typedef struct {
 	int devblksz;
 	bool quiet;
 	const char *infile;
+	const char *packdir;
 	const char *outfile;
 	const char *selinux;
 	char *comp_extra;
-	E_PACK_MODE mode;
 } options_t;
 
 typedef struct {

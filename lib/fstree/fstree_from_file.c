@@ -362,7 +362,7 @@ out_desc:
 	return -1;
 }
 
-int fstree_from_file(fstree_t *fs, const char *filename)
+int fstree_from_file(fstree_t *fs, const char *filename, const char *rootdir)
 {
 	FILE *fp = fopen(filename, "rb");
 	size_t n, line_num = 0;
@@ -375,23 +375,30 @@ int fstree_from_file(fstree_t *fs, const char *filename)
 		return -1;
 	}
 
-	ptr = strrchr(filename, '/');
+	if (rootdir == NULL) {
+		ptr = strrchr(filename, '/');
 
-	if (ptr != NULL) {
-		line = strndup(filename, ptr - filename);
-		if (line == NULL) {
-			perror("composing root path");
-			return -1;
-		}
+		if (ptr != NULL) {
+			line = strndup(filename, ptr - filename);
+			if (line == NULL) {
+				perror("composing root path");
+				return -1;
+			}
 
-		if (chdir(line)) {
-			perror(line);
+			if (chdir(line)) {
+				perror(line);
+				free(line);
+				return -1;
+			}
+
 			free(line);
+			line = NULL;
+		}
+	} else {
+		if (chdir(rootdir)) {
+			perror(rootdir);
 			return -1;
 		}
-
-		free(line);
-		line = NULL;
 	}
 
 	for (;;) {

@@ -58,9 +58,17 @@ static const char *help_string =
 "\n"
 "  --pack-file, -F <file>      Use a `gen_init_cpio` style description file.\n"
 "                              The file format is specified below.\n"
-"  --pack-dir, -D <directory>  Pack the contents of the given directory into\n"
-"                              a SquashFS image. The directory becomes the\n"
-"                              root of the file system.\n"
+"                              If --pack-dir is used, input file paths are\n"
+"                              relative to the pack directory, otherwise\n"
+"                              they are relative to the directory the pack\n"
+"                              file is in.\n"
+"  --pack-dir, -D <directory>  If --pack-file is used, this is the root path\n"
+"                              relative to which to read files. If no pack\n"
+"                              file is specified, pack the contents of the\n"
+"                              given directory into a SquashFS image. The\n"
+"                              directory becomes the root of the file\n"
+"                              system.\n"
+"\n"
 "  --compressor, -c <name>     Select the compressor to use.\n"
 "                              A list of available compressors is below.\n"
 "                              Defaults to 'xz'.\n"
@@ -246,7 +254,6 @@ void process_command_line(options_t *opt, int argc, char **argv)
 	opt->devblksz = SQFS_DEVBLK_SIZE;
 	opt->infile = NULL;
 	opt->outfile = NULL;
-	opt->mode = PACK_NONE;
 
 	for (;;) {
 		i = getopt_long(argc, argv, short_opts, long_opts, NULL);
@@ -294,12 +301,10 @@ void process_command_line(options_t *opt, int argc, char **argv)
 			opt->comp_extra = optarg;
 			break;
 		case 'F':
-			opt->mode = PACK_FILE;
 			opt->infile = optarg;
 			break;
 		case 'D':
-			opt->mode = PACK_DIR;
-			opt->infile = optarg;
+			opt->packdir = optarg;
 			break;
 #ifdef WITH_SELINUX
 		case 's':
@@ -331,7 +336,7 @@ void process_command_line(options_t *opt, int argc, char **argv)
 		exit(EXIT_SUCCESS);
 	}
 
-	if (opt->mode == PACK_NONE) {
+	if (opt->infile == NULL && opt->packdir == NULL) {
 		fputs("No input file or directory specified.\n", stderr);
 		goto fail_arg;
 	}
