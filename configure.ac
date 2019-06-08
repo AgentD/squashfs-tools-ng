@@ -1,5 +1,5 @@
 AC_PREREQ([2.60])
-AC_INIT([squashfs-tools-ng], [0.1], [goliath@sigma-star.at], squashfs-tools-ng)
+AC_INIT([squashfs-tools-ng], [0.1], [goliath@infraroot.at], squashfs-tools-ng)
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([foreign dist-xz subdir-objects])
 AM_SILENT_RULES([yes])
