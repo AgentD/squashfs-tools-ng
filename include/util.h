@@ -41,4 +41,13 @@ void print_version(void);
 */
 int mkdir_p(const char *path);
 
+/* Returns 0 on success. On failure, prints error message to stderr. */
+int pushd(const char *path);
+
+/* Same as pushd, but the string doesn't have to be null-terminated. */
+int pushdn(const char *path, size_t len);
+
+/* Returns 0 on success. On failure, prints error message to stderr. */
+int popd(void);
+
 #endif /* UTIL_H */
