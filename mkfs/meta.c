@@ -187,7 +187,7 @@ static int write_inode(sqfs_info_t *info, meta_writer_t *im, meta_writer_t *dm,
 			return -1;
 
 		if ((di->start_block) > 0xFFFFFFFFUL || di->size > 0xFFFF ||
-		    (node->xattr != NULL && di->size != 0)) {
+		    node->xattr != NULL) {
 			type = SQFS_INODE_EXT_DIR;
 		} else {
 			type = SQFS_INODE_DIR;
@@ -344,7 +344,7 @@ static int write_inode(sqfs_info_t *info, meta_writer_t *im, meta_writer_t *dm,
 			.start_block = htole32(node->data.dir->start_block),
 			.parent_inode = node->parent ?
 				htole32(node->parent->inode_num) : htole32(1),
-			.inodex_count = htole32(diridx->num_nodes - 1),
+			.inodex_count = htole32(0),
 			.offset = htole16(node->data.dir->block_offset),
 			.xattr_idx = htole32(0xFFFFFFFF),
 		};
@@ -356,6 +356,12 @@ static int write_inode(sqfs_info_t *info, meta_writer_t *im, meta_writer_t *dm,
 			free(diridx);
 			return -1;
 		}
+
+		/* HACK: truncated index for empty directories */
+		if (node->data.dir->size == 0)
+			break;
+
+		ext.inodex_count = htole32(diridx->num_nodes - 1);
 
 		for (i = 0; i < diridx->num_nodes; ++i) {
 			idx.start_block = htole32(diridx->idx_nodes[i].block);

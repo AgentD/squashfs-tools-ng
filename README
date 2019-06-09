@@ -47,8 +47,6 @@ At the moment, the following things still require some work:
     - rdsquashfs ignores them entirely
     - SquashFS supports deduplicating values through "out of line"
       storage but this is currently not used yet.
-    - empty directories cannot have xattrs. The way I understand it, this is a
-      design flaw in SquashFS. I hope I'm missing something here.
  - sparse files (not implemented yet; lots of zeros compress good anyway :P)
  - hard links (not implemented yet; do we even want this?)
  - File deduplication (not implemented; do we even need this?)
