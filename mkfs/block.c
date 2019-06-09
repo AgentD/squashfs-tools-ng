@@ -211,7 +211,24 @@ static int find_and_process_files(sqfs_info_t *info, tree_node_t *n,
 
 int write_data_to_image(sqfs_info_t *info)
 {
+	bool need_restore = false;
+	const char *ptr;
 	int ret;
+
+	if (info->opt.packdir != NULL) {
+		if (pushd(info->opt.packdir))
+			return -1;
+		need_restore = true;
+	} else {
+		ptr = strrchr(info->opt.infile, '/');
+
+		if (ptr != NULL) {
+			if (pushdn(info->opt.infile, ptr - info->opt.infile))
+				return -1;
+
+			need_restore = true;
+		}
+	}
 
 	info->block = malloc(info->super.block_size);
 
@@ -245,5 +262,9 @@ int write_data_to_image(sqfs_info_t *info)
 	info->block = NULL;
 	info->fragment = NULL;
 	info->scratch = NULL;
+
+	if (need_restore)
+		ret = popd();
+
 	return ret;
 }

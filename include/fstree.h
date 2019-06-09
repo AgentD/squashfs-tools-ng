@@ -222,7 +222,10 @@ void fstree_xattr_deduplicate(fstree_t *fs);
   Parses the file format accepted by gensquashfs and produce a file system
   tree from it. File input paths are interpreted as relative to the given
   root dir. If rootdir is NULL, use the path where the input file is as root
-  dir. The function actually chdirs into the root dir.
+  dir.
+
+  This function tries to temporarily change the working directory, so if it
+  fails, the current working directory is undefined.
 
   On failure, an error report with filename and line number is written
   to stderr.
