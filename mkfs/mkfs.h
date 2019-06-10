@@ -47,8 +47,6 @@ typedef struct {
 	sqfs_fragment_t *fragments;
 	size_t num_fragments;
 	size_t max_fragments;
-
-	int file_block_count;
 	size_t frag_offset;
 
 	id_table_t idtbl;

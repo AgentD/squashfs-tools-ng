@@ -2,50 +2,43 @@
 #include "mkfs.h"
 #include "util.h"
 
-static int write_block(file_info_t *fi, sqfs_info_t *info)
+static int write_compressed(sqfs_info_t *info, const void *in, size_t size,
+			    uint32_t *outsize)
 {
-	size_t idx, bs;
 	ssize_t ret;
-	void *ptr;
 
-	idx = info->file_block_count++;
-	bs = info->super.block_size;
-
-	ret = info->cmp->do_block(info->cmp, info->block, bs,
-				  info->scratch, bs);
+	ret = info->cmp->do_block(info->cmp, in, size, info->scratch,
+				  info->super.block_size);
 	if (ret < 0)
 		return -1;
 
-	if (ret > 0) {
-		ptr = info->scratch;
-		bs = ret;
-		fi->blocksizes[idx] = bs;
+	if (ret > 0 && (size_t)ret < size) {
+		size = ret;
+		ret = write_retry(info->outfd, info->scratch, size);
+		*outsize = size;
 	} else {
-		ptr = info->block;
-		fi->blocksizes[idx] = bs | (1 << 24);
+		ret = write_retry(info->outfd, in, size);
+		*outsize = size | (1 << 24);
 	}
 
-	ret = write_retry(info->outfd, ptr, bs);
 	if (ret < 0) {
 		perror("writing to output file");
 		return -1;
 	}
 
-	if ((size_t)ret < bs) {
+	if ((size_t)ret < size) {
 		fputs("write to output file truncated\n", stderr);
 		return -1;
 	}
 
-	info->super.bytes_used += bs;
+	info->super.bytes_used += ret;
 	return 0;
 }
 
-static int flush_fragments(sqfs_info_t *info)
+static int grow_fragment_table(sqfs_info_t *info)
 {
-	size_t newsz, size;
-	uint64_t offset;
-	void *new, *ptr;
-	ssize_t ret;
+	size_t newsz;
+	void *new;
 
 	if (info->num_fragments == info->max_fragments) {
 		newsz = info->max_fragments ? info->max_fragments * 2 : 16;
@@ -61,43 +54,27 @@ static int flush_fragments(sqfs_info_t *info)
 		info->fragments = new;
 	}
 
-	offset = info->super.bytes_used;
-	size = info->frag_offset;
+	return 0;
+}
 
-	ret = info->cmp->do_block(info->cmp, info->fragment, size,
-				  info->scratch, info->super.block_size);
-	if (ret < 0)
+static int flush_fragments(sqfs_info_t *info)
+{
+	uint64_t offset;
+	uint32_t out;
+
+	if (grow_fragment_table(info))
+		return -1;
+
+	offset = info->super.bytes_used;
+
+	if (write_compressed(info, info->fragment, info->frag_offset, &out))
 		return -1;
 
 	info->fragments[info->num_fragments].start_offset = htole64(offset);
 	info->fragments[info->num_fragments].pad0 = 0;
-
-	if (ret > 0) {
-		ptr = info->scratch;
-		size = ret;
-		info->fragments[info->num_fragments].size = htole32(size);
-	} else {
-		ptr = info->fragment;
-		info->fragments[info->num_fragments].size =
-			htole32(size | (1 << 24));
-	}
+	info->fragments[info->num_fragments].size = htole32(out);
 
 	info->num_fragments += 1;
-
-	ret = write_retry(info->outfd, ptr, size);
-	if (ret < 0) {
-		perror("writing to output file");
-		return -1;
-	}
-
-	if ((size_t)ret < size) {
-		fputs("write to output file truncated\n", stderr);
-		return -1;
-	}
-
-	memset(info->fragment, 0, info->super.block_size);
-
-	info->super.bytes_used += size;
 	info->frag_offset = 0;
 
 	info->super.flags &= ~SQFS_FLAG_NO_FRAGMENTS;
@@ -105,25 +82,11 @@ static int flush_fragments(sqfs_info_t *info)
 	return 0;
 }
 
-static int add_fragment(file_info_t *fi, sqfs_info_t *info, size_t size)
-{
-	if (info->frag_offset + size > info->super.block_size) {
-		if (flush_fragments(info))
-			return -1;
-	}
-
-	fi->fragment_offset = info->frag_offset;
-	fi->fragment = info->num_fragments;
-
-	memcpy((char *)info->fragment + info->frag_offset, info->block, size);
-	info->frag_offset += size;
-	return 0;
-}
-
 static int process_file(sqfs_info_t *info, file_info_t *fi)
 {
+	int infd, ret, blk_idx = 0;
 	uint64_t count = fi->size;
-	int infd, ret;
+	uint32_t out;
 	size_t diff;
 
 	infd = open(fi->input_file, O_RDONLY);
@@ -133,7 +96,6 @@ static int process_file(sqfs_info_t *info, file_info_t *fi)
 	}
 
 	fi->startblock = info->super.bytes_used;
-	info->file_block_count = 0;
 
 	while (count != 0) {
 		diff = count > (uint64_t)info->super.block_size ?
@@ -146,11 +108,24 @@ static int process_file(sqfs_info_t *info, file_info_t *fi)
 			goto fail_trunc;
 
 		if (diff < info->super.block_size) {
-			if (add_fragment(fi, info, diff))
-				goto fail;
+			if (info->frag_offset + diff > info->super.block_size) {
+				if (flush_fragments(info))
+					goto fail;
+			}
+
+			fi->fragment_offset = info->frag_offset;
+			fi->fragment = info->num_fragments;
+
+			memcpy((char *)info->fragment + info->frag_offset,
+			       info->block, diff);
+			info->frag_offset += diff;
 		} else {
-			if (write_block(fi, info))
+			if (write_compressed(info, info->block,
+					     info->super.block_size, &out)) {
 				goto fail;
+			}
+
+			fi->blocksizes[blk_idx++] = out;
 		}
 
 		count -= diff;
