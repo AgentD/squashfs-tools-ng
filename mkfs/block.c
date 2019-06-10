@@ -255,6 +255,8 @@ int write_data_to_image(sqfs_info_t *info)
 
 	ret = find_and_process_files(info, info->fs.root, info->opt.quiet);
 
+	ret = ret == 0 ? flush_fragments(info) : ret;
+
 	free(info->block);
 	free(info->fragment);
 	free(info->scratch);
