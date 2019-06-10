@@ -10,45 +10,6 @@
 #define XATTR_NAME_SELINUX "security.selinux"
 #define XATTR_VALUE_SELINUX "system_u:object_r:unlabeled_t:s0"
 
-static char *get_path(tree_node_t *node)
-{
-	tree_node_t *it;
-	char *str, *ptr;
-	size_t len = 0;
-
-	if (node->parent == NULL) {
-		str = strdup("/");
-
-		if (str == NULL)
-			goto fail_alloc;
-		return str;
-	}
-
-	for (it = node; it != NULL && it->parent != NULL; it = it->parent) {
-		len += strlen(it->name) + 1;
-	}
-
-	str = malloc(len + 1);
-	if (str == NULL)
-		goto fail_alloc;
-
-	ptr = str + len;
-	*ptr = '\0';
-
-	for (it = node; it != NULL && it->parent != NULL; it = it->parent) {
-		len = strlen(it->name);
-		ptr -= len;
-
-		memcpy(ptr, it->name, len);
-		*(--ptr) = '/';
-	}
-
-	return str;
-fail_alloc:
-	perror("relabeling files");
-	return NULL;
-}
-
 static int relable_node(fstree_t *fs, struct selabel_handle *sehnd,
 			tree_node_t *node)
 {
@@ -56,9 +17,11 @@ static int relable_node(fstree_t *fs, struct selabel_handle *sehnd,
 	tree_node_t *it;
 	int ret;
 
-	path = get_path(node);
-	if (path == NULL)
+	path = fstree_get_path(node);
+	if (path == NULL) {
+		perror("relabeling files");
 		return -1;
+	}
 
 	if (selabel_lookup(sehnd, &context, path, node->mode) < 0) {
 		free(path);

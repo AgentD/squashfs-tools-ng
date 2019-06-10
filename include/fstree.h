@@ -254,4 +254,12 @@ int fstree_relabel_selinux(fstree_t *fs, const char *filename);
 /* Returns 0 on success. Prints to stderr on failure */
 int fstree_gen_inode_table(fstree_t *fs);
 
+/*
+  Generate a string holding the full path of a node. Returned
+  string must be freed.
+
+  Returns NULL on failure and sets errno.
+*/
+char *fstree_get_path(tree_node_t *node);
+
 #endif /* FSTREE_H */
