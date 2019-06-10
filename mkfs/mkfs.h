@@ -2,6 +2,7 @@
 #ifndef MKFS_H
 #define MKFS_H
 
+#include "meta_writer.h"
 #include "squashfs.h"
 #include "compress.h"
 #include "id_table.h"
@@ -16,6 +17,18 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include <errno.h>
+
+typedef struct {
+	tree_node_t *node;
+	uint32_t block;
+	uint32_t offset;
+} idx_ref_t;
+
+typedef struct {
+	size_t num_nodes;
+	size_t max_nodes;
+	idx_ref_t idx_nodes[];
+} dir_index_t;
 
 typedef struct {
 	unsigned int def_uid;
@@ -64,5 +77,7 @@ int write_data_to_image(sqfs_info_t *info);
 int sqfs_write_inodes(sqfs_info_t *info);
 
 int write_xattr(sqfs_info_t *info);
+
+int write_dir(meta_writer_t *dm, dir_info_t *dir, dir_index_t **index);
 
 #endif /* MKFS_H */
