@@ -43,7 +43,6 @@ static int write_block(file_info_t *fi, sqfs_info_t *info)
 static int flush_fragments(sqfs_info_t *info)
 {
 	size_t newsz, size;
-	file_info_t *fi;
 	uint64_t offset;
 	void *new, *ptr;
 	ssize_t ret;
@@ -64,9 +63,6 @@ static int flush_fragments(sqfs_info_t *info)
 
 	offset = info->super.bytes_used;
 	size = info->frag_offset;
-
-	for (fi = info->frag_list; fi != NULL; fi = fi->frag_next)
-		fi->fragment = info->num_fragments;
 
 	ret = info->cmp->do_block(info->cmp, info->fragment, size,
 				  info->scratch, info->super.block_size);
@@ -103,7 +99,6 @@ static int flush_fragments(sqfs_info_t *info)
 
 	info->super.bytes_used += size;
 	info->frag_offset = 0;
-	info->frag_list = NULL;
 
 	info->super.flags &= ~SQFS_FLAG_NO_FRAGMENTS;
 	info->super.flags |= SQFS_FLAG_ALWAYS_FRAGMENTS;
@@ -118,8 +113,7 @@ static int add_fragment(file_info_t *fi, sqfs_info_t *info, size_t size)
 	}
 
 	fi->fragment_offset = info->frag_offset;
-	fi->frag_next = info->frag_list;
-	info->frag_list = fi;
+	fi->fragment = info->num_fragments;
 
 	memcpy((char *)info->fragment + info->frag_offset, info->block, size);
 	info->frag_offset += size;

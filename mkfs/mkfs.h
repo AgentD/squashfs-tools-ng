@@ -49,7 +49,6 @@ typedef struct {
 	size_t max_fragments;
 
 	int file_block_count;
-	file_info_t *frag_list;
 	size_t frag_offset;
 
 	id_table_t idtbl;

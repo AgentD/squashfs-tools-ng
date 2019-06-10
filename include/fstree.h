@@ -55,14 +55,6 @@ struct file_info_t {
 	/* Path to the input file. */
 	char *input_file;
 
-	/* Linked list pointer for aggregating fragments
-
-	   When writing out data blocks, files that don't have a multiple of
-	   the block size have their tail ends gathered in a fragment block.
-	   A linked list is used to keep track of which files share the same
-	   fragment block. */
-	file_info_t *frag_next;
-
 	uint64_t size;
 
 	/* Absolute position of the first data block. */
