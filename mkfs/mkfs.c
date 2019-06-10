@@ -89,6 +89,11 @@ int main(int argc, char **argv)
 
 	fstree_sort(&info.fs);
 
+	if (fstree_gen_inode_table(&info.fs))
+		goto out_fstree;
+
+	info.super.inode_count = info.fs.inode_tbl_size - 2;
+
 	info.cmp = compressor_create(info.super.compression_id, true,
 				     info.super.block_size,
 				     info.opt.comp_extra);

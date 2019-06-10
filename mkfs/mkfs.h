@@ -65,7 +65,6 @@ typedef struct {
 	size_t frag_offset;
 
 	id_table_t idtbl;
-	size_t inode_counter;
 
 	compressor_t *cmp;
 } sqfs_info_t;

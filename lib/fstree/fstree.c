@@ -352,5 +352,6 @@ void fstree_cleanup(fstree_t *fs)
 	str_table_cleanup(&fs->xattr_keys);
 	str_table_cleanup(&fs->xattr_values);
 	free_recursive(fs->root);
+	free(fs->inode_table);
 	memset(fs, 0, sizeof(*fs));
 }

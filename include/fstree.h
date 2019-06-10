@@ -130,7 +130,6 @@ struct tree_node_t {
 	   Generated on the fly when writing inodes. */
 	uint64_t inode_ref;
 
-	/* Inode number. Generated on the fly when writing inodes. */
 	uint32_t inode_num;
 
 	/* Type specific data. Pointers are into payload area blow. */
@@ -151,12 +150,16 @@ struct fstree_t {
 	uint32_t default_mode;
 	uint32_t default_mtime;
 	size_t block_size;
+	size_t inode_tbl_size;
 
 	str_table_t xattr_keys;
 	str_table_t xattr_values;
 
 	tree_node_t *root;
 	tree_xattr_t *xattr;
+
+	/* linear array of tree nodes. inode number is array index */
+	tree_node_t **inode_table;
 };
 
 /*
@@ -247,5 +250,8 @@ void fstree_sort(fstree_t *fs);
 /* Add labels from an SELinux labeling file to all tree nodes.
    Returns 0 on success. Internally prints errors to stderr. */
 int fstree_relabel_selinux(fstree_t *fs, const char *filename);
+
+/* Returns 0 on success. Prints to stderr on failure */
+int fstree_gen_inode_table(fstree_t *fs);
 
 #endif /* FSTREE_H */

@@ -64,9 +64,6 @@ static int write_inode(sqfs_info_t *info, meta_writer_t *im, meta_writer_t *dm,
 
 	meta_writer_get_position(im, &block, &offset);
 	node->inode_ref = (block << 16) | offset;
-	node->inode_num = info->inode_counter++;
-
-	info->super.inode_count += 1;
 
 	type = get_type(node);
 
@@ -293,44 +290,13 @@ out_file_blocks:
 	return 0;
 }
 
-static int write_child_inodes(sqfs_info_t *info, meta_writer_t *im,
-			      meta_writer_t *dm, tree_node_t *root)
-{
-	bool has_subdirs = false;
-	tree_node_t *it;
-
-	for (it = root->data.dir->children; it != NULL; it = it->next) {
-		if (S_ISDIR(it->mode)) {
-			has_subdirs = true;
-			break;
-		}
-	}
-
-	if (has_subdirs) {
-		for (it = root->data.dir->children; it != NULL; it = it->next) {
-			if (!S_ISDIR(it->mode))
-				continue;
-
-			if (write_child_inodes(info, im, dm, it))
-				return -1;
-		}
-	}
-
-	for (it = root->data.dir->children; it != NULL; it = it->next) {
-		if (write_inode(info, im, dm, it))
-			return -1;
-	}
-
-	return 0;
-}
-
 int sqfs_write_inodes(sqfs_info_t *info)
 {
 	meta_writer_t *im, *dm;
 	uint8_t buffer[1024];
 	uint32_t offset;
 	uint64_t block;
-	size_t diff;
+	size_t i, diff;
 	ssize_t ret;
 	FILE *tmp;
 	int tmpfd;
@@ -351,13 +317,12 @@ int sqfs_write_inodes(sqfs_info_t *info)
 	if (dm == NULL)
 		goto fail_im;
 
-	info->inode_counter = 2;
-
-	if (write_child_inodes(info, im, dm, info->fs.root))
-		goto fail;
-
-	if (write_inode(info, im, dm, info->fs.root))
-		goto fail;
+	for (i = 0; i < info->fs.inode_tbl_size; ++i) {
+		if (info->fs.inode_table[i] != NULL) {
+			if (write_inode(info, im, dm, info->fs.inode_table[i]))
+				goto fail;
+		}
+	}
 
 	if (meta_writer_flush(im))
 		goto fail;
