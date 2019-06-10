@@ -63,12 +63,4 @@ int write_data_to_image(sqfs_info_t *info);
 
 int write_xattr(sqfs_info_t *info);
 
-int write_dir(meta_writer_t *dm, dir_info_t *dir, dir_index_t **index);
-
-int write_inode(fstree_t *fs, id_table_t *idtbl, meta_writer_t *im,
-		meta_writer_t *dm, tree_node_t *node);
-
-int sqfs_write_inodes(sqfs_super_t *super, fstree_t *fs, int outfd,
-		      compressor_t *cmp, id_table_t *idtbl);
-
 #endif /* MKFS_H */
