@@ -4,7 +4,7 @@
 
 #include "util.h"
 
-ssize_t write_retry(int fd, void *data, size_t size)
+ssize_t write_retry(int fd, const void *data, size_t size)
 {
 	ssize_t ret, total = 0;
 
@@ -18,7 +18,7 @@ ssize_t write_retry(int fd, void *data, size_t size)
 			return -1;
 		}
 
-		data = (char *)data + ret;
+		data = (const char *)data + ret;
 		size -= ret;
 		total += ret;
 	}

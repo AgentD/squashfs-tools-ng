@@ -17,7 +17,7 @@ int canonicalize_name(char *filename);
   A wrapper around the write() system call. It retries the write if it is
   interrupted by a signal or only part of the data was written.
 */
-ssize_t write_retry(int fd, void *data, size_t size);
+ssize_t write_retry(int fd, const void *data, size_t size);
 
 /*
   A wrapper around the read() system call. It retries the read if it is
