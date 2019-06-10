@@ -114,8 +114,10 @@ int main(int argc, char **argv)
 	if (write_data_to_image(&info))
 		goto out_cmp;
 
-	if (sqfs_write_inodes(&info))
+	if (sqfs_write_inodes(&info.super, &info.fs, info.outfd,
+			      info.cmp, &info.idtbl)) {
 		goto out_cmp;
+	}
 
 	info.super.fragment_entry_count = info.num_fragments;
 

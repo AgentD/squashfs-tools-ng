@@ -2,7 +2,8 @@
 #include "mkfs.h"
 #include "util.h"
 
-int sqfs_write_inodes(sqfs_info_t *info)
+int sqfs_write_inodes(sqfs_super_t *super, fstree_t *fs, int outfd,
+		      compressor_t *cmp, id_table_t *idtbl)
 {
 	meta_writer_t *im, *dm;
 	uint8_t buffer[1024];
@@ -21,17 +22,17 @@ int sqfs_write_inodes(sqfs_info_t *info)
 
 	tmpfd = fileno(tmp);
 
-	im = meta_writer_create(info->outfd, info->cmp);
+	im = meta_writer_create(outfd, cmp);
 	if (im == NULL)
 		goto fail_tmp;
 
-	dm = meta_writer_create(tmpfd, info->cmp);
+	dm = meta_writer_create(tmpfd, cmp);
 	if (dm == NULL)
 		goto fail_im;
 
-	for (i = 2; i < info->fs.inode_tbl_size; ++i) {
-		if (write_inode(&info->fs, &info->idtbl, im, dm,
-				info->fs.inode_table[i])) {
+	for (i = 2; i < fs->inode_tbl_size; ++i) {
+		if (write_inode(fs, idtbl, im, dm,
+				fs->inode_table[i])) {
 			goto fail;
 		}
 	}
@@ -42,15 +43,15 @@ int sqfs_write_inodes(sqfs_info_t *info)
 	if (meta_writer_flush(dm))
 		goto fail;
 
-	info->super.root_inode_ref = info->fs.root->inode_ref;
+	super->root_inode_ref = fs->root->inode_ref;
 
 	meta_writer_get_position(im, &block, &offset);
-	info->super.inode_table_start = info->super.bytes_used;
-	info->super.bytes_used += block;
+	super->inode_table_start = super->bytes_used;
+	super->bytes_used += block;
 
-	info->super.directory_table_start = info->super.bytes_used;
+	super->directory_table_start = super->bytes_used;
 	meta_writer_get_position(dm, &block, &offset);
-	info->super.bytes_used += block;
+	super->bytes_used += block;
 
 	if (lseek(tmpfd, 0, SEEK_SET) == (off_t)-1) {
 		perror("rewind on directory temp file");
@@ -68,7 +69,7 @@ int sqfs_write_inodes(sqfs_info_t *info)
 			break;
 
 		diff = ret;
-		ret = write_retry(info->outfd, buffer, diff);
+		ret = write_retry(outfd, buffer, diff);
 
 		if (ret < 0) {
 			perror("write to image file");
