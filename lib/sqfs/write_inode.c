@@ -1,9 +1,11 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "mkfs.h"
+#include "meta_writer.h"
 #include "util.h"
 
 #include <assert.h>
 #include <endian.h>
+#include <stdlib.h>
+#include <string.h>
 
 static int get_type(tree_node_t *node)
 {
@@ -43,8 +45,8 @@ static size_t hard_link_count(tree_node_t *n)
 	return 1;
 }
 
-int write_inode(fstree_t *fs, id_table_t *idtbl, meta_writer_t *im,
-		meta_writer_t *dm, tree_node_t *node)
+int meta_writer_write_inode(fstree_t *fs, id_table_t *idtbl, meta_writer_t *im,
+			    meta_writer_t *dm, tree_node_t *node)
 {
 	dir_index_t *diridx = NULL;
 	uint16_t uid_idx, gid_idx;
@@ -69,7 +71,7 @@ int write_inode(fstree_t *fs, id_table_t *idtbl, meta_writer_t *im,
 	if (S_ISDIR(node->mode)) {
 		di = node->data.dir;
 
-		if (write_dir(dm, di, &diridx))
+		if (meta_writer_write_dir(dm, di, &diridx))
 			return -1;
 
 		if ((di->start_block) > 0xFFFFFFFFUL || di->size > 0xFFFF ||

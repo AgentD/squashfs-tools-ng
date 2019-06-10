@@ -1,9 +1,13 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "mkfs.h"
+#include "meta_writer.h"
+#include "table.h"
 #include "util.h"
 
-int sqfs_write_inodes(sqfs_super_t *super, fstree_t *fs, int outfd,
-		      compressor_t *cmp, id_table_t *idtbl)
+#include <unistd.h>
+#include <stdio.h>
+
+int sqfs_serialize_fstree(int outfd, sqfs_super_t *super, fstree_t *fs,
+			  compressor_t *cmp, id_table_t *idtbl)
 {
 	meta_writer_t *im, *dm;
 	uint8_t buffer[1024];
@@ -31,8 +35,8 @@ int sqfs_write_inodes(sqfs_super_t *super, fstree_t *fs, int outfd,
 		goto fail_im;
 
 	for (i = 2; i < fs->inode_tbl_size; ++i) {
-		if (write_inode(fs, idtbl, im, dm,
-				fs->inode_table[i])) {
+		if (meta_writer_write_inode(fs, idtbl, im, dm,
+					    fs->inode_table[i])) {
 			goto fail;
 		}
 	}

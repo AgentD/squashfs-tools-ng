@@ -114,8 +114,8 @@ int main(int argc, char **argv)
 	if (write_data_to_image(&info))
 		goto out_cmp;
 
-	if (sqfs_write_inodes(&info.super, &info.fs, info.outfd,
-			      info.cmp, &info.idtbl)) {
+	if (sqfs_serialize_fstree(info.outfd, &info.super, &info.fs,
+				  info.cmp, &info.idtbl)) {
 		goto out_cmp;
 	}
 

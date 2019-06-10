@@ -1,9 +1,12 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "mkfs.h"
+#include "meta_writer.h"
 #include "util.h"
 
 #include <assert.h>
 #include <endian.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 
 static int get_type(mode_t mode)
 {
@@ -45,7 +48,8 @@ static int dir_index_grow(dir_index_t **index)
 	return 0;
 }
 
-int write_dir(meta_writer_t *dm, dir_info_t *dir, dir_index_t **index)
+int meta_writer_write_dir(meta_writer_t *dm, dir_info_t *dir,
+			  dir_index_t **index)
 {
 	size_t i, size, count;
 	sqfs_dir_header_t hdr;

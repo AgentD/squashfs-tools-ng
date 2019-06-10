@@ -19,18 +19,6 @@
 #include <errno.h>
 
 typedef struct {
-	tree_node_t *node;
-	uint32_t block;
-	uint32_t offset;
-} idx_ref_t;
-
-typedef struct {
-	size_t num_nodes;
-	size_t max_nodes;
-	idx_ref_t idx_nodes[];
-} dir_index_t;
-
-typedef struct {
 	unsigned int def_uid;
 	unsigned int def_gid;
 	unsigned int def_mode;
