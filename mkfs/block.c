@@ -82,18 +82,13 @@ static int flush_fragments(sqfs_info_t *info)
 	return 0;
 }
 
-static int process_file(sqfs_info_t *info, file_info_t *fi)
+static int write_data_from_fd(sqfs_info_t *info, file_info_t *fi, int infd)
 {
-	int infd, ret, blk_idx = 0;
 	uint64_t count = fi->size;
+	int blk_idx = 0;
 	uint32_t out;
+	ssize_t ret;
 	size_t diff;
-
-	infd = open(fi->input_file, O_RDONLY);
-	if (infd < 0) {
-		perror(fi->input_file);
-		return -1;
-	}
 
 	fi->startblock = info->super.bytes_used;
 
@@ -110,7 +105,7 @@ static int process_file(sqfs_info_t *info, file_info_t *fi)
 		if (diff < info->super.block_size) {
 			if (info->frag_offset + diff > info->super.block_size) {
 				if (flush_fragments(info))
-					goto fail;
+					return -1;
 			}
 
 			fi->fragment_offset = info->frag_offset;
@@ -122,7 +117,7 @@ static int process_file(sqfs_info_t *info, file_info_t *fi)
 		} else {
 			if (write_compressed(info, info->block,
 					     info->super.block_size, &out)) {
-				goto fail;
+				return -1;
 			}
 
 			fi->blocksizes[blk_idx++] = out;
@@ -131,17 +126,29 @@ static int process_file(sqfs_info_t *info, file_info_t *fi)
 		count -= diff;
 	}
 
-	close(infd);
 	return 0;
-fail:
-	close(infd);
-	return -1;
 fail_read:
 	fprintf(stderr, "read from %s: %s\n", fi->input_file, strerror(errno));
-	goto fail;
+	return -1;
 fail_trunc:
 	fprintf(stderr, "%s: truncated read\n", fi->input_file);
-	goto fail;
+	return -1;
+}
+
+static int process_file(sqfs_info_t *info, file_info_t *fi)
+{
+	int ret, infd;
+
+	infd = open(fi->input_file, O_RDONLY);
+	if (infd < 0) {
+		perror(fi->input_file);
+		return -1;
+	}
+
+	ret = write_data_from_fd(info, fi, infd);
+
+	close(infd);
+	return ret;
 }
 
 static void print_name(tree_node_t *n)
