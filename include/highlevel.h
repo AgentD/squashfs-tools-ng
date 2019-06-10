@@ -1,9 +1,10 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#ifndef TABLE_H
-#define TABLE_H
+#ifndef HIGHLEVEL_H
+#define HIGHLEVEL_H
 
 #include "squashfs.h"
 #include "compress.h"
+#include "id_table.h"
 #include "fstree.h"
 
 #include <stdint.h>
@@ -39,4 +40,4 @@ int sqfs_write_table(int outfd, sqfs_super_t *super, const void *data,
 int sqfs_serialize_fstree(int outfd, sqfs_super_t *super, fstree_t *fs,
 			  compressor_t *cmp, id_table_t *idtbl);
 
-#endif /* TABLE_H */
+#endif /* HIGHLEVEL_H */

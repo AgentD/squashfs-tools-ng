@@ -3,12 +3,12 @@
 #define MKFS_H
 
 #include "meta_writer.h"
+#include "highlevel.h"
 #include "squashfs.h"
 #include "compress.h"
 #include "id_table.h"
 #include "fstree.h"
 #include "config.h"
-#include "table.h"
 
 #include <assert.h>
 #include <unistd.h>

@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "meta_reader.h"
-#include "id_table.h"
-#include "table.h"
+#include "highlevel.h"
 #include "util.h"
 
 #include <stdlib.h>

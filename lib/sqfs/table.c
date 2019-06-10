@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "meta_writer.h"
-#include "table.h"
+#include "highlevel.h"
 #include "util.h"
 
 #include <endian.h>
