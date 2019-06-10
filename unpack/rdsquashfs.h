@@ -4,6 +4,7 @@
 
 #include "meta_reader.h"
 #include "frag_reader.h"
+#include "highlevel.h"
 #include "squashfs.h"
 #include "compress.h"
 #include "id_table.h"
@@ -20,33 +21,22 @@
 #include <stdio.h>
 
 enum UNPACK_FLAGS {
-	UNPACK_NO_DEVICES = 0x01,
-	UNPACK_NO_SOCKETS = 0x02,
-	UNPACK_NO_FIFO = 0x04,
-	UNPACK_NO_SLINKS = 0x08,
-	UNPACK_NO_EMPTY = 0x10,
-	UNPACK_CHMOD = 0x20,
-	UNPACK_CHOWN = 0x40,
-	UNPACK_QUIET = 0x80,
+	UNPACK_CHMOD = 0x01,
+	UNPACK_CHOWN = 0x02,
+	UNPACK_QUIET = 0x04,
 };
 
 typedef struct {
 	compressor_t *cmp;
 	size_t block_size;
 	frag_reader_t *frag;
+	int rdtree_flags;
 	int sqfsfd;
 	int flags;
 
 	void *buffer;
 	void *scratch;
 } unsqfs_info_t;
-
-tree_node_t *tree_node_from_inode(sqfs_inode_generic_t *inode,
-				  const id_table_t *idtbl,
-				  const char *name,
-				  size_t block_size);
-
-int read_fstree(fstree_t *out, sqfs_super_t *super, unsqfs_info_t *info);
 
 void list_files(tree_node_t *node);
 

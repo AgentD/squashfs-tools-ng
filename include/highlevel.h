@@ -10,6 +10,14 @@
 #include <stdint.h>
 #include <stddef.h>
 
+enum RDTREE_FLAGS {
+	RDTREE_NO_DEVICES = 0x01,
+	RDTREE_NO_SOCKETS = 0x02,
+	RDTREE_NO_FIFO = 0x04,
+	RDTREE_NO_SLINKS = 0x08,
+	RDTREE_NO_EMPTY = 0x10,
+};
+
 /*
   Convenience function for writing meta data to a SquashFS image
 
@@ -39,5 +47,24 @@ int sqfs_write_table(int outfd, sqfs_super_t *super, const void *data,
  */
 int sqfs_serialize_fstree(int outfd, sqfs_super_t *super, fstree_t *fs,
 			  compressor_t *cmp, id_table_t *idtbl);
+
+/*
+  Convert a generic squashfs tree node to an fstree_t node.
+
+  Prints error messages to stderr on failure.
+ */
+tree_node_t *tree_node_from_inode(sqfs_inode_generic_t *inode,
+				  const id_table_t *idtbl,
+				  const char *name,
+				  size_t block_size);
+
+/*
+  Restore a file system tree from a squashfs image. The given flags are a
+  combination of RDTREE_FLAGS.
+
+  Returns 0 on success. Prints error messages to stderr on failure.
+ */
+int deserialize_fstree(fstree_t *out, sqfs_super_t *super, compressor_t *cmp,
+		       int fd, int flags);
 
 #endif /* HIGHLEVEL_H */

@@ -1,6 +1,10 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "rdsquashfs.h"
+#include "meta_reader.h"
+#include "highlevel.h"
 
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 
 static int should_skip(int type, int flags)
 {
@@ -9,16 +13,16 @@ static int should_skip(int type, int flags)
 	case SQFS_INODE_CDEV:
 	case SQFS_INODE_EXT_CDEV:
 	case SQFS_INODE_EXT_BDEV:
-		return (flags & UNPACK_NO_DEVICES);
+		return (flags & RDTREE_NO_DEVICES);
 	case SQFS_INODE_SLINK:
 	case SQFS_INODE_EXT_SLINK:
-		return (flags & UNPACK_NO_SLINKS);
+		return (flags & RDTREE_NO_SLINKS);
 	case SQFS_INODE_SOCKET:
 	case SQFS_INODE_EXT_SOCKET:
-		return(flags & UNPACK_NO_SOCKETS);
+		return(flags & RDTREE_NO_SOCKETS);
 	case SQFS_INODE_FIFO:
 	case SQFS_INODE_EXT_FIFO:
-		return (flags & UNPACK_NO_FIFO);
+		return (flags & RDTREE_NO_FIFO);
 	}
 	return 0;
 }
@@ -93,7 +97,7 @@ static int fill_dir(meta_reader_t *ir, meta_reader_t *dr, tree_node_t *root,
 				return -1;
 
 			if (n->data.dir->children == NULL &&
-			    (flags & UNPACK_NO_EMPTY)) {
+			    (flags & RDTREE_NO_EMPTY)) {
 				if (prev == NULL) {
 					root->data.dir->children = n->next;
 					free(n);
@@ -114,7 +118,8 @@ static int fill_dir(meta_reader_t *ir, meta_reader_t *dr, tree_node_t *root,
 	return 0;
 }
 
-int read_fstree(fstree_t *out, sqfs_super_t *super, unsqfs_info_t *info)
+int deserialize_fstree(fstree_t *out, sqfs_super_t *super, compressor_t *cmp,
+		       int fd, int flags)
 {
 	sqfs_inode_generic_t *root;
 	meta_reader_t *ir, *dr;
@@ -123,18 +128,18 @@ int read_fstree(fstree_t *out, sqfs_super_t *super, unsqfs_info_t *info)
 	int status = -1;
 	size_t offset;
 
-	ir = meta_reader_create(info->sqfsfd, info->cmp);
+	ir = meta_reader_create(fd, cmp);
 	if (ir == NULL)
 		return -1;
 
-	dr = meta_reader_create(info->sqfsfd, info->cmp);
+	dr = meta_reader_create(fd, cmp);
 	if (dr == NULL)
 		goto out_ir;
 
 	if (id_table_init(&idtbl))
 		goto out_dr;
 
-	if (id_table_read(&idtbl, info->sqfsfd, super, info->cmp))
+	if (id_table_read(&idtbl, fd, super, cmp))
 		goto out_id;
 
 	block_start = super->root_inode_ref >> 16;
@@ -165,7 +170,7 @@ int read_fstree(fstree_t *out, sqfs_super_t *super, unsqfs_info_t *info)
 	if (out->root == NULL)
 		goto out_id;
 
-	if (fill_dir(ir, dr, out->root, super, &idtbl, info->flags))
+	if (fill_dir(ir, dr, out->root, super, &idtbl, flags))
 		goto fail_fs;
 
 	fstree_sort(out);

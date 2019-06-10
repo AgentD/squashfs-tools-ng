@@ -177,16 +177,16 @@ int main(int argc, char **argv)
 
 		switch (i) {
 		case 'D':
-			info.flags |= UNPACK_NO_DEVICES;
+			info.rdtree_flags |= RDTREE_NO_DEVICES;
 			break;
 		case 'S':
-			info.flags |= UNPACK_NO_SOCKETS;
+			info.rdtree_flags |= RDTREE_NO_SOCKETS;
 			break;
 		case 'F':
-			info.flags |= UNPACK_NO_FIFO;
+			info.rdtree_flags |= RDTREE_NO_FIFO;
 			break;
 		case 'L':
-			info.flags |= UNPACK_NO_SLINKS;
+			info.rdtree_flags |= RDTREE_NO_SLINKS;
 			break;
 		case 'C':
 			info.flags |= UNPACK_CHMOD;
@@ -195,7 +195,7 @@ int main(int argc, char **argv)
 			info.flags |= UNPACK_CHOWN;
 			break;
 		case 'E':
-			info.flags |= UNPACK_NO_EMPTY;
+			info.rdtree_flags |= RDTREE_NO_EMPTY;
 			break;
 		case 'c':
 			op = OP_CAT;
@@ -276,8 +276,10 @@ int main(int argc, char **argv)
 			goto out_cmp;
 	}
 
-	if (read_fstree(&fs, &super, &info))
+	if (deserialize_fstree(&fs, &super, info.cmp,
+			       info.sqfsfd, info.rdtree_flags)) {
 		goto out_cmp;
+	}
 
 	info.block_size = super.block_size;
 

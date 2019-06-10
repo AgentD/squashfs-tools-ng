@@ -20,6 +20,8 @@ libsquashfs_a_SOURCES += lib/sqfs/id_table_read.c lib/sqfs/read_inode.c
 libsquashfs_a_SOURCES += lib/sqfs/readdir.c lib/sqfs/frag_reader.c
 libsquashfs_a_SOURCES += lib/sqfs/write_dir.c lib/sqfs/write_inode.c
 libsquashfs_a_SOURCES += lib/sqfs/serialize_fstree.c
+libsquashfs_a_SOURCES += lib/sqfs/tree_node_from_inode.c
+libsquashfs_a_SOURCES += lib/sqfs/deserialize_fstree.c
 libsquashfs_a_SOURCES += include/frag_reader.h
 
 libutil_a_SOURCES = lib/util/canonicalize_name.c lib/util/write_retry.c
