@@ -125,13 +125,14 @@ int main(int argc, char **argv)
 {
 	int i, status = EXIT_FAILURE, op = OP_NONE;
 	const char *unpack_root = NULL;
+	int rdtree_flags = 0, flags = 0;
+	data_reader_t *data = NULL;
 	char *cmdpath = NULL;
-	unsqfs_info_t info;
 	sqfs_super_t super;
+	compressor_t *cmp;
 	tree_node_t *n;
 	fstree_t fs;
-
-	memset(&info, 0, sizeof(info));
+	int sqfsfd;
 
 	for (;;) {
 		i = getopt_long(argc, argv, short_opts, long_opts, NULL);
@@ -140,25 +141,25 @@ int main(int argc, char **argv)
 
 		switch (i) {
 		case 'D':
-			info.rdtree_flags |= RDTREE_NO_DEVICES;
+			rdtree_flags |= RDTREE_NO_DEVICES;
 			break;
 		case 'S':
-			info.rdtree_flags |= RDTREE_NO_SOCKETS;
+			rdtree_flags |= RDTREE_NO_SOCKETS;
 			break;
 		case 'F':
-			info.rdtree_flags |= RDTREE_NO_FIFO;
+			rdtree_flags |= RDTREE_NO_FIFO;
 			break;
 		case 'L':
-			info.rdtree_flags |= RDTREE_NO_SLINKS;
+			rdtree_flags |= RDTREE_NO_SLINKS;
 			break;
 		case 'C':
-			info.flags |= UNPACK_CHMOD;
+			flags |= UNPACK_CHMOD;
 			break;
 		case 'O':
-			info.flags |= UNPACK_CHOWN;
+			flags |= UNPACK_CHOWN;
 			break;
 		case 'E':
-			info.rdtree_flags |= RDTREE_NO_EMPTY;
+			rdtree_flags |= RDTREE_NO_EMPTY;
 			break;
 		case 'c':
 			op = OP_CAT;
@@ -179,7 +180,7 @@ int main(int argc, char **argv)
 			cmdpath = get_path(cmdpath, optarg);
 			break;
 		case 'q':
-			info.flags |= UNPACK_QUIET;
+			flags |= UNPACK_QUIET;
 			break;
 		case 'h':
 			printf(help_string, __progname);
@@ -204,13 +205,13 @@ int main(int argc, char **argv)
 		goto fail_arg;
 	}
 
-	info.sqfsfd = open(argv[optind], O_RDONLY);
-	if (info.sqfsfd < 0) {
+	sqfsfd = open(argv[optind], O_RDONLY);
+	if (sqfsfd < 0) {
 		perror(argv[optind]);
 		goto out_cmd;
 	}
 
-	if (sqfs_super_read(&super, info.sqfsfd))
+	if (sqfs_super_read(&super, sqfsfd))
 		goto out_fd;
 
 	if ((super.version_major != SQFS_VERSION_MAJOR) ||
@@ -229,20 +230,18 @@ int main(int argc, char **argv)
 		goto out_fd;
 	}
 
-	info.cmp = compressor_create(super.compression_id, false,
-				     super.block_size, NULL);
-	if (info.cmp == NULL)
+	cmp = compressor_create(super.compression_id, false,
+				super.block_size, NULL);
+	if (cmp == NULL)
 		goto out_fd;
 
 	if (super.flags & SQFS_FLAG_COMPRESSOR_OPTIONS) {
-		if (info.cmp->read_options(info.cmp, info.sqfsfd))
+		if (cmp->read_options(cmp, sqfsfd))
 			goto out_cmp;
 	}
 
-	if (deserialize_fstree(&fs, &super, info.cmp,
-			       info.sqfsfd, info.rdtree_flags)) {
+	if (deserialize_fstree(&fs, &super, cmp, sqfsfd, rdtree_flags))
 		goto out_cmp;
-	}
 
 	switch (op) {
 	case OP_LS:
@@ -266,14 +265,12 @@ int main(int argc, char **argv)
 			goto out_fs;
 		}
 
-		info.data = data_reader_create(info.sqfsfd, &super, info.cmp);
-		if (info.data == NULL)
+		data = data_reader_create(sqfsfd, &super, cmp);
+		if (data == NULL)
 			goto out_fs;
 
-		if (data_reader_dump_file(info.data, n->data.file,
-					  STDOUT_FILENO)) {
+		if (data_reader_dump_file(data, n->data.file, STDOUT_FILENO))
 			goto out_fs;
-		}
 		break;
 	case OP_UNPACK:
 		n = find_node(fs.root, cmdpath);
@@ -282,11 +279,11 @@ int main(int argc, char **argv)
 			goto out_fs;
 		}
 
-		info.data = data_reader_create(info.sqfsfd, &super, info.cmp);
-		if (info.data == NULL)
+		data = data_reader_create(sqfsfd, &super, cmp);
+		if (data == NULL)
 			goto out_fs;
 
-		if (restore_fstree(unpack_root, n, &info))
+		if (restore_fstree(unpack_root, n, data, flags))
 			goto out_fs;
 		break;
 	case OP_DESCRIBE:
@@ -296,13 +293,13 @@ int main(int argc, char **argv)
 
 	status = EXIT_SUCCESS;
 out_fs:
-	if (info.data != NULL)
-		data_reader_destroy(info.data);
+	if (data != NULL)
+		data_reader_destroy(data);
 	fstree_cleanup(&fs);
 out_cmp:
-	info.cmp->destroy(info.cmp);
+	cmp->destroy(cmp);
 out_fd:
-	close(info.sqfsfd);
+	close(sqfsfd);
 out_cmd:
 	free(cmdpath);
 	return status;

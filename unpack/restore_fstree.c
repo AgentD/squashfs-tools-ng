@@ -1,12 +1,12 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "rdsquashfs.h"
 
-static int create_node(tree_node_t *n, unsqfs_info_t *info)
+static int create_node(tree_node_t *n, data_reader_t *data, int flags)
 {
 	char *name;
 	int fd;
 
-	if (!(info->flags & UNPACK_QUIET)) {
+	if (!(flags & UNPACK_QUIET)) {
 		name = fstree_get_path(n);
 		printf("unpacking %s\n", name);
 		free(name);
@@ -24,7 +24,7 @@ static int create_node(tree_node_t *n, unsqfs_info_t *info)
 			return -1;
 
 		for (n = n->data.dir->children; n != NULL; n = n->next) {
-			if (create_node(n, info))
+			if (create_node(n, data, flags))
 				return -1;
 		}
 
@@ -63,7 +63,7 @@ static int create_node(tree_node_t *n, unsqfs_info_t *info)
 			return -1;
 		}
 
-		if (data_reader_dump_file(info->data, n->data.file, fd)) {
+		if (data_reader_dump_file(data, n->data.file, fd)) {
 			close(fd);
 			return -1;
 		}
@@ -74,7 +74,7 @@ static int create_node(tree_node_t *n, unsqfs_info_t *info)
 		break;
 	}
 
-	if (info->flags & UNPACK_CHOWN) {
+	if (flags & UNPACK_CHOWN) {
 		if (fchownat(AT_FDCWD, n->name, n->uid, n->gid,
 			     AT_SYMLINK_NOFOLLOW)) {
 			fprintf(stderr, "chown %s: %s\n",
@@ -83,7 +83,7 @@ static int create_node(tree_node_t *n, unsqfs_info_t *info)
 		}
 	}
 
-	if (info->flags & UNPACK_CHMOD) {
+	if (flags & UNPACK_CHMOD) {
 		if (fchmodat(AT_FDCWD, n->name, n->mode,
 			     AT_SYMLINK_NOFOLLOW)) {
 			fprintf(stderr, "chmod %s: %s\n",
@@ -94,7 +94,8 @@ static int create_node(tree_node_t *n, unsqfs_info_t *info)
 	return 0;
 }
 
-int restore_fstree(const char *rootdir, tree_node_t *root, unsqfs_info_t *info)
+int restore_fstree(const char *rootdir, tree_node_t *root,
+		   data_reader_t *data, int flags)
 {
 	tree_node_t *n;
 
@@ -108,11 +109,11 @@ int restore_fstree(const char *rootdir, tree_node_t *root, unsqfs_info_t *info)
 
 	if (S_ISDIR(root->mode)) {
 		for (n = root->data.dir->children; n != NULL; n = n->next) {
-			if (create_node(n, info))
+			if (create_node(n, data, flags))
 				return -1;
 		}
 	} else {
-		if (create_node(root, info))
+		if (create_node(root, data, flags))
 			return -1;
 	}
 

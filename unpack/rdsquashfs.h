@@ -26,18 +26,10 @@ enum UNPACK_FLAGS {
 	UNPACK_QUIET = 0x04,
 };
 
-typedef struct {
-	data_reader_t *data;
-	compressor_t *cmp;
-	int rdtree_flags;
-	int sqfsfd;
-	int flags;
-} unsqfs_info_t;
-
 void list_files(tree_node_t *node);
 
 int restore_fstree(const char *rootdir, tree_node_t *root,
-		   unsqfs_info_t *info);
+		   data_reader_t *data, int flags);
 
 void describe_tree(tree_node_t *root, const char *unpack_root);
 
