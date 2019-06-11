@@ -63,8 +63,7 @@ static int write_pair(meta_writer_t *mw, const char *key, const char *value)
 	return 0;
 }
 
-static int write_kv_pairs(sqfs_info_t *info, meta_writer_t *mw,
-			  tree_xattr_t *xattr)
+static int write_kv_pairs(fstree_t *fs, meta_writer_t *mw, tree_xattr_t *xattr)
 {
 	uint32_t key_idx, val_idx;
 	const char *key, *value;
@@ -74,8 +73,8 @@ static int write_kv_pairs(sqfs_info_t *info, meta_writer_t *mw,
 		key_idx = (xattr->ref[i] >> 32) & 0xFFFFFFFF;
 		val_idx = xattr->ref[i] & 0xFFFFFFFF;
 
-		key = str_table_get_string(&info->fs.xattr_keys, key_idx);
-		value = str_table_get_string(&info->fs.xattr_values, val_idx);
+		key = str_table_get_string(&fs->xattr_keys, key_idx);
+		value = str_table_get_string(&fs->xattr_values, val_idx);
 
 		if (write_pair(mw, key, value))
 			return -1;
@@ -87,7 +86,8 @@ static int write_kv_pairs(sqfs_info_t *info, meta_writer_t *mw,
 	return 0;
 }
 
-int write_xattr(sqfs_info_t *info)
+int write_xattr(int outfd, fstree_t *fs, sqfs_super_t *super,
+		compressor_t *cmp)
 {
 	uint64_t kv_start, id_start, block, *tbl;
 	size_t i = 0, count = 0, blocks;
@@ -98,21 +98,21 @@ int write_xattr(sqfs_info_t *info)
 	uint32_t offset;
 	ssize_t ret;
 
-	if (info->fs.xattr == NULL)
+	if (fs->xattr == NULL)
 		return 0;
 
-	mw = meta_writer_create(info->outfd, info->cmp);
+	mw = meta_writer_create(outfd, cmp);
 	if (mw == NULL)
 		return -1;
 
 	/* write xattr key-value pairs */
-	kv_start = info->super.bytes_used;
+	kv_start = super->bytes_used;
 
-	for (it = info->fs.xattr; it != NULL; it = it->next) {
+	for (it = fs->xattr; it != NULL; it = it->next) {
 		meta_writer_get_position(mw, &it->block, &it->offset);
 		it->size = 0;
 
-		if (write_kv_pairs(info, mw, it))
+		if (write_kv_pairs(fs, mw, it))
 			goto fail_mw;
 
 		++count;
@@ -124,7 +124,7 @@ int write_xattr(sqfs_info_t *info)
 	meta_writer_get_position(mw, &block, &offset);
 	meta_writer_reset(mw);
 
-	info->super.bytes_used += block;
+	super->bytes_used += block;
 
 	/* allocate location table */
 	blocks = (count * sizeof(id_ent)) / SQFS_META_BLOCK_SIZE;
@@ -141,9 +141,9 @@ int write_xattr(sqfs_info_t *info)
 
 	/* write ID table referring to key value pairs, record offsets */
 	id_start = 0;
-	tbl[i++] = htole64(info->super.bytes_used);
+	tbl[i++] = htole64(super->bytes_used);
 
-	for (it = info->fs.xattr; it != NULL; it = it->next) {
+	for (it = fs->xattr; it != NULL; it = it->next) {
 		id_ent.xattr = htole64((it->block << 16) | it->offset);
 		id_ent.count = htole32(it->num_attr);
 		id_ent.size = htole32(it->size);
@@ -155,7 +155,7 @@ int write_xattr(sqfs_info_t *info)
 
 		if (block != id_start) {
 			id_start = block;
-			tbl[i++] = htole64(info->super.bytes_used + id_start);
+			tbl[i++] = htole64(super->bytes_used + id_start);
 		}
 	}
 
@@ -163,27 +163,27 @@ int write_xattr(sqfs_info_t *info)
 		goto fail_tbl;
 
 	meta_writer_get_position(mw, &block, &offset);
-	info->super.bytes_used += block;
+	super->bytes_used += block;
 
 	/* write offset table */
 	idtbl.xattr_table_start = htole64(kv_start);
 	idtbl.xattr_ids = htole32(count);
 	idtbl.unused = 0;
 
-	ret = write_retry(info->outfd, &idtbl, sizeof(idtbl));
+	ret = write_retry(outfd, &idtbl, sizeof(idtbl));
 	if (ret < 0)
 		goto fail_wr;
 	if ((size_t)ret < sizeof(idtbl))
 		goto fail_trunc;
 
-	write_retry(info->outfd, tbl, sizeof(tbl[0]) * blocks);
+	write_retry(outfd, tbl, sizeof(tbl[0]) * blocks);
 	if (ret < 0)
 		goto fail_wr;
 	if ((size_t)ret < sizeof(tbl[0]) * blocks)
 		goto fail_trunc;
 
-	info->super.xattr_id_table_start = info->super.bytes_used;
-	info->super.bytes_used += sizeof(idtbl) + sizeof(tbl[0]) * blocks;
+	super->xattr_id_table_start = super->bytes_used;
+	super->bytes_used += sizeof(idtbl) + sizeof(tbl[0]) * blocks;
 
 	free(tbl);
 	meta_writer_destroy(mw);

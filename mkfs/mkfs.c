@@ -129,7 +129,7 @@ int main(int argc, char **argv)
 	if (id_table_write(&info.idtbl, info.outfd, &info.super, info.cmp))
 		goto out_data;
 
-	if (write_xattr(&info))
+	if (write_xattr(info.outfd, &info.fs, &info.super, info.cmp))
 		goto out_data;
 
 	if (sqfs_super_write(&info.super, info.outfd))
