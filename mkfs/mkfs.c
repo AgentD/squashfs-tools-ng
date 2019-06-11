@@ -40,8 +40,8 @@ static int padd_file(sqfs_info_t *info)
 int main(int argc, char **argv)
 {
 	int status = EXIT_FAILURE, ret;
+	data_writer_t *data;
 	sqfs_info_t info;
-	uint64_t start;
 
 	memset(&info, 0, sizeof(info));
 
@@ -111,39 +111,37 @@ int main(int argc, char **argv)
 		info.super.bytes_used += ret;
 	}
 
-	if (write_data_to_image(&info))
+	data = data_writer_create(&info.super, info.cmp, info.outfd);
+	if (data == NULL)
 		goto out_cmp;
+
+	if (write_data_to_image(data, &info))
+		goto out_data;
 
 	if (sqfs_serialize_fstree(info.outfd, &info.super, &info.fs,
 				  info.cmp, &info.idtbl)) {
-		goto out_cmp;
+		goto out_data;
 	}
 
-	info.super.fragment_entry_count = info.num_fragments;
-
-	if (sqfs_write_table(info.outfd, &info.super, info.fragments,
-			     sizeof(info.fragments[0]), info.num_fragments,
-			     &start, info.cmp)) {
-		goto out_cmp;
-	}
-
-	info.super.fragment_table_start = start;
+	if (data_writer_write_fragment_table(data))
+		goto out_data;
 
 	if (id_table_write(&info.idtbl, info.outfd, &info.super, info.cmp))
-		goto out_cmp;
+		goto out_data;
 
 	if (write_xattr(&info))
-		goto out_cmp;
+		goto out_data;
 
 	if (sqfs_super_write(&info.super, info.outfd))
-		goto out_cmp;
+		goto out_data;
 
 	if (padd_file(&info))
-		goto out_cmp;
+		goto out_data;
 
 	status = EXIT_SUCCESS;
+out_data:
+	data_writer_destroy(data);
 out_cmp:
-	free(info.fragments);
 	info.cmp->destroy(info.cmp);
 out_fstree:
 	fstree_cleanup(&info.fs);

@@ -2,22 +2,37 @@
 #include "mkfs.h"
 #include "util.h"
 
-static int write_compressed(sqfs_info_t *info, const void *in, size_t size,
+struct data_writer_t {
+	void *block;
+	void *fragment;
+	void *scratch;
+
+	sqfs_fragment_t *fragments;
+	size_t num_fragments;
+	size_t max_fragments;
+	size_t frag_offset;
+
+	sqfs_super_t *super;
+	compressor_t *cmp;
+	int outfd;
+};
+
+static int write_compressed(data_writer_t *data, const void *in, size_t size,
 			    uint32_t *outsize)
 {
 	ssize_t ret;
 
-	ret = info->cmp->do_block(info->cmp, in, size, info->scratch,
-				  info->super.block_size);
+	ret = data->cmp->do_block(data->cmp, in, size, data->scratch,
+				  data->super->block_size);
 	if (ret < 0)
 		return -1;
 
 	if (ret > 0 && (size_t)ret < size) {
 		size = ret;
-		ret = write_retry(info->outfd, info->scratch, size);
+		ret = write_retry(data->outfd, data->scratch, size);
 		*outsize = size;
 	} else {
-		ret = write_retry(info->outfd, in, size);
+		ret = write_retry(data->outfd, in, size);
 		*outsize = size | (1 << 24);
 	}
 
@@ -31,58 +46,58 @@ static int write_compressed(sqfs_info_t *info, const void *in, size_t size,
 		return -1;
 	}
 
-	info->super.bytes_used += ret;
+	data->super->bytes_used += ret;
 	return 0;
 }
 
-static int grow_fragment_table(sqfs_info_t *info)
+static int grow_fragment_table(data_writer_t *data)
 {
 	size_t newsz;
 	void *new;
 
-	if (info->num_fragments == info->max_fragments) {
-		newsz = info->max_fragments ? info->max_fragments * 2 : 16;
-		new = realloc(info->fragments,
-			      sizeof(info->fragments[0]) * newsz);
+	if (data->num_fragments == data->max_fragments) {
+		newsz = data->max_fragments ? data->max_fragments * 2 : 16;
+		new = realloc(data->fragments,
+			      sizeof(data->fragments[0]) * newsz);
 
 		if (new == NULL) {
 			perror("appending to fragment table");
 			return -1;
 		}
 
-		info->max_fragments = newsz;
-		info->fragments = new;
+		data->max_fragments = newsz;
+		data->fragments = new;
 	}
 
 	return 0;
 }
 
-static int flush_fragments(sqfs_info_t *info)
+int data_writer_flush_fragments(data_writer_t *data)
 {
 	uint64_t offset;
 	uint32_t out;
 
-	if (grow_fragment_table(info))
+	if (grow_fragment_table(data))
 		return -1;
 
-	offset = info->super.bytes_used;
+	offset = data->super->bytes_used;
 
-	if (write_compressed(info, info->fragment, info->frag_offset, &out))
+	if (write_compressed(data, data->fragment, data->frag_offset, &out))
 		return -1;
 
-	info->fragments[info->num_fragments].start_offset = htole64(offset);
-	info->fragments[info->num_fragments].pad0 = 0;
-	info->fragments[info->num_fragments].size = htole32(out);
+	data->fragments[data->num_fragments].start_offset = htole64(offset);
+	data->fragments[data->num_fragments].pad0 = 0;
+	data->fragments[data->num_fragments].size = htole32(out);
 
-	info->num_fragments += 1;
-	info->frag_offset = 0;
+	data->num_fragments += 1;
+	data->frag_offset = 0;
 
-	info->super.flags &= ~SQFS_FLAG_NO_FRAGMENTS;
-	info->super.flags |= SQFS_FLAG_ALWAYS_FRAGMENTS;
+	data->super->flags &= ~SQFS_FLAG_NO_FRAGMENTS;
+	data->super->flags |= SQFS_FLAG_ALWAYS_FRAGMENTS;
 	return 0;
 }
 
-static int write_data_from_fd(sqfs_info_t *info, file_info_t *fi, int infd)
+int write_data_from_fd(data_writer_t *data, file_info_t *fi, int infd)
 {
 	uint64_t count = fi->size;
 	int blk_idx = 0;
@@ -90,33 +105,33 @@ static int write_data_from_fd(sqfs_info_t *info, file_info_t *fi, int infd)
 	ssize_t ret;
 	size_t diff;
 
-	fi->startblock = info->super.bytes_used;
+	fi->startblock = data->super->bytes_used;
 
 	while (count != 0) {
-		diff = count > (uint64_t)info->super.block_size ?
-			info->super.block_size : count;
+		diff = count > (uint64_t)data->super->block_size ?
+			data->super->block_size : count;
 
-		ret = read_retry(infd, info->block, diff);
+		ret = read_retry(infd, data->block, diff);
 		if (ret < 0)
 			goto fail_read;
 		if ((size_t)ret < diff)
 			goto fail_trunc;
 
-		if (diff < info->super.block_size) {
-			if (info->frag_offset + diff > info->super.block_size) {
-				if (flush_fragments(info))
+		if (diff < data->super->block_size) {
+			if (data->frag_offset + diff > data->super->block_size) {
+				if (data_writer_flush_fragments(data))
 					return -1;
 			}
 
-			fi->fragment_offset = info->frag_offset;
-			fi->fragment = info->num_fragments;
+			fi->fragment_offset = data->frag_offset;
+			fi->fragment = data->num_fragments;
 
-			memcpy((char *)info->fragment + info->frag_offset,
-			       info->block, diff);
-			info->frag_offset += diff;
+			memcpy((char *)data->fragment + data->frag_offset,
+			       data->block, diff);
+			data->frag_offset += diff;
 		} else {
-			if (write_compressed(info, info->block,
-					     info->super.block_size, &out)) {
+			if (write_compressed(data, data->block,
+					     data->super->block_size, &out)) {
 				return -1;
 			}
 
@@ -135,7 +150,50 @@ fail_trunc:
 	return -1;
 }
 
-static int process_file(sqfs_info_t *info, file_info_t *fi)
+data_writer_t *data_writer_create(sqfs_super_t *super, compressor_t *cmp,
+				  int outfd)
+{
+	data_writer_t *data;
+
+	data = calloc(1, sizeof(*data) + super->block_size * 3);
+	if (data == NULL) {
+		perror("creating data writer");
+		return NULL;
+	}
+
+	data->block = (char *)data + sizeof(*data);
+	data->fragment = (char *)data->block + super->block_size;
+	data->scratch = (char *)data->fragment + super->block_size;
+
+	data->super = super;
+	data->cmp = cmp;
+	data->outfd = outfd;
+	return data;
+}
+
+void data_writer_destroy(data_writer_t *data)
+{
+	free(data->fragments);
+	free(data);
+}
+
+int data_writer_write_fragment_table(data_writer_t *data)
+{
+	uint64_t start;
+
+	data->super->fragment_entry_count = data->num_fragments;
+
+	if (sqfs_write_table(data->outfd, data->super, data->fragments,
+			     sizeof(data->fragments[0]), data->num_fragments,
+			     &start, data->cmp)) {
+		return -1;
+	}
+
+	data->super->fragment_table_start = start;
+	return 0;
+}
+
+static int process_file(data_writer_t *data, file_info_t *fi)
 {
 	int ret, infd;
 
@@ -145,7 +203,7 @@ static int process_file(sqfs_info_t *info, file_info_t *fi)
 		return -1;
 	}
 
-	ret = write_data_from_fd(info, fi, infd);
+	ret = write_data_from_fd(data, fi, infd);
 
 	close(infd);
 	return ret;
@@ -161,12 +219,12 @@ static void print_name(tree_node_t *n)
 	fputs(n->name, stdout);
 }
 
-static int find_and_process_files(sqfs_info_t *info, tree_node_t *n,
+static int find_and_process_files(data_writer_t *data, tree_node_t *n,
 				  bool quiet)
 {
 	if (S_ISDIR(n->mode)) {
 		for (n = n->data.dir->children; n != NULL; n = n->next) {
-			if (find_and_process_files(info, n, quiet))
+			if (find_and_process_files(data, n, quiet))
 				return -1;
 		}
 		return 0;
@@ -179,13 +237,13 @@ static int find_and_process_files(sqfs_info_t *info, tree_node_t *n,
 			fputc('\n', stdout);
 		}
 
-		return process_file(info, n->data.file);
+		return process_file(data, n->data.file);
 	}
 
 	return 0;
 }
 
-int write_data_to_image(sqfs_info_t *info)
+int write_data_to_image(data_writer_t *data, sqfs_info_t *info)
 {
 	bool need_restore = false;
 	const char *ptr;
@@ -206,40 +264,9 @@ int write_data_to_image(sqfs_info_t *info)
 		}
 	}
 
-	info->block = malloc(info->super.block_size);
+	ret = find_and_process_files(data, info->fs.root, info->opt.quiet);
 
-	if (info->block == NULL) {
-		perror("allocating data block buffer");
-		return -1;
-	}
-
-	info->fragment = malloc(info->super.block_size);
-
-	if (info->fragment == NULL) {
-		perror("allocating fragment buffer");
-		free(info->block);
-		return -1;
-	}
-
-	info->scratch = malloc(info->super.block_size);
-	if (info->scratch == NULL) {
-		perror("allocating scratch buffer");
-		free(info->block);
-		free(info->fragment);
-		return -1;
-	}
-
-	ret = find_and_process_files(info, info->fs.root, info->opt.quiet);
-
-	ret = ret == 0 ? flush_fragments(info) : ret;
-
-	free(info->block);
-	free(info->fragment);
-	free(info->scratch);
-
-	info->block = NULL;
-	info->fragment = NULL;
-	info->scratch = NULL;
+	ret = ret == 0 ? data_writer_flush_fragments(data) : ret;
 
 	if (need_restore)
 		ret = popd();
