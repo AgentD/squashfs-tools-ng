@@ -3,6 +3,7 @@
 #define MKFS_H
 
 #include "meta_writer.h"
+#include "data_writer.h"
 #include "highlevel.h"
 #include "squashfs.h"
 #include "compress.h"
@@ -35,8 +36,6 @@ typedef struct {
 	char *comp_extra;
 } options_t;
 
-typedef struct data_writer_t data_writer_t;
-
 typedef struct {
 	int outfd;
 	options_t opt;
@@ -51,17 +50,6 @@ typedef struct {
 void process_command_line(options_t *opt, int argc, char **argv);
 
 int write_xattr(sqfs_info_t *info);
-
-data_writer_t *data_writer_create(sqfs_super_t *super, compressor_t *cmp,
-				  int outfd);
-
-void data_writer_destroy(data_writer_t *data);
-
-int data_writer_write_fragment_table(data_writer_t *data);
-
-int write_data_from_fd(data_writer_t *data, file_info_t *fi, int infd);
-
-int data_writer_flush_fragments(data_writer_t *data);
 
 int write_data_to_image(data_writer_t *data, sqfs_info_t *info);
 
