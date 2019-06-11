@@ -121,43 +121,6 @@ static char *get_path(char *old, const char *arg)
 	return path;
 }
 
-static int alloc_buffers(unsqfs_info_t *info, sqfs_super_t *super)
-{
-	info->buffer = malloc(super->block_size);
-	if (info->buffer == NULL) {
-		perror("allocating block buffer");
-		return -1;
-	}
-
-	info->scratch = malloc(super->block_size);
-	if (info->scratch == NULL) {
-		perror("allocating scrtach buffer for extracting blocks");
-		return -1;
-	}
-
-	return 0;
-}
-
-static int load_fragment_table(unsqfs_info_t *info, sqfs_super_t *super)
-{
-	if (super->fragment_entry_count == 0)
-		return 0;
-
-	if (super->flags & SQFS_FLAG_NO_FRAGMENTS)
-		return 0;
-
-	if (super->fragment_table_start >= super->bytes_used) {
-		fputs("Fragment table start is past end of file\n", stderr);
-		return -1;
-	}
-
-	info->frag = frag_reader_create(super, info->sqfsfd, info->cmp);
-	if (info->frag == NULL)
-		return -1;
-
-	return 0;
-}
-
 int main(int argc, char **argv)
 {
 	int i, status = EXIT_FAILURE, op = OP_NONE;
@@ -281,8 +244,6 @@ int main(int argc, char **argv)
 		goto out_cmp;
 	}
 
-	info.block_size = super.block_size;
-
 	switch (op) {
 	case OP_LS:
 		n = find_node(fs.root, cmdpath);
@@ -305,14 +266,14 @@ int main(int argc, char **argv)
 			goto out_fs;
 		}
 
-		if (load_fragment_table(&info, &super))
+		info.data = data_reader_create(info.sqfsfd, &super, info.cmp);
+		if (info.data == NULL)
 			goto out_fs;
 
-		if (alloc_buffers(&info, &super))
+		if (data_reader_dump_file(info.data, n->data.file,
+					  STDOUT_FILENO)) {
 			goto out_fs;
-
-		if (extract_file(n->data.file, &info, STDOUT_FILENO))
-			goto out_fs;
+		}
 		break;
 	case OP_UNPACK:
 		n = find_node(fs.root, cmdpath);
@@ -321,10 +282,8 @@ int main(int argc, char **argv)
 			goto out_fs;
 		}
 
-		if (load_fragment_table(&info, &super))
-			goto out_fs;
-
-		if (alloc_buffers(&info, &super))
+		info.data = data_reader_create(info.sqfsfd, &super, info.cmp);
+		if (info.data == NULL)
 			goto out_fs;
 
 		if (restore_fstree(unpack_root, n, &info))
@@ -337,8 +296,8 @@ int main(int argc, char **argv)
 
 	status = EXIT_SUCCESS;
 out_fs:
-	if (info.frag != NULL)
-		frag_reader_destroy(info.frag);
+	if (info.data != NULL)
+		data_reader_destroy(info.data);
 	fstree_cleanup(&fs);
 out_cmp:
 	info.cmp->destroy(info.cmp);
@@ -346,8 +305,6 @@ out_fd:
 	close(info.sqfsfd);
 out_cmd:
 	free(cmdpath);
-	free(info.buffer);
-	free(info.scratch);
 	return status;
 fail_arg:
 	fprintf(stderr, "Try `%s --help' for more information.\n", __progname);

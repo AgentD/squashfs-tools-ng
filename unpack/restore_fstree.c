@@ -63,7 +63,7 @@ static int create_node(tree_node_t *n, unsqfs_info_t *info)
 			return -1;
 		}
 
-		if (extract_file(n->data.file, info, fd)) {
+		if (data_reader_dump_file(info->data, n->data.file, fd)) {
 			close(fd);
 			return -1;
 		}

@@ -3,7 +3,7 @@
 #define RDSQUASHFS_H
 
 #include "meta_reader.h"
-#include "frag_reader.h"
+#include "data_reader.h"
 #include "highlevel.h"
 #include "squashfs.h"
 #include "compress.h"
@@ -27,20 +27,14 @@ enum UNPACK_FLAGS {
 };
 
 typedef struct {
+	data_reader_t *data;
 	compressor_t *cmp;
-	size_t block_size;
-	frag_reader_t *frag;
 	int rdtree_flags;
 	int sqfsfd;
 	int flags;
-
-	void *buffer;
-	void *scratch;
 } unsqfs_info_t;
 
 void list_files(tree_node_t *node);
-
-int extract_file(file_info_t *fi, unsqfs_info_t *info, int outfd);
 
 int restore_fstree(const char *rootdir, tree_node_t *root,
 		   unsqfs_info_t *info);
