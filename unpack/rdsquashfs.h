@@ -26,11 +26,30 @@ enum UNPACK_FLAGS {
 	UNPACK_QUIET = 0x04,
 };
 
+enum {
+	OP_NONE = 0,
+	OP_LS,
+	OP_CAT,
+	OP_UNPACK,
+	OP_DESCRIBE,
+};
+
+typedef struct {
+	int op;
+	int rdtree_flags;
+	int flags;
+	char *cmdpath;
+	const char *unpack_root;
+	const char *image_name;
+} options_t;
+
 void list_files(tree_node_t *node);
 
 int restore_fstree(const char *rootdir, tree_node_t *root,
 		   data_reader_t *data, int flags);
 
 void describe_tree(tree_node_t *root, const char *unpack_root);
+
+void process_command_line(options_t *opt, int argc, char **argv);
 
 #endif /* RDSQUASHFS_H */
