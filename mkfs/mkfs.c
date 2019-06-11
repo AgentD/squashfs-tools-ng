@@ -1,6 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "mkfs.h"
-#include "util.h"
 
 static int padd_file(int outfd, sqfs_super_t *super, options_t *opt)
 {

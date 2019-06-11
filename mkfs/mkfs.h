@@ -10,14 +10,18 @@
 #include "id_table.h"
 #include "fstree.h"
 #include "config.h"
+#include "util.h"
 
+#include <getopt.h>
 #include <assert.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #include <stdio.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <ctype.h>
 
 typedef struct {
 	unsigned int def_uid;

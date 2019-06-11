@@ -1,15 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "mkfs.h"
-#include "util.h"
-
-#include <stdlib.h>
-#include <getopt.h>
-#include <unistd.h>
-#include <limits.h>
-#include <string.h>
-#include <fcntl.h>
-#include <ctype.h>
-#include <stdio.h>
 
 static struct option long_opts[] = {
 	{ "compressor", required_argument, NULL, 'c' },
