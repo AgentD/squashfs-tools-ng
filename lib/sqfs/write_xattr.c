@@ -1,9 +1,12 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "meta_writer.h"
-#include "mkfs.h"
+#include "highlevel.h"
 #include "util.h"
 
 #include <assert.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 
 static const struct {
 	const char *prefix;

@@ -67,4 +67,12 @@ tree_node_t *tree_node_from_inode(sqfs_inode_generic_t *inode,
 int deserialize_fstree(fstree_t *out, sqfs_super_t *super, compressor_t *cmp,
 		       int fd, int flags);
 
+/*
+  Generate a squahfs xattr table from a file system tree.
+
+  Returns 0 on success. Prints error messages to stderr on failure.
+ */
+int write_xattr(int outfd, fstree_t *fs, sqfs_super_t *super,
+		compressor_t *cmp);
+
 #endif /* HIGHLEVEL_H */

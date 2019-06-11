@@ -49,9 +49,6 @@ typedef struct {
 
 void process_command_line(options_t *opt, int argc, char **argv);
 
-int write_xattr(int outfd, fstree_t *fs, sqfs_super_t *super,
-		compressor_t *cmp);
-
 int write_data_to_image(data_writer_t *data, sqfs_info_t *info);
 
 #endif /* MKFS_H */
