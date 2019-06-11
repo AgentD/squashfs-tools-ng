@@ -36,19 +36,8 @@ typedef struct {
 	char *comp_extra;
 } options_t;
 
-typedef struct {
-	int outfd;
-	options_t opt;
-	sqfs_super_t super;
-	fstree_t fs;
-
-	id_table_t idtbl;
-
-	compressor_t *cmp;
-} sqfs_info_t;
-
 void process_command_line(options_t *opt, int argc, char **argv);
 
-int write_data_to_image(data_writer_t *data, sqfs_info_t *info);
+int write_data_to_image(data_writer_t *data, fstree_t *fs, options_t *opt);
 
 #endif /* MKFS_H */

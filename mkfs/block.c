@@ -52,33 +52,33 @@ static int find_and_process_files(data_writer_t *data, tree_node_t *n,
 	return 0;
 }
 
-int write_data_to_image(data_writer_t *data, sqfs_info_t *info)
+int write_data_to_image(data_writer_t *data, fstree_t *fs, options_t *opt)
 {
 	bool need_restore = false;
 	const char *ptr;
 	int ret;
 
-	if (info->opt.packdir != NULL) {
-		if (pushd(info->opt.packdir))
+	if (opt->packdir != NULL) {
+		if (pushd(opt->packdir))
 			return -1;
 		need_restore = true;
 	} else {
-		ptr = strrchr(info->opt.infile, '/');
+		ptr = strrchr(opt->infile, '/');
 
 		if (ptr != NULL) {
-			if (pushdn(info->opt.infile, ptr - info->opt.infile))
+			if (pushdn(opt->infile, ptr - opt->infile))
 				return -1;
 
 			need_restore = true;
 		}
 	}
 
-	ret = find_and_process_files(data, info->fs.root, info->opt.quiet);
+	ret = find_and_process_files(data, fs->root, opt->quiet);
 
 	ret = ret == 0 ? data_writer_flush_fragments(data) : ret;
 
 	if (need_restore)
-		ret = popd();
+		ret = ret == 0 ? popd() : ret;
 
 	return ret;
 }

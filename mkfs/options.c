@@ -253,8 +253,12 @@ void process_command_line(options_t *opt, int argc, char **argv)
 	opt->compressor = SQFS_COMP_XZ;
 	opt->blksz = SQFS_DEFAULT_BLOCK_SIZE;
 	opt->devblksz = SQFS_DEVBLK_SIZE;
+	opt->quiet = false;
 	opt->infile = NULL;
+	opt->packdir = NULL;
 	opt->outfile = NULL;
+	opt->selinux = NULL;
+	opt->comp_extra = NULL;
 
 	for (;;) {
 		i = getopt_long(argc, argv, short_opts, long_opts, NULL);
