@@ -85,23 +85,21 @@ int main(int argc, char **argv)
 	if (deserialize_fstree(&fs, &super, cmp, sqfsfd, opt.rdtree_flags))
 		goto out_cmp;
 
-	switch (opt.op) {
-	case OP_LS:
+	if (opt.cmdpath != NULL) {
 		n = find_node(fs.root, opt.cmdpath);
 		if (n == NULL) {
 			perror(opt.cmdpath);
 			goto out_fs;
 		}
+	} else {
+		n = fs.root;
+	}
 
+	switch (opt.op) {
+	case OP_LS:
 		list_files(n);
 		break;
 	case OP_CAT:
-		n = find_node(fs.root, opt.cmdpath);
-		if (n == NULL) {
-			perror(opt.cmdpath);
-			goto out_fs;
-		}
-
 		if (!S_ISREG(n->mode)) {
 			fprintf(stderr, "/%s: not a regular file\n",
 				opt.cmdpath);
@@ -116,12 +114,6 @@ int main(int argc, char **argv)
 			goto out_fs;
 		break;
 	case OP_UNPACK:
-		n = find_node(fs.root, opt.cmdpath);
-		if (n == NULL) {
-			perror(opt.cmdpath);
-			goto out_fs;
-		}
-
 		data = data_reader_create(sqfsfd, &super, cmp);
 		if (data == NULL)
 			goto out_fs;

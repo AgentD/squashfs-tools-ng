@@ -124,6 +124,8 @@ void process_command_line(options_t *opt, int argc, char **argv)
 			break;
 		case 'd':
 			opt->op = OP_DESCRIBE;
+			free(opt->cmdpath);
+			opt->cmdpath = NULL;
 			break;
 		case 'l':
 			opt->op = OP_LS;
