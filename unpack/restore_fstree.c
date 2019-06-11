@@ -1,52 +1,38 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "rdsquashfs.h"
 
-static void print_name(tree_node_t *n)
+static int create_node(tree_node_t *n, unsqfs_info_t *info)
 {
-	if (n->parent != NULL) {
-		print_name(n->parent);
-		fputc('/', stdout);
-	}
-
-	fputs(n->name, stdout);
-}
-
-static int create_node(int dirfd, tree_node_t *n, unsqfs_info_t *info)
-{
+	char *name;
 	int fd;
 
 	if (!(info->flags & UNPACK_QUIET)) {
-		fputs("unpacking ", stdout);
-		print_name(n);
-		fputc('\n', stdout);
+		name = fstree_get_path(n);
+		printf("unpacking %s\n", name);
+		free(name);
 	}
 
 	switch (n->mode & S_IFMT) {
 	case S_IFDIR:
-		if (mkdirat(dirfd, n->name, 0755) && errno != EEXIST) {
+		if (mkdir(n->name, 0755) && errno != EEXIST) {
 			fprintf(stderr, "mkdir %s: %s\n",
 				n->name, strerror(errno));
 			return -1;
 		}
 
-		fd = openat(dirfd, n->name, O_RDONLY | O_DIRECTORY);
-		if (fd < 0) {
-			fprintf(stderr, "open dir %s: %s\n",
-				n->name, strerror(errno));
+		if (pushd(n->name))
 			return -1;
-		}
 
 		for (n = n->data.dir->children; n != NULL; n = n->next) {
-			if (create_node(fd, n, info)) {
-				close(fd);
+			if (create_node(n, info))
 				return -1;
-			}
 		}
 
-		close(fd);
+		if (popd())
+			return -1;
 		break;
 	case S_IFLNK:
-		if (symlinkat(n->data.slink_target, dirfd, n->name)) {
+		if (symlink(n->data.slink_target, n->name)) {
 			fprintf(stderr, "ln -s %s %s: %s\n",
 				n->data.slink_target, n->name,
 				strerror(errno));
@@ -55,7 +41,7 @@ static int create_node(int dirfd, tree_node_t *n, unsqfs_info_t *info)
 		break;
 	case S_IFSOCK:
 	case S_IFIFO:
-		if (mknodat(dirfd, n->name, (n->mode & S_IFMT) | 0700, 0)) {
+		if (mknod(n->name, (n->mode & S_IFMT) | 0700, 0)) {
 			fprintf(stderr, "creating %s: %s\n",
 				n->name, strerror(errno));
 			return -1;
@@ -63,15 +49,14 @@ static int create_node(int dirfd, tree_node_t *n, unsqfs_info_t *info)
 		break;
 	case S_IFBLK:
 	case S_IFCHR:
-		if (mknodat(dirfd, n->name, (n->mode & S_IFMT),
-			    n->data.devno)) {
+		if (mknod(n->name, n->mode & S_IFMT, n->data.devno)) {
 			fprintf(stderr, "creating device %s: %s\n",
 				n->name, strerror(errno));
 			return -1;
 		}
 		break;
 	case S_IFREG:
-		fd = openat(dirfd, n->name, O_WRONLY | O_CREAT | O_EXCL, 0600);
+		fd = open(n->name, O_WRONLY | O_CREAT | O_EXCL, 0600);
 		if (fd < 0) {
 			fprintf(stderr, "creating %s: %s\n",
 				n->name, strerror(errno));
@@ -90,7 +75,7 @@ static int create_node(int dirfd, tree_node_t *n, unsqfs_info_t *info)
 	}
 
 	if (info->flags & UNPACK_CHOWN) {
-		if (fchownat(dirfd, n->name, n->uid, n->gid,
+		if (fchownat(AT_FDCWD, n->name, n->uid, n->gid,
 			     AT_SYMLINK_NOFOLLOW)) {
 			fprintf(stderr, "chown %s: %s\n",
 				n->name, strerror(errno));
@@ -99,7 +84,7 @@ static int create_node(int dirfd, tree_node_t *n, unsqfs_info_t *info)
 	}
 
 	if (info->flags & UNPACK_CHMOD) {
-		if (fchmodat(dirfd, n->name, n->mode,
+		if (fchmodat(AT_FDCWD, n->name, n->mode,
 			     AT_SYMLINK_NOFOLLOW)) {
 			fprintf(stderr, "chmod %s: %s\n",
 				n->name, strerror(errno));
@@ -112,37 +97,24 @@ static int create_node(int dirfd, tree_node_t *n, unsqfs_info_t *info)
 int restore_fstree(const char *rootdir, tree_node_t *root, unsqfs_info_t *info)
 {
 	tree_node_t *n;
-	int dirfd;
 
-	if (mkdir_p(rootdir))
-		return -1;
-
-	if (rootdir == NULL) {
-		dirfd = AT_FDCWD;
-	} else {
-		dirfd = open(rootdir, O_RDONLY | O_DIRECTORY);
-		if (dirfd < 0) {
-			perror(rootdir);
+	if (rootdir != NULL) {
+		if (mkdir_p(rootdir))
 			return -1;
-		}
+
+		if (pushd(rootdir))
+			return -1;
 	}
 
 	if (S_ISDIR(root->mode)) {
 		for (n = root->data.dir->children; n != NULL; n = n->next) {
-			if (create_node(dirfd, n, info))
-				goto fail;
+			if (create_node(n, info))
+				return -1;
 		}
-		return 0;
+	} else {
+		if (create_node(root, info))
+			return -1;
 	}
 
-	if (create_node(dirfd, root, info))
-		goto fail;
-
-	if (dirfd != AT_FDCWD)
-		close(dirfd);
-	return 0;
-fail:
-	if (dirfd != AT_FDCWD)
-		close(dirfd);
-	return -1;
+	return rootdir == NULL ? 0 : popd();
 }
