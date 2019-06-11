@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include <string.h>
+#include <stdlib.h>
 #include <stdio.h>
 
 #include "internal.h"
@@ -126,4 +127,22 @@ void compressor_print_help(E_SQFS_COMPRESSOR id)
 		return;
 
 	helpfuns[id]();
+}
+
+E_SQFS_COMPRESSOR compressor_get_default(void)
+{
+#if defined(WITH_XZ)
+	return SQFS_COMP_XZ;
+#elif defined(WITH_ZSTD)
+	return SQFS_COMP_ZSTD;
+#elif defined(WITH_GZIP)
+	return SQFS_COMP_GZIP;
+#elif defined(WITH_LZO)
+	return SQFS_COMP_LZO;
+#elif defined(WITH_LZ4)
+	return SQFS_COMP_LZ4;
+#else
+	fputs("No compressor implementation available!\n", stderr);
+	exit(EXIT_FAILURE);
+#endif
 }

@@ -61,7 +61,7 @@ static const char *help_string =
 "\n"
 "  --compressor, -c <name>     Select the compressor to use.\n"
 "                              A list of available compressors is below.\n"
-"                              Defaults to 'xz'.\n"
+"                              Defaults to '%s'.\n"
 "  --comp-extra, -X <options>  A comma seperated list of extra options for\n"
 "                              the selected compressor. Specify 'help' to\n"
 "                              get a list of available options.\n"
@@ -240,7 +240,7 @@ void process_command_line(options_t *opt, int argc, char **argv)
 	opt->def_mode = 0755;
 	opt->def_mtime = 0;
 	opt->outmode = O_WRONLY | O_CREAT | O_EXCL;
-	opt->compressor = SQFS_COMP_XZ;
+	opt->compressor = compressor_get_default();
 	opt->blksz = SQFS_DEFAULT_BLOCK_SIZE;
 	opt->devblksz = SQFS_DEVBLK_SIZE;
 	opt->quiet = false;
@@ -308,6 +308,7 @@ void process_command_line(options_t *opt, int argc, char **argv)
 #endif
 		case 'h':
 			printf(help_string, __progname,
+			       compressors[compressor_get_default()],
 			       SQFS_DEFAULT_BLOCK_SIZE, SQFS_DEVBLK_SIZE);
 
 			fputs("Available compressors:\n", stdout);

@@ -42,118 +42,117 @@ AC_SUBST([WARN_CFLAGS])
 ##### config options #####
 
 AC_ARG_WITH([gzip],
-	[AS_HELP_STRING([--without-gzip],
-			[Build without gzip compression support])],
-	[case "${withval}" in
-	yes) AM_CONDITIONAL([WITH_GZIP], [true]) ;;
-	no)  AM_CONDITIONAL([WITH_GZIP], [false]) ;;
-	*) AC_MSG_ERROR([bad value ${withval} for --without-gzip]) ;;
-	esac],
-	[AM_CONDITIONAL([WITH_GZIP], [true])])
+	[AS_HELP_STRING([--with-gzip], [Build with gzip compression support])],
+	[want_gzip="${withval}"], [want_gzip="maybe"])
 
 AC_ARG_WITH([xz],
-	[AS_HELP_STRING([--without-xz],
-			[Build without xz compression support])],
-	[case "${withval}" in
-	yes) AM_CONDITIONAL([WITH_XZ], [true]) ;;
-	no)  AM_CONDITIONAL([WITH_XZ], [false]) ;;
-	*) AC_MSG_ERROR([bad value ${withval} for --without-xz]) ;;
-	esac],
-	[AM_CONDITIONAL([WITH_XZ], [true])])
+	[AS_HELP_STRING([--with-xz], [Build with xz compression support])],
+	[want_xz="${withval}"], [want_xz="maybe"])
 
 AC_ARG_WITH([lzo],
-	[AS_HELP_STRING([--without-lzo],
-			[Build without lzo compression support])],
-	[case "${withval}" in
-	yes) AM_CONDITIONAL([WITH_LZO], [true]) ;;
-	no)  AM_CONDITIONAL([WITH_LZO], [false]) ;;
-	*) AC_MSG_ERROR([bad value ${withval} for --without-lzo]) ;;
-	esac],
-	[AM_CONDITIONAL([WITH_LZO], [true])])
+	[AS_HELP_STRING([--with-lzo], [Build with lzo compression support])],
+	[want_lzo="${withval}"], [want_lzo="maybe"])
 
 AC_ARG_WITH([lz4],
-	[AS_HELP_STRING([--without-lz4],
-			[Build without lz4 compression support])],
-	[case "${withval}" in
-	yes) AM_CONDITIONAL([WITH_LZ4], [true]) ;;
-	no)  AM_CONDITIONAL([WITH_LZ4], [false]) ;;
-	*) AC_MSG_ERROR([bad value ${withval} for --without-lz4]) ;;
-	esac],
-	[AM_CONDITIONAL([WITH_LZ4], [true])])
+	[AS_HELP_STRING([--without-lz4], [Build with lz4 compression support])],
+	[want_lz4="${withval}"], [want_lz4="maybe"])
 
 AC_ARG_WITH([zstd],
-	[AS_HELP_STRING([--without-zstd],
-			[Build without zstd compression support])],
-	[case "${withval}" in
-	yes) AM_CONDITIONAL([WITH_ZSTD], [true]) ;;
-	no)  AM_CONDITIONAL([WITH_ZSTD], [false]) ;;
-	*) AC_MSG_ERROR([bad value ${withval} for --without-zstd]) ;;
-	esac],
-	[AM_CONDITIONAL([WITH_ZSTD], [true])])
+	[AS_HELP_STRING([--with-zstd], [Build with zstd compression support])],
+	[want_zstd="${withval}"], [want_zstd="maybe"])
 
 AC_ARG_WITH([selinux],
-	[AS_HELP_STRING([--without-selinux],
-			[Build without SELinux label file support])],
-	[case "${withval}" in
-	yes) AM_CONDITIONAL([WITH_SELINUX], [true]) ;;
-	no)  AM_CONDITIONAL([WITH_SELINUX], [false]) ;;
-	*) AC_MSG_ERROR([bad value ${withval} for --without-selinux]) ;;
-	esac],
-	[AM_CONDITIONAL([WITH_SELINUX], [true])])
+	[AS_HELP_STRING([--with-selinux],
+			[Build with SELinux label file support])],
+	[want_selinux="${withval}"], [want_selinux="maybe"])
 
 ##### search for dependencies #####
 
-need_zlib="no"
-need_xz="no"
-need_lzo="no"
-need_lz4="no"
-need_zstd="no"
-need_selinux="no"
+PKG_CHECK_MODULES(ZLIB, [zlib],
+			[AM_CONDITIONAL([WITH_GZIP], [true])],
+			[AM_CONDITIONAL([WITH_GZIP], [false])])
 
-AM_COND_IF([WITH_GZIP], [need_zlib="yes"])
-AM_COND_IF([WITH_XZ], [need_xz="yes"])
-AM_COND_IF([WITH_LZO], [need_lzo="yes"])
-AM_COND_IF([WITH_LZ4], [need_lz4="yes"])
-AM_COND_IF([WITH_ZSTD], [need_zstd="yes"])
-AM_COND_IF([WITH_SELINUX], [need_selinux="yes"])
+PKG_CHECK_MODULES(XZ, [liblzma >= 5.0.0],
+		      [AM_CONDITIONAL([WITH_XZ], [true])],
+		      [AM_CONDITIONAL([WITH_XZ], [false])])
 
-if test "x$need_zlib" = "xyes"; then
-	PKG_CHECK_MODULES(ZLIB, [zlib], [], [AC_MSG_ERROR([cannot find zlib])])
-fi
+PKG_CHECK_MODULES(LZ4, [liblz4],
+		       [AM_CONDITIONAL([WITH_LZ4], [true])],
+		       [AM_CONDITIONAL([WITH_LZ4], [false])])
 
-if test "x$need_xz" = "xyes"; then
-	PKG_CHECK_MODULES(XZ, [liblzma >= 5.0.0], [],
-			      [AC_MSG_ERROR([cannot find xz sdk])])
-fi
+PKG_CHECK_MODULES(ZSTD, [libzstd],
+			[AM_CONDITIONAL([WITH_ZSTD], [true])],
+			[AM_CONDITIONAL([WITH_ZSTD], [false])])
 
-if test "x$need_lzo" = "xyes"; then
+AM_CONDITIONAL([WITH_LZO], [false])
+
+if test "x$want_lzo" != "xno"; then
 	AC_ARG_VAR([LZO_CFLAGS], [C compiler flags for lzo])
 	AC_ARG_VAR([LZO_LIBS], [linker flags for lzo])
+	AM_CONDITIONAL([WITH_LZO], [true])
+
 	AC_CHECK_LIB([lzo2], [lzo1x_1_15_compress], [LZO_LIBS="-llzo2"],
-		[AC_CHECK_LIB([lzo],[lzo1x_1_15_compress],[LZO_LIBS="-llzo"],
-			[AC_MSG_ERROR([cannot find lzo library])]
-		)]
-	)
+			     [AC_CHECK_LIB([lzo],[lzo1x_1_15_compress],
+				[ZO_LIBS="-llzo"],
+			     	[AM_CONDITIONAL([WITH_LZO], [false])]
+			     )]
+		    )
 fi
 
-if test "x$need_lz4" = "xyes"; then
-	PKG_CHECK_MODULES(LZ4, [liblz4], [],
-			       [AC_MSG_ERROR([cannot lz4 library])])
-fi
+AM_CONDITIONAL([WITH_SELINUX], [false])
 
-if test "x$need_zstd" = "xyes"; then
-	PKG_CHECK_MODULES(ZSTD, [libzstd], [],
-			      	[AC_MSG_ERROR([cannot zstd library])])
-fi
+if test "x$want_selinux" != "xno"; then
+	AM_CONDITIONAL([WITH_SELINUX], [true])
 
-if test "x$need_selinux" = "xyes"; then
 	PKG_CHECK_MODULES(LIBSELINUX, [libselinux], [],
-				      [AC_MSG_ERROR([cannot find libselinux])])
-
+			  [AM_CONDITIONAL([WITH_SELINUX], [false])])
 	AC_CHECK_HEADERS([selinux/selinux.h], [],
-			 [AC_MSG_ERROR([cannot find SELinux system headers])])
+			 [AM_CONDITIONAL([WITH_SELINUX], [false])])
 	AC_CHECK_HEADERS([selinux/label.h], [],
-			 [AC_MSG_ERROR([cannot find SELinux system headers])])
+			 [AM_CONDITIONAL([WITH_SELINUX], [false])])
+fi
+
+case "$want_gzip" in
+yes) AM_COND_IF([WITH_GZIP], [], [AC_MSG_ERROR([cannot find zlib])]) ;;
+no)  AM_CONDITIONAL([WITH_GZIP], [false]) ;;
+esac
+
+case "$want_xz" in
+yes) AM_COND_IF([WITH_XZ], [], [AC_MSG_ERROR([cannot find xz sdk])]) ;;
+no)  AM_CONDITIONAL([WITH_XZ], [false]) ;;
+esac
+
+case "$want_lzo" in
+yes) AM_COND_IF([WITH_LZO], [], [AC_MSG_ERROR([cannot find lzo library])]) ;;
+no)  AM_CONDITIONAL([WITH_LZO], [false]) ;;
+esac
+
+case "$want_lz4" in
+yes) AM_COND_IF([WITH_LZ4], [], [AC_MSG_ERROR([cannot find lz4 library])]) ;;
+no)  AM_CONDITIONAL([WITH_LZ4], [false]) ;;
+esac
+
+case "$want_zstd" in
+yes) AM_COND_IF([WITH_ZSTD], [], [AC_MSG_ERROR([cannot find zstd library])]) ;;
+no)  AM_CONDITIONAL([WITH_ZSTD], [false]) ;;
+esac
+
+case "$want_selinux" in
+yes) AM_COND_IF([WITH_SELINUX], [], [AC_MSG_ERROR([cannot find selinux])]) ;;
+no)  AM_CONDITIONAL([WITH_SELINUX], [false]) ;;
+esac
+
+##### sanity check #####
+
+have_compressor="no"
+AM_COND_IF([WITH_GZIP], [have_compressor="yes"])
+AM_COND_IF([WITH_XZ], [have_compressor="yes"])
+AM_COND_IF([WITH_LZO], [have_compressor="yes"])
+AM_COND_IF([WITH_LZ4], [have_compressor="yes"])
+AM_COND_IF([WITH_ZSTD], [have_compressor="yes"])
+
+if test "x$have_compressor" != "xyes"; then
+	AC_MSG_ERROR([no compressor available. At lest one is required])
 fi
 
 ##### generate output #####

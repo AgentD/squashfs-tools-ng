@@ -49,4 +49,6 @@ compressor_t *compressor_create(E_SQFS_COMPRESSOR id, bool compress,
 
 void compressor_print_help(E_SQFS_COMPRESSOR id);
 
+E_SQFS_COMPRESSOR compressor_get_default(void);
+
 #endif /* COMPRESS_H */
