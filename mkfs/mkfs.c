@@ -37,6 +37,73 @@ static int padd_file(int outfd, sqfs_super_t *super, options_t *opt)
 	return 0;
 }
 
+static int process_file(data_writer_t *data, tree_node_t *n, bool quiet)
+{
+	int ret, infd;
+	char *name;
+
+	if (!quiet) {
+		name = fstree_get_path(n);
+		printf("packing %s\n", name);
+		free(name);
+	}
+
+	infd = open(n->data.file->input_file, O_RDONLY);
+	if (infd < 0) {
+		perror(n->data.file->input_file);
+		return -1;
+	}
+
+	ret = write_data_from_fd(data, n->data.file, infd);
+
+	close(infd);
+	return ret;
+}
+
+static int pack_files_dfs(data_writer_t *data, tree_node_t *n, bool quiet)
+{
+	if (S_ISREG(n->mode))
+		return process_file(data, n, quiet);
+
+	if (S_ISDIR(n->mode)) {
+		for (n = n->data.dir->children; n != NULL; n = n->next) {
+			if (pack_files_dfs(data, n, quiet))
+				return -1;
+		}
+	}
+
+	return 0;
+}
+
+static int pack_files(data_writer_t *data, fstree_t *fs, options_t *opt)
+{
+	bool need_restore = false;
+	const char *ptr;
+
+	if (opt->packdir != NULL) {
+		if (pushd(opt->packdir))
+			return -1;
+		need_restore = true;
+	} else {
+		ptr = strrchr(opt->infile, '/');
+
+		if (ptr != NULL) {
+			if (pushdn(opt->infile, ptr - opt->infile))
+				return -1;
+
+			need_restore = true;
+		}
+	}
+
+	if (pack_files_dfs(data, fs->root, opt->quiet))
+		return -1;
+
+	if (data_writer_flush_fragments(data))
+		return -1;
+
+	return need_restore ? popd() : 0;
+}
+
 int main(int argc, char **argv)
 {
 	int status = EXIT_FAILURE, ret;
@@ -114,7 +181,7 @@ int main(int argc, char **argv)
 	if (data == NULL)
 		goto out_cmp;
 
-	if (write_data_to_image(data, &fs, &opt))
+	if (pack_files(data, &fs, &opt))
 		goto out_data;
 
 	if (sqfs_serialize_fstree(outfd, &super, &fs, cmp, &idtbl))

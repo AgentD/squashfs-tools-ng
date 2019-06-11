@@ -1,4 +1,4 @@
-gensquashfs_SOURCES = mkfs/mkfs.c mkfs/mkfs.h mkfs/block.c mkfs/options.c
+gensquashfs_SOURCES = mkfs/mkfs.c mkfs/mkfs.h mkfs/options.c
 gensquashfs_LDADD = libsquashfs.a libfstree.a libcompress.a libutil.a
 gensquashfs_CPPFLAGS = $(AM_CPPFLAGS)
 

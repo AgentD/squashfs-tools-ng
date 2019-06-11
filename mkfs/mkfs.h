@@ -38,6 +38,4 @@ typedef struct {
 
 void process_command_line(options_t *opt, int argc, char **argv);
 
-int write_data_to_image(data_writer_t *data, fstree_t *fs, options_t *opt);
-
 #endif /* MKFS_H */
