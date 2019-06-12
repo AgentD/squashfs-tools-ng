@@ -20,3 +20,4 @@ config.h
 *~
 gensquashfs
 rdsquashfs
+sqfs2tar
