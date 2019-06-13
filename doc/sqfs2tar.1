@@ -1,0 +1,50 @@
+.TH SQFS2TAR "1" "June 2019" "sqfs2tar" "User Commands"
+.SH NAME
+sqfs2tar \- turn a squashfs image into a tar archive
+.SH SYNOPSIS
+.B sqfs2tar
+[\fI\,OPTIONS\/\fR...] \fI\,<sqfsfile>\/\fR
+.SH DESCRIPTION
+Read a squashfs archive and turn it into a tar archive, written to stdout.
+
+The idea is to quickly and painlessly turn a squashfs filesystem image into
+a tar archive that can then be examined and processed by any tool that can
+work on tar archives.
+.PP
+Possible options:
+.TP
+\fB\-\-help\fR, \fB\-h\fR
+Print help text and exit.
+.TP
+\fB\-\-version\fR, \fB\-V\fR
+Print version information and exit.
+.SH LIMITATIONS
+To be compatible with as many tools as possible, the output format is POSIX tar
+using pax extensions if necessary, so the tools you intend to use should
+support the pax format.
+
+It is not possible to store socket files in a tar or pax archive. Also, in the
+current implementation, all extended attribuates are lost.
+
+If any file or directory is encountered that cannot be converted, it is
+skipped and a warning is written to stderr.
+.SH EXAMPLES
+Turn a squashfs image into a tar archive:
+.IP
+sqfs2tar rootfs.sqfs > rootfs.tar
+.TP
+Turn a squashfs image into a gzip'ed tar archive:
+.IP
+sqfs2tar rootfs.sqfs | gzip > rootfs.tar.gz
+.TP
+Turn a squashfs image into an LZMA2 compressed tar archive:
+.IP
+sqfs2tar rootfs.sqfs | xz > rootfs.tar.xz
+.SH AUTHOR
+Written by David Oberhollenzer.
+.SH COPYRIGHT
+Copyright \(co 2019 David Oberhollenzer
+License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>.
+.br
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
