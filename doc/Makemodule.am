@@ -1,0 +1,1 @@
+dist_man1_MANS += doc/gensquashfs.1 doc/rdsquashfs.1

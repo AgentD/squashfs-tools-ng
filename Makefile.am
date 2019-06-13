@@ -5,10 +5,11 @@ AM_CFLAGS = $(WARN_CFLAGS)
 
 noinst_LIBRARIES =
 bin_PROGRAMS =
-dist_man1_MANS = doc/gensquashfs.1 doc/rdsquashfs.1
+dist_man1_MANS =
 
 EXTRA_DIST = autogen.sh LICENSE README
 
+include doc/Makemodule.am
 include lib/Makemodule.am
 include mkfs/Makemodule.am
 include unpack/Makemodule.am
