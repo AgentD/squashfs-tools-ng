@@ -2,4 +2,8 @@ sqfs2tar_SOURCES = tar/sqfs2tar.c tar/tar.h tar/write_header.c
 sqfs2tar_LDADD = libsquashfs.a libfstree.a libcompress.a libutil.a
 sqfs2tar_LDADD += $(XZ_LIBS) $(ZLIB_LIBS) $(LZO_LIBS) $(LZ4_LIBS) $(ZSTD_LIBS)
 
-bin_PROGRAMS += sqfs2tar
+tar2sqfs_SOURCES = tar/tar2sqfs.c tar/skip.c tar/read_header.c tar/tar.h
+tar2sqfs_LDADD = libsquashfs.a libfstree.a libcompress.a libutil.a
+tar2sqfs_LDADD += $(XZ_LIBS) $(ZLIB_LIBS) $(LZO_LIBS) $(LZ4_LIBS) $(ZSTD_LIBS)
+
+bin_PROGRAMS += sqfs2tar tar2sqfs

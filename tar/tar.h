@@ -24,6 +24,18 @@ typedef struct {
 	char padding[12];
 } tar_header_t;
 
+typedef struct {
+	uint64_t size;
+	uint64_t mode;
+	uint64_t uid;
+	uint64_t gid;
+	uint64_t dev_maj;
+	uint64_t dev_min;
+	char *name;
+	char *link_target;
+	bool unknown_record;
+} tar_header_decoded_t;
+
 #define TAR_TYPE_FILE '0'
 #define TAR_TYPE_LINK '1'
 #define TAR_TYPE_SLINK '2'
@@ -43,5 +55,15 @@ typedef struct {
 */
 int write_tar_header(int fd, const fstree_t *fs, const tree_node_t *n,
 		     const char *name);
+
+/* calcuate and skip the zero padding */
+int skip_padding(int fd, uint64_t size);
+
+/* round up to block size and skip the entire entry */
+int skip_entry(int fd, uint64_t size);
+
+int read_header(int fd, tar_header_decoded_t *out);
+
+void clear_header(tar_header_decoded_t *hdr);
 
 #endif /* TAR_H */
