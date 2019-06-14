@@ -156,16 +156,23 @@ tree_node_t *fstree_add_file(fstree_t *fs, const char *path, uint16_t mode,
 	char *ptr;
 
 	count = filesz / fs->block_size;
-	extra = sizeof(uint32_t) * count + strlen(input) + 1;
+	extra = sizeof(uint32_t) * count;
+
+	if (input != NULL)
+		extra += strlen(input) + 1;
 
 	mode &= 07777;
 	node = fstree_add(fs, path, S_IFREG | mode, uid, gid, extra);
 
 	if (node != NULL) {
-		ptr = (char *)(node->data.file->blocksizes + count);
-		strcpy(ptr, input);
+		if (input != NULL) {
+			ptr = (char *)(node->data.file->blocksizes + count);
+			strcpy(ptr, input);
+			node->data.file->input_file = ptr;
+		} else {
+			node->data.file->input_file = NULL;
+		}
 
-		node->data.file->input_file = ptr;
 		node->data.file->size = filesz;
 	}
 	return node;
