@@ -1,0 +1,54 @@
+.TH TAR2SQFS "1" "June 2019" "tar2sqfs" "User Commands"
+.SH NAME
+tar2sqfs \- create a squashfs image from a tar archive
+.SH SYNOPSIS
+.B tar2sqfs
+[\fI\,OPTIONS\/\fR...] \fI\,<sqfsfile>\/\fR
+.SH DESCRIPTION
+Read an uncompressed tar archive from stdin and turn it into a squashfs
+filesystem image.
+
+The idea is to quickly and painlessly turn a tar ball into a squashfs
+filesystem image, so existing tools that work with tar can be used for
+squashfs.
+.PP
+Possible options:
+.TP
+\fB\-\-help\fR, \fB\-h\fR
+Print help text and exit.
+.TP
+\fB\-\-version\fR, \fB\-V\fR
+Print version information and exit.
+.SH LIMITATIONS
+Currently the tool can only process POSIX tar archives with pax extensions, so
+you need to tell your tool that generates the tar ball to not use any other
+extensions.
+
+For GNU tar, this can be done with the flag \fB\-\-posix\fR:
+.IP
+tar cf file.tar \-\-posix bin/ lib/ etc/ usr/
+.TP
+Furthermore, hard links and sparse files are currently not supported. If any
+unsupported section is encountered in a tar archive, the section is skipped and
+a warning message is written to stderr.
+.SH EXAMPLES
+.TP
+Turn an uncompressed tar archive into a squashfs image:
+.IP
+tar2sqfs rootfs.sqfs < rootfs.tar
+.TP
+Turn a gzip'ed tar archive into a squashfs image:
+.IP
+zcat rootfs.tar.gz | tar2sqfs rootfs.sqfs
+.TP
+Turn an LZMA2 compressed tar archive into a squashfs image:
+.IP
+xzcat rootfs.tar.xz | tar2sqfs rootfs.sqfs
+.SH AUTHOR
+Written by David Oberhollenzer.
+.SH COPYRIGHT
+Copyright \(co 2019 David Oberhollenzer
+License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>.
+.br
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
