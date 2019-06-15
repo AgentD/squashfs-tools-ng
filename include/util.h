@@ -3,6 +3,7 @@
 #define UTIL_H
 
 #include <sys/types.h>
+#include <stdint.h>
 
 /*
   Removes all preceeding and trailing slashes, shortens all sequences of
@@ -49,5 +50,11 @@ int pushdn(const char *path, size_t len);
 
 /* Returns 0 on success. On failure, prints error message to stderr. */
 int popd(void);
+
+/*
+  Write zero bytes to an output file to padd it to specified block size.
+  Returns 0 on success. On failure, prints error message to stderr.
+*/
+int padd_file(int outfd, uint64_t size, size_t blocksize);
 
 #endif /* UTIL_H */

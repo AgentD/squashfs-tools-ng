@@ -1,41 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "mkfs.h"
 
-static int padd_file(int outfd, sqfs_super_t *super, options_t *opt)
-{
-	size_t padd_sz = super->bytes_used % opt->devblksz;
-	uint8_t *buffer;
-	ssize_t ret;
-
-	if (padd_sz == 0)
-		return 0;
-
-	padd_sz = opt->devblksz - padd_sz;
-
-	buffer = calloc(1, padd_sz);
-	if (buffer == NULL) {
-		perror("padding output file to block size");
-		return -1;
-	}
-
-	ret = write_retry(outfd, buffer, padd_sz);
-
-	if (ret < 0) {
-		perror("Error padding squashfs image to page size");
-		free(buffer);
-		return -1;
-	}
-
-	if ((size_t)ret < padd_sz) {
-		fputs("Truncated write trying to padd squashfs image\n",
-		      stderr);
-		return -1;
-	}
-
-	free(buffer);
-	return 0;
-}
-
 static int process_file(data_writer_t *data, tree_node_t *n, bool quiet)
 {
 	int ret, infd;
@@ -198,7 +163,7 @@ int main(int argc, char **argv)
 	if (sqfs_super_write(&super, outfd))
 		goto out_data;
 
-	if (padd_file(outfd, &super, &opt))
+	if (padd_file(outfd, super.bytes_used, opt.devblksz))
 		goto out_data;
 
 	status = EXIT_SUCCESS;
