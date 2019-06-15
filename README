@@ -28,12 +28,21 @@ tools that attempt to address many of the problems of the old tools:
    maintainable in the long run.
 
 
+In addition to that, tools have been added to directly convert a tar archive
+into a SquashFS file system image and back. Although the scope of those tools
+is limited, and it is suggested to only use those for quick testing, this
+allows for using existing tools can work on tar archives to on SquashFS
+images.
+
+
 The tools in this package have different names, so they can be installed in
 together with the existing tools:
 
  - `gensquashfs` can be used to produce SquashFS images from `gen_init_cpio`
    like file listings or simply pack an input directory.
  - `rdsquashfs` can be used to inspect and unpack SquashFS images.
+ - `sqfs2tar` can turn a SquashFS image into a tar ball, written to stdout.
+ - `tar2sqfs` can turn a tar ball (read from stdin) into a SquashFS image.
 
 
  Limitations
@@ -51,6 +60,12 @@ At the moment, the following things still require some work:
  - hard links (not implemented yet; do we even want this?)
  - File deduplication (not implemented; do we even need this?)
  - NFS export tables (not implemented yet)
+
+
+At the moment, tar2sqfs also has some limitations on what it can process:
+ - only POSIX tar archives with pax extensions (use --posix for GNU tar)
+ - no sparse files or hard links (converted to symlink)
+ - way fewer tuning options than gensquashfs
 
 
  Future plans
