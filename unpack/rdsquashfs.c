@@ -56,16 +56,6 @@ int main(int argc, char **argv)
 	if (sqfs_super_read(&super, sqfsfd))
 		goto out_fd;
 
-	if ((super.version_major != SQFS_VERSION_MAJOR) ||
-	    (super.version_minor != SQFS_VERSION_MINOR)) {
-		fprintf(stderr,
-			"The image uses squashfs version %d.%d\n"
-			"We currently only supports version %d.%d (sorry).\n",
-			super.version_major, super.version_minor,
-			SQFS_VERSION_MAJOR, SQFS_VERSION_MINOR);
-		goto out_fd;
-	}
-
 	if (!compressor_exists(super.compression_id)) {
 		fputs("Image uses a compressor that has not been built in\n",
 		      stderr);

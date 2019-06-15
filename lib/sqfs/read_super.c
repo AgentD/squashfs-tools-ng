@@ -54,6 +54,16 @@ int sqfs_super_read(sqfs_super_t *super, int fd)
 		return -1;
 	}
 
+	if ((temp.version_major != SQFS_VERSION_MAJOR) ||
+	    (temp.version_minor != SQFS_VERSION_MINOR)) {
+		fprintf(stderr,
+			"The squashfs image uses squashfs version %d.%d\n"
+			"This tool currently only supports version %d.%d.\n",
+			temp.version_major, temp.version_minor,
+			SQFS_VERSION_MAJOR, SQFS_VERSION_MINOR);
+		return -1;
+	}
+
 	if ((temp.block_size - 1) & temp.block_size) {
 		fputs("Block size in image is not a power of 2!\n", stderr);
 		return -1;
