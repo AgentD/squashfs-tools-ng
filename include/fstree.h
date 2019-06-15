@@ -254,4 +254,7 @@ int fstree_gen_inode_table(fstree_t *fs);
 */
 char *fstree_get_path(tree_node_t *node);
 
+/* get a struct stat from a tree node */
+void fstree_node_stat(fstree_t *fs, tree_node_t *node, struct stat *sb);
+
 #endif /* FSTREE_H */
