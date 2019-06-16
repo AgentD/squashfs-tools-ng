@@ -2,7 +2,8 @@
 #ifndef TAR_H
 #define TAR_H
 
-#include "fstree.h"
+#include <sys/stat.h>
+#include <stdbool.h>
 
 typedef struct {
 	char name[100];
@@ -53,8 +54,8 @@ typedef struct {
   Returns < 0 on failure, > 0 if cannot encode, 0 on success.
   Prints error/warning messages to stderr.
 */
-int write_tar_header(int fd, const fstree_t *fs, const tree_node_t *n,
-		     const char *name);
+int write_tar_header(int fd, const struct stat *sb, const char *name,
+		     const char *slink_target);
 
 /* calcuate and skip the zero padding */
 int skip_padding(int fd, uint64_t size);

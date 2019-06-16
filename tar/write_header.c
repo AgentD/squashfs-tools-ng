@@ -17,41 +17,6 @@ static void write_octal(char *dst, unsigned int value, int digits)
 	memcpy(dst, temp, strlen(temp));
 }
 
-static void init_header(tar_header_t *hdr, const fstree_t *fs,
-			const tree_node_t *n)
-{
-	memset(hdr, 0, sizeof(*hdr));
-
-	memcpy(hdr->magic, TAR_MAGIC, strlen(TAR_MAGIC));
-	memcpy(hdr->version, TAR_VERSION, strlen(TAR_VERSION));
-
-	write_octal(hdr->mode, n->mode & ~S_IFMT, 6);
-	write_octal(hdr->uid, n->uid, 6);
-	write_octal(hdr->gid, n->gid, 6);
-	write_octal(hdr->size, 0, 11);
-	write_octal(hdr->mtime, fs->default_mtime, 11);
-	write_octal(hdr->devmajor, 0, 6);
-	write_octal(hdr->devminor, 0, 6);
-
-	sprintf(hdr->uname, "%u", n->uid);
-	sprintf(hdr->gname, "%u", n->gid);
-}
-
-static void update_checksum(tar_header_t *hdr)
-{
-	unsigned int chksum = 0;
-	size_t i;
-
-	memset(hdr->chksum, ' ', sizeof(hdr->chksum));
-
-	for (i = 0; i < sizeof(*hdr); ++i)
-		chksum += ((unsigned char *)hdr)[i];
-
-	write_octal(hdr->chksum, chksum, 6);
-	hdr->chksum[6] = '\0';
-	hdr->chksum[7] = ' ';
-}
-
 static int name_to_tar_header(tar_header_t *hdr, const char *path)
 {
 	size_t len = strlen(path);
@@ -80,22 +45,70 @@ static int name_to_tar_header(tar_header_t *hdr, const char *path)
 	return 0;
 }
 
-static bool need_pax_header(const tree_node_t *n, const char *name)
+static void init_header(tar_header_t *hdr, const struct stat *sb,
+			const char *name, const char *slink_target)
 {
-	tar_header_t temp;
+	memset(hdr, 0, sizeof(*hdr));
 
-	if (n->uid > 0777777 || n->gid > 0777777)
-		return true;
+	name_to_tar_header(hdr, name);
+	memcpy(hdr->magic, TAR_MAGIC, sizeof(hdr->magic));
+	memcpy(hdr->version, TAR_VERSION, sizeof(hdr->version));
+	write_octal(hdr->mode, sb->st_mode & ~S_IFMT, 6);
+	write_octal(hdr->uid, sb->st_uid, 6);
+	write_octal(hdr->gid, sb->st_gid, 6);
+	write_octal(hdr->mtime, sb->st_mtime, 11);
+	write_octal(hdr->size, 0, 11);
+	write_octal(hdr->devmajor, 0, 6);
+	write_octal(hdr->devminor, 0, 6);
 
-	if (S_ISREG(n->mode) && n->data.file->size > 077777777777UL)
-		return true;
-
-	if (S_ISLNK(n->mode)) {
-		if (strlen(n->data.slink_target) >= sizeof(temp.linkname))
-			return true;
+	switch (sb->st_mode & S_IFMT) {
+	case S_IFREG:
+		write_octal(hdr->size, sb->st_size & 077777777777L, 11);
+		break;
+	case S_IFLNK:
+		if (sb->st_size < (off_t)sizeof(hdr->linkname))
+			strcpy(hdr->linkname, slink_target);
+		break;
+	case S_IFCHR:
+	case S_IFBLK:
+		write_octal(hdr->devmajor, major(sb->st_rdev), 6);
+		write_octal(hdr->devminor, minor(sb->st_rdev), 6);
+		break;
 	}
 
-	if (name_to_tar_header(&temp, name))
+	sprintf(hdr->uname, "%u", sb->st_uid);
+	sprintf(hdr->gname, "%u", sb->st_gid);
+}
+
+static void update_checksum(tar_header_t *hdr)
+{
+	unsigned int chksum = 0;
+	size_t i;
+
+	memset(hdr->chksum, ' ', sizeof(hdr->chksum));
+
+	for (i = 0; i < sizeof(*hdr); ++i)
+		chksum += ((unsigned char *)hdr)[i];
+
+	write_octal(hdr->chksum, chksum, 6);
+	hdr->chksum[6] = '\0';
+	hdr->chksum[7] = ' ';
+}
+
+static bool need_pax_header(const struct stat *sb, const char *name)
+{
+	tar_header_t tmp;
+
+	if (sb->st_uid > 0777777 || sb->st_gid > 0777777)
+		return true;
+
+	if (S_ISREG(sb->st_mode) && sb->st_size > 077777777777L)
+		return true;
+
+	if (S_ISLNK(sb->st_mode) && sb->st_size >= (off_t)sizeof(tmp.linkname))
+		return true;
+
+	if (name_to_tar_header(&tmp, name))
 		return true;
 
 	return false;
@@ -120,48 +133,41 @@ static char *write_pax_entry(char *dst, const char *key, const char *value)
 	return dst + len;
 }
 
-static int write_pax_header(int fd, const fstree_t *fs, const tree_node_t *n,
-			    const char *name)
+static int write_pax_header(int fd, const struct stat *sb, const char *name,
+			    const char *slink_target)
 {
 	char temp[64], *ptr;
+	struct stat fakesb;
 	tar_header_t hdr;
 	ssize_t ret;
 	size_t len;
 
 	memset(buffer, 0, sizeof(buffer));
-	memset(&hdr, 0, sizeof(hdr));
+	memset(&fakesb, 0, sizeof(fakesb));
+	fakesb.st_mode = S_IFREG | 0644;
 
-	sprintf(hdr.name, "pax%lu", pax_hdr_counter);
-	memcpy(hdr.magic, TAR_MAGIC, strlen(TAR_MAGIC));
-	memcpy(hdr.version, TAR_VERSION, strlen(TAR_VERSION));
-	write_octal(hdr.mode, 0644, 6);
-	write_octal(hdr.uid, 0, 6);
-	write_octal(hdr.gid, 0, 6);
-	write_octal(hdr.mtime, 0, 11);
-	write_octal(hdr.devmajor, 0, 6);
-	write_octal(hdr.devminor, 0, 6);
-	sprintf(hdr.uname, "%u", 0);
-	sprintf(hdr.gname, "%u", 0);
+	sprintf(temp, "pax%lu", pax_hdr_counter);
+	init_header(&hdr, &fakesb, temp, NULL);
 	hdr.typeflag = TAR_TYPE_PAX;
 
+	sprintf(temp, "%u", sb->st_uid);
 	ptr = buffer;
-	sprintf(temp, "%u", n->uid);
 	ptr = write_pax_entry(ptr, "uid", temp);
 	ptr = write_pax_entry(ptr, "uname", temp);
 
-	sprintf(temp, "%u", fs->default_mtime);
+	sprintf(temp, "%lu", sb->st_mtime);
 	ptr = write_pax_entry(ptr, "mtime", temp);
 
-	sprintf(temp, "%u", n->gid);
+	sprintf(temp, "%u", sb->st_gid);
 	ptr = write_pax_entry(ptr, "gid", temp);
 	ptr = write_pax_entry(ptr, "gname", temp);
 
 	ptr = write_pax_entry(ptr, "path", name);
 
-	if (S_ISLNK(n->mode)) {
-		ptr = write_pax_entry(ptr, "linkpath", n->data.slink_target);
-	} else if (S_ISREG(n->mode)) {
-		sprintf(temp, "%lu", n->data.file->size);
+	if (S_ISLNK(sb->st_mode)) {
+		ptr = write_pax_entry(ptr, "linkpath", slink_target);
+	} else if (S_ISREG(sb->st_mode)) {
+		sprintf(temp, "%lu", sb->st_size);
 		ptr = write_pax_entry(ptr, "size", temp);
 	}
 
@@ -190,48 +196,30 @@ fail_trunc:
 	return -1;
 }
 
-int write_tar_header(int fd, const fstree_t *fs, const tree_node_t *n,
-		     const char *name)
+int write_tar_header(int fd, const struct stat *sb, const char *name,
+		     const char *slink_target)
 {
 	const char *reason;
 	tar_header_t hdr;
 	ssize_t ret;
 
-	if (need_pax_header(n, name)) {
-		if (write_pax_header(fd, fs, n, name))
+	if (need_pax_header(sb, name)) {
+		if (write_pax_header(fd, sb, name, slink_target))
 			return -1;
 
-		init_header(&hdr, fs, n);
-		sprintf(hdr.name, "pax%lu_data", pax_hdr_counter++);
-	} else {
-		init_header(&hdr, fs, n);
-		name_to_tar_header(&hdr, name);
+		sprintf(buffer, "pax%lu_data", pax_hdr_counter++);
+		name = buffer;
 	}
 
-	switch (n->mode & S_IFMT) {
-	case S_IFCHR:
-	case S_IFBLK:
-		write_octal(hdr.devmajor, major(n->data.devno), 6);
-		write_octal(hdr.devminor, minor(n->data.devno), 6);
-		hdr.typeflag = S_ISBLK(n->mode) ? TAR_TYPE_BLOCKDEV :
-			TAR_TYPE_CHARDEV;
-		break;
-	case S_IFLNK:
-		if (strlen(n->data.slink_target) < sizeof(hdr.linkname))
-			strcpy(hdr.linkname, n->data.slink_target);
+	init_header(&hdr, sb, name, slink_target);
 
-		hdr.typeflag = TAR_TYPE_SLINK;
-		break;
-	case S_IFREG:
-		write_octal(hdr.size, n->data.file->size & 077777777777UL, 11);
-		hdr.typeflag = TAR_TYPE_FILE;
-		break;
-	case S_IFDIR:
-		hdr.typeflag = TAR_TYPE_DIR;
-		break;
-	case S_IFIFO:
-		hdr.typeflag = TAR_TYPE_FIFO;
-		break;
+	switch (sb->st_mode & S_IFMT) {
+	case S_IFCHR: hdr.typeflag = TAR_TYPE_CHARDEV; break;
+	case S_IFBLK: hdr.typeflag = TAR_TYPE_BLOCKDEV; break;
+	case S_IFLNK: hdr.typeflag = TAR_TYPE_SLINK; break;
+	case S_IFREG: hdr.typeflag = TAR_TYPE_FILE; break;
+	case S_IFDIR: hdr.typeflag = TAR_TYPE_DIR; break;
+	case S_IFIFO: hdr.typeflag = TAR_TYPE_FIFO; break;
 	case S_IFSOCK:
 		reason = "cannot pack socket";
 		goto out_skip;

@@ -105,7 +105,8 @@ static int terminate_archive(void)
 
 static int write_tree_dfs(fstree_t *fs, tree_node_t *n, data_reader_t *data)
 {
-	char *name;
+	char *name, *target;
+	struct stat sb;
 	int ret;
 
 	if (n->parent != NULL || !S_ISDIR(n->mode)) {
@@ -117,7 +118,10 @@ static int write_tree_dfs(fstree_t *fs, tree_node_t *n, data_reader_t *data)
 
 		assert(canonicalize_name(name) == 0);
 
-		ret = write_tar_header(STDOUT_FILENO, fs, n, name);
+		fstree_node_stat(fs, n, &sb);
+
+		target = S_ISLNK(sb.st_mode) ? n->data.slink_target : NULL;
+		ret = write_tar_header(STDOUT_FILENO, &sb, name, target);
 		free(name);
 
 		if (ret < 0)
