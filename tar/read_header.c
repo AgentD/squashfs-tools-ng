@@ -2,19 +2,23 @@
 #include "util.h"
 #include "tar.h"
 
+#include <sys/sysmacros.h>
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <stdio.h>
 
 enum {
-	PAX_SIZE = 0x01,
-	PAX_UID = 0x02,
-	PAX_GID = 0x04,
-	PAX_DEV_MAJ = 0x08,
-	PAX_DEV_MIN = 0x10,
-	PAX_NAME = 0x20,
-	PAX_SLINK_TARGET = 0x40,
+	PAX_SIZE = 0x001,
+	PAX_UID = 0x002,
+	PAX_GID = 0x004,
+	PAX_DEV_MAJ = 0x008,
+	PAX_DEV_MIN = 0x010,
+	PAX_NAME = 0x020,
+	PAX_SLINK_TARGET = 0x040,
+	PAX_ATIME = 0x080,
+	PAX_MTIME = 0x100,
+	PAX_CTIME = 0x200,
 };
 
 static int read_octal(const char *str, int digits, uint64_t *out)
@@ -124,6 +128,7 @@ static int read_pax_header(int fd, uint64_t entsize, unsigned int *set_by_pax,
 			   tar_header_decoded_t *out)
 {
 	char *buffer, *line;
+	uint64_t field;
 	ssize_t ret;
 	uint64_t i;
 
@@ -160,10 +165,12 @@ static int read_pax_header(int fd, uint64_t entsize, unsigned int *set_by_pax,
 		buffer[i] = '\0';
 
 		if (!strncmp(line, "uid=", 4)) {
-			pax_read_decimal(line + 4, &out->uid);
+			pax_read_decimal(line + 4, &field);
+			out->sb.st_uid = field;
 			*set_by_pax |= PAX_UID;
 		} else if (!strncmp(line, "gid=", 4)) {
-			pax_read_decimal(line + 4, &out->gid);
+			pax_read_decimal(line + 4, &field);
+			out->sb.st_gid = field;
 			*set_by_pax |= PAX_GID;
 		} else if (!strncmp(line, "path=", 5)) {
 			free(out->name);
@@ -172,7 +179,8 @@ static int read_pax_header(int fd, uint64_t entsize, unsigned int *set_by_pax,
 				goto fail_errno;
 			*set_by_pax |= PAX_NAME;
 		} else if (!strncmp(line, "size=", 5)) {
-			pax_read_decimal(line + 5, &out->size);
+			pax_read_decimal(line + 5, &field);
+			out->sb.st_size = field;
 			*set_by_pax |= PAX_SIZE;
 		} else if (!strncmp(line, "linkpath=", 9)) {
 			free(out->link_target);
@@ -180,6 +188,18 @@ static int read_pax_header(int fd, uint64_t entsize, unsigned int *set_by_pax,
 			if (out->link_target == NULL)
 				goto fail_errno;
 			*set_by_pax |= PAX_SLINK_TARGET;
+		} else if (!strncmp(line, "atime=", 6)) {
+			pax_read_decimal(line + 6, &field);
+			out->sb.st_atime = field;
+			*set_by_pax |= PAX_ATIME;
+		} else if (!strncmp(line, "mtime=", 6)) {
+			pax_read_decimal(line + 6, &field);
+			out->sb.st_mtime = field;
+			*set_by_pax |= PAX_MTIME;
+		} else if (!strncmp(line, "ctime=", 6)) {
+			pax_read_decimal(line + 6, &field);
+			out->sb.st_ctime = field;
+			*set_by_pax |= PAX_CTIME;
 		}
 	}
 
@@ -199,6 +219,7 @@ fail:
 static int decode_header(const tar_header_t *hdr, unsigned int set_by_pax,
 			 tar_header_decoded_t *out)
 {
+	uint64_t field;
 	size_t count;
 
 	if (!(set_by_pax & PAX_NAME)) {
@@ -223,38 +244,53 @@ static int decode_header(const tar_header_t *hdr, unsigned int set_by_pax,
 	}
 
 	if (!(set_by_pax & PAX_SIZE)) {
-		if (read_number(hdr->size, sizeof(hdr->size), &out->size))
+		if (read_number(hdr->size, sizeof(hdr->size), &field))
 			return -1;
+		out->sb.st_size = field;
 	}
 
 	if (!(set_by_pax & PAX_UID)) {
-		if (read_number(hdr->uid, sizeof(hdr->uid), &out->uid))
+		if (read_number(hdr->uid, sizeof(hdr->uid), &field))
 			return -1;
+		out->sb.st_uid = field;
 	}
 
 	if (!(set_by_pax & PAX_GID)) {
-		if (read_number(hdr->gid, sizeof(hdr->gid), &out->gid))
+		if (read_number(hdr->gid, sizeof(hdr->gid), &field))
 			return -1;
+		out->sb.st_gid = field;
 	}
 
 	if (!(set_by_pax & PAX_DEV_MAJ)) {
-		if (read_number(hdr->devmajor, sizeof(hdr->devmajor),
-				&out->dev_maj)) {
+		if (read_number(hdr->devmajor, sizeof(hdr->devmajor), &field))
 			return -1;
-		}
+
+		out->sb.st_rdev = makedev(field, minor(out->sb.st_rdev));
 	}
 
 	if (!(set_by_pax & PAX_DEV_MIN)) {
-		if (read_number(hdr->devminor, sizeof(hdr->devminor),
-				&out->dev_min)) {
+		if (read_number(hdr->devminor, sizeof(hdr->devminor), &field))
 			return -1;
-		}
+
+		out->sb.st_rdev = makedev(major(out->sb.st_rdev), field);
 	}
 
-	if (read_octal(hdr->mode, sizeof(hdr->mode), &out->mode))
+	if (!(set_by_pax & PAX_MTIME)) {
+		if (read_number(hdr->mtime, sizeof(hdr->mtime), &field))
+			return -1;
+		out->sb.st_mtime = field;
+	}
+
+	if (!(set_by_pax & PAX_ATIME))
+		out->sb.st_atime = out->sb.st_mtime;
+
+	if (!(set_by_pax & PAX_CTIME))
+		out->sb.st_ctime = out->sb.st_mtime;
+
+	if (read_octal(hdr->mode, sizeof(hdr->mode), &field))
 		return -1;
 
-	out->mode &= 07777;
+	out->sb.st_mode = field & 07777;
 
 	if (hdr->typeflag == TAR_TYPE_LINK ||
 	    hdr->typeflag == TAR_TYPE_SLINK) {
@@ -272,26 +308,26 @@ static int decode_header(const tar_header_t *hdr, unsigned int set_by_pax,
 	switch (hdr->typeflag) {
 	case '\0':
 	case TAR_TYPE_FILE:
-		out->mode |= S_IFREG;
+		out->sb.st_mode |= S_IFREG;
 		break;
 	case TAR_TYPE_LINK:
 		/* XXX: hard links are not support yet */
-		out->mode = S_IFLNK | 0777;
+		out->sb.st_mode = S_IFLNK | 0777;
 		break;
 	case TAR_TYPE_SLINK:
-		out->mode = S_IFLNK | 0777;
+		out->sb.st_mode = S_IFLNK | 0777;
 		break;
 	case TAR_TYPE_CHARDEV:
-		out->mode |= S_IFCHR;
+		out->sb.st_mode |= S_IFCHR;
 		break;
 	case TAR_TYPE_BLOCKDEV:
-		out->mode |= S_IFBLK;
+		out->sb.st_mode |= S_IFBLK;
 		break;
 	case TAR_TYPE_DIR:
-		out->mode |= S_IFDIR;
+		out->sb.st_mode |= S_IFDIR;
 		break;
 	case TAR_TYPE_FIFO:
-		out->mode |= S_IFIFO;
+		out->sb.st_mode |= S_IFIFO;
 		break;
 	default:
 		out->unknown_record = true;

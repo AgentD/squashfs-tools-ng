@@ -26,12 +26,7 @@ typedef struct {
 } tar_header_t;
 
 typedef struct {
-	uint64_t size;
-	uint64_t mode;
-	uint64_t uid;
-	uint64_t gid;
-	uint64_t dev_maj;
-	uint64_t dev_min;
+	struct stat sb;
 	char *name;
 	char *link_target;
 	bool unknown_record;

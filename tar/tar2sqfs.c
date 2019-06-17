@@ -93,17 +93,12 @@ static int create_node_and_repack_data(tar_header_decoded_t *hdr, fstree_t *fs,
 				       data_writer_t *data)
 {
 	tree_node_t *node;
-	size_t extra = 0;
 
-	if (S_ISLNK(hdr->mode))
-		extra = strlen(hdr->link_target) + 1;
+	node = fstree_add_generic(fs, hdr->name, &hdr->sb, hdr->link_target);
+	if (node == NULL)
+		goto fail_errno;
 
-	if (S_ISREG(hdr->mode)) {
-		node = fstree_add_file(fs, hdr->name, hdr->mode,
-				       hdr->uid, hdr->gid, hdr->size, NULL);
-		if (node == NULL)
-			goto fail_errno;
-
+	if (S_ISREG(hdr->sb.st_mode)) {
 		if (write_data_from_fd(data, node->data.file,
 				       STDIN_FILENO)) {
 			return -1;
@@ -111,18 +106,6 @@ static int create_node_and_repack_data(tar_header_decoded_t *hdr, fstree_t *fs,
 
 		if (skip_padding(STDIN_FILENO, node->data.file->size))
 			return -1;
-	} else {
-		node = fstree_add(fs, hdr->name, hdr->mode,
-				  hdr->uid, hdr->gid, extra);
-		if (node == NULL)
-			goto fail_errno;
-
-		if (S_ISLNK(hdr->mode)) {
-			strcpy(node->data.slink_target,
-			       hdr->link_target);
-		} else if (S_ISBLK(hdr->mode) || S_ISCHR(hdr->mode)) {
-			node->data.devno = makedev(hdr->dev_maj, hdr->dev_min);
-		}
 	}
 
 	return 0;
@@ -146,7 +129,7 @@ static int process_tar_ball(fstree_t *fs, data_writer_t *data)
 		if (hdr.unknown_record) {
 			fprintf(stderr, "skipping '%s' (unknown entry type)\n",
 				hdr.name);
-			if (skip_entry(STDIN_FILENO, hdr.size))
+			if (skip_entry(STDIN_FILENO, hdr.sb.st_size))
 				goto fail;
 			continue;
 		}
@@ -154,7 +137,7 @@ static int process_tar_ball(fstree_t *fs, data_writer_t *data)
 		if (canonicalize_name(hdr.name)) {
 			fprintf(stderr, "skipping '%s' (invalid name)\n",
 				hdr.name);
-			if (skip_entry(STDIN_FILENO, hdr.size))
+			if (skip_entry(STDIN_FILENO, hdr.sb.st_size))
 				goto fail;
 			continue;
 		}
