@@ -200,6 +200,14 @@ tree_node_t *fstree_add_file(fstree_t *fs, const char *path, uint16_t mode,
 			     const char *input);
 
 /*
+  internally calls fstree_add or fstree_add_file depending on the given stat
+  structure and sets the link target for symlinks or input file for regular
+  files from the given extra string.
+*/
+tree_node_t *fstree_add_generic(fstree_t *fs, const char *path,
+				const struct stat *sb, const char *extra);
+
+/*
   Add an extended attribute key value pair to a tree node.
 
   Returns 0 on success, prints error to stderr on failure.

@@ -178,6 +178,34 @@ tree_node_t *fstree_add_file(fstree_t *fs, const char *path, uint16_t mode,
 	return node;
 }
 
+tree_node_t *fstree_add_generic(fstree_t *fs, const char *path,
+				const struct stat *sb, const char *extra)
+{
+	size_t payload = 0;
+	tree_node_t *node;
+
+	if (S_ISREG(sb->st_mode)) {
+		return fstree_add_file(fs, path, sb->st_mode, sb->st_uid,
+				       sb->st_gid, sb->st_size, extra);
+	}
+
+	if (S_ISLNK(sb->st_mode))
+		payload = strlen(extra) + 1;
+
+	node = fstree_add(fs, path, sb->st_mode, sb->st_uid,
+			  sb->st_gid, payload);
+	if (node == NULL)
+		return NULL;
+
+	if (S_ISLNK(sb->st_mode)) {
+		strcpy(node->data.slink_target, extra);
+	} else if (S_ISBLK(sb->st_mode) || S_ISCHR(sb->st_mode)) {
+		node->data.devno = sb->st_rdev;
+	}
+
+	return node;
+}
+
 int fstree_add_xattr(fstree_t *fs, tree_node_t *node,
 		     const char *key, const char *value)
 {
