@@ -12,159 +12,47 @@
 #include <ctype.h>
 #include <errno.h>
 
-static int add_dir(fstree_t *fs, const char *filename, size_t line_num,
-		   const char *path, uint16_t mode, uint32_t uid,
-		   uint32_t gid, const char *extra)
+static int add_generic(fstree_t *fs, const char *filename, size_t line_num,
+		       const char *path, struct stat *sb, const char *extra)
 {
-	if (extra != NULL && *extra != '\0') {
-		fprintf(stderr, "%s: %zu: WARNING: ignoring extra arguments\n",
-			filename, line_num);
-	}
-
-	if (fstree_add(fs, path, S_IFDIR | mode, uid, gid, 0) == NULL) {
-		fprintf(stderr, "%s: %zu: mkdir -p %s: %s\n",
+	if (fstree_add_generic(fs, path, sb, extra) == NULL) {
+		fprintf(stderr, "%s: %zu: %s: %s\n",
 			filename, line_num, path, strerror(errno));
 		return -1;
 	}
 
-	return 0;
-}
-
-static int add_slink(fstree_t *fs, const char *filename, size_t line_num,
-		     const char *path, uint16_t mode, uint32_t uid,
-		     uint32_t gid, const char *extra)
-{
-	tree_node_t *node;
-	(void)mode;
-
-	if (extra == NULL || *extra == '\0') {
-		fprintf(stderr, "%s: %zu: missing symlink target\n",
-			filename, line_num);
-		return -1;
-	}
-
-	node = fstree_add(fs, path, S_IFLNK | 0777, uid, gid,
-			  strlen(extra) + 1);
-
-	if (node == NULL) {
-		fprintf(stderr, "%s: %zu: ln -s %s %s\n",
-			filename, line_num, extra, path);
-		return -1;
-	}
-
-	strcpy(node->data.slink_target, extra);
 	return 0;
 }
 
 static int add_device(fstree_t *fs, const char *filename, size_t line_num,
-		      const char *path, uint16_t mode, uint32_t uid,
-		      uint32_t gid, const char *extra)
+		      const char *path, struct stat *sb, const char *extra)
 {
-	unsigned int maj = 0, min = 0;
-	tree_node_t *node;
+	unsigned int maj, min;
+	char c;
 
-	if (extra == NULL || *extra == '\0') {
-		fprintf(stderr, "%s: %zu: missing device type\n",
+	if (sscanf(extra, "%c %u:%u", &c, &maj, &min) != 3) {
+		fprintf(stderr, "%s: %zu: expected '<c|b> major:minor'\n",
 			filename, line_num);
 		return -1;
 	}
 
-	if ((*extra == 'c' || *extra == 'C') && isspace(extra[1])) {
-		mode |= S_IFCHR;
-	} else if ((*extra == 'b' || *extra == 'B') && isspace(extra[1])) {
-		mode |= S_IFBLK;
+	if (c == 'c' || c == 'C') {
+		sb->st_mode |= S_IFCHR;
+	} else if (c == 'b' || c == 'B') {
+		sb->st_mode |= S_IFBLK;
 	} else {
-		fprintf(stderr, "%s: %zu: unsupported device type",
-			filename, line_num);
+		fprintf(stderr, "%s: %zu: unknown device type '%c'\n",
+			filename, line_num, c);
 		return -1;
 	}
 
-	++extra;
-	while (isspace(*extra))
-		++extra;
-
-	if (!isdigit(*extra))
-		goto fail_devno;
-
-	while (isdigit(*extra))
-		maj = maj * 10 + *(extra++) - '0';
-
-	if (!isspace(*extra))
-		goto fail_devno;
-	while (isspace(*extra))
-		++extra;
-
-	if (!isdigit(*extra))
-		goto fail_devno;
-
-	while (isdigit(*extra))
-		min = min * 10 + *(extra++) - '0';
-
-	while (isspace(*extra))
-		++extra;
-
-	if (*extra != '\0') {
-		fprintf(stderr, "%s: %zu: WARNING: ignoring extra arguments\n",
-			filename, line_num);
-	}
-
-	node = fstree_add(fs, path, mode, uid, gid, 0);
-	if (node == NULL) {
-		fprintf(stderr, "%s: %zu: mknod %s %c %u %u: %s\n",
-			filename, line_num, path, S_ISCHR(mode) ? 'c' : 'b',
-			maj, min, strerror(errno));
-		return -1;
-	}
-
-	node->data.devno = makedev(maj, min);
-	return 0;
-fail_devno:
-	fprintf(stderr, "%s: %zu: error in device number format\n",
-		filename, line_num);
-	return -1;
-}
-
-static int add_pipe(fstree_t *fs, const char *filename, size_t line_num,
-		    const char *path, uint16_t mode, uint32_t uid,
-		    uint32_t gid, const char *extra)
-{
-	if (extra != NULL && *extra != '\0') {
-		fprintf(stderr, "%s: %zu: WARNING: ignoring extra arguments\n",
-			filename, line_num);
-	}
-
-	if (fstree_add(fs, path, S_IFIFO | mode, uid, gid, 0) == NULL) {
-		fprintf(stderr, "%s: %zu: mkfifo %s: %s\n",
-			filename, line_num, path, strerror(errno));
-		return -1;
-	}
-
-	return 0;
-}
-
-static int add_socket(fstree_t *fs, const char *filename, size_t line_num,
-		      const char *path, uint16_t mode, uint32_t uid,
-		      uint32_t gid, const char *extra)
-{
-	if (extra != NULL && *extra != '\0') {
-		fprintf(stderr, "%s: %zu: WARNING: ignoring extra arguments\n",
-			filename, line_num);
-	}
-
-	if (fstree_add(fs, path, S_IFSOCK | mode, uid, gid, 0) == NULL) {
-		fprintf(stderr, "%s: %zu: creating Unix socket %s: %s\n",
-			filename, line_num, path, strerror(errno));
-		return -1;
-	}
-
-	return 0;
+	sb->st_rdev = makedev(maj, min);
+	return add_generic(fs, filename, line_num, path, sb, NULL);
 }
 
 static int add_file(fstree_t *fs, const char *filename, size_t line_num,
-		    const char *path, uint16_t mode, uint32_t uid,
-		    uint32_t gid, const char *extra)
+		    const char *path, struct stat *basic, const char *extra)
 {
-	tree_node_t *node;
 	struct stat sb;
 
 	if (extra == NULL || *extra == '\0')
@@ -176,29 +64,26 @@ static int add_file(fstree_t *fs, const char *filename, size_t line_num,
 		return -1;
 	}
 
-	node = fstree_add_file(fs, path, mode, uid, gid, sb.st_size, extra);
+	sb.st_uid = basic->st_uid;
+	sb.st_gid = basic->st_gid;
+	sb.st_mode = basic->st_mode;
 
-	if (node == NULL) {
-		fprintf(stderr, "%s: %zu: adding %s as %s: %s\n",
-			filename, line_num, extra, path, strerror(errno));
-		return -1;
-	}
-
-	return 0;
+	return add_generic(fs, filename, line_num, path, &sb, extra);
 }
 
 static const struct {
 	const char *keyword;
+	unsigned int mode;
+	bool need_extra;
 	int (*callback)(fstree_t *fs, const char *filename, size_t line_num,
-			const char *path, uint16_t mode, uint32_t uid,
-			uint32_t gid, const char *extra);
+			const char *path, struct stat *sb, const char *extra);
 } file_list_hooks[] = {
-	{ "dir", add_dir },
-	{ "slink", add_slink },
-	{ "nod", add_device },
-	{ "pipe", add_pipe },
-	{ "sock", add_socket },
-	{ "file", add_file },
+	{ "dir", S_IFDIR, false, add_generic },
+	{ "slink", S_IFLNK, true, add_generic },
+	{ "nod", 0, true, add_device },
+	{ "pipe", S_IFIFO, false, add_generic },
+	{ "sock", S_IFSOCK, false, add_generic },
+	{ "file", S_IFREG, false, add_file },
 };
 
 #define NUM_HOOKS (sizeof(file_list_hooks) / sizeof(file_list_hooks[0]))
@@ -229,9 +114,12 @@ static int handle_line(fstree_t *fs, const char *filename,
 		       size_t line_num, char *line)
 {
 	const char *extra = NULL, *msg = NULL;
-	unsigned int mode = 0, uid = 0, gid = 0, x;
 	char keyword[16], *path;
+	unsigned int x;
+	struct stat sb;
 	size_t i;
+
+	memset(&sb, 0, sizeof(sb));
 
 	/* isolate keyword */
 	for (i = 0; isalpha(line[i]); ++i)
@@ -274,9 +162,9 @@ static int handle_line(fstree_t *fs, const char *filename,
 		if (line[i] > '7')
 			goto fail_mode;
 
-		mode = (mode << 3) | (line[i] - '0');
+		sb.st_mode = (sb.st_mode << 3) | (line[i] - '0');
 
-		if (mode > 07777)
+		if (sb.st_mode > 07777)
 			goto fail_mode_bits;
 	}
 
@@ -293,10 +181,10 @@ static int handle_line(fstree_t *fs, const char *filename,
 	for (; isdigit(line[i]); ++i) {
 		x = line[i] - '0';
 
-		if (uid > (0xFFFFFFFF - x) / 10)
+		if (sb.st_uid > (0xFFFFFFFF - x) / 10)
 			goto fail_ov;
 
-		uid = uid * 10 + x;
+		sb.st_uid = sb.st_uid * 10 + x;
 	}
 
 	if (!isspace(line[i]))
@@ -312,10 +200,10 @@ static int handle_line(fstree_t *fs, const char *filename,
 	for (; isdigit(line[i]); ++i) {
 		x = line[i] - '0';
 
-		if (gid > (0xFFFFFFFF - x) / 10)
+		if (sb.st_gid > (0xFFFFFFFF - x) / 10)
 			goto fail_ov;
 
-		gid = gid * 10 + x;
+		sb.st_gid = sb.st_gid * 10 + x;
 	}
 
 	/* extra */
@@ -330,15 +218,23 @@ static int handle_line(fstree_t *fs, const char *filename,
 	/* forward to callback */
 	for (i = 0; i < NUM_HOOKS; ++i) {
 		if (strcmp(file_list_hooks[i].keyword, keyword) == 0) {
+			if (file_list_hooks[i].need_extra && extra == NULL)
+				goto fail_no_extra;
+
+			sb.st_mode |= file_list_hooks[i].mode;
+
 			return file_list_hooks[i].callback(fs, filename,
 							   line_num, path,
-							   mode, uid, gid,
-							   extra);
+							   &sb, extra);
 		}
 	}
 
 	fprintf(stderr, "%s: %zu: unknown entry type '%s'.\n", filename,
 		line_num, keyword);
+	return -1;
+fail_no_extra:
+	fprintf(stderr, "%s: %zu: missing argument for %s.\n",
+		filename, line_num, keyword);
 	return -1;
 fail_ov:
 	msg = "numeric overflow";
