@@ -137,10 +137,7 @@ struct tree_node_t {
 
 /* Encapsulates a file system tree */
 struct fstree_t {
-	uint32_t default_uid;
-	uint32_t default_gid;
-	uint32_t default_mode;
-	uint32_t default_mtime;
+	struct stat defaults;
 	size_t block_size;
 	size_t inode_tbl_size;
 
@@ -169,40 +166,35 @@ int fstree_init(fstree_t *fs, size_t block_size, uint32_t mtime,
 void fstree_cleanup(fstree_t *fs);
 
 /*
-  Add a generic node to an fstree.
+  Create a tree node from a struct stat, node name and extra data.
 
-  The new node is inserted by path. If some components of the path don't
-  exist, they are created as directories with default permissions, like
-  mkdir -p would, and marked as implcitily created. A subsequent call that
-  tries to create an existing tree node will fail, except if the target
-  is an implicitly created directory node and the call tries to create it
-  as a directory (this will simply overwrite the permissions and ownership).
-  The implicitly created flag is then cleared. Subsequent attempts to create
-  an existing directory again will then also fail.
+  For symlinks, the extra part is interpreted as target. For regular files, it
+  is interpreted as input path (can be NULL). The name doesn't have to be null
+  terminated, a length has to be specified.
 
   This function does not print anything to stderr, instead it sets an
   appropriate errno value.
 
-  `extra_len` specifies an additional number of bytes to allocate for payload
-  data in the tree node.
+  The resulting node can be freed with a single free() call.
 */
-tree_node_t *fstree_add(fstree_t *fs, const char *path, uint16_t mode,
-			uint32_t uid, uint32_t gid, size_t extra_len);
+tree_node_t *fstree_mknode(fstree_t *fs, tree_node_t *parent, const char *name,
+			   size_t name_len, const char *extra,
+			   const struct stat *sb);
 
 /*
-  A wrappter around fstree_add for regular files.
+  Add a node to an fstree at a specific path.
 
-  This function internally computes the number of extra payload bytes
-  requiered and sets up the payload pointers propperly.
-*/
-tree_node_t *fstree_add_file(fstree_t *fs, const char *path, uint16_t mode,
-			     uint32_t uid, uint32_t gid, uint64_t filesz,
-			     const char *input);
+  If some components of the path don't exist, they are created as directories
+  with default permissions, like mkdir -p would, and marked as implcitily
+  created. A subsequent call that tries to create an existing tree node will
+  fail, except if the target is an implicitly created directory node and the
+  call tries to create it as a directory (this will simply overwrite the
+  permissions and ownership). The implicitly created flag is then cleared.
+  Subsequent attempts to create an existing directory again will then also
+  fail.
 
-/*
-  internally calls fstree_add or fstree_add_file depending on the given stat
-  structure and sets the link target for symlinks or input file for regular
-  files from the given extra string.
+  This function does not print anything to stderr, instead it sets an
+  appropriate errno value. Internally it uses fstree_mknode to create the node.
 */
 tree_node_t *fstree_add_generic(fstree_t *fs, const char *path,
 				const struct stat *sb, const char *extra);

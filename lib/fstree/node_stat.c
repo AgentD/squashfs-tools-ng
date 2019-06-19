@@ -7,17 +7,12 @@ void fstree_node_stat(fstree_t *fs, tree_node_t *node, struct stat *sb)
 {
 	tree_node_t *n;
 
-	memset(sb, 0, sizeof(*sb));
-
+	*sb = fs->defaults;
 	sb->st_ino = node->inode_num;
 	sb->st_mode = node->mode;
 	sb->st_nlink = 1;
 	sb->st_uid = node->uid;
 	sb->st_gid = node->gid;
-	sb->st_blksize = fs->block_size;
-	sb->st_mtime = fs->default_mtime;
-	sb->st_atime = sb->st_mtime;
-	sb->st_ctime = sb->st_mtime;
 
 	switch (node->mode & S_IFMT) {
 	case S_IFDIR:

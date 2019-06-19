@@ -6,19 +6,26 @@
 #include <stdio.h>
 #include <errno.h>
 
-static tree_node_t *mknode(tree_node_t *parent, const char *name,
-			   size_t name_len, size_t extra_len,
-			   uint16_t mode, uint32_t uid, uint32_t gid)
+tree_node_t *fstree_mknode(fstree_t *fs, tree_node_t *parent, const char *name,
+			   size_t name_len, const char *extra,
+			   const struct stat *sb)
 {
-	size_t size = sizeof(tree_node_t) + extra_len;
+	size_t size = sizeof(tree_node_t);
 	tree_node_t *n;
+	char *ptr;
 
-	switch (mode & S_IFMT) {
+	switch (sb->st_mode & S_IFMT) {
+	case S_IFLNK:
+		size += strlen(extra) + 1;
+		break;
 	case S_IFDIR:
 		size += sizeof(*n->data.dir);
 		break;
 	case S_IFREG:
 		size += sizeof(*n->data.file);
+		size += (sb->st_size / fs->block_size) * sizeof(uint32_t);
+		if (extra != NULL)
+			size += strlen(extra) + 1;
 		break;
 	}
 
@@ -32,19 +39,32 @@ static tree_node_t *mknode(tree_node_t *parent, const char *name,
 		n->parent = parent;
 	}
 
-	n->uid = uid;
-	n->gid = gid;
-	n->mode = mode;
+	n->uid = sb->st_uid;
+	n->gid = sb->st_gid;
+	n->mode = sb->st_mode;
 
-	switch (mode & S_IFMT) {
+	switch (sb->st_mode & S_IFMT) {
 	case S_IFDIR:
 		n->data.dir = (dir_info_t *)n->payload;
 		break;
 	case S_IFREG:
 		n->data.file = (file_info_t *)n->payload;
+		n->data.file->size = sb->st_size;
+		if (extra == NULL)
+			break;
+
+		ptr = (char *)n->data.file->blocksizes;
+		ptr += (sb->st_size / fs->block_size) * sizeof(uint32_t);
+		n->data.file->input_file = ptr;
+		strcpy(n->data.file->input_file, extra);
 		break;
 	case S_IFLNK:
 		n->data.slink_target = (char *)n->payload;
+		strcpy(n->data.slink_target, extra);
+		break;
+	case S_IFBLK:
+	case S_IFCHR:
+		n->data.devno = sb->st_rdev;
 		break;
 	}
 
@@ -103,9 +123,8 @@ static tree_node_t *get_parent_node(fstree_t *fs, tree_node_t *root,
 		n = child_by_name(root, path, end - path);
 
 		if (n == NULL) {
-			n = mknode(root, path, end - path, 0,
-				   S_IFDIR | fs->default_mode,
-				   fs->default_uid, fs->default_gid);
+			n = fstree_mknode(fs, root, path, end - path, NULL,
+					  &fs->defaults);
 			if (n == NULL)
 				return NULL;
 
@@ -119,91 +138,32 @@ static tree_node_t *get_parent_node(fstree_t *fs, tree_node_t *root,
 	return root;
 }
 
-tree_node_t *fstree_add(fstree_t *fs, const char *path, uint16_t mode,
-			uint32_t uid, uint32_t gid, size_t extra_len)
+tree_node_t *fstree_add_generic(fstree_t *fs, const char *path,
+				const struct stat *sb, const char *extra)
 {
 	tree_node_t *child, *parent;
 	const char *name;
-
-	name = strrchr(path, '/');
-	name = (name == NULL ? path : (name + 1));
 
 	parent = get_parent_node(fs, fs->root, path);
 	if (parent == NULL)
 		return NULL;
 
+	name = strrchr(path, '/');
+	name = (name == NULL ? path : (name + 1));
+
 	child = child_by_name(parent, name, strlen(name));
 	if (child != NULL) {
-		if (S_ISDIR(child->mode) && S_ISDIR(mode) &&
-		    child->data.dir->created_implicitly) {
-			child->data.dir->created_implicitly = false;
-			return child;
+		if (!S_ISDIR(child->mode) || !S_ISDIR(sb->st_mode) ||
+		    !child->data.dir->created_implicitly) {
+			errno = EEXIST;
+			return NULL;
 		}
 
-		errno = EEXIST;
-		return NULL;
+		child->data.dir->created_implicitly = false;
+		return child;
 	}
 
-	return mknode(parent, name, strlen(name), extra_len, mode, uid, gid);
-}
-
-tree_node_t *fstree_add_file(fstree_t *fs, const char *path, uint16_t mode,
-			     uint32_t uid, uint32_t gid, uint64_t filesz,
-			     const char *input)
-{
-	tree_node_t *node;
-	size_t count, extra;
-	char *ptr;
-
-	count = filesz / fs->block_size;
-	extra = sizeof(uint32_t) * count;
-
-	if (input != NULL)
-		extra += strlen(input) + 1;
-
-	mode &= 07777;
-	node = fstree_add(fs, path, S_IFREG | mode, uid, gid, extra);
-
-	if (node != NULL) {
-		if (input != NULL) {
-			ptr = (char *)(node->data.file->blocksizes + count);
-			strcpy(ptr, input);
-			node->data.file->input_file = ptr;
-		} else {
-			node->data.file->input_file = NULL;
-		}
-
-		node->data.file->size = filesz;
-	}
-	return node;
-}
-
-tree_node_t *fstree_add_generic(fstree_t *fs, const char *path,
-				const struct stat *sb, const char *extra)
-{
-	size_t payload = 0;
-	tree_node_t *node;
-
-	if (S_ISREG(sb->st_mode)) {
-		return fstree_add_file(fs, path, sb->st_mode, sb->st_uid,
-				       sb->st_gid, sb->st_size, extra);
-	}
-
-	if (S_ISLNK(sb->st_mode))
-		payload = strlen(extra) + 1;
-
-	node = fstree_add(fs, path, sb->st_mode, sb->st_uid,
-			  sb->st_gid, payload);
-	if (node == NULL)
-		return NULL;
-
-	if (S_ISLNK(sb->st_mode)) {
-		strcpy(node->data.slink_target, extra);
-	} else if (S_ISBLK(sb->st_mode) || S_ISCHR(sb->st_mode)) {
-		node->data.devno = sb->st_rdev;
-	}
-
-	return node;
+	return fstree_mknode(fs, parent, name, strlen(name), extra, sb);
 }
 
 int fstree_add_xattr(fstree_t *fs, tree_node_t *node,
@@ -347,10 +307,13 @@ int fstree_init(fstree_t *fs, size_t block_size, uint32_t mtime,
 {
 	memset(fs, 0, sizeof(*fs));
 
-	fs->default_uid = default_uid;
-	fs->default_gid = default_gid;
-	fs->default_mode = default_mode & 07777;
-	fs->default_mtime = mtime;
+	fs->defaults.st_uid = default_uid;
+	fs->defaults.st_gid = default_gid;
+	fs->defaults.st_mode = S_IFDIR | (default_mode & 07777);
+	fs->defaults.st_mtime = mtime;
+	fs->defaults.st_ctime = mtime;
+	fs->defaults.st_atime = mtime;
+	fs->defaults.st_blksize = block_size;
 	fs->block_size = block_size;
 
 	if (str_table_init(&fs->xattr_keys, FSTREE_XATTR_KEY_BUCKETS))
@@ -361,8 +324,7 @@ int fstree_init(fstree_t *fs, size_t block_size, uint32_t mtime,
 		return -1;
 	}
 
-	fs->root = mknode(NULL, "", 0, 0, S_IFDIR | fs->default_mode,
-			  default_uid, default_gid);
+	fs->root = fstree_mknode(fs, NULL, "", 0, NULL, &fs->defaults);
 
 	if (fs->root == NULL) {
 		perror("initializing file system tree");

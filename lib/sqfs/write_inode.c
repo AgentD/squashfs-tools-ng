@@ -95,7 +95,7 @@ int meta_writer_write_inode(fstree_t *fs, id_table_t *idtbl, meta_writer_t *im,
 	base.mode = htole16(node->mode);
 	base.uid_idx = htole16(uid_idx);
 	base.gid_idx = htole16(gid_idx);
-	base.mod_time = htole32(fs->default_mtime);
+	base.mod_time = htole32(fs->defaults.st_mtime);
 	base.inode_number = htole32(node->inode_num);
 
 	if (meta_writer_append(im, &base, sizeof(base))) {

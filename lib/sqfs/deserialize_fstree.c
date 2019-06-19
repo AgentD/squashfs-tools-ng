@@ -158,10 +158,12 @@ int deserialize_fstree(fstree_t *out, sqfs_super_t *super, compressor_t *cmp,
 
 	memset(out, 0, sizeof(*out));
 	out->block_size = super->block_size;
-	out->default_uid = 0;
-	out->default_gid = 0;
-	out->default_mode = 0755;
-	out->default_mtime = super->modification_time;
+	out->defaults.st_uid = 0;
+	out->defaults.st_gid = 0;
+	out->defaults.st_mode = 0755;
+	out->defaults.st_mtime = super->modification_time;
+	out->defaults.st_ctime = super->modification_time;
+	out->defaults.st_atime = super->modification_time;
 
 	out->root = tree_node_from_inode(root, &idtbl, "", super->block_size);
 	free(root);
