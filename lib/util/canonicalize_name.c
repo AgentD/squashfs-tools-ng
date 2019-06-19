@@ -1,56 +1,54 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include <string.h>
-
 #include "util.h"
+
+static void normalize_slashes(char *filename)
+{
+	char *dst = filename, *src = filename;
+
+	while (*src == '/' || *src == '\\')
+		++src;
+
+	while (*src != '\0') {
+		if (*src == '/' || *src == '\\') {
+			while (*src == '/' || *src == '\\')
+				++src;
+			if (*src == '\0')
+				break;
+			*(dst++) = '/';
+		} else {
+			*(dst++) = *(src++);
+		}
+	}
+
+	*dst = '\0';
+}
 
 int canonicalize_name(char *filename)
 {
-	char *ptr = filename;
-	int i;
+	char *dst = filename, *src = filename;
 
-	while (*ptr == '/')
-		++ptr;
+	normalize_slashes(filename);
 
-	if (ptr != filename) {
-		memmove(filename, ptr, strlen(ptr) + 1);
-		ptr = filename;
-	}
-
-	while (*ptr != '\0') {
-		if (*ptr == '/') {
-			for (i = 0; ptr[i] == '/'; ++i)
-				;
-
-			if (i > 1)
-				memmove(ptr + 1, ptr + i, strlen(ptr + i) + 1);
-		}
-
-		if (ptr[0] == '/' && ptr[1] == '\0') {
-			*ptr = '\0';
-			break;
-		}
-
-		++ptr;
-	}
-
-	ptr = filename;
-
-	while (*ptr != '\0') {
-		if (ptr[0] == '.') {
-			if (ptr[1] == '/' || ptr[1] == '\0')
-				return -1;
-
-			if (ptr[1] == '.' &&
-			    (ptr[2] == '/' || ptr[2] == '\0')) {
-				return -1;
+	while (*src != '\0') {
+		if (src[0] == '.') {
+			if (src[1] == '\0')
+				break;
+			if (src[1] == '/') {
+				src += 2;
+				continue;
 			}
+			if (src[1] == '.' && (src[2] == '/' || src[2] == '\0'))
+				return -1;
 		}
 
-		while (*ptr != '\0' && *ptr != '/')
-			++ptr;
-		if (*ptr == '/')
-			++ptr;
+		while (*src != '\0' && *src != '/')
+			*(dst++) = *(src++);
+
+		if (*src == '/')
+			*(dst++) = *(src++);
 	}
 
+	*dst = '\0';
+	normalize_slashes(filename);
 	return 0;
 }
