@@ -7,6 +7,11 @@ libfstree_a_SOURCES += include/fstree.h
 libfstree_a_CFLAGS = $(AM_CFLAGS)
 libfstree_a_CPPFLAGS = $(AM_CPPFLAGS)
 
+libtar_a_SOURCES = lib/tar/read_header.c lib/tar/write_header.c lib/tar/skip.c
+libtar_a_SOURCES += include/tar.h
+libtar_a_CFLAGS = $(AM_CFLAGS)
+libtar_a_CPPFLAGS = $(AM_CPPFLAGS)
+
 libcompress_a_SOURCES = lib/comp/compressor.c lib/comp/internal.h
 libcompress_a_SOURCES += include/compress.h
 libcompress_a_CFLAGS = $(AM_CFLAGS)
@@ -76,4 +81,4 @@ libfstree_a_CFLAGS += $(LIBSELINUX_CFLAGS)
 libfstree_a_CPPFLAGS += -DWITH_SELINUX
 endif
 
-noinst_LIBRARIES += libfstree.a libcompress.a libutil.a libsquashfs.a
+noinst_LIBRARIES += libfstree.a libcompress.a libutil.a libsquashfs.a libtar.a
