@@ -13,8 +13,11 @@ test_mknode_reg_LDADD = libfstree.a
 test_mknode_dir_SOURCES = tests/mknode_dir.c
 test_mknode_dir_LDADD = libfstree.a
 
+test_gen_inode_table_SOURCES = tests/gen_inode_table.c
+test_gen_inode_table_LDADD = libfstree.a libutil.a
+
 check_PROGRAMS += test_canonicalize_name test_mknode_simple test_mknode_slink
-check_PROGRAMS += test_mknode_reg test_mknode_dir
+check_PROGRAMS += test_mknode_reg test_mknode_dir test_gen_inode_table
 
 TESTS += test_canonicalize_name test_mknode_simple test_mknode_slink
-TESTS += test_mknode_reg test_mknode_dir
+TESTS += test_mknode_reg test_mknode_dir test_gen_inode_table
