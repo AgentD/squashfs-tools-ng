@@ -109,6 +109,13 @@ int main(int argc, char **argv)
 			goto out_fstree;
 	}
 
+	fstree_sort(&fs);
+
+	if (fstree_gen_inode_table(&fs))
+		goto out_fstree;
+
+	super.inode_count = fs.inode_tbl_size - 2;
+
 #ifdef WITH_SELINUX
 	if (opt.selinux != NULL) {
 		if (fstree_relabel_selinux(&fs, opt.selinux))
@@ -117,13 +124,6 @@ int main(int argc, char **argv)
 #endif
 
 	fstree_xattr_deduplicate(&fs);
-
-	fstree_sort(&fs);
-
-	if (fstree_gen_inode_table(&fs))
-		goto out_fstree;
-
-	super.inode_count = fs.inode_tbl_size - 2;
 
 	cmp = compressor_create(super.compression_id, true, super.block_size,
 				opt.comp_extra);

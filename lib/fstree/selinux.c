@@ -14,41 +14,26 @@ static int relable_node(fstree_t *fs, struct selabel_handle *sehnd,
 			tree_node_t *node)
 {
 	char *context = NULL, *path;
-	tree_node_t *it;
 	int ret;
 
 	path = fstree_get_path(node);
-	if (path == NULL) {
-		perror("relabeling files");
-		return -1;
-	}
+	if (path == NULL)
+		goto fail;
 
 	if (selabel_lookup(sehnd, &context, path, node->mode) < 0) {
-		free(path);
-
-		ret = fstree_add_xattr(fs, node, XATTR_NAME_SELINUX,
-				       XATTR_VALUE_SELINUX);
-	} else {
-		free(path);
-		ret = fstree_add_xattr(fs, node, XATTR_NAME_SELINUX, context);
-		free(context);
+		context = strdup(XATTR_VALUE_SELINUX);
+		if (context == NULL)
+			goto fail;
 	}
 
-	if (ret)
-		return -1;
-
-	if (S_ISDIR(node->mode)) {
-		it = node->data.dir->children;
-
-		while (it != NULL) {
-			if (relable_node(fs, sehnd, it))
-				return -1;
-
-			it = it->next;
-		}
-	}
-
-	return 0;
+	ret = fstree_add_xattr(fs, node, XATTR_NAME_SELINUX, context);
+	free(context);
+	free(path);
+	return ret;
+fail:
+	perror("relabeling files");
+	free(path);
+	return -1;
 }
 
 int fstree_relabel_selinux(fstree_t *fs, const char *filename)
@@ -57,6 +42,7 @@ int fstree_relabel_selinux(fstree_t *fs, const char *filename)
 	struct selinux_opt seopts[] = {
 		{ SELABEL_OPT_PATH, filename },
 	};
+	size_t i;
 	int ret;
 
 	sehnd = selabel_open(SELABEL_CTX_FILE, seopts, 1);
@@ -66,7 +52,11 @@ int fstree_relabel_selinux(fstree_t *fs, const char *filename)
 		return -1;
 	}
 
-	ret = relable_node(fs, sehnd, fs->root);
+	for (i = 2; i < fs->inode_tbl_size; ++i) {
+		ret = relable_node(fs, sehnd, fs->inode_table[i]);
+		if (ret)
+			break;
+	}
 
 	selabel_close(sehnd);
 	return ret;
