@@ -74,6 +74,9 @@ tree_node_t *fstree_add_generic(fstree_t *fs, const char *path,
 			return NULL;
 		}
 
+		child->uid = sb->st_uid;
+		child->gid = sb->st_gid;
+		child->mode = sb->st_mode;
 		child->data.dir->created_implicitly = false;
 		return child;
 	}
