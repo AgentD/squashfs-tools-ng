@@ -223,7 +223,7 @@ static int decode_header(const tar_header_t *hdr, unsigned int set_by_pax,
 	size_t count;
 
 	if (!(set_by_pax & PAX_NAME)) {
-		if (hdr->prefix[0] == '\0') {
+		if (hdr->prefix[0] != '\0') {
 			count = strlen(hdr->name) + 1;
 			count += strlen(hdr->prefix) + 1;
 
