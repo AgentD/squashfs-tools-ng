@@ -57,6 +57,7 @@ tree_node_t *fstree_mknode(fstree_t *fs, tree_node_t *parent, const char *name,
 		strcpy(n->data.file->input_file, extra);
 		break;
 	case S_IFLNK:
+		n->mode = S_IFLNK | 0777;
 		n->data.slink_target = (char *)n->payload;
 		strcpy(n->data.slink_target, extra);
 		break;
