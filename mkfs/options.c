@@ -79,7 +79,7 @@ static const char *help_string =
 "                                 mtime=<value>  0 if not set.\n"
 "\n"
 #ifdef WITH_SELINUX
-"  --selinux, s <file>         Specify an SELinux label file to get context\n"
+"  --selinux, -s <file>        Specify an SELinux label file to get context\n"
 "                              attributes from.\n"
 #endif
 "  --force, -f                 Overwrite the output file if it exists.\n"
