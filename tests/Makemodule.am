@@ -19,10 +19,13 @@ test_gen_inode_table_LDADD = libfstree.a libutil.a
 test_add_by_path_SOURCES = tests/add_by_path.c
 test_add_by_path_LDADD = libfstree.a libutil.a
 
+test_get_path_SOURCES = tests/get_path.c
+test_get_path_LDADD = libfstree.a libutil.a
+
 check_PROGRAMS += test_canonicalize_name test_mknode_simple test_mknode_slink
 check_PROGRAMS += test_mknode_reg test_mknode_dir test_gen_inode_table
-check_PROGRAMS += test_add_by_path
+check_PROGRAMS += test_add_by_path test_get_path
 
 TESTS += test_canonicalize_name test_mknode_simple test_mknode_slink
 TESTS += test_mknode_reg test_mknode_dir test_gen_inode_table
-TESTS += test_add_by_path
+TESTS += test_add_by_path test_get_path
