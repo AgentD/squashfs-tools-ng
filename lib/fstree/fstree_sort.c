@@ -3,32 +3,9 @@
 
 #include <string.h>
 
-static tree_node_t *sort_list(tree_node_t *head)
+static tree_node_t *merge(tree_node_t *lhs, tree_node_t *rhs)
 {
-	tree_node_t *it, *prev, *lhs, *rhs;
-	size_t i, count = 0;
-
-	for (it = head; it != NULL; it = it->next)
-		++count;
-
-	if (count < 2)
-		return head;
-
-	prev = NULL;
-	it = head;
-
-	for (i = 0; i < count / 2; ++i) {
-		prev = it;
-		it = it->next;
-	}
-
-	prev->next = NULL;
-
-	lhs = sort_list(head);
-	rhs = sort_list(it);
-
-	head = NULL;
-	prev = NULL;
+	tree_node_t *head = NULL, *prev = NULL, *it;
 
 	while (lhs != NULL && rhs != NULL) {
 		if (strcmp(lhs->name, rhs->name) <= 0) {
@@ -60,17 +37,36 @@ static tree_node_t *sort_list(tree_node_t *head)
 	return head;
 }
 
-static void sort_directory(tree_node_t *n)
+tree_node_t *tree_node_list_sort(tree_node_t *head)
 {
-	n->data.dir->children = sort_list(n->data.dir->children);
+	tree_node_t *it, *prev;
+	size_t i, count = 0;
+
+	for (it = head; it != NULL; it = it->next)
+		++count;
+
+	if (count < 2)
+		return head;
+
+	prev = NULL;
+	it = head;
+
+	for (i = 0; i < count / 2; ++i) {
+		prev = it;
+		it = it->next;
+	}
+
+	prev->next = NULL;
+
+	return merge(tree_node_list_sort(head), tree_node_list_sort(it));
+}
+
+void tree_node_sort_recursive(tree_node_t *n)
+{
+	n->data.dir->children = tree_node_list_sort(n->data.dir->children);
 
 	for (n = n->data.dir->children; n != NULL; n = n->next) {
 		if (S_ISDIR(n->mode))
-			sort_directory(n);
+			tree_node_sort_recursive(n);
 	}
-}
-
-void fstree_sort(fstree_t *fs)
-{
-	sort_directory(fs->root);
 }

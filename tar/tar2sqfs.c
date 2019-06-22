@@ -214,7 +214,7 @@ int main(int argc, char **argv)
 	if (data_writer_flush_fragments(data))
 		goto out;
 
-	fstree_sort(&fs);
+	tree_node_sort_recursive(fs.root);
 	if (fstree_gen_inode_table(&fs))
 		goto out;
 

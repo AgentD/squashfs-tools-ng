@@ -236,9 +236,6 @@ int fstree_from_file(fstree_t *fs, const char *filename, const char *rootdir);
  */
 int fstree_from_dir(fstree_t *fs, const char *path);
 
-/* Lexicographically sort all directory contents. */
-void fstree_sort(fstree_t *fs);
-
 /* Add labels from an SELinux labeling file to all tree nodes.
    Returns 0 on success. Internally prints errors to stderr. */
 int fstree_relabel_selinux(fstree_t *fs, const char *filename);
@@ -256,5 +253,11 @@ char *fstree_get_path(tree_node_t *node);
 
 /* get a struct stat from a tree node */
 void fstree_node_stat(fstree_t *fs, tree_node_t *node, struct stat *sb);
+
+/* ASCIIbetically sort a linked list of tree nodes */
+tree_node_t *tree_node_list_sort(tree_node_t *head);
+
+/* ASCIIbetically sort all sub directories recursively */
+void tree_node_sort_recursive(tree_node_t *root);
 
 #endif /* FSTREE_H */

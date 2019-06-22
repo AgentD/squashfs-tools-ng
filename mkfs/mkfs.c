@@ -109,7 +109,7 @@ int main(int argc, char **argv)
 			goto out_fstree;
 	}
 
-	fstree_sort(&fs);
+	tree_node_sort_recursive(fs.root);
 
 	if (fstree_gen_inode_table(&fs))
 		goto out_fstree;

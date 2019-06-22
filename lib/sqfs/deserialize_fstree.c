@@ -175,7 +175,7 @@ int deserialize_fstree(fstree_t *out, sqfs_super_t *super, compressor_t *cmp,
 	if (fill_dir(ir, dr, out->root, super, &idtbl, flags))
 		goto fail_fs;
 
-	fstree_sort(out);
+	tree_node_sort_recursive(out->root);
 
 	status = 0;
 out_id:
