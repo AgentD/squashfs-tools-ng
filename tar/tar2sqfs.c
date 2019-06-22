@@ -19,11 +19,13 @@
 #include <fcntl.h>
 
 static struct option long_opts[] = {
+	{ "force", no_argument, NULL, 'f' },
+	{ "quiet", no_argument, NULL, 'q' },
 	{ "help", no_argument, NULL, 'h' },
 	{ "version", no_argument, NULL, 'V' },
 };
 
-static const char *short_opts = "hV";
+static const char *short_opts = "fqhV";
 
 static const char *usagestr =
 "Usage: tar2sqfs [OPTIONS...] <sqfsfile>\n"
@@ -33,8 +35,10 @@ static const char *usagestr =
 "\n"
 "Possible options:\n"
 "\n"
-"  --help, -h                Print help text and exit.\n"
-"  --version, -V             Print version information and exit.\n"
+"  --force, -f                 Overwrite the output file if it exists.\n"
+"  --quiet, -q                 Do not print out progress reports.\n"
+"  --help, -h                  Print help text and exit.\n"
+"  --version, -V               Print version information and exit.\n"
 "\n"
 "Examples:\n"
 "\n"
@@ -50,6 +54,8 @@ static uint16_t def_mode = 0755;
 static uint32_t def_uid = 0;
 static uint32_t def_gid = 0;
 static size_t devblksize = SQFS_DEVBLK_SIZE;
+static bool quiet = false;
+static int outmode = O_WRONLY | O_CREAT | O_EXCL;
 
 static void process_args(int argc, char **argv)
 {
@@ -61,6 +67,12 @@ static void process_args(int argc, char **argv)
 			break;
 
 		switch (i) {
+		case 'f':
+			outmode = O_WRONLY | O_CREAT | O_TRUNC;
+			break;
+		case 'q':
+			quiet = true;
+			break;
 		case 'h':
 			fputs(usagestr, stdout);
 			exit(EXIT_SUCCESS);
@@ -97,6 +109,9 @@ static int create_node_and_repack_data(tar_header_decoded_t *hdr, fstree_t *fs,
 	node = fstree_add_generic(fs, hdr->name, &hdr->sb, hdr->link_target);
 	if (node == NULL)
 		goto fail_errno;
+
+	if (!quiet)
+		printf("Packing %s\n", hdr->name);
 
 	if (S_ISREG(hdr->sb.st_mode)) {
 		if (write_data_from_fd(data, node->data.file,
@@ -167,7 +182,7 @@ int main(int argc, char **argv)
 
 	process_args(argc, argv);
 
-	outfd = open(filename, O_CREAT | O_EXCL | O_RDWR, 0644);
+	outfd = open(filename, outmode, 0644);
 	if (outfd < 0) {
 		perror(filename);
 		return EXIT_FAILURE;
