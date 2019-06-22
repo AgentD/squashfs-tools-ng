@@ -7,6 +7,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
+#include <stdio.h>
 
 #include "str_table.h"
 
@@ -215,19 +216,18 @@ void fstree_xattr_deduplicate(fstree_t *fs);
 
 /*
   Parses the file format accepted by gensquashfs and produce a file system
-  tree from it. File input paths are interpreted as relative to the given
-  root dir. If rootdir is NULL, use the path where the input file is as root
-  dir.
+  tree from it. File input paths are interpreted as relative to the current
+  working directory.
 
-  This function tries to temporarily change the working directory, so if it
-  fails, the current working directory is undefined.
+  Data is read from the given file pointer. The filename is only used for
+  producing error messages.
 
   On failure, an error report with filename and line number is written
   to stderr.
 
   Returns 0 on success.
  */
-int fstree_from_file(fstree_t *fs, const char *filename, const char *rootdir);
+int fstree_from_file(fstree_t *fs, const char *filename, FILE *fp);
 
 /*
   Recursively scan a directory and generate a file system tree from it.

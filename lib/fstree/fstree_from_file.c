@@ -8,7 +8,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include <stdio.h>
 #include <ctype.h>
 #include <errno.h>
 
@@ -258,35 +257,11 @@ out_desc:
 	return -1;
 }
 
-int fstree_from_file(fstree_t *fs, const char *filename, const char *rootdir)
+int fstree_from_file(fstree_t *fs, const char *filename, FILE *fp)
 {
-	FILE *fp = fopen(filename, "rb");
-	bool need_restore = false;
 	size_t n, line_num = 0;
-	const char *ptr;
 	ssize_t ret;
 	char *line;
-
-	if (fp == NULL) {
-		perror(filename);
-		return -1;
-	}
-
-	if (rootdir == NULL) {
-		ptr = strrchr(filename, '/');
-
-		if (ptr != NULL) {
-			if (pushdn(filename, ptr - filename)) {
-				free(line);
-				return -1;
-			}
-			need_restore = true;
-		}
-	} else {
-		if (pushd(rootdir))
-			return -1;
-		need_restore = true;
-	}
 
 	for (;;) {
 		line = NULL;
@@ -318,15 +293,8 @@ int fstree_from_file(fstree_t *fs, const char *filename, const char *rootdir)
 
 		free(line);
 	}
-
-	fclose(fp);
-
-	if (need_restore && popd() != 0)
-		return -1;
-
 	return 0;
 fail_line:
 	free(line);
-	fclose(fp);
 	return -1;
 }

@@ -39,25 +39,32 @@ static int pack_files_dfs(data_writer_t *data, tree_node_t *n, bool quiet)
 	return 0;
 }
 
-static int pack_files(data_writer_t *data, fstree_t *fs, options_t *opt)
+static int set_working_dir(options_t *opt)
 {
-	bool need_restore = false;
 	const char *ptr;
 
-	if (opt->packdir != NULL) {
-		if (pushd(opt->packdir))
-			return -1;
-		need_restore = true;
-	} else {
-		ptr = strrchr(opt->infile, '/');
+	if (opt->packdir != NULL)
+		return pushd(opt->packdir);
 
-		if (ptr != NULL) {
-			if (pushdn(opt->infile, ptr - opt->infile))
-				return -1;
+	ptr = strrchr(opt->infile, '/');
+	if (ptr != NULL)
+		return pushdn(opt->infile, ptr - opt->infile);
 
-			need_restore = true;
-		}
-	}
+	return 0;
+}
+
+static int restore_working_dir(options_t *opt)
+{
+	if (opt->packdir != NULL || strrchr(opt->infile, '/') != NULL)
+		return popd();
+
+	return 0;
+}
+
+static int pack_files(data_writer_t *data, fstree_t *fs, options_t *opt)
+{
+	if (set_working_dir(opt))
+		return -1;
 
 	if (pack_files_dfs(data, fs->root, opt->quiet))
 		return -1;
@@ -65,7 +72,36 @@ static int pack_files(data_writer_t *data, fstree_t *fs, options_t *opt)
 	if (data_writer_flush_fragments(data))
 		return -1;
 
-	return need_restore ? popd() : 0;
+	return restore_working_dir(opt);
+}
+
+static int read_fstree(fstree_t *fs, options_t *opt)
+{
+	FILE *fp;
+	int ret;
+
+	if (opt->infile == NULL)
+		return fstree_from_dir(fs, opt->packdir);
+
+	fp = fopen(opt->infile, "rb");
+	if (fp == NULL) {
+		perror(opt->infile);
+		return -1;
+	}
+
+	if (set_working_dir(opt)) {
+		fclose(fp);
+		return -1;
+	}
+
+	ret = fstree_from_file(fs, opt->infile, fp);
+
+	fclose(fp);
+
+	if (restore_working_dir(opt))
+		return -1;
+
+	return ret;
 }
 
 int main(int argc, char **argv)
@@ -101,13 +137,8 @@ int main(int argc, char **argv)
 		goto out_outfd;
 	}
 
-	if (opt.infile != NULL) {
-		if (fstree_from_file(&fs, opt.infile, opt.packdir))
-			goto out_fstree;
-	} else {
-		if (fstree_from_dir(&fs, opt.packdir))
-			goto out_fstree;
-	}
+	if (read_fstree(&fs, &opt))
+		goto out_fstree;
 
 	tree_node_sort_recursive(fs.root);
 
