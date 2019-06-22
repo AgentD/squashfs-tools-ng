@@ -137,59 +137,19 @@ static const char *compressors[] = {
 
 static long read_number(const char *name, const char *str, long min, long max)
 {
-	long base = 10, result = 0;
-	int x;
+	long result = strtol(str, NULL, 0);
 
-	if (str[0] == '0') {
-		if (str[1] == 'x' || str[1] == 'X') {
-			base = 16;
-			str += 2;
-		} else {
-			base = 8;
-		}
+	if (result < min) {
+		fprintf(stderr, "%s: number too small\n", name);
+		exit(EXIT_FAILURE);
 	}
 
-	if (!isxdigit(*str))
-		goto fail_num;
-
-	while (isxdigit(*str)) {
-		x = *(str++);
-
-		if (isupper(x)) {
-			x = x - 'A' + 10;
-		} else if (islower(x)) {
-			x = x - 'a' + 10;
-		} else {
-			x -= '0';
-		}
-
-		if (x >= base)
-			goto fail_num;
-
-		if (result > (LONG_MAX - x) / base)
-			goto fail_ov;
-
-		result = result * base + x;
+	if (result > max) {
+		fprintf(stderr, "%s: number too large\n", name);
+		exit(EXIT_FAILURE);
 	}
-
-	if (result < min)
-		goto fail_uf;
-
-	if (result > max)
-		goto fail_ov;
 
 	return result;
-fail_num:
-	fprintf(stderr, "%s: expected numeric value > 0\n", name);
-	goto fail;
-fail_uf:
-	fprintf(stderr, "%s: number to small\n", name);
-	goto fail;
-fail_ov:
-	fprintf(stderr, "%s: number to large\n", name);
-	goto fail;
-fail:
-	exit(EXIT_FAILURE);
 }
 
 static void process_defaults(options_t *opt, char *subopts)
