@@ -19,13 +19,15 @@
 #include <fcntl.h>
 
 static struct option long_opts[] = {
+	{ "compressor", required_argument, NULL, 'c' },
+	{ "comp-extra", required_argument, NULL, 'X' },
 	{ "force", no_argument, NULL, 'f' },
 	{ "quiet", no_argument, NULL, 'q' },
 	{ "help", no_argument, NULL, 'h' },
 	{ "version", no_argument, NULL, 'V' },
 };
 
-static const char *short_opts = "fqhV";
+static const char *short_opts = "c:X:fqhV";
 
 static const char *usagestr =
 "Usage: tar2sqfs [OPTIONS...] <sqfsfile>\n"
@@ -35,6 +37,11 @@ static const char *usagestr =
 "\n"
 "Possible options:\n"
 "\n"
+"  --compressor, -c <name>     Select the compressor to use.\n"
+"                              A list of available compressors is below.\n"
+"  --comp-extra, -X <options>  A comma seperated list of extra options for\n"
+"                              the selected compressor. Specify 'help' to\n"
+"                              get a list of available options.\n"
 "  --force, -f                 Overwrite the output file if it exists.\n"
 "  --quiet, -q                 Do not print out progress reports.\n"
 "  --help, -h                  Print help text and exit.\n"
@@ -52,10 +59,15 @@ static int block_size = SQFS_DEFAULT_BLOCK_SIZE;
 static size_t devblksize = SQFS_DEVBLK_SIZE;
 static bool quiet = false;
 static int outmode = O_WRONLY | O_CREAT | O_EXCL;
+static E_SQFS_COMPRESSOR comp_id;
+static char *comp_extra = NULL;
 
 static void process_args(int argc, char **argv)
 {
+	bool have_compressor;
 	int i;
+
+	comp_id = compressor_get_default();
 
 	for (;;) {
 		i = getopt_long(argc, argv, short_opts, long_opts, NULL);
@@ -63,6 +75,24 @@ static void process_args(int argc, char **argv)
 			break;
 
 		switch (i) {
+		case 'c':
+			have_compressor = true;
+
+			if (compressor_id_from_name(optarg, &comp_id))
+				have_compressor = false;
+
+			if (!compressor_exists(comp_id))
+				have_compressor = false;
+
+			if (!have_compressor) {
+				fprintf(stderr, "Unsupported compressor '%s'\n",
+					optarg);
+				exit(EXIT_FAILURE);
+			}
+			break;
+		case 'X':
+			comp_extra = optarg;
+			break;
 		case 'f':
 			outmode = O_WRONLY | O_CREAT | O_TRUNC;
 			break;
@@ -71,6 +101,7 @@ static void process_args(int argc, char **argv)
 			break;
 		case 'h':
 			fputs(usagestr, stdout);
+			compressor_print_available();
 			exit(EXIT_SUCCESS);
 		case 'V':
 			print_version();
@@ -78,6 +109,11 @@ static void process_args(int argc, char **argv)
 		default:
 			goto fail_arg;
 		}
+	}
+
+	if (comp_extra != NULL && strcmp(comp_extra, "help") == 0) {
+		compressor_print_help(comp_id);
+		exit(EXIT_SUCCESS);
 	}
 
 	if (optind >= argc) {
@@ -168,7 +204,6 @@ fail:
 int main(int argc, char **argv)
 {
 	int outfd, status = EXIT_SUCCESS;
-	E_SQFS_COMPRESSOR comp_id;
 	data_writer_t *data;
 	sqfs_super_t super;
 	compressor_t *cmp;
@@ -187,9 +222,7 @@ int main(int argc, char **argv)
 	if (fstree_init(&fs, block_size, NULL))
 		goto out_fd;
 
-	comp_id = compressor_get_default();
-
-	cmp = compressor_create(comp_id, true, block_size, NULL);
+	cmp = compressor_create(comp_id, true, block_size, comp_extra);
 	if (cmp == NULL) {
 		fputs("Error creating compressor\n", stderr);
 		goto out_fs;

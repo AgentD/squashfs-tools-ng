@@ -14,6 +14,15 @@ squashfs.
 .PP
 Possible options:
 .TP
+\fB\-\-compressor\fR, \fB\-c\fR <name>
+Select the compressor to use.
+Run \fBtar2sqfs \-\-help\fR to get a list of all available compressors
+and the default selection.
+.TP
+\fB\-\-comp\-extra\fR, \fB\-X\fR <options>
+A comma seperated list of extra options for the selected compressor. Specify
+\fBhelp\fR to get a list of available options.
+.TP
 \fB\-\-force\fR, \fB\-f\fR
 Overwrite the output file if it exists.
 .TP
