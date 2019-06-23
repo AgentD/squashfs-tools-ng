@@ -20,15 +20,17 @@
 
 static struct option long_opts[] = {
 	{ "compressor", required_argument, NULL, 'c' },
-	{ "comp-extra", required_argument, NULL, 'X' },
+	{ "block-size", required_argument, NULL, 'b' },
+	{ "dev-block-size", required_argument, NULL, 'B' },
 	{ "defaults", required_argument, NULL, 'd' },
+	{ "comp-extra", required_argument, NULL, 'X' },
 	{ "force", no_argument, NULL, 'f' },
 	{ "quiet", no_argument, NULL, 'q' },
 	{ "help", no_argument, NULL, 'h' },
 	{ "version", no_argument, NULL, 'V' },
 };
 
-static const char *short_opts = "c:X:d:fqhV";
+static const char *short_opts = "c:b:B:d:X:fqhV";
 
 static const char *usagestr =
 "Usage: tar2sqfs [OPTIONS...] <sqfsfile>\n"
@@ -43,6 +45,10 @@ static const char *usagestr =
 "  --comp-extra, -X <options>  A comma seperated list of extra options for\n"
 "                              the selected compressor. Specify 'help' to\n"
 "                              get a list of available options.\n"
+"  --block-size, -b <size>     Block size to use for Squashfs image.\n"
+"                              Defaults to %u.\n"
+"  --dev-block-size, -B <size> Device block size to padd the image to.\n"
+"                              Defaults to %u.\n"
 "  --defaults, -d <options>    A comma seperated list of default values for\n"
 "                              implicitly created directories.\n"
 "\n"
@@ -86,6 +92,17 @@ static void process_args(int argc, char **argv)
 			break;
 
 		switch (i) {
+		case 'b':
+			block_size = strtol(optarg, NULL, 0);
+			break;
+		case 'B':
+			devblksize = strtol(optarg, NULL, 0);
+			if (devblksize < 1024) {
+				fputs("Device block size must be at "
+				      "least 1024\n", stderr);
+				exit(EXIT_FAILURE);
+			}
+			break;
 		case 'c':
 			have_compressor = true;
 
@@ -114,7 +131,8 @@ static void process_args(int argc, char **argv)
 			quiet = true;
 			break;
 		case 'h':
-			fputs(usagestr, stdout);
+			printf(help_string, SQFS_DEFAULT_BLOCK_SIZE,
+			       SQFS_DEVBLK_SIZE);
 			compressor_print_available();
 			exit(EXIT_SUCCESS);
 		case 'V':

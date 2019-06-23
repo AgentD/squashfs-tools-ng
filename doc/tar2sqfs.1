@@ -23,6 +23,14 @@ and the default selection.
 A comma seperated list of extra options for the selected compressor. Specify
 \fBhelp\fR to get a list of available options.
 .TP
+\fB\-\-block\-size\fR, \fB\-b\fR <size>
+Block size to use for Squashfs image.
+Defaults to 131072.
+.TP
+\fB\-\-dev\-block\-size\fR, \fB\-B\fR <size>
+Device block size to padd the image to.
+Defaults to 4096.
+.TP
 \fB\-\-defaults\fR, \fB\-d\fR <options>
 A comma seperated list of default values for
 implicitly created directories.
