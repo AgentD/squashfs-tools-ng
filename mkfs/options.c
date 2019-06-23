@@ -61,7 +61,6 @@ static const char *help_string =
 "\n"
 "  --compressor, -c <name>     Select the compressor to use.\n"
 "                              A list of available compressors is below.\n"
-"                              Defaults to '%s'.\n"
 "  --comp-extra, -X <options>  A comma seperated list of extra options for\n"
 "                              the selected compressor. Specify 'help' to\n"
 "                              get a list of available options.\n"
@@ -125,15 +124,6 @@ static const char *help_string =
 "    # Implicitly create /bin.\n"
 "    file /bin/bash 0755 0 0"
 "\n\n";
-
-static const char *compressors[] = {
-	[SQFS_COMP_GZIP] = "gzip",
-	[SQFS_COMP_LZMA] = "lzma",
-	[SQFS_COMP_LZO] = "lzo",
-	[SQFS_COMP_XZ] = "xz",
-	[SQFS_COMP_LZ4] = "lz4",
-	[SQFS_COMP_ZSTD] = "zstd",
-};
 
 static long read_number(const char *name, const char *str, long min, long max)
 {
@@ -217,17 +207,13 @@ void process_command_line(options_t *opt, int argc, char **argv)
 
 		switch (i) {
 		case 'c':
-			have_compressor = false;
+			have_compressor = true;
 
-			for (i = SQFS_COMP_MIN; i <= SQFS_COMP_MAX; ++i) {
-				if (strcmp(compressors[i], optarg) == 0) {
-					if (compressor_exists(i)) {
-						have_compressor = true;
-						opt->compressor = i;
-						break;
-					}
-				}
-			}
+			if (compressor_id_from_name(optarg, &opt->compressor))
+				have_compressor = false;
+
+			if (!compressor_exists(opt->compressor))
+				have_compressor = false;
 
 			if (!have_compressor) {
 				fprintf(stderr, "Unsupported compressor '%s'\n",
@@ -268,16 +254,8 @@ void process_command_line(options_t *opt, int argc, char **argv)
 #endif
 		case 'h':
 			printf(help_string, __progname,
-			       compressors[compressor_get_default()],
 			       SQFS_DEFAULT_BLOCK_SIZE, SQFS_DEVBLK_SIZE);
-
-			fputs("Available compressors:\n", stdout);
-
-			for (i = SQFS_COMP_MIN; i <= SQFS_COMP_MAX; ++i) {
-				if (compressor_exists(i))
-					printf("\t%s\n", compressors[i]);
-			}
-
+			compressor_print_available();
 			exit(EXIT_SUCCESS);
 		case 'V':
 			print_version();

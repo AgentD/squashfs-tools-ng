@@ -28,8 +28,8 @@ typedef struct {
 	unsigned int def_gid;
 	unsigned int def_mode;
 	unsigned int def_mtime;
+	E_SQFS_COMPRESSOR compressor;
 	int outmode;
-	int compressor;
 	int blksz;
 	int devblksz;
 	bool quiet;

@@ -47,6 +47,15 @@ static const compressor_help_fun_t helpfuns[SQFS_COMP_MAX + 1] = {
 #endif
 };
 
+static const char *names[] = {
+	[SQFS_COMP_GZIP] = "gzip",
+	[SQFS_COMP_LZMA] = "lzma",
+	[SQFS_COMP_LZO] = "lzo",
+	[SQFS_COMP_XZ] = "xz",
+	[SQFS_COMP_LZ4] = "lz4",
+	[SQFS_COMP_ZSTD] = "zstd",
+};
+
 int generic_write_options(int fd, const void *data, size_t size)
 {
 	uint8_t buffer[size + 2];
@@ -127,6 +136,42 @@ void compressor_print_help(E_SQFS_COMPRESSOR id)
 		return;
 
 	helpfuns[id]();
+}
+
+void compressor_print_available(void)
+{
+	size_t i;
+
+	fputs("Available compressors:\n", stdout);
+
+	for (i = 0; i < sizeof(names) / sizeof(names[0]); ++i) {
+		if (compressor_exists(i))
+			printf("\t%s\n", names[i]);
+	}
+
+	printf("\nDefault compressor: %s\n", names[compressor_get_default()]);
+}
+
+const char *compressor_name_from_id(E_SQFS_COMPRESSOR id)
+{
+	if (id < 0 || (size_t)id > sizeof(names) / sizeof(names[0]))
+		return NULL;
+
+	return names[id];
+}
+
+int compressor_id_from_name(const char *name, E_SQFS_COMPRESSOR *out)
+{
+	size_t i;
+
+	for (i = 0; i < sizeof(names) / sizeof(names[0]); ++i) {
+		if (names[i] != NULL && strcmp(names[i], name) == 0) {
+			*out = i;
+			return 0;
+		}
+	}
+
+	return -1;
 }
 
 E_SQFS_COMPRESSOR compressor_get_default(void)
