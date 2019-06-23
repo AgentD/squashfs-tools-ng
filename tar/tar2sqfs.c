@@ -131,7 +131,7 @@ static void process_args(int argc, char **argv)
 			quiet = true;
 			break;
 		case 'h':
-			printf(help_string, SQFS_DEFAULT_BLOCK_SIZE,
+			printf(usagestr, SQFS_DEFAULT_BLOCK_SIZE,
 			       SQFS_DEVBLK_SIZE);
 			compressor_print_available();
 			exit(EXIT_SUCCESS);
