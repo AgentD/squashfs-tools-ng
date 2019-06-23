@@ -110,23 +110,6 @@ static const char *help_string =
 "    file /bin/bash 0755 0 0"
 "\n\n";
 
-static long read_number(const char *name, const char *str, long min, long max)
-{
-	long result = strtol(str, NULL, 0);
-
-	if (result < min) {
-		fprintf(stderr, "%s: number too small\n", name);
-		exit(EXIT_FAILURE);
-	}
-
-	if (result > max) {
-		fprintf(stderr, "%s: number too large\n", name);
-		exit(EXIT_FAILURE);
-	}
-
-	return result;
-}
-
 void process_command_line(options_t *opt, int argc, char **argv)
 {
 	bool have_compressor;
@@ -165,12 +148,15 @@ void process_command_line(options_t *opt, int argc, char **argv)
 			}
 			break;
 		case 'b':
-			opt->blksz = read_number("Block size", optarg,
-						 4096, (1 << 20) - 1);
+			opt->blksz = strtol(optarg, NULL, 0);
 			break;
 		case 'B':
-			opt->devblksz = read_number("Device block size", optarg,
-						    4096, 0xFFFFFFFF);
+			opt->devblksz = strtol(optarg, NULL, 0);
+			if (opt->devblksz < 1024) {
+				fputs("Device block size must be at "
+				      "least 1024\n", stderr);
+				exit(EXIT_FAILURE);
+			}
 			break;
 		case 'd':
 			opt->fs_defaults = optarg;
