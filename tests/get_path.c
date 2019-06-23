@@ -12,7 +12,7 @@ int main(void)
 	fstree_t fs;
 	char *str;
 
-	assert(fstree_init(&fs, 512, 1337, 0755, 21, 42) == 0);
+	assert(fstree_init(&fs, 512, NULL) == 0);
 
 	memset(&sb, 0, sizeof(sb));
 	sb.st_mode = S_IFDIR | 0750;

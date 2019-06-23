@@ -24,11 +24,8 @@
 #include <ctype.h>
 
 typedef struct {
-	unsigned int def_uid;
-	unsigned int def_gid;
-	unsigned int def_mode;
-	unsigned int def_mtime;
 	E_SQFS_COMPRESSOR compressor;
+	char *fs_defaults;
 	int outmode;
 	int blksz;
 	int devblksz;

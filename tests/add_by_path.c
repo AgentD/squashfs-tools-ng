@@ -11,8 +11,11 @@ int main(void)
 	tree_node_t *a, *b;
 	struct stat sb;
 	fstree_t fs;
+	char *opts;
 
-	assert(fstree_init(&fs, 512, 1337, 0755, 21, 42) == 0);
+	opts = strdup("mode=0755,uid=21,gid=42");
+	assert(fstree_init(&fs, 512, opts) == 0);
+	free(opts);
 
 	memset(&sb, 0, sizeof(sb));
 	sb.st_mode = S_IFDIR | 0750;

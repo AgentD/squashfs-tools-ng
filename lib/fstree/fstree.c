@@ -5,6 +5,85 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+enum {
+	DEF_UID = 0,
+	DEF_GID,
+	DEF_MODE,
+	DEF_MTIME,
+};
+
+static const char *defaults[] = {
+	[DEF_UID] = "uid",
+	[DEF_GID] = "gid",
+	[DEF_MODE] = "mode",
+	[DEF_MTIME] = "mtime",
+	NULL
+};
+
+static int process_defaults(struct stat *sb, char *subopts)
+{
+	char *value;
+	long lval;
+	int i;
+
+	while (*subopts != '\0') {
+		i = getsubopt(&subopts, (char *const *)defaults, &value);
+
+		if (value == NULL) {
+			fprintf(stderr, "Missing value for option %s\n",
+				defaults[i]);
+			return -1;
+		}
+
+		switch (i) {
+		case DEF_UID:
+			lval = strtol(value, NULL, 0);
+			if (lval < 0)
+				goto fail_uv;
+			if (lval > 0xFFFFFFFFL)
+				goto fail_ov;
+			sb->st_uid = lval;
+			break;
+		case DEF_GID:
+			lval = strtol(value, NULL, 0);
+			if (lval < 0)
+				goto fail_uv;
+			if (lval > 0xFFFFFFFFL)
+				goto fail_ov;
+			sb->st_gid = lval;
+			break;
+		case DEF_MODE:
+			lval = strtol(value, NULL, 0);
+			if (lval < 0)
+				goto fail_uv;
+			if (lval > 07777)
+				goto fail_ov;
+			sb->st_mode = S_IFDIR | (uint16_t)lval;
+			break;
+		case DEF_MTIME:
+			lval = strtol(value, NULL, 0);
+			if (lval < 0)
+				goto fail_uv;
+			if (lval > 0xFFFFFFFFL)
+				goto fail_ov;
+			sb->st_mtime = lval;
+			sb->st_atime = lval;
+			sb->st_ctime = lval;
+			break;
+		default:
+			fprintf(stderr, "Unknown option '%s'\n", value);
+			return -1;
+		}
+	}
+	return 0;
+fail_uv:
+	fprintf(stderr, "%s: value must be positive\n", defaults[i]);
+	return -1;
+fail_ov:
+	fprintf(stderr, "%s: value too large\n", defaults[i]);
+	return -1;
+}
+
 static void free_recursive(tree_node_t *n)
 {
 	tree_node_t *it;
@@ -21,20 +100,15 @@ static void free_recursive(tree_node_t *n)
 	free(n);
 }
 
-int fstree_init(fstree_t *fs, size_t block_size, uint32_t mtime,
-		uint16_t default_mode, uint32_t default_uid,
-		uint32_t default_gid)
+int fstree_init(fstree_t *fs, size_t block_size, char *defaults)
 {
 	memset(fs, 0, sizeof(*fs));
-
-	fs->defaults.st_uid = default_uid;
-	fs->defaults.st_gid = default_gid;
-	fs->defaults.st_mode = S_IFDIR | (default_mode & 07777);
-	fs->defaults.st_mtime = mtime;
-	fs->defaults.st_ctime = mtime;
-	fs->defaults.st_atime = mtime;
+	fs->defaults.st_mode = S_IFDIR | 0755;
 	fs->defaults.st_blksize = block_size;
 	fs->block_size = block_size;
+
+	if (defaults != NULL && process_defaults(&fs->defaults, defaults) != 0)
+		return -1;
 
 	if (str_table_init(&fs->xattr_keys, FSTREE_XATTR_KEY_BUCKETS))
 		return -1;

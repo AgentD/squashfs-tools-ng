@@ -158,11 +158,13 @@ struct fstree_t {
 
   `block_size` is the the data block size for regular files.
 
+  The string `defaults` can specify default attributes (mode, uid, gid, mtime)
+  as a comma seperated list of key value paris (<key>=<value>[,...]). The string
+  is passed to getsubopt and will be altered.
+
   Returns 0 on success.
 */
-int fstree_init(fstree_t *fs, size_t block_size, uint32_t mtime,
-		uint16_t default_mode, uint32_t default_uid,
-		uint32_t default_gid);
+int fstree_init(fstree_t *fs, size_t block_size, char *defaults);
 
 void fstree_cleanup(fstree_t *fs);
 

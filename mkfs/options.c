@@ -24,21 +24,6 @@ static const char *short_opts = "s:F:D:X:c:b:B:d:fqhV";
 static const char *short_opts = "F:D:X:c:b:B:d:fqhV";
 #endif
 
-enum {
-	DEF_UID = 0,
-	DEF_GID,
-	DEF_MODE,
-	DEF_MTIME,
-};
-
-static const char *defaults[] = {
-	[DEF_UID] = "uid",
-	[DEF_GID] = "gid",
-	[DEF_MODE] = "mode",
-	[DEF_MTIME] = "mtime",
-	NULL
-};
-
 extern char *__progname;
 
 static const char *help_string =
@@ -142,53 +127,11 @@ static long read_number(const char *name, const char *str, long min, long max)
 	return result;
 }
 
-static void process_defaults(options_t *opt, char *subopts)
-{
-	char *value;
-	int i;
-
-	while (*subopts != '\0') {
-		i = getsubopt(&subopts, (char *const *)defaults, &value);
-
-		if (value == NULL) {
-			fprintf(stderr, "Missing value for option %s\n",
-				defaults[i]);
-			exit(EXIT_FAILURE);
-		}
-
-		switch (i) {
-		case DEF_UID:
-			opt->def_uid = read_number("Default user ID", value,
-						   0, 0xFFFFFFFF);
-			break;
-		case DEF_GID:
-			opt->def_gid = read_number("Default group ID", value,
-						   0, 0xFFFFFFFF);
-			break;
-		case DEF_MODE:
-			opt->def_mode = read_number("Default permissions",
-						    value, 0, 0xFFFFFFFF);
-			break;
-		case DEF_MTIME:
-			opt->def_mtime = read_number("Default mtime", value,
-						     0, 0xFFFFFFFF);
-			break;
-		default:
-			fprintf(stderr, "Unknown option '%s'\n", value);
-			exit(EXIT_FAILURE);
-		}
-	}
-}
-
 void process_command_line(options_t *opt, int argc, char **argv)
 {
 	bool have_compressor;
 	int i;
 
-	opt->def_uid = 0;
-	opt->def_gid = 0;
-	opt->def_mode = 0755;
-	opt->def_mtime = 0;
 	opt->outmode = O_WRONLY | O_CREAT | O_EXCL;
 	opt->compressor = compressor_get_default();
 	opt->blksz = SQFS_DEFAULT_BLOCK_SIZE;
@@ -230,7 +173,7 @@ void process_command_line(options_t *opt, int argc, char **argv)
 						    4096, 0xFFFFFFFF);
 			break;
 		case 'd':
-			process_defaults(opt, optarg);
+			opt->fs_defaults = optarg;
 			break;
 		case 'f':
 			opt->outmode = O_WRONLY | O_CREAT | O_TRUNC;

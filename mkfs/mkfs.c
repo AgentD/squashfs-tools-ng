@@ -117,11 +117,16 @@ int main(int argc, char **argv)
 
 	process_command_line(&opt, argc, argv);
 
-	if (sqfs_super_init(&super, opt.blksz, opt.def_mtime, opt.compressor))
+	if (fstree_init(&fs, opt.blksz, opt.fs_defaults))
 		return EXIT_FAILURE;
 
+	if (sqfs_super_init(&super, opt.blksz, fs.defaults.st_mtime,
+			    opt.compressor)) {
+		goto out_fstree;
+	}
+
 	if (id_table_init(&idtbl))
-		return EXIT_FAILURE;
+		goto out_fstree;
 
 	outfd = open(opt.outfile, opt.outmode, 0644);
 	if (outfd < 0) {
@@ -132,25 +137,20 @@ int main(int argc, char **argv)
 	if (sqfs_super_write(&super, outfd))
 		goto out_outfd;
 
-	if (fstree_init(&fs, opt.blksz, opt.def_mtime, opt.def_mode,
-			opt.def_uid, opt.def_gid)) {
-		goto out_outfd;
-	}
-
 	if (read_fstree(&fs, &opt))
-		goto out_fstree;
+		goto out_outfd;
 
 	tree_node_sort_recursive(fs.root);
 
 	if (fstree_gen_inode_table(&fs))
-		goto out_fstree;
+		goto out_outfd;
 
 	super.inode_count = fs.inode_tbl_size - 2;
 
 #ifdef WITH_SELINUX
 	if (opt.selinux != NULL) {
 		if (fstree_relabel_selinux(&fs, opt.selinux))
-			goto out_fstree;
+			goto out_outfd;
 	}
 #endif
 
@@ -202,11 +202,11 @@ out_data:
 	data_writer_destroy(data);
 out_cmp:
 	cmp->destroy(cmp);
-out_fstree:
-	fstree_cleanup(&fs);
 out_outfd:
 	close(outfd);
 out_idtbl:
 	id_table_cleanup(&idtbl);
+out_fstree:
+	fstree_cleanup(&fs);
 	return status;
 }

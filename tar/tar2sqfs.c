@@ -49,10 +49,6 @@ static const char *usagestr =
 
 static const char *filename;
 static int block_size = SQFS_DEFAULT_BLOCK_SIZE;
-static uint32_t def_mtime = 0;
-static uint16_t def_mode = 0755;
-static uint32_t def_uid = 0;
-static uint32_t def_gid = 0;
 static size_t devblksize = SQFS_DEVBLK_SIZE;
 static bool quiet = false;
 static int outmode = O_WRONLY | O_CREAT | O_EXCL;
@@ -188,10 +184,8 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	if (fstree_init(&fs, block_size, def_mtime, def_mode,
-			def_uid, def_gid)) {
+	if (fstree_init(&fs, block_size, NULL))
 		goto out_fd;
-	}
 
 	comp_id = compressor_get_default();
 
@@ -201,7 +195,7 @@ int main(int argc, char **argv)
 		goto out_fs;
 	}
 
-	if (sqfs_super_init(&super, block_size, def_mtime, comp_id))
+	if (sqfs_super_init(&super, block_size, fs.defaults.st_mtime, comp_id))
 		goto out_cmp;
 
 	if (sqfs_super_write(&super, outfd))
