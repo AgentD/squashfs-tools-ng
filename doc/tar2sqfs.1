@@ -23,6 +23,26 @@ and the default selection.
 A comma seperated list of extra options for the selected compressor. Specify
 \fBhelp\fR to get a list of available options.
 .TP
+\fB\-\-defaults\fR, \fB\-d\fR <options>
+A comma seperated list of default values for
+implicitly created directories.
+The following values can be set:
+.TS
+tab(;) allbox;
+l l
+l l
+l l
+l l
+l l
+rd.
+\fBOption\fR;\fBDefault\fR
+uid=<value>;0
+gid=<value>;0
+mode=<value>;0755
+mtime=<value>;0
+.TE
+.TP
+.TP
 \fB\-\-force\fR, \fB\-f\fR
 Overwrite the output file if it exists.
 .TP

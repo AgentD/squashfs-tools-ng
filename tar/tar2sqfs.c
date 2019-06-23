@@ -21,13 +21,14 @@
 static struct option long_opts[] = {
 	{ "compressor", required_argument, NULL, 'c' },
 	{ "comp-extra", required_argument, NULL, 'X' },
+	{ "defaults", required_argument, NULL, 'd' },
 	{ "force", no_argument, NULL, 'f' },
 	{ "quiet", no_argument, NULL, 'q' },
 	{ "help", no_argument, NULL, 'h' },
 	{ "version", no_argument, NULL, 'V' },
 };
 
-static const char *short_opts = "c:X:fqhV";
+static const char *short_opts = "c:X:d:fqhV";
 
 static const char *usagestr =
 "Usage: tar2sqfs [OPTIONS...] <sqfsfile>\n"
@@ -42,6 +43,15 @@ static const char *usagestr =
 "  --comp-extra, -X <options>  A comma seperated list of extra options for\n"
 "                              the selected compressor. Specify 'help' to\n"
 "                              get a list of available options.\n"
+"  --defaults, -d <options>    A comma seperated list of default values for\n"
+"                              implicitly created directories.\n"
+"\n"
+"                              Possible options:\n"
+"                                 uid=<value>    0 if not set.\n"
+"                                 gid=<value>    0 if not set.\n"
+"                                 mode=<value>   0755 if not set.\n"
+"                                 mtime=<value>  0 if not set.\n"
+"\n"
 "  --force, -f                 Overwrite the output file if it exists.\n"
 "  --quiet, -q                 Do not print out progress reports.\n"
 "  --help, -h                  Print help text and exit.\n"
@@ -61,6 +71,7 @@ static bool quiet = false;
 static int outmode = O_WRONLY | O_CREAT | O_EXCL;
 static E_SQFS_COMPRESSOR comp_id;
 static char *comp_extra = NULL;
+static char *fs_defaults = NULL;
 
 static void process_args(int argc, char **argv)
 {
@@ -92,6 +103,9 @@ static void process_args(int argc, char **argv)
 			break;
 		case 'X':
 			comp_extra = optarg;
+			break;
+		case 'd':
+			fs_defaults = optarg;
 			break;
 		case 'f':
 			outmode = O_WRONLY | O_CREAT | O_TRUNC;
@@ -219,7 +233,7 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	if (fstree_init(&fs, block_size, NULL))
+	if (fstree_init(&fs, block_size, fs_defaults))
 		goto out_fd;
 
 	cmp = compressor_create(comp_id, true, block_size, comp_extra);
