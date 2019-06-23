@@ -5,11 +5,43 @@
 #include <string.h>
 #include <stdio.h>
 
+static void remove_from_list(fstree_t *fs, tree_xattr_t *xattr)
+{
+	tree_xattr_t *prev = NULL, *it = fs->xattr;
+
+	while (it != xattr) {
+		prev = it;
+		it = it->next;
+	}
+
+	if (prev == NULL) {
+		fs->xattr = xattr->next;
+	} else {
+		prev->next = xattr->next;
+	}
+}
+
+static tree_xattr_t *grow_xattr_block(tree_xattr_t *xattr)
+{
+	size_t count = (xattr == NULL) ? 4 : (xattr->max_attr * 2);
+	void *new = realloc(xattr, sizeof(*xattr) + sizeof(uint64_t) * count);
+
+	if (new == NULL) {
+		perror("adding extended attributes");
+		free(xattr);
+		return NULL;
+	}
+
+	xattr = new;
+	xattr->max_attr = count;
+	return xattr;
+}
+
 int fstree_add_xattr(fstree_t *fs, tree_node_t *node,
 		     const char *key, const char *value)
 {
-	tree_xattr_t *xattr, *prev, *it;
 	size_t key_idx, value_idx;
+	tree_xattr_t *xattr;
 
 	if (str_table_get_index(&fs->xattr_keys, key, &key_idx))
 		return -1;
@@ -29,56 +61,20 @@ int fstree_add_xattr(fstree_t *fs, tree_node_t *node,
 		}
 	}
 
-	if (node->xattr == NULL) {
-		xattr = calloc(1, sizeof(*xattr) + sizeof(uint64_t) * 4);
-		if (xattr == NULL) {
-			perror("adding extended attributes");
+	xattr = node->xattr;
+
+	if (xattr == NULL || xattr->max_attr == xattr->num_attr) {
+		if (xattr != NULL)
+			remove_from_list(fs, xattr);
+
+		xattr = grow_xattr_block(xattr);
+		if (xattr == NULL)
 			return -1;
-		}
-
-		xattr->max_attr = 4;
-		xattr->owner = node;
-
-		xattr->next = fs->xattr;
-		fs->xattr = xattr;
 
 		node->xattr = xattr;
-	} else {
-		xattr = node->xattr;
-
-		if (xattr->max_attr == xattr->num_attr) {
-			prev = NULL;
-			it = fs->xattr;
-
-			while (it != xattr) {
-				prev = it;
-				it = it->next;
-			}
-
-			if (prev == NULL) {
-				fs->xattr = xattr->next;
-			} else {
-				prev->next = xattr->next;
-			}
-
-			node->xattr = NULL;
-
-			it = realloc(xattr, sizeof(*xattr) +
-				     sizeof(uint64_t) * xattr->max_attr * 2);
-
-			if (it == NULL) {
-				perror("adding extended attributes");
-				free(xattr);
-				return -1;
-			}
-
-			xattr = it;
-			xattr->max_attr *= 2;
-
-			node->xattr = xattr;
-			xattr->next = fs->xattr;
-			fs->xattr = xattr;
-		}
+		xattr->owner = node;
+		xattr->next = fs->xattr;
+		fs->xattr = xattr;
 	}
 
 	xattr->ref[xattr->num_attr]  = (uint64_t)key_idx << 32;
