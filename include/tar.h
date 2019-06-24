@@ -4,6 +4,7 @@
 
 #include <sys/stat.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 typedef struct {
 	char name[100];
