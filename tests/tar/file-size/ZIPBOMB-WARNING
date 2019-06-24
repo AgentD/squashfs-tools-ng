@@ -1,0 +1,6 @@
+WARNING!
+
+The inner compressed tarballs in this directory are 8 GiB of size each.
+Be careful not to decompress them accidentally without preparing
+appropriate backing store (or having the decompressor smart about sparse
+files).

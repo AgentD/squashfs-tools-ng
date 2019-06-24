@@ -1,0 +1,19 @@
+The tar archives in this directory have been obtained from here:
+
+    https://github.com/mgorny/tar-test-inputs
+
+    git commit hash a2110a6
+
+This repository was linked in the following article on interoperability of
+various different tar programs:
+
+    https://dev.gentoo.org/~mgorny/articles/portability-of-tar-features.html
+
+The original intention of the example archives was to test various tar programs
+for interoperability with each others extensions and format quirks.
+
+The following have been removed since there is no intention in adding support
+for those features:
+
+ - volume-label tests
+ - multi-volume tests
