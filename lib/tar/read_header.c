@@ -189,16 +189,31 @@ static int read_pax_header(int fd, uint64_t entsize, unsigned int *set_by_pax,
 				goto fail_errno;
 			*set_by_pax |= PAX_SLINK_TARGET;
 		} else if (!strncmp(line, "atime=", 6)) {
-			pax_read_decimal(line + 6, &field);
-			out->sb.st_atime = field;
+			if (line[6] == '-') {
+				pax_read_decimal(line + 7, &field);
+				out->sb.st_atime = -((int64_t)field);
+			} else {
+				pax_read_decimal(line + 6, &field);
+				out->sb.st_atime = field;
+			}
 			*set_by_pax |= PAX_ATIME;
 		} else if (!strncmp(line, "mtime=", 6)) {
-			pax_read_decimal(line + 6, &field);
-			out->sb.st_mtime = field;
+			if (line[6] == '-') {
+				pax_read_decimal(line + 7, &field);
+				out->sb.st_mtime = -((int64_t)field);
+			} else {
+				pax_read_decimal(line + 6, &field);
+				out->sb.st_mtime = field;
+			}
 			*set_by_pax |= PAX_MTIME;
 		} else if (!strncmp(line, "ctime=", 6)) {
-			pax_read_decimal(line + 6, &field);
-			out->sb.st_ctime = field;
+			if (line[6] == '-') {
+				pax_read_decimal(line + 7, &field);
+				out->sb.st_ctime = -((int64_t)field);
+			} else {
+				pax_read_decimal(line + 6, &field);
+				out->sb.st_ctime = field;
+			}
 			*set_by_pax |= PAX_CTIME;
 		}
 	}
