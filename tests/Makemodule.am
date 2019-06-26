@@ -38,13 +38,18 @@ test_tar_formats_SOURCES = tests/tar_formats.c
 test_tar_formats_LDADD = libtar.a libutil.a
 test_tar_formats_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(top_srcdir)/tests/tar
 
+test_tar_long_paths_SOURCES = tests/tar_long_paths.c
+test_tar_long_paths_LDADD = libtar.a libutil.a
+test_tar_long_paths_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(top_srcdir)/tests/tar
+
 check_PROGRAMS += test_canonicalize_name test_mknode_simple test_mknode_slink
 check_PROGRAMS += test_mknode_reg test_mknode_dir test_gen_inode_table
 check_PROGRAMS += test_add_by_path test_get_path test_fstree_sort
 check_PROGRAMS += test_fstree_from_file test_fstree_init test_fstree_xattr
-check_PROGRAMS += test_tar_formats
+check_PROGRAMS += test_tar_formats test_tar_long_paths
 
 TESTS += test_canonicalize_name test_mknode_simple test_mknode_slink
 TESTS += test_mknode_reg test_mknode_dir test_gen_inode_table
 TESTS += test_add_by_path test_get_path test_fstree_sort test_fstree_from_file
 TESTS += test_fstree_init test_fstree_xattr test_tar_formats
+TESTS += test_tar_long_paths
