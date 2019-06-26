@@ -46,14 +46,19 @@ test_tar_mtime_SOURCES = tests/tar_mtime.c
 test_tar_mtime_LDADD = libtar.a libutil.a
 test_tar_mtime_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(top_srcdir)/tests/tar
 
+test_tar_large_uid_SOURCES = tests/tar_large_uid.c
+test_tar_large_uid_LDADD = libtar.a libutil.a
+test_tar_large_uid_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(top_srcdir)/tests/tar
+
 check_PROGRAMS += test_canonicalize_name test_mknode_simple test_mknode_slink
 check_PROGRAMS += test_mknode_reg test_mknode_dir test_gen_inode_table
 check_PROGRAMS += test_add_by_path test_get_path test_fstree_sort
 check_PROGRAMS += test_fstree_from_file test_fstree_init test_fstree_xattr
 check_PROGRAMS += test_tar_formats test_tar_long_paths test_tar_mtime
+check_PROGRAMS += test_tar_large_uid
 
 TESTS += test_canonicalize_name test_mknode_simple test_mknode_slink
 TESTS += test_mknode_reg test_mknode_dir test_gen_inode_table
 TESTS += test_add_by_path test_get_path test_fstree_sort test_fstree_from_file
 TESTS += test_fstree_init test_fstree_xattr test_tar_formats
-TESTS += test_tar_long_paths test_tar_mtime
+TESTS += test_tar_long_paths test_tar_mtime test_tar_large_uid
