@@ -25,6 +25,11 @@ static int read_octal(const char *str, int digits, uint64_t *out)
 {
 	uint64_t result = 0;
 
+	while (digits > 0 && isspace(*str)) {
+		++str;
+		--digits;
+	}
+
 	while (digits > 0 && *str >= '0' && *str <= '7') {
 		if (result > 0x1FFFFFFFFFFFFFFFUL) {
 			fputs("numeric overflow parsing tar header\n", stderr);
@@ -42,6 +47,11 @@ static int read_octal(const char *str, int digits, uint64_t *out)
 static int read_binary(const char *str, int digits, uint64_t *out)
 {
 	uint64_t x, result = 0;
+
+	while (digits > 0 && isspace(*str)) {
+		++str;
+		--digits;
+	}
 
 	while (digits > 0) {
 		if (result > 0x00FFFFFFFFFFFFFFUL) {
@@ -96,15 +106,24 @@ static bool is_checksum_valid(const tar_header_t *hdr)
 	return chksum == ref;
 }
 
-static bool is_magic_valid(const tar_header_t *hdr)
+static E_TAR_VERSION check_version(const tar_header_t *hdr)
 {
-	if (memcmp(hdr->magic, TAR_MAGIC, sizeof(hdr->magic)) != 0)
-		return false;
+	char buffer[sizeof(hdr->magic) + sizeof(hdr->version)];
 
-	if (memcmp(hdr->version, TAR_VERSION, sizeof(hdr->version)) != 0)
-		return false;
+	memset(buffer, '\0', sizeof(buffer));
+	if (memcmp(hdr->magic, buffer, sizeof(hdr->magic)) == 0 &&
+	    memcmp(hdr->version, buffer, sizeof(hdr->version)) == 0)
+		return ETV_V7_UNIX;
 
-	return true;
+	if (memcmp(hdr->magic, TAR_MAGIC, sizeof(hdr->magic)) == 0 &&
+	    memcmp(hdr->version, TAR_VERSION, sizeof(hdr->version)) == 0)
+		return ETV_POSIX;
+
+	if (memcmp(hdr->magic, TAR_MAGIC_OLD, sizeof(hdr->magic)) == 0 &&
+	    memcmp(hdr->version, TAR_VERSION_OLD, sizeof(hdr->version)) == 0)
+		return ETV_PRE_POSIX;
+
+	return ETV_UNKNOWN;
 }
 
 static int pax_read_decimal(const char *str, uint64_t *out)
@@ -232,13 +251,14 @@ fail:
 }
 
 static int decode_header(const tar_header_t *hdr, unsigned int set_by_pax,
-			 tar_header_decoded_t *out)
+			 tar_header_decoded_t *out, E_TAR_VERSION version)
 {
 	uint64_t field;
 	size_t count;
 
 	if (!(set_by_pax & PAX_NAME)) {
-		if (hdr->prefix[0] != '\0') {
+		if (hdr->tail.posix.prefix[0] != '\0' &&
+		    version == ETV_POSIX) {
 			count = strlen(hdr->name) + 1;
 			count += strlen(hdr->prefix) + 1;
 
@@ -356,6 +376,7 @@ int read_header(int fd, tar_header_decoded_t *out)
 {
 	unsigned int set_by_pax = 0;
 	bool prev_was_zero = false;
+	E_TAR_VERSION version;
 	uint64_t pax_size;
 	tar_header_t hdr;
 	int ret;
@@ -379,8 +400,9 @@ int read_header(int fd, tar_header_decoded_t *out)
 		}
 
 		prev_was_zero = false;
+		version = check_version(&hdr);
 
-		if (!is_magic_valid(&hdr))
+		if (version == ETV_UNKNOWN)
 			goto fail_magic;
 
 		if (!is_checksum_valid(&hdr))
@@ -398,7 +420,7 @@ int read_header(int fd, tar_header_decoded_t *out)
 		break;
 	}
 
-	if (decode_header(&hdr, set_by_pax, out))
+	if (decode_header(&hdr, set_by_pax, out, version))
 		goto fail;
 
 	return 0;

@@ -6,6 +6,13 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+typedef enum {
+	ETV_UNKNOWN = 0,
+	ETV_V7_UNIX,
+	ETV_PRE_POSIX,
+	ETV_POSIX,
+} E_TAR_VERSION;
+
 typedef struct {
 	char name[100];
 	char mode[8];
@@ -45,6 +52,9 @@ typedef struct {
 
 #define TAR_MAGIC "ustar"
 #define TAR_VERSION "00"
+
+#define TAR_MAGIC_OLD "ustar "
+#define TAR_VERSION_OLD " "
 
 /*
   Returns < 0 on failure, > 0 if cannot encode, 0 on success.
