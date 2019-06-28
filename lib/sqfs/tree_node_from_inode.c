@@ -113,6 +113,7 @@ tree_node_t *tree_node_from_inode(sqfs_inode_generic_t *inode,
 		out->name += sizeof(file_info_t);
 
 		out->data.file->size = inode->data.file_ext.file_size;
+		out->data.file->sparse = inode->data.file_ext.sparse;
 		out->data.file->startblock = inode->data.file_ext.blocks_start;
 		out->data.file->fragment = inode->data.file_ext.fragment_idx;
 		out->data.file->fragment_offset =

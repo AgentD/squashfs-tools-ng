@@ -58,6 +58,9 @@ struct file_info_t {
 
 	uint64_t size;
 
+	/* Number of bytes not written to disk because they are 0 */
+	uint64_t sparse;
+
 	/* Absolute position of the first data block. */
 	uint64_t startblock;
 

@@ -5,6 +5,7 @@
 
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 #include <stdio.h>
 
 struct data_reader_t {
@@ -81,12 +82,18 @@ int data_reader_dump_file(data_reader_t *data, file_info_t *fi, int outfd)
 			if (bs > data->block_size)
 				goto fail_bs;
 
-			ret = read_retry(data->sqfsfd, data->buffer, bs);
-			if (ret < 0)
-				goto fail_rd;
+			if (bs == 0) {
+				bs = data->block_size;
+				memset(data->buffer, 0, bs);
+				compressed = false;
+			} else {
+				ret = read_retry(data->sqfsfd, data->buffer, bs);
+				if (ret < 0)
+					goto fail_rd;
 
-			if ((size_t)ret < bs)
-				goto fail_trunc;
+				if ((size_t)ret < bs)
+					goto fail_trunc;
+			}
 
 			if (compressed) {
 				ret = data->cmp->do_block(data->cmp,
@@ -114,13 +121,18 @@ int data_reader_dump_file(data_reader_t *data, file_info_t *fi, int outfd)
 	fragsz = fi->size % data->block_size;
 
 	if (fragsz > 0) {
-		if (data->frag == NULL)
-			goto fail_frag;
+		if (fi->fragment == 0xFFFFFFFF ||
+		    fi->fragment_offset == 0xFFFFFFFF) {
+			memset(data->buffer, 0, fragsz);
+		} else {
+			if (data->frag == NULL)
+				goto fail_frag;
 
-		if (frag_reader_read(data->frag, fi->fragment,
-				     fi->fragment_offset, data->buffer,
-				     fragsz)) {
-			return -1;
+			if (frag_reader_read(data->frag, fi->fragment,
+					     fi->fragment_offset, data->buffer,
+					     fragsz)) {
+				return -1;
+			}
 		}
 
 		ret = write_retry(outfd, data->buffer, fragsz);

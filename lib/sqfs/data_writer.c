@@ -78,6 +78,11 @@ static int grow_fragment_table(data_writer_t *data)
 	return 0;
 }
 
+static bool is_zero_block(unsigned char *ptr, size_t size)
+{
+	return ptr[0] == 0 && memcmp(ptr, ptr + 1, size - 1) == 0;
+}
+
 int data_writer_flush_fragments(data_writer_t *data)
 {
 	uint64_t offset;
@@ -115,6 +120,7 @@ int write_data_from_fd(data_writer_t *data, file_info_t *fi, int infd)
 	size_t diff;
 
 	fi->startblock = data->super->bytes_used;
+	fi->sparse = 0;
 
 	while (count != 0) {
 		diff = count > (uint64_t)data->super->block_size ?
@@ -125,6 +131,18 @@ int write_data_from_fd(data_writer_t *data, file_info_t *fi, int infd)
 			goto fail_read;
 		if ((size_t)ret < diff)
 			goto fail_trunc;
+
+		if (is_zero_block(data->block, diff)) {
+			if (diff < data->super->block_size) {
+				fi->fragment_offset = 0xFFFFFFFF;
+				fi->fragment = 0xFFFFFFFF;
+			} else {
+				fi->blocksizes[blk_idx++] = 0;
+			}
+			fi->sparse += diff;
+			count -= diff;
+			continue;
+		}
 
 		if (diff < data->super->block_size) {
 			if (data->frag_offset + diff > data->super->block_size) {

@@ -86,7 +86,7 @@ int meta_writer_write_inode(fstree_t *fs, id_table_t *idtbl, meta_writer_t *im,
 		fi = node->data.file;
 
 		if (fi->startblock > 0xFFFFFFFFUL || fi->size > 0xFFFFFFFFUL ||
-		    hard_link_count(node) > 1) {
+		    hard_link_count(node) > 1 || fi->sparse > 0) {
 			type = SQFS_INODE_EXT_FILE;
 		}
 	}
@@ -185,7 +185,7 @@ int meta_writer_write_inode(fstree_t *fs, id_table_t *idtbl, meta_writer_t *im,
 		sqfs_inode_file_ext_t ext = {
 			.blocks_start = htole64(fi->startblock),
 			.file_size = htole64(fi->size),
-			.sparse = htole64(0),
+			.sparse = htole64(fi->sparse),
 			.nlink = htole32(hard_link_count(node)),
 			.fragment_idx = htole32(0xFFFFFFFF),
 			.fragment_offset = htole32(0xFFFFFFFF),
@@ -294,6 +294,14 @@ int meta_writer_write_inode(fstree_t *fs, id_table_t *idtbl, meta_writer_t *im,
 out_file_blocks:
 	for (i = 0; i < fi->size / fs->block_size; ++i) {
 		bs = htole32(fi->blocksizes[i]);
+
+		if (meta_writer_append(im, &bs, sizeof(bs)))
+			return -1;
+	}
+
+	if ((fi->size % fs->block_size) != 0 &&
+	    (fi->fragment == 0xFFFFFFFF || fi->fragment_offset == 0xFFFFFFFF)) {
+		bs = htole32(0);
 
 		if (meta_writer_append(im, &bs, sizeof(bs)))
 			return -1;
