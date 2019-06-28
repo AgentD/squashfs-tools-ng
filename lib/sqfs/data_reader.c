@@ -59,7 +59,8 @@ void data_reader_destroy(data_reader_t *data)
 	free(data);
 }
 
-int data_reader_dump_file(data_reader_t *data, file_info_t *fi, int outfd)
+int data_reader_dump_file(data_reader_t *data, file_info_t *fi, int outfd,
+			  bool allow_sparse)
 {
 	size_t i, count, fragsz;
 	bool compressed;
@@ -81,6 +82,14 @@ int data_reader_dump_file(data_reader_t *data, file_info_t *fi, int outfd)
 
 			if (bs > data->block_size)
 				goto fail_bs;
+
+			if (bs == 0 && allow_sparse) {
+				if (ftruncate(outfd, i * data->block_size))
+					goto fail_sparse;
+				if (lseek(outfd, 0, SEEK_END) == (off_t)-1)
+					goto fail_sparse;
+				continue;
+			}
 
 			if (bs == 0) {
 				bs = data->block_size;
@@ -123,6 +132,12 @@ int data_reader_dump_file(data_reader_t *data, file_info_t *fi, int outfd)
 	if (fragsz > 0) {
 		if (fi->fragment == 0xFFFFFFFF ||
 		    fi->fragment_offset == 0xFFFFFFFF) {
+			if (allow_sparse) {
+				if (ftruncate(outfd, fragsz))
+					goto fail_sparse;
+				return 0;
+			}
+
 			memset(data->buffer, 0, fragsz);
 		} else {
 			if (data->frag == NULL)
@@ -144,6 +159,9 @@ int data_reader_dump_file(data_reader_t *data, file_info_t *fi, int outfd)
 	}
 
 	return 0;
+fail_sparse:
+	perror("creating sparse output file");
+	return -1;
 fail_seek:
 	perror("seek on squashfs");
 	return -1;

@@ -26,8 +26,12 @@ void data_reader_destroy(data_reader_t *data);
   file and its fragment, if it has one. The entire data is dumped to the
   given file descriptor.
 
+  If allow_sparse is true, try to truncate and seek forward on outfd if a
+  zero block is found. If false, always write blocks of zeros to outfd.
+
   Returns 0 on success, prints error messages to stderr on failure.
  */
-int data_reader_dump_file(data_reader_t *data, file_info_t *fi, int outfd);
+int data_reader_dump_file(data_reader_t *data, file_info_t *fi, int outfd,
+			  bool allow_sparse);
 
 #endif /* DATA_READER_H */

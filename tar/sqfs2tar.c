@@ -131,7 +131,7 @@ static int write_tree_dfs(fstree_t *fs, tree_node_t *n, data_reader_t *data)
 
 		if (S_ISREG(n->mode)) {
 			if (data_reader_dump_file(data, n->data.file,
-						  STDOUT_FILENO)) {
+						  STDOUT_FILENO, false)) {
 				return -1;
 			}
 

@@ -100,7 +100,8 @@ int main(int argc, char **argv)
 		if (data == NULL)
 			goto out_fs;
 
-		if (data_reader_dump_file(data, n->data.file, STDOUT_FILENO))
+		if (data_reader_dump_file(data, n->data.file,
+					  STDOUT_FILENO, false))
 			goto out_fs;
 		break;
 	case OP_UNPACK:

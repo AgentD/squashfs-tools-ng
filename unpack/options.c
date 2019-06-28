@@ -11,6 +11,7 @@ static struct option long_opts[] = {
 	{ "no-fifo", no_argument, NULL, 'F' },
 	{ "no-slink", no_argument, NULL, 'L' },
 	{ "no-empty-dir", no_argument, NULL, 'E' },
+	{ "no-sparse", no_argument, NULL, 'Z' },
 	{ "describe", no_argument, NULL, 'd' },
 	{ "chmod", no_argument, NULL, 'C' },
 	{ "chown", no_argument, NULL, 'O' },
@@ -19,7 +20,7 @@ static struct option long_opts[] = {
 	{ "version", no_argument, NULL, 'V' },
 };
 
-static const char *short_opts = "l:c:u:p:DSFLCOEdqhV";
+static const char *short_opts = "l:c:u:p:DSFLCOEZdqhV";
 
 static const char *help_string =
 "Usage: %s [OPTIONS] <squashfs-file>\n"
@@ -47,6 +48,8 @@ static const char *help_string =
 "  --no-slink, -L            Do not unpack symbolic links.\n"
 "  --no-empty-dir, -E        Do not unpack directories that would end up\n"
 "                            empty after applying the above rules.\n"
+"  --no-sparse, -Z           Do not create sparse files, always write zero\n"
+"                            blocks to disk.\n"
 "  --chmod, -C               Change permission flags of unpacked files to\n"
 "                            those store in the squashfs image.\n"
 "  --chown, -O               Change ownership of unpacked files to the\n"
@@ -117,6 +120,9 @@ void process_command_line(options_t *opt, int argc, char **argv)
 			break;
 		case 'O':
 			opt->flags |= UNPACK_CHOWN;
+			break;
+		case 'Z':
+			opt->flags |= UNPACK_NO_SPARSE;
 			break;
 		case 'c':
 			opt->op = OP_CAT;

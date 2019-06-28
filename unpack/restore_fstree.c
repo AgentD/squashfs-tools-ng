@@ -63,7 +63,8 @@ static int create_node(tree_node_t *n, data_reader_t *data, int flags)
 			return -1;
 		}
 
-		if (data_reader_dump_file(data, n->data.file, fd)) {
+		if (data_reader_dump_file(data, n->data.file, fd,
+					  (flags & UNPACK_NO_SPARSE) == 0)) {
 			close(fd);
 			return -1;
 		}
