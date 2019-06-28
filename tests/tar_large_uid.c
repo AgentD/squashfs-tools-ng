@@ -68,5 +68,22 @@ int main(void)
 	clear_header(&hdr);
 	close(fd);
 
+	fd = open_read("user-group-largenum/gnu.tar");
+	assert(read_header(fd, &hdr) == 0);
+	assert(hdr.sb.st_mode == (S_IFREG | 0644));
+	assert(hdr.sb.st_uid == 0x80000000);
+	assert(hdr.sb.st_gid == 0x80000000);
+	assert(hdr.sb.st_size == 5);
+	assert(hdr.sb.st_mtime == 013376036700);
+	assert(hdr.sb.st_atime == 013376036700);
+	assert(hdr.sb.st_ctime == 013376036700);
+	assert(strcmp(hdr.name, "input.txt") == 0);
+	assert(!hdr.unknown_record);
+	assert(read_retry(fd, buffer, 5) == 5);
+	buffer[5] = '\0';
+	assert(strcmp(buffer, "test\n") == 0);
+	clear_header(&hdr);
+	close(fd);
+
 	return EXIT_SUCCESS;
 }

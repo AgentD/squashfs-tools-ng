@@ -46,36 +46,44 @@ static int read_octal(const char *str, int digits, uint64_t *out)
 
 static int read_binary(const char *str, int digits, uint64_t *out)
 {
-	uint64_t x, result = 0;
-
-	while (digits > 0 && isspace(*str)) {
-		++str;
-		--digits;
-	}
+	uint64_t x, ov, result;
+	bool first = true;
 
 	while (digits > 0) {
-		if (result > 0x00FFFFFFFFFFFFFFUL) {
-			fputs("numeric overflow parsing tar header\n", stderr);
-			return -1;
+		x = *((const unsigned char *)str++);
+		--digits;
+
+		if (first) {
+			first = false;
+			if (x == 0xFF) {
+				result = 0xFFFFFFFFFFFFFFFFUL;
+			} else {
+				x &= 0x7F;
+				result = 0;
+				if (digits > 7 && x != 0)
+					goto fail_ov;
+			}
 		}
 
-		x = *((const unsigned char *)str++);
+		ov = (result >> 56) & 0xFF;
+
+		if (ov != 0 && ov != 0xFF)
+			goto fail_ov;
+
 		result = (result << 8) | x;
-		--digits;
 	}
 
 	*out = result;
 	return 0;
+fail_ov:
+	fputs("numeric overflow parsing tar header\n", stderr);
+	return -1;
 }
 
 static int read_number(const char *str, int digits, uint64_t *out)
 {
-	if (*((unsigned char *)str) & 0x80) {
-		if (read_binary(str, digits, out))
-			return -1;
-		*out &= 0x7FFFFFFFFFFFFFFF;
-		return 0;
-	}
+	if (*((unsigned char *)str) & 0x80)
+		return read_binary(str, digits, out);
 
 	return read_octal(str, digits, out);
 }
@@ -260,13 +268,13 @@ static int decode_header(const tar_header_t *hdr, unsigned int set_by_pax,
 		if (hdr->tail.posix.prefix[0] != '\0' &&
 		    version == ETV_POSIX) {
 			count = strlen(hdr->name) + 1;
-			count += strlen(hdr->prefix) + 1;
+			count += strlen(hdr->tail.posix.prefix) + 1;
 
 			out->name = malloc(count);
 
 			if (out->name != NULL) {
 				sprintf(out->name, "%s/%s",
-					hdr->prefix, hdr->name);
+					hdr->tail.posix.prefix, hdr->name);
 			}
 		} else {
 			out->name = strdup(hdr->name);
@@ -313,14 +321,53 @@ static int decode_header(const tar_header_t *hdr, unsigned int set_by_pax,
 	if (!(set_by_pax & PAX_MTIME)) {
 		if (read_number(hdr->mtime, sizeof(hdr->mtime), &field))
 			return -1;
-		out->sb.st_mtime = field;
+		if (field & 0x8000000000000000UL) {
+			field = ~field + 1;
+			out->sb.st_mtime = -((int64_t)field);
+		} else {
+			out->sb.st_mtime = field;
+		}
 	}
 
-	if (!(set_by_pax & PAX_ATIME))
-		out->sb.st_atime = out->sb.st_mtime;
+	if (!(set_by_pax & PAX_ATIME)) {
+		field = out->sb.st_mtime;
 
-	if (!(set_by_pax & PAX_CTIME))
-		out->sb.st_ctime = out->sb.st_mtime;
+		if (version == ETV_PRE_POSIX &&
+		    ((uint8_t)hdr->tail.gnu.atime[0] == 0x80 ||
+		     (uint8_t)hdr->tail.gnu.atime[0] == 0xFF ||
+		     isdigit(hdr->tail.gnu.atime[0]))) {
+			if (read_number(hdr->tail.gnu.atime,
+					sizeof(hdr->tail.gnu.atime), &field))
+				return -1;
+		}
+
+		if (field & 0x8000000000000000UL) {
+			field = ~field + 1;
+			out->sb.st_atime = -((int64_t)field);
+		} else {
+			out->sb.st_atime = field;
+		}
+	}
+
+	if (!(set_by_pax & PAX_CTIME)) {
+		field = out->sb.st_mtime;
+
+		if (version == ETV_PRE_POSIX &&
+		    ((uint8_t)hdr->tail.gnu.ctime[0] == 0x80 ||
+		     (uint8_t)hdr->tail.gnu.ctime[0] == 0xFF ||
+		     isdigit(hdr->tail.gnu.ctime[0]))) {
+			if (read_number(hdr->tail.gnu.ctime,
+					sizeof(hdr->tail.gnu.atime), &field))
+				return -1;
+		}
+
+		if (field & 0x8000000000000000UL) {
+			field = ~field + 1;
+			out->sb.st_ctime = -((int64_t)field);
+		} else {
+			out->sb.st_ctime = field;
+		}
+	}
 
 	if (read_octal(hdr->mode, sizeof(hdr->mode), &field))
 		return -1;
@@ -372,6 +419,37 @@ static int decode_header(const tar_header_t *hdr, unsigned int set_by_pax,
 	return 0;
 }
 
+static char *record_to_memory(int fd, uint64_t size)
+{
+	char *buffer = malloc(size + 1);
+	ssize_t ret;
+
+	if (buffer == NULL)
+		goto fail_errno;
+
+	ret = read_retry(fd, buffer, size);
+	if (ret == 0)
+		goto fail_eof;
+	if (ret < 0)
+		goto fail_errno;
+	if ((uint64_t)ret < size)
+		goto fail_eof;
+
+	if (skip_padding(fd, size))
+		goto fail;
+
+	return buffer;
+fail_errno:
+	perror("reading tar record");
+	goto fail;
+fail_eof:
+	fputs("reading tar record: unexpected end of file\n", stderr);
+	goto fail;
+fail:
+	free(buffer);
+	return NULL;
+}
+
 int read_header(int fd, tar_header_decoded_t *out)
 {
 	unsigned int set_by_pax = 0;
@@ -408,7 +486,26 @@ int read_header(int fd, tar_header_decoded_t *out)
 		if (!is_checksum_valid(&hdr))
 			goto fail_chksum;
 
-		if (hdr.typeflag == TAR_TYPE_PAX) {
+		switch (hdr.typeflag) {
+		case TAR_TYPE_GNU_SLINK:
+			if (read_number(hdr.size, sizeof(hdr.size), &pax_size))
+				return -1;
+			free(out->link_target);
+			out->link_target = record_to_memory(fd, pax_size);
+			if (out->link_target == NULL)
+				goto fail;
+			set_by_pax |= PAX_SLINK_TARGET;
+			continue;
+		case TAR_TYPE_GNU_PATH:
+			if (read_number(hdr.size, sizeof(hdr.size), &pax_size))
+				return -1;
+			free(out->name);
+			out->name = record_to_memory(fd, pax_size);
+			if (out->name == NULL)
+				goto fail;
+			set_by_pax |= PAX_NAME;
+			continue;
+		case TAR_TYPE_PAX:
 			clear_header(out);
 			if (read_number(hdr.size, sizeof(hdr.size), &pax_size))
 				return -1;

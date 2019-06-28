@@ -33,14 +33,14 @@ static int name_to_tar_header(tar_header_t *hdr, const char *path)
 			return -1;
 
 		len = ptr - path;
-		if (len >= sizeof(hdr->prefix))
+		if (len >= sizeof(hdr->tail.posix.prefix))
 			continue;
 		if (strlen(ptr + 1) >= sizeof(hdr->name))
 			continue;
 		break;
 	}
 
-	memcpy(hdr->prefix, path, ptr - path);
+	memcpy(hdr->tail.posix.prefix, path, ptr - path);
 	memcpy(hdr->name, ptr + 1, strlen(ptr + 1));
 	return 0;
 }

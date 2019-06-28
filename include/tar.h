@@ -29,8 +29,27 @@ typedef struct {
 	char gname[32];
 	char devmajor[8];
 	char devminor[8];
-	char prefix[155];
-	char padding[12];
+	union {
+		struct {
+			char prefix[155];
+			char padding[12];
+		} posix;
+
+		struct {
+			char atime[12];
+			char ctime[12];
+			char offset[12];
+			char deprecated[4];
+			char unused;
+			struct {
+				char offset[12];
+				char numbytes[12];
+			} sparse[4];
+			char isextended;
+			char realsize[12];
+			char padding[17];
+		} gnu;
+	} tail;
 } tar_header_t;
 
 typedef struct {
@@ -47,6 +66,9 @@ typedef struct {
 #define TAR_TYPE_BLOCKDEV '4'
 #define TAR_TYPE_DIR '5'
 #define TAR_TYPE_FIFO '6'
+
+#define TAR_TYPE_GNU_SLINK 'K'
+#define TAR_TYPE_GNU_PATH 'L'
 
 #define TAR_TYPE_PAX 'x'
 

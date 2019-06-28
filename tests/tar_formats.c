@@ -102,5 +102,39 @@ int main(void)
 	clear_header(&hdr);
 	close(fd);
 
+	fd = open_read("format-acceptance/gnu.tar");
+	assert(read_header(fd, &hdr) == 0);
+	assert(hdr.sb.st_mode == (S_IFREG | 0644));
+	assert(hdr.sb.st_uid == 01750);
+	assert(hdr.sb.st_gid == 01750);
+	assert(hdr.sb.st_size == 5);
+	assert(hdr.sb.st_mtime == 1542905892);
+	assert(hdr.sb.st_atime == 1542905892);
+	assert(hdr.sb.st_ctime == 1542905892);
+	assert(strcmp(hdr.name, "input.txt") == 0);
+	assert(!hdr.unknown_record);
+	assert(read_retry(fd, buffer, 5) == 5);
+	buffer[5] = '\0';
+	assert(strcmp(buffer, "test\n") == 0);
+	clear_header(&hdr);
+	close(fd);
+
+	fd = open_read("format-acceptance/gnu-g.tar");
+	assert(read_header(fd, &hdr) == 0);
+	assert(hdr.sb.st_mode == (S_IFREG | 0644));
+	assert(hdr.sb.st_uid == 01750);
+	assert(hdr.sb.st_gid == 01750);
+	assert(hdr.sb.st_size == 5);
+	assert(hdr.sb.st_mtime == 013375560044);
+	assert(hdr.sb.st_atime == 013375561762);
+	assert(hdr.sb.st_ctime == 013375561750);
+	assert(strcmp(hdr.name, "input.txt") == 0);
+	assert(!hdr.unknown_record);
+	assert(read_retry(fd, buffer, 5) == 5);
+	buffer[5] = '\0';
+	assert(strcmp(buffer, "test\n") == 0);
+	clear_header(&hdr);
+	close(fd);
+
 	return EXIT_SUCCESS;
 }
