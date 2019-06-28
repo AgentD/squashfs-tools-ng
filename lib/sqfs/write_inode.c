@@ -185,12 +185,17 @@ int meta_writer_write_inode(fstree_t *fs, id_table_t *idtbl, meta_writer_t *im,
 		sqfs_inode_file_ext_t ext = {
 			.blocks_start = htole64(fi->startblock),
 			.file_size = htole64(fi->size),
-			.sparse = htole64(0xFFFFFFFFFFFFFFFFUL),
+			.sparse = htole64(0),
 			.nlink = htole32(hard_link_count(node)),
-			.fragment_idx = htole32(fi->fragment),
-			.fragment_offset = htole32(fi->fragment_offset),
+			.fragment_idx = htole32(0xFFFFFFFF),
+			.fragment_offset = htole32(0xFFFFFFFF),
 			.xattr_idx = htole32(0xFFFFFFFF),
 		};
+
+		if ((fi->size % fs->block_size) != 0) {
+			ext.fragment_idx = htole32(fi->fragment);
+			ext.fragment_offset = htole32(fi->fragment_offset);
+		}
 
 		if (node->xattr != NULL)
 			ext.xattr_idx = htole32(node->xattr->index);
@@ -202,10 +207,15 @@ int meta_writer_write_inode(fstree_t *fs, id_table_t *idtbl, meta_writer_t *im,
 	case SQFS_INODE_FILE: {
 		sqfs_inode_file_t reg = {
 			.blocks_start = htole32(fi->startblock),
-			.fragment_index = htole32(fi->fragment),
-			.fragment_offset = htole32(fi->fragment_offset),
+			.fragment_index = htole32(0xFFFFFFFF),
+			.fragment_offset = htole32(0xFFFFFFFF),
 			.file_size = htole32(fi->size),
 		};
+
+		if ((fi->size % fs->block_size) != 0) {
+			reg.fragment_index = htole32(fi->fragment);
+			reg.fragment_offset = htole32(fi->fragment_offset);
+		}
 
 		if (meta_writer_append(im, &reg, sizeof(reg)))
 			return -1;
