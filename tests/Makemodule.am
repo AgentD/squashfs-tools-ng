@@ -57,3 +57,5 @@ TESTS += test_mknode_reg test_mknode_dir test_gen_inode_table
 TESTS += test_add_by_path test_get_path test_fstree_sort test_fstree_from_file
 TESTS += test_fstree_init test_fstree_xattr test_tar_ustar test_tar_pax
 TESTS += test_tar_gnu
+
+EXTRA_DIST += $(top_srcdir)/tests/tar
