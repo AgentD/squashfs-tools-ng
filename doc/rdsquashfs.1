@@ -50,6 +50,10 @@ Do not unpack symbolic links.
 Do not unpack directories that would end up
 empty after applying the above rules.
 .TP
+\fB\-\-no\-sparse\fR, \fB\-Z\fR
+Do not create sparse files. Always unpack sparse files by
+writing blocks of zeros to disk.
+.TP
 \fB\-\-chmod\fR, \fB\-C\fR
 Change permission flags of unpacked files to
 those store in the SquashFS image.

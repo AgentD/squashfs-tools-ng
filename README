@@ -56,7 +56,6 @@ At the moment, the following things still require some work:
     - rdsquashfs ignores them entirely
     - SquashFS supports deduplicating values through "out of line"
       storage but this is currently not used yet.
- - sparse files (not implemented yet; lots of zeros compress good anyway :P)
  - hard links (not implemented yet; do we even want this?)
  - File deduplication (not implemented; do we even need this?)
  - NFS export tables (not implemented yet)
@@ -65,7 +64,6 @@ At the moment, the following things still require some work:
 At the moment, tar2sqfs also has some limitations on what it can process:
  - only POSIX tar archives with pax extensions (use --posix for GNU tar)
  - no sparse files or hard links (converted to symlink)
- - way fewer tuning options than gensquashfs
 
 
  Future plans
