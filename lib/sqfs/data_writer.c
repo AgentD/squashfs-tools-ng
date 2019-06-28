@@ -83,6 +83,9 @@ int data_writer_flush_fragments(data_writer_t *data)
 	uint64_t offset;
 	uint32_t out;
 
+	if (data->frag_offset == 0)
+		return 0;
+
 	if (grow_fragment_table(data))
 		return -1;
 
@@ -186,6 +189,12 @@ void data_writer_destroy(data_writer_t *data)
 int data_writer_write_fragment_table(data_writer_t *data)
 {
 	uint64_t start;
+
+	if (data->num_fragments == 0) {
+		data->super->fragment_entry_count = 0;
+		data->super->fragment_table_start = 0xFFFFFFFFFFFFFFFFUL;
+		return 0;
+	}
 
 	data->super->fragment_entry_count = data->num_fragments;
 
