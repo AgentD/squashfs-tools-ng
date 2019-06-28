@@ -34,36 +34,26 @@ test_fstree_init_LDADD = libfstree.a libutil.a
 test_fstree_xattr_SOURCES = tests/fstree_xattr.c
 test_fstree_xattr_LDADD = libfstree.a libutil.a
 
-test_tar_formats_SOURCES = tests/tar_formats.c
-test_tar_formats_LDADD = libtar.a libutil.a
-test_tar_formats_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(top_srcdir)/tests/tar
+test_tar_gnu_SOURCES = tests/tar_gnu.c
+test_tar_gnu_LDADD = libtar.a libutil.a
+test_tar_gnu_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(top_srcdir)/tests/tar
 
-test_tar_big_size_SOURCES = tests/tar_big_size.c
-test_tar_big_size_LDADD = libtar.a libutil.a
-test_tar_big_size_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(top_srcdir)/tests/tar
+test_tar_pax_SOURCES = tests/tar_pax.c
+test_tar_pax_LDADD = libtar.a libutil.a
+test_tar_pax_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(top_srcdir)/tests/tar
 
-test_tar_long_paths_SOURCES = tests/tar_long_paths.c
-test_tar_long_paths_LDADD = libtar.a libutil.a
-test_tar_long_paths_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(top_srcdir)/tests/tar
-
-test_tar_mtime_SOURCES = tests/tar_mtime.c
-test_tar_mtime_LDADD = libtar.a libutil.a
-test_tar_mtime_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(top_srcdir)/tests/tar
-
-test_tar_large_uid_SOURCES = tests/tar_large_uid.c
-test_tar_large_uid_LDADD = libtar.a libutil.a
-test_tar_large_uid_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(top_srcdir)/tests/tar
+test_tar_ustar_SOURCES = tests/tar_ustar.c
+test_tar_ustar_LDADD = libtar.a libutil.a
+test_tar_ustar_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(top_srcdir)/tests/tar
 
 check_PROGRAMS += test_canonicalize_name test_mknode_simple test_mknode_slink
 check_PROGRAMS += test_mknode_reg test_mknode_dir test_gen_inode_table
 check_PROGRAMS += test_add_by_path test_get_path test_fstree_sort
 check_PROGRAMS += test_fstree_from_file test_fstree_init test_fstree_xattr
-check_PROGRAMS += test_tar_formats test_tar_long_paths test_tar_mtime
-check_PROGRAMS += test_tar_large_uid test_tar_big_size
+check_PROGRAMS += test_tar_ustar test_tar_pax test_tar_gnu
 
 TESTS += test_canonicalize_name test_mknode_simple test_mknode_slink
 TESTS += test_mknode_reg test_mknode_dir test_gen_inode_table
 TESTS += test_add_by_path test_get_path test_fstree_sort test_fstree_from_file
-TESTS += test_fstree_init test_fstree_xattr test_tar_formats
-TESTS += test_tar_long_paths test_tar_mtime test_tar_large_uid
-TESTS += test_tar_big_size
+TESTS += test_fstree_init test_fstree_xattr test_tar_ustar test_tar_pax
+TESTS += test_tar_gnu
