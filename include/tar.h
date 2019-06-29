@@ -53,9 +53,25 @@ typedef struct {
 } tar_header_t;
 
 typedef struct {
+	struct {
+		char offset[12];
+		char numbytes[12];
+	} sparse[21];
+	char isextended;
+	char padding[7];
+} gnu_sparse_t;
+
+typedef struct tar_sparse_data_t {
+	struct tar_sparse_data_t *next;
+	uint64_t offset;
+	uint64_t count;
+} tar_sparse_data_t;
+
+typedef struct {
 	struct stat sb;
 	char *name;
 	char *link_target;
+	tar_sparse_data_t *sparse;
 	bool unknown_record;
 } tar_header_decoded_t;
 
@@ -69,6 +85,7 @@ typedef struct {
 
 #define TAR_TYPE_GNU_SLINK 'K'
 #define TAR_TYPE_GNU_PATH 'L'
+#define TAR_TYPE_GNU_SPARSE 'S'
 
 #define TAR_TYPE_PAX 'x'
 
