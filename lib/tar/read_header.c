@@ -489,7 +489,7 @@ int read_header(int fd, tar_header_decoded_t *out)
 		switch (hdr.typeflag) {
 		case TAR_TYPE_GNU_SLINK:
 			if (read_number(hdr.size, sizeof(hdr.size), &pax_size))
-				return -1;
+				goto fail;
 			free(out->link_target);
 			out->link_target = record_to_memory(fd, pax_size);
 			if (out->link_target == NULL)
@@ -498,7 +498,7 @@ int read_header(int fd, tar_header_decoded_t *out)
 			continue;
 		case TAR_TYPE_GNU_PATH:
 			if (read_number(hdr.size, sizeof(hdr.size), &pax_size))
-				return -1;
+				goto fail;
 			free(out->name);
 			out->name = record_to_memory(fd, pax_size);
 			if (out->name == NULL)
@@ -508,10 +508,10 @@ int read_header(int fd, tar_header_decoded_t *out)
 		case TAR_TYPE_PAX:
 			clear_header(out);
 			if (read_number(hdr.size, sizeof(hdr.size), &pax_size))
-				return -1;
+				goto fail;
 			set_by_pax = 0;
 			if (read_pax_header(fd, pax_size, &set_by_pax, out))
-				return -1;
+				goto fail;
 			continue;
 		}
 		break;
