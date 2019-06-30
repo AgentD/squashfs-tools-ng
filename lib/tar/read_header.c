@@ -163,6 +163,55 @@ static int pax_read_decimal(const char *str, uint64_t *out)
 	return 0;
 }
 
+static sparse_map_t *read_sparse_map(const char *line)
+{
+	sparse_map_t *last = NULL, *list = NULL, *ent = NULL;
+
+	do {
+		ent = calloc(1, sizeof(*ent));
+		if (ent == NULL)
+			goto fail_errno;
+
+		if (pax_read_decimal(line, &ent->offset))
+			goto fail_format;
+
+		while (isdigit(*line))
+			++line;
+
+		if (*(line++) != ',')
+			goto fail_format;
+
+		if (pax_read_decimal(line, &ent->count))
+			goto fail_format;
+
+		while (isdigit(*line))
+			++line;
+
+		if (last == NULL) {
+			list = last = ent;
+		} else {
+			last->next = ent;
+			last = ent;
+		}
+	} while (*(line++) == ',');
+
+	return list;
+fail_errno:
+	perror("parsing GNU pax sparse file record");
+	goto fail;
+fail_format:
+	fputs("malformed GNU pax sparse file record\n", stderr);
+	goto fail;
+fail:
+	while (list != NULL) {
+		ent = list;
+		list = list->next;
+		free(ent);
+	}
+	free(ent);
+	return NULL;
+}
+
 static int read_pax_header(int fd, uint64_t entsize, unsigned int *set_by_pax,
 			   tar_header_decoded_t *out)
 {
@@ -254,6 +303,19 @@ static int read_pax_header(int fd, uint64_t entsize, unsigned int *set_by_pax,
 				out->sb.st_ctime = field;
 			}
 			*set_by_pax |= PAX_CTIME;
+		} else if (!strncmp(line, "GNU.sparse.name=", 16)) {
+			free(out->name);
+			out->name = strdup(line + 5);
+			if (out->name == NULL)
+				goto fail_errno;
+			*set_by_pax |= PAX_NAME;
+		} else if (!strncmp(line, "GNU.sparse.map=", 15)) {
+			free_sparse_list(out->sparse);
+			sparse_last = NULL;
+
+			out->sparse = read_sparse_map(line + 15);
+			if (out->sparse == NULL)
+				goto fail;
 		} else if (!strncmp(line, "GNU.sparse.size=", 16)) {
 			pax_read_decimal(line + 16, &out->actual_size);
 			*set_by_pax |= PAX_SPARSE_SIZE;
