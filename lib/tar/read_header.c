@@ -19,7 +19,19 @@ enum {
 	PAX_ATIME = 0x080,
 	PAX_MTIME = 0x100,
 	PAX_CTIME = 0x200,
+	PAX_SPARSE_SIZE = 0x400,
 };
+
+static void free_sparse_list(sparse_map_t *sparse)
+{
+	sparse_map_t *old;
+
+	while (sparse != NULL) {
+		old = sparse;
+		sparse = sparse->next;
+		free(old);
+	}
+}
 
 static int read_octal(const char *str, int digits, uint64_t *out)
 {
@@ -154,8 +166,9 @@ static int pax_read_decimal(const char *str, uint64_t *out)
 static int read_pax_header(int fd, uint64_t entsize, unsigned int *set_by_pax,
 			   tar_header_decoded_t *out)
 {
+	sparse_map_t *sparse_last = NULL, *sparse;
+	uint64_t field, offset = 0, num_bytes = 0;
 	char *buffer, *line;
-	uint64_t field;
 	ssize_t ret;
 	uint64_t i;
 
@@ -241,6 +254,25 @@ static int read_pax_header(int fd, uint64_t entsize, unsigned int *set_by_pax,
 				out->sb.st_ctime = field;
 			}
 			*set_by_pax |= PAX_CTIME;
+		} else if (!strncmp(line, "GNU.sparse.size=", 16)) {
+			pax_read_decimal(line + 16, &out->actual_size);
+			*set_by_pax |= PAX_SPARSE_SIZE;
+		} else if (!strncmp(line, "GNU.sparse.offset=", 18)) {
+			pax_read_decimal(line + 18, &offset);
+		} else if (!strncmp(line, "GNU.sparse.numbytes=", 20)) {
+			pax_read_decimal(line + 20, &num_bytes);
+			sparse = calloc(1, sizeof(*sparse));
+			if (sparse == NULL)
+				goto fail_errno;
+			sparse->offset = offset;
+			sparse->count = num_bytes;
+			if (sparse_last == NULL) {
+				free_sparse_list(out->sparse);
+				out->sparse = sparse_last = sparse;
+			} else {
+				sparse_last->next = sparse;
+				sparse_last = sparse;
+			}
 		}
 	}
 
@@ -447,17 +479,6 @@ fail_eof:
 fail:
 	free(buffer);
 	return NULL;
-}
-
-static void free_sparse_list(sparse_map_t *sparse)
-{
-	sparse_map_t *old;
-
-	while (sparse != NULL) {
-		old = sparse;
-		sparse = sparse->next;
-		free(old);
-	}
 }
 
 static sparse_map_t *read_gnu_old_sparse(int fd, tar_header_t *hdr)
