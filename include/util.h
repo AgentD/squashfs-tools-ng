@@ -5,6 +5,13 @@
 #include <sys/types.h>
 #include <stdint.h>
 
+/* layout structure for sparse files, indicating where the actual data is */
+typedef struct sparse_map_t {
+	struct sparse_map_t *next;
+	uint64_t offset;
+	uint64_t count;
+} sparse_map_t;
+
 /*
   Convert back to forward slashed, remove all preceeding and trailing slashes,
   collapse all sequences of slashes, remove all path components that are '.'

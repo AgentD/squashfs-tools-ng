@@ -5,6 +5,7 @@
 #include "squashfs.h"
 #include "compress.h"
 #include "fstree.h"
+#include "util.h"
 
 typedef struct data_writer_t data_writer_t;
 
@@ -42,8 +43,21 @@ int data_writer_flush_fragments(data_writer_t *data);
   The file_info_t object is updated accordingly and used to determine the
   number of bytes to write and the input file name to report errors.
 
+  Blocks or fragments that are all zero bytes automatically detected,
+  not written out and the sparse file accounting updated accordingly.
+
   Returns 0 on success, prints errors to stderr.
 */
 int write_data_from_fd(data_writer_t *data, file_info_t *fi, int infd);
+
+/*
+  Does the same as write_data_from_fd but the input file is the condensed
+  representation of a sparse file. The layout must be in order and
+  non-overlapping.
+
+  Returns 0 on success, prints errors to stderr.
+ */
+int write_data_from_fd_condensed(data_writer_t *data, file_info_t *fi,
+				 int infd, sparse_map_t *map);
 
 #endif /* DATA_WRITER_H */

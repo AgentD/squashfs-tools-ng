@@ -165,6 +165,26 @@ fail_arg:
 	exit(EXIT_FAILURE);
 }
 
+static int write_file(tar_header_decoded_t *hdr, file_info_t *fi,
+		      data_writer_t *data)
+{
+	int ret;
+
+	if (hdr->sparse != NULL) {
+		ret = write_data_from_fd_condensed(data, fi, STDIN_FILENO,
+						   hdr->sparse);
+		if (ret)
+			return -1;
+
+		return skip_padding(STDIN_FILENO, hdr->sparse_size);
+	}
+
+	if (write_data_from_fd(data, fi, STDIN_FILENO))
+		return -1;
+
+	return skip_padding(STDIN_FILENO, fi->size);
+}
+
 static int create_node_and_repack_data(tar_header_decoded_t *hdr, fstree_t *fs,
 				       data_writer_t *data)
 {
@@ -177,15 +197,8 @@ static int create_node_and_repack_data(tar_header_decoded_t *hdr, fstree_t *fs,
 	if (!quiet)
 		printf("Packing %s\n", hdr->name);
 
-	if (S_ISREG(hdr->sb.st_mode)) {
-		if (write_data_from_fd(data, node->data.file,
-				       STDIN_FILENO)) {
-			return -1;
-		}
-
-		if (skip_padding(STDIN_FILENO, node->data.file->size))
-			return -1;
-	}
+	if (S_ISREG(hdr->sb.st_mode))
+		return write_file(hdr, node->data.file, data);
 
 	return 0;
 fail_errno:
@@ -196,6 +209,9 @@ fail_errno:
 static int process_tar_ball(fstree_t *fs, data_writer_t *data)
 {
 	tar_header_decoded_t hdr;
+	uint64_t offset, count;
+	sparse_map_t *m;
+	bool skip;
 	int ret;
 
 	for (;;) {
@@ -205,9 +221,37 @@ static int process_tar_ball(fstree_t *fs, data_writer_t *data)
 		if (ret < 0)
 			return -1;
 
+		skip = false;
+
 		if (hdr.unknown_record) {
 			fprintf(stderr, "skipping '%s' (unknown entry type)\n",
 				hdr.name);
+			skip = true;
+		}
+
+		if (!skip && hdr.sparse != NULL) {
+			offset = hdr.sparse->offset;
+			count = 0;
+
+			for (m = hdr.sparse; m != NULL; m = m->next) {
+				if (m->offset < offset) {
+					skip = true;
+					break;
+				}
+				offset = m->offset + m->count;
+				count += m->count;
+			}
+
+			if (count != hdr.sparse_size)
+				skip = true;
+
+			if (skip) {
+				fprintf(stderr, "skipping '%s' (broken sparse "
+					"file layout)\n", hdr.name);
+			}
+		}
+
+		if (skip) {
 			if (skip_entry(STDIN_FILENO, hdr.sb.st_size))
 				goto fail;
 			continue;

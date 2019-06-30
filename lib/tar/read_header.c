@@ -451,9 +451,9 @@ fail:
 	return NULL;
 }
 
-static void free_sparse_list(tar_sparse_data_t *sparse)
+static void free_sparse_list(sparse_map_t *sparse)
 {
-	tar_sparse_data_t *old;
+	sparse_map_t *old;
 
 	while (sparse != NULL) {
 		old = sparse;
@@ -462,9 +462,9 @@ static void free_sparse_list(tar_sparse_data_t *sparse)
 	}
 }
 
-static tar_sparse_data_t *read_gnu_old_sparse(int fd, tar_header_t *hdr)
+static sparse_map_t *read_gnu_old_sparse(int fd, tar_header_t *hdr)
 {
-	tar_sparse_data_t *list = NULL, *end = NULL, *node;
+	sparse_map_t *list = NULL, *end = NULL, *node;
 	gnu_sparse_t sph;
 	uint64_t off, sz;
 	ssize_t ret;

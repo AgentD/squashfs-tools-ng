@@ -6,6 +6,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "util.h"
+
 typedef enum {
 	ETV_UNKNOWN = 0,
 	ETV_V7_UNIX,
@@ -61,17 +63,11 @@ typedef struct {
 	char padding[7];
 } gnu_sparse_t;
 
-typedef struct tar_sparse_data_t {
-	struct tar_sparse_data_t *next;
-	uint64_t offset;
-	uint64_t count;
-} tar_sparse_data_t;
-
 typedef struct {
 	struct stat sb;
 	char *name;
 	char *link_target;
-	tar_sparse_data_t *sparse;
+	sparse_map_t *sparse;
 	uint64_t sparse_size;
 	bool unknown_record;
 } tar_header_decoded_t;

@@ -18,6 +18,8 @@ struct data_writer_t {
 	size_t max_fragments;
 	size_t frag_offset;
 
+	int block_idx;
+
 	sqfs_super_t *super;
 	compressor_t *cmp;
 	int outfd;
@@ -111,18 +113,55 @@ int data_writer_flush_fragments(data_writer_t *data)
 	return 0;
 }
 
+static int flush_data_block(data_writer_t *data, size_t size, file_info_t *fi)
+{
+	uint32_t out;
+
+	if (is_zero_block(data->block, size)) {
+		if (size < data->super->block_size) {
+			fi->fragment_offset = 0xFFFFFFFF;
+			fi->fragment = 0xFFFFFFFF;
+		} else {
+			fi->blocksizes[data->block_idx++] = 0;
+		}
+
+		fi->sparse += size;
+		return 0;
+	}
+
+	if (size < data->super->block_size) {
+		if (data->frag_offset + size > data->super->block_size) {
+			if (data_writer_flush_fragments(data))
+				return -1;
+		}
+
+		fi->fragment_offset = data->frag_offset;
+		fi->fragment = data->num_fragments;
+
+		memcpy((char *)data->fragment + data->frag_offset,
+		       data->block, size);
+		data->frag_offset += size;
+	} else {
+		if (write_compressed(data, data->block, size, &out))
+			return -1;
+
+		fi->blocksizes[data->block_idx++] = out;
+	}
+
+	return 0;
+}
+
 int write_data_from_fd(data_writer_t *data, file_info_t *fi, int infd)
 {
-	uint64_t count = fi->size;
-	int blk_idx = 0;
-	uint32_t out;
+	uint64_t count;
 	ssize_t ret;
 	size_t diff;
 
 	fi->startblock = data->super->bytes_used;
 	fi->sparse = 0;
+	data->block_idx = 0;
 
-	while (count != 0) {
+	for (count = fi->size; count != 0; count -= diff) {
 		diff = count > (uint64_t)data->super->block_size ?
 			data->super->block_size : count;
 
@@ -132,45 +171,92 @@ int write_data_from_fd(data_writer_t *data, file_info_t *fi, int infd)
 		if ((size_t)ret < diff)
 			goto fail_trunc;
 
-		if (is_zero_block(data->block, diff)) {
-			if (diff < data->super->block_size) {
-				fi->fragment_offset = 0xFFFFFFFF;
-				fi->fragment = 0xFFFFFFFF;
-			} else {
-				fi->blocksizes[blk_idx++] = 0;
-			}
-			fi->sparse += diff;
-			count -= diff;
-			continue;
-		}
-
-		if (diff < data->super->block_size) {
-			if (data->frag_offset + diff > data->super->block_size) {
-				if (data_writer_flush_fragments(data))
-					return -1;
-			}
-
-			fi->fragment_offset = data->frag_offset;
-			fi->fragment = data->num_fragments;
-
-			memcpy((char *)data->fragment + data->frag_offset,
-			       data->block, diff);
-			data->frag_offset += diff;
-		} else {
-			if (write_compressed(data, data->block,
-					     data->super->block_size, &out)) {
-				return -1;
-			}
-
-			fi->blocksizes[blk_idx++] = out;
-		}
-
-		count -= diff;
+		if (flush_data_block(data, diff, fi))
+			return -1;
 	}
 
 	return 0;
 fail_read:
-	fprintf(stderr, "read from %s: %s\n", fi->input_file, strerror(errno));
+	perror(fi->input_file);
+	return -1;
+fail_trunc:
+	fprintf(stderr, "%s: truncated read\n", fi->input_file);
+	return -1;
+}
+
+int write_data_from_fd_condensed(data_writer_t *data, file_info_t *fi,
+				 int infd, sparse_map_t *map)
+{
+	size_t start, count, diff;
+	sparse_map_t *m;
+	uint64_t offset;
+	ssize_t ret;
+
+	fi->startblock = data->super->bytes_used;
+	fi->sparse = 0;
+	data->block_idx = 0;
+
+	if (map != NULL) {
+		offset = map->offset;
+
+		for (m = map; m != NULL; m = m->next) {
+			if (m->offset < offset)
+				goto fail_map;
+			offset = m->offset + m->count;
+		}
+
+		if (offset > fi->size)
+			goto fail_map_size;
+	}
+
+	for (offset = 0; offset < fi->size; offset += diff) {
+		if (fi->size - offset >= (uint64_t)data->super->block_size) {
+			diff = data->super->block_size;
+		} else {
+			diff = fi->size - offset;
+		}
+
+		memset(data->block, 0, diff);
+
+		while (map != NULL && map->offset < offset + diff) {
+			start = 0;
+			count = map->count;
+
+			if (map->offset < offset)
+				count -= offset - map->offset;
+
+			if (map->offset > offset)
+				start = map->offset - offset;
+
+			if (start + count > diff)
+				count = diff - start;
+
+			ret = read_retry(infd, (char *)data->block + start,
+					 count);
+			if (ret < 0)
+				goto fail_read;
+			if ((size_t)ret < count)
+				goto fail_trunc;
+
+			map = map->next;
+		}
+
+		if (flush_data_block(data, diff, fi))
+			return -1;
+	}
+
+	return 0;
+fail_map_size:
+	fprintf(stderr, "%s: sparse file map spans beyond file size\n",
+		fi->input_file);
+	return -1;
+fail_map:
+	fprintf(stderr,
+		"%s: sparse file map is unordered or self overlapping\n",
+		fi->input_file);
+	return -1;
+fail_read:
+	perror(fi->input_file);
 	return -1;
 fail_trunc:
 	fprintf(stderr, "%s: truncated read\n", fi->input_file);
