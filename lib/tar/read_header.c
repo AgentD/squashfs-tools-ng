@@ -613,16 +613,6 @@ int read_header(int fd, tar_header_decoded_t *out)
 				goto fail;
 			continue;
 		case TAR_TYPE_GNU_SPARSE:
-			if (!(set_by_pax & PAX_SIZE)) {
-				if (read_number(hdr.tail.gnu.realsize,
-						sizeof(hdr.tail.gnu.realsize),
-						&pax_size))
-					goto fail;
-
-				out->sb.st_size = pax_size;
-				set_by_pax |= PAX_SIZE;
-			}
-
 			free_sparse_list(out->sparse);
 			out->sparse = read_gnu_old_sparse(fd, &hdr);
 			if (out->sparse == NULL)
@@ -634,6 +624,15 @@ int read_header(int fd, tar_header_decoded_t *out)
 
 	if (decode_header(&hdr, set_by_pax, out, version))
 		goto fail;
+
+	if (hdr.typeflag == TAR_TYPE_GNU_SPARSE) {
+		if (read_number(hdr.tail.gnu.realsize,
+				sizeof(hdr.tail.gnu.realsize), &pax_size))
+			goto fail;
+
+		out->sparse_size = out->sb.st_size;
+		out->sb.st_size = pax_size;
+	}
 
 	return 0;
 out_eof:

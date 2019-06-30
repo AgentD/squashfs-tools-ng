@@ -40,6 +40,7 @@ int main(void)
 	assert(hdr.sb.st_uid == 01750);
 	assert(hdr.sb.st_gid == 01750);
 	assert(hdr.sb.st_size == 524288);
+	assert(hdr.sparse_size == 8192);
 	assert(strcmp(hdr.name, "input.bin") == 0);
 	assert(!hdr.unknown_record);
 
@@ -69,6 +70,7 @@ int main(void)
 	assert(hdr.sb.st_uid == 01750);
 	assert(hdr.sb.st_gid == 01750);
 	assert(hdr.sb.st_size == 2097152);
+	assert(hdr.sparse_size == 32768);
 	assert(strcmp(hdr.name, "input.bin") == 0);
 	assert(!hdr.unknown_record);
 
