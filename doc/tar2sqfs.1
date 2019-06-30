@@ -62,18 +62,19 @@ Print help text and exit.
 .TP
 \fB\-\-version\fR, \fB\-V\fR
 Print version information and exit.
-.SH LIMITATIONS
-Currently the tool can only process POSIX tar archives with pax extensions, so
-you need to tell your tool that generates the tar ball to not use any other
-extensions.
+.SH COMPATIBILITY
+The tool is designed to support a broad variety of commonly used tar archives.
+Currently the tool can process v7 format, pre-POSIX ustar, POSIX tar and GNU
+tar archives. PAX extension headers are supported.
 
-For GNU tar, this can be done with the flag \fB\-\-posix\fR:
-.IP
-tar cf file.tar \-\-posix bin/ lib/ etc/ usr/
-.TP
-Furthermore, hard links and sparse files are currently not supported. If any
-unsupported section is encountered in a tar archive, the section is skipped and
-a warning message is written to stderr.
+The support for GNU tar is limited to commonly used header formats (i.e. some
+older, legacy headers are not supported) and extensions like sparse files.
+
+Hard links are currently not supported and silently converted to symlinks.
+Furthermore, none of the various xattr extensions are currently implemented.
+
+If any unsupported section is encountered in an archive, the section is skipped
+and a warning message is written to stderr.
 .SH EXAMPLES
 .TP
 Turn an uncompressed tar archive into a squashfs image:
