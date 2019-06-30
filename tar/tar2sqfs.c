@@ -176,7 +176,7 @@ static int write_file(tar_header_decoded_t *hdr, file_info_t *fi,
 		if (ret)
 			return -1;
 
-		return skip_padding(STDIN_FILENO, hdr->sparse_size);
+		return skip_padding(STDIN_FILENO, hdr->record_size);
 	}
 
 	if (write_data_from_fd(data, fi, STDIN_FILENO))
@@ -242,7 +242,7 @@ static int process_tar_ball(fstree_t *fs, data_writer_t *data)
 				count += m->count;
 			}
 
-			if (count != hdr.sparse_size)
+			if (count != hdr.record_size)
 				skip = true;
 
 			if (skip) {

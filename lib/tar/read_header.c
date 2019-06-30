@@ -206,8 +206,7 @@ static int read_pax_header(int fd, uint64_t entsize, unsigned int *set_by_pax,
 				goto fail_errno;
 			*set_by_pax |= PAX_NAME;
 		} else if (!strncmp(line, "size=", 5)) {
-			pax_read_decimal(line + 5, &field);
-			out->sb.st_size = field;
+			pax_read_decimal(line + 5, &out->record_size);
 			*set_by_pax |= PAX_SIZE;
 		} else if (!strncmp(line, "linkpath=", 9)) {
 			free(out->link_target);
@@ -287,9 +286,8 @@ static int decode_header(const tar_header_t *hdr, unsigned int set_by_pax,
 	}
 
 	if (!(set_by_pax & PAX_SIZE)) {
-		if (read_number(hdr->size, sizeof(hdr->size), &field))
+		if (read_number(hdr->size, sizeof(hdr->size), &out->record_size))
 			return -1;
-		out->sb.st_size = field;
 	}
 
 	if (!(set_by_pax & PAX_UID)) {
@@ -617,6 +615,10 @@ int read_header(int fd, tar_header_decoded_t *out)
 			out->sparse = read_gnu_old_sparse(fd, &hdr);
 			if (out->sparse == NULL)
 				goto fail;
+			if (read_number(hdr.tail.gnu.realsize,
+					sizeof(hdr.tail.gnu.realsize),
+					&out->actual_size))
+				goto fail;
 			break;
 		}
 		break;
@@ -625,15 +627,12 @@ int read_header(int fd, tar_header_decoded_t *out)
 	if (decode_header(&hdr, set_by_pax, out, version))
 		goto fail;
 
-	if (hdr.typeflag == TAR_TYPE_GNU_SPARSE) {
-		if (read_number(hdr.tail.gnu.realsize,
-				sizeof(hdr.tail.gnu.realsize), &pax_size))
-			goto fail;
-
-		out->sparse_size = out->sb.st_size;
-		out->sb.st_size = pax_size;
+	if (out->sparse != NULL) {
+		out->sb.st_size = out->actual_size;
+	} else {
+		out->sb.st_size = out->record_size;
+		out->actual_size = out->record_size;
 	}
-
 	return 0;
 out_eof:
 	clear_header(out);

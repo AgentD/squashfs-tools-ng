@@ -68,7 +68,8 @@ typedef struct {
 	char *name;
 	char *link_target;
 	sparse_map_t *sparse;
-	uint64_t sparse_size;
+	uint64_t actual_size;
+	uint64_t record_size;
 	bool unknown_record;
 } tar_header_decoded_t;
 
