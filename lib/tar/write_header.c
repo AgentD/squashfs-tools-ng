@@ -1,21 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "util.h"
-#include "tar.h"
-
-#include <sys/sysmacros.h>
-#include <string.h>
-#include <stdio.h>
+#include "internal.h"
 
 static unsigned long pax_hdr_counter = 0;
 static char buffer[4096];
-
-static void write_octal(char *dst, unsigned int value, int digits)
-{
-	char temp[64];
-
-	sprintf(temp, "%0*o ", digits, value);
-	memcpy(dst, temp, strlen(temp));
-}
 
 static int name_to_tar_header(tar_header_t *hdr, const char *path)
 {
@@ -78,21 +65,6 @@ static void init_header(tar_header_t *hdr, const struct stat *sb,
 
 	sprintf(hdr->uname, "%u", sb->st_uid);
 	sprintf(hdr->gname, "%u", sb->st_gid);
-}
-
-static void update_checksum(tar_header_t *hdr)
-{
-	unsigned int chksum = 0;
-	size_t i;
-
-	memset(hdr->chksum, ' ', sizeof(hdr->chksum));
-
-	for (i = 0; i < sizeof(*hdr); ++i)
-		chksum += ((unsigned char *)hdr)[i];
-
-	write_octal(hdr->chksum, chksum, 6);
-	hdr->chksum[6] = '\0';
-	hdr->chksum[7] = ' ';
 }
 
 static bool need_pax_header(const struct stat *sb, const char *name)

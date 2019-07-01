@@ -8,13 +8,6 @@
 
 #include "util.h"
 
-typedef enum {
-	ETV_UNKNOWN = 0,
-	ETV_V7_UNIX,
-	ETV_PRE_POSIX,
-	ETV_POSIX,
-} E_TAR_VERSION;
-
 typedef struct {
 	char name[100];
 	char mode[8];

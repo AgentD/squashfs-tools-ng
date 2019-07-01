@@ -1,104 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "util.h"
-#include "tar.h"
-
-#include <sys/sysmacros.h>
-#include <string.h>
-#include <stdlib.h>
-#include <ctype.h>
-#include <stdio.h>
-
-enum {
-	PAX_SIZE = 0x001,
-	PAX_UID = 0x002,
-	PAX_GID = 0x004,
-	PAX_DEV_MAJ = 0x008,
-	PAX_DEV_MIN = 0x010,
-	PAX_NAME = 0x020,
-	PAX_SLINK_TARGET = 0x040,
-	PAX_ATIME = 0x080,
-	PAX_MTIME = 0x100,
-	PAX_CTIME = 0x200,
-	PAX_SPARSE_SIZE = 0x400,
-};
-
-static void free_sparse_list(sparse_map_t *sparse)
-{
-	sparse_map_t *old;
-
-	while (sparse != NULL) {
-		old = sparse;
-		sparse = sparse->next;
-		free(old);
-	}
-}
-
-static int read_octal(const char *str, int digits, uint64_t *out)
-{
-	uint64_t result = 0;
-
-	while (digits > 0 && isspace(*str)) {
-		++str;
-		--digits;
-	}
-
-	while (digits > 0 && *str >= '0' && *str <= '7') {
-		if (result > 0x1FFFFFFFFFFFFFFFUL) {
-			fputs("numeric overflow parsing tar header\n", stderr);
-			return -1;
-		}
-
-		result = (result << 3) | (*(str++) - '0');
-		--digits;
-	}
-
-	*out = result;
-	return 0;
-}
-
-static int read_binary(const char *str, int digits, uint64_t *out)
-{
-	uint64_t x, ov, result;
-	bool first = true;
-
-	while (digits > 0) {
-		x = *((const unsigned char *)str++);
-		--digits;
-
-		if (first) {
-			first = false;
-			if (x == 0xFF) {
-				result = 0xFFFFFFFFFFFFFFFFUL;
-			} else {
-				x &= 0x7F;
-				result = 0;
-				if (digits > 7 && x != 0)
-					goto fail_ov;
-			}
-		}
-
-		ov = (result >> 56) & 0xFF;
-
-		if (ov != 0 && ov != 0xFF)
-			goto fail_ov;
-
-		result = (result << 8) | x;
-	}
-
-	*out = result;
-	return 0;
-fail_ov:
-	fputs("numeric overflow parsing tar header\n", stderr);
-	return -1;
-}
-
-static int read_number(const char *str, int digits, uint64_t *out)
-{
-	if (*((unsigned char *)str) & 0x80)
-		return read_binary(str, digits, out);
-
-	return read_octal(str, digits, out);
-}
+#include "internal.h"
 
 static bool is_zero_block(const tar_header_t *hdr)
 {
@@ -107,26 +8,7 @@ static bool is_zero_block(const tar_header_t *hdr)
 	return ptr[0] == '\0' && memcmp(ptr, ptr + 1, sizeof(*hdr) - 1) == 0;
 }
 
-static bool is_checksum_valid(const tar_header_t *hdr)
-{
-	unsigned int chksum = 0;
-	tar_header_t copy;
-	uint64_t ref;
-	size_t i;
-
-	if (read_octal(hdr->chksum, sizeof(hdr->chksum), &ref))
-		return false;
-
-	memcpy(&copy, hdr, sizeof(*hdr));
-	memset(copy.chksum, ' ', sizeof(copy.chksum));
-
-	for (i = 0; i < sizeof(copy); ++i)
-		chksum += ((unsigned char *)&copy)[i];
-
-	return chksum == ref;
-}
-
-static E_TAR_VERSION check_version(const tar_header_t *hdr)
+static int check_version(const tar_header_t *hdr)
 {
 	char buffer[sizeof(hdr->magic) + sizeof(hdr->version)];
 
@@ -146,65 +28,35 @@ static E_TAR_VERSION check_version(const tar_header_t *hdr)
 	return ETV_UNKNOWN;
 }
 
-static int pax_read_decimal(const char *str, uint64_t *out)
+static char *record_to_memory(int fd, uint64_t size)
 {
-	uint64_t result = 0;
+	char *buffer = malloc(size + 1);
+	ssize_t ret;
 
-	while (*str >= '0' && *str <= '9') {
-		if (result > 0xFFFFFFFFFFFFFFFFUL / 10) {
-			fputs("numeric overflow parsing pax header\n", stderr);
-			return -1;
-		}
+	if (buffer == NULL)
+		goto fail_errno;
 
-		result = (result * 10) + (*(str++) - '0');
-	}
+	ret = read_retry(fd, buffer, size);
+	if (ret == 0)
+		goto fail_eof;
+	if (ret < 0)
+		goto fail_errno;
+	if ((uint64_t)ret < size)
+		goto fail_eof;
 
-	*out = result;
-	return 0;
-}
+	if (skip_padding(fd, size))
+		goto fail;
 
-static sparse_map_t *read_sparse_map(const char *line)
-{
-	sparse_map_t *last = NULL, *list = NULL, *ent = NULL;
-
-	do {
-		ent = calloc(1, sizeof(*ent));
-		if (ent == NULL)
-			goto fail_errno;
-
-		if (pax_read_decimal(line, &ent->offset))
-			goto fail_format;
-
-		while (isdigit(*line))
-			++line;
-
-		if (*(line++) != ',')
-			goto fail_format;
-
-		if (pax_read_decimal(line, &ent->count))
-			goto fail_format;
-
-		while (isdigit(*line))
-			++line;
-
-		if (last == NULL) {
-			list = last = ent;
-		} else {
-			last->next = ent;
-			last = ent;
-		}
-	} while (*(line++) == ',');
-
-	return list;
+	buffer[size] = '\0';
+	return buffer;
 fail_errno:
-	perror("parsing GNU pax sparse file record");
+	perror("reading tar record");
 	goto fail;
-fail_format:
-	fputs("malformed GNU pax sparse file record\n", stderr);
+fail_eof:
+	fputs("reading tar record: unexpected end of file\n", stderr);
 	goto fail;
 fail:
-	free_sparse_list(list);
-	free(ent);
+	free(buffer);
 	return NULL;
 }
 
@@ -214,23 +66,11 @@ static int read_pax_header(int fd, uint64_t entsize, unsigned int *set_by_pax,
 	sparse_map_t *sparse_last = NULL, *sparse;
 	uint64_t field, offset = 0, num_bytes = 0;
 	char *buffer, *line;
-	ssize_t ret;
 	uint64_t i;
 
-	buffer = malloc(entsize + 1);
+	buffer = record_to_memory(fd, entsize);
 	if (buffer == NULL)
-		goto fail_errno;
-
-	ret = read_retry(fd, buffer, entsize);
-	if (ret < 0)
-		goto fail_errno;
-	if ((size_t)ret < entsize)
-		goto fail_eof;
-
-	if (skip_padding(fd, entsize))
-		goto fail;
-
-	buffer[entsize] = '\0';
+		return -1;
 
 	for (i = 0; i < entsize; ++i) {
 		while (i < entsize && isspace(buffer[i]))
@@ -251,12 +91,12 @@ static int read_pax_header(int fd, uint64_t entsize, unsigned int *set_by_pax,
 
 		if (!strncmp(line, "uid=", 4)) {
 			if (pax_read_decimal(line + 4, &field))
-				return -1;
+				goto fail;
 			out->sb.st_uid = field;
 			*set_by_pax |= PAX_UID;
 		} else if (!strncmp(line, "gid=", 4)) {
 			if (pax_read_decimal(line + 4, &field))
-				return -1;
+				goto fail;
 			out->sb.st_gid = field;
 			*set_by_pax |= PAX_GID;
 		} else if (!strncmp(line, "path=", 5)) {
@@ -267,7 +107,7 @@ static int read_pax_header(int fd, uint64_t entsize, unsigned int *set_by_pax,
 			*set_by_pax |= PAX_NAME;
 		} else if (!strncmp(line, "size=", 5)) {
 			if (pax_read_decimal(line + 5, &out->record_size))
-				return -1;
+				goto fail;
 			*set_by_pax |= PAX_SIZE;
 		} else if (!strncmp(line, "linkpath=", 9)) {
 			free(out->link_target);
@@ -278,33 +118,33 @@ static int read_pax_header(int fd, uint64_t entsize, unsigned int *set_by_pax,
 		} else if (!strncmp(line, "atime=", 6)) {
 			if (line[6] == '-') {
 				if (pax_read_decimal(line + 7, &field))
-					return -1;
+					goto fail;
 				out->sb.st_atime = -((int64_t)field);
 			} else {
 				if (pax_read_decimal(line + 6, &field))
-					return -1;
+					goto fail;
 				out->sb.st_atime = field;
 			}
 			*set_by_pax |= PAX_ATIME;
 		} else if (!strncmp(line, "mtime=", 6)) {
 			if (line[6] == '-') {
 				if (pax_read_decimal(line + 7, &field))
-					return -1;
+					goto fail;
 				out->sb.st_mtime = -((int64_t)field);
 			} else {
 				if (pax_read_decimal(line + 6, &field))
-					return -1;
+					goto fail;
 				out->sb.st_mtime = field;
 			}
 			*set_by_pax |= PAX_MTIME;
 		} else if (!strncmp(line, "ctime=", 6)) {
 			if (line[6] == '-') {
 				if (pax_read_decimal(line + 7, &field))
-					return -1;
+					goto fail;
 				out->sb.st_ctime = -((int64_t)field);
 			} else {
 				if (pax_read_decimal(line + 6, &field))
-					return -1;
+					goto fail;
 				out->sb.st_ctime = field;
 			}
 			*set_by_pax |= PAX_CTIME;
@@ -323,14 +163,14 @@ static int read_pax_header(int fd, uint64_t entsize, unsigned int *set_by_pax,
 				goto fail;
 		} else if (!strncmp(line, "GNU.sparse.size=", 16)) {
 			if (pax_read_decimal(line + 16, &out->actual_size))
-				return -1;
+				goto fail;
 			*set_by_pax |= PAX_SPARSE_SIZE;
 		} else if (!strncmp(line, "GNU.sparse.offset=", 18)) {
 			if (pax_read_decimal(line + 18, &offset))
-				return -1;
+				goto fail;
 		} else if (!strncmp(line, "GNU.sparse.numbytes=", 20)) {
 			if (pax_read_decimal(line + 20, &num_bytes))
-				return -1;
+				goto fail;
 			sparse = calloc(1, sizeof(*sparse));
 			if (sparse == NULL)
 				goto fail_errno;
@@ -351,16 +191,13 @@ static int read_pax_header(int fd, uint64_t entsize, unsigned int *set_by_pax,
 fail_errno:
 	perror("reading pax header");
 	goto fail;
-fail_eof:
-	fputs("reading pax header: unexpected end of file\n", stderr);
-	goto fail;
 fail:
 	free(buffer);
 	return -1;
 }
 
 static int decode_header(const tar_header_t *hdr, unsigned int set_by_pax,
-			 tar_header_decoded_t *out, E_TAR_VERSION version)
+			 tar_header_decoded_t *out, int version)
 {
 	uint64_t field;
 	size_t count;
@@ -520,132 +357,13 @@ static int decode_header(const tar_header_t *hdr, unsigned int set_by_pax,
 	return 0;
 }
 
-static char *record_to_memory(int fd, uint64_t size)
-{
-	char *buffer = malloc(size + 1);
-	ssize_t ret;
-
-	if (buffer == NULL)
-		goto fail_errno;
-
-	ret = read_retry(fd, buffer, size);
-	if (ret == 0)
-		goto fail_eof;
-	if (ret < 0)
-		goto fail_errno;
-	if ((uint64_t)ret < size)
-		goto fail_eof;
-
-	if (skip_padding(fd, size))
-		goto fail;
-
-	return buffer;
-fail_errno:
-	perror("reading tar record");
-	goto fail;
-fail_eof:
-	fputs("reading tar record: unexpected end of file\n", stderr);
-	goto fail;
-fail:
-	free(buffer);
-	return NULL;
-}
-
-static sparse_map_t *read_gnu_old_sparse(int fd, tar_header_t *hdr)
-{
-	sparse_map_t *list = NULL, *end = NULL, *node;
-	gnu_sparse_t sph;
-	uint64_t off, sz;
-	ssize_t ret;
-	int i;
-
-	for (i = 0; i < 4; ++i) {
-		if (!isdigit(hdr->tail.gnu.sparse[i].offset[0]))
-			break;
-		if (!isdigit(hdr->tail.gnu.sparse[i].numbytes[0]))
-			break;
-
-		if (read_octal(hdr->tail.gnu.sparse[i].offset,
-			       sizeof(hdr->tail.gnu.sparse[i].offset), &off))
-			goto fail;
-		if (read_octal(hdr->tail.gnu.sparse[i].numbytes,
-			       sizeof(hdr->tail.gnu.sparse[i].numbytes), &sz))
-			goto fail;
-
-		node = calloc(1, sizeof(*node));
-		if (node == NULL)
-			goto fail_errno;
-
-		node->offset = off;
-		node->count = sz;
-
-		if (list == NULL) {
-			list = end = node;
-		} else {
-			end->next = node;
-			end = node;
-		}
-	}
-
-	if (hdr->tail.gnu.isextended == 0)
-		return list;
-
-	do {
-		ret = read_retry(fd, &sph, sizeof(sph));
-		if (ret < 0)
-			goto fail_errno;
-		if ((size_t)ret < sizeof(sph))
-			goto fail_eof;
-
-		for (i = 0; i < 21; ++i) {
-			if (!isdigit(sph.sparse[i].offset[0]))
-				break;
-			if (!isdigit(sph.sparse[i].numbytes[0]))
-				break;
-
-			if (read_octal(sph.sparse[i].offset,
-				       sizeof(sph.sparse[i].offset), &off))
-				goto fail;
-			if (read_octal(sph.sparse[i].numbytes,
-				       sizeof(sph.sparse[i].numbytes), &sz))
-				goto fail;
-
-			node = calloc(1, sizeof(*node));
-			if (node == NULL)
-				goto fail_errno;
-
-			node->offset = off;
-			node->count = sz;
-
-			if (list == NULL) {
-				list = end = node;
-			} else {
-				end->next = node;
-				end = node;
-			}
-		}
-	} while (sph.isextended != 0);
-
-	return list;
-fail_eof:
-	fputs("parsing GNU sparse header: unexpected end of file", stderr);
-	goto fail;
-fail_errno:
-	perror("parsing GNU sparse header");
-	goto fail;
-fail:
-	free_sparse_list(list);
-	return NULL;
-}
-
 int read_header(int fd, tar_header_decoded_t *out)
 {
 	unsigned int set_by_pax = 0;
 	bool prev_was_zero = false;
-	E_TAR_VERSION version;
 	uint64_t pax_size;
 	tar_header_t hdr;
-	int ret;
+	int ret, version;
 
 	memset(out, 0, sizeof(*out));
 
@@ -743,12 +461,4 @@ fail_chksum:
 fail:
 	clear_header(out);
 	return -1;
-}
-
-void clear_header(tar_header_decoded_t *hdr)
-{
-	free_sparse_list(hdr->sparse);
-	free(hdr->name);
-	free(hdr->link_target);
-	memset(hdr, 0, sizeof(*hdr));
 }
