@@ -181,7 +181,7 @@ static int handle_line(fstree_t *fs, const char *filename,
 		x = line[i] - '0';
 
 		if (sb.st_uid > (0xFFFFFFFF - x) / 10)
-			goto fail_ov;
+			goto fail_ent;
 
 		sb.st_uid = sb.st_uid * 10 + x;
 	}
@@ -200,7 +200,7 @@ static int handle_line(fstree_t *fs, const char *filename,
 		x = line[i] - '0';
 
 		if (sb.st_gid > (0xFFFFFFFF - x) / 10)
-			goto fail_ov;
+			goto fail_ent;
 
 		sb.st_gid = sb.st_gid * 10 + x;
 	}
@@ -235,9 +235,6 @@ fail_no_extra:
 	fprintf(stderr, "%s: %zu: missing argument for %s.\n",
 		filename, line_num, keyword);
 	return -1;
-fail_ov:
-	msg = "numeric overflow";
-	goto fail_ent;
 fail_uid_gid:
 	msg = "uid & gid must be decimal numbers";
 	goto out_desc;
