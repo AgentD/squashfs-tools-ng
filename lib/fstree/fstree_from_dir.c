@@ -78,7 +78,7 @@ static int populate_dir(fstree_t *fs, tree_node_t *root)
 		}
 
 		if (S_ISLNK(sb.st_mode)) {
-			extra = alloca(sb.st_size + 1);
+			extra = calloc(1, sb.st_size + 1);
 			if (extra == NULL)
 				goto fail_rdlink;
 
