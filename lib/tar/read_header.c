@@ -203,11 +203,7 @@ fail_format:
 	fputs("malformed GNU pax sparse file record\n", stderr);
 	goto fail;
 fail:
-	while (list != NULL) {
-		ent = list;
-		list = list->next;
-		free(ent);
-	}
+	free_sparse_list(list);
 	free(ent);
 	return NULL;
 }
