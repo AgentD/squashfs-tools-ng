@@ -43,7 +43,7 @@ int fstree_relabel_selinux(fstree_t *fs, const char *filename)
 		{ SELABEL_OPT_PATH, filename },
 	};
 	size_t i;
-	int ret;
+	int ret = 0;
 
 	sehnd = selabel_open(SELABEL_CTX_FILE, seopts, 1);
 
