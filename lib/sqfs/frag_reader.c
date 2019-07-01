@@ -92,7 +92,7 @@ frag_reader_t *frag_reader_create(sqfs_super_t *super, int fd,
 	if (f == NULL)
 		goto fail_rd;
 
-	tbl = malloc(count * sizeof(tbl[0]));
+	tbl = calloc(count, sizeof(tbl[0]));
 	if (tbl == NULL)
 		goto fail_rd;
 

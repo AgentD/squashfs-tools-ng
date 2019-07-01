@@ -28,7 +28,7 @@ int id_table_read(id_table_t *tbl, int fd, sqfs_super_t *super,
 		return -1;
 	}
 
-	tbl->ids = malloc(super->id_count * sizeof(uint32_t));
+	tbl->ids = calloc(super->id_count, sizeof(uint32_t));
 	if (tbl->ids == NULL) {
 		perror("reading ID table");
 		return -1;
