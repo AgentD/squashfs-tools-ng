@@ -254,11 +254,13 @@ static int read_pax_header(int fd, uint64_t entsize, unsigned int *set_by_pax,
 		buffer[i] = '\0';
 
 		if (!strncmp(line, "uid=", 4)) {
-			pax_read_decimal(line + 4, &field);
+			if (pax_read_decimal(line + 4, &field))
+				return -1;
 			out->sb.st_uid = field;
 			*set_by_pax |= PAX_UID;
 		} else if (!strncmp(line, "gid=", 4)) {
-			pax_read_decimal(line + 4, &field);
+			if (pax_read_decimal(line + 4, &field))
+				return -1;
 			out->sb.st_gid = field;
 			*set_by_pax |= PAX_GID;
 		} else if (!strncmp(line, "path=", 5)) {
@@ -268,7 +270,8 @@ static int read_pax_header(int fd, uint64_t entsize, unsigned int *set_by_pax,
 				goto fail_errno;
 			*set_by_pax |= PAX_NAME;
 		} else if (!strncmp(line, "size=", 5)) {
-			pax_read_decimal(line + 5, &out->record_size);
+			if (pax_read_decimal(line + 5, &out->record_size))
+				return -1;
 			*set_by_pax |= PAX_SIZE;
 		} else if (!strncmp(line, "linkpath=", 9)) {
 			free(out->link_target);
@@ -278,28 +281,34 @@ static int read_pax_header(int fd, uint64_t entsize, unsigned int *set_by_pax,
 			*set_by_pax |= PAX_SLINK_TARGET;
 		} else if (!strncmp(line, "atime=", 6)) {
 			if (line[6] == '-') {
-				pax_read_decimal(line + 7, &field);
+				if (pax_read_decimal(line + 7, &field))
+					return -1;
 				out->sb.st_atime = -((int64_t)field);
 			} else {
-				pax_read_decimal(line + 6, &field);
+				if (pax_read_decimal(line + 6, &field))
+					return -1;
 				out->sb.st_atime = field;
 			}
 			*set_by_pax |= PAX_ATIME;
 		} else if (!strncmp(line, "mtime=", 6)) {
 			if (line[6] == '-') {
-				pax_read_decimal(line + 7, &field);
+				if (pax_read_decimal(line + 7, &field))
+					return -1;
 				out->sb.st_mtime = -((int64_t)field);
 			} else {
-				pax_read_decimal(line + 6, &field);
+				if (pax_read_decimal(line + 6, &field))
+					return -1;
 				out->sb.st_mtime = field;
 			}
 			*set_by_pax |= PAX_MTIME;
 		} else if (!strncmp(line, "ctime=", 6)) {
 			if (line[6] == '-') {
-				pax_read_decimal(line + 7, &field);
+				if (pax_read_decimal(line + 7, &field))
+					return -1;
 				out->sb.st_ctime = -((int64_t)field);
 			} else {
-				pax_read_decimal(line + 6, &field);
+				if (pax_read_decimal(line + 6, &field))
+					return -1;
 				out->sb.st_ctime = field;
 			}
 			*set_by_pax |= PAX_CTIME;
@@ -317,12 +326,15 @@ static int read_pax_header(int fd, uint64_t entsize, unsigned int *set_by_pax,
 			if (out->sparse == NULL)
 				goto fail;
 		} else if (!strncmp(line, "GNU.sparse.size=", 16)) {
-			pax_read_decimal(line + 16, &out->actual_size);
+			if (pax_read_decimal(line + 16, &out->actual_size))
+				return -1;
 			*set_by_pax |= PAX_SPARSE_SIZE;
 		} else if (!strncmp(line, "GNU.sparse.offset=", 18)) {
-			pax_read_decimal(line + 18, &offset);
+			if (pax_read_decimal(line + 18, &offset))
+				return -1;
 		} else if (!strncmp(line, "GNU.sparse.numbytes=", 20)) {
-			pax_read_decimal(line + 20, &num_bytes);
+			if (pax_read_decimal(line + 20, &num_bytes))
+				return -1;
 			sparse = calloc(1, sizeof(*sparse));
 			if (sparse == NULL)
 				goto fail_errno;
