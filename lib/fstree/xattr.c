@@ -23,8 +23,16 @@ static void remove_from_list(fstree_t *fs, tree_xattr_t *xattr)
 
 static tree_xattr_t *grow_xattr_block(tree_xattr_t *xattr)
 {
-	size_t count = (xattr == NULL) ? 4 : (xattr->max_attr * 2);
-	void *new = realloc(xattr, sizeof(*xattr) + sizeof(uint64_t) * count);
+	size_t new_size, old_size = 0, new_count = 4;
+	void *new;
+
+	if (xattr != NULL) {
+		new_count = xattr->max_attr * 2;
+		old_size = sizeof(*xattr) + sizeof(uint64_t) * xattr->max_attr;
+	}
+
+	new_size = sizeof(*xattr) + sizeof(uint64_t) * new_count;
+	new = realloc(xattr, new_size);
 
 	if (new == NULL) {
 		perror("adding extended attributes");
@@ -32,8 +40,10 @@ static tree_xattr_t *grow_xattr_block(tree_xattr_t *xattr)
 		return NULL;
 	}
 
+	memset((char *)new + old_size, 0, new_size - old_size);
+
 	xattr = new;
-	xattr->max_attr = count;
+	xattr->max_attr = new_count;
 	return xattr;
 }
 
