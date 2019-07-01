@@ -3,6 +3,7 @@
 
 static int create_node(tree_node_t *n, data_reader_t *data, int flags)
 {
+	tree_node_t *c;
 	char *name;
 	int fd;
 
@@ -23,8 +24,8 @@ static int create_node(tree_node_t *n, data_reader_t *data, int flags)
 		if (pushd(n->name))
 			return -1;
 
-		for (n = n->data.dir->children; n != NULL; n = n->next) {
-			if (create_node(n, data, flags))
+		for (c = n->data.dir->children; c != NULL; c = c->next) {
+			if (create_node(c, data, flags))
 				return -1;
 		}
 
