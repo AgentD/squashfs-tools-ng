@@ -165,10 +165,10 @@ static int write_pax_header(int fd, const struct stat *sb, const char *name,
 	ptr = write_pax_entry(ptr, "path", name);
 
 	if (S_ISLNK(sb->st_mode)) {
-		ptr = write_pax_entry(ptr, "linkpath", slink_target);
+		write_pax_entry(ptr, "linkpath", slink_target);
 	} else if (S_ISREG(sb->st_mode)) {
 		sprintf(temp, "%lu", sb->st_size);
-		ptr = write_pax_entry(ptr, "size", temp);
+		write_pax_entry(ptr, "size", temp);
 	}
 
 	len = strlen(buffer);
