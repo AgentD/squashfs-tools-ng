@@ -304,10 +304,10 @@ fail_value:
 compressor_t *create_gzip_compressor(bool compress, size_t block_size,
 				     char *options)
 {
-	gzip_compressor_t *gzip = calloc(1, sizeof(*gzip));
-	compressor_t *base = (compressor_t *)gzip;
 	int window = GZIP_DEFAULT_WINDOW;
 	int level = GZIP_DEFAULT_LEVEL;
+	gzip_compressor_t *gzip;
+	compressor_t *base;
 	int flags = 0;
 	int ret;
 
