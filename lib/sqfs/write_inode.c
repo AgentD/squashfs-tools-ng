@@ -107,7 +107,7 @@ int meta_writer_write_inode(fstree_t *fs, id_table_t *idtbl, meta_writer_t *im,
 	case SQFS_INODE_FIFO:
 	case SQFS_INODE_SOCKET: {
 		sqfs_inode_ipc_t ipc = {
-			.nlink = hard_link_count(node),
+			.nlink = htole32(hard_link_count(node)),
 		};
 
 		return meta_writer_append(im, &ipc, sizeof(ipc));
@@ -115,7 +115,7 @@ int meta_writer_write_inode(fstree_t *fs, id_table_t *idtbl, meta_writer_t *im,
 	case SQFS_INODE_EXT_FIFO:
 	case SQFS_INODE_EXT_SOCKET: {
 		sqfs_inode_ipc_ext_t ipc = {
-			.nlink = hard_link_count(node),
+			.nlink = htole32(hard_link_count(node)),
 			.xattr_idx = htole32(0xFFFFFFFF),
 		};
 
