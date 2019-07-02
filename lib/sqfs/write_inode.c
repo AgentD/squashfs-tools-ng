@@ -263,11 +263,7 @@ int meta_writer_write_inode(fstree_t *fs, id_table_t *idtbl, meta_writer_t *im,
 
 		for (i = 0; i < diridx->num_nodes; ++i) {
 			idx.start_block = htole32(diridx->idx_nodes[i].block);
-
-			idx.index = diridx->idx_nodes[i].offset;
-			idx.index -= node->data.dir->block_offset;
-			idx.index = htole32(idx.index);
-
+			idx.index = htole32(diridx->idx_nodes[i].offset);
 			idx.size = strlen(diridx->idx_nodes[i].node->name) - 1;
 			idx.size = htole32(idx.size);
 
