@@ -29,10 +29,8 @@ tools that attempt to address many of the problems of the old tools:
 
 
 In addition to that, tools have been added to directly convert a tar archive
-into a SquashFS file system image and back. Although the scope of those tools
-is limited, and it is suggested to only use those for quick testing, this
-allows for using existing tools can work on tar archives to on SquashFS
-images.
+into a SquashFS file system image and back. This allows for using existing
+tools can work on tar archives seamlessly to work on SquashFS images.
 
 
 The tools in this package have different names, so they can be installed in
