@@ -1,39 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "rdsquashfs.h"
 
-static tree_node_t *find_node(tree_node_t *n, const char *path)
-{
-	const char *end;
-	size_t len;
-
-	while (path != NULL && *path != '\0') {
-		if (!S_ISDIR(n->mode)) {
-			errno = ENOTDIR;
-			return NULL;
-		}
-
-		end = strchrnul(path, '/');
-		len = end - path;
-
-		for (n = n->data.dir->children; n != NULL; n = n->next) {
-			if (strncmp(path, n->name, len) != 0)
-				continue;
-			if (n->name[len] != '\0')
-				continue;
-			break;
-		}
-
-		if (n == NULL) {
-			errno = ENOENT;
-			return NULL;
-		}
-
-		path = *end ? (end + 1) : end;
-	}
-
-	return n;
-}
-
 int main(int argc, char **argv)
 {
 	int status = EXIT_FAILURE;
@@ -76,7 +43,7 @@ int main(int argc, char **argv)
 		goto out_cmp;
 
 	if (opt.cmdpath != NULL) {
-		n = find_node(fs.root, opt.cmdpath);
+		n = fstree_node_from_path(&fs, opt.cmdpath);
 		if (n == NULL) {
 			perror(opt.cmdpath);
 			goto out_fs;

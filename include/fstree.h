@@ -265,4 +265,7 @@ tree_node_t *tree_node_list_sort(tree_node_t *head);
 /* ASCIIbetically sort all sub directories recursively */
 void tree_node_sort_recursive(tree_node_t *root);
 
+/* resolve a path to a tree node. Returns NULL on failure and sets errno */
+tree_node_t *fstree_node_from_path(fstree_t *fs, const char *path);
+
 #endif /* FSTREE_H */
