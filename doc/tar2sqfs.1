@@ -51,6 +51,9 @@ mtime=<value>;0
 .TE
 .TP
 .TP
+\fB\-\-no\-skip\fR, \fB\-s\fR
+Abort if a tar record cannot be read instead of skipping it.
+.TP
 \fB\-\-force\fR, \fB\-f\fR
 Overwrite the output file if it exists.
 .TP
@@ -73,8 +76,9 @@ older, legacy headers are not supported) and extensions like sparse files.
 Hard links are currently not supported and silently converted to symlinks.
 Furthermore, none of the various xattr extensions are currently implemented.
 
-If any unsupported section is encountered in an archive, the section is skipped
-and a warning message is written to stderr.
+If any unsupported section is encountered in an archive a warning message is
+written to stderr. If the \fB\-\-no\-skip\fR option is set, processing aborts.
+By default, the unknown section is simply skipped after issuing a warning.
 .SH EXAMPLES
 .TP
 Turn an uncompressed tar archive into a squashfs image:

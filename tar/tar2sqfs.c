@@ -24,13 +24,14 @@ static struct option long_opts[] = {
 	{ "dev-block-size", required_argument, NULL, 'B' },
 	{ "defaults", required_argument, NULL, 'd' },
 	{ "comp-extra", required_argument, NULL, 'X' },
+	{ "no-skip", no_argument, NULL, 's' },
 	{ "force", no_argument, NULL, 'f' },
 	{ "quiet", no_argument, NULL, 'q' },
 	{ "help", no_argument, NULL, 'h' },
 	{ "version", no_argument, NULL, 'V' },
 };
 
-static const char *short_opts = "c:b:B:d:X:fqhV";
+static const char *short_opts = "c:b:B:d:X:sfqhV";
 
 static const char *usagestr =
 "Usage: tar2sqfs [OPTIONS...] <sqfsfile>\n"
@@ -58,6 +59,8 @@ static const char *usagestr =
 "                                 mode=<value>   0755 if not set.\n"
 "                                 mtime=<value>  0 if not set.\n"
 "\n"
+"  --no-skip, -s               Abort if a tar record cannot be read instead\n"
+"                              of skipping it.\n"
 "  --force, -f                 Overwrite the output file if it exists.\n"
 "  --quiet, -q                 Do not print out progress reports.\n"
 "  --help, -h                  Print help text and exit.\n"
@@ -78,6 +81,7 @@ static int outmode = O_WRONLY | O_CREAT | O_EXCL;
 static E_SQFS_COMPRESSOR comp_id;
 static char *comp_extra = NULL;
 static char *fs_defaults = NULL;
+static bool dont_skip = false;
 
 static void process_args(int argc, char **argv)
 {
@@ -123,6 +127,9 @@ static void process_args(int argc, char **argv)
 			break;
 		case 'd':
 			fs_defaults = optarg;
+			break;
+		case 's':
+			dont_skip = true;
 			break;
 		case 'f':
 			outmode = O_WRONLY | O_CREAT | O_TRUNC;
@@ -224,8 +231,7 @@ static int process_tar_ball(fstree_t *fs, data_writer_t *data)
 		skip = false;
 
 		if (hdr.unknown_record) {
-			fprintf(stderr, "skipping '%s' (unknown entry type)\n",
-				hdr.name);
+			fprintf(stderr, "%s: unknown entry type\n", hdr.name);
 			skip = true;
 		}
 
@@ -246,12 +252,14 @@ static int process_tar_ball(fstree_t *fs, data_writer_t *data)
 				skip = true;
 
 			if (skip) {
-				fprintf(stderr, "skipping '%s' (broken sparse "
+				fprintf(stderr, "%s: broken sparse "
 					"file layout)\n", hdr.name);
 			}
 		}
 
 		if (skip) {
+			if (dont_skip)
+				goto fail;
 			if (skip_entry(STDIN_FILENO, hdr.sb.st_size))
 				goto fail;
 			continue;
