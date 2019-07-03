@@ -84,11 +84,3 @@ int pax_read_decimal(const char *str, uint64_t *out)
 	*out = result;
 	return 0;
 }
-
-void write_octal(char *dst, unsigned int value, int digits)
-{
-	char temp[64];
-
-	sprintf(temp, "%0*o ", digits, value);
-	memcpy(dst, temp, strlen(temp));
-}

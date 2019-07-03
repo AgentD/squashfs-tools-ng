@@ -11,7 +11,7 @@ void update_checksum(tar_header_t *hdr)
 	for (i = 0; i < sizeof(*hdr); ++i)
 		chksum += ((unsigned char *)hdr)[i];
 
-	write_octal(hdr->chksum, chksum, 6);
+	sprintf(hdr->chksum, "%06o", chksum);
 	hdr->chksum[6] = '\0';
 	hdr->chksum[7] = ' ';
 }

@@ -38,8 +38,6 @@ int read_binary(const char *str, int digits, uint64_t *out);
 
 int read_number(const char *str, int digits, uint64_t *out);
 
-void write_octal(char *dst, unsigned int value, int digits);
-
 int pax_read_decimal(const char *str, uint64_t *out);
 
 void update_checksum(tar_header_t *hdr);

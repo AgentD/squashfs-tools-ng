@@ -1,197 +1,166 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "internal.h"
 
-static unsigned long pax_hdr_counter = 0;
-static char buffer[4096];
-
-static int name_to_tar_header(tar_header_t *hdr, const char *path)
+static void write_binary(char *dst, uint64_t value, int digits)
 {
-	size_t len = strlen(path);
-	const char *ptr;
+	memset(dst, 0, digits);
 
-	if ((len + 1) <= sizeof(hdr->name)) {
-		memcpy(hdr->name, path, len);
-		return 0;
+	while (digits > 0) {
+		((unsigned char *)dst)[digits - 1] = value & 0xFF;
+		--digits;
+		value >>= 8;
 	}
 
-	for (ptr = path; ; ++ptr) {
-		ptr = strchr(ptr, '/');
-		if (ptr == NULL)
-			return -1;
+	((unsigned char *)dst)[0] |= 0x80;
+}
 
-		len = ptr - path;
-		if (len >= sizeof(hdr->tail.posix.prefix))
-			continue;
-		if (strlen(ptr + 1) >= sizeof(hdr->name))
-			continue;
-		break;
+static void write_number(char *dst, uint64_t value, int digits)
+{
+	uint64_t mask = 0;
+	char buffer[64];
+	int i;
+
+	for (i = 0; i < (digits - 1); ++i)
+		mask = (mask << 3) | 7;
+
+	if (value <= mask) {
+		sprintf(buffer, "%0*o ", digits - 1, (unsigned int)value);
+		memcpy(dst, buffer, digits);
+	} else if (value <= ((mask << 3) | 7)) {
+		sprintf(buffer, "%0*o", digits, (unsigned int)value);
+		memcpy(dst, buffer, digits);
+	} else {
+		write_binary(dst, value, digits);
 	}
-
-	memcpy(hdr->tail.posix.prefix, path, ptr - path);
-	memcpy(hdr->name, ptr + 1, strlen(ptr + 1));
-	return 0;
 }
 
-static void init_header(tar_header_t *hdr, const struct stat *sb,
-			const char *name, const char *slink_target)
+static void write_number_signed(char *dst, int64_t value, int digits)
 {
-	memset(hdr, 0, sizeof(*hdr));
+	uint64_t neg;
 
-	name_to_tar_header(hdr, name);
-	memcpy(hdr->magic, TAR_MAGIC, sizeof(hdr->magic));
-	memcpy(hdr->version, TAR_VERSION, sizeof(hdr->version));
-	write_octal(hdr->mode, sb->st_mode & ~S_IFMT, 6);
-	write_octal(hdr->uid, sb->st_uid, 6);
-	write_octal(hdr->gid, sb->st_gid, 6);
-	write_octal(hdr->mtime, sb->st_mtime, 11);
-	write_octal(hdr->size, 0, 11);
-	write_octal(hdr->devmajor, 0, 6);
-	write_octal(hdr->devminor, 0, 6);
-
-	switch (sb->st_mode & S_IFMT) {
-	case S_IFREG:
-		write_octal(hdr->size, sb->st_size & 077777777777L, 11);
-		break;
-	case S_IFLNK:
-		if (sb->st_size < (off_t)sizeof(hdr->linkname))
-			strcpy(hdr->linkname, slink_target);
-		break;
-	case S_IFCHR:
-	case S_IFBLK:
-		write_octal(hdr->devmajor, major(sb->st_rdev), 6);
-		write_octal(hdr->devminor, minor(sb->st_rdev), 6);
-		break;
+	if (value < 0) {
+		neg = -value;
+		write_binary(dst, ~neg + 1, digits);
+	} else {
+		write_number(dst, value, digits);
 	}
-
-	sprintf(hdr->uname, "%u", sb->st_uid);
-	sprintf(hdr->gname, "%u", sb->st_gid);
 }
 
-static bool need_pax_header(const struct stat *sb, const char *name)
+static int write_header(int fd, const struct stat *sb, const char *name,
+			const char *slink_target, int type)
 {
-	tar_header_t tmp;
-
-	if (sb->st_uid > 0777777 || sb->st_gid > 0777777)
-		return true;
-
-	if (S_ISREG(sb->st_mode) && sb->st_size > 077777777777L)
-		return true;
-
-	if (S_ISLNK(sb->st_mode) && sb->st_size >= (off_t)sizeof(tmp.linkname))
-		return true;
-
-	if (name_to_tar_header(&tmp, name))
-		return true;
-
-	return false;
-}
-
-static char *write_pax_entry(char *dst, const char *key, const char *value)
-{
-	size_t i, len, prefix = 0, oldprefix;
-
-	do {
-		len = prefix + 1 + strlen(key) + 1 + strlen(value) + 1;
-
-		oldprefix = prefix;
-		prefix = 1;
-
-		for (i = len; i >= 10; i /= 10)
-			++prefix;
-	} while (oldprefix != prefix);
-
-	sprintf(dst, "%zu %s=%s\n", len, key, value);
-
-	return dst + len;
-}
-
-static int write_pax_header(int fd, const struct stat *sb, const char *name,
-			    const char *slink_target)
-{
-	char temp[64], *ptr;
-	struct stat fakesb;
+	int maj = 0, min = 0;
+	uint64_t size = 0;
 	tar_header_t hdr;
 	ssize_t ret;
-	size_t len;
 
-	memset(buffer, 0, sizeof(buffer));
-	memset(&fakesb, 0, sizeof(fakesb));
-	fakesb.st_mode = S_IFREG | 0644;
-
-	sprintf(temp, "pax%lu", pax_hdr_counter);
-	init_header(&hdr, &fakesb, temp, NULL);
-	hdr.typeflag = TAR_TYPE_PAX;
-
-	sprintf(temp, "%u", sb->st_uid);
-	ptr = buffer;
-	ptr = write_pax_entry(ptr, "uid", temp);
-	ptr = write_pax_entry(ptr, "uname", temp);
-
-	sprintf(temp, "%lu", sb->st_mtime);
-	ptr = write_pax_entry(ptr, "mtime", temp);
-
-	sprintf(temp, "%u", sb->st_gid);
-	ptr = write_pax_entry(ptr, "gid", temp);
-	ptr = write_pax_entry(ptr, "gname", temp);
-
-	ptr = write_pax_entry(ptr, "path", name);
-
-	if (S_ISLNK(sb->st_mode)) {
-		write_pax_entry(ptr, "linkpath", slink_target);
-	} else if (S_ISREG(sb->st_mode)) {
-		sprintf(temp, "%lu", sb->st_size);
-		write_pax_entry(ptr, "size", temp);
+	if (S_ISCHR(sb->st_mode) || S_ISBLK(sb->st_mode)) {
+		maj = major(sb->st_rdev);
+		min = minor(sb->st_rdev);
 	}
 
-	len = strlen(buffer);
-	write_octal(hdr.size, len, 11);
+	if (S_ISREG(sb->st_mode))
+		size = sb->st_size;
+
+	memset(&hdr, 0, sizeof(hdr));
+
+	memcpy(hdr.name, name, strlen(name));
+	write_number(hdr.mode, sb->st_mode & ~S_IFMT, sizeof(hdr.mode));
+	write_number(hdr.uid, sb->st_uid, sizeof(hdr.uid));
+	write_number(hdr.gid, sb->st_gid, sizeof(hdr.gid));
+	write_number(hdr.size, size, sizeof(hdr.size));
+	write_number_signed(hdr.mtime, sb->st_mtime, sizeof(hdr.mtime));
+	hdr.typeflag = type;
+	if (slink_target != NULL)
+		memcpy(hdr.linkname, slink_target, sb->st_size);
+	memcpy(hdr.magic, TAR_MAGIC_OLD, sizeof(hdr.magic));
+	memcpy(hdr.version, TAR_VERSION_OLD, sizeof(hdr.version));
+	sprintf(hdr.uname, "%u", sb->st_uid);
+	sprintf(hdr.gname, "%u", sb->st_gid);
+	write_number(hdr.devmajor, maj, sizeof(hdr.devmajor));
+	write_number(hdr.devminor, min, sizeof(hdr.devminor));
+
 	update_checksum(&hdr);
 
 	ret = write_retry(fd, &hdr, sizeof(hdr));
-	if (ret < 0)
-		goto fail_wr;
-	if ((size_t)ret < sizeof(hdr))
-		goto fail_trunc;
+	if (ret < 0) {
+		perror("writing header record");
+		return -1;
+	}
 
-	ret = write_retry(fd, buffer, len);
-	if (ret < 0)
-		goto fail_wr;
-	if ((size_t)ret < len)
-		goto fail_trunc;
+	if ((size_t)ret < sizeof(hdr)) {
+		fputs("writing header record: truncated write\n", stderr);
+		return -1;
+	}
 
-	return padd_file(fd, len, 512);
-fail_wr:
-	perror("writing pax header");
-	return -1;
-fail_trunc:
-	fputs("writing pax header: truncated write\n", stderr);
-	return -1;
+	return 0;
+}
+
+static int write_gnu_header(int fd, const struct stat *orig,
+			    const char *payload, size_t payload_len,
+			    int type, const char *name)
+{
+	struct stat sb;
+	ssize_t ret;
+
+	sb = *orig;
+	sb.st_mode = S_IFREG | 0644;
+	sb.st_size = payload_len;
+
+	if (write_header(fd, &sb, name, NULL, type))
+		return -1;
+
+	ret = write_retry(fd, payload, payload_len);
+	if (ret < 0) {
+		perror("writing GNU extension header");
+		return -1;
+	}
+
+	if ((size_t)ret < payload_len) {
+		fputs("writing GNU extension header: truncated write\n", stderr);
+		return -1;
+	}
+
+	return padd_file(fd, payload_len, 512);
 }
 
 int write_tar_header(int fd, const struct stat *sb, const char *name,
-		     const char *slink_target)
+		     const char *slink_target, unsigned int counter)
 {
 	const char *reason;
-	tar_header_t hdr;
-	ssize_t ret;
+	char buffer[64];
+	int type;
 
-	if (need_pax_header(sb, name)) {
-		if (write_pax_header(fd, sb, name, slink_target))
+	if (!S_ISLNK(sb->st_mode))
+		slink_target = NULL;
+
+	if (S_ISLNK(sb->st_mode) && sb->st_size >= 100) {
+		sprintf(buffer, "gnu/target%u", counter);
+		if (write_gnu_header(fd, sb, slink_target, sb->st_size,
+				     TAR_TYPE_GNU_SLINK, buffer))
 			return -1;
+		slink_target = NULL;
+	}
 
-		sprintf(buffer, "pax%lu_data", pax_hdr_counter++);
+	if (strlen(name) >= 100) {
+		sprintf(buffer, "gnu/name%u", counter);
+
+		if (write_gnu_header(fd, sb, name, strlen(name),
+				     TAR_TYPE_GNU_PATH, buffer)) {
+			return -1;
+		}
+
+		sprintf(buffer, "gnu/data%u", counter);
 		name = buffer;
 	}
 
-	init_header(&hdr, sb, name, slink_target);
-
 	switch (sb->st_mode & S_IFMT) {
-	case S_IFCHR: hdr.typeflag = TAR_TYPE_CHARDEV; break;
-	case S_IFBLK: hdr.typeflag = TAR_TYPE_BLOCKDEV; break;
-	case S_IFLNK: hdr.typeflag = TAR_TYPE_SLINK; break;
-	case S_IFREG: hdr.typeflag = TAR_TYPE_FILE; break;
-	case S_IFDIR: hdr.typeflag = TAR_TYPE_DIR; break;
-	case S_IFIFO: hdr.typeflag = TAR_TYPE_FIFO; break;
+	case S_IFCHR: type = TAR_TYPE_CHARDEV; break;
+	case S_IFBLK: type = TAR_TYPE_BLOCKDEV; break;
+	case S_IFLNK: type = TAR_TYPE_SLINK; break;
+	case S_IFREG: type = TAR_TYPE_FILE; break;
+	case S_IFDIR: type = TAR_TYPE_DIR; break;
+	case S_IFIFO: type = TAR_TYPE_FIFO; break;
 	case S_IFSOCK:
 		reason = "cannot pack socket";
 		goto out_skip;
@@ -200,20 +169,7 @@ int write_tar_header(int fd, const struct stat *sb, const char *name,
 		goto out_skip;
 	}
 
-	update_checksum(&hdr);
-
-	ret = write_retry(fd, &hdr, sizeof(hdr));
-
-	if (ret < 0) {
-		perror("writing header record");
-	} else if ((size_t)ret < sizeof(hdr)) {
-		fputs("writing header record: truncated write\n", stderr);
-		ret = -1;
-	} else {
-		ret = 0;
-	}
-
-	return ret;
+	return write_header(fd, sb, name, slink_target, type);
 out_skip:
 	fprintf(stderr, "WARNING: skipping '%s' (%s)\n", name, reason);
 	return 1;

@@ -18,10 +18,11 @@ Print help text and exit.
 .TP
 \fB\-\-version\fR, \fB\-V\fR
 Print version information and exit.
-.SH LIMITATIONS
-To be compatible with as many tools as possible, the output format is POSIX tar
-using pax extensions if necessary, so the tools you intend to use should
-support the pax format.
+.SH COMPATIBILITY
+To be compatible with as many tools as possible, the output format is pre-POSIX
+ustar archive using GNU extensions where necessary. This seems to be more
+widely supported by many tar programs (besides GNU tar), even more than the
+newer POSIX format and PAX extensions.
 
 It is not possible to store socket files in a tar or pax archive. Also, in the
 current implementation, all extended attribuates are lost.

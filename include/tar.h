@@ -89,9 +89,12 @@ typedef struct {
 /*
   Returns < 0 on failure, > 0 if cannot encode, 0 on success.
   Prints error/warning messages to stderr.
+
+  The counter is an incremental record counter used if additional
+  headers need to be generated.
 */
 int write_tar_header(int fd, const struct stat *sb, const char *name,
-		     const char *slink_target);
+		     const char *slink_target, unsigned int counter);
 
 /* calcuate and skip the zero padding */
 int skip_padding(int fd, uint64_t size);

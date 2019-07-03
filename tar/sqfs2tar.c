@@ -42,6 +42,7 @@ static const char *usagestr =
 "\n";
 
 static const char *filename;
+static unsigned int record_counter;
 
 static void process_args(int argc, char **argv)
 {
@@ -121,7 +122,8 @@ static int write_tree_dfs(fstree_t *fs, tree_node_t *n, data_reader_t *data)
 		fstree_node_stat(fs, n, &sb);
 
 		target = S_ISLNK(sb.st_mode) ? n->data.slink_target : NULL;
-		ret = write_tar_header(STDOUT_FILENO, &sb, name, target);
+		ret = write_tar_header(STDOUT_FILENO, &sb, name, target,
+				       record_counter++);
 		free(name);
 
 		if (ret < 0)
