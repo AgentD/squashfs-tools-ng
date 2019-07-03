@@ -13,6 +13,16 @@ work on tar archives.
 .PP
 Possible options:
 .TP
+\fB\-\-subdir\fR, \fB\-d\fR <dir>
+Unpack the given sub directory instead of the filesystem root. Can be specified
+more than once to select multiple directories. If only one is specified, it
+becomes the new root of node of the archive file system tree.
+.TP
+\fB\-\-keep\-as\-dir\fR, \fB\-k\fR
+If \fB\-\-subdir\fR is used only once, don't make the subdir the archive root,
+instead keep it as prefix for all unpacked files. Using \fB\-\-subdir\fR more
+than once implies \fB\-\-keep\-as\-dir\fR.
+.TP
 \fB\-\-no\-skip\fR, \fB\-s\fR
 Abort if file cannot be stored in a tar record instead of skipping it.
 .TP
