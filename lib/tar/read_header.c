@@ -199,23 +199,27 @@ fail:
 static int decode_header(const tar_header_t *hdr, unsigned int set_by_pax,
 			 tar_header_decoded_t *out, int version)
 {
+	size_t len1, len2;
 	uint64_t field;
-	size_t count;
 
 	if (!(set_by_pax & PAX_NAME)) {
 		if (hdr->tail.posix.prefix[0] != '\0' &&
 		    version == ETV_POSIX) {
-			count = strlen(hdr->name) + 1;
-			count += strlen(hdr->tail.posix.prefix) + 1;
+			len1 = strnlen(hdr->name, sizeof(hdr->name));
+			len2 = strnlen(hdr->tail.posix.prefix,
+				       sizeof(hdr->tail.posix.prefix));
 
-			out->name = malloc(count);
+			out->name = malloc(len1 + 1 + len2 + 1);
 
 			if (out->name != NULL) {
-				sprintf(out->name, "%s/%s",
-					hdr->tail.posix.prefix, hdr->name);
+				memcpy(out->name, hdr->name, len1);
+				out->name[len1] = '/';
+				memcpy(out->name + len1 + 1,
+				       hdr->tail.posix.prefix, len2);
+				out->name[len1 + 1 + len2] = '\0';
 			}
 		} else {
-			out->name = strdup(hdr->name);
+			out->name = strndup(hdr->name, sizeof(hdr->name));
 		}
 
 		if (out->name == NULL) {
