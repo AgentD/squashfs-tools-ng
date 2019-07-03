@@ -13,6 +13,9 @@ work on tar archives.
 .PP
 Possible options:
 .TP
+\fB\-\-no\-skip\fR, \fB\-s\fR
+Abort if file cannot be stored in a tar record instead of skipping it.
+.TP
 \fB\-\-help\fR, \fB\-h\fR
 Print help text and exit.
 .TP
@@ -28,7 +31,8 @@ It is not possible to store socket files in a tar or pax archive. Also, in the
 current implementation, all extended attribuates are lost.
 
 If any file or directory is encountered that cannot be converted, it is
-skipped and a warning is written to stderr.
+skipped and a warning is written to stderr. Unless the \fB\-\-no\-skip\fR
+option is set, which aborts processing if a file cannot be converted.
 .SH EXAMPLES
 Turn a squashfs image into a tar archive:
 .IP

@@ -17,11 +17,12 @@
 #include <stdio.h>
 
 static struct option long_opts[] = {
+	{ "no-skip", no_argument, NULL, 's' },
 	{ "help", no_argument, NULL, 'h' },
 	{ "version", no_argument, NULL, 'V' },
 };
 
-static const char *short_opts = "hV";
+static const char *short_opts = "shV";
 
 static const char *usagestr =
 "Usage: sqfs2tar [OPTIONS...] <sqfsfile>\n"
@@ -30,6 +31,10 @@ static const char *usagestr =
 "to stdout.\n"
 "\n"
 "Possible options:\n"
+"\n"
+"  --no-skip                 Abort if a file cannot be stored in a tar\n"
+"                            archive. By default, it is simply skipped\n"
+"                            and a warning is written to stderr."
 "\n"
 "  --help, -h                Print help text and exit.\n"
 "  --version, -V             Print version information and exit.\n"
@@ -43,6 +48,7 @@ static const char *usagestr =
 
 static const char *filename;
 static unsigned int record_counter;
+static bool dont_skip = false;
 
 static void process_args(int argc, char **argv)
 {
@@ -54,6 +60,9 @@ static void process_args(int argc, char **argv)
 			break;
 
 		switch (i) {
+		case 's':
+			dont_skip = true;
+			break;
 		case 'h':
 			fputs(usagestr, stdout);
 			exit(EXIT_SUCCESS);
@@ -124,12 +133,24 @@ static int write_tree_dfs(fstree_t *fs, tree_node_t *n, data_reader_t *data)
 		target = S_ISLNK(sb.st_mode) ? n->data.slink_target : NULL;
 		ret = write_tar_header(STDOUT_FILENO, &sb, name, target,
 				       record_counter++);
+
+		if (ret > 0) {
+			if (dont_skip) {
+				fputs("Not allowed to skip files, aborting!\n",
+				      stderr);
+				ret = -1;
+			} else {
+				fprintf(stderr, "Skipping %s\n", name);
+				ret = 0;
+			}
+			free(name);
+			return ret;
+		}
+
 		free(name);
 
 		if (ret < 0)
 			return -1;
-		if (ret > 0)
-			return 0;
 
 		if (S_ISREG(n->mode)) {
 			if (data_reader_dump_file(data, n->data.file,

@@ -171,6 +171,6 @@ int write_tar_header(int fd, const struct stat *sb, const char *name,
 
 	return write_header(fd, sb, name, slink_target, type);
 out_skip:
-	fprintf(stderr, "WARNING: skipping '%s' (%s)\n", name, reason);
+	fprintf(stderr, "WARNING: %s: %s\n", name, reason);
 	return 1;
 }
