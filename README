@@ -51,7 +51,7 @@ At the moment, the following things still require some work:
  - more testing (extensive unit testing for libsqfs still needed)
  - extended attributes
     - gensquashfs supports SELinux labeling only
-    - rdsquashfs, sqfs2tar and tar2sqfs ignore them entirely
+    - rdsquashfs and sqfs2tar ignore them entirely
     - entire key value blocks are deduplicated, but individual value
       deduplication ("out of line" storage) isn't implemented.
  - hard links (not implemented; tar2sqfs turns them into symlinks)

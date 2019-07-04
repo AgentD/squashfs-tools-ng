@@ -2,6 +2,7 @@
 #ifndef SQUASHFS_H
 #define SQUASHFS_H
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
 
@@ -249,5 +250,8 @@ int sqfs_super_write(sqfs_super_t *super, int fd);
 
 /* Returns 0 on success. Prints error messages to stderr on failure. */
 int sqfs_super_read(sqfs_super_t *super, int fd);
+
+/* Check if a given xattr key can be encoded in squashfs at all. */
+bool sqfs_has_xattr(const char *key);
 
 #endif /* SQUASHFS_H */

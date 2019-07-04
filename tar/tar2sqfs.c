@@ -25,13 +25,14 @@ static struct option long_opts[] = {
 	{ "defaults", required_argument, NULL, 'd' },
 	{ "comp-extra", required_argument, NULL, 'X' },
 	{ "no-skip", no_argument, NULL, 's' },
+	{ "no-xattr", no_argument, NULL, 'x' },
 	{ "force", no_argument, NULL, 'f' },
 	{ "quiet", no_argument, NULL, 'q' },
 	{ "help", no_argument, NULL, 'h' },
 	{ "version", no_argument, NULL, 'V' },
 };
 
-static const char *short_opts = "c:b:B:d:X:sfqhV";
+static const char *short_opts = "c:b:B:d:X:sxfqhV";
 
 static const char *usagestr =
 "Usage: tar2sqfs [OPTIONS...] <sqfsfile>\n"
@@ -61,6 +62,7 @@ static const char *usagestr =
 "\n"
 "  --no-skip, -s               Abort if a tar record cannot be read instead\n"
 "                              of skipping it.\n"
+"  --no-xattr, -x              Do not copy extended attributes from archive.\n"
 "  --force, -f                 Overwrite the output file if it exists.\n"
 "  --quiet, -q                 Do not print out progress reports.\n"
 "  --help, -h                  Print help text and exit.\n"
@@ -82,6 +84,7 @@ static E_SQFS_COMPRESSOR comp_id;
 static char *comp_extra = NULL;
 static char *fs_defaults = NULL;
 static bool dont_skip = false;
+static bool no_xattr = false;
 
 static void process_args(int argc, char **argv)
 {
@@ -127,6 +130,9 @@ static void process_args(int argc, char **argv)
 			break;
 		case 'd':
 			fs_defaults = optarg;
+			break;
+		case 'x':
+			no_xattr = true;
 			break;
 		case 's':
 			dont_skip = true;
@@ -192,6 +198,31 @@ static int write_file(tar_header_decoded_t *hdr, file_info_t *fi,
 	return skip_padding(STDIN_FILENO, fi->size);
 }
 
+static int copy_xattr(fstree_t *fs, tree_node_t *node,
+		      tar_header_decoded_t *hdr)
+{
+	tar_xattr_t *xattr;
+
+	for (xattr = hdr->xattr; xattr != NULL; xattr = xattr->next) {
+		if (!sqfs_has_xattr(xattr->key)) {
+			if (dont_skip) {
+				fprintf(stderr, "Cannot encode xattr key '%s' "
+					"in squashfs\n", xattr->key);
+				return -1;
+			}
+
+			fprintf(stderr, "WARNING: squashfs does not "
+				"support xattr prefix of %s\n", xattr->key);
+			continue;
+		}
+
+		if (fstree_add_xattr(fs, node, xattr->key, xattr->value))
+			return -1;
+	}
+
+	return 0;
+}
+
 static int create_node_and_repack_data(tar_header_decoded_t *hdr, fstree_t *fs,
 				       data_writer_t *data)
 {
@@ -203,6 +234,11 @@ static int create_node_and_repack_data(tar_header_decoded_t *hdr, fstree_t *fs,
 
 	if (!quiet)
 		printf("Packing %s\n", hdr->name);
+
+	if (!no_xattr) {
+		if (copy_xattr(fs, node, hdr))
+			return -1;
+	}
 
 	if (S_ISREG(hdr->sb.st_mode))
 		return write_file(hdr, node->data.file, data);
@@ -346,6 +382,8 @@ int main(int argc, char **argv)
 
 	super.inode_count = fs.inode_tbl_size - 2;
 
+	fstree_xattr_deduplicate(&fs);
+
 	if (sqfs_serialize_fstree(outfd, &super, &fs, cmp, &idtbl))
 		goto out;
 
@@ -354,6 +392,9 @@ int main(int argc, char **argv)
 
 	if (id_table_write(&idtbl, outfd, &super, cmp))
 		goto out;
+
+	if (write_xattr(outfd, &fs, &super, cmp))
+		goto out_data;
 
 	if (sqfs_super_write(&super, outfd))
 		goto out;

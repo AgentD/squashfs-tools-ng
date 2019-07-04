@@ -51,6 +51,10 @@ mtime=<value>;0
 .TE
 .TP
 .TP
+\fB\-\-no\-xattr\fR, \fB\-s\fR
+Do not copy extended attributes from archive. Default behaviour is to copy all
+extended attributes and skip the ones that cannot be encoded in SquashFS.
+.TP
 \fB\-\-no\-skip\fR, \fB\-s\fR
 Abort if a tar record cannot be read instead of skipping it.
 .TP
@@ -76,9 +80,13 @@ older, legacy headers are not supported) and extensions like sparse files.
 Hard links are currently not supported and silently converted to symlinks.
 Furthermore, none of the various xattr extensions are currently implemented.
 
-If any unsupported section is encountered in an archive a warning message is
-written to stderr. If the \fB\-\-no\-skip\fR option is set, processing aborts.
-By default, the unknown section is simply skipped after issuing a warning.
+Extended attributes are supported through the SCHILY.xattr PAX extension
+(favoured by GNU tar and star) or through the LIBARCHIVE.xattr PAX extension.
+
+If any unsupported section or extended attribute key is encountered in an
+archive a warning message is written to stderr. If the \fB\-\-no\-skip\fR
+option is set, processing aborts. By default, unknown sections and unsupported
+extended attributes are simply skipped after issuing a warning.
 .SH EXAMPLES
 .TP
 Turn an uncompressed tar archive into a squashfs image:

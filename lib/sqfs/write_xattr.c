@@ -30,8 +30,12 @@ static int get_prefix(const char *key)
 		}
 	}
 
-	fprintf(stderr, "unknown xattr key '%s'\n", key);
 	return -1;
+}
+
+bool sqfs_has_xattr(const char *key)
+{
+	return get_prefix(key) >= 0;
 }
 
 static int write_pair(meta_writer_t *mw, const char *key, const char *value)
@@ -41,8 +45,10 @@ static int write_pair(meta_writer_t *mw, const char *key, const char *value)
 	int type;
 
 	type = get_prefix(key);
-	if (type < 0)
+	if (type < 0) {
+		fprintf(stderr, "unsupported xattr key '%s'\n", key);
 		return -1;
+	}
 
 	key = strchr(key, '.');
 	assert(key != NULL);
