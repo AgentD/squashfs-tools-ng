@@ -212,10 +212,9 @@ static int decode_header(const tar_header_t *hdr, unsigned int set_by_pax,
 			out->name = malloc(len1 + 1 + len2 + 1);
 
 			if (out->name != NULL) {
-				memcpy(out->name, hdr->name, len1);
-				out->name[len1] = '/';
-				memcpy(out->name + len1 + 1,
-				       hdr->tail.posix.prefix, len2);
+				memcpy(out->name, hdr->tail.posix.prefix, len2);
+				out->name[len2] = '/';
+				memcpy(out->name + len2 + 1, hdr->name, len1);
 				out->name[len1 + 1 + len2] = '\0';
 			}
 		} else {
