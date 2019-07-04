@@ -7,7 +7,7 @@ on embedded devices, live systems or simply as a compressed archive format.
 
 Think of it as a .tar.gz that you can mount (or XZ, LZO, LZ4, ZSTD).
 
-The file system itself and the user space tooling were originally developed by
+The filesystem itself and the user space tooling were originally developed by
 Phillip Lougher with third party contributions that have accumulated over time.
 
 Unfortunately, the original user space tooling does not support a lot of
@@ -29,11 +29,11 @@ tools that attempt to address many of the problems of the old tools:
 
 
 In addition to that, tools have been added to directly convert a tar archive
-into a SquashFS file system image and back. This allows for using existing
-tools can work on tar archives seamlessly to work on SquashFS images.
+into a SquashFS filesystem image and back. This allows for using existing
+tools can work on tar archives seamlessly on SquashFS images.
 
 
-The tools in this package have different names, so they can be installed in
+The tools in this package have different names, so they can be installed
 together with the existing tools:
 
  - `gensquashfs` can be used to produce SquashFS images from `gen_init_cpio`
