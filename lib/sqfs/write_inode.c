@@ -9,24 +9,29 @@
 
 static int get_type(tree_node_t *node)
 {
-	int type;
-
 	switch (node->mode & S_IFMT) {
-	case S_IFSOCK: type = SQFS_INODE_SOCKET; break;
-	case S_IFIFO:  type = SQFS_INODE_FIFO; break;
-	case S_IFLNK:  type = SQFS_INODE_SLINK; break;
-	case S_IFBLK:  type = SQFS_INODE_BDEV; break;
-	case S_IFCHR:  type = SQFS_INODE_CDEV; break;
-	case S_IFDIR:  type = SQFS_INODE_DIR; break;
-	case S_IFREG:  type = SQFS_INODE_FILE; break;
-	default:
-		assert(0);
+	case S_IFSOCK:
+		if (node->xattr != NULL)
+			return SQFS_INODE_EXT_SOCKET;
+		return SQFS_INODE_SOCKET;
+	case S_IFIFO:
+		if (node->xattr != NULL)
+			return SQFS_INODE_EXT_FIFO;
+		return SQFS_INODE_FIFO;
+	case S_IFLNK:
+		if (node->xattr != NULL)
+			return SQFS_INODE_EXT_SLINK;
+		return SQFS_INODE_SLINK;
+	case S_IFBLK:
+		if (node->xattr != NULL)
+			return SQFS_INODE_EXT_BDEV;
+		return SQFS_INODE_BDEV;
+	case S_IFCHR:
+		if (node->xattr != NULL)
+			return SQFS_INODE_EXT_CDEV;
+		return SQFS_INODE_CDEV;
 	}
-
-	if (node->xattr != NULL)
-		type = SQFS_INODE_EXT_TYPE(type);
-
-	return type;
+	assert(0);
 }
 
 static size_t hard_link_count(tree_node_t *n)
@@ -66,8 +71,6 @@ int meta_writer_write_inode(fstree_t *fs, id_table_t *idtbl, meta_writer_t *im,
 	meta_writer_get_position(im, &block, &offset);
 	node->inode_ref = (block << 16) | offset;
 
-	type = get_type(node);
-
 	if (S_ISDIR(node->mode)) {
 		di = node->data.dir;
 
@@ -84,11 +87,15 @@ int meta_writer_write_inode(fstree_t *fs, id_table_t *idtbl, meta_writer_t *im,
 		}
 	} else if (S_ISREG(node->mode)) {
 		fi = node->data.file;
+		type = SQFS_INODE_FILE;
 
 		if (fi->startblock > 0xFFFFFFFFUL || fi->size > 0xFFFFFFFFUL ||
-		    hard_link_count(node) > 1 || fi->sparse > 0) {
+		    hard_link_count(node) > 1 || fi->sparse > 0 ||
+		    node->xattr != NULL) {
 			type = SQFS_INODE_EXT_FILE;
 		}
+	} else {
+		type = get_type(node);
 	}
 
 	base.type = htole16(type);
