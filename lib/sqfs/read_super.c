@@ -9,8 +9,8 @@
 
 int sqfs_super_read(sqfs_super_t *super, int fd)
 {
+	size_t block_size = 0;
 	sqfs_super_t temp;
-	size_t block_size;
 	ssize_t ret;
 	int i;
 
@@ -69,10 +69,12 @@ int sqfs_super_read(sqfs_super_t *super, int fd)
 		return -1;
 	}
 
-	block_size = 1;
+	if (temp.block_log > 0 && temp.block_log < 32) {
+		block_size = 1;
 
-	for (i = 0; i < temp.block_log; ++i)
-		block_size <<= 1;
+		for (i = 0; i < temp.block_log; ++i)
+			block_size <<= 1;
+	}
 
 	if (temp.block_size != block_size) {
 		fputs("Mismatch between block size and block log\n", stderr);
