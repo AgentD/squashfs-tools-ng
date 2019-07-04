@@ -185,7 +185,7 @@ int write_xattr(int outfd, fstree_t *fs, sqfs_super_t *super,
 	if ((size_t)ret < sizeof(idtbl))
 		goto fail_trunc;
 
-	write_retry(outfd, tbl, sizeof(tbl[0]) * blocks);
+	ret = write_retry(outfd, tbl, sizeof(tbl[0]) * blocks);
 	if (ret < 0)
 		goto fail_wr;
 	if ((size_t)ret < sizeof(tbl[0]) * blocks)
