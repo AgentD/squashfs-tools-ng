@@ -266,7 +266,13 @@ static int process_tar_ball(fstree_t *fs, data_writer_t *data)
 
 		skip = false;
 
-		if (hdr.unknown_record) {
+		if (hdr.name == NULL || canonicalize_name(hdr.name) != 0) {
+			fprintf(stderr, "skipping '%s' (invalid name)\n",
+				hdr.name);
+			skip = true;
+		}
+
+		if (!skip && hdr.unknown_record) {
 			fprintf(stderr, "%s: unknown entry type\n", hdr.name);
 			skip = true;
 		}
@@ -296,14 +302,6 @@ static int process_tar_ball(fstree_t *fs, data_writer_t *data)
 		if (skip) {
 			if (dont_skip)
 				goto fail;
-			if (skip_entry(STDIN_FILENO, hdr.sb.st_size))
-				goto fail;
-			continue;
-		}
-
-		if (canonicalize_name(hdr.name)) {
-			fprintf(stderr, "skipping '%s' (invalid name)\n",
-				hdr.name);
 			if (skip_entry(STDIN_FILENO, hdr.sb.st_size))
 				goto fail;
 			continue;
