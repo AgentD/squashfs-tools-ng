@@ -56,6 +56,13 @@ typedef struct {
 	char padding[7];
 } gnu_sparse_t;
 
+typedef struct tar_xattr_t {
+	struct tar_xattr_t *next;
+	char *key;
+	char *value;
+	char data[];
+} tar_xattr_t;
+
 typedef struct {
 	struct stat sb;
 	char *name;
@@ -64,6 +71,7 @@ typedef struct {
 	uint64_t actual_size;
 	uint64_t record_size;
 	bool unknown_record;
+	tar_xattr_t *xattr;
 } tar_header_decoded_t;
 
 #define TAR_TYPE_FILE '0'

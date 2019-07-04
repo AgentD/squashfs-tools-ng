@@ -60,18 +60,28 @@ test_tar_sparse_gnu2_LDADD = libtar.a libutil.a
 test_tar_sparse_gnu2_CPPFLAGS = $(AM_CPPFLAGS)
 test_tar_sparse_gnu2_CPPFLAGS += -DTESTPATH=$(top_srcdir)/tests/tar
 
+test_tar_xattr_bsd_SOURCES = tests/tar_xattr_bsd.c
+test_tar_xattr_bsd_LDADD = libtar.a libutil.a
+test_tar_xattr_bsd_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(top_srcdir)/tests/tar
+
+test_tar_xattr_schily_SOURCES = tests/tar_xattr_schily.c
+test_tar_xattr_schily_LDADD = libtar.a libutil.a
+test_tar_xattr_schily_CPPFLAGS = $(AM_CPPFLAGS)
+test_tar_xattr_schily_CPPFLAGS += -DTESTPATH=$(top_srcdir)/tests/tar
+
 check_PROGRAMS += test_canonicalize_name test_mknode_simple test_mknode_slink
 check_PROGRAMS += test_mknode_reg test_mknode_dir test_gen_inode_table
 check_PROGRAMS += test_add_by_path test_get_path test_fstree_sort
 check_PROGRAMS += test_fstree_from_file test_fstree_init test_fstree_xattr
 check_PROGRAMS += test_tar_ustar test_tar_pax test_tar_gnu test_tar_sparse_gnu
 check_PROGRAMS += test_tar_sparse_gnu1 test_tar_sparse_gnu2
+check_PROGRAMS += test_tar_xattr_bsd test_tar_xattr_schily
 
 TESTS += test_canonicalize_name test_mknode_simple test_mknode_slink
 TESTS += test_mknode_reg test_mknode_dir test_gen_inode_table
 TESTS += test_add_by_path test_get_path test_fstree_sort test_fstree_from_file
 TESTS += test_fstree_init test_fstree_xattr test_tar_ustar test_tar_pax
 TESTS += test_tar_gnu test_tar_sparse_gnu test_tar_sparse_gnu1
-TESTS += test_tar_sparse_gnu2
+TESTS += test_tar_sparse_gnu2 test_tar_xattr_bsd test_tar_xattr_schily
 
 EXTRA_DIST += $(top_srcdir)/tests/tar

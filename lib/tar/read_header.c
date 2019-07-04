@@ -60,12 +60,29 @@ fail:
 	return NULL;
 }
 
+static tar_xattr_t *mkxattr(const char *key, size_t keylen,
+			    const char *value, size_t valuelen)
+{
+	tar_xattr_t *xattr;
+
+	xattr = calloc(1, sizeof(*xattr) + keylen + 1 + valuelen + 1);
+	if (xattr == NULL)
+		return NULL;
+
+	xattr->key = xattr->data;
+	xattr->value = xattr->data + keylen + 1;
+	memcpy(xattr->key, key, keylen);
+	memcpy(xattr->value, value, valuelen);
+	return xattr;
+}
+
 static int read_pax_header(int fd, uint64_t entsize, unsigned int *set_by_pax,
 			   tar_header_decoded_t *out)
 {
 	sparse_map_t *sparse_last = NULL, *sparse;
 	uint64_t field, offset = 0, num_bytes = 0;
-	char *buffer, *line;
+	char *buffer, *line, *key, *ptr, *value;
+	tar_xattr_t *xattr;
 	uint64_t i;
 
 	buffer = record_to_memory(fd, entsize);
@@ -183,6 +200,39 @@ static int read_pax_header(int fd, uint64_t entsize, unsigned int *set_by_pax,
 				sparse_last->next = sparse;
 				sparse_last = sparse;
 			}
+		} else if (!strncmp(line, "SCHILY.xattr.", 13)) {
+			key = line + 13;
+
+			ptr = strrchr(key, '=');
+			if (ptr == NULL || ptr == key)
+				continue;
+
+			value = ptr + 1;
+
+			xattr = mkxattr(key, ptr - key, value, strlen(value));
+			if (xattr == NULL)
+				goto fail_errno;
+
+			xattr->next = out->xattr;
+			out->xattr = xattr;
+		} else if (!strncmp(line, "LIBARCHIVE.xattr.", 17)) {
+			key = line + 17;
+
+			ptr = strrchr(key, '=');
+			if (ptr == NULL || ptr == key)
+				continue;
+
+			value = ptr + 1;
+
+			xattr = mkxattr(key, ptr - key, value, strlen(value));
+			if (xattr == NULL)
+				goto fail_errno;
+
+			urldecode(xattr->key);
+			base64_decode((uint8_t *)xattr->value, value);
+
+			xattr->next = out->xattr;
+			out->xattr = xattr;
 		}
 	}
 
