@@ -154,7 +154,7 @@ void compressor_print_available(void)
 
 const char *compressor_name_from_id(E_SQFS_COMPRESSOR id)
 {
-	if (id < 0 || (size_t)id > sizeof(names) / sizeof(names[0]))
+	if (id < 0 || (size_t)id >= sizeof(names) / sizeof(names[0]))
 		return NULL;
 
 	return names[id];
