@@ -150,7 +150,7 @@ typedef struct {
 
 typedef struct {
 	uint16_t offset;
-	uint16_t inode_number;
+	int16_t inode_diff;
 	uint16_t type;
 	uint16_t size;
 	uint8_t name[];

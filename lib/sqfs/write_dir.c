@@ -55,8 +55,10 @@ int meta_writer_write_dir(meta_writer_t *dm, dir_info_t *dir,
 	sqfs_dir_header_t hdr;
 	sqfs_dir_entry_t ent;
 	tree_node_t *c, *d;
+	uint16_t *diff_u16;
 	uint32_t offset;
 	uint64_t block;
+	int32_t diff;
 
 	c = dir->children;
 	dir->size = 0;
@@ -73,8 +75,9 @@ int meta_writer_write_dir(meta_writer_t *dm, dir_info_t *dir,
 			if ((d->inode_ref >> 16) != (c->inode_ref >> 16))
 				break;
 
-			/* XXX: difference is actually signed */
-			if ((d->inode_num - c->inode_num) > 0x7FFF)
+			diff = d->inode_num - c->inode_num;
+
+			if (diff > 32767 || diff < -32767)
 				break;
 
 			size += sizeof(ent) + strlen(c->name);
@@ -109,8 +112,12 @@ int meta_writer_write_dir(meta_writer_t *dm, dir_info_t *dir,
 		d = c;
 
 		for (i = 0; i < count; ++i) {
+			ent.inode_diff = c->inode_num - d->inode_num;
+
+			diff_u16 = (uint16_t *)&ent.inode_diff;
+			*diff_u16 = htole16(*diff_u16);
+
 			ent.offset = htole16(c->inode_ref & 0x0000FFFF);
-			ent.inode_number = htole16(c->inode_num - d->inode_num);
 			ent.type = htole16(get_type(c->mode));
 			ent.size = htole16(strlen(c->name) - 1);
 			dir->size += sizeof(ent) + strlen(c->name);

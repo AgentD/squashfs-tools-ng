@@ -19,12 +19,15 @@ int meta_reader_read_dir_header(meta_reader_t *m, sqfs_dir_header_t *hdr)
 sqfs_dir_entry_t *meta_reader_read_dir_ent(meta_reader_t *m)
 {
 	sqfs_dir_entry_t ent, *out;
+	uint16_t *diff_u16;
 
 	if (meta_reader_read(m, &ent, sizeof(ent)))
 		return NULL;
 
+	diff_u16 = (uint16_t *)&ent.inode_diff;
+	*diff_u16 = le16toh(*diff_u16);
+
 	ent.offset = le16toh(ent.offset);
-	ent.inode_number = le16toh(ent.inode_number);
 	ent.type = le16toh(ent.type);
 	ent.size = le16toh(ent.size);
 
