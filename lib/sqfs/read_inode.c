@@ -9,50 +9,38 @@
 #define SWAB32(x) x = le32toh(x)
 #define SWAB64(x) x = le64toh(x)
 
-static int check_mode(sqfs_inode_t *inode)
+static int set_mode(sqfs_inode_t *inode)
 {
-	switch (inode->mode & S_IFMT) {
-	case S_IFSOCK:
-		if (inode->type != SQFS_INODE_SOCKET &&
-		    inode->type != SQFS_INODE_EXT_SOCKET) {
-			goto fail_mismatch;
-		}
+	inode->mode &= ~S_IFMT;
+
+	switch (inode->type) {
+	case SQFS_INODE_SOCKET:
+	case SQFS_INODE_EXT_SOCKET:
+		inode->mode |= S_IFSOCK;
 		break;
-	case S_IFLNK:
-		if (inode->type != SQFS_INODE_SLINK &&
-		    inode->type != SQFS_INODE_EXT_SLINK) {
-			goto fail_mismatch;
-		}
+	case SQFS_INODE_SLINK:
+	case SQFS_INODE_EXT_SLINK:
+		inode->mode |= S_IFLNK;
 		break;
-	case S_IFREG:
-		if (inode->type != SQFS_INODE_FILE &&
-		    inode->type != SQFS_INODE_EXT_FILE) {
-			goto fail_mismatch;
-		}
+	case SQFS_INODE_FILE:
+	case SQFS_INODE_EXT_FILE:
+		inode->mode |= S_IFREG;
 		break;
-	case S_IFBLK:
-		if (inode->type != SQFS_INODE_BDEV &&
-		    inode->type != SQFS_INODE_EXT_BDEV) {
-			goto fail_mismatch;
-		}
+	case SQFS_INODE_BDEV:
+	case SQFS_INODE_EXT_BDEV:
+		inode->mode |= S_IFBLK;
 		break;
-	case S_IFDIR:
-		if (inode->type != SQFS_INODE_DIR &&
-		    inode->type != SQFS_INODE_EXT_DIR) {
-			goto fail_mismatch;
-		}
+	case SQFS_INODE_DIR:
+	case SQFS_INODE_EXT_DIR:
+		inode->mode |= S_IFDIR;
 		break;
-	case S_IFCHR:
-		if (inode->type != SQFS_INODE_CDEV &&
-		    inode->type != SQFS_INODE_EXT_CDEV) {
-			goto fail_mismatch;
-		}
+	case SQFS_INODE_CDEV:
+	case SQFS_INODE_EXT_CDEV:
+		inode->mode |= S_IFCHR;
 		break;
-	case S_IFIFO:
-		if (inode->type != SQFS_INODE_FIFO &&
-		    inode->type != SQFS_INODE_EXT_FIFO) {
-			goto fail_mismatch;
-		}
+	case SQFS_INODE_FIFO:
+	case SQFS_INODE_EXT_FIFO:
+		inode->mode |= S_IFIFO;
 		break;
 	default:
 		fputs("Found inode with unknown file mode\n", stderr);
@@ -60,9 +48,6 @@ static int check_mode(sqfs_inode_t *inode)
 	}
 
 	return 0;
-fail_mismatch:
-	fputs("Found inode where type does not match mode\n", stderr);
-	return -1;
 }
 
 static sqfs_inode_generic_t *read_inode_file(meta_reader_t *ir,
@@ -218,7 +203,7 @@ sqfs_inode_generic_t *meta_reader_read_inode(meta_reader_t *ir,
 	SWAB32(inode.mod_time);
 	SWAB32(inode.inode_number);
 
-	if (check_mode(&inode))
+	if (set_mode(&inode))
 		return NULL;
 
 	/* inode types where the size is variable */
