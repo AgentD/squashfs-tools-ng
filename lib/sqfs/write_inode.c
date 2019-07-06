@@ -7,6 +7,22 @@
 #include <stdlib.h>
 #include <string.h>
 
+static size_t hard_link_count(tree_node_t *n)
+{
+	size_t count;
+
+	if (S_ISDIR(n->mode)) {
+		count = 2;
+
+		for (n = n->data.dir->children; n != NULL; n = n->next)
+			++count;
+
+		return count;
+	}
+
+	return 1;
+}
+
 static int get_type(tree_node_t *node)
 {
 	switch (node->mode & S_IFMT) {
@@ -30,24 +46,33 @@ static int get_type(tree_node_t *node)
 		if (node->xattr != NULL)
 			return SQFS_INODE_EXT_CDEV;
 		return SQFS_INODE_CDEV;
+	case S_IFREG: {
+		file_info_t *fi = node->data.file;
+
+		if (node->xattr != NULL || fi->sparse > 0)
+			return SQFS_INODE_EXT_FILE;
+
+		if (fi->startblock > 0xFFFFFFFFUL || fi->size > 0xFFFFFFFFUL)
+			return SQFS_INODE_EXT_FILE;
+
+		if (hard_link_count(node) > 1)
+			return SQFS_INODE_EXT_FILE;
+
+		return SQFS_INODE_FILE;
+	}
+	case S_IFDIR: {
+		dir_info_t *di = node->data.dir;
+
+		if (node->xattr != NULL)
+			return SQFS_INODE_EXT_DIR;
+
+		if (di->start_block > 0xFFFFFFFFUL || di->size > 0xFFFF)
+			return SQFS_INODE_EXT_DIR;
+
+		return SQFS_INODE_DIR;
+	}
 	}
 	assert(0);
-}
-
-static size_t hard_link_count(tree_node_t *n)
-{
-	size_t count;
-
-	if (S_ISDIR(n->mode)) {
-		count = 2;
-
-		for (n = n->data.dir->children; n != NULL; n = n->next)
-			++count;
-
-		return count;
-	}
-
-	return 1;
 }
 
 static int write_file_blocks(fstree_t *fs, file_info_t *fi, meta_writer_t *im)
@@ -99,12 +124,9 @@ int meta_writer_write_inode(fstree_t *fs, id_table_t *idtbl, meta_writer_t *im,
 {
 	dir_index_t *diridx = NULL;
 	uint16_t uid_idx, gid_idx;
-	file_info_t *fi = NULL;
-	dir_info_t *di = NULL;
 	sqfs_inode_t base;
 	uint32_t offset;
 	uint64_t block;
-	int type;
 
 	if (id_table_id_to_index(idtbl, node->uid, &uid_idx))
 		return -1;
@@ -116,33 +138,11 @@ int meta_writer_write_inode(fstree_t *fs, id_table_t *idtbl, meta_writer_t *im,
 	node->inode_ref = (block << 16) | offset;
 
 	if (S_ISDIR(node->mode)) {
-		di = node->data.dir;
-
-		if (meta_writer_write_dir(dm, di, &diridx))
+		if (meta_writer_write_dir(dm, node->data.dir, &diridx))
 			return -1;
-
-		if ((di->start_block) > 0xFFFFFFFFUL || di->size > 0xFFFF ||
-		    node->xattr != NULL) {
-			type = SQFS_INODE_EXT_DIR;
-		} else {
-			type = SQFS_INODE_DIR;
-			free(diridx);
-			diridx = NULL;
-		}
-	} else if (S_ISREG(node->mode)) {
-		fi = node->data.file;
-		type = SQFS_INODE_FILE;
-
-		if (fi->startblock > 0xFFFFFFFFUL || fi->size > 0xFFFFFFFFUL ||
-		    hard_link_count(node) > 1 || fi->sparse > 0 ||
-		    node->xattr != NULL) {
-			type = SQFS_INODE_EXT_FILE;
-		}
-	} else {
-		type = get_type(node);
 	}
 
-	base.type = htole16(type);
+	base.type = htole16(get_type(node));
 	base.mode = htole16(node->mode);
 	base.uid_idx = htole16(uid_idx);
 	base.gid_idx = htole16(gid_idx);
@@ -154,7 +154,7 @@ int meta_writer_write_inode(fstree_t *fs, id_table_t *idtbl, meta_writer_t *im,
 		return -1;
 	}
 
-	switch (type) {
+	switch (le16toh(base.type)) {
 	case SQFS_INODE_FIFO:
 	case SQFS_INODE_SOCKET: {
 		sqfs_inode_ipc_t ipc = {
@@ -232,6 +232,7 @@ int meta_writer_write_inode(fstree_t *fs, id_table_t *idtbl, meta_writer_t *im,
 		return meta_writer_append(im, &dev, sizeof(dev));
 	}
 	case SQFS_INODE_EXT_FILE: {
+		file_info_t *fi = node->data.file;
 		sqfs_inode_file_ext_t ext = {
 			.blocks_start = htole64(fi->startblock),
 			.file_size = htole64(fi->size),
@@ -255,6 +256,7 @@ int meta_writer_write_inode(fstree_t *fs, id_table_t *idtbl, meta_writer_t *im,
 		return write_file_blocks(fs, fi, im);
 	}
 	case SQFS_INODE_FILE: {
+		file_info_t *fi = node->data.file;
 		sqfs_inode_file_t reg = {
 			.blocks_start = htole32(fi->startblock),
 			.fragment_index = htole32(0xFFFFFFFF),
