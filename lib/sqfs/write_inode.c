@@ -50,6 +50,50 @@ static size_t hard_link_count(tree_node_t *n)
 	return 1;
 }
 
+static int write_file_blocks(fstree_t *fs, file_info_t *fi, meta_writer_t *im)
+{
+	uint32_t bs;
+	uint64_t i;
+
+	for (i = 0; i < fi->size / fs->block_size; ++i) {
+		bs = htole32(fi->blocksizes[i]);
+
+		if (meta_writer_append(im, &bs, sizeof(bs)))
+			return -1;
+	}
+
+	if ((fi->size % fs->block_size) != 0 &&
+	    (fi->fragment == 0xFFFFFFFF || fi->fragment_offset == 0xFFFFFFFF)) {
+		bs = htole32(0);
+
+		if (meta_writer_append(im, &bs, sizeof(bs)))
+			return -1;
+	}
+	return 0;
+}
+
+static int write_dir_index(dir_index_t *diridx, meta_writer_t *im)
+{
+	sqfs_dir_index_t idx;
+	size_t i;
+
+	for (i = 0; i < diridx->num_nodes; ++i) {
+		idx.start_block = htole32(diridx->idx_nodes[i].block);
+		idx.index = htole32(diridx->idx_nodes[i].offset);
+		idx.size = strlen(diridx->idx_nodes[i].node->name) - 1;
+		idx.size = htole32(idx.size);
+
+		if (meta_writer_append(im, &idx, sizeof(idx)))
+			return -1;
+
+		if (meta_writer_append(im, diridx->idx_nodes[i].node->name,
+				       le32toh(idx.size) + 1)) {
+			return -1;
+		}
+	}
+	return 0;
+}
+
 int meta_writer_write_inode(fstree_t *fs, id_table_t *idtbl, meta_writer_t *im,
 			    meta_writer_t *dm, tree_node_t *node)
 {
@@ -57,9 +101,9 @@ int meta_writer_write_inode(fstree_t *fs, id_table_t *idtbl, meta_writer_t *im,
 	uint16_t uid_idx, gid_idx;
 	file_info_t *fi = NULL;
 	dir_info_t *di = NULL;
-	uint32_t bs, offset;
 	sqfs_inode_t base;
-	uint64_t i, block;
+	uint32_t offset;
+	uint64_t block;
 	int type;
 
 	if (id_table_id_to_index(idtbl, node->uid, &uid_idx))
@@ -187,7 +231,6 @@ int meta_writer_write_inode(fstree_t *fs, id_table_t *idtbl, meta_writer_t *im,
 
 		return meta_writer_append(im, &dev, sizeof(dev));
 	}
-
 	case SQFS_INODE_EXT_FILE: {
 		sqfs_inode_file_ext_t ext = {
 			.blocks_start = htole64(fi->startblock),
@@ -209,7 +252,7 @@ int meta_writer_write_inode(fstree_t *fs, id_table_t *idtbl, meta_writer_t *im,
 
 		if (meta_writer_append(im, &ext, sizeof(ext)))
 			return -1;
-		goto out_file_blocks;
+		return write_file_blocks(fs, fi, im);
 	}
 	case SQFS_INODE_FILE: {
 		sqfs_inode_file_t reg = {
@@ -226,7 +269,7 @@ int meta_writer_write_inode(fstree_t *fs, id_table_t *idtbl, meta_writer_t *im,
 
 		if (meta_writer_append(im, &reg, sizeof(reg)))
 			return -1;
-		goto out_file_blocks;
+		return write_file_blocks(fs, fi, im);
 	}
 	case SQFS_INODE_DIR: {
 		sqfs_inode_dir_t dir = {
@@ -241,8 +284,6 @@ int meta_writer_write_inode(fstree_t *fs, id_table_t *idtbl, meta_writer_t *im,
 		return meta_writer_append(im, &dir, sizeof(dir));
 	}
 	case SQFS_INODE_EXT_DIR: {
-		sqfs_dir_index_t idx;
-		size_t i;
 		sqfs_inode_dir_ext_t ext = {
 			.nlink = htole32(hard_link_count(node)),
 			.size = htole32(node->data.dir->size),
@@ -262,26 +303,10 @@ int meta_writer_write_inode(fstree_t *fs, id_table_t *idtbl, meta_writer_t *im,
 			return -1;
 		}
 
-		/* HACK: truncated index for empty directories */
-		if (node->data.dir->size == 0)
-			break;
+		if (node->data.dir->size > 0) {
+			ext.inodex_count = htole32(diridx->num_nodes - 1);
 
-		ext.inodex_count = htole32(diridx->num_nodes - 1);
-
-		for (i = 0; i < diridx->num_nodes; ++i) {
-			idx.start_block = htole32(diridx->idx_nodes[i].block);
-			idx.index = htole32(diridx->idx_nodes[i].offset);
-			idx.size = strlen(diridx->idx_nodes[i].node->name) - 1;
-			idx.size = htole32(idx.size);
-
-			if (meta_writer_append(im, &idx, sizeof(idx))) {
-				free(diridx);
-				return -1;
-			}
-
-			if (meta_writer_append(im,
-					       diridx->idx_nodes[i].node->name,
-					       le32toh(idx.size) + 1)) {
+			if (write_dir_index(diridx, im)) {
 				free(diridx);
 				return -1;
 			}
@@ -292,22 +317,6 @@ int meta_writer_write_inode(fstree_t *fs, id_table_t *idtbl, meta_writer_t *im,
 	}
 	default:
 		assert(0);
-	}
-	return 0;
-out_file_blocks:
-	for (i = 0; i < fi->size / fs->block_size; ++i) {
-		bs = htole32(fi->blocksizes[i]);
-
-		if (meta_writer_append(im, &bs, sizeof(bs)))
-			return -1;
-	}
-
-	if ((fi->size % fs->block_size) != 0 &&
-	    (fi->fragment == 0xFFFFFFFF || fi->fragment_offset == 0xFFFFFFFF)) {
-		bs = htole32(0);
-
-		if (meta_writer_append(im, &bs, sizeof(bs)))
-			return -1;
 	}
 	return 0;
 }
