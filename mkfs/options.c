@@ -125,6 +125,7 @@ void process_command_line(options_t *opt, int argc, char **argv)
 	opt->outfile = NULL;
 	opt->selinux = NULL;
 	opt->comp_extra = NULL;
+	opt->fs_defaults = NULL;
 
 	for (;;) {
 		i = getopt_long(argc, argv, short_opts, long_opts, NULL);
