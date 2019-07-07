@@ -29,8 +29,8 @@ static int add_device(fstree_t *fs, const char *filename, size_t line_num,
 	unsigned int maj, min;
 	char c;
 
-	if (sscanf(extra, "%c %u:%u", &c, &maj, &min) != 3) {
-		fprintf(stderr, "%s: %zu: expected '<c|b> major:minor'\n",
+	if (sscanf(extra, "%c %u %u", &c, &maj, &min) != 3) {
+		fprintf(stderr, "%s: %zu: expected '<c|b> major minor'\n",
 			filename, line_num);
 		return -1;
 	}

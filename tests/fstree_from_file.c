@@ -11,8 +11,8 @@ static const char *testdesc =
 "# comment line\n"
 "slink /slink 0644 2 3 slinktarget\n"
 "dir /dir 0755 4 5\n"
-"nod /chardev 0600 6 7 c 13:37\n"
-"nod /blkdev 0600 8 9 b 42:21\n"
+"nod /chardev 0600 6 7 c 13 37\n"
+"nod /blkdev 0600 8 9 b 42 21\n"
 "pipe /pipe 0644 10 11\n"
 "  sock  /sock  0555  12  13  ";
 
