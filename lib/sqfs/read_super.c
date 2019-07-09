@@ -88,6 +88,11 @@ int sqfs_super_read(sqfs_super_t *super, int fd)
 		return -1;
 	}
 
+	if (temp.id_count == 0) {
+		fputs("ID table in squashfs image is empty.\n", stderr);
+		return -1;
+	}
+
 	memcpy(super, &temp, sizeof(temp));
 	return 0;
 fail_seek:
