@@ -84,6 +84,8 @@ static int populate_dir(fstree_t *fs, tree_node_t *root)
 
 			if (readlink(ent->d_name, extra, sb.st_size) < 0)
 				goto fail_rdlink;
+
+			extra[sb.st_size] = '\0';
 		} else if (S_ISREG(sb.st_mode)) {
 			extra = get_file_path(root, ent->d_name);
 			if (extra == NULL)
