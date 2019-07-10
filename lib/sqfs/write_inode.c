@@ -300,18 +300,17 @@ int meta_writer_write_inode(fstree_t *fs, id_table_t *idtbl, meta_writer_t *im,
 		if (node->xattr != NULL)
 			ext.xattr_idx = htole32(node->xattr->index);
 
+		if (diridx != NULL)
+			ext.inodex_count = htole32(diridx->num_nodes - 1);
+
 		if (meta_writer_append(im, &ext, sizeof(ext))) {
 			free(diridx);
 			return -1;
 		}
 
-		if (node->data.dir->size > 0) {
-			ext.inodex_count = htole32(diridx->num_nodes - 1);
-
-			if (write_dir_index(diridx, im)) {
-				free(diridx);
-				return -1;
-			}
+		if (diridx != NULL && write_dir_index(diridx, im) != 0) {
+			free(diridx);
+			return -1;
 		}
 
 		free(diridx);
