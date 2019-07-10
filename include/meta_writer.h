@@ -22,8 +22,11 @@ typedef struct {
 typedef struct meta_writer_t meta_writer_t;
 
 /* Create a meta data reader using a given compressor to compress data.
-   Internally prints error message to stderr on failure. */
-meta_writer_t *meta_writer_create(int fd, compressor_t *cmp);
+   Internally prints error message to stderr on failure.
+   If keep_in_mem is true, the blocks are collected in memory and must
+   be explicitly flushed to disk using meta_write_write_to_file.
+*/
+meta_writer_t *meta_writer_create(int fd, compressor_t *cmp, bool keep_in_mem);
 
 void meta_writer_destroy(meta_writer_t *m);
 
@@ -40,6 +43,11 @@ void meta_writer_get_position(const meta_writer_t *m, uint64_t *block_start,
 
 /* Reset all internal state, including the current block start position. */
 void meta_writer_reset(meta_writer_t *m);
+
+/* If created with keep_in_mem true, write the collected blocks to disk.
+   Does not flush the current block. Writes error messages to stderr and
+   returns non-zero on failure. */
+int meta_write_write_to_file(meta_writer_t *m);
 
 /*
   High level helper function that writes squashfs directory entries to

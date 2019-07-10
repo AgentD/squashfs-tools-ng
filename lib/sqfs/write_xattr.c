@@ -110,7 +110,7 @@ int write_xattr(int outfd, fstree_t *fs, sqfs_super_t *super,
 	if (fs->xattr == NULL)
 		return 0;
 
-	mw = meta_writer_create(outfd, cmp);
+	mw = meta_writer_create(outfd, cmp, false);
 	if (mw == NULL)
 		return -1;
 

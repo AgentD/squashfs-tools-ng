@@ -8,6 +8,13 @@
 #include <unistd.h>
 #include <stdio.h>
 
+typedef struct meta_block_t {
+	struct meta_block_t *next;
+
+	/* possibly compressed data with 2 byte header */
+	uint8_t data[SQFS_META_BLOCK_SIZE + 2];
+} meta_block_t;
+
 struct meta_writer_t {
 	/* A byte offset into the uncompressed data of the current block */
 	size_t offset;
@@ -22,13 +29,36 @@ struct meta_writer_t {
 	compressor_t *cmp;
 
 	/* The raw data chunk that data is appended to */
-	uint8_t data[SQFS_META_BLOCK_SIZE + 2];
+	uint8_t data[SQFS_META_BLOCK_SIZE];
 
-	/* Scratch buffer for compressing data */
-	uint8_t scratch[SQFS_META_BLOCK_SIZE + 2];
+	bool keep_in_mem;
+	meta_block_t *list;
+	meta_block_t *list_end;
 };
 
-meta_writer_t *meta_writer_create(int fd, compressor_t *cmp)
+static int write_block(int fd, meta_block_t *outblk)
+{
+	size_t count;
+	ssize_t ret;
+
+	count = le16toh(((uint16_t *)outblk->data)[0]) & 0x7FFF;
+
+	ret = write_retry(fd, outblk->data, count + 2);
+
+	if (ret < 0) {
+		perror("writing meta data block");
+		return -1;
+	}
+
+	if ((size_t)ret < count) {
+		fputs("meta data written to file was truncated\n", stderr);
+		return -1;
+	}
+
+	return 0;
+}
+
+meta_writer_t *meta_writer_create(int fd, compressor_t *cmp, bool keep_in_mem)
 {
 	meta_writer_t *m = calloc(1, sizeof(*m));
 
@@ -39,53 +69,71 @@ meta_writer_t *meta_writer_create(int fd, compressor_t *cmp)
 
 	m->cmp = cmp;
 	m->outfd = fd;
+	m->keep_in_mem = keep_in_mem;
 	return m;
 }
 
 void meta_writer_destroy(meta_writer_t *m)
 {
+	meta_block_t *blk;
+
+	while (m->list != NULL) {
+		blk = m->list;
+		m->list = blk->next;
+		free(blk);
+	}
+
 	free(m);
 }
 
 int meta_writer_flush(meta_writer_t *m)
 {
-	ssize_t ret, count;
-	void *ptr;
+	meta_block_t *outblk;
+	size_t count;
+	ssize_t ret;
 
 	if (m->offset == 0)
 		return 0;
 
-	ret = m->cmp->do_block(m->cmp, m->data + 2, m->offset,
-			       m->scratch + 2, sizeof(m->scratch) - 2);
-	if (ret < 0)
+	outblk = calloc(1, sizeof(*outblk));
+	if (outblk == NULL) {
+		perror("generating meta data block");
 		return -1;
+	}
+
+	ret = m->cmp->do_block(m->cmp, m->data, m->offset,
+			       outblk->data + 2, sizeof(outblk->data) - 2);
+	if (ret < 0) {
+		free(outblk);
+		return -1;
+	}
 
 	if (ret > 0) {
-		((uint16_t *)m->scratch)[0] = htole16(ret);
+		((uint16_t *)outblk->data)[0] = htole16(ret);
 		count = ret + 2;
-		ptr = m->scratch;
 	} else {
-		((uint16_t *)m->data)[0] = htole16(m->offset | 0x8000);
+		((uint16_t *)outblk->data)[0] = htole16(m->offset | 0x8000);
+		memcpy(outblk->data + 2, m->data, m->offset);
 		count = m->offset + 2;
-		ptr = m->data;
 	}
 
-	ret = write_retry(m->outfd, ptr, count);
-
-	if (ret < 0) {
-		perror("writing meta data");
-		return -1;
-	}
-
-	if (ret < count) {
-		fputs("meta data written to file was truncated\n", stderr);
-		return -1;
+	if (m->keep_in_mem) {
+		if (m->list == NULL) {
+			m->list = outblk;
+		} else {
+			m->list_end->next = outblk;
+		}
+		m->list_end = outblk;
+		ret = 0;
+	} else {
+		ret = write_block(m->outfd, outblk);
+		free(outblk);
 	}
 
 	memset(m->data, 0, sizeof(m->data));
 	m->offset = 0;
 	m->block_offset += count;
-	return 0;
+	return ret;
 }
 
 int meta_writer_append(meta_writer_t *m, const void *data, size_t size)
@@ -93,24 +141,24 @@ int meta_writer_append(meta_writer_t *m, const void *data, size_t size)
 	size_t diff;
 
 	while (size != 0) {
-		diff = sizeof(m->data) - 2 - m->offset;
+		diff = sizeof(m->data) - m->offset;
 
 		if (diff == 0) {
 			if (meta_writer_flush(m))
 				return -1;
-			diff = sizeof(m->data) - 2;
+			diff = sizeof(m->data);
 		}
 
 		if (diff > size)
 			diff = size;
 
-		memcpy(m->data + 2 + m->offset, data, diff);
+		memcpy(m->data + m->offset, data, diff);
 		m->offset += diff;
 		size -= diff;
 		data = (const char *)data + diff;
 	}
 
-	if (m->offset == (sizeof(m->data) - 2))
+	if (m->offset == sizeof(m->data))
 		return meta_writer_flush(m);
 
 	return 0;
@@ -127,4 +175,22 @@ void meta_writer_reset(meta_writer_t *m)
 {
 	m->block_offset = 0;
 	m->offset = 0;
+}
+
+int meta_write_write_to_file(meta_writer_t *m)
+{
+	meta_block_t *blk;
+
+	while (m->list != NULL) {
+		blk = m->list;
+
+		if (write_block(m->outfd, blk))
+			return -1;
+
+		m->list = blk->next;
+		free(blk);
+	}
+
+	m->list_end = NULL;
+	return 0;
 }

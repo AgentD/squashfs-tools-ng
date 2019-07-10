@@ -19,7 +19,7 @@ int sqfs_write_table(int outfd, sqfs_super_t *super, const void *data,
 
 	/* Write actual data. Whenever we cross a block boundary, remember
 	   the block start offset */
-	m = meta_writer_create(outfd, cmp);
+	m = meta_writer_create(outfd, cmp, false);
 	if (m == NULL)
 		return -1;
 

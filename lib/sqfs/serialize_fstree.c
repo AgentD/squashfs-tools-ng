@@ -26,11 +26,11 @@ int sqfs_serialize_fstree(int outfd, sqfs_super_t *super, fstree_t *fs,
 
 	tmpfd = fileno(tmp);
 
-	im = meta_writer_create(outfd, cmp);
+	im = meta_writer_create(outfd, cmp, false);
 	if (im == NULL)
 		goto fail_tmp;
 
-	dm = meta_writer_create(tmpfd, cmp);
+	dm = meta_writer_create(tmpfd, cmp, false);
 	if (dm == NULL)
 		goto fail_im;
 
