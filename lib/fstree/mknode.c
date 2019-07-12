@@ -8,7 +8,7 @@ tree_node_t *fstree_mknode(fstree_t *fs, tree_node_t *parent, const char *name,
 			   size_t name_len, const char *extra,
 			   const struct stat *sb)
 {
-	size_t size = sizeof(tree_node_t);
+	size_t size = sizeof(tree_node_t), block_count = 0;
 	tree_node_t *n;
 	char *ptr;
 
@@ -20,8 +20,11 @@ tree_node_t *fstree_mknode(fstree_t *fs, tree_node_t *parent, const char *name,
 		size += sizeof(*n->data.dir);
 		break;
 	case S_IFREG:
-		size += sizeof(*n->data.file);
-		size += (sb->st_size / fs->block_size) * sizeof(uint32_t);
+		block_count = (sb->st_size / fs->block_size);
+		if ((sb->st_size % fs->block_size) != 0)
+			++block_count;
+
+		size += sizeof(*n->data.file) + block_count * sizeof(uint32_t);
 		if (extra != NULL)
 			size += strlen(extra) + 1;
 		break;
@@ -48,11 +51,13 @@ tree_node_t *fstree_mknode(fstree_t *fs, tree_node_t *parent, const char *name,
 	case S_IFREG:
 		n->data.file = (file_info_t *)n->payload;
 		n->data.file->size = sb->st_size;
+		n->data.file->fragment = 0xFFFFFFFF;
+		n->data.file->fragment_offset = 0xFFFFFFFF;
 		if (extra == NULL)
 			break;
 
 		ptr = (char *)n->data.file->blocksizes;
-		ptr += (sb->st_size / fs->block_size) * sizeof(uint32_t);
+		ptr += block_count * sizeof(uint32_t);
 		n->data.file->input_file = ptr;
 		strcpy(n->data.file->input_file, extra);
 		break;
