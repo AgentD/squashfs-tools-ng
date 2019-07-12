@@ -62,13 +62,21 @@ void data_reader_destroy(data_reader_t *data)
 int data_reader_dump_file(data_reader_t *data, file_info_t *fi, int outfd,
 			  bool allow_sparse)
 {
-	size_t i, count, fragsz;
+	size_t i, count, fragsz, unpackedsz;
+	uint64_t filesz = 0;
 	bool compressed;
 	uint32_t bs;
 	ssize_t ret;
 	void *ptr;
 
 	count = fi->size / data->block_size;
+	fragsz = fi->size % data->block_size;
+
+	if (fragsz != 0 && (fi->fragment == 0xFFFFFFFF ||
+			    fi->fragment_offset == 0xFFFFFFFF)) {
+		fragsz = 0;
+		++count;
+	}
 
 	if (count > 0) {
 		if (lseek(data->sqfsfd, fi->startblock, SEEK_SET) == (off_t)-1)
@@ -83,8 +91,16 @@ int data_reader_dump_file(data_reader_t *data, file_info_t *fi, int outfd,
 			if (bs > data->block_size)
 				goto fail_bs;
 
+			if ((fi->size - filesz) < (uint64_t)data->block_size) {
+				unpackedsz = fi->size - filesz;
+			} else {
+				unpackedsz = data->block_size;
+			}
+
+			filesz += unpackedsz;
+
 			if (bs == 0 && allow_sparse) {
-				if (ftruncate(outfd, i * data->block_size))
+				if (ftruncate(outfd, filesz))
 					goto fail_sparse;
 				if (lseek(outfd, 0, SEEK_END) == (off_t)-1)
 					goto fail_sparse;
@@ -92,8 +108,7 @@ int data_reader_dump_file(data_reader_t *data, file_info_t *fi, int outfd,
 			}
 
 			if (bs == 0) {
-				bs = data->block_size;
-				memset(data->buffer, 0, bs);
+				memset(data->buffer, 0, unpackedsz);
 				compressed = false;
 			} else {
 				ret = read_retry(data->sqfsfd, data->buffer, bs);
@@ -118,7 +133,7 @@ int data_reader_dump_file(data_reader_t *data, file_info_t *fi, int outfd,
 				ptr = data->buffer;
 			}
 
-			ret = write_retry(outfd, ptr, bs);
+			ret = write_retry(outfd, ptr, unpackedsz);
 			if (ret < 0)
 				goto fail_wr;
 
@@ -127,27 +142,14 @@ int data_reader_dump_file(data_reader_t *data, file_info_t *fi, int outfd,
 		}
 	}
 
-	fragsz = fi->size % data->block_size;
-
 	if (fragsz > 0) {
-		if (fi->fragment == 0xFFFFFFFF ||
-		    fi->fragment_offset == 0xFFFFFFFF) {
-			if (allow_sparse) {
-				if (ftruncate(outfd, fragsz))
-					goto fail_sparse;
-				return 0;
-			}
+		if (data->frag == NULL)
+			goto fail_frag;
 
-			memset(data->buffer, 0, fragsz);
-		} else {
-			if (data->frag == NULL)
-				goto fail_frag;
-
-			if (frag_reader_read(data->frag, fi->fragment,
-					     fi->fragment_offset, data->buffer,
-					     fragsz)) {
-				return -1;
-			}
+		if (frag_reader_read(data->frag, fi->fragment,
+				     fi->fragment_offset, data->buffer,
+				     fragsz)) {
+			return -1;
 		}
 
 		ret = write_retry(outfd, data->buffer, fragsz);

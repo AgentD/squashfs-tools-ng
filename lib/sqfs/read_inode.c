@@ -50,13 +50,26 @@ static int set_mode(sqfs_inode_t *inode)
 	return 0;
 }
 
+static uint64_t get_block_count(uint64_t size, uint64_t block_size,
+				uint32_t frag_index, uint32_t frag_offset)
+{
+	uint64_t count = size / block_size;
+
+	if ((size % block_size) != 0 &&
+	    (frag_index == 0xFFFFFFFF || frag_offset == 0xFFFFFFFF)) {
+		++count;
+	}
+
+	return count;
+}
+
 static sqfs_inode_generic_t *read_inode_file(meta_reader_t *ir,
 					     sqfs_inode_t *base,
 					     size_t block_size)
 {
 	sqfs_inode_generic_t *out;
 	sqfs_inode_file_t file;
-	size_t i, count;
+	uint64_t i, count;
 
 	if (meta_reader_read(ir, &file, sizeof(file)))
 		return NULL;
@@ -66,7 +79,8 @@ static sqfs_inode_generic_t *read_inode_file(meta_reader_t *ir,
 	SWAB32(file.fragment_offset);
 	SWAB32(file.file_size);
 
-	count = file.file_size / block_size;
+	count = get_block_count(file.file_size, block_size,
+				file.fragment_index, file.fragment_offset);
 
 	out = calloc(1, sizeof(*out) + count * sizeof(uint32_t));
 	if (out == NULL) {
@@ -95,7 +109,7 @@ static sqfs_inode_generic_t *read_inode_file_ext(meta_reader_t *ir,
 {
 	sqfs_inode_file_ext_t file;
 	sqfs_inode_generic_t *out;
-	size_t i, count;
+	uint64_t i, count;
 
 	if (meta_reader_read(ir, &file, sizeof(file)))
 		return NULL;
@@ -108,7 +122,8 @@ static sqfs_inode_generic_t *read_inode_file_ext(meta_reader_t *ir,
 	SWAB32(file.fragment_offset);
 	SWAB32(file.xattr_idx);
 
-	count = file.file_size / block_size;
+	count = get_block_count(file.file_size, block_size,
+				file.fragment_idx, file.fragment_offset);
 
 	out = calloc(1, sizeof(*out) + count * sizeof(uint32_t));
 	if (out == NULL) {
