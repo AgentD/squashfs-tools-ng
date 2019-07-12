@@ -118,13 +118,7 @@ static int flush_data_block(data_writer_t *data, size_t size, file_info_t *fi)
 	uint32_t out;
 
 	if (is_zero_block(data->block, size)) {
-		if (size < data->super->block_size) {
-			fi->fragment_offset = 0xFFFFFFFF;
-			fi->fragment = 0xFFFFFFFF;
-		} else {
-			fi->blocksizes[data->block_idx++] = 0;
-		}
-
+		fi->blocksizes[data->block_idx++] = 0;
 		fi->sparse += size;
 		return 0;
 	}

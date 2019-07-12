@@ -77,19 +77,16 @@ static int get_type(tree_node_t *node)
 
 static int write_file_blocks(fstree_t *fs, file_info_t *fi, meta_writer_t *im)
 {
+	uint64_t i, count = fi->size / fs->block_size;
 	uint32_t bs;
-	uint64_t i;
-
-	for (i = 0; i < fi->size / fs->block_size; ++i) {
-		bs = htole32(fi->blocksizes[i]);
-
-		if (meta_writer_append(im, &bs, sizeof(bs)))
-			return -1;
-	}
 
 	if ((fi->size % fs->block_size) != 0 &&
 	    (fi->fragment == 0xFFFFFFFF || fi->fragment_offset == 0xFFFFFFFF)) {
-		bs = htole32(0);
+		++count;
+	}
+
+	for (i = 0; i < count; ++i) {
+		bs = htole32(fi->blocksizes[i]);
 
 		if (meta_writer_append(im, &bs, sizeof(bs)))
 			return -1;
