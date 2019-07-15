@@ -18,7 +18,7 @@ static int process_file(data_writer_t *data, tree_node_t *n, bool quiet)
 		return -1;
 	}
 
-	ret = write_data_from_fd(data, n->data.file, infd);
+	ret = write_data_from_fd(data, n->data.file, infd, 0);
 
 	close(infd);
 	return ret;
@@ -172,7 +172,7 @@ int main(int argc, char **argv)
 		super.bytes_used += ret;
 	}
 
-	data = data_writer_create(&super, cmp, outfd);
+	data = data_writer_create(&super, cmp, outfd, opt.devblksz);
 	if (data == NULL)
 		goto out_cmp;
 

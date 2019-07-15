@@ -185,14 +185,14 @@ static int write_file(tar_header_decoded_t *hdr, file_info_t *fi,
 
 	if (hdr->sparse != NULL) {
 		ret = write_data_from_fd_condensed(data, fi, STDIN_FILENO,
-						   hdr->sparse);
+						   hdr->sparse, 0);
 		if (ret)
 			return -1;
 
 		return skip_padding(STDIN_FILENO, hdr->record_size);
 	}
 
-	if (write_data_from_fd(data, fi, STDIN_FILENO))
+	if (write_data_from_fd(data, fi, STDIN_FILENO, 0))
 		return -1;
 
 	return skip_padding(STDIN_FILENO, fi->size);
@@ -361,7 +361,7 @@ int main(int argc, char **argv)
 		super.bytes_used += ret;
 	}
 
-	data = data_writer_create(&super, cmp, outfd);
+	data = data_writer_create(&super, cmp, outfd, devblksize);
 	if (data == NULL)
 		goto out_cmp;
 

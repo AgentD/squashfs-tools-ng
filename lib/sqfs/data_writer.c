@@ -18,6 +18,8 @@ struct data_writer_t {
 	size_t max_fragments;
 	size_t frag_offset;
 
+	size_t devblksz;
+
 	int block_idx;
 
 	sqfs_super_t *super;
@@ -26,14 +28,16 @@ struct data_writer_t {
 };
 
 static int write_compressed(data_writer_t *data, const void *in, size_t size,
-			    uint32_t *outsize)
+			    uint32_t *outsize, int flags)
 {
-	ssize_t ret;
+	ssize_t ret = 0;
 
-	ret = data->cmp->do_block(data->cmp, in, size, data->scratch,
-				  data->super->block_size);
-	if (ret < 0)
-		return -1;
+	if (!(flags & DW_DONT_COMPRESS)) {
+		ret = data->cmp->do_block(data->cmp, in, size, data->scratch,
+					  data->super->block_size);
+		if (ret < 0)
+			return -1;
+	}
 
 	if (ret > 0 && (size_t)ret < size) {
 		size = ret;
@@ -85,6 +89,20 @@ static bool is_zero_block(unsigned char *ptr, size_t size)
 	return ptr[0] == 0 && memcmp(ptr, ptr + 1, size - 1) == 0;
 }
 
+static int allign_file(data_writer_t *data)
+{
+	size_t diff = data->super->bytes_used % data->devblksz;
+
+	if (diff == 0)
+		return 0;
+
+	if (padd_file(data->outfd, data->super->bytes_used, data->devblksz))
+		return -1;
+
+	data->super->bytes_used += data->devblksz - diff;
+	return 0;
+}
+
 int data_writer_flush_fragments(data_writer_t *data)
 {
 	uint64_t offset;
@@ -98,7 +116,7 @@ int data_writer_flush_fragments(data_writer_t *data)
 
 	offset = data->super->bytes_used;
 
-	if (write_compressed(data, data->fragment, data->frag_offset, &out))
+	if (write_compressed(data, data->fragment, data->frag_offset, &out, 0))
 		return -1;
 
 	data->fragments[data->num_fragments].start_offset = htole64(offset);
@@ -113,7 +131,8 @@ int data_writer_flush_fragments(data_writer_t *data)
 	return 0;
 }
 
-static int flush_data_block(data_writer_t *data, size_t size, file_info_t *fi)
+static int flush_data_block(data_writer_t *data, size_t size,
+			    file_info_t *fi, int flags)
 {
 	uint32_t out;
 
@@ -123,7 +142,7 @@ static int flush_data_block(data_writer_t *data, size_t size, file_info_t *fi)
 		return 0;
 	}
 
-	if (size < data->super->block_size) {
+	if (size < data->super->block_size && !(flags & DW_DONT_FRAGMENT)) {
 		if (data->frag_offset + size > data->super->block_size) {
 			if (data_writer_flush_fragments(data))
 				return -1;
@@ -136,7 +155,7 @@ static int flush_data_block(data_writer_t *data, size_t size, file_info_t *fi)
 		       data->block, size);
 		data->frag_offset += size;
 	} else {
-		if (write_compressed(data, data->block, size, &out))
+		if (write_compressed(data, data->block, size, &out, flags))
 			return -1;
 
 		fi->blocksizes[data->block_idx++] = out;
@@ -145,11 +164,15 @@ static int flush_data_block(data_writer_t *data, size_t size, file_info_t *fi)
 	return 0;
 }
 
-int write_data_from_fd(data_writer_t *data, file_info_t *fi, int infd)
+int write_data_from_fd(data_writer_t *data, file_info_t *fi,
+		       int infd, int flags)
 {
 	uint64_t count;
 	ssize_t ret;
 	size_t diff;
+
+	if ((flags & DW_ALLIGN_DEVBLK) && allign_file(data) != 0)
+		return -1;
 
 	fi->startblock = data->super->bytes_used;
 	fi->sparse = 0;
@@ -165,9 +188,12 @@ int write_data_from_fd(data_writer_t *data, file_info_t *fi, int infd)
 		if ((size_t)ret < diff)
 			goto fail_trunc;
 
-		if (flush_data_block(data, diff, fi))
+		if (flush_data_block(data, diff, fi, flags))
 			return -1;
 	}
+
+	if ((flags & DW_ALLIGN_DEVBLK) && allign_file(data) != 0)
+		return -1;
 
 	return 0;
 fail_read:
@@ -179,12 +205,15 @@ fail_trunc:
 }
 
 int write_data_from_fd_condensed(data_writer_t *data, file_info_t *fi,
-				 int infd, sparse_map_t *map)
+				 int infd, sparse_map_t *map, int flags)
 {
 	size_t start, count, diff;
 	sparse_map_t *m;
 	uint64_t offset;
 	ssize_t ret;
+
+	if ((flags & DW_ALLIGN_DEVBLK) && allign_file(data) != 0)
+		return -1;
 
 	fi->startblock = data->super->bytes_used;
 	fi->sparse = 0;
@@ -235,9 +264,12 @@ int write_data_from_fd_condensed(data_writer_t *data, file_info_t *fi,
 			map = map->next;
 		}
 
-		if (flush_data_block(data, diff, fi))
+		if (flush_data_block(data, diff, fi, flags))
 			return -1;
 	}
+
+	if ((flags & DW_ALLIGN_DEVBLK) && allign_file(data) != 0)
+		return -1;
 
 	return 0;
 fail_map_size:
@@ -258,7 +290,7 @@ fail_trunc:
 }
 
 data_writer_t *data_writer_create(sqfs_super_t *super, compressor_t *cmp,
-				  int outfd)
+				  int outfd, size_t devblksize)
 {
 	data_writer_t *data;
 
@@ -275,6 +307,7 @@ data_writer_t *data_writer_create(sqfs_super_t *super, compressor_t *cmp,
 	data->super = super;
 	data->cmp = cmp;
 	data->outfd = outfd;
+	data->devblksz = devblksize;
 	return data;
 }
 
