@@ -99,7 +99,7 @@ int meta_writer_write_dir(meta_writer_t *dm, dir_info_t *dir,
 		i = (*index)->num_nodes++;
 		(*index)->idx_nodes[i].node = c;
 		(*index)->idx_nodes[i].block = block;
-		(*index)->idx_nodes[i].offset = offset;
+		(*index)->idx_nodes[i].index = dir->size;
 
 		hdr.count = htole32(count - 1);
 		hdr.start_block = htole32(c->inode_ref >> 16);

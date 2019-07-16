@@ -10,7 +10,7 @@
 typedef struct {
 	tree_node_t *node;
 	uint32_t block;
-	uint32_t offset;
+	uint32_t index;
 } idx_ref_t;
 
 typedef struct {

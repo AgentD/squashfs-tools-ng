@@ -101,7 +101,7 @@ static int write_dir_index(dir_index_t *diridx, meta_writer_t *im)
 
 	for (i = 0; i < diridx->num_nodes; ++i) {
 		idx.start_block = htole32(diridx->idx_nodes[i].block);
-		idx.index = htole32(diridx->idx_nodes[i].offset);
+		idx.index = htole32(diridx->idx_nodes[i].index);
 		idx.size = strlen(diridx->idx_nodes[i].node->name) - 1;
 		idx.size = htole32(idx.size);
 
