@@ -23,9 +23,11 @@ int canonicalize_name(char *filename);
 
 /*
   A wrapper around the write() system call. It retries the write if it is
-  interrupted by a signal or only part of the data was written.
+  interrupted by a signal or only part of the data was written. Returns 0
+  on success. Writes to stderr on failure using 'errstr' as a perror style
+  error prefix.
 */
-ssize_t write_retry(int fd, const void *data, size_t size);
+int write_data(const char *errstr, int fd, const void *data, size_t size);
 
 /*
   A wrapper around the read() system call. It retries the read if it is

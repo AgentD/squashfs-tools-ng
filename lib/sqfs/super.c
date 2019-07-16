@@ -47,7 +47,6 @@ int sqfs_super_init(sqfs_super_t *super, size_t block_size, uint32_t mtime,
 int sqfs_super_write(sqfs_super_t *super, int fd)
 {
 	sqfs_super_t copy;
-	ssize_t ret;
 
 	copy.magic = htole32(super->magic);
 	copy.inode_count = htole32(super->inode_count);
@@ -72,18 +71,8 @@ int sqfs_super_write(sqfs_super_t *super, int fd)
 	if (lseek(fd, 0, SEEK_SET) == (off_t)-1)
 		goto fail_seek;
 
-	ret = write_retry(fd, &copy, sizeof(copy));
-
-	if (ret < 0) {
-		perror("squashfs writing super block");
+	if (write_data("writing super block", fd, &copy, sizeof(copy)))
 		return -1;
-	}
-
-	if ((size_t)ret < sizeof(copy)) {
-		fputs("squashfs writing super block: truncated write\n",
-		      stderr);
-		return -1;
-	}
 
 	if (lseek(fd, 0, SEEK_END) == (off_t)-1)
 		goto fail_seek;

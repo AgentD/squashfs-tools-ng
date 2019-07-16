@@ -105,7 +105,6 @@ int write_xattr(int outfd, fstree_t *fs, sqfs_super_t *super,
 	meta_writer_t *mw;
 	tree_xattr_t *it;
 	uint32_t offset;
-	ssize_t ret;
 
 	if (fs->xattr == NULL)
 		return 0;
@@ -179,17 +178,13 @@ int write_xattr(int outfd, fstree_t *fs, sqfs_super_t *super,
 	idtbl.xattr_ids = htole32(count);
 	idtbl.unused = 0;
 
-	ret = write_retry(outfd, &idtbl, sizeof(idtbl));
-	if (ret < 0)
-		goto fail_wr;
-	if ((size_t)ret < sizeof(idtbl))
-		goto fail_trunc;
+	if (write_data("writing xattr ID table", outfd, &idtbl, sizeof(idtbl)))
+		goto fail_tbl;
 
-	ret = write_retry(outfd, tbl, sizeof(tbl[0]) * blocks);
-	if (ret < 0)
-		goto fail_wr;
-	if ((size_t)ret < sizeof(tbl[0]) * blocks)
-		goto fail_trunc;
+	if (write_data("writing xattr ID table",
+		       outfd, tbl, sizeof(tbl[0]) * blocks)) {
+		goto fail_tbl;
+	}
 
 	super->xattr_id_table_start = super->bytes_used;
 	super->bytes_used += sizeof(idtbl) + sizeof(tbl[0]) * blocks;
@@ -197,12 +192,6 @@ int write_xattr(int outfd, fstree_t *fs, sqfs_super_t *super,
 	free(tbl);
 	meta_writer_destroy(mw);
 	return 0;
-fail_wr:
-	perror("writing xattr ID table");
-	goto fail_tbl;
-fail_trunc:
-	fputs("writing xattr ID table: truncated write\n", stderr);
-	goto fail_tbl;
 fail_tbl:
 	free(tbl);
 fail_mw:

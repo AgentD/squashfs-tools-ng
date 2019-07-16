@@ -161,23 +161,11 @@ out_exit:
 static int terminate_archive(void)
 {
 	char buffer[1024];
-	ssize_t ret;
 
 	memset(buffer, '\0', sizeof(buffer));
 
-	ret = write_retry(STDOUT_FILENO, buffer, sizeof(buffer));
-
-	if (ret < 0) {
-		perror("adding archive terminator");
-		return -1;
-	}
-
-	if ((size_t)ret < sizeof(buffer)) {
-		fputs("adding archive terminator: truncated write\n", stderr);
-		return -1;
-	}
-
-	return 0;
+	return write_data("adding archive terminator", STDOUT_FILENO,
+			  buffer, sizeof(buffer));
 }
 
 static int write_tree_dfs(fstree_t *fs, tree_node_t *n, data_reader_t *data)

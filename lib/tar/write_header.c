@@ -52,7 +52,6 @@ static int write_header(int fd, const struct stat *sb, const char *name,
 	int maj = 0, min = 0;
 	uint64_t size = 0;
 	tar_header_t hdr;
-	ssize_t ret;
 
 	if (S_ISCHR(sb->st_mode) || S_ISBLK(sb->st_mode)) {
 		maj = major(sb->st_rdev);
@@ -82,18 +81,7 @@ static int write_header(int fd, const struct stat *sb, const char *name,
 
 	update_checksum(&hdr);
 
-	ret = write_retry(fd, &hdr, sizeof(hdr));
-	if (ret < 0) {
-		perror("writing header record");
-		return -1;
-	}
-
-	if ((size_t)ret < sizeof(hdr)) {
-		fputs("writing header record: truncated write\n", stderr);
-		return -1;
-	}
-
-	return 0;
+	return write_data("writing tar header record", fd, &hdr, sizeof(hdr));
 }
 
 static int write_gnu_header(int fd, const struct stat *orig,
@@ -101,7 +89,6 @@ static int write_gnu_header(int fd, const struct stat *orig,
 			    int type, const char *name)
 {
 	struct stat sb;
-	ssize_t ret;
 
 	sb = *orig;
 	sb.st_mode = S_IFREG | 0644;
@@ -110,14 +97,8 @@ static int write_gnu_header(int fd, const struct stat *orig,
 	if (write_header(fd, &sb, name, NULL, type))
 		return -1;
 
-	ret = write_retry(fd, payload, payload_len);
-	if (ret < 0) {
-		perror("writing GNU extension header");
-		return -1;
-	}
-
-	if ((size_t)ret < payload_len) {
-		fputs("writing GNU extension header: truncated write\n", stderr);
+	if (write_data("writing GNU extension header",
+		       fd, payload, payload_len)) {
 		return -1;
 	}
 

@@ -1,27 +1,30 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include <unistd.h>
 #include <errno.h>
+#include <stdio.h>
 
 #include "util.h"
 
-ssize_t write_retry(int fd, const void *data, size_t size)
+int write_data(const char *errstr, int fd, const void *data, size_t size)
 {
-	ssize_t ret, total = 0;
+	ssize_t ret;
 
 	while (size > 0) {
 		ret = write(fd, data, size);
-		if (ret == 0)
-			break;
+		if (ret == 0) {
+			fprintf(stderr, "%s: write truncated\n", errstr);
+			return -1;
+		}
 		if (ret < 0) {
 			if (errno == EINTR)
 				continue;
+			perror(errstr);
 			return -1;
 		}
 
 		data = (const char *)data + ret;
 		size -= ret;
-		total += ret;
 	}
 
-	return total;
+	return 0;
 }

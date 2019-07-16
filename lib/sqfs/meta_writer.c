@@ -38,24 +38,10 @@ struct meta_writer_t {
 
 static int write_block(int fd, meta_block_t *outblk)
 {
-	size_t count;
-	ssize_t ret;
+	size_t count = le16toh(((uint16_t *)outblk->data)[0]) & 0x7FFF;
 
-	count = le16toh(((uint16_t *)outblk->data)[0]) & 0x7FFF;
-
-	ret = write_retry(fd, outblk->data, count + 2);
-
-	if (ret < 0) {
-		perror("writing meta data block");
-		return -1;
-	}
-
-	if ((size_t)ret < count) {
-		fputs("meta data written to file was truncated\n", stderr);
-		return -1;
-	}
-
-	return 0;
+	return write_data("writing meta data block", fd,
+			  outblk->data, count + 2);
 }
 
 meta_writer_t *meta_writer_create(int fd, compressor_t *cmp, bool keep_in_mem)

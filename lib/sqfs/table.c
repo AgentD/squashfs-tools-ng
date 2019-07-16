@@ -15,7 +15,6 @@ int sqfs_write_table(int outfd, sqfs_super_t *super, const void *data,
 	size_t i, blkidx = 0, tblsize;
 	meta_writer_t *m;
 	uint32_t offset;
-	ssize_t ret;
 
 	/* Write actual data. Whenever we cross a block boundary, remember
 	   the block start offset */
@@ -49,16 +48,8 @@ int sqfs_write_table(int outfd, sqfs_super_t *super, const void *data,
 	*startblock = super->bytes_used;
 	tblsize = sizeof(blocks[0]) * blkidx;
 
-	ret = write_retry(outfd, blocks, tblsize);
-	if (ret < 0) {
-		perror("writing index table");
+	if (write_data("writing table index", outfd, blocks, tblsize))
 		return -1;
-	}
-
-	if ((size_t)ret < tblsize) {
-		fputs("index table truncated\n", stderr);
-		return -1;
-	}
 
 	super->bytes_used += tblsize;
 	return 0;

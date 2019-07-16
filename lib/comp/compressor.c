@@ -59,24 +59,16 @@ static const char *names[] = {
 int generic_write_options(int fd, const void *data, size_t size)
 {
 	uint8_t buffer[size + 2];
-	ssize_t ret;
 
 	*((uint16_t *)buffer) = htole16(0x8000 | size);
 	memcpy(buffer + 2, data, size);
 
-	ret = write_retry(fd, buffer, sizeof(buffer));
-
-	if (ret < 0) {
-		perror("writing compressor options");
+	if (write_data("writing compressor options",
+		       fd, buffer, sizeof(buffer))) {
 		return -1;
 	}
 
-	if ((size_t)ret < sizeof(buffer)) {
-		fputs("writing compressor options: truncated write\n", stderr);
-		return -1;
-	}
-
-	return ret;
+	return sizeof(buffer);
 }
 
 int generic_read_options(int fd, void *data, size_t size)

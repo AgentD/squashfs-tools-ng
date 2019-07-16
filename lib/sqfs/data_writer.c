@@ -41,24 +41,16 @@ static int write_compressed(data_writer_t *data, const void *in, size_t size,
 
 	if (ret > 0 && (size_t)ret < size) {
 		size = ret;
-		ret = write_retry(data->outfd, data->scratch, size);
+		in = data->scratch;
 		*outsize = size;
 	} else {
-		ret = write_retry(data->outfd, in, size);
 		*outsize = size | (1 << 24);
 	}
 
-	if (ret < 0) {
-		perror("writing to output file");
+	if (write_data("writing data block", data->outfd, in, size))
 		return -1;
-	}
 
-	if ((size_t)ret < size) {
-		fputs("write to output file truncated\n", stderr);
-		return -1;
-	}
-
-	data->super->bytes_used += ret;
+	data->super->bytes_used += size;
 	return 0;
 }
 

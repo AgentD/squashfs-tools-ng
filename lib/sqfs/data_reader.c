@@ -133,12 +133,10 @@ int data_reader_dump_file(data_reader_t *data, file_info_t *fi, int outfd,
 				ptr = data->buffer;
 			}
 
-			ret = write_retry(outfd, ptr, unpackedsz);
-			if (ret < 0)
-				goto fail_wr;
-
-			if ((size_t)ret < bs)
-				goto fail_wr_trunc;
+			if (write_data("writing uncompressed block",
+					outfd, ptr, unpackedsz)) {
+				return -1;
+			}
 		}
 	}
 
@@ -152,12 +150,10 @@ int data_reader_dump_file(data_reader_t *data, file_info_t *fi, int outfd,
 			return -1;
 		}
 
-		ret = write_retry(outfd, data->buffer, fragsz);
-		if (ret < 0)
-			goto fail_wr;
-
-		if ((size_t)ret < fragsz)
-			goto fail_wr_trunc;
+		if (write_data("writing uncompressed fragment",
+			       outfd, data->buffer, fragsz)) {
+			return -1;
+		}
 	}
 
 	return 0;
@@ -166,12 +162,6 @@ fail_sparse:
 	return -1;
 fail_seek:
 	perror("seek on squashfs");
-	return -1;
-fail_wr:
-	perror("writing uncompressed block");
-	return -1;
-fail_wr_trunc:
-	fputs("writing uncompressed block: truncated write\n", stderr);
 	return -1;
 fail_rd:
 	perror("reading from squashfs");
