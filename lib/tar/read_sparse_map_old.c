@@ -6,7 +6,6 @@ sparse_map_t *read_gnu_old_sparse(int fd, tar_header_t *hdr)
 	sparse_map_t *list = NULL, *end = NULL, *node;
 	gnu_sparse_t sph;
 	uint64_t off, sz;
-	ssize_t ret;
 	int i;
 
 	for (i = 0; i < 4; ++i) {
@@ -41,11 +40,10 @@ sparse_map_t *read_gnu_old_sparse(int fd, tar_header_t *hdr)
 		return list;
 
 	do {
-		ret = read_retry(fd, &sph, sizeof(sph));
-		if (ret < 0)
-			goto fail_errno;
-		if ((size_t)ret < sizeof(sph))
-			goto fail_eof;
+		if (read_data("reading GNU sparse header",
+			      fd, &sph, sizeof(sph))) {
+			goto fail;
+		}
 
 		for (i = 0; i < 21; ++i) {
 			if (!isdigit(sph.sparse[i].offset[0]))
@@ -77,9 +75,6 @@ sparse_map_t *read_gnu_old_sparse(int fd, tar_header_t *hdr)
 	} while (sph.isextended != 0);
 
 	return list;
-fail_eof:
-	fputs("parsing GNU sparse header: unexpected end of file", stderr);
-	goto fail;
 fail_errno:
 	perror("parsing GNU sparse header");
 	goto fail;

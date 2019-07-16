@@ -7,7 +7,6 @@
 static int skip_bytes(int fd, uint64_t size)
 {
 	unsigned char buffer[1024];
-	ssize_t ret;
 	size_t diff;
 
 	while (size != 0) {
@@ -15,17 +14,8 @@ static int skip_bytes(int fd, uint64_t size)
 		if (diff > size)
 			diff = size;
 
-		ret = read_retry(fd, buffer, diff);
-
-		if (ret < 0) {
-			perror("reading tar record data");
+		if (read_data("reading tar record padding", fd, buffer, diff))
 			return -1;
-		}
-
-		if ((size_t)ret < diff) {
-			fputs("unexpected end of file\n", stderr);
-			return -1;
-		}
 
 		size -= diff;
 	}

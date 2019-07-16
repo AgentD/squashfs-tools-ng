@@ -71,12 +71,8 @@ int meta_reader_seek(meta_reader_t *m, uint64_t block_start, size_t offset)
 		return -1;
 	}
 
-	ret = read_retry(m->fd, &header, 2);
-	if (ret < 0)
-		goto fail_rd;
-
-	if ((size_t)ret < 2)
-		goto fail_trunc;
+	if (read_data("reading meta data header", m->fd, &header, 2))
+		return -1;
 
 	header = le16toh(header);
 	compressed = (header & 0x8000) == 0;
@@ -94,12 +90,8 @@ int meta_reader_seek(meta_reader_t *m, uint64_t block_start, size_t offset)
 
 	memset(m->data, 0, sizeof(m->data));
 
-	ret = read_retry(m->fd, m->data, size);
-	if (ret < 0)
-		goto fail_rd;
-
-	if ((size_t)ret < size)
-		goto fail_trunc;
+	if (read_data("reading meta data block", m->fd, m->data, size))
+		return -1;
 
 	if (compressed) {
 		ret = m->cmp->do_block(m->cmp, m->data, size,
@@ -117,12 +109,6 @@ int meta_reader_seek(meta_reader_t *m, uint64_t block_start, size_t offset)
 	}
 
 	return 0;
-fail_trunc:
-	fputs("reading meta data: unexpected end of file\n", stderr);
-	return -1;
-fail_rd:
-	perror("reading meta data");
-	return -1;
 }
 
 int meta_reader_read(meta_reader_t *m, void *data, size_t size)

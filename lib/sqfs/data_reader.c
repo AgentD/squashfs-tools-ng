@@ -110,13 +110,9 @@ int data_reader_dump_file(data_reader_t *data, file_info_t *fi, int outfd,
 			if (bs == 0) {
 				memset(data->buffer, 0, unpackedsz);
 				compressed = false;
-			} else {
-				ret = read_retry(data->sqfsfd, data->buffer, bs);
-				if (ret < 0)
-					goto fail_rd;
-
-				if ((size_t)ret < bs)
-					goto fail_trunc;
+			} else if (read_data("reading data block",
+					     data->sqfsfd, data->buffer, bs)) {
+				return -1;
 			}
 
 			if (compressed) {
@@ -162,12 +158,6 @@ fail_sparse:
 	return -1;
 fail_seek:
 	perror("seek on squashfs");
-	return -1;
-fail_rd:
-	perror("reading from squashfs");
-	return -1;
-fail_trunc:
-	fputs("reading from squashfs: unexpected end of file\n", stderr);
 	return -1;
 fail_bs:
 	fputs("found compressed block larger than block size\n", stderr);

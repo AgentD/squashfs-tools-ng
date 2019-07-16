@@ -31,18 +31,12 @@ static int check_version(const tar_header_t *hdr)
 static char *record_to_memory(int fd, uint64_t size)
 {
 	char *buffer = malloc(size + 1);
-	ssize_t ret;
 
 	if (buffer == NULL)
 		goto fail_errno;
 
-	ret = read_retry(fd, buffer, size);
-	if (ret == 0)
-		goto fail_eof;
-	if (ret < 0)
-		goto fail_errno;
-	if ((uint64_t)ret < size)
-		goto fail_eof;
+	if (read_data("reading tar record", fd, buffer, size))
+		goto fail;
 
 	if (skip_padding(fd, size))
 		goto fail;
@@ -51,9 +45,6 @@ static char *record_to_memory(int fd, uint64_t size)
 	return buffer;
 fail_errno:
 	perror("reading tar record");
-	goto fail;
-fail_eof:
-	fputs("reading tar record: unexpected end of file\n", stderr);
 	goto fail;
 fail:
 	free(buffer);
@@ -416,18 +407,13 @@ int read_header(int fd, tar_header_decoded_t *out)
 	bool prev_was_zero = false;
 	uint64_t pax_size;
 	tar_header_t hdr;
-	int ret, version;
+	int version;
 
 	memset(out, 0, sizeof(*out));
 
 	for (;;) {
-		ret = read_retry(fd, &hdr, sizeof(hdr));
-		if (ret == 0)
-			goto out_eof;
-		if (ret < 0)
-			goto fail_errno;
-		if (ret < (int)sizeof(hdr))
-			goto fail_eof;
+		if (read_data("reading tar header", fd, &hdr, sizeof(hdr)))
+			goto fail;
 
 		if (is_zero_block(&hdr)) {
 			if (prev_was_zero)
@@ -499,12 +485,6 @@ int read_header(int fd, tar_header_decoded_t *out)
 out_eof:
 	clear_header(out);
 	return 1;
-fail_errno:
-	perror("reading tar header");
-	goto fail;
-fail_eof:
-	fputs("reading tar header: unexpected end of file\n", stderr);
-	goto fail;
 fail_magic:
 	fputs("input is not a ustar tar archive!\n", stderr);
 	goto fail;

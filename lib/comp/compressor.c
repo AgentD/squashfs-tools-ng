@@ -74,18 +74,9 @@ int generic_write_options(int fd, const void *data, size_t size)
 int generic_read_options(int fd, void *data, size_t size)
 {
 	uint8_t buffer[size + 2];
-	ssize_t ret;
 
-	ret = read_retry(fd, buffer, sizeof(buffer));
-
-	if (ret < 0) {
-		perror("reading compressor options");
-		return -1;
-	}
-
-	if ((size_t)ret < sizeof(buffer)) {
-		fputs("reading compressor options: unexpected end of file\n",
-		      stderr);
+	if (read_data("reading compressor options",
+		      fd, buffer, sizeof(buffer))) {
 		return -1;
 	}
 

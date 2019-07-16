@@ -11,23 +11,13 @@ int sqfs_super_read(sqfs_super_t *super, int fd)
 {
 	size_t block_size = 0;
 	sqfs_super_t temp;
-	ssize_t ret;
 	int i;
 
 	if (lseek(fd, 0, SEEK_SET) == (off_t)-1)
 		goto fail_seek;
 
-	ret = read_retry(fd, &temp, sizeof(temp));
-
-	if (ret < 0) {
-		perror("reading super block");
+	if (read_data("reading super block", fd, &temp, sizeof(temp)))
 		return -1;
-	}
-
-	if ((size_t)ret < sizeof(temp)) {
-		fputs("reading super block: unexpected end of file\n", stderr);
-		return -1;
-	}
 
 	temp.magic = le32toh(temp.magic);
 	temp.inode_count = le32toh(temp.inode_count);

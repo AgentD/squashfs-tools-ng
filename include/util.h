@@ -31,9 +31,11 @@ int write_data(const char *errstr, int fd, const void *data, size_t size);
 
 /*
   A wrapper around the read() system call. It retries the read if it is
-  interrupted by a signal or less than the desired size was read.
+  interrupted by a signal or less than the desired size was read. Returns 0
+  on success. Writes to stderr on failure using 'errstr' as a perror style
+  error prefix.
 */
-ssize_t read_retry(int fd, void *buffer, size_t size);
+int read_data(const char *errstr, int fd, void *buffer, size_t size);
 
 /*
   A common implementation of the '--version' command line flag.

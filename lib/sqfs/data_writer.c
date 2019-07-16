@@ -160,7 +160,6 @@ int write_data_from_fd(data_writer_t *data, file_info_t *fi,
 		       int infd, int flags)
 {
 	uint64_t count;
-	ssize_t ret;
 	size_t diff;
 
 	if ((flags & DW_ALLIGN_DEVBLK) && allign_file(data) != 0)
@@ -174,11 +173,8 @@ int write_data_from_fd(data_writer_t *data, file_info_t *fi,
 		diff = count > (uint64_t)data->super->block_size ?
 			data->super->block_size : count;
 
-		ret = read_retry(infd, data->block, diff);
-		if (ret < 0)
-			goto fail_read;
-		if ((size_t)ret < diff)
-			goto fail_trunc;
+		if (read_data(fi->input_file, infd, data->block, diff))
+			return -1;
 
 		if (flush_data_block(data, diff, fi, flags))
 			return -1;
@@ -188,12 +184,6 @@ int write_data_from_fd(data_writer_t *data, file_info_t *fi,
 		return -1;
 
 	return 0;
-fail_read:
-	perror(fi->input_file);
-	return -1;
-fail_trunc:
-	fprintf(stderr, "%s: truncated read\n", fi->input_file);
-	return -1;
 }
 
 int write_data_from_fd_condensed(data_writer_t *data, file_info_t *fi,
@@ -202,7 +192,6 @@ int write_data_from_fd_condensed(data_writer_t *data, file_info_t *fi,
 	size_t start, count, diff;
 	sparse_map_t *m;
 	uint64_t offset;
-	ssize_t ret;
 
 	if ((flags & DW_ALLIGN_DEVBLK) && allign_file(data) != 0)
 		return -1;
@@ -246,12 +235,10 @@ int write_data_from_fd_condensed(data_writer_t *data, file_info_t *fi,
 			if (start + count > diff)
 				count = diff - start;
 
-			ret = read_retry(infd, (char *)data->block + start,
-					 count);
-			if (ret < 0)
-				goto fail_read;
-			if ((size_t)ret < count)
-				goto fail_trunc;
+			if (read_data(fi->input_file, infd,
+				      (char *)data->block + start, count)) {
+				return -1;
+			}
 
 			map = map->next;
 		}
@@ -272,12 +259,6 @@ fail_map:
 	fprintf(stderr,
 		"%s: sparse file map is unordered or self overlapping\n",
 		fi->input_file);
-	return -1;
-fail_read:
-	perror(fi->input_file);
-	return -1;
-fail_trunc:
-	fprintf(stderr, "%s: truncated read\n", fi->input_file);
 	return -1;
 }
 

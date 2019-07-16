@@ -50,7 +50,7 @@ int main(void)
 	assert(hdr.sb.st_ctime == 1542905892);
 	assert(strcmp(hdr.name, "input.txt") == 0);
 	assert(!hdr.unknown_record);
-	assert(read_retry(fd, buffer, 5) == 5);
+	assert(read_data("data0", fd, buffer, 5) == 0);
 	buffer[5] = '\0';
 	assert(strcmp(buffer, "test\n") == 0);
 	clear_header(&hdr);
@@ -67,7 +67,7 @@ int main(void)
 	assert(hdr.sb.st_ctime == 013375561750);
 	assert(strcmp(hdr.name, "input.txt") == 0);
 	assert(!hdr.unknown_record);
-	assert(read_retry(fd, buffer, 5) == 5);
+	assert(read_data("data1", fd, buffer, 5) == 0);
 	buffer[5] = '\0';
 	assert(strcmp(buffer, "test\n") == 0);
 	clear_header(&hdr);
@@ -98,7 +98,7 @@ int main(void)
 	assert(hdr.sb.st_ctime == 013376036700);
 	assert(strcmp(hdr.name, "input.txt") == 0);
 	assert(!hdr.unknown_record);
-	assert(read_retry(fd, buffer, 5) == 5);
+	assert(read_data("data2", fd, buffer, 5) == 0);
 	buffer[5] = '\0';
 	assert(strcmp(buffer, "test\n") == 0);
 	clear_header(&hdr);
@@ -115,7 +115,7 @@ int main(void)
 	assert(hdr.sb.st_ctime == 8589934592);
 	assert(strcmp(hdr.name, "input.txt") == 0);
 	assert(!hdr.unknown_record);
-	assert(read_retry(fd, buffer, 5) == 5);
+	assert(read_data("data3", fd, buffer, 5) == 0);
 	buffer[5] = '\0';
 	assert(strcmp(buffer, "test\n") == 0);
 	clear_header(&hdr);
@@ -132,7 +132,7 @@ int main(void)
 	assert(hdr.sb.st_ctime == -315622800);
 	assert(strcmp(hdr.name, "input.txt") == 0);
 	assert(!hdr.unknown_record);
-	assert(read_retry(fd, buffer, 5) == 5);
+	assert(read_data("data4", fd, buffer, 5) == 0);
 	buffer[5] = '\0';
 	assert(strcmp(buffer, "test\n") == 0);
 	clear_header(&hdr);
@@ -149,7 +149,7 @@ int main(void)
 	assert(hdr.sb.st_ctime == 1542909670);
 	assert(strcmp(hdr.name, filename) == 0);
 	assert(!hdr.unknown_record);
-	assert(read_retry(fd, buffer, 5) == 5);
+	assert(read_data("data5", fd, buffer, 5) == 0);
 	buffer[5] = '\0';
 	assert(strcmp(buffer, "test\n") == 0);
 	clear_header(&hdr);

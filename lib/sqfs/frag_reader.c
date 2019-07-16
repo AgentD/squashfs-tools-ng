@@ -42,16 +42,8 @@ static int precache_block(frag_reader_t *f, size_t i)
 		return -1;
 	}
 
-	ret = read_retry(f->fd, f->buffer, size);
-	if (ret < 0) {
-		perror("reading fragment");
+	if (read_data("reading fragment", f->fd, f->buffer, size))
 		return -1;
-	}
-
-	if ((size_t)ret < size) {
-		fputs("reading fragment: unexpected end of file\n", stderr);
-		return -1;
-	}
 
 	if (compressed) {
 		ret = f->cmp->do_block(f->cmp, f->buffer, size,
@@ -62,11 +54,12 @@ static int precache_block(frag_reader_t *f, size_t i)
 			return -1;
 		}
 
+		size = ret;
 		memmove(f->buffer, f->buffer + f->block_size, ret);
 	}
 
 	f->current_index = i;
-	f->used = ret;
+	f->used = size;
 	return 0;
 }
 
@@ -79,7 +72,6 @@ frag_reader_t *frag_reader_create(sqfs_super_t *super, int fd,
 	uint64_t *locations = NULL;
 	meta_reader_t *m = NULL;
 	frag_reader_t *f = NULL;
-	ssize_t ret;
 
 	count = super->fragment_entry_count;
 	blockcount = count / (SQFS_META_BLOCK_SIZE / sizeof(tbl[0]));
@@ -104,12 +96,10 @@ frag_reader_t *frag_reader_create(sqfs_super_t *super, int fd,
 	if (lseek(fd, super->fragment_table_start, SEEK_SET) == (off_t)-1)
 		goto fail_seek;
 
-	ret = read_retry(fd, locations, blockcount * sizeof(locations[0]));
-	if (ret < 0)
-		goto fail_rd;
-
-	if ((size_t)ret < (blockcount * sizeof(locations[0])))
-		goto fail_trunc;
+	if (read_data("reading fragment table", fd, locations,
+		      blockcount * sizeof(locations[0]))) {
+		goto fail;
+	}
 
 	for (i = 0; i < blockcount; ++i)
 		locations[i] = le64toh(locations[i]);
@@ -149,9 +139,6 @@ frag_reader_t *frag_reader_create(sqfs_super_t *super, int fd,
 	return f;
 fail_seek:
 	perror("seek to fragment table");
-	goto fail;
-fail_trunc:
-	fputs("reading fragment table: unexpected end of file\n", stderr);
 	goto fail;
 fail_rd:
 	perror("reading fragment table");

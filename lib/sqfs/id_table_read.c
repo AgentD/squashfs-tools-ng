@@ -14,7 +14,6 @@ int id_table_read(id_table_t *tbl, int fd, sqfs_super_t *super,
 	uint64_t blocks[32];
 	meta_reader_t *m;
 	uint32_t *ptr;
-	ssize_t ret;
 
 	if (tbl->ids != NULL) {
 		free(tbl->ids);
@@ -44,12 +43,10 @@ int id_table_read(id_table_t *tbl, int fd, sqfs_super_t *super,
 	if (super->id_count % 2048)
 		++block_count;
 
-	ret = read_retry(fd, blocks, sizeof(blocks[0]) * block_count);
-	if (ret < 0)
-		goto fail_rd;
-
-	if ((size_t)ret < sizeof(blocks[0]) * block_count)
-		goto fail_trunc;
+	if (read_data("reading ID table", fd, blocks,
+		      sizeof(blocks[0]) * block_count)) {
+		return -1;
+	}
 
 	for (i = 0; i < block_count; ++i)
 		blocks[i] = le64toh(blocks[i]);
@@ -82,12 +79,6 @@ int id_table_read(id_table_t *tbl, int fd, sqfs_super_t *super,
 	return 0;
 fail_meta:
 	meta_reader_destroy(m);
-	return -1;
-fail_trunc:
-	fputs("reading ID table: unexpected end of file\n", stderr);
-	return -1;
-fail_rd:
-	perror("reading ID table");
 	return -1;
 fail_seek:
 	perror("seeking to ID table");
