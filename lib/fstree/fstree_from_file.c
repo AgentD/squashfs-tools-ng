@@ -113,7 +113,7 @@ static int handle_line(fstree_t *fs, const char *filename,
 		       size_t line_num, char *line)
 {
 	const char *extra = NULL, *msg = NULL;
-	char keyword[16], *path;
+	char keyword[16], *path, *ptr;
 	unsigned int x;
 	struct stat sb;
 	size_t i;
@@ -136,17 +136,35 @@ static int handle_line(fstree_t *fs, const char *filename,
 	/* isolate path */
 	path = line + i;
 
-	for (; line[i] != '\0'; ++i) {
-		/* TODO: escape sequences to support spaces in path */
+	if (*path == '"') {
+		ptr = path;
+		++i;
 
-		if (isspace(line[i]))
-			break;
+		while (line[i] != '\0' && line[i] != '"') {
+			if (line[i] == '\\' &&
+			    (line[i + 1] == '"' || line[i + 1] == '\\')) {
+				*(ptr++) = line[i + 1];
+				i += 2;
+			} else {
+				*(ptr++) = line[i++];
+			}
+		}
+
+		if (line[i] != '"' || !isspace(line[i + 1]))
+			goto fail_ent;
+
+		*ptr = '\0';
+		++i;
+	} else {
+		while (line[i] != '\0' && !isspace(line[i]))
+			++i;
+
+		if (!isspace(line[i]))
+			goto fail_ent;
+
+		line[i++] = '\0';
 	}
 
-	if (!isspace(line[i]))
-		goto fail_ent;
-
-	line[i++] = '\0';
 	while (isspace(line[i]))
 		++i;
 

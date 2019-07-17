@@ -100,7 +100,10 @@ l l
 l l
 l l
 rd.
-<path>;Absolute path of the entry in the image.
+<path>;T{
+Absolute path of the entry in the image. Can be put in quotes
+if some components contain spaces.
+T}
 <location>;T{
 Optional location of the input file. Can be specified relative to either the
 description file or the pack directory. If omitted, the image path is used
@@ -132,6 +135,9 @@ file /sbin/init 0755 0 0 ../init/sbin/init
 # Read from ./bin/bash relative to pack dir or listing path
 # /bin is created implicitly with default attributes.
 file /bin/bash 0755 0 0
+
+# file name with a space in it and a "special" name
+file "/opt/my app/\\"special\\"/data" 0600 0 0
 .fi
 .in
 .SH AUTHOR

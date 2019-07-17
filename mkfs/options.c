@@ -83,7 +83,8 @@ static const char *help_string =
 "pipe <path> <mode> <uid> <gid>\n"
 "sock <path> <mode> <uid> <gid>\n"
 "\n"
-"<path>       Absolute path of the entry in the image.\n"
+"<path>       Absolute path of the entry in the image. Can be put in quotes\n"
+"             if some components contain spaces.\n"
 "<location>   If given, location of the input file. Either absolute or relative\n"
 "             to the description file. If omitted, the image path is used,\n"
 "             relative to the description file.\n"
@@ -107,7 +108,10 @@ static const char *help_string =
 "    \n"
 "    # Read bin/bash, relative to listing or pack dir.\n"
 "    # Implicitly create /bin.\n"
-"    file /bin/bash 0755 0 0"
+"    file /bin/bash 0755 0 0\n"
+"    \n"
+"    # file name with a space in it.\n"
+"    file \"/opt/my app/\\\"special\\\"/data\" 0600 0 0\n"
 "\n\n";
 
 void process_command_line(options_t *opt, int argc, char **argv)

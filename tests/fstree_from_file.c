@@ -14,6 +14,8 @@ static const char *testdesc =
 "nod /chardev 0600 6 7 c 13 37\n"
 "nod /blkdev 0600 8 9 b 42 21\n"
 "pipe /pipe 0644 10 11\n"
+"dir \"/foo bar\" 0755 0 0\n"
+"dir \"/foo bar/ test \\\"/\" 0755 0 0\n"
 "  sock  /sock  0555  12  13  ";
 
 int main(void)
@@ -54,6 +56,20 @@ int main(void)
 	assert(n->gid == 5);
 	assert(strcmp(n->name, "dir") == 0);
 	assert(n->data.dir->children == NULL);
+
+	n = n->next;
+	assert(n->mode == (S_IFDIR | 0755));
+	assert(n->uid == 0);
+	assert(n->gid == 0);
+	assert(strcmp(n->name, "foo bar") == 0);
+	assert(n->data.dir->children != NULL);
+
+	assert(n->data.dir->children->next == NULL);
+	assert(n->data.dir->children->mode == (S_IFDIR | 0755));
+	assert(n->data.dir->children->uid == 0);
+	assert(n->data.dir->children->gid == 0);
+	assert(strcmp(n->data.dir->children->name, " test \"") == 0);
+	assert(n->data.dir->children->data.dir->children == NULL);
 
 	n = n->next;
 	assert(n->mode == (S_IFIFO | 0644));
