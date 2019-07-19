@@ -45,6 +45,8 @@ static int strings_grow(str_table_t *table)
 
 int str_table_init(str_table_t *table, size_t size)
 {
+	memset(table, 0, sizeof(*table));
+
 	table->buckets = calloc(size, sizeof(table->buckets[0]));
 	table->num_buckets = size;
 
