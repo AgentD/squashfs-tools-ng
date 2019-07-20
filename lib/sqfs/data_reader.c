@@ -167,3 +167,8 @@ fail_frag:
 	      stderr);
 	return -1;
 }
+
+const frag_reader_t *data_reader_get_fragment_reader(const data_reader_t *data)
+{
+	return data->frag;
+}

@@ -179,3 +179,13 @@ fail_range:
 	fputs("attempted to read past fragment block limits\n", stderr);
 	return -1;
 }
+
+const sqfs_fragment_t *frag_reader_get_table(const frag_reader_t *f)
+{
+	return f->tbl;
+}
+
+size_t frag_reader_get_fragment_count(const frag_reader_t *f)
+{
+	return f->num_fragments;
+}

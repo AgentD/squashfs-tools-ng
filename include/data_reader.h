@@ -2,6 +2,7 @@
 #ifndef DATA_READER_H
 #define DATA_READER_H
 
+#include "frag_reader.h"
 #include "squashfs.h"
 #include "compress.h"
 #include "fstree.h"
@@ -33,5 +34,7 @@ void data_reader_destroy(data_reader_t *data);
  */
 int data_reader_dump_file(data_reader_t *data, file_info_t *fi, int outfd,
 			  bool allow_sparse);
+
+const frag_reader_t *data_reader_get_fragment_reader(const data_reader_t *data);
 
 #endif /* DATA_READER_H */

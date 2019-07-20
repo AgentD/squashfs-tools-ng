@@ -33,4 +33,8 @@ void frag_reader_destroy(frag_reader_t *f);
 int frag_reader_read(frag_reader_t *f, size_t index, size_t offset,
 		     void *buffer, size_t size);
 
+const sqfs_fragment_t *frag_reader_get_table(const frag_reader_t *f);
+
+size_t frag_reader_get_fragment_count(const frag_reader_t *f);
+
 #endif /* FRAG_READER_H */
