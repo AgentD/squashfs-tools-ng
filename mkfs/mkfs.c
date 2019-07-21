@@ -185,6 +185,11 @@ int main(int argc, char **argv)
 	if (data_writer_write_fragment_table(data))
 		goto out_data;
 
+	if (opt.exportable) {
+		if (write_export_table(outfd, &fs, &super, cmp))
+			goto out_data;
+	}
+
 	if (id_table_write(&idtbl, outfd, &super, cmp))
 		goto out_data;
 

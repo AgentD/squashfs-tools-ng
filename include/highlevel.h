@@ -75,4 +75,12 @@ int deserialize_fstree(fstree_t *out, sqfs_super_t *super, compressor_t *cmp,
 int write_xattr(int outfd, fstree_t *fs, sqfs_super_t *super,
 		compressor_t *cmp);
 
+/*
+  Generate an NFS export table.
+
+  Returns 0 on success. Prints error messages to stderr on failure.
+ */
+int write_export_table(int outfd, fstree_t *fs, sqfs_super_t *super,
+		       compressor_t *cmp);
+
 #endif /* HIGHLEVEL_H */

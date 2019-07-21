@@ -29,6 +29,7 @@ typedef struct {
 	int outmode;
 	int blksz;
 	int devblksz;
+	bool exportable;
 	bool quiet;
 	const char *infile;
 	const char *packdir;

@@ -26,13 +26,14 @@ static struct option long_opts[] = {
 	{ "comp-extra", required_argument, NULL, 'X' },
 	{ "no-skip", no_argument, NULL, 's' },
 	{ "no-xattr", no_argument, NULL, 'x' },
+	{ "exportable", no_argument, NULL, 'e' },
 	{ "force", no_argument, NULL, 'f' },
 	{ "quiet", no_argument, NULL, 'q' },
 	{ "help", no_argument, NULL, 'h' },
 	{ "version", no_argument, NULL, 'V' },
 };
 
-static const char *short_opts = "c:b:B:d:X:sxfqhV";
+static const char *short_opts = "c:b:B:d:X:sxefqhV";
 
 static const char *usagestr =
 "Usage: tar2sqfs [OPTIONS...] <sqfsfile>\n"
@@ -63,6 +64,7 @@ static const char *usagestr =
 "  --no-skip, -s               Abort if a tar record cannot be read instead\n"
 "                              of skipping it.\n"
 "  --no-xattr, -x              Do not copy extended attributes from archive.\n"
+"  --exportable, -e            Generate an export table for NFS support.\n"
 "  --force, -f                 Overwrite the output file if it exists.\n"
 "  --quiet, -q                 Do not print out progress reports.\n"
 "  --help, -h                  Print help text and exit.\n"
@@ -85,6 +87,7 @@ static char *comp_extra = NULL;
 static char *fs_defaults = NULL;
 static bool dont_skip = false;
 static bool no_xattr = false;
+static bool exportable = false;
 
 static void process_args(int argc, char **argv)
 {
@@ -136,6 +139,9 @@ static void process_args(int argc, char **argv)
 			break;
 		case 's':
 			dont_skip = true;
+			break;
+		case 'e':
+			exportable = true;
 			break;
 		case 'f':
 			outmode = O_WRONLY | O_CREAT | O_TRUNC;
@@ -387,6 +393,11 @@ int main(int argc, char **argv)
 
 	if (data_writer_write_fragment_table(data))
 		goto out;
+
+	if (exportable) {
+		if (write_export_table(outfd, &fs, &super, cmp))
+			goto out;
+	}
 
 	if (id_table_write(&idtbl, outfd, &super, cmp))
 		goto out;
