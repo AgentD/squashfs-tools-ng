@@ -51,9 +51,7 @@ At the moment, the following things still require some work:
  - more testing (extensive unit testing for libsqfs still needed)
  - extended attributes
     - gensquashfs supports SELinux labeling only
-    - rdsquashfs and sqfs2tar ignore them entirely
-    - entire key value blocks are deduplicated, but individual value
-      deduplication ("out of line" storage) isn't implemented.
+    - code for reading them back from an image doesn't exist yet
  - hard links (not implemented; tar2sqfs turns them into symlinks)
  - File deduplication (not implemented; do we even need this?)
  - NFS export tables (not implemented yet)
