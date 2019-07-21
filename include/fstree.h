@@ -46,9 +46,11 @@ struct tree_xattr_t {
 	/* linked list pointer of list of attributes in @ref fstree_t */
 	tree_xattr_t *next;
 
-	/* Array with pairs of key-value tupples.
-	   Each key-value tupple is encoded as (key << 32) | value. */
-	uint64_t ref[];
+	/* Array with pairs of key-value tupples */
+	struct {
+		uint32_t key_index;
+		uint32_t value_index;
+	} attr[];
 };
 
 /* Additional meta data stored in a tree_node_t for regular files. */

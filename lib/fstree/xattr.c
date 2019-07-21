@@ -87,17 +87,15 @@ int fstree_add_xattr(fstree_t *fs, tree_node_t *node,
 		fs->xattr = xattr;
 	}
 
-	xattr->ref[xattr->num_attr]  = (uint64_t)key_idx << 32;
-	xattr->ref[xattr->num_attr] |= (uint64_t)value_idx;
+	xattr->attr[xattr->num_attr].key_index = key_idx;
+	xattr->attr[xattr->num_attr].value_index = value_idx;
 	xattr->num_attr += 1;
 	return 0;
 }
 
-static int cmp_u64(const void *lhs, const void *rhs)
+static int cmp_attr(const void *lhs, const void *rhs)
 {
-	uint64_t l = *((uint64_t *)lhs), r = *((uint64_t *)rhs);
-
-	return l < r ? -1 : (l > r ? 1 : 0);
+	return memcmp(lhs, rhs, sizeof(((tree_xattr_t *)0)->attr[0]));
 }
 
 void fstree_xattr_reindex(fstree_t *fs)
@@ -113,8 +111,8 @@ void fstree_xattr_reindex(fstree_t *fs)
 		it->index = index++;
 
 		for (i = 0; i < it->num_attr; ++i) {
-			key_idx = (it->ref[i] >> 32) & 0x00000000FFFFFFFF;
-			value_idx = it->ref[i] & 0x00000000FFFFFFFF;
+			key_idx = it->attr[i].key_index;
+			value_idx = it->attr[i].value_index;
 
 			str_table_add_ref(&fs->xattr_keys, key_idx);
 			str_table_add_ref(&fs->xattr_values, value_idx);
@@ -128,7 +126,7 @@ void fstree_xattr_deduplicate(fstree_t *fs)
 	int diff;
 
 	for (it = fs->xattr; it != NULL; it = it->next)
-		qsort(it->ref, it->num_attr, sizeof(it->ref[0]), cmp_u64);
+		qsort(it->attr, it->num_attr, sizeof(it->attr[0]), cmp_attr);
 
 	prev = NULL;
 	it = fs->xattr;
@@ -138,8 +136,8 @@ void fstree_xattr_deduplicate(fstree_t *fs)
 			if (it1->num_attr != it->num_attr)
 				continue;
 
-			diff = memcmp(it1->ref, it->ref,
-				      it->num_attr * sizeof(it->ref[0]));
+			diff = memcmp(it1->attr, it->attr,
+				      it->num_attr * sizeof(it->attr[0]));
 			if (diff == 0)
 				break;
 		}

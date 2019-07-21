@@ -38,10 +38,10 @@ bool sqfs_has_xattr(const char *key)
 	return get_prefix(key) >= 0;
 }
 
-static int write_pair(meta_writer_t *mw, const char *key, const char *value)
+static int write_key(meta_writer_t *mw, const char *key, tree_xattr_t *xattr)
 {
+	const char *orig_key = key;
 	sqfs_xattr_entry_t kent;
-	sqfs_xattr_value_t vent;
 	int type;
 
 	type = get_prefix(key);
@@ -62,6 +62,15 @@ static int write_pair(meta_writer_t *mw, const char *key, const char *value)
 	if (meta_writer_append(mw, key, strlen(key)))
 		return -1;
 
+	xattr->size += sizeof(sqfs_xattr_entry_t) + strlen(orig_key);
+	return 0;
+}
+
+static int write_value(meta_writer_t *mw, const char *value,
+		       tree_xattr_t *xattr)
+{
+	sqfs_xattr_value_t vent;
+
 	vent.size = htole32(strlen(value));
 
 	if (meta_writer_append(mw, &vent, sizeof(vent)))
@@ -69,6 +78,7 @@ static int write_pair(meta_writer_t *mw, const char *key, const char *value)
 	if (meta_writer_append(mw, value, strlen(value)))
 		return -1;
 
+	xattr->size += sizeof(vent) + strlen(value);
 	return 0;
 }
 
@@ -79,17 +89,17 @@ static int write_kv_pairs(fstree_t *fs, meta_writer_t *mw, tree_xattr_t *xattr)
 	size_t i;
 
 	for (i = 0; i < xattr->num_attr; ++i) {
-		key_idx = (xattr->ref[i] >> 32) & 0xFFFFFFFF;
-		val_idx = xattr->ref[i] & 0xFFFFFFFF;
+		key_idx = xattr->attr[i].key_index;
+		val_idx = xattr->attr[i].value_index;
 
 		key = str_table_get_string(&fs->xattr_keys, key_idx);
 		value = str_table_get_string(&fs->xattr_values, val_idx);
 
-		if (write_pair(mw, key, value))
+		if (write_key(mw, key, xattr))
 			return -1;
 
-		xattr->size += sizeof(sqfs_xattr_entry_t) + strlen(key);
-		xattr->size += sizeof(sqfs_xattr_value_t) + strlen(value);
+		if (write_value(mw, value, xattr))
+			return -1;
 	}
 
 	return 0;
