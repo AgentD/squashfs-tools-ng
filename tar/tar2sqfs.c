@@ -403,7 +403,7 @@ int main(int argc, char **argv)
 		goto out;
 
 	if (write_xattr(outfd, &fs, &super, cmp))
-		goto out_data;
+		goto out;
 
 	if (sqfs_super_write(&super, outfd))
 		goto out;
