@@ -123,7 +123,6 @@ int data_reader_dump_file(data_reader_t *data, file_info_t *fi, int outfd,
 				if (ret <= 0)
 					return -1;
 
-				bs = ret;
 				ptr = data->scratch;
 			} else {
 				ptr = data->buffer;
