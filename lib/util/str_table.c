@@ -128,3 +128,49 @@ const char *str_table_get_string(str_table_t *table, size_t index)
 
 	return table->strings[index];
 }
+
+static str_bucket_t *bucket_by_index(str_table_t *table, size_t index)
+{
+	str_bucket_t *bucket = NULL;
+	uint32_t hash;
+
+	if (index < table->num_strings) {
+		hash = strhash(table->strings[index]);
+		bucket = table->buckets[hash % table->num_buckets];
+
+		while (bucket != NULL && bucket->index != index)
+			bucket = bucket->next;
+	}
+
+	return bucket;
+}
+
+void str_table_reset_ref_count(str_table_t *table)
+{
+	str_bucket_t *bucket;
+	size_t i;
+
+	for (i = 0; i < table->num_buckets; ++i) {
+		bucket = table->buckets[i];
+
+		while (bucket != NULL) {
+			bucket->refcount = 0;
+			bucket = bucket->next;
+		}
+	}
+}
+
+void str_table_add_ref(str_table_t *table, size_t index)
+{
+	str_bucket_t *bucket = bucket_by_index(table, index);
+
+	if (bucket != NULL && bucket->refcount < ~((size_t)0))
+		bucket->refcount += 1;
+}
+
+size_t str_table_get_ref_count(str_table_t *table, size_t index)
+{
+	str_bucket_t *bucket = bucket_by_index(table, index);
+
+	return bucket != NULL ? bucket->refcount : 0;
+}

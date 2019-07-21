@@ -6,6 +6,7 @@ typedef struct str_bucket_t {
 	struct str_bucket_t *next;
 	char *str;
 	size_t index;
+	size_t refcount;
 } str_bucket_t;
 
 /* Stores strings in a hash table and assigns an incremental, unique ID to
@@ -33,5 +34,11 @@ int str_table_get_index(str_table_t *table, const char *str, size_t *idx);
 /* Resolve a unique ID to the string it represents.
    Returns NULL if the ID is unknown, i.e. out of bounds. */
 const char *str_table_get_string(str_table_t *table, size_t index);
+
+void str_table_reset_ref_count(str_table_t *table);
+
+void str_table_add_ref(str_table_t *table, size_t index);
+
+size_t str_table_get_ref_count(str_table_t *table, size_t index);
 
 #endif /* STR_TABLE_H */

@@ -102,11 +102,24 @@ static int cmp_u64(const void *lhs, const void *rhs)
 
 void fstree_xattr_reindex(fstree_t *fs)
 {
+	uint32_t key_idx, value_idx;
+	size_t i, index = 0;
 	tree_xattr_t *it;
-	size_t index = 0;
 
-	for (it = fs->xattr; it != NULL; it = it->next)
+	str_table_reset_ref_count(&fs->xattr_keys);
+	str_table_reset_ref_count(&fs->xattr_values);
+
+	for (it = fs->xattr; it != NULL; it = it->next) {
 		it->index = index++;
+
+		for (i = 0; i < it->num_attr; ++i) {
+			key_idx = (it->ref[i] >> 32) & 0x00000000FFFFFFFF;
+			value_idx = it->ref[i] & 0x00000000FFFFFFFF;
+
+			str_table_add_ref(&fs->xattr_keys, key_idx);
+			str_table_add_ref(&fs->xattr_values, value_idx);
+		}
+	}
 }
 
 void fstree_xattr_deduplicate(fstree_t *fs)
