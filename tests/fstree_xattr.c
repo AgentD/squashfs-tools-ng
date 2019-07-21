@@ -71,6 +71,11 @@ int main(void)
 	assert(a->xattr != b->xattr);
 	assert(a->xattr != c->xattr);
 
+	assert(str_table_get_ref_count(&fs.xattr_keys,
+				       a->xattr->attr[0].key_index) == 3);
+	assert(str_table_get_ref_count(&fs.xattr_values,
+				       a->xattr->attr[0].value_index) == 2);
+
 	fstree_cleanup(&fs);
 	return EXIT_SUCCESS;
 }
