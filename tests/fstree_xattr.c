@@ -53,10 +53,17 @@ int main(void)
 	assert(c->xattr->num_attr == 1);
 	assert(d->xattr->num_attr == 2);
 
-	assert(a->xattr->ref[0] == b->xattr->ref[0]);
-	assert(a->xattr->ref[0] == c->xattr->ref[1]);
-	assert(a->xattr->ref[0] != c->xattr->ref[0]);
-	assert(b->xattr->ref[1] == d->xattr->ref[0]);
+	assert(a->xattr->attr[0].key_index == b->xattr->attr[0].key_index);
+	assert(a->xattr->attr[0].value_index == b->xattr->attr[0].value_index);
+
+	assert(a->xattr->attr[0].key_index == d->xattr->attr[1].key_index);
+	assert(a->xattr->attr[0].value_index == d->xattr->attr[1].value_index);
+
+	assert(a->xattr->attr[0].key_index == c->xattr->attr[0].key_index);
+	assert(a->xattr->attr[0].value_index != c->xattr->attr[0].value_index);
+
+	assert(b->xattr->attr[1].key_index == d->xattr->attr[0].key_index);
+	assert(b->xattr->attr[1].value_index == d->xattr->attr[0].value_index);
 
 	fstree_xattr_deduplicate(&fs);
 
