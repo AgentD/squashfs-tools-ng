@@ -42,22 +42,6 @@ together with the existing tools:
  - `sqfs2tar` can turn a SquashFS image into a tar ball, written to stdout.
  - `tar2sqfs` can turn a tar ball (read from stdin) into a SquashFS image.
 
-
- Limitations
- ***********
-
-At the moment, the following things still require some work:
-
- - more testing (extensive unit testing for libsqfs still needed)
-    - many corner cases in the Xattr code have never been tested
-    - NFS export should work in theory but hasn't been tested yet
- - extended attributes
-    - gensquashfs supports SELinux labeling only
-    - code for reading them back from an image doesn't exist yet
- - hard links (not implemented; tar2sqfs turns them into symlinks)
- - File deduplication (not implemented; do we even need this?)
-
-
  Future plans
  ************
 
@@ -75,7 +59,6 @@ have eventually:
    arbitrary checks enforced by the kernel.
  - Patching kernel and user space to support SquashFS on top of UBI
  - Patching kernel and user space to support ACLs
-
 
  Copyright & License
  *******************
