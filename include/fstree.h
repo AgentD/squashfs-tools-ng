@@ -119,6 +119,8 @@ struct tree_node_t {
 
 	uint32_t uid;
 	uint32_t gid;
+	uint32_t inode_num;
+	uint32_t mod_time;
 	uint16_t mode;
 
 	/* SquashFS inode refernce number. 32 bit offset of the meta data
@@ -127,8 +129,6 @@ struct tree_node_t {
 
 	   Generated on the fly when writing inodes. */
 	uint64_t inode_ref;
-
-	uint32_t inode_num;
 
 	/* Type specific data. Pointers are into payload area blow. */
 	union {
@@ -241,7 +241,7 @@ int fstree_from_file(fstree_t *fs, const char *filename, FILE *fp);
 
   Returns 0 on success, prints errors to stderr.
  */
-int fstree_from_dir(fstree_t *fs, const char *path);
+int fstree_from_dir(fstree_t *fs, const char *path, bool keep_time_stamps);
 
 /* Add labels from an SELinux labeling file to all tree nodes.
    Returns 0 on success. Internally prints errors to stderr. */

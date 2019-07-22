@@ -43,7 +43,7 @@ fail:
 	return NULL;
 }
 
-static int populate_dir(fstree_t *fs, tree_node_t *root)
+static int populate_dir(fstree_t *fs, tree_node_t *root, bool keep_time_stamps)
 {
 	char *extra = NULL;
 	struct dirent *ent;
@@ -92,6 +92,12 @@ static int populate_dir(fstree_t *fs, tree_node_t *root)
 				goto fail;
 		}
 
+		if (!keep_time_stamps) {
+			sb.st_atim = fs->defaults.st_atim;
+			sb.st_mtim = fs->defaults.st_mtim;
+			sb.st_ctim = fs->defaults.st_ctim;
+		}
+
 		n = fstree_mknode(fs, root, ent->d_name, strlen(ent->d_name),
 				  extra, &sb);
 		if (n == NULL) {
@@ -110,7 +116,7 @@ static int populate_dir(fstree_t *fs, tree_node_t *root)
 			if (pushd(n->name))
 				return -1;
 
-			if (populate_dir(fs, n))
+			if (populate_dir(fs, n, keep_time_stamps))
 				return -1;
 
 			if (popd())
@@ -127,14 +133,14 @@ fail:
 	return -1;
 }
 
-int fstree_from_dir(fstree_t *fs, const char *path)
+int fstree_from_dir(fstree_t *fs, const char *path, bool keep_time_stamps)
 {
 	int ret;
 
 	if (pushd(path))
 		return -1;
 
-	ret = populate_dir(fs, fs->root);
+	ret = populate_dir(fs, fs->root, keep_time_stamps);
 
 	if (popd())
 		ret = -1;

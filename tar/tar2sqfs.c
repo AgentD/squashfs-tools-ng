@@ -26,6 +26,7 @@ static struct option long_opts[] = {
 	{ "comp-extra", required_argument, NULL, 'X' },
 	{ "no-skip", no_argument, NULL, 's' },
 	{ "no-xattr", no_argument, NULL, 'x' },
+	{ "keep-time", no_argument, NULL, 'k' },
 	{ "exportable", no_argument, NULL, 'e' },
 	{ "force", no_argument, NULL, 'f' },
 	{ "quiet", no_argument, NULL, 'q' },
@@ -33,7 +34,7 @@ static struct option long_opts[] = {
 	{ "version", no_argument, NULL, 'V' },
 };
 
-static const char *short_opts = "c:b:B:d:X:sxefqhV";
+static const char *short_opts = "c:b:B:d:X:sxekfqhV";
 
 static const char *usagestr =
 "Usage: tar2sqfs [OPTIONS...] <sqfsfile>\n"
@@ -64,6 +65,8 @@ static const char *usagestr =
 "  --no-skip, -s               Abort if a tar record cannot be read instead\n"
 "                              of skipping it.\n"
 "  --no-xattr, -x              Do not copy extended attributes from archive.\n"
+"  --keep-time, -k             Keep the time stamps stored in the archive\n"
+"                              instead of setting defaults on all files.\n"
 "  --exportable, -e            Generate an export table for NFS support.\n"
 "  --force, -f                 Overwrite the output file if it exists.\n"
 "  --quiet, -q                 Do not print out progress reports.\n"
@@ -88,6 +91,7 @@ static char *fs_defaults = NULL;
 static bool dont_skip = false;
 static bool no_xattr = false;
 static bool exportable = false;
+static bool keep_time = false;
 
 static void process_args(int argc, char **argv)
 {
@@ -136,6 +140,9 @@ static void process_args(int argc, char **argv)
 			break;
 		case 'x':
 			no_xattr = true;
+			break;
+		case 'k':
+			keep_time = true;
 			break;
 		case 's':
 			dont_skip = true;
@@ -233,6 +240,12 @@ static int create_node_and_repack_data(tar_header_decoded_t *hdr, fstree_t *fs,
 				       data_writer_t *data)
 {
 	tree_node_t *node;
+
+	if (!keep_time) {
+		hdr->sb.st_mtime = fs->defaults.st_mtime;
+		hdr->sb.st_ctime = fs->defaults.st_ctime;
+		hdr->sb.st_atime = fs->defaults.st_atime;
+	}
 
 	node = fstree_add_generic(fs, hdr->name, &hdr->sb, hdr->link_target);
 	if (node == NULL)

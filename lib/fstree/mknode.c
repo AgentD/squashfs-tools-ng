@@ -43,6 +43,7 @@ tree_node_t *fstree_mknode(fstree_t *fs, tree_node_t *parent, const char *name,
 	n->uid = sb->st_uid;
 	n->gid = sb->st_gid;
 	n->mode = sb->st_mode;
+	n->mod_time = sb->st_mtime;
 
 	switch (sb->st_mode & S_IFMT) {
 	case S_IFDIR:

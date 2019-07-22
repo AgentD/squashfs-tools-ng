@@ -9,6 +9,7 @@ static struct option long_opts[] = {
 	{ "comp-extra", required_argument, NULL, 'X' },
 	{ "pack-file", required_argument, NULL, 'F' },
 	{ "pack-dir", required_argument, NULL, 'D' },
+	{ "keep-time", required_argument, NULL, 'k' },
 	{ "exportable", no_argument, NULL, 'e' },
 	{ "force", no_argument, NULL, 'f' },
 	{ "quiet", no_argument, NULL, 'q' },
@@ -20,9 +21,9 @@ static struct option long_opts[] = {
 };
 
 #ifdef WITH_SELINUX
-static const char *short_opts = "s:F:D:X:c:b:B:d:efqhV";
+static const char *short_opts = "s:F:D:X:c:b:B:d:kefqhV";
 #else
-static const char *short_opts = "F:D:X:c:b:B:d:efqhV";
+static const char *short_opts = "F:D:X:c:b:B:d:kefqhV";
 #endif
 
 extern char *__progname;
@@ -67,6 +68,9 @@ static const char *help_string =
 "  --selinux, -s <file>        Specify an SELinux label file to get context\n"
 "                              attributes from.\n"
 #endif
+"  --keep-time, -k             When using --pack-dir only, use the timestamps\n"
+"                              from the input files instead of setting\n"
+"                              defaults on all input paths.\n"
 "  --exportable, -e            Generate an export table for NFS support.\n"
 "  --force, -f                 Overwrite the output file if it exists.\n"
 "  --quiet, -q                 Do not print out progress reports.\n"
@@ -125,6 +129,7 @@ void process_command_line(options_t *opt, int argc, char **argv)
 	opt->compressor = compressor_get_default();
 	opt->blksz = SQFS_DEFAULT_BLOCK_SIZE;
 	opt->devblksz = SQFS_DEVBLK_SIZE;
+	opt->keep_time = false;
 	opt->exportable = false;
 	opt->quiet = false;
 	opt->infile = NULL;
@@ -168,6 +173,9 @@ void process_command_line(options_t *opt, int argc, char **argv)
 			break;
 		case 'd':
 			opt->fs_defaults = optarg;
+			break;
+		case 'k':
+			opt->keep_time = true;
 			break;
 		case 'e':
 			opt->exportable = true;

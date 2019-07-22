@@ -66,6 +66,9 @@ static int add_file(fstree_t *fs, const char *filename, size_t line_num,
 	sb.st_uid = basic->st_uid;
 	sb.st_gid = basic->st_gid;
 	sb.st_mode = basic->st_mode;
+	sb.st_atim = basic->st_atim;
+	sb.st_mtim = basic->st_mtim;
+	sb.st_ctim = basic->st_ctim;
 
 	return add_generic(fs, filename, line_num, path, &sb, extra);
 }
@@ -119,6 +122,9 @@ static int handle_line(fstree_t *fs, const char *filename,
 	size_t i;
 
 	memset(&sb, 0, sizeof(sb));
+	sb.st_mtime = fs->defaults.st_mtime;
+	sb.st_atime = fs->defaults.st_atime;
+	sb.st_ctime = fs->defaults.st_ctime;
 
 	/* isolate keyword */
 	for (i = 0; isalpha(line[i]); ++i)

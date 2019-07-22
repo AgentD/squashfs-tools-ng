@@ -81,7 +81,7 @@ static int read_fstree(fstree_t *fs, options_t *opt)
 	int ret;
 
 	if (opt->infile == NULL)
-		return fstree_from_dir(fs, opt->packdir);
+		return fstree_from_dir(fs, opt->packdir, opt->keep_time);
 
 	fp = fopen(opt->infile, "rb");
 	if (fp == NULL) {

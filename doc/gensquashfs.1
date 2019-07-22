@@ -37,6 +37,11 @@ Defaults to 131072.
 Device block size to padd the image to.
 Defaults to 4096.
 .TP
+\fB\-\-keep\-time\fR, \fB\-k\fR
+Whe using \fB\-\-pack\-dir\fR only, use the timestamps from the input files
+instead of setting defaults on all input paths. The root inode and the
+modification time on the SquashFS image itself will still be set to defaults.
+.TP
 \fB\-\-defaults\fR, \fB\-d\fR <options>
 A comma seperated list of default values for
 implicitly created directories.

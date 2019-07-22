@@ -13,6 +13,9 @@ void fstree_node_stat(fstree_t *fs, tree_node_t *node, struct stat *sb)
 	sb->st_nlink = 1;
 	sb->st_uid = node->uid;
 	sb->st_gid = node->gid;
+	sb->st_mtime = node->mod_time;
+	sb->st_atime = node->mod_time;
+	sb->st_ctime = node->mod_time;
 
 	switch (node->mode & S_IFMT) {
 	case S_IFDIR:
