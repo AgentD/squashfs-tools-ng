@@ -2,6 +2,8 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+#include "config.h"
+
 #include <sys/types.h>
 #include <stdint.h>
 

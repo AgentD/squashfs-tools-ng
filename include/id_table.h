@@ -2,6 +2,8 @@
 #ifndef ID_TABLE_H
 #define ID_TABLE_H
 
+#include "config.h"
+
 #include <stdint.h>
 #include <stddef.h>
 

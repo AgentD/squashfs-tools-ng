@@ -1,4 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
+#include "config.h"
+
 #include "internal.h"
 
 sparse_map_t *read_gnu_old_sparse(int fd, tar_header_t *hdr)

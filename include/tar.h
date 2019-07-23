@@ -2,6 +2,8 @@
 #ifndef TAR_H
 #define TAR_H
 
+#include "config.h"
+
 #include <sys/stat.h>
 #include <stdbool.h>
 #include <stdint.h>

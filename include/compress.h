@@ -2,6 +2,8 @@
 #ifndef COMPRESS_H
 #define COMPRESS_H
 
+#include "config.h"
+
 #include <sys/types.h>
 #include <stdbool.h>
 #include <stddef.h>

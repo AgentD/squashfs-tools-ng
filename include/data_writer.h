@@ -2,6 +2,8 @@
 #ifndef DATA_WRITER_H
 #define DATA_WRITER_H
 
+#include "config.h"
+
 #include "squashfs.h"
 #include "compress.h"
 #include "fstree.h"

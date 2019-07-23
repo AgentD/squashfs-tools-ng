@@ -2,6 +2,8 @@
 #ifndef DATA_READER_H
 #define DATA_READER_H
 
+#include "config.h"
+
 #include "frag_reader.h"
 #include "squashfs.h"
 #include "compress.h"

@@ -2,6 +2,8 @@
 #ifndef FRAG_READER_H
 #define FRAG_READER_H
 
+#include "config.h"
+
 #include "squashfs.h"
 #include "compress.h"
 

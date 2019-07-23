@@ -2,6 +2,8 @@
 #ifndef META_WRITER_H
 #define META_WRITER_H
 
+#include "config.h"
+
 #include "compress.h"
 #include "squashfs.h"
 #include "id_table.h"

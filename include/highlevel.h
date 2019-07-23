@@ -2,6 +2,8 @@
 #ifndef HIGHLEVEL_H
 #define HIGHLEVEL_H
 
+#include "config.h"
+
 #include "squashfs.h"
 #include "compress.h"
 #include "id_table.h"

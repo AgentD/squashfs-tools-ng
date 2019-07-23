@@ -1,4 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
+#include "config.h"
+
 #include "internal.h"
 
 void update_checksum(tar_header_t *hdr)

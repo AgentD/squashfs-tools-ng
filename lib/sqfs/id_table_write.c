@@ -1,4 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
+#include "config.h"
+
 #include "highlevel.h"
 
 int id_table_write(id_table_t *tbl, int outfd, sqfs_super_t *super,
