@@ -58,7 +58,8 @@ static ssize_t zstd_comp_block(compressor_t *base, const uint8_t *in,
 				zstd->level);
 
 	if (ZSTD_isError(ret)) {
-		fputs("internal error in ZSTD compressor\n", stderr);
+		fprintf(stderr, "internal error in ZSTD compressor: %s\n",
+			ZSTD_getErrorName(ret));
 		return -1;
 	}
 
@@ -74,7 +75,8 @@ static ssize_t zstd_uncomp_block(compressor_t *base, const uint8_t *in,
 	ret = ZSTD_decompress(out, outsize, in, size);
 
 	if (ZSTD_isError(ret)) {
-		fputs("error uncompressing ZSTD compressed data", stderr);
+		fprintf(stderr, "error uncompressing ZSTD compressed data: %s",
+			ZSTD_getErrorName(ret));
 		return -1;
 	}
 
