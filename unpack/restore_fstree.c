@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "rdsquashfs.h"
 
-static int create_node(tree_node_t *n, data_reader_t *data, int flags)
+static int create_node(tree_node_t *n, int flags)
 {
 	tree_node_t *c;
 	char *name;
@@ -9,7 +9,7 @@ static int create_node(tree_node_t *n, data_reader_t *data, int flags)
 
 	if (!(flags & UNPACK_QUIET)) {
 		name = fstree_get_path(n);
-		printf("unpacking %s\n", name);
+		printf("creating %s\n", name);
 		free(name);
 	}
 
@@ -25,7 +25,7 @@ static int create_node(tree_node_t *n, data_reader_t *data, int flags)
 			return -1;
 
 		for (c = n->data.dir->children; c != NULL; c = c->next) {
-			if (create_node(c, data, flags))
+			if (create_node(c, flags))
 				return -1;
 		}
 
@@ -64,16 +64,43 @@ static int create_node(tree_node_t *n, data_reader_t *data, int flags)
 			return -1;
 		}
 
-		if (data_reader_dump_file(data, n->data.file, fd,
-					  (flags & UNPACK_NO_SPARSE) == 0)) {
-			close(fd);
+		close(fd);
+
+		if (n->parent != NULL) {
+			n->data.file->input_file = fstree_get_path(n);
+		} else {
+			n->data.file->input_file = strdup(n->name);
+		}
+
+		if (n->data.file->input_file == NULL) {
+			perror("restoring file path");
 			return -1;
 		}
 
-		close(fd);
+		canonicalize_name(n->data.file->input_file);
 		break;
 	default:
 		break;
+	}
+
+	return 0;
+}
+
+static int set_attribs(tree_node_t *n, int flags)
+{
+	tree_node_t *c;
+
+	if (S_ISDIR(n->mode)) {
+		if (pushd(n->name))
+			return -1;
+
+		for (c = n->data.dir->children; c != NULL; c = c->next) {
+			if (set_attribs(c, flags))
+				return -1;
+		}
+
+		if (popd())
+			return -1;
 	}
 
 	if (flags & UNPACK_CHOWN) {
@@ -96,28 +123,32 @@ static int create_node(tree_node_t *n, data_reader_t *data, int flags)
 	return 0;
 }
 
-int restore_fstree(const char *rootdir, tree_node_t *root,
-		   data_reader_t *data, int flags)
+int restore_fstree(tree_node_t *root, int flags)
 {
-	tree_node_t *n;
+	tree_node_t *n, *old_parent;
 
-	if (rootdir != NULL) {
-		if (mkdir_p(rootdir))
-			return -1;
-
-		if (pushd(rootdir))
-			return -1;
-	}
+	/* make sure fstree_get_path() stops at this node */
+	old_parent = root->parent;
+	root->parent = NULL;
 
 	if (S_ISDIR(root->mode)) {
 		for (n = root->data.dir->children; n != NULL; n = n->next) {
-			if (create_node(n, data, flags))
+			if (create_node(n, flags))
 				return -1;
 		}
 	} else {
-		if (create_node(root, data, flags))
+		if (create_node(root, flags))
 			return -1;
 	}
 
-	return rootdir == NULL ? 0 : popd();
+	root->parent = old_parent;
+	return 0;
+}
+
+int update_tree_attribs(tree_node_t *root, int flags)
+{
+	if ((flags & (UNPACK_CHOWN | UNPACK_CHMOD)) == 0)
+		return 0;
+
+	return set_attribs(root, flags);
 }

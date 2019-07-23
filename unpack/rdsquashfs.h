@@ -48,8 +48,11 @@ typedef struct {
 
 void list_files(tree_node_t *node);
 
-int restore_fstree(const char *rootdir, tree_node_t *root,
-		   data_reader_t *data, int flags);
+int restore_fstree(tree_node_t *root, int flags);
+
+int update_tree_attribs(tree_node_t *root, int flags);
+
+int fill_unpacked_files(fstree_t *fs, data_reader_t *data, int flags);
 
 void describe_tree(tree_node_t *root, const char *unpack_root);
 

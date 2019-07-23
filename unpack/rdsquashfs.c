@@ -42,6 +42,8 @@ int main(int argc, char **argv)
 	if (deserialize_fstree(&fs, &super, cmp, sqfsfd, opt.rdtree_flags))
 		goto out_cmp;
 
+	fstree_gen_file_list(&fs);
+
 	if (opt.cmdpath != NULL) {
 		n = fstree_node_from_path(&fs, opt.cmdpath);
 		if (n == NULL) {
@@ -72,11 +74,28 @@ int main(int argc, char **argv)
 			goto out_fs;
 		break;
 	case OP_UNPACK:
+		if (opt.unpack_root != NULL) {
+			if (mkdir_p(opt.unpack_root))
+				return -1;
+
+			if (pushd(opt.unpack_root))
+				return -1;
+		}
+
+		if (restore_fstree(n, opt.flags))
+			goto out_fs;
+
 		data = data_reader_create(sqfsfd, &super, cmp);
 		if (data == NULL)
 			goto out_fs;
 
-		if (restore_fstree(opt.unpack_root, n, data, opt.flags))
+		if (fill_unpacked_files(&fs, data, opt.flags))
+			goto out_fs;
+
+		if (update_tree_attribs(n, opt.flags))
+			goto out_fs;
+
+		if (opt.unpack_root != NULL && popd() != 0)
 			goto out_fs;
 		break;
 	case OP_DESCRIBE:
