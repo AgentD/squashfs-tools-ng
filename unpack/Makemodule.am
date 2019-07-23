@@ -19,7 +19,7 @@ if WITH_LZ4
 rdsquashfs_LDADD += $(LZ4_LIBS)
 endif
 
-if WITH_LZ4
+if WITH_ZSTD
 rdsquashfs_LDADD += $(ZSTD_LIBS)
 endif
 
