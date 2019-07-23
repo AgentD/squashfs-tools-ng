@@ -38,27 +38,31 @@ static int fill_dir(meta_reader_t *ir, meta_reader_t *dr, tree_node_t *root,
 	size_t size, diff;
 	uint32_t i;
 
+	size = root->data.dir->size;
+	if (size <= sizeof(hdr))
+		return 0;
+
 	block_start = root->data.dir->start_block;
 	block_start += super->directory_table_start;
 
 	if (meta_reader_seek(dr, block_start, root->data.dir->block_offset))
 		return -1;
 
-	size = root->data.dir->size;
-
-	while (size != 0) {
+	while (size > sizeof(hdr)) {
 		if (meta_reader_read_dir_header(dr, &hdr))
 			return -1;
 
-		size -= sizeof(hdr) > size ? size : sizeof(hdr);
+		size -= sizeof(hdr);
 
-		for (i = 0; i <= hdr.count; ++i) {
+		for (i = 0; i <= hdr.count && size > sizeof(*ent); ++i) {
 			ent = meta_reader_read_dir_ent(dr);
 			if (ent == NULL)
 				return -1;
 
 			diff = sizeof(*ent) + strlen((char *)ent->name);
-			size -= diff > size ? size : diff;
+			if (diff > size)
+				break;
+			size -= diff;
 
 			if (should_skip(ent->type, flags)) {
 				free(ent);
