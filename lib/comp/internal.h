@@ -2,6 +2,8 @@
 #ifndef INTERNAL_H
 #define INTERNAL_H
 
+#include "config.h"
+
 #include "compress.h"
 
 int generic_write_options(int fd, const void *data, size_t size);

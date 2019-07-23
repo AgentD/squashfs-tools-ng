@@ -1,4 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
+#include "config.h"
+
 #include "meta_writer.h"
 #include "util.h"
 

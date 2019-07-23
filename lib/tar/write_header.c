@@ -1,4 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
+#include "config.h"
+
 #include "internal.h"
 
 static void write_binary(char *dst, uint64_t value, int digits)

@@ -1,4 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
+#include "config.h"
+
 #include "internal.h"
 
 void free_sparse_list(sparse_map_t *sparse)

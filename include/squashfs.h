@@ -2,6 +2,8 @@
 #ifndef SQUASHFS_H
 #define SQUASHFS_H
 
+#include "config.h"
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>

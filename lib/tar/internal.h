@@ -2,6 +2,8 @@
 #ifndef INTERNAL_H
 #define INTERNAL_H
 
+#include "config.h"
+
 #include "util.h"
 #include "tar.h"
 

@@ -2,6 +2,8 @@
 #ifndef META_READER_H
 #define META_READER_H
 
+#include "config.h"
+
 #include "compress.h"
 #include "squashfs.h"
 

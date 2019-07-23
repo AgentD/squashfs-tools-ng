@@ -2,6 +2,8 @@
 #ifndef RDSQUASHFS_H
 #define RDSQUASHFS_H
 
+#include "config.h"
+
 #include "meta_reader.h"
 #include "data_reader.h"
 #include "highlevel.h"
@@ -9,7 +11,6 @@
 #include "compress.h"
 #include "id_table.h"
 #include "fstree.h"
-#include "config.h"
 #include "util.h"
 
 #include <string.h>
