@@ -1,42 +1,23 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "mkfs.h"
 
-static int process_file(data_writer_t *data, tree_node_t *n, bool quiet)
+static int process_file(data_writer_t *data, file_info_t *fi, bool quiet)
 {
 	int ret, infd;
-	char *name;
 
-	if (!quiet) {
-		name = fstree_get_path(n);
-		printf("packing %s\n", name);
-		free(name);
-	}
+	if (!quiet)
+		printf("packing %s\n", fi->input_file);
 
-	infd = open(n->data.file->input_file, O_RDONLY);
+	infd = open(fi->input_file, O_RDONLY);
 	if (infd < 0) {
-		perror(n->data.file->input_file);
+		perror(fi->input_file);
 		return -1;
 	}
 
-	ret = write_data_from_fd(data, n->data.file, infd, 0);
+	ret = write_data_from_fd(data, fi, infd, 0);
 
 	close(infd);
 	return ret;
-}
-
-static int pack_files_dfs(data_writer_t *data, tree_node_t *n, bool quiet)
-{
-	if (S_ISREG(n->mode))
-		return process_file(data, n, quiet);
-
-	if (S_ISDIR(n->mode)) {
-		for (n = n->data.dir->children; n != NULL; n = n->next) {
-			if (pack_files_dfs(data, n, quiet))
-				return -1;
-		}
-	}
-
-	return 0;
 }
 
 static int set_working_dir(options_t *opt)
@@ -63,11 +44,15 @@ static int restore_working_dir(options_t *opt)
 
 static int pack_files(data_writer_t *data, fstree_t *fs, options_t *opt)
 {
+	file_info_t *fi;
+
 	if (set_working_dir(opt))
 		return -1;
 
-	if (pack_files_dfs(data, fs->root, opt->quiet))
-		return -1;
+	for (fi = fs->files; fi != NULL; fi = fi->next) {
+		if (process_file(data, fi, opt->quiet))
+			return -1;
+	}
 
 	if (data_writer_flush_fragments(data))
 		return -1;
@@ -144,6 +129,8 @@ int main(int argc, char **argv)
 
 	if (fstree_gen_inode_table(&fs))
 		goto out_outfd;
+
+	fstree_gen_file_list(&fs);
 
 	super.inode_count = fs.inode_tbl_size - 2;
 

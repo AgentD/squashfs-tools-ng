@@ -57,6 +57,9 @@ struct tree_xattr_t {
 
 /* Additional meta data stored in a tree_node_t for regular files. */
 struct file_info_t {
+	/* Linked list pointer for files in fstree_t */
+	file_info_t *next;
+
 	/* Path to the input file. */
 	char *input_file;
 
@@ -157,6 +160,9 @@ struct fstree_t {
 
 	/* linear array of tree nodes. inode number is array index */
 	tree_node_t **inode_table;
+
+	/* linear linked list of all regular files */
+	file_info_t *files;
 };
 
 /*
@@ -251,6 +257,8 @@ int fstree_relabel_selinux(fstree_t *fs, const char *filename);
 
 /* Returns 0 on success. Prints to stderr on failure */
 int fstree_gen_inode_table(fstree_t *fs);
+
+void fstree_gen_file_list(fstree_t *fs);
 
 /*
   Generate a string holding the full path of a node. Returned
