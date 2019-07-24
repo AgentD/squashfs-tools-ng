@@ -7,15 +7,16 @@ on embedded devices, live systems or simply as a compressed archive format.
 
 Think of it as a .tar.gz that you can mount (or XZ, LZO, LZ4, ZSTD).
 
-The filesystem itself and the user space tooling were originally developed by
-Phillip Lougher with third party contributions that have accumulated over time.
+As the name suggests, this is not the original user space tooling for
+SquashFS, which are currently maintained in parallel elsewhere. After a
+long period of silence on the SourceForge site and mailing list, I
+attempted to fork the existing code base with the intention to
+restructure/clean it up and add many features I personally perceived to
+be missing, but I ultimately decided that it would be easier to start
+from scratch than to work with the existing code.
 
-Unfortunately, the original user space tooling does not support a lot of
-standard use cases, the source code of the tools is in a pretty deteriorated
-state and apparently no longer maintained.
-
-This package contains the source code of a complete rewrite of the user space
-tools that attempt to address many of the problems of the old tools:
+Here are some of the features that primarily distinguish this package from
+the (at the time of writing recent) squashfs-tools 4.3:
 
  - Reproducible SquashFS images, i.e. deterministic packing without
    any local time stamps.
