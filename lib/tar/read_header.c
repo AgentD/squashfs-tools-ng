@@ -129,11 +129,11 @@ static int read_pax_header(int fd, uint64_t entsize, unsigned int *set_by_pax,
 			if (line[6] == '-') {
 				if (pax_read_decimal(line + 7, &field))
 					goto fail;
-				out->sb.st_mtime = -((int64_t)field);
+				out->mtime = -((int64_t)field);
 			} else {
 				if (pax_read_decimal(line + 6, &field))
 					goto fail;
-				out->sb.st_mtime = field;
+				out->mtime = field;
 			}
 			*set_by_pax |= PAX_MTIME;
 		} else if (!strncmp(line, "GNU.sparse.name=", 16)) {
@@ -284,9 +284,9 @@ static int decode_header(const tar_header_t *hdr, unsigned int set_by_pax,
 			return -1;
 		if (field & 0x8000000000000000UL) {
 			field = ~field + 1;
-			out->sb.st_mtime = -((int64_t)field);
+			out->mtime = -((int64_t)field);
 		} else {
-			out->sb.st_mtime = field;
+			out->mtime = field;
 		}
 	}
 
@@ -338,6 +338,17 @@ static int decode_header(const tar_header_t *hdr, unsigned int set_by_pax,
 		break;
 	}
 
+#if SIZEOF_TIME_T < 8
+	if (out->mtime > (int64_t)INT32_MAX) {
+		out->sb.st_mtime = INT32_MAX;
+	} else if (out->mtime < (int64_t)INT32_MIN) {
+		out->sb.st_mtime = INT32_MIN;
+	} else {
+		out->sb.st_mtime = out->mtime;
+	}
+#else
+	out->sb.st_mtime = out->mtime;
+#endif
 	return 0;
 }
 

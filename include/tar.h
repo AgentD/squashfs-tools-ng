@@ -74,6 +74,10 @@ typedef struct {
 	uint64_t record_size;
 	bool unknown_record;
 	tar_xattr_t *xattr;
+
+	/* broken out since struct stat could contain
+	   32 bit values on 32 bit systems. */
+	int64_t mtime;
 } tar_header_decoded_t;
 
 #define TAR_TYPE_FILE '0'

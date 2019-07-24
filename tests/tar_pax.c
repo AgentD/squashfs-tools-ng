@@ -48,6 +48,7 @@ int main(void)
 	assert(hdr.sb.st_gid == 01750);
 	assert(hdr.sb.st_size == 5);
 	assert(hdr.sb.st_mtime == 1542905892);
+	assert(hdr.mtime == 1542905892);
 	assert(strcmp(hdr.name, "input.txt") == 0);
 	assert(!hdr.unknown_record);
 	assert(read_data("data0", fd, buffer, 5) == 0);
@@ -63,6 +64,7 @@ int main(void)
 	assert(hdr.sb.st_gid == 01750);
 	assert(hdr.sb.st_size == 8589934592);
 	assert(hdr.sb.st_mtime == 1542959190);
+	assert(hdr.mtime == 1542959190);
 	assert(strcmp(hdr.name, "big-file.bin") == 0);
 	assert(!hdr.unknown_record);
 	clear_header(&hdr);
@@ -75,6 +77,7 @@ int main(void)
 	assert(hdr.sb.st_gid == 2147483648);
 	assert(hdr.sb.st_size == 5);
 	assert(hdr.sb.st_mtime == 013376036700);
+	assert(hdr.mtime == 013376036700);
 	assert(strcmp(hdr.name, "input.txt") == 0);
 	assert(!hdr.unknown_record);
 	assert(read_data("data1", fd, buffer, 5) == 0);
@@ -89,7 +92,12 @@ int main(void)
 	assert(hdr.sb.st_uid == 01750);
 	assert(hdr.sb.st_gid == 01750);
 	assert(hdr.sb.st_size == 5);
-	assert(hdr.sb.st_mtime == 8589934592);
+#if SIZEOF_TIME_T < 8
+	assert(hdr.sb.st_mtime == INT32_MAX);
+#else
+	assert(hdr.sb.st_mtime == 8589934592L);
+#endif
+	assert(hdr.mtime == 8589934592L);
 	assert(strcmp(hdr.name, "input.txt") == 0);
 	assert(!hdr.unknown_record);
 	assert(read_data("data2", fd, buffer, 5) == 0);
@@ -105,6 +113,7 @@ int main(void)
 	assert(hdr.sb.st_gid == 01750);
 	assert(hdr.sb.st_size == 5);
 	assert(hdr.sb.st_mtime == -315622800);
+	assert(hdr.mtime == -315622800);
 	assert(strcmp(hdr.name, "input.txt") == 0);
 	assert(!hdr.unknown_record);
 	assert(read_data("data3", fd, buffer, 5) == 0);
@@ -120,6 +129,7 @@ int main(void)
 	assert(hdr.sb.st_gid == 01750);
 	assert(hdr.sb.st_size == 5);
 	assert(hdr.sb.st_mtime == 1542909670);
+	assert(hdr.mtime == 1542909670);
 	assert(strcmp(hdr.name, filename) == 0);
 	assert(!hdr.unknown_record);
 	assert(read_data("data4", fd, buffer, 5) == 0);

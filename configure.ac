@@ -156,6 +156,9 @@ if test "x$have_compressor" != "xyes"; then
 	AC_MSG_ERROR([no compressor available. At lest one is required])
 fi
 
+##### additional checks #####
+AX_COMPILE_CHECK_SIZEOF(time_t)
+
 ##### generate output #####
 
 AC_CONFIG_HEADERS([config.h])
