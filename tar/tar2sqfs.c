@@ -245,8 +245,6 @@ static int create_node_and_repack_data(tar_header_decoded_t *hdr, fstree_t *fs,
 
 	if (!keep_time) {
 		hdr->sb.st_mtime = fs->defaults.st_mtime;
-		hdr->sb.st_ctime = fs->defaults.st_ctime;
-		hdr->sb.st_atime = fs->defaults.st_atime;
 	}
 
 	node = fstree_add_generic(fs, hdr->name, &hdr->sb, hdr->link_target);

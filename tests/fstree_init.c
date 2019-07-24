@@ -18,8 +18,6 @@ int main(void)
 	assert(fstree_init(&fs, 512, str) == 0);
 	free(str);
 	assert(fs.defaults.st_mtime == 1337);
-	assert(fs.defaults.st_atime == 1337);
-	assert(fs.defaults.st_ctime == 1337);
 	assert(fs.defaults.st_uid == 1000);
 	assert(fs.defaults.st_gid == 100);
 	assert(fs.defaults.st_mode == (S_IFDIR | 0321));
@@ -27,8 +25,6 @@ int main(void)
 
 	assert(fstree_init(&fs, 512, NULL) == 0);
 	assert(fs.defaults.st_mtime == 0);
-	assert(fs.defaults.st_atime == 0);
-	assert(fs.defaults.st_ctime == 0);
 	assert(fs.defaults.st_uid == 0);
 	assert(fs.defaults.st_gid == 0);
 	assert(fs.defaults.st_mode == (S_IFDIR | 0755));

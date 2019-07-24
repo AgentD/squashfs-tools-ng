@@ -43,8 +43,6 @@ int main(void)
 	assert(hdr.sb.st_gid == 01750);
 	assert(hdr.sb.st_size == 5);
 	assert(hdr.sb.st_mtime == 1543094477);
-	assert(hdr.sb.st_atime == 1543094642);
-	assert(hdr.sb.st_ctime == 1543094606);
 	assert(strcmp(hdr.name, "input.txt") == 0);
 	assert(!hdr.unknown_record);
 	assert(read_data("data0", fd, buffer, 5) == 0);

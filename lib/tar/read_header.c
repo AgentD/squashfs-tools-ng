@@ -125,17 +125,6 @@ static int read_pax_header(int fd, uint64_t entsize, unsigned int *set_by_pax,
 			if (out->link_target == NULL)
 				goto fail_errno;
 			*set_by_pax |= PAX_SLINK_TARGET;
-		} else if (!strncmp(line, "atime=", 6)) {
-			if (line[6] == '-') {
-				if (pax_read_decimal(line + 7, &field))
-					goto fail;
-				out->sb.st_atime = -((int64_t)field);
-			} else {
-				if (pax_read_decimal(line + 6, &field))
-					goto fail;
-				out->sb.st_atime = field;
-			}
-			*set_by_pax |= PAX_ATIME;
 		} else if (!strncmp(line, "mtime=", 6)) {
 			if (line[6] == '-') {
 				if (pax_read_decimal(line + 7, &field))
@@ -147,17 +136,6 @@ static int read_pax_header(int fd, uint64_t entsize, unsigned int *set_by_pax,
 				out->sb.st_mtime = field;
 			}
 			*set_by_pax |= PAX_MTIME;
-		} else if (!strncmp(line, "ctime=", 6)) {
-			if (line[6] == '-') {
-				if (pax_read_decimal(line + 7, &field))
-					goto fail;
-				out->sb.st_ctime = -((int64_t)field);
-			} else {
-				if (pax_read_decimal(line + 6, &field))
-					goto fail;
-				out->sb.st_ctime = field;
-			}
-			*set_by_pax |= PAX_CTIME;
 		} else if (!strncmp(line, "GNU.sparse.name=", 16)) {
 			free(out->name);
 			out->name = strdup(line + 5);
@@ -309,46 +287,6 @@ static int decode_header(const tar_header_t *hdr, unsigned int set_by_pax,
 			out->sb.st_mtime = -((int64_t)field);
 		} else {
 			out->sb.st_mtime = field;
-		}
-	}
-
-	if (!(set_by_pax & PAX_ATIME)) {
-		field = out->sb.st_mtime;
-
-		if (version == ETV_PRE_POSIX &&
-		    ((uint8_t)hdr->tail.gnu.atime[0] == 0x80 ||
-		     (uint8_t)hdr->tail.gnu.atime[0] == 0xFF ||
-		     isdigit(hdr->tail.gnu.atime[0]))) {
-			if (read_number(hdr->tail.gnu.atime,
-					sizeof(hdr->tail.gnu.atime), &field))
-				return -1;
-		}
-
-		if (field & 0x8000000000000000UL) {
-			field = ~field + 1;
-			out->sb.st_atime = -((int64_t)field);
-		} else {
-			out->sb.st_atime = field;
-		}
-	}
-
-	if (!(set_by_pax & PAX_CTIME)) {
-		field = out->sb.st_mtime;
-
-		if (version == ETV_PRE_POSIX &&
-		    ((uint8_t)hdr->tail.gnu.ctime[0] == 0x80 ||
-		     (uint8_t)hdr->tail.gnu.ctime[0] == 0xFF ||
-		     isdigit(hdr->tail.gnu.ctime[0]))) {
-			if (read_number(hdr->tail.gnu.ctime,
-					sizeof(hdr->tail.gnu.atime), &field))
-				return -1;
-		}
-
-		if (field & 0x8000000000000000UL) {
-			field = ~field + 1;
-			out->sb.st_ctime = -((int64_t)field);
-		} else {
-			out->sb.st_ctime = field;
 		}
 	}
 

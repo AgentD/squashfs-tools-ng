@@ -125,8 +125,6 @@ static int handle_line(fstree_t *fs, const char *filename,
 
 	memset(&sb, 0, sizeof(sb));
 	sb.st_mtime = fs->defaults.st_mtime;
-	sb.st_atime = fs->defaults.st_atime;
-	sb.st_ctime = fs->defaults.st_ctime;
 
 	/* isolate keyword */
 	for (i = 0; isalpha(line[i]); ++i)

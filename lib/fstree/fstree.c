@@ -69,8 +69,6 @@ static int process_defaults(struct stat *sb, char *subopts)
 			if (lval > 0xFFFFFFFFL)
 				goto fail_ov;
 			sb->st_mtime = lval;
-			sb->st_atime = lval;
-			sb->st_ctime = lval;
 			break;
 		default:
 			fprintf(stderr, "Unknown option '%s'\n", value);
