@@ -42,7 +42,7 @@ static int process_defaults(struct stat *sb, char *subopts)
 			lval = strtol(value, NULL, 0);
 			if (lval < 0)
 				goto fail_uv;
-			if (lval > 0xFFFFFFFFL)
+			if (lval > (long)INT32_MAX)
 				goto fail_ov;
 			sb->st_uid = lval;
 			break;
@@ -50,7 +50,7 @@ static int process_defaults(struct stat *sb, char *subopts)
 			lval = strtol(value, NULL, 0);
 			if (lval < 0)
 				goto fail_uv;
-			if (lval > 0xFFFFFFFFL)
+			if (lval > (long)INT32_MAX)
 				goto fail_ov;
 			sb->st_gid = lval;
 			break;
@@ -66,7 +66,7 @@ static int process_defaults(struct stat *sb, char *subopts)
 			lval = strtol(value, NULL, 0);
 			if (lval < 0)
 				goto fail_uv;
-			if (lval > 0xFFFFFFFFL)
+			if (lval > (long)INT32_MAX)
 				goto fail_ov;
 			sb->st_mtime = lval;
 			break;
