@@ -77,8 +77,8 @@ int generic_read_options(int fd, void *data, size_t size)
 {
 	uint8_t buffer[size + 2];
 
-	if (read_data("reading compressor options",
-		      fd, buffer, sizeof(buffer))) {
+	if (read_data_at("reading compressor options", sizeof(sqfs_super_t),
+			 fd, buffer, sizeof(buffer))) {
 		return -1;
 	}
 

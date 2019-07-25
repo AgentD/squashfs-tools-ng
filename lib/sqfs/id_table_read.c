@@ -38,15 +38,12 @@ int id_table_read(id_table_t *tbl, int fd, sqfs_super_t *super,
 	tbl->num_ids = super->id_count;
 	tbl->max_ids = super->id_count;
 
-	if (lseek(fd, super->id_table_start, SEEK_SET) == (off_t)-1)
-		goto fail_seek;
-
 	block_count = super->id_count / 2048;
 	if (super->id_count % 2048)
 		++block_count;
 
-	if (read_data("reading ID table", fd, blocks,
-		      sizeof(blocks[0]) * block_count)) {
+	if (read_data_at("reading ID table", super->id_table_start, fd,
+			 blocks, sizeof(blocks[0]) * block_count)) {
 		return -1;
 	}
 
@@ -81,8 +78,5 @@ int id_table_read(id_table_t *tbl, int fd, sqfs_super_t *super,
 	return 0;
 fail_meta:
 	meta_reader_destroy(m);
-	return -1;
-fail_seek:
-	perror("seeking to ID table");
 	return -1;
 }

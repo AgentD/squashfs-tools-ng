@@ -31,11 +31,6 @@ static int precache_block(frag_reader_t *f, size_t i)
 	if (i == f->current_index)
 		return 0;
 
-	if (lseek(f->fd, f->tbl[i].start_offset, SEEK_SET) == (off_t)-1) {
-		perror("seeking to fragment location");
-		return -1;
-	}
-
 	compressed = (f->tbl[i].size & (1 << 24)) == 0;
 	size = f->tbl[i].size & ((1 << 24) - 1);
 
@@ -44,8 +39,10 @@ static int precache_block(frag_reader_t *f, size_t i)
 		return -1;
 	}
 
-	if (read_data("reading fragment", f->fd, f->buffer, size))
+	if (read_data_at("reading fragment", f->tbl[i].start_offset,
+			 f->fd, f->buffer, size)) {
 		return -1;
+	}
 
 	if (compressed) {
 		ret = f->cmp->do_block(f->cmp, f->buffer, size,
@@ -95,11 +92,8 @@ frag_reader_t *frag_reader_create(sqfs_super_t *super, int fd,
 		goto fail_rd;
 
 	/* read the meta block offset table */
-	if (lseek(fd, super->fragment_table_start, SEEK_SET) == (off_t)-1)
-		goto fail_seek;
-
-	if (read_data("reading fragment table", fd, locations,
-		      blockcount * sizeof(locations[0]))) {
+	if (read_data_at("reading fragment table", super->fragment_table_start,
+			 fd, locations, blockcount * sizeof(locations[0]))) {
 		goto fail;
 	}
 
@@ -139,9 +133,6 @@ frag_reader_t *frag_reader_create(sqfs_super_t *super, int fd,
 	f->block_size = super->block_size;
 	f->current_index = count;
 	return f;
-fail_seek:
-	perror("seek to fragment table");
-	goto fail;
 fail_rd:
 	perror("reading fragment table");
 	goto fail;

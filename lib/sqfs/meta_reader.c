@@ -68,13 +68,10 @@ int meta_reader_seek(meta_reader_t *m, uint64_t block_start, size_t offset)
 		return 0;
 	}
 
-	if (lseek(m->fd, block_start, SEEK_SET) == (off_t)-1) {
-		perror("seek on image file");
+	if (read_data_at("reading meta data header", block_start,
+			 m->fd, &header, 2)) {
 		return -1;
 	}
-
-	if (read_data("reading meta data header", m->fd, &header, 2))
-		return -1;
 
 	header = le16toh(header);
 	compressed = (header & 0x8000) == 0;
@@ -92,8 +89,10 @@ int meta_reader_seek(meta_reader_t *m, uint64_t block_start, size_t offset)
 
 	memset(m->data, 0, sizeof(m->data));
 
-	if (read_data("reading meta data block", m->fd, m->data, size))
+	if (read_data_at("reading meta data block", block_start + 2,
+			 m->fd, m->data, size)) {
 		return -1;
+	}
 
 	if (compressed) {
 		ret = m->cmp->do_block(m->cmp, m->data, size,

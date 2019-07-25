@@ -65,6 +65,7 @@ int data_reader_dump_file(data_reader_t *data, file_info_t *fi, int outfd,
 			  bool allow_sparse)
 {
 	size_t i, count, fragsz, unpackedsz;
+	off_t sqfs_location;
 	uint64_t filesz = 0;
 	bool compressed;
 	uint32_t bs;
@@ -81,8 +82,7 @@ int data_reader_dump_file(data_reader_t *data, file_info_t *fi, int outfd,
 	}
 
 	if (count > 0) {
-		if (lseek(data->sqfsfd, fi->startblock, SEEK_SET) == (off_t)-1)
-			goto fail_seek;
+		sqfs_location = fi->startblock;
 
 		for (i = 0; i < count; ++i) {
 			bs = fi->blocksizes[i];
@@ -112,9 +112,13 @@ int data_reader_dump_file(data_reader_t *data, file_info_t *fi, int outfd,
 			if (bs == 0) {
 				memset(data->buffer, 0, unpackedsz);
 				compressed = false;
-			} else if (read_data("reading data block",
-					     data->sqfsfd, data->buffer, bs)) {
-				return -1;
+			} else {
+				if (read_data_at("reading data block",
+						 sqfs_location, data->sqfsfd,
+						 data->buffer, bs)) {
+					return -1;
+				}
+				sqfs_location += bs;
 			}
 
 			if (compressed) {
@@ -156,9 +160,6 @@ int data_reader_dump_file(data_reader_t *data, file_info_t *fi, int outfd,
 	return 0;
 fail_sparse:
 	perror("creating sparse output file");
-	return -1;
-fail_seek:
-	perror("seek on squashfs");
 	return -1;
 fail_bs:
 	fputs("found compressed block larger than block size\n", stderr);

@@ -15,10 +15,7 @@ int sqfs_super_read(sqfs_super_t *super, int fd)
 	sqfs_super_t temp;
 	int i;
 
-	if (lseek(fd, 0, SEEK_SET) == (off_t)-1)
-		goto fail_seek;
-
-	if (read_data("reading super block", fd, &temp, sizeof(temp)))
+	if (read_data_at("reading super block", 0, fd, &temp, sizeof(temp)))
 		return -1;
 
 	temp.magic = le32toh(temp.magic);
@@ -87,7 +84,4 @@ int sqfs_super_read(sqfs_super_t *super, int fd)
 
 	memcpy(super, &temp, sizeof(temp));
 	return 0;
-fail_seek:
-	perror("squashfs writing super block: seek on output file");
-	return -1;
 }
