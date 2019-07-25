@@ -14,10 +14,13 @@
 #include "util.h"
 
 #include <sys/sysmacros.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <getopt.h>
+#include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -41,6 +44,7 @@ typedef struct {
 	int op;
 	int rdtree_flags;
 	int flags;
+	unsigned int num_jobs;
 	char *cmdpath;
 	const char *unpack_root;
 	const char *image_name;
@@ -52,7 +56,8 @@ int restore_fstree(tree_node_t *root, int flags);
 
 int update_tree_attribs(tree_node_t *root, int flags);
 
-int fill_unpacked_files(fstree_t *fs, data_reader_t *data, int flags);
+int fill_unpacked_files(fstree_t *fs, data_reader_t *data, int flags,
+			unsigned int num_jobs);
 
 void describe_tree(tree_node_t *root, const char *unpack_root);
 

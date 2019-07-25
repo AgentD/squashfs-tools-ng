@@ -89,7 +89,7 @@ int main(int argc, char **argv)
 		if (data == NULL)
 			goto out_fs;
 
-		if (fill_unpacked_files(&fs, data, opt.flags))
+		if (fill_unpacked_files(&fs, data, opt.flags, opt.num_jobs))
 			goto out_fs;
 
 		if (update_tree_attribs(n, opt.flags))

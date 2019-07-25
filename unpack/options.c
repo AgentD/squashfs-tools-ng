@@ -12,6 +12,7 @@ static struct option long_opts[] = {
 	{ "no-slink", no_argument, NULL, 'L' },
 	{ "no-empty-dir", no_argument, NULL, 'E' },
 	{ "no-sparse", no_argument, NULL, 'Z' },
+	{ "jobs", required_argument, NULL, 'j' },
 	{ "describe", no_argument, NULL, 'd' },
 	{ "chmod", no_argument, NULL, 'C' },
 	{ "chown", no_argument, NULL, 'O' },
@@ -20,7 +21,7 @@ static struct option long_opts[] = {
 	{ "version", no_argument, NULL, 'V' },
 };
 
-static const char *short_opts = "l:c:u:p:DSFLCOEZdqhV";
+static const char *short_opts = "l:c:u:p:DSFLCOEZj:dqhV";
 
 static const char *help_string =
 "Usage: %s [OPTIONS] <squashfs-file>\n"
@@ -50,6 +51,7 @@ static const char *help_string =
 "                            empty after applying the above rules.\n"
 "  --no-sparse, -Z           Do not create sparse files, always write zero\n"
 "                            blocks to disk.\n"
+"  --jobs, -j <count>        Number of parallel unpacking jobs to start.\n"
 "  --chmod, -C               Change permission flags of unpacked files to\n"
 "                            those store in the squashfs image.\n"
 "  --chown, -O               Change ownership of unpacked files to the\n"
@@ -85,7 +87,7 @@ static char *get_path(char *old, const char *arg)
 
 void process_command_line(options_t *opt, int argc, char **argv)
 {
-	int i;
+	int i, j;
 
 	opt->op = OP_NONE;
 	opt->rdtree_flags = 0;
@@ -93,6 +95,7 @@ void process_command_line(options_t *opt, int argc, char **argv)
 	opt->cmdpath = NULL;
 	opt->unpack_root = NULL;
 	opt->image_name = NULL;
+	opt->num_jobs = 1;
 
 	for (;;) {
 		i = getopt_long(argc, argv, short_opts, long_opts, NULL);
@@ -123,6 +126,17 @@ void process_command_line(options_t *opt, int argc, char **argv)
 			break;
 		case 'Z':
 			opt->flags |= UNPACK_NO_SPARSE;
+			break;
+		case 'j':
+			for (j = 0; optarg[j] != '\0'; ++j) {
+				if (j > 6 || !isdigit(optarg[j]))
+					goto fail_num_jobs;
+			}
+
+			opt->num_jobs = atoi(optarg);
+
+			if (opt->num_jobs < 1)
+				goto fail_num_jobs;
 			break;
 		case 'c':
 			opt->op = OP_CAT;
@@ -176,4 +190,7 @@ fail_arg:
 	fprintf(stderr, "Try `%s --help' for more information.\n", __progname);
 	free(opt->cmdpath);
 	exit(EXIT_FAILURE);
+fail_num_jobs:
+	fputs("Expected a positive integer for --jobs.\n", stderr);
+	goto fail_arg;
 }
