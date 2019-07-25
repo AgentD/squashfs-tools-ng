@@ -5,6 +5,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h>
 
 tree_node_t *fstree_mknode(fstree_t *fs, tree_node_t *parent, const char *name,
 			   size_t name_len, const char *extra,
@@ -16,6 +17,10 @@ tree_node_t *fstree_mknode(fstree_t *fs, tree_node_t *parent, const char *name,
 
 	switch (sb->st_mode & S_IFMT) {
 	case S_IFLNK:
+		if (extra == NULL) {
+			errno = EINVAL;
+			return NULL;
+		}
 		size += strlen(extra) + 1;
 		break;
 	case S_IFDIR:
@@ -67,7 +72,8 @@ tree_node_t *fstree_mknode(fstree_t *fs, tree_node_t *parent, const char *name,
 	case S_IFLNK:
 		n->mode = S_IFLNK | 0777;
 		n->data.slink_target = (char *)n->payload;
-		strcpy(n->data.slink_target, extra);
+		if (extra != NULL)
+			strcpy(n->data.slink_target, extra);
 		break;
 	case S_IFBLK:
 	case S_IFCHR:
