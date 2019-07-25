@@ -40,6 +40,12 @@ int write_data(const char *errstr, int fd, const void *data, size_t size);
 int read_data(const char *errstr, int fd, void *buffer, size_t size);
 
 /*
+  Similar to read_data but wrapps pread() instead of read().
+*/
+int read_data_at(const char *errstr, off_t location,
+		 int fd, void *buffer, size_t size);
+
+/*
   A common implementation of the '--version' command line flag.
 
   Prints out version information. The program name is extracted from the
