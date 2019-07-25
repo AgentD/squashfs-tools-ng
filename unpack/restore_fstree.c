@@ -77,7 +77,7 @@ static int create_node(tree_node_t *n, int flags)
 			return -1;
 		}
 
-		canonicalize_name(n->data.file->input_file);
+		assert(canonicalize_name(n->data.file->input_file) == 0);
 		break;
 	default:
 		break;
