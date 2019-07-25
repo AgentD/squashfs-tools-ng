@@ -34,6 +34,13 @@ data is unpacked to. If used with \fB\-\-describe\fR, this
 is used as a prefix for the input path of
 regular files.
 .TP
+\fB\-\-jobs\fR, \fB\-j\fR <count>
+Specify a number of parallel jobs to spawn for unpacking file data.
+The file hierarchy is created sequentially but the data unpacking is
+distributed over the given number of jobs so that each job has to unpack
+roughly the same amount of data. This can be used to speed up unpacking
+of large SquashFS archives.
+.TP
 \fB\-\-no\-dev\fR, \fB\-D\fR
 Do not unpack device special files.
 .TP
