@@ -1,9 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "config.h"
-
 #include "rdsquashfs.h"
-
-#include <sys/sysmacros.h>
 
 static void print_name(tree_node_t *n)
 {

@@ -1,6 +1,4 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "config.h"
-
 #include "rdsquashfs.h"
 
 static struct option long_opts[] = {

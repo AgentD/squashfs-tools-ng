@@ -1,6 +1,4 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "config.h"
-
 #include "rdsquashfs.h"
 
 static int create_node(tree_node_t *n, data_reader_t *data, int flags)

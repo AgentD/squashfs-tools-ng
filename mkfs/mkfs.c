@@ -1,6 +1,4 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-#include "config.h"
-
 #include "mkfs.h"
 
 static int process_file(data_writer_t *data, tree_node_t *n, bool quiet)

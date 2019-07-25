@@ -13,6 +13,7 @@
 #include "fstree.h"
 #include "util.h"
 
+#include <sys/sysmacros.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
