@@ -32,6 +32,12 @@ enum {
 	ETV_POSIX,
 };
 
+
+#define TAR_MAX_SYMLINK_LEN (65536)
+#define TAR_MAX_PATH_LEN (65536)
+#define TAR_MAX_PAX_LEN (65536)
+
+
 int read_octal(const char *str, int digits, uint64_t *out);
 
 int read_binary(const char *str, int digits, uint64_t *out);

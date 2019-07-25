@@ -386,6 +386,8 @@ int read_header(int fd, tar_header_decoded_t *out)
 		case TAR_TYPE_GNU_SLINK:
 			if (read_number(hdr.size, sizeof(hdr.size), &pax_size))
 				goto fail;
+			if (pax_size < 1 || pax_size > TAR_MAX_SYMLINK_LEN)
+				goto fail_slink_len;
 			free(out->link_target);
 			out->link_target = record_to_memory(fd, pax_size);
 			if (out->link_target == NULL)
@@ -395,6 +397,8 @@ int read_header(int fd, tar_header_decoded_t *out)
 		case TAR_TYPE_GNU_PATH:
 			if (read_number(hdr.size, sizeof(hdr.size), &pax_size))
 				goto fail;
+			if (pax_size < 1 || pax_size > TAR_MAX_PATH_LEN)
+				goto fail_path_len;
 			free(out->name);
 			out->name = record_to_memory(fd, pax_size);
 			if (out->name == NULL)
@@ -405,6 +409,8 @@ int read_header(int fd, tar_header_decoded_t *out)
 			clear_header(out);
 			if (read_number(hdr.size, sizeof(hdr.size), &pax_size))
 				goto fail;
+			if (pax_size < 1 || pax_size > TAR_MAX_PAX_LEN)
+				goto fail_pax_len;
 			set_by_pax = 0;
 			if (read_pax_header(fd, pax_size, &set_by_pax, out))
 				goto fail;
@@ -436,6 +442,18 @@ int read_header(int fd, tar_header_decoded_t *out)
 out_eof:
 	clear_header(out);
 	return 1;
+fail_slink_len:
+	fprintf(stderr, "rejecting GNU symlink header with size %zu\n",
+		pax_size);
+	goto fail;
+fail_path_len:
+	fprintf(stderr, "rejecting GNU long path header with size %zu\n",
+		pax_size);
+	goto fail;
+fail_pax_len:
+	fprintf(stderr, "rejecting PAX header with size %zu\n",
+		pax_size);
+	goto fail;
 fail_magic:
 	fputs("input is not a ustar tar archive!\n", stderr);
 	goto fail;
