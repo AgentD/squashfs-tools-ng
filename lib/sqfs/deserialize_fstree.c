@@ -62,8 +62,10 @@ static int fill_dir(meta_reader_t *ir, meta_reader_t *dr, tree_node_t *root,
 				return -1;
 
 			diff = sizeof(*ent) + strlen((char *)ent->name);
-			if (diff > size)
+			if (diff > size) {
+				free(ent);
 				break;
+			}
 			size -= diff;
 
 			if (should_skip(ent->type, flags)) {
