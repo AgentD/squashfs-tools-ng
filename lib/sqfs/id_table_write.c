@@ -15,8 +15,8 @@ int id_table_write(id_table_t *tbl, int outfd, sqfs_super_t *super,
 
 	super->id_count = tbl->num_ids;
 
-	ret = sqfs_write_table(outfd, super, tbl->ids, sizeof(tbl->ids[0]),
-			       tbl->num_ids, &start, cmp);
+	ret = sqfs_write_table(outfd, super, cmp, tbl->ids,
+			       sizeof(tbl->ids[0]) * tbl->num_ids, &start);
 
 	super->id_table_start = start;
 

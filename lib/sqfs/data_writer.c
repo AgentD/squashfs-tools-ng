@@ -295,6 +295,8 @@ void data_writer_destroy(data_writer_t *data)
 int data_writer_write_fragment_table(data_writer_t *data)
 {
 	uint64_t start;
+	size_t size;
+	int ret;
 
 	if (data->num_fragments == 0) {
 		data->super->fragment_entry_count = 0;
@@ -302,14 +304,13 @@ int data_writer_write_fragment_table(data_writer_t *data)
 		return 0;
 	}
 
-	data->super->fragment_entry_count = data->num_fragments;
-
-	if (sqfs_write_table(data->outfd, data->super, data->fragments,
-			     sizeof(data->fragments[0]), data->num_fragments,
-			     &start, data->cmp)) {
+	size = sizeof(data->fragments[0]) * data->num_fragments;
+	ret = sqfs_write_table(data->outfd, data->super, data->cmp,
+			       data->fragments, size, &start);
+	if (ret)
 		return -1;
-	}
 
+	data->super->fragment_entry_count = data->num_fragments;
 	data->super->fragment_table_start = start;
 	return 0;
 }

@@ -23,17 +23,16 @@ enum RDTREE_FLAGS {
 /*
   Convenience function for writing meta data to a SquashFS image
 
-  This function internally creates a meta data writer and writes 'count'
-  blocks of data from 'data' to it, each 'entsize' bytes in size. For each
-  meta data block, it remembers the 64 bit start address, writes out all
-  addresses to an uncompressed address list and returns the location where
-  the address list starts.
+  This function internally creates a meta data writer and writes the given
+  'data' blob with 'table_size' bytes to disk, neatly partitioned into meta
+  data blocks. For each meta data block, it remembers the 64 bit start address,
+  writes out all addresses to an uncompressed list and returns the location
+  where the address list starts in 'start'.
 
   Returns 0 on success. Internally prints error messages to stderr.
  */
-int sqfs_write_table(int outfd, sqfs_super_t *super, const void *data,
-		     size_t entsize, size_t count, uint64_t *startblock,
-		     compressor_t *cmp);
+int sqfs_write_table(int outfd, sqfs_super_t *super, compressor_t *cmp,
+		     const void *data, size_t table_size, uint64_t *start);
 
 /*
   High level helper function to serialize an entire file system tree to
