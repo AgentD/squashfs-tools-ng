@@ -110,8 +110,8 @@ frag_reader_t *frag_reader_create(sqfs_super_t *super, int fd,
 			goto fail;
 
 		diff = SQFS_META_BLOCK_SIZE / sizeof(tbl[0]);
-		if (diff > count)
-			diff = count;
+		if (diff > (count - j))
+			diff = count - j;
 
 		if (meta_reader_read(m, tbl + j, diff * sizeof(tbl[0])))
 			goto fail;
