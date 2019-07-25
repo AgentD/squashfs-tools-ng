@@ -65,7 +65,7 @@ static int write_header(int fd, const struct stat *sb, const char *name,
 
 	memset(&hdr, 0, sizeof(hdr));
 
-	memcpy(hdr.name, name, strlen(name));
+	strncpy(hdr.name, name, sizeof(hdr.name) - 1);
 	write_number(hdr.mode, sb->st_mode & ~S_IFMT, sizeof(hdr.mode));
 	write_number(hdr.uid, sb->st_uid, sizeof(hdr.uid));
 	write_number(hdr.gid, sb->st_gid, sizeof(hdr.gid));
