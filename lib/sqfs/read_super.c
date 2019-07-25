@@ -58,18 +58,21 @@ int sqfs_super_read(sqfs_super_t *super, int fd)
 		return -1;
 	}
 
-	if (temp.block_log > 0 && temp.block_log < 32) {
-		block_size = 1;
-
-		for (i = 0; i < temp.block_log; ++i)
-			block_size <<= 1;
-	}
-
-	if (temp.block_size != block_size) {
-		fputs("Mismatch between block size and block log\n", stderr);
-		fputs("Filesystem probably currupted.\n", stderr);
+	if (temp.block_size < 4096 || temp.block_size >= (1 << 20)) {
+		fputs("Block size in iamge not between 4k and 1M\n", stderr);
 		return -1;
 	}
+
+	if (temp.block_log < 12 || temp.block_log > 20)
+		goto fail_block_log;
+
+	block_size = 1;
+
+	for (i = 0; i < temp.block_log; ++i)
+		block_size <<= 1;
+
+	if (temp.block_size != block_size)
+		goto fail_block_log;
 
 	if (temp.compression_id < SQFS_COMP_MIN ||
 	    temp.compression_id > SQFS_COMP_MAX) {
@@ -84,4 +87,8 @@ int sqfs_super_read(sqfs_super_t *super, int fd)
 
 	memcpy(super, &temp, sizeof(temp));
 	return 0;
+fail_block_log:
+	fputs("Mismatch between block size and block log\n", stderr);
+	fputs("Filesystem probably currupted.\n", stderr);
+	return -1;
 }
