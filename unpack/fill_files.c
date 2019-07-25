@@ -97,6 +97,9 @@ int fill_unpacked_files(fstree_t *fs, data_reader_t *data, int flags,
 		pid = fork();
 
 		if (pid == 0) {
+			/* Kill the child when the parent process dies */
+			prctl(PR_SET_PDEATHSIG, SIGKILL);
+
 			if (fill_files(data, sublists[i], flags))
 				exit(EXIT_FAILURE);
 			exit(EXIT_SUCCESS);

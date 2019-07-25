@@ -15,6 +15,7 @@
 
 #include <sys/sysmacros.h>
 #include <sys/types.h>
+#include <sys/prctl.h>
 #include <sys/wait.h>
 #include <string.h>
 #include <stdlib.h>
