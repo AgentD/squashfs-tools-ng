@@ -65,7 +65,6 @@ static int precache_block(frag_reader_t *f, size_t i)
 frag_reader_t *frag_reader_create(sqfs_super_t *super, int fd,
 				  compressor_t *cmp)
 {
-	sqfs_fragment_t *tbl = NULL;
 	frag_reader_t *f = NULL;
 	size_t i;
 
@@ -81,7 +80,7 @@ frag_reader_t *frag_reader_create(sqfs_super_t *super, int fd,
 	f->cmp = cmp;
 	f->fd = fd;
 
-	f->tbl = sqfs_read_table(fd, cmp, sizeof(tbl[0]) * f->num_fragments,
+	f->tbl = sqfs_read_table(fd, cmp, sizeof(f->tbl[0]) * f->num_fragments,
 				 super->fragment_table_start);
 	if (f->tbl == NULL) {
 		free(f);
@@ -89,8 +88,8 @@ frag_reader_t *frag_reader_create(sqfs_super_t *super, int fd,
 	}
 
 	for (i = 0; i < f->num_fragments; ++i) {
-		tbl[i].start_offset = le64toh(tbl[i].start_offset);
-		tbl[i].size = le32toh(tbl[i].size);
+		f->tbl[i].start_offset = le64toh(f->tbl[i].start_offset);
+		f->tbl[i].size = le32toh(f->tbl[i].size);
 	}
 
 	return f;
