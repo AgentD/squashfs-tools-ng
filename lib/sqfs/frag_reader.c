@@ -1,11 +1,10 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "config.h"
 
-#include "meta_reader.h"
 #include "frag_reader.h"
+#include "highlevel.h"
 #include "util.h"
 
-#include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -66,83 +65,35 @@ static int precache_block(frag_reader_t *f, size_t i)
 frag_reader_t *frag_reader_create(sqfs_super_t *super, int fd,
 				  compressor_t *cmp)
 {
-	size_t i, blockcount, j, diff, count;
 	sqfs_fragment_t *tbl = NULL;
-	uint64_t *locations = NULL;
-	meta_reader_t *m = NULL;
 	frag_reader_t *f = NULL;
+	size_t i;
 
-	count = super->fragment_entry_count;
-	blockcount = count / (SQFS_META_BLOCK_SIZE / sizeof(tbl[0]));
-
-	if (count % (SQFS_META_BLOCK_SIZE / sizeof(tbl[0])))
-		++blockcount;
-
-	/* pre allocate all the stuff */
 	f = calloc(1, sizeof(*f) + super->block_size * 2);
-	if (f == NULL)
-		goto fail_rd;
-
-	tbl = calloc(count, sizeof(tbl[0]));
-	if (tbl == NULL)
-		goto fail_rd;
-
-	locations = malloc(blockcount * sizeof(locations[0]));
-	if (locations == NULL)
-		goto fail_rd;
-
-	/* read the meta block offset table */
-	if (read_data_at("reading fragment table", super->fragment_table_start,
-			 fd, locations, blockcount * sizeof(locations[0]))) {
-		goto fail;
+	if (f == NULL) {
+		perror("creating fragment table");
+		return NULL;
 	}
 
-	for (i = 0; i < blockcount; ++i)
-		locations[i] = le64toh(locations[i]);
+	f->block_size = super->block_size;
+	f->num_fragments = super->fragment_entry_count;
+	f->current_index = f->num_fragments;
+	f->cmp = cmp;
+	f->fd = fd;
 
-	/* read the meta blocks */
-	m = meta_reader_create(fd, cmp);
-	if (m == NULL)
-		goto fail;
-
-	for (i = 0, j = 0; i < blockcount && j < count; ++i, j += diff) {
-		if (meta_reader_seek(m, locations[i], 0))
-			goto fail;
-
-		diff = SQFS_META_BLOCK_SIZE / sizeof(tbl[0]);
-		if (diff > (count - j))
-			diff = count - j;
-
-		if (meta_reader_read(m, tbl + j, diff * sizeof(tbl[0])))
-			goto fail;
+	f->tbl = sqfs_read_table(fd, cmp, sizeof(tbl[0]) * f->num_fragments,
+				 super->fragment_table_start);
+	if (f->tbl == NULL) {
+		free(f);
+		return NULL;
 	}
 
-	for (i = 0; i < count; ++i) {
+	for (i = 0; i < f->num_fragments; ++i) {
 		tbl[i].start_offset = le64toh(tbl[i].start_offset);
 		tbl[i].size = le32toh(tbl[i].size);
 	}
 
-	/* cleanup and ship it */
-	meta_reader_destroy(m);
-	free(locations);
-
-	f->tbl = tbl;
-	f->num_fragments = count;
-	f->cmp = cmp;
-	f->fd = fd;
-	f->block_size = super->block_size;
-	f->current_index = count;
 	return f;
-fail_rd:
-	perror("reading fragment table");
-	goto fail;
-fail:
-	if (m != NULL)
-		meta_reader_destroy(m);
-	free(tbl);
-	free(locations);
-	free(f);
-	return NULL;
 }
 
 void frag_reader_destroy(frag_reader_t *f)
