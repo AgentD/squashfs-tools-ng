@@ -76,4 +76,6 @@ int popd(void);
 */
 int padd_file(int outfd, uint64_t size, size_t blocksize);
 
+uint32_t update_crc32(uint32_t crc, const void *data, size_t size);
+
 #endif /* UTIL_H */
