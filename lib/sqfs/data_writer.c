@@ -165,18 +165,33 @@ static int flush_data_block(data_writer_t *data, size_t size,
 	return 0;
 }
 
-int write_data_from_fd(data_writer_t *data, file_info_t *fi,
-		       int infd, int flags)
+static int begin_file(data_writer_t *data, file_info_t *fi, int flags)
 {
-	uint64_t count;
-	size_t diff;
-
 	if ((flags & DW_ALLIGN_DEVBLK) && allign_file(data) != 0)
 		return -1;
 
 	fi->startblock = data->super->bytes_used;
 	fi->sparse = 0;
 	data->block_idx = 0;
+	return 0;
+}
+
+static int end_file(data_writer_t *data, int flags)
+{
+	if ((flags & DW_ALLIGN_DEVBLK) && allign_file(data) != 0)
+		return -1;
+
+	return 0;
+}
+
+int write_data_from_fd(data_writer_t *data, file_info_t *fi,
+		       int infd, int flags)
+{
+	uint64_t count;
+	size_t diff;
+
+	if (begin_file(data, fi, flags))
+		return -1;
 
 	for (count = fi->size; count != 0; count -= diff) {
 		diff = count > (uint64_t)data->super->block_size ?
@@ -189,10 +204,7 @@ int write_data_from_fd(data_writer_t *data, file_info_t *fi,
 			return -1;
 	}
 
-	if ((flags & DW_ALLIGN_DEVBLK) && allign_file(data) != 0)
-		return -1;
-
-	return 0;
+	return end_file(data, flags);
 }
 
 int write_data_from_fd_condensed(data_writer_t *data, file_info_t *fi,
@@ -202,12 +214,8 @@ int write_data_from_fd_condensed(data_writer_t *data, file_info_t *fi,
 	sparse_map_t *m;
 	uint64_t offset;
 
-	if ((flags & DW_ALLIGN_DEVBLK) && allign_file(data) != 0)
+	if (begin_file(data, fi, flags))
 		return -1;
-
-	fi->startblock = data->super->bytes_used;
-	fi->sparse = 0;
-	data->block_idx = 0;
 
 	if (map != NULL) {
 		offset = map->offset;
@@ -256,10 +264,7 @@ int write_data_from_fd_condensed(data_writer_t *data, file_info_t *fi,
 			return -1;
 	}
 
-	if ((flags & DW_ALLIGN_DEVBLK) && allign_file(data) != 0)
-		return -1;
-
-	return 0;
+	return end_file(data, flags);
 fail_map_size:
 	fprintf(stderr, "%s: sparse file map spans beyond file size\n",
 		fi->input_file);
