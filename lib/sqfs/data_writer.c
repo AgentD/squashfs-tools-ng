@@ -7,6 +7,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <errno.h>
 
@@ -153,6 +154,114 @@ static file_info_t *fragment_by_chksum(file_info_t *fi, uint32_t chksum,
 	return it;
 }
 
+static size_t get_block_count(file_info_t *fi, size_t block_size)
+{
+	size_t count = fi->size / block_size;
+
+	if ((fi->size % block_size != 0) &&
+	    (fi->fragment == 0xFFFFFFFF ||
+	     fi->fragment_offset == 0xFFFFFFFF)) {
+		++count;
+	}
+
+	while (count > 0 && fi->blocks[count - 1].size == 0)
+		--count;
+
+	return count;
+}
+
+static size_t find_first_match(file_info_t *file, file_info_t *cmp,
+			       size_t idx, size_t cmp_blk_count)
+{
+	size_t i;
+
+	for (i = 0; i < cmp_blk_count; ++i) {
+		if (memcmp(file->blocks + idx, cmp->blocks + i,
+			   sizeof(file->blocks[idx])) == 0) {
+			break;
+		}
+	}
+
+	return i;
+}
+
+static uint64_t find_equal_blocks(file_info_t *file, file_info_t *list,
+				  size_t block_size)
+{
+	size_t start, first_match, i, j, block_count, cmp_blk_count;
+	uint64_t location;
+	file_info_t *it;
+
+	block_count = get_block_count(file, block_size);
+	if (block_count == 0)
+		return 0;
+
+	for (start = 0; start < block_count; ++start) {
+		if (file->blocks[start].size != 0)
+			break;
+	}
+
+	location = 0;
+
+	for (it = list; it != NULL; it = it->next) {
+		if (it == file) {
+			it = NULL;
+			break;
+		}
+
+		/* XXX: list assumed to be processed in order, prevent us from
+		   re-checking files we know are duplicates */
+		if (it->startblock < location)
+			continue;
+
+		location = it->startblock;
+
+		cmp_blk_count = get_block_count(it, block_size);
+		if (cmp_blk_count == 0)
+			continue;
+
+		first_match = find_first_match(file, it, start, cmp_blk_count);
+		if (first_match == cmp_blk_count)
+			continue;
+
+		i = start;
+		j = first_match;
+
+		while (i < block_count && j < cmp_blk_count) {
+			if (file->blocks[i].size == 0) {
+				++i;
+				continue;
+			}
+
+			if (it->blocks[j].size == 0) {
+				++j;
+				continue;
+			}
+
+			if (memcmp(it->blocks + j, file->blocks + i,
+				   sizeof(file->blocks[i])) != 0) {
+				break;
+			}
+
+			++i;
+			++j;
+		}
+
+		if (i == block_count)
+			break;
+	}
+
+	if (it == NULL)
+		return 0;
+
+	location = it->startblock;
+
+	for (i = 0; i < first_match; ++i)
+		location += it->blocks[i].size & ((1 << 24) - 1);
+
+	return location;
+}
+
 static int flush_data_block(data_writer_t *data, size_t size,
 			    file_info_t *fi, int flags, file_info_t *list)
 {
@@ -204,8 +313,13 @@ static int flush_data_block(data_writer_t *data, size_t size,
 	return 0;
 }
 
-static int begin_file(data_writer_t *data, file_info_t *fi, int flags)
+static int begin_file(data_writer_t *data, file_info_t *fi,
+		      int flags, off_t *start)
 {
+	*start = lseek(data->outfd, 0, SEEK_CUR);
+	if (*start == (off_t)-1)
+		goto fail_seek;
+
 	if ((flags & DW_ALLIGN_DEVBLK) && allign_file(data) != 0)
 		return -1;
 
@@ -213,14 +327,37 @@ static int begin_file(data_writer_t *data, file_info_t *fi, int flags)
 	fi->sparse = 0;
 	data->block_idx = 0;
 	return 0;
+fail_seek:
+	perror("querying current position on squashfs image");
+	return -1;
 }
 
-static int end_file(data_writer_t *data, int flags)
+static int end_file(data_writer_t *data, file_info_t *fi,
+		    off_t start, int flags, file_info_t *list)
 {
+	uint64_t ref;
+
 	if ((flags & DW_ALLIGN_DEVBLK) && allign_file(data) != 0)
 		return -1;
 
+	ref = find_equal_blocks(fi, list, data->super->block_size);
+
+	if (ref > 0) {
+		fi->startblock = ref;
+
+		if (lseek(data->outfd, start, SEEK_SET) == (off_t)-1)
+			goto fail_seek;
+
+		if (ftruncate(data->outfd, start))
+			goto fail_truncate;
+	}
 	return 0;
+fail_seek:
+	perror("seeking on squashfs image after file deduplication");
+	return -1;
+fail_truncate:
+	perror("truncating squashfs image after file deduplication");
+	return -1;
 }
 
 int write_data_from_fd(data_writer_t *data, file_info_t *fi,
@@ -228,8 +365,9 @@ int write_data_from_fd(data_writer_t *data, file_info_t *fi,
 {
 	uint64_t count;
 	size_t diff;
+	off_t start;
 
-	if (begin_file(data, fi, flags))
+	if (begin_file(data, fi, flags, &start))
 		return -1;
 
 	for (count = fi->size; count != 0; count -= diff) {
@@ -243,7 +381,7 @@ int write_data_from_fd(data_writer_t *data, file_info_t *fi,
 			return -1;
 	}
 
-	return end_file(data, flags);
+	return end_file(data, fi, start, flags, list);
 }
 
 int write_data_from_fd_condensed(data_writer_t *data, file_info_t *fi,
@@ -253,8 +391,9 @@ int write_data_from_fd_condensed(data_writer_t *data, file_info_t *fi,
 	size_t start, count, diff;
 	sparse_map_t *m;
 	uint64_t offset;
+	off_t location;
 
-	if (begin_file(data, fi, flags))
+	if (begin_file(data, fi, flags, &location))
 		return -1;
 
 	if (map != NULL) {
@@ -304,7 +443,7 @@ int write_data_from_fd_condensed(data_writer_t *data, file_info_t *fi,
 			return -1;
 	}
 
-	return end_file(data, flags);
+	return end_file(data, fi, location, flags, list);
 fail_map_size:
 	fprintf(stderr, "%s: sparse file map spans beyond file size\n",
 		fi->input_file);
