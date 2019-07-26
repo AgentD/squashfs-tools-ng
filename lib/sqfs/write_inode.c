@@ -88,7 +88,7 @@ static int write_file_blocks(fstree_t *fs, file_info_t *fi, meta_writer_t *im)
 	}
 
 	for (i = 0; i < count; ++i) {
-		bs = htole32(fi->blocksizes[i]);
+		bs = htole32(fi->blocks[i].size);
 
 		if (meta_writer_append(im, &bs, sizeof(bs)))
 			return -1;

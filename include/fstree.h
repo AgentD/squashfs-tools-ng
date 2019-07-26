@@ -78,9 +78,15 @@ struct file_info_t {
 	/* Byte offset into the fragment block. */
 	uint32_t fragment_offset;
 
-	/* For each full data block, stores the compressed size.
-	   Bit (1 << 24) is set if the block is stored uncompressed. */
-	uint32_t blocksizes[];
+	uint32_t fragment_chksum;
+
+	/* Stores data about each full data block. */
+	struct {
+		uint32_t chksum;
+
+		/* Bit (1 << 24) is set if the block is stored uncompressed. */
+		uint32_t size;
+	} blocks[];
 };
 
 /* Additional meta data stored in a tree_node_t for directories */

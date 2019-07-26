@@ -92,7 +92,7 @@ static int dump_blocks(data_reader_t *data, file_info_t *fi, int outfd,
 	void *ptr;
 
 	for (i = 0; i < count; ++i) {
-		bs = fi->blocksizes[i];
+		bs = fi->blocks[i].size;
 
 		compressed = (bs & (1 << 24)) == 0;
 		bs &= (1 << 24) - 1;

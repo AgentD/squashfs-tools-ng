@@ -31,7 +31,7 @@ int main(void)
 	assert((char *)node->name >= (char *)node->payload);
 	assert((char *)node->data.file >= (char *)node->payload);
 	assert(node->data.file->input_file > (char *)(node->data.file + 1) +
-	       sizeof(uint32_t) * 4);
+	       sizeof(node->data.file->blocks[0]) * 4);
 	assert(node->name >= node->data.file->input_file + 6);
 	assert(strcmp(node->name, "filename") == 0);
 	assert(strcmp(node->data.file->input_file, "input") == 0);

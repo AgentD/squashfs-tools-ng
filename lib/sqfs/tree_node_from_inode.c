@@ -38,13 +38,13 @@ static size_t compute_size(sqfs_inode_generic_t *inode, const char *name,
 		break;
 	}
 
-	return size + block_count * sizeof(uint32_t);
+	return size + block_count * sizeof(((file_info_t *)0)->blocks[0]);
 }
 
 static void copy_block_sizes(sqfs_inode_generic_t *inode, tree_node_t *out,
 			     size_t block_size)
 {
-	size_t block_count = out->data.file->size / block_size;
+	size_t i, block_count = out->data.file->size / block_size;
 
 	if ((out->data.file->size % block_size) != 0) {
 		if (out->data.file->fragment == 0xFFFFFFFF ||
@@ -53,12 +53,10 @@ static void copy_block_sizes(sqfs_inode_generic_t *inode, tree_node_t *out,
 		}
 	}
 
-	out->name += block_count * sizeof(uint32_t);
+	out->name += block_count * sizeof(out->data.file->blocks[0]);
 
-	if (block_count) {
-		memcpy(out->data.file->blocksizes, inode->block_sizes,
-		       block_count * sizeof(uint32_t));
-	}
+	for (i = 0; i < block_count; ++i)
+		out->data.file->blocks[i].size = inode->block_sizes[i];
 }
 
 tree_node_t *tree_node_from_inode(sqfs_inode_generic_t *inode,

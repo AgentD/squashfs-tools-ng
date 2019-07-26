@@ -31,7 +31,8 @@ tree_node_t *fstree_mknode(fstree_t *fs, tree_node_t *parent, const char *name,
 		if ((sb->st_size % fs->block_size) != 0)
 			++block_count;
 
-		size += sizeof(*n->data.file) + block_count * sizeof(uint32_t);
+		size += sizeof(*n->data.file);
+		size += block_count * sizeof(n->data.file->blocks[0]);
 		if (extra != NULL)
 			size += strlen(extra) + 1;
 		break;
@@ -64,8 +65,8 @@ tree_node_t *fstree_mknode(fstree_t *fs, tree_node_t *parent, const char *name,
 		if (extra == NULL)
 			break;
 
-		ptr = (char *)n->data.file->blocksizes;
-		ptr += block_count * sizeof(uint32_t);
+		ptr = (char *)n->data.file->blocks;
+		ptr += block_count * sizeof(n->data.file->blocks[0]);
 		n->data.file->input_file = ptr;
 		strcpy(n->data.file->input_file, extra);
 		break;
