@@ -131,7 +131,7 @@ static int flush_data_block(data_writer_t *data, size_t size,
 	uint32_t out;
 
 	if (is_zero_block(data->block, size)) {
-		fi->blocksizes[data->block_idx++] = 0;
+		fi->blocks[data->block_idx++].size = 0;
 		fi->sparse += size;
 		return 0;
 	}
@@ -152,7 +152,7 @@ static int flush_data_block(data_writer_t *data, size_t size,
 		if (write_compressed(data, data->block, size, &out, flags))
 			return -1;
 
-		fi->blocksizes[data->block_idx++] = out;
+		fi->blocks[data->block_idx++].size = out;
 	}
 
 	return 0;
