@@ -66,10 +66,14 @@ int data_writer_flush_fragments(data_writer_t *data);
 
   The flags argument is a combination of DW_* flags.
 
+  If 'list' is not NULL, it is used for fragment and data block deduplication.
+  It is assumed that the list is processed in order and scanning stops as soon
+  as the current file info 'fi' is encountered in the list.
+
   Returns 0 on success, prints errors to stderr.
 */
 int write_data_from_fd(data_writer_t *data, file_info_t *fi, int infd,
-		       int flags);
+		       int flags, file_info_t *list);
 
 /*
   Does the same as write_data_from_fd but the input file is the condensed
@@ -78,9 +82,14 @@ int write_data_from_fd(data_writer_t *data, file_info_t *fi, int infd,
 
   The flags argument is a combination of DW_* flags.
 
+  If 'list' is not NULL, it is used for fragment and data block deduplication.
+  It is assumed that the list is processed in order and scanning stops as soon
+  as the current file info 'fi' is encountered in the list.
+
   Returns 0 on success, prints errors to stderr.
  */
 int write_data_from_fd_condensed(data_writer_t *data, file_info_t *fi,
-				 int infd, sparse_map_t *map, int flags);
+				 int infd, sparse_map_t *map, int flags,
+				 file_info_t *list);
 
 #endif /* DATA_WRITER_H */

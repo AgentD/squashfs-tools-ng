@@ -125,10 +125,39 @@ int data_writer_flush_fragments(data_writer_t *data)
 	return 0;
 }
 
+static file_info_t *fragment_by_chksum(file_info_t *fi, uint32_t chksum,
+				       size_t frag_size, file_info_t *list,
+				       size_t block_size)
+{
+	file_info_t *it;
+
+	for (it = list; it != NULL; it = it->next) {
+		if (it == fi) {
+			it = NULL;
+			break;
+		}
+
+		if (it->fragment == 0xFFFFFFFF)
+			continue;
+
+		if (it->fragment_offset == 0xFFFFFFFF)
+			continue;
+
+		if ((it->size % block_size) != frag_size)
+			continue;
+
+		if (it->fragment_chksum == chksum)
+			break;
+	}
+
+	return it;
+}
+
 static int flush_data_block(data_writer_t *data, size_t size,
-			    file_info_t *fi, int flags)
+			    file_info_t *fi, int flags, file_info_t *list)
 {
 	uint32_t out, chksum;
+	file_info_t *ref;
 
 	if (is_zero_block(data->block, size)) {
 		fi->blocks[data->block_idx].size = 0;
@@ -141,6 +170,16 @@ static int flush_data_block(data_writer_t *data, size_t size,
 	chksum = update_crc32(0, data->block, size);
 
 	if (size < data->super->block_size && !(flags & DW_DONT_FRAGMENT)) {
+		ref = fragment_by_chksum(fi, chksum, size, list,
+					 data->super->block_size);
+
+		if (ref != NULL) {
+			fi->fragment_chksum = ref->fragment_chksum;
+			fi->fragment_offset = ref->fragment_offset;
+			fi->fragment = ref->fragment;
+			return 0;
+		}
+
 		if (data->frag_offset + size > data->super->block_size) {
 			if (data_writer_flush_fragments(data))
 				return -1;
@@ -185,7 +224,7 @@ static int end_file(data_writer_t *data, int flags)
 }
 
 int write_data_from_fd(data_writer_t *data, file_info_t *fi,
-		       int infd, int flags)
+		       int infd, int flags, file_info_t *list)
 {
 	uint64_t count;
 	size_t diff;
@@ -200,7 +239,7 @@ int write_data_from_fd(data_writer_t *data, file_info_t *fi,
 		if (read_data(fi->input_file, infd, data->block, diff))
 			return -1;
 
-		if (flush_data_block(data, diff, fi, flags))
+		if (flush_data_block(data, diff, fi, flags, list))
 			return -1;
 	}
 
@@ -208,7 +247,8 @@ int write_data_from_fd(data_writer_t *data, file_info_t *fi,
 }
 
 int write_data_from_fd_condensed(data_writer_t *data, file_info_t *fi,
-				 int infd, sparse_map_t *map, int flags)
+				 int infd, sparse_map_t *map, int flags,
+				 file_info_t *list)
 {
 	size_t start, count, diff;
 	sparse_map_t *m;
@@ -260,7 +300,7 @@ int write_data_from_fd_condensed(data_writer_t *data, file_info_t *fi,
 			map = map->next;
 		}
 
-		if (flush_data_block(data, diff, fi, flags))
+		if (flush_data_block(data, diff, fi, flags, list))
 			return -1;
 	}
 

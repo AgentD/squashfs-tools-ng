@@ -1,7 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 #include "mkfs.h"
 
-static int process_file(data_writer_t *data, file_info_t *fi, bool quiet)
+static int process_file(data_writer_t *data, file_info_t *fi, bool quiet,
+			file_info_t *list)
 {
 	int ret, infd;
 
@@ -14,7 +15,7 @@ static int process_file(data_writer_t *data, file_info_t *fi, bool quiet)
 		return -1;
 	}
 
-	ret = write_data_from_fd(data, fi, infd, 0);
+	ret = write_data_from_fd(data, fi, infd, 0, list);
 
 	close(infd);
 	return ret;
@@ -50,7 +51,7 @@ static int pack_files(data_writer_t *data, fstree_t *fs, options_t *opt)
 		return -1;
 
 	for (fi = fs->files; fi != NULL; fi = fi->next) {
-		if (process_file(data, fi, opt->quiet))
+		if (process_file(data, fi, opt->quiet, fs->files))
 			return -1;
 	}
 
