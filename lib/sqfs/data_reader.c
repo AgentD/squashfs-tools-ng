@@ -2,7 +2,7 @@
 #include "config.h"
 
 #include "data_reader.h"
-#include "frag_reader.h"
+#include "highlevel.h"
 #include "util.h"
 
 #include <stdlib.h>
@@ -11,53 +11,72 @@
 #include <stdio.h>
 
 struct data_reader_t {
+	sqfs_fragment_t *frag;
+	size_t num_fragments;
+	size_t current_frag_index;
+	size_t frag_used;
+
 	compressor_t *cmp;
 	size_t block_size;
-	frag_reader_t *frag;
 	int sqfsfd;
 
 	void *buffer;
 	void *scratch;
+	void *frag_block;
 };
 
 data_reader_t *data_reader_create(int fd, sqfs_super_t *super,
 				  compressor_t *cmp)
 {
-	data_reader_t *data = calloc(1, sizeof(*data) + 2 * super->block_size);
+	data_reader_t *data = calloc(1, sizeof(*data) + 3 * super->block_size);
+	size_t i, size;
 
 	if (data == NULL) {
 		perror("creating data reader");
 		return data;
 	}
 
-	if (super->fragment_entry_count > 0 &&
-	    !(super->flags & SQFS_FLAG_NO_FRAGMENTS)) {
-		if (super->fragment_table_start >= super->bytes_used) {
-			fputs("Fragment table start is past end of file\n",
-			      stderr);
-			free(data);
-			return NULL;
-		}
-
-		data->frag = frag_reader_create(super, fd, cmp);
-		if (data->frag == NULL) {
-			free(data);
-			return NULL;
-		}
-	}
-
+	data->num_fragments = super->fragment_entry_count;
+	data->current_frag_index = super->fragment_entry_count;
 	data->buffer = (char *)data + sizeof(*data);
 	data->scratch = (char *)data->buffer + super->block_size;
+	data->frag_block = (char *)data->scratch + super->block_size;
 	data->sqfsfd = fd;
 	data->block_size = super->block_size;
 	data->cmp = cmp;
+
+	if (super->fragment_entry_count == 0 ||
+	    (super->flags & SQFS_FLAG_NO_FRAGMENTS) != 0) {
+		return 0;
+	}
+
+	if (super->fragment_table_start >= super->bytes_used) {
+		fputs("Fragment table start is past end of file\n", stderr);
+		free(data);
+		return NULL;
+	}
+
+	size = sizeof(data->frag[0]) * data->num_fragments;
+
+	data->frag = sqfs_read_table(fd, cmp, size,
+				     super->fragment_table_start);
+	if (data->frag == NULL) {
+		free(data);
+		return NULL;
+	}
+
+	for (i = 0; i < data->num_fragments; ++i) {
+		data->frag[i].size = le32toh(data->frag[i].size);
+		data->frag[i].start_offset =
+			le64toh(data->frag[i].start_offset);
+	}
+
 	return data;
 }
 
 void data_reader_destroy(data_reader_t *data)
 {
-	if (data->frag != NULL)
-		frag_reader_destroy(data->frag);
+	free(data->frag);
 	free(data);
 }
 
@@ -134,6 +153,52 @@ fail_bs:
 	return -1;
 }
 
+static int precache_fragment_block(data_reader_t *data, size_t idx)
+{
+	bool compressed;
+	size_t size;
+	ssize_t ret;
+
+	if (idx == data->current_frag_index)
+		return 0;
+
+	if (idx >= data->num_fragments) {
+		fputs("fragment index out of bounds\n", stderr);
+		return -1;
+	}
+
+	compressed = (data->frag[idx].size & (1 << 24)) == 0;
+	size = data->frag[idx].size & ((1 << 24) - 1);
+
+	if (size > data->block_size) {
+		fputs("found fragment block larger than block size\n", stderr);
+		return -1;
+	}
+
+	if (read_data_at("reading fragments", data->frag[idx].start_offset,
+			 data->sqfsfd, data->buffer, size)) {
+		return -1;
+	}
+
+	if (compressed) {
+		ret = data->cmp->do_block(data->cmp, data->buffer, size,
+					  data->frag_block, data->block_size);
+
+		if (ret <= 0) {
+			fputs("extracting fragment block failed\n", stderr);
+			return -1;
+		}
+
+		size = ret;
+	} else {
+		memcpy(data->frag_block, data->buffer, size);
+	}
+
+	data->current_frag_index = idx;
+	data->frag_used = size;
+	return 0;
+}
+
 int data_reader_dump_file(data_reader_t *data, file_info_t *fi, int outfd,
 			  bool allow_sparse)
 {
@@ -150,29 +215,24 @@ int data_reader_dump_file(data_reader_t *data, file_info_t *fi, int outfd,
 		return -1;
 
 	if (fragsz > 0) {
-		if (data->frag == NULL)
-			goto fail_frag;
-
-		if (frag_reader_read(data->frag, fi->fragment,
-				     fi->fragment_offset, data->buffer,
-				     fragsz)) {
+		if (precache_fragment_block(data, fi->fragment))
 			return -1;
-		}
 
-		if (write_data("writing uncompressed fragment",
-			       outfd, data->buffer, fragsz)) {
+		if (fi->fragment_offset >= data->frag_used)
+			goto fail_range;
+
+		if ((fi->fragment_offset + fragsz - 1) >= data->frag_used)
+			goto fail_range;
+
+		if (write_data("writing uncompressed fragment", outfd,
+			       (char *)data->frag_block + fi->fragment_offset,
+			       fragsz)) {
 			return -1;
 		}
 	}
 
 	return 0;
-fail_frag:
-	fputs("file not a multiple of block size but no fragments available\n",
-	      stderr);
+fail_range:
+	fputs("attempted to read past fragment block limits\n", stderr);
 	return -1;
-}
-
-const frag_reader_t *data_reader_get_fragment_reader(const data_reader_t *data)
-{
-	return data->frag;
 }
