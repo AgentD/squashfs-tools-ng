@@ -61,19 +61,84 @@ void data_reader_destroy(data_reader_t *data)
 	free(data);
 }
 
-int data_reader_dump_file(data_reader_t *data, file_info_t *fi, int outfd,
-			  bool allow_sparse)
+static int dump_blocks(data_reader_t *data, file_info_t *fi, int outfd,
+		       bool allow_sparse, size_t count)
 {
-	size_t i, count, fragsz, unpackedsz;
-	off_t sqfs_location;
+	off_t sqfs_location = fi->startblock;
+	size_t i, unpackedsz;
 	uint64_t filesz = 0;
 	bool compressed;
 	uint32_t bs;
 	ssize_t ret;
 	void *ptr;
 
-	count = fi->size / data->block_size;
-	fragsz = fi->size % data->block_size;
+	for (i = 0; i < count; ++i) {
+		bs = fi->blocksizes[i];
+
+		compressed = (bs & (1 << 24)) == 0;
+		bs &= (1 << 24) - 1;
+
+		if (bs > data->block_size)
+			goto fail_bs;
+
+		if ((fi->size - filesz) < (uint64_t)data->block_size) {
+			unpackedsz = fi->size - filesz;
+		} else {
+			unpackedsz = data->block_size;
+		}
+
+		filesz += unpackedsz;
+
+		if (bs == 0 && allow_sparse) {
+			if (ftruncate(outfd, filesz))
+				goto fail_sparse;
+			if (lseek(outfd, 0, SEEK_END) == (off_t)-1)
+				goto fail_sparse;
+			continue;
+		}
+
+		if (bs == 0) {
+			memset(data->buffer, 0, unpackedsz);
+			compressed = false;
+		} else {
+			if (read_data_at("reading data block", sqfs_location,
+					 data->sqfsfd, data->buffer, bs)) {
+				return -1;
+			}
+			sqfs_location += bs;
+		}
+
+		if (compressed) {
+			ret = data->cmp->do_block(data->cmp, data->buffer, bs,
+						  data->scratch,
+						  data->block_size);
+			if (ret <= 0)
+				return -1;
+
+			ptr = data->scratch;
+		} else {
+			ptr = data->buffer;
+		}
+
+		if (write_data("writing uncompressed block",
+			       outfd, ptr, unpackedsz)) {
+			return -1;
+		}
+	}
+	return 0;
+fail_sparse:
+	perror("creating sparse output file");
+	return -1;
+fail_bs:
+	fputs("found compressed block larger than block size\n", stderr);
+	return -1;
+}
+
+int data_reader_dump_file(data_reader_t *data, file_info_t *fi, int outfd,
+			  bool allow_sparse)
+{
+	size_t fragsz = fi->size % data->block_size;
+	size_t count = fi->size / data->block_size;
 
 	if (fragsz != 0 && (fi->fragment == 0xFFFFFFFF ||
 			    fi->fragment_offset == 0xFFFFFFFF)) {
@@ -81,65 +146,8 @@ int data_reader_dump_file(data_reader_t *data, file_info_t *fi, int outfd,
 		++count;
 	}
 
-	if (count > 0) {
-		sqfs_location = fi->startblock;
-
-		for (i = 0; i < count; ++i) {
-			bs = fi->blocksizes[i];
-
-			compressed = (bs & (1 << 24)) == 0;
-			bs &= (1 << 24) - 1;
-
-			if (bs > data->block_size)
-				goto fail_bs;
-
-			if ((fi->size - filesz) < (uint64_t)data->block_size) {
-				unpackedsz = fi->size - filesz;
-			} else {
-				unpackedsz = data->block_size;
-			}
-
-			filesz += unpackedsz;
-
-			if (bs == 0 && allow_sparse) {
-				if (ftruncate(outfd, filesz))
-					goto fail_sparse;
-				if (lseek(outfd, 0, SEEK_END) == (off_t)-1)
-					goto fail_sparse;
-				continue;
-			}
-
-			if (bs == 0) {
-				memset(data->buffer, 0, unpackedsz);
-				compressed = false;
-			} else {
-				if (read_data_at("reading data block",
-						 sqfs_location, data->sqfsfd,
-						 data->buffer, bs)) {
-					return -1;
-				}
-				sqfs_location += bs;
-			}
-
-			if (compressed) {
-				ret = data->cmp->do_block(data->cmp,
-							  data->buffer, bs,
-							  data->scratch,
-							  data->block_size);
-				if (ret <= 0)
-					return -1;
-
-				ptr = data->scratch;
-			} else {
-				ptr = data->buffer;
-			}
-
-			if (write_data("writing uncompressed block",
-					outfd, ptr, unpackedsz)) {
-				return -1;
-			}
-		}
-	}
+	if (dump_blocks(data, fi, outfd, allow_sparse, count))
+		return -1;
 
 	if (fragsz > 0) {
 		if (data->frag == NULL)
@@ -158,12 +166,6 @@ int data_reader_dump_file(data_reader_t *data, file_info_t *fi, int outfd,
 	}
 
 	return 0;
-fail_sparse:
-	perror("creating sparse output file");
-	return -1;
-fail_bs:
-	fputs("found compressed block larger than block size\n", stderr);
-	return -1;
 fail_frag:
 	fputs("file not a multiple of block size but no fragments available\n",
 	      stderr);
