@@ -128,13 +128,17 @@ int data_writer_flush_fragments(data_writer_t *data)
 static int flush_data_block(data_writer_t *data, size_t size,
 			    file_info_t *fi, int flags)
 {
-	uint32_t out;
+	uint32_t out, chksum;
 
 	if (is_zero_block(data->block, size)) {
-		fi->blocks[data->block_idx++].size = 0;
+		fi->blocks[data->block_idx].size = 0;
+		fi->blocks[data->block_idx].chksum = 0;
 		fi->sparse += size;
+		data->block_idx++;
 		return 0;
 	}
+
+	chksum = update_crc32(0, data->block, size);
 
 	if (size < data->super->block_size && !(flags & DW_DONT_FRAGMENT)) {
 		if (data->frag_offset + size > data->super->block_size) {
@@ -142,6 +146,7 @@ static int flush_data_block(data_writer_t *data, size_t size,
 				return -1;
 		}
 
+		fi->fragment_chksum = chksum;
 		fi->fragment_offset = data->frag_offset;
 		fi->fragment = data->num_fragments;
 
@@ -152,7 +157,9 @@ static int flush_data_block(data_writer_t *data, size_t size,
 		if (write_compressed(data, data->block, size, &out, flags))
 			return -1;
 
-		fi->blocks[data->block_idx++].size = out;
+		fi->blocks[data->block_idx].chksum = chksum;
+		fi->blocks[data->block_idx].size = out;
+		data->block_idx++;
 	}
 
 	return 0;
