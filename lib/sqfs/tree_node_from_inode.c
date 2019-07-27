@@ -50,6 +50,8 @@ static void copy_block_sizes(sqfs_inode_generic_t *inode, tree_node_t *out,
 		if (out->data.file->fragment == 0xFFFFFFFF ||
 		    out->data.file->fragment_offset == 0xFFFFFFFF) {
 			++block_count;
+		} else {
+			out->data.file->flags |= FILE_FLAG_HAS_FRAGMENT;
 		}
 	}
 

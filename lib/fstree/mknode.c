@@ -60,8 +60,6 @@ tree_node_t *fstree_mknode(fstree_t *fs, tree_node_t *parent, const char *name,
 	case S_IFREG:
 		n->data.file = (file_info_t *)n->payload;
 		n->data.file->size = sb->st_size;
-		n->data.file->fragment = 0xFFFFFFFF;
-		n->data.file->fragment_offset = 0xFFFFFFFF;
 		if (extra == NULL)
 			break;
 

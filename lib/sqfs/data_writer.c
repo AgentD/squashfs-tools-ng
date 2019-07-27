@@ -138,10 +138,10 @@ static file_info_t *fragment_by_chksum(file_info_t *fi, uint32_t chksum,
 			break;
 		}
 
-		if (it->fragment == 0xFFFFFFFF)
+		if (!(it->flags & FILE_FLAG_HAS_FRAGMENT))
 			continue;
 
-		if (it->fragment_offset == 0xFFFFFFFF)
+		if (it->flags & FILE_FLAG_FRAGMENT_IS_DUPLICATE)
 			continue;
 
 		if ((it->size % block_size) != frag_size)
@@ -158,11 +158,8 @@ static size_t get_block_count(file_info_t *fi, size_t block_size)
 {
 	size_t count = fi->size / block_size;
 
-	if ((fi->size % block_size != 0) &&
-	    (fi->fragment == 0xFFFFFFFF ||
-	     fi->fragment_offset == 0xFFFFFFFF)) {
+	if ((fi->size % block_size) && !(fi->flags & FILE_FLAG_HAS_FRAGMENT))
 		++count;
-	}
 
 	while (count > 0 && fi->blocks[count - 1].size == 0)
 		--count;
@@ -201,20 +198,14 @@ static uint64_t find_equal_blocks(file_info_t *file, file_info_t *list,
 			break;
 	}
 
-	location = 0;
-
 	for (it = list; it != NULL; it = it->next) {
 		if (it == file) {
 			it = NULL;
 			break;
 		}
 
-		/* XXX: list assumed to be processed in order, prevent us from
-		   re-checking files we know are duplicates */
-		if (it->startblock < location)
+		if (it->flags & FILE_FLAG_BLOCKS_ARE_DUPLICATE)
 			continue;
-
-		location = it->startblock;
 
 		cmp_blk_count = get_block_count(it, block_size);
 		if (cmp_blk_count == 0)
@@ -279,6 +270,8 @@ static int flush_data_block(data_writer_t *data, size_t size,
 	chksum = update_crc32(0, data->block, size);
 
 	if (size < data->super->block_size && !(flags & DW_DONT_FRAGMENT)) {
+		fi->flags |= FILE_FLAG_HAS_FRAGMENT;
+
 		ref = fragment_by_chksum(fi, chksum, size, list,
 					 data->super->block_size);
 
@@ -286,6 +279,7 @@ static int flush_data_block(data_writer_t *data, size_t size,
 			fi->fragment_chksum = ref->fragment_chksum;
 			fi->fragment_offset = ref->fragment_offset;
 			fi->fragment = ref->fragment;
+			fi->flags |= FILE_FLAG_FRAGMENT_IS_DUPLICATE;
 			return 0;
 		}
 
@@ -344,6 +338,7 @@ static int end_file(data_writer_t *data, file_info_t *fi,
 
 	if (ref > 0) {
 		fi->startblock = ref;
+		fi->flags |= FILE_FLAG_BLOCKS_ARE_DUPLICATE;
 
 		if (lseek(data->outfd, start, SEEK_SET) == (off_t)-1)
 			goto fail_seek;

@@ -83,7 +83,7 @@ static int write_file_blocks(fstree_t *fs, file_info_t *fi, meta_writer_t *im)
 	uint32_t bs;
 
 	if ((fi->size % fs->block_size) != 0 &&
-	    (fi->fragment == 0xFFFFFFFF || fi->fragment_offset == 0xFFFFFFFF)) {
+	    !(fi->flags & FILE_FLAG_HAS_FRAGMENT)) {
 		++count;
 	}
 
