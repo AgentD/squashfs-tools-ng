@@ -28,10 +28,8 @@ int id_table_read(id_table_t *tbl, int fd, sqfs_super_t *super,
 	tbl->max_ids = super->id_count;
 	tbl->ids = sqfs_read_table(fd, cmp, tbl->num_ids * sizeof(uint32_t),
 				   super->id_table_start);
-	if (tbl->ids == NULL) {
-		free(tbl);
+	if (tbl->ids == NULL)
 		return -1;
-	}
 
 	for (i = 0; i < tbl->num_ids; ++i)
 		tbl->ids[i] = le32toh(tbl->ids[i]);
