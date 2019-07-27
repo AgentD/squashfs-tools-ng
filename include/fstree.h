@@ -22,6 +22,14 @@ typedef struct dir_info_t dir_info_t;
 typedef struct fstree_t fstree_t;
 typedef struct tree_xattr_t tree_xattr_t;
 
+enum {
+	FILE_FLAG_HAS_FRAGMENT = 0x01,
+
+	FILE_FLAG_FRAGMENT_IS_DUPLICATE = 0x02,
+
+	FILE_FLAG_BLOCKS_ARE_DUPLICATE = 0x04,
+};
+
 /* Encapsulates a set of key-value pairs attached to a tree_node_t */
 struct tree_xattr_t {
 	/* Number of key-value pairs */
@@ -79,6 +87,9 @@ struct file_info_t {
 	uint32_t fragment_offset;
 
 	uint32_t fragment_chksum;
+
+	/* combination of FILE_FLAG_* flags */
+	uint32_t flags;
 
 	/* Stores data about each full data block. */
 	struct {
