@@ -337,6 +337,8 @@ static int end_file(data_writer_t *data, file_info_t *fi,
 	ref = find_equal_blocks(fi, list, data->super->block_size);
 
 	if (ref > 0) {
+		data->super->bytes_used = fi->startblock;
+
 		fi->startblock = ref;
 		fi->flags |= FILE_FLAG_BLOCKS_ARE_DUPLICATE;
 
