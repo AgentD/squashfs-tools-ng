@@ -190,6 +190,9 @@ int main(int argc, char **argv)
 	if (padd_file(outfd, super.bytes_used, opt.devblksz))
 		goto out_data;
 
+	if (!opt.quiet)
+		sqfs_print_statistics(&fs, &super);
+
 	status = EXIT_SUCCESS;
 out_data:
 	data_writer_destroy(data);
