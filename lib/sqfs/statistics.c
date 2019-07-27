@@ -13,9 +13,11 @@ void sqfs_print_statistics(fstree_t *fs, sqfs_super_t *super)
 	uint64_t output_bytes = 0;
 	uint64_t input_bytes = 0;
 	file_info_t *fi;
+	bool is_dupe;
 
 	for (fi = fs->files; fi != NULL; fi = fi->next) {
 		num_blocks = fi->size / fs->block_size;
+		is_dupe = true;
 
 		if ((fi->size % fs->block_size) &&
 		    !(fi->flags & FILE_FLAG_HAS_FRAGMENT)) {
@@ -27,15 +29,13 @@ void sqfs_print_statistics(fstree_t *fs, sqfs_super_t *super)
 				sparse += 1;
 		}
 
-		if (fi->flags & FILE_FLAG_BLOCKS_ARE_DUPLICATE) {
-			duplicate_blocks += num_blocks - sparse;
-		} else {
-			blocks_written += num_blocks - sparse;
-		}
-
-		if ((fi->flags & FILE_FLAG_FRAGMENT_IS_DUPLICATE) &&
-		    (fi->flags & FILE_FLAG_BLOCKS_ARE_DUPLICATE)) {
-			file_dup_count += 1;
+		if (num_blocks > sparse) {
+			if (fi->flags & FILE_FLAG_BLOCKS_ARE_DUPLICATE) {
+				duplicate_blocks += num_blocks - sparse;
+			} else {
+				blocks_written += num_blocks - sparse;
+				is_dupe = false;
+			}
 		}
 
 		if (fi->flags & FILE_FLAG_HAS_FRAGMENT) {
@@ -43,8 +43,12 @@ void sqfs_print_statistics(fstree_t *fs, sqfs_super_t *super)
 				frag_dup += 1;
 			} else {
 				frag_count += 1;
+				is_dupe = false;
 			}
 		}
+
+		if (is_dupe)
+			file_dup_count += 1;
 
 		sparse_blocks += sparse;
 		file_count += 1;
