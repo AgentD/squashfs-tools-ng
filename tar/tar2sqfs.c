@@ -429,6 +429,9 @@ int main(int argc, char **argv)
 	if (padd_file(outfd, super.bytes_used, devblksize))
 		goto out;
 
+	if (!quiet)
+		sqfs_print_statistics(&fs, &super);
+
 	status = EXIT_SUCCESS;
 out:
 	id_table_cleanup(&idtbl);

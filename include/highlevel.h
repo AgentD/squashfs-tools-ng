@@ -87,4 +87,7 @@ int write_xattr(int outfd, fstree_t *fs, sqfs_super_t *super,
 int write_export_table(int outfd, fstree_t *fs, sqfs_super_t *super,
 		       compressor_t *cmp);
 
+/* Print out fancy statistics for squashfs packing tools */
+void sqfs_print_statistics(fstree_t *fs, sqfs_super_t *super);
+
 #endif /* HIGHLEVEL_H */
