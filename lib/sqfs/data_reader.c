@@ -47,7 +47,7 @@ data_reader_t *data_reader_create(int fd, sqfs_super_t *super,
 
 	if (super->fragment_entry_count == 0 ||
 	    (super->flags & SQFS_FLAG_NO_FRAGMENTS) != 0) {
-		return 0;
+		return data;
 	}
 
 	if (super->fragment_table_start >= super->bytes_used) {
