@@ -297,4 +297,25 @@ void tree_node_sort_recursive(tree_node_t *root);
 /* resolve a path to a tree node. Returns NULL on failure and sets errno */
 tree_node_t *fstree_node_from_path(fstree_t *fs, const char *path);
 
+/*
+  Walk through 'list' to find a file with a fragment that has
+  the same size ('frag_size') and checksum ('chksum') as 'fi'.
+  Processing stopps if 'fi' itself is found in the list.
+
+  Returns NULL if no such fragment could be found.
+*/
+file_info_t *fragment_by_chksum(file_info_t *fi, uint32_t chksum,
+				size_t frag_size, file_info_t *list,
+				size_t block_size);
+
+/*
+  Walk through 'list' to find a file that contains the same sequence of blocks
+  as 'file', comparing size and checksum. Processing stops if 'file' is found
+  in the list.
+
+  Returns NULL if no such fragment could be found.
+ */
+uint64_t find_equal_blocks(file_info_t *file, file_info_t *list,
+			   size_t block_size);
+
 #endif /* FSTREE_H */
