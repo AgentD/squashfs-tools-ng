@@ -22,6 +22,7 @@ struct data_writer_t {
 	size_t frag_offset;
 
 	size_t devblksz;
+	off_t start;
 
 	int block_idx;
 
@@ -126,7 +127,33 @@ int data_writer_flush_fragments(data_writer_t *data)
 	return 0;
 }
 
-static int flush_data_block(data_writer_t *data, size_t size,
+static int deduplicate_data(data_writer_t *data, file_info_t *fi,
+			    file_info_t *list)
+{
+	uint64_t ref = find_equal_blocks(fi, list, data->super->block_size);
+
+	if (ref > 0) {
+		data->super->bytes_used = fi->startblock;
+
+		fi->startblock = ref;
+		fi->flags |= FILE_FLAG_BLOCKS_ARE_DUPLICATE;
+
+		if (lseek(data->outfd, data->start, SEEK_SET) == (off_t)-1)
+			goto fail_seek;
+
+		if (ftruncate(data->outfd, data->start))
+			goto fail_truncate;
+	}
+	return 0;
+fail_seek:
+	perror("seeking on squashfs image after file deduplication");
+	return -1;
+fail_truncate:
+	perror("truncating squashfs image after file deduplication");
+	return -1;
+}
+
+static int flush_data_block(data_writer_t *data, size_t size, bool is_last,
 			    file_info_t *fi, int flags, file_info_t *list)
 {
 	uint32_t out, chksum;
@@ -137,13 +164,16 @@ static int flush_data_block(data_writer_t *data, size_t size,
 		fi->blocks[data->block_idx].chksum = 0;
 		fi->sparse += size;
 		data->block_idx++;
-		return 0;
+		return is_last ? deduplicate_data(data, fi, list) : 0;
 	}
 
 	chksum = update_crc32(0, data->block, size);
 
 	if (size < data->super->block_size && !(flags & DW_DONT_FRAGMENT)) {
 		fi->flags |= FILE_FLAG_HAS_FRAGMENT;
+
+		if (deduplicate_data(data, fi, list))
+			return -1;
 
 		ref = fragment_by_chksum(fi, chksum, size, list,
 					 data->super->block_size);
@@ -175,16 +205,18 @@ static int flush_data_block(data_writer_t *data, size_t size,
 		fi->blocks[data->block_idx].chksum = chksum;
 		fi->blocks[data->block_idx].size = out;
 		data->block_idx++;
+
+		if (is_last && deduplicate_data(data, fi, list) != 0)
+			return -1;
 	}
 
 	return 0;
 }
 
-static int begin_file(data_writer_t *data, file_info_t *fi,
-		      int flags, off_t *start)
+static int begin_file(data_writer_t *data, file_info_t *fi, int flags)
 {
-	*start = lseek(data->outfd, 0, SEEK_CUR);
-	if (*start == (off_t)-1)
+	data->start = lseek(data->outfd, 0, SEEK_CUR);
+	if (data->start == (off_t)-1)
 		goto fail_seek;
 
 	if ((flags & DW_ALLIGN_DEVBLK) && allign_file(data) != 0)
@@ -199,59 +231,41 @@ fail_seek:
 	return -1;
 }
 
-static int end_file(data_writer_t *data, file_info_t *fi,
-		    off_t start, int flags, file_info_t *list)
+static int end_file(data_writer_t *data, int flags)
 {
-	uint64_t ref;
-
 	if ((flags & DW_ALLIGN_DEVBLK) && allign_file(data) != 0)
 		return -1;
 
-	ref = find_equal_blocks(fi, list, data->super->block_size);
-
-	if (ref > 0) {
-		data->super->bytes_used = fi->startblock;
-
-		fi->startblock = ref;
-		fi->flags |= FILE_FLAG_BLOCKS_ARE_DUPLICATE;
-
-		if (lseek(data->outfd, start, SEEK_SET) == (off_t)-1)
-			goto fail_seek;
-
-		if (ftruncate(data->outfd, start))
-			goto fail_truncate;
-	}
 	return 0;
-fail_seek:
-	perror("seeking on squashfs image after file deduplication");
-	return -1;
-fail_truncate:
-	perror("truncating squashfs image after file deduplication");
-	return -1;
 }
 
 int write_data_from_fd(data_writer_t *data, file_info_t *fi,
 		       int infd, int flags, file_info_t *list)
 {
 	uint64_t count;
+	bool is_last;
 	size_t diff;
-	off_t start;
 
-	if (begin_file(data, fi, flags, &start))
+	if (begin_file(data, fi, flags))
 		return -1;
 
 	for (count = fi->size; count != 0; count -= diff) {
-		diff = count > (uint64_t)data->super->block_size ?
-			data->super->block_size : count;
+		if (count > (uint64_t)data->super->block_size) {
+			diff = data->super->block_size;
+			is_last = false;
+		} else {
+			diff = count;
+			is_last = true;
+		}
 
 		if (read_data(fi->input_file, infd, data->block, diff))
 			return -1;
 
-		if (flush_data_block(data, diff, fi, flags, list))
+		if (flush_data_block(data, diff, is_last, fi, flags, list))
 			return -1;
 	}
 
-	return end_file(data, fi, start, flags, list);
+	return end_file(data, flags);
 }
 
 int write_data_from_fd_condensed(data_writer_t *data, file_info_t *fi,
@@ -261,9 +275,9 @@ int write_data_from_fd_condensed(data_writer_t *data, file_info_t *fi,
 	size_t start, count, diff;
 	sparse_map_t *m;
 	uint64_t offset;
-	off_t location;
+	bool is_last;
 
-	if (begin_file(data, fi, flags, &location))
+	if (begin_file(data, fi, flags))
 		return -1;
 
 	if (map != NULL) {
@@ -280,10 +294,12 @@ int write_data_from_fd_condensed(data_writer_t *data, file_info_t *fi,
 	}
 
 	for (offset = 0; offset < fi->size; offset += diff) {
-		if (fi->size - offset >= (uint64_t)data->super->block_size) {
+		if (fi->size - offset > (uint64_t)data->super->block_size) {
 			diff = data->super->block_size;
+			is_last = false;
 		} else {
 			diff = fi->size - offset;
+			is_last = true;
 		}
 
 		memset(data->block, 0, diff);
@@ -309,11 +325,11 @@ int write_data_from_fd_condensed(data_writer_t *data, file_info_t *fi,
 			map = map->next;
 		}
 
-		if (flush_data_block(data, diff, fi, flags, list))
+		if (flush_data_block(data, diff, is_last, fi, flags, list))
 			return -1;
 	}
 
-	return end_file(data, fi, location, flags, list);
+	return end_file(data, flags);
 fail_map_size:
 	fprintf(stderr, "%s: sparse file map spans beyond file size\n",
 		fi->input_file);
