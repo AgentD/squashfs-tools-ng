@@ -1,4 +1,9 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * rdsquashfs.h
+ *
+ * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
+ */
 #ifndef RDSQUASHFS_H
 #define RDSQUASHFS_H
 

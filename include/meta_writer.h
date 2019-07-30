@@ -1,4 +1,9 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * meta_writer.h
+ *
+ * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
+ */
 #ifndef META_WRITER_H
 #define META_WRITER_H
 

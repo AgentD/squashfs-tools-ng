@@ -1,4 +1,9 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * mkfs.c
+ *
+ * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
+ */
 #include "mkfs.h"
 
 static int process_file(data_writer_t *data, file_info_t *fi, bool quiet,

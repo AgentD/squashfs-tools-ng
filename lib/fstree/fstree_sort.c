@@ -1,4 +1,10 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
+/*
+ * fstree_sort.c
+ *
+ * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
+ * Copyright (C) 2019 Zachary Dremann <dremann@gmail.com>
+ */
 #include "config.h"
 
 #include "fstree.h"
