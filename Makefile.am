@@ -8,7 +8,7 @@ bin_PROGRAMS =
 dist_man1_MANS =
 check_PROGRAMS =
 
-EXTRA_DIST = autogen.sh LICENSE README
+EXTRA_DIST = autogen.sh LICENSE README.md
 TESTS =
 
 include doc/Makemodule.am
