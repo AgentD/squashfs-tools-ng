@@ -84,13 +84,13 @@ static int write_value(meta_writer_t *mw, const char *value,
 	uint32_t offset;
 	uint64_t block;
 
+	meta_writer_get_position(mw, &block, &offset);
+	*value_ref_out = (block << 16) | (offset & 0xFFFF);
+
 	vent.size = htole32(strlen(value));
 
 	if (meta_writer_append(mw, &vent, sizeof(vent)))
 		return -1;
-
-	meta_writer_get_position(mw, &block, &offset);
-	*value_ref_out = (block << 16) | (offset & 0xFFFF);
 
 	if (meta_writer_append(mw, value, strlen(value)))
 		return -1;
