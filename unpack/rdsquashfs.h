@@ -45,6 +45,7 @@ enum {
 	OP_CAT,
 	OP_UNPACK,
 	OP_DESCRIBE,
+	OP_RDATTR,
 };
 
 typedef struct {

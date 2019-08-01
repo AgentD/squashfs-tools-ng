@@ -6,6 +6,21 @@
  */
 #include "rdsquashfs.h"
 
+static void dump_xattrs(fstree_t *fs, tree_xattr_t *xattr)
+{
+	const char *key, *value;
+	size_t i;
+
+	for (i = 0; i < xattr->num_attr; ++i) {
+		key = str_table_get_string(&fs->xattr_keys,
+					   xattr->attr[i].key_index);
+		value = str_table_get_string(&fs->xattr_values,
+					     xattr->attr[i].value_index);
+
+		printf("%s=%s\n", key, value);
+	}
+}
+
 int main(int argc, char **argv)
 {
 	int status = EXIT_FAILURE;
@@ -105,6 +120,10 @@ int main(int argc, char **argv)
 		break;
 	case OP_DESCRIBE:
 		describe_tree(fs.root, opt.unpack_root);
+		break;
+	case OP_RDATTR:
+		if (n->xattr != NULL)
+			dump_xattrs(&fs, n->xattr);
 		break;
 	}
 

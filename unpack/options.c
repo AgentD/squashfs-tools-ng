@@ -9,6 +9,7 @@
 static struct option long_opts[] = {
 	{ "list", required_argument, NULL, 'l' },
 	{ "cat", required_argument, NULL, 'c' },
+	{ "xattr", required_argument, NULL, 'x' },
 	{ "unpack-root", required_argument, NULL, 'p' },
 	{ "unpack-path", required_argument, NULL, 'u' },
 	{ "no-dev", no_argument, NULL, 'D' },
@@ -26,7 +27,7 @@ static struct option long_opts[] = {
 	{ "version", no_argument, NULL, 'V' },
 };
 
-static const char *short_opts = "l:c:u:p:DSFLCOEZj:dqhV";
+static const char *short_opts = "l:c:u:p:x:DSFLCOEZj:dqhV";
 
 static const char *help_string =
 "Usage: %s [OPTIONS] <squashfs-file>\n"
@@ -39,6 +40,8 @@ static const char *help_string =
 "                            the squashfs image.\n"
 "  --cat, -c <path>          If the specified path is a regular file in the,\n"
 "                            image, dump its contents to stdout.\n"
+"  --xattr, -x <path>        Enumerate extended attributes associated with\n"
+"                            an inode that the given path resolves to.\n"
 "  --unpack-path, -u <path>  Unpack this sub directory from the image. To\n"
 "                            unpack everything, simply specify /.\n"
 "  --describe, -d            Produce a file listing from the image.\n"
@@ -151,6 +154,11 @@ void process_command_line(options_t *opt, int argc, char **argv)
 			opt->op = OP_DESCRIBE;
 			free(opt->cmdpath);
 			opt->cmdpath = NULL;
+			break;
+		case 'x':
+			opt->op = OP_RDATTR;
+			opt->rdtree_flags |= RDTREE_READ_XATTR;
+			opt->cmdpath = get_path(opt->cmdpath, optarg);
 			break;
 		case 'l':
 			opt->op = OP_LS;
