@@ -256,6 +256,12 @@ int sqfs_super_write(sqfs_super_t *super, int fd);
 /* Returns 0 on success. Prints error messages to stderr on failure. */
 int sqfs_super_read(sqfs_super_t *super, int fd);
 
+/* Get id from xattr key prefix or -1 if not supported */
+int sqfs_get_xattr_prefix_id(const char *key);
+
+/* Get a prefix string from the ID or NULL if unknown */
+const char *sqfs_get_xattr_prefix(E_SQFS_XATTR_TYPE id);
+
 /* Check if a given xattr key can be encoded in squashfs at all. */
 bool sqfs_has_xattr(const char *key);
 

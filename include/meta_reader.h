@@ -24,6 +24,9 @@ void meta_reader_destroy(meta_reader_t *m);
 int meta_reader_seek(meta_reader_t *m, uint64_t block_start,
 		     size_t offset);
 
+void meta_reader_get_position(meta_reader_t *m, uint64_t *block_start,
+			      size_t *offset);
+
 /* Returns 0 on success. Internally prints to stderr on failure */
 int meta_reader_read(meta_reader_t *m, void *data, size_t size);
 

@@ -15,43 +15,13 @@
 #include <string.h>
 #include <stdio.h>
 
-static const struct {
-	const char *prefix;
-	E_SQFS_XATTR_TYPE type;
-} xattr_types[] = {
-	{ "user.", SQUASHFS_XATTR_USER },
-	{ "trusted.", SQUASHFS_XATTR_TRUSTED },
-	{ "security.", SQUASHFS_XATTR_SECURITY },
-};
-
-static int get_prefix(const char *key)
-{
-	size_t i, len;
-
-	for (i = 0; i < sizeof(xattr_types) / sizeof(xattr_types[0]); ++i) {
-		len = strlen(xattr_types[i].prefix);
-
-		if (strncmp(key, xattr_types[i].prefix, len) == 0 &&
-		    strlen(key) > len) {
-			return xattr_types[i].type;
-		}
-	}
-
-	return -1;
-}
-
-bool sqfs_has_xattr(const char *key)
-{
-	return get_prefix(key) >= 0;
-}
-
 static int write_key(meta_writer_t *mw, const char *key, tree_xattr_t *xattr,
 		     bool value_is_ool)
 {
 	sqfs_xattr_entry_t kent;
 	int type;
 
-	type = get_prefix(key);
+	type = sqfs_get_xattr_prefix_id(key);
 	if (type < 0) {
 		fprintf(stderr, "unsupported xattr key '%s'\n", key);
 		return -1;

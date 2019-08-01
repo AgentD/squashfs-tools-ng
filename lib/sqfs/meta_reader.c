@@ -117,6 +117,13 @@ int meta_reader_seek(meta_reader_t *m, uint64_t block_start, size_t offset)
 	return 0;
 }
 
+void meta_reader_get_position(meta_reader_t *m, uint64_t *block_start,
+			      size_t *offset)
+{
+	*block_start = m->block_offset;
+	*offset = m->offset;
+}
+
 int meta_reader_read(meta_reader_t *m, void *data, size_t size)
 {
 	size_t diff;
