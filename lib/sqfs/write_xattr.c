@@ -294,6 +294,7 @@ int write_xattr(int outfd, fstree_t *fs, sqfs_super_t *super,
 
 	super->xattr_id_table_start = super->bytes_used;
 	super->bytes_used += sizeof(idtbl) + sizeof(tbl[0]) * blocks;
+	super->flags &= ~SQFS_FLAG_NO_XATTRS;
 
 	free(tbl);
 	meta_writer_destroy(mw);
