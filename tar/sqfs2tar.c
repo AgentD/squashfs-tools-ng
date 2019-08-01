@@ -27,11 +27,12 @@ static struct option long_opts[] = {
 	{ "subdir", required_argument, NULL, 'd' },
 	{ "keep-as-dir", no_argument, NULL, 'k' },
 	{ "no-skip", no_argument, NULL, 's' },
+	{ "no-xattr", no_argument, NULL, 'X' },
 	{ "help", no_argument, NULL, 'h' },
 	{ "version", no_argument, NULL, 'V' },
 };
 
-static const char *short_opts = "d:kshV";
+static const char *short_opts = "d:ksXhV";
 
 static const char *usagestr =
 "Usage: sqfs2tar [OPTIONS...] <sqfsfile>\n"
@@ -52,8 +53,9 @@ static const char *usagestr =
 "                            prefix for all unpacked files.\n"
 "                            Using --subdir more than once implies\n"
 "                            --keep-as-dir.\n"
+"  --no-xattr, -X            Do not copy extended attributes.\n"
 "\n"
-"  --no-skip                 Abort if a file cannot be stored in a tar\n"
+"  --no-skip, -s             Abort if a file cannot be stored in a tar\n"
 "                            archive. By default, it is simply skipped\n"
 "                            and a warning is written to stderr.\n"
 "\n"
@@ -71,6 +73,7 @@ static const char *filename;
 static unsigned int record_counter;
 static bool dont_skip = false;
 static bool keep_as_dir = false;
+static bool no_xattr = false;
 
 static const char *current_subdir = NULL;
 
@@ -118,6 +121,9 @@ static void process_args(int argc, char **argv)
 			break;
 		case 's':
 			dont_skip = true;
+			break;
+		case 'X':
+			no_xattr = true;
 			break;
 		case 'h':
 			fputs(usagestr, stdout);
@@ -175,8 +181,40 @@ static int terminate_archive(void)
 			  buffer, sizeof(buffer));
 }
 
+static tar_xattr_t *gen_xattr_list(fstree_t *fs, tree_xattr_t *xattr)
+{
+	const char *key, *value;
+	tar_xattr_t *list;
+	size_t i;
+
+	list = malloc(sizeof(list[0]) * xattr->num_attr);
+	if (list == NULL) {
+		perror("creating xattr list");
+		return NULL;
+	}
+
+	for (i = 0; i < xattr->num_attr; ++i) {
+		key = str_table_get_string(&fs->xattr_keys,
+					   xattr->attr[i].key_index);
+		value = str_table_get_string(&fs->xattr_values,
+					     xattr->attr[i].value_index);
+
+		list[i].key = (char *)key;
+		list[i].value = (char *)value;
+
+		if (i + 1 < xattr->num_attr) {
+			list[i].next = list + i + 1;
+		} else {
+			list[i].next = NULL;
+		}
+	}
+
+	return list;
+}
+
 static int write_tree_dfs(fstree_t *fs, tree_node_t *n, data_reader_t *data)
 {
+	tar_xattr_t *xattr = NULL;
 	size_t len, name_len;
 	char *name, *target;
 	struct stat sb;
@@ -210,9 +248,18 @@ static int write_tree_dfs(fstree_t *fs, tree_node_t *n, data_reader_t *data)
 
 	fstree_node_stat(fs, n, &sb);
 
+	if (!no_xattr && n->xattr != NULL) {
+		xattr = gen_xattr_list(fs, n->xattr);
+		if (xattr == NULL) {
+			free(name);
+			return -1;
+		}
+	}
+
 	target = S_ISLNK(sb.st_mode) ? n->data.slink_target : NULL;
-	ret = write_tar_header(STDOUT_FILENO, &sb, name, target, NULL,
+	ret = write_tar_header(STDOUT_FILENO, &sb, name, target, xattr,
 			       record_counter++);
+	free(xattr);
 
 	if (ret > 0) {
 		if (dont_skip) {
@@ -254,13 +301,13 @@ skip_hdr:
 
 int main(int argc, char **argv)
 {
+	int sqfsfd, rdtree_flags = 0;
 	data_reader_t *data = NULL;
 	int status = EXIT_FAILURE;
 	sqfs_super_t super;
 	compressor_t *cmp;
 	tree_node_t *root;
 	fstree_t fs;
-	int sqfsfd;
 	size_t i;
 
 	process_args(argc, argv);
@@ -290,7 +337,10 @@ int main(int argc, char **argv)
 			goto out_cmp;
 	}
 
-	if (deserialize_fstree(&fs, &super, cmp, sqfsfd, 0))
+	if (!no_xattr)
+		rdtree_flags |= RDTREE_READ_XATTR;
+
+	if (deserialize_fstree(&fs, &super, cmp, sqfsfd, rdtree_flags))
 		goto out_cmp;
 
 	data = data_reader_create(sqfsfd, &super, cmp);
