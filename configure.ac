@@ -159,6 +159,8 @@ fi
 ##### additional checks #####
 AX_COMPILE_CHECK_SIZEOF(time_t)
 
+AC_CHECK_HEADERS([sys/xattr.h], [], [])
+
 ##### generate output #####
 
 AC_CONFIG_HEADERS([config.h])

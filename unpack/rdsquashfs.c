@@ -112,7 +112,7 @@ int main(int argc, char **argv)
 		if (fill_unpacked_files(&fs, data, opt.flags, opt.num_jobs))
 			goto out_fs;
 
-		if (update_tree_attribs(n, opt.flags))
+		if (update_tree_attribs(&fs, n, opt.flags))
 			goto out_fs;
 
 		if (opt.unpack_root != NULL && popd() != 0)

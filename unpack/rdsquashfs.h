@@ -20,6 +20,9 @@
 
 #include <sys/sysmacros.h>
 #include <sys/types.h>
+#ifdef HAVE_SYS_XATTR_H
+#include <sys/xattr.h>
+#endif
 #include <sys/prctl.h>
 #include <sys/wait.h>
 #include <string.h>
@@ -37,6 +40,7 @@ enum UNPACK_FLAGS {
 	UNPACK_CHOWN = 0x02,
 	UNPACK_QUIET = 0x04,
 	UNPACK_NO_SPARSE = 0x08,
+	UNPACK_SET_XATTR = 0x10,
 };
 
 enum {
@@ -62,7 +66,7 @@ void list_files(tree_node_t *node);
 
 int restore_fstree(tree_node_t *root, int flags);
 
-int update_tree_attribs(tree_node_t *root, int flags);
+int update_tree_attribs(fstree_t *fs, tree_node_t *root, int flags);
 
 int fill_unpacked_files(fstree_t *fs, data_reader_t *data, int flags,
 			unsigned int num_jobs);

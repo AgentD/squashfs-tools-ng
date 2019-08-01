@@ -91,7 +91,7 @@ static int create_node(tree_node_t *n, int flags)
 	return 0;
 }
 
-static int set_attribs(tree_node_t *n, int flags)
+static int set_attribs(fstree_t *fs, tree_node_t *n, int flags)
 {
 	tree_node_t *c;
 
@@ -100,7 +100,7 @@ static int set_attribs(tree_node_t *n, int flags)
 			return -1;
 
 		for (c = n->data.dir->children; c != NULL; c = c->next) {
-			if (set_attribs(c, flags))
+			if (set_attribs(fs, c, flags))
 				return -1;
 		}
 
@@ -125,6 +125,30 @@ static int set_attribs(tree_node_t *n, int flags)
 			return -1;
 		}
 	}
+#ifdef HAVE_SYS_XATTR_H
+	if ((flags & UNPACK_SET_XATTR) && n->xattr != NULL) {
+		size_t i, len, kidx, vidx;
+		const char *key, *value;
+
+		for (i = 0; i < n->xattr->num_attr; ++i) {
+			kidx = n->xattr->attr[i].key_index;
+			vidx = n->xattr->attr[i].value_index;
+
+			key = str_table_get_string(&fs->xattr_keys, kidx);
+			value = str_table_get_string(&fs->xattr_values, vidx);
+			len = strlen(value);
+
+			if (lsetxattr(n->name, key, value, len, 0)) {
+				fprintf(stderr,
+					"setting xattr '%s' on %s: %s\n",
+					key, n->name, strerror(errno));
+				return -1;
+			}
+		}
+	}
+#else
+	(void)fs;
+#endif
 	return 0;
 }
 
@@ -150,10 +174,10 @@ int restore_fstree(tree_node_t *root, int flags)
 	return 0;
 }
 
-int update_tree_attribs(tree_node_t *root, int flags)
+int update_tree_attribs(fstree_t *fs, tree_node_t *root, int flags)
 {
 	if ((flags & (UNPACK_CHOWN | UNPACK_CHMOD)) == 0)
 		return 0;
 
-	return set_attribs(root, flags);
+	return set_attribs(fs, root, flags);
 }

@@ -18,6 +18,9 @@ static struct option long_opts[] = {
 	{ "no-slink", no_argument, NULL, 'L' },
 	{ "no-empty-dir", no_argument, NULL, 'E' },
 	{ "no-sparse", no_argument, NULL, 'Z' },
+#ifdef HAVE_SYS_XATTR_H
+	{ "set-xattr", no_argument, NULL, 'X' },
+#endif
 	{ "jobs", required_argument, NULL, 'j' },
 	{ "describe", no_argument, NULL, 'd' },
 	{ "chmod", no_argument, NULL, 'C' },
@@ -27,7 +30,12 @@ static struct option long_opts[] = {
 	{ "version", no_argument, NULL, 'V' },
 };
 
-static const char *short_opts = "l:c:u:p:x:DSFLCOEZj:dqhV";
+static const char *short_opts =
+	"l:c:u:p:x:DSFLCOEZj:dqhV"
+#ifdef HAVE_SYS_XATTR_H
+	"X"
+#endif
+	;
 
 static const char *help_string =
 "Usage: %s [OPTIONS] <squashfs-file>\n"
@@ -59,6 +67,10 @@ static const char *help_string =
 "                            empty after applying the above rules.\n"
 "  --no-sparse, -Z           Do not create sparse files, always write zero\n"
 "                            blocks to disk.\n"
+#ifdef HAVE_SYS_XATTR_H
+"  --set-xattr, -X           When unpacking files to disk, set the extended\n"
+"                            attributes from the squashfs image.\n"
+#endif
 "  --jobs, -j <count>        Number of parallel unpacking jobs to start.\n"
 "  --chmod, -C               Change permission flags of unpacked files to\n"
 "                            those store in the squashfs image.\n"
@@ -135,6 +147,12 @@ void process_command_line(options_t *opt, int argc, char **argv)
 		case 'Z':
 			opt->flags |= UNPACK_NO_SPARSE;
 			break;
+#ifdef HAVE_SYS_XATTR_H
+		case 'X':
+			opt->flags |= UNPACK_SET_XATTR;
+			opt->rdtree_flags |= RDTREE_READ_XATTR;
+			break;
+#endif
 		case 'j':
 			for (j = 0; optarg[j] != '\0'; ++j) {
 				if (j > 6 || !isdigit(optarg[j]))
