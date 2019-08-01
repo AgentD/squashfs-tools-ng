@@ -23,6 +23,10 @@ If \fB\-\-subdir\fR is used only once, don't make the subdir the archive root,
 instead keep it as prefix for all unpacked files. Using \fB\-\-subdir\fR more
 than once implies \fB\-\-keep\-as\-dir\fR.
 .TP
+\fB\-\-no\-xattr\fR, \fB\-X\fR
+Discard extended attributes from the squashfs image. The default behavior is
+to copy all xattrs attached to squashfs inodes into the resulting tar archive.
+.TP
 \fB\-\-no\-skip\fR, \fB\-s\fR
 Abort if file cannot be stored in a tar record instead of skipping it.
 .TP

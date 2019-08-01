@@ -18,6 +18,10 @@ the SquashFS image.
 If the specified path is a regular file in the image, extract it and dump
 its contents to stdout.
 .TP
+\fB\-\-xattr\fR, \fB\-x\fR <path>
+If the inode that the specified path resolves to has extended attributes, dump
+them as key value pairs to stdout.
+.TP
 \fB\-\-unpack\-path\fR, \fB\-u\fR <path>
 Unpack the specified sub directory from the image. To unpack everything,
 simply specify /.
