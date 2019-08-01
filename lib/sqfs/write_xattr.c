@@ -48,7 +48,6 @@ bool sqfs_has_xattr(const char *key)
 static int write_key(meta_writer_t *mw, const char *key, tree_xattr_t *xattr,
 		     bool value_is_ool)
 {
-	const char *orig_key = key;
 	sqfs_xattr_entry_t kent;
 	int type;
 
@@ -73,7 +72,7 @@ static int write_key(meta_writer_t *mw, const char *key, tree_xattr_t *xattr,
 	if (meta_writer_append(mw, key, strlen(key)))
 		return -1;
 
-	xattr->size += sizeof(sqfs_xattr_entry_t) + strlen(orig_key);
+	xattr->size += sizeof(sqfs_xattr_entry_t) + strlen(key);
 	return 0;
 }
 
