@@ -6,6 +6,7 @@
  */
 #include "config.h"
 
+#include "xattr_reader.h"
 #include "meta_reader.h"
 #include "highlevel.h"
 
@@ -34,8 +35,39 @@ static int should_skip(int type, int flags)
 	return 0;
 }
 
+static int restore_xattr(xattr_reader_t *xr, fstree_t *fs, tree_node_t *node,
+			 sqfs_inode_generic_t *inode)
+{
+	uint32_t idx;
+
+	switch (inode->base.type) {
+	case SQFS_INODE_EXT_DIR:
+		idx = inode->data.dir_ext.xattr_idx;
+		break;
+	case SQFS_INODE_EXT_FILE:
+		idx = inode->data.file_ext.xattr_idx;
+		break;
+	case SQFS_INODE_EXT_SLINK:
+		idx = inode->data.slink_ext.xattr_idx;
+		break;
+	case SQFS_INODE_EXT_BDEV:
+	case SQFS_INODE_EXT_CDEV:
+		idx = inode->data.dev_ext.xattr_idx;
+		break;
+	case SQFS_INODE_EXT_FIFO:
+	case SQFS_INODE_EXT_SOCKET:
+		idx = inode->data.ipc_ext.xattr_idx;
+		break;
+	default:
+		return 0;
+	}
+
+	return xattr_reader_restore_node(xr, fs, node, idx);
+}
+
 static int fill_dir(meta_reader_t *ir, meta_reader_t *dr, tree_node_t *root,
-		    sqfs_super_t *super, id_table_t *idtbl, int flags)
+		    sqfs_super_t *super, id_table_t *idtbl, fstree_t *fs,
+		    xattr_reader_t *xr, int flags)
 {
 	sqfs_inode_generic_t *inode;
 	sqfs_dir_header_t hdr;
@@ -89,11 +121,24 @@ static int fill_dir(meta_reader_t *ir, meta_reader_t *dr, tree_node_t *root,
 			n = tree_node_from_inode(inode, idtbl,
 						 (char *)ent->name,
 						 super->block_size);
+
+			if (n == NULL) {
+				free(ent);
+				free(inode);
+				return -1;
+			}
+
+			if (flags & RDTREE_READ_XATTR) {
+				if (restore_xattr(xr, fs, n, inode)) {
+					free(n);
+					free(ent);
+					free(inode);
+					return -1;
+				}
+			}
+
 			free(ent);
 			free(inode);
-
-			if (n == NULL)
-				return -1;
 
 			n->parent = root;
 			n->next = root->data.dir->children;
@@ -106,7 +151,7 @@ static int fill_dir(meta_reader_t *ir, meta_reader_t *dr, tree_node_t *root,
 
 	while (n != NULL) {
 		if (S_ISDIR(n->mode)) {
-			if (fill_dir(ir, dr, n, super, idtbl, flags))
+			if (fill_dir(ir, dr, n, super, idtbl, fs, xr, flags))
 				return -1;
 
 			if (n->data.dir->children == NULL &&
@@ -137,6 +182,7 @@ int deserialize_fstree(fstree_t *out, sqfs_super_t *super, compressor_t *cmp,
 	sqfs_inode_generic_t *root;
 	meta_reader_t *ir, *dr;
 	uint64_t block_start;
+	xattr_reader_t *xr;
 	id_table_t idtbl;
 	int status = -1;
 	size_t offset;
@@ -155,18 +201,22 @@ int deserialize_fstree(fstree_t *out, sqfs_super_t *super, compressor_t *cmp,
 	if (id_table_read(&idtbl, fd, super, cmp))
 		goto out_id;
 
+	xr = xattr_reader_create(fd, super, cmp);
+	if (xr == NULL)
+		goto out_id;
+
 	block_start = super->root_inode_ref >> 16;
 	offset = super->root_inode_ref & 0xFFFF;
 	root = meta_reader_read_inode(ir, super, block_start, offset);
 	if (root == NULL)
-		goto out_id;
+		goto out_xr;
 
 	if (root->base.type != SQFS_INODE_DIR &&
 	    root->base.type != SQFS_INODE_EXT_DIR) {
 		free(root);
 		fputs("File system root inode is not a directory inode!\n",
 		      stderr);
-		goto out_id;
+		goto out_xr;
 	}
 
 	memset(out, 0, sizeof(*out));
@@ -177,18 +227,41 @@ int deserialize_fstree(fstree_t *out, sqfs_super_t *super, compressor_t *cmp,
 	out->defaults.st_mtime = super->modification_time;
 
 	out->root = tree_node_from_inode(root, &idtbl, "", super->block_size);
+
+	if (out->root == NULL) {
+		free(root);
+		goto fail_fs;
+	}
+
+	if (flags & RDTREE_READ_XATTR) {
+		if (str_table_init(&out->xattr_keys,
+				   FSTREE_XATTR_KEY_BUCKETS)) {
+			free(root);
+			goto fail_fs;
+		}
+
+		if (str_table_init(&out->xattr_values,
+				   FSTREE_XATTR_VALUE_BUCKETS)) {
+			free(root);
+			goto fail_fs;
+		}
+
+		if (restore_xattr(xr, out, out->root, root)) {
+			free(root);
+			goto fail_fs;
+		}
+	}
+
 	free(root);
-	root = NULL;
 
-	if (out->root == NULL)
-		goto out_id;
-
-	if (fill_dir(ir, dr, out->root, super, &idtbl, flags))
+	if (fill_dir(ir, dr, out->root, super, &idtbl, out, xr, flags))
 		goto fail_fs;
 
 	tree_node_sort_recursive(out->root);
 
 	status = 0;
+out_xr:
+	xattr_reader_destroy(xr);
 out_id:
 	id_table_cleanup(&idtbl);
 out_dr:
@@ -198,5 +271,5 @@ out_ir:
 	return status;
 fail_fs:
 	fstree_cleanup(out);
-	goto out_id;
+	goto out_xr;
 }
