@@ -211,7 +211,7 @@ static int write_tree_dfs(fstree_t *fs, tree_node_t *n, data_reader_t *data)
 	fstree_node_stat(fs, n, &sb);
 
 	target = S_ISLNK(sb.st_mode) ? n->data.slink_target : NULL;
-	ret = write_tar_header(STDOUT_FILENO, &sb, name, target,
+	ret = write_tar_header(STDOUT_FILENO, &sb, name, target, NULL,
 			       record_counter++);
 
 	if (ret > 0) {

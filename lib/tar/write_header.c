@@ -112,12 +112,63 @@ static int write_gnu_header(int fd, const struct stat *orig,
 	return padd_file(fd, payload_len, 512);
 }
 
+static size_t num_digits(size_t num)
+{
+	size_t i = 1;
+
+	while (num > 10) {
+		num /= 10;
+		++i;
+	}
+
+	return i;
+}
+
+static int write_schily_xattr(int fd, const struct stat *orig,
+			      const char *name, const tar_xattr_t *xattr)
+{
+	static const char *prefix = "SCHILY.xattr.";
+	size_t len, total_size = 0;
+	const tar_xattr_t *it;
+	struct stat sb;
+
+	for (it = xattr; it != NULL; it = it->next) {
+		len = strlen(prefix) + strlen(it->key) + strlen(it->value) + 2;
+
+		total_size += num_digits(len) + 1 + len;
+	}
+
+	sb = *orig;
+	sb.st_mode = S_IFREG | 0644;
+	sb.st_size = total_size;
+
+	if (write_header(fd, &sb, name, NULL, TAR_TYPE_PAX))
+		return -1;
+
+	for (it = xattr; it != NULL; it = it->next) {
+		len = strlen(prefix) + strlen(it->key) + strlen(it->value) + 2;
+		len += num_digits(len) + 1;
+
+		dprintf(fd, "%zu %s%s=%s\n", len, prefix, it->key, it->value);
+	}
+
+	return padd_file(fd, total_size, 512);
+}
+
 int write_tar_header(int fd, const struct stat *sb, const char *name,
-		     const char *slink_target, unsigned int counter)
+		     const char *slink_target, const tar_xattr_t *xattr,
+		     unsigned int counter)
 {
 	const char *reason;
 	char buffer[64];
 	int type;
+
+	if (xattr != NULL) {
+		sprintf(buffer, "pax/xattr%u", counter);
+
+		if (write_schily_xattr(fd, sb, buffer, xattr))
+			return -1;
+	}
 
 	if (!S_ISLNK(sb->st_mode))
 		slink_target = NULL;
