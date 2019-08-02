@@ -52,7 +52,7 @@ rd.
 uid=<value>;0
 gid=<value>;0
 mode=<value>;0755
-mtime=<value>;0
+mtime=<value>;\fB$SOURCE\_DATE\_EPOCH\fR if set, 0 otherwise
 .TE
 .TP
 .TP
@@ -95,6 +95,13 @@ If any unsupported section or extended attribute key is encountered in an
 archive a warning message is written to stderr. If the \fB\-\-no\-skip\fR
 option is set, processing aborts. By default, unknown sections and unsupported
 extended attributes are simply skipped after issuing a warning.
+.SH ENVIRONEMNT VARIABLES
+If the command line switch \fB\-\-defaults\fR is not used or no default mtime
+is specified, the value of the environment variable \fBSOURCE\_DATE\_EPOCH\fR
+is used for all file and filesystem timestamps.
+
+If \fBSOURCE\_DATE\_EPOCH\fR is not set, not a parsable number or it is out of
+range, the timestamps default to 0.
 .SH EXAMPLES
 .TP
 Turn an uncompressed tar archive into a squashfs image:

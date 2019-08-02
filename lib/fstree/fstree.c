@@ -7,6 +7,7 @@
 #include "config.h"
 
 #include "fstree.h"
+#include "util.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -110,6 +111,7 @@ int fstree_init(fstree_t *fs, size_t block_size, char *defaults)
 	memset(fs, 0, sizeof(*fs));
 	fs->defaults.st_mode = S_IFDIR | 0755;
 	fs->defaults.st_blksize = block_size;
+	fs->defaults.st_mtime = get_source_date_epoch();
 	fs->block_size = block_size;
 
 	if (defaults != NULL && process_defaults(&fs->defaults, defaults) != 0)

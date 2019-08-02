@@ -45,6 +45,7 @@ libutil_a_SOURCES += lib/util/print_version.c lib/util/mkdir_p.c
 libutil_a_SOURCES += lib/util/str_table.c include/str_table.h
 libutil_a_SOURCES += lib/util/dirstack.c lib/util/padd_file.c
 libutil_a_SOURCES += lib/util/read_data_at.c lib/util/crc32.c
+libutil_a_SOURCES += lib/util/source_date_epoch.c
 
 if WITH_GZIP
 libcompress_a_SOURCES += lib/comp/gzip.c

@@ -58,7 +58,7 @@ rd.
 uid=<value>;0
 gid=<value>;0
 mode=<value>;0755
-mtime=<value>;0
+mtime=<value>;\fB$SOURCE\_DATE\_EPOCH\fR if set, 0 otherwise
 .TE
 .TP
 .TP
@@ -148,6 +148,13 @@ file /bin/bash 0755 0 0
 file "/opt/my app/\\"special\\"/data" 0600 0 0
 .fi
 .in
+.SH ENVIRONEMNT VARIABLES
+If the command line switch \fB\-\-defaults\fR is not used or no default mtime
+is specified, the value of the environment variable \fBSOURCE\_DATE\_EPOCH\fR
+is used for all file and filesystem timestamps.
+
+If \fBSOURCE\_DATE\_EPOCH\fR is not set, not a parsable number or it is out of
+range, the timestamps default to 0.
 .SH AUTHOR
 Written by David Oberhollenzer.
 .SH COPYRIGHT
