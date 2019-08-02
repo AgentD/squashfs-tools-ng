@@ -237,36 +237,28 @@ static int restore_kv_pairs(xattr_reader_t *xr, fstree_t *fs,
 			return -1;
 
 		val = read_value(xr, key);
-		if (val == NULL) {
-			free(key);
-			return -1;
-		}
+		if (val == NULL)
+			goto fail_key;
 
 		ret = str_table_get_index(&fs->xattr_keys,
 					  (const char *)key->key, &key_idx);
-		if (ret) {
-			free(val);
-			free(key);
-			return -1;
-		}
+		if (ret)
+			goto fail_kv;
 
 		ret = str_table_get_index(&fs->xattr_values,
 					  (const char *)val->value, &val_idx);
-		if (ret) {
-			free(val);
-			free(key);
-			return -1;
-		}
+		if (ret)
+			goto fail_kv;
 
 		if (sizeof(size_t) > sizeof(uint32_t)) {
 			if (key_idx > 0xFFFFFFFFUL) {
 				fputs("too many unique xattr keys\n", stderr);
-				return -1;
+				goto fail_kv;
 			}
 
 			if (val_idx > 0xFFFFFFFFUL) {
 				fputs("too many unique xattr values\n", stderr);
-				return -1;
+				goto fail_kv;
 			}
 		}
 
@@ -278,6 +270,11 @@ static int restore_kv_pairs(xattr_reader_t *xr, fstree_t *fs,
 	}
 
 	return 0;
+fail_kv:
+	free(val);
+fail_key:
+	free(key);
+	return -1;
 }
 
 int xattr_reader_restore_node(xattr_reader_t *xr, fstree_t *fs,
