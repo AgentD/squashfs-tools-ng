@@ -64,8 +64,7 @@ static int get_id_block_locations(xattr_reader_t *xr, int sqfsfd,
 			 super->xattr_id_table_start + sizeof(idtbl),
 			 sqfsfd, xr->id_block_starts,
 			 sizeof(xr->id_block_starts[0]) * xr->num_id_blocks)) {
-		free(xr->id_block_starts);
-		return -1;
+		goto fail;
 	}
 
 	for (i = 0; i < xr->num_id_blocks; ++i) {
@@ -74,12 +73,15 @@ static int get_id_block_locations(xattr_reader_t *xr, int sqfsfd,
 		if (xr->id_block_starts[i] > super->bytes_used) {
 			fputs("found xattr ID block that is past "
 			      "end of filesystem\n", stderr);
-			free(xr->id_block_starts);
-			return -1;
+			goto fail;
 		}
 	}
 
 	return 0;
+fail:
+	free(xr->id_block_starts);
+	xr->id_block_starts = NULL;
+	return -1;
 }
 
 static int get_xattr_desc(xattr_reader_t *xr, uint32_t idx,
