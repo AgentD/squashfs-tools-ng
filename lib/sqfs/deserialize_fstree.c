@@ -230,7 +230,7 @@ int deserialize_fstree(fstree_t *out, sqfs_super_t *super, compressor_t *cmp,
 
 	if (out->root == NULL) {
 		free(root);
-		goto fail_fs;
+		goto out_xr;
 	}
 
 	if (flags & RDTREE_READ_XATTR) {
