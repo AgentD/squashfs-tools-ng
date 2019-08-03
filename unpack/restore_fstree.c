@@ -9,8 +9,8 @@
 static int create_node(tree_node_t *n, int flags)
 {
 	tree_node_t *c;
+	int fd, ret;
 	char *name;
-	int fd;
 
 	if (!(flags & UNPACK_QUIET)) {
 		name = fstree_get_path(n);
@@ -82,7 +82,8 @@ static int create_node(tree_node_t *n, int flags)
 			return -1;
 		}
 
-		assert(canonicalize_name(n->data.file->input_file) == 0);
+		ret = canonicalize_name(n->data.file->input_file);
+		assert(ret == 0);
 		break;
 	default:
 		break;

@@ -229,7 +229,8 @@ static int write_tree_dfs(fstree_t *fs, tree_node_t *n, data_reader_t *data)
 		return -1;
 	}
 
-	assert(canonicalize_name(name) == 0);
+	ret = canonicalize_name(name);
+	assert(ret == 0);
 
 	if (current_subdir != NULL && !keep_as_dir) {
 		if (strcmp(name, current_subdir) == 0) {

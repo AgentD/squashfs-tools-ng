@@ -22,6 +22,7 @@
 static char *get_file_path(tree_node_t *n, const char *name)
 {
 	char *ptr, *new;
+	int ret;
 
 	if (n->parent == NULL) {
 		ptr = strdup(name);
@@ -34,7 +35,8 @@ static char *get_file_path(tree_node_t *n, const char *name)
 	if (ptr == NULL)
 		goto fail;
 
-	assert(canonicalize_name(ptr) == 0);
+	ret = canonicalize_name(ptr);
+	assert(ret == 0);
 
 	new = realloc(ptr, strlen(ptr) + strlen(name) + 2);
 	if (new == NULL)
