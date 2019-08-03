@@ -6,14 +6,46 @@
  */
 #include "rdsquashfs.h"
 
-static void print_name(tree_node_t *n)
+static int print_name(tree_node_t *n)
 {
-	if (n->parent != NULL) {
-		print_name(n->parent);
-		fputc('/', stdout);
+	char *start, *ptr, *name = fstree_get_path(n);
+	int ret;
+
+	if (name == NULL) {
+		perror("Recovering file path of tree node");
+		return -1;
 	}
 
-	fputs(n->name, stdout);
+	ret = canonicalize_name(name);
+	assert(ret == 0);
+
+	if (strchr(name, ' ') == NULL && strchr(name, '"') == NULL) {
+		fputs(name, stdout);
+	} else {
+		fputc('"', stdout);
+
+		ptr = strchr(name, '"');
+
+		if (ptr != NULL) {
+			start = name;
+
+			do {
+				fwrite(start, 1, ptr - start, stdout);
+				fputs("\\\"", stdout);
+				start = ptr + 1;
+				ptr = strchr(start, '"');
+			} while (ptr != NULL);
+
+			fputs(start, stdout);
+		} else {
+			fputs(name, stdout);
+		}
+
+		fputc('"', stdout);
+	}
+
+	free(name);
+	return 0;
 }
 
 static void print_perm(tree_node_t *n)
@@ -21,56 +53,61 @@ static void print_perm(tree_node_t *n)
 	printf(" 0%o %d %d", n->mode & (~S_IFMT), n->uid, n->gid);
 }
 
-static void print_simple(const char *type, tree_node_t *n, const char *extra)
+static int print_simple(const char *type, tree_node_t *n, const char *extra)
 {
 	printf("%s ", type);
-	print_name(n);
+	if (print_name(n))
+		return -1;
 	print_perm(n);
 	if (extra != NULL)
 		printf(" %s", extra);
 	fputc('\n', stdout);
+	return 0;
 }
 
-void describe_tree(tree_node_t *root, const char *unpack_root)
+int describe_tree(tree_node_t *root, const char *unpack_root)
 {
 	tree_node_t *n;
 
 	switch (root->mode & S_IFMT) {
 	case S_IFSOCK:
-		print_simple("sock", root, NULL);
-		break;
+		return print_simple("sock", root, NULL);
 	case S_IFLNK:
-		print_simple("slink", root, root->data.slink_target);
-		break;
+		return print_simple("slink", root, root->data.slink_target);
 	case S_IFIFO:
-		print_simple("pipe", root, NULL);
-		break;
+		return print_simple("pipe", root, NULL);
 	case S_IFREG:
-		if (unpack_root != NULL) {
-			fputs("file ", stdout);
-			print_name(root);
-			print_perm(root);
-			printf(" %s", unpack_root);
-			print_name(root);
-			fputc('\n', stdout);
-		} else {
-			print_simple("file", root, NULL);
-		}
+		if (unpack_root == NULL)
+			return print_simple("file", root, NULL);
+
+		fputs("file ", stdout);
+		if (print_name(root))
+			return -1;
+		print_perm(root);
+		printf(" %s/", unpack_root);
+		if (print_name(root))
+			return -1;
+		fputc('\n', stdout);
 		break;
 	case S_IFCHR:
 	case S_IFBLK: {
 		char buffer[32];
 		sprintf(buffer, "%c %d %d", S_ISCHR(root->mode) ? 'c' : 'b',
 		       major(root->data.devno), minor(root->data.devno));
-		print_simple("nod", root, buffer);
-		break;
+		return print_simple("nod", root, buffer);
 	}
 	case S_IFDIR:
-		if (root->name[0] != '\0')
-			print_simple("dir", root, NULL);
+		if (root->name[0] != '\0') {
+			if (print_simple("dir", root, NULL))
+				return -1;
+		}
 
-		for (n = root->data.dir->children; n != NULL; n = n->next)
-			describe_tree(n, unpack_root);
+		for (n = root->data.dir->children; n != NULL; n = n->next) {
+			if (describe_tree(n, unpack_root))
+				return -1;
+		}
 		break;
 	}
+
+	return 0;
 }

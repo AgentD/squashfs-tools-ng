@@ -71,7 +71,7 @@ int update_tree_attribs(fstree_t *fs, tree_node_t *root, int flags);
 int fill_unpacked_files(fstree_t *fs, data_reader_t *data, int flags,
 			unsigned int num_jobs);
 
-void describe_tree(tree_node_t *root, const char *unpack_root);
+int describe_tree(tree_node_t *root, const char *unpack_root);
 
 void process_command_line(options_t *opt, int argc, char **argv);
 

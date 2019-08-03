@@ -119,7 +119,8 @@ int main(int argc, char **argv)
 			goto out_fs;
 		break;
 	case OP_DESCRIBE:
-		describe_tree(fs.root, opt.unpack_root);
+		if (describe_tree(fs.root, opt.unpack_root))
+			goto out_fs;
 		break;
 	case OP_RDATTR:
 		if (n->xattr != NULL)
