@@ -99,11 +99,8 @@ static int populate_dir(fstree_t *fs, tree_node_t *root, bool keep_time_stamps)
 				goto fail;
 		}
 
-		if (!keep_time_stamps) {
-			sb.st_atim = fs->defaults.st_atim;
+		if (!keep_time_stamps)
 			sb.st_mtim = fs->defaults.st_mtim;
-			sb.st_ctim = fs->defaults.st_ctim;
-		}
 
 		n = fstree_mknode(fs, root, ent->d_name, strlen(ent->d_name),
 				  extra, &sb);
