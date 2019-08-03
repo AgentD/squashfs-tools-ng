@@ -448,16 +448,16 @@ out_eof:
 	clear_header(out);
 	return 1;
 fail_slink_len:
-	fprintf(stderr, "rejecting GNU symlink header with size %zu\n",
-		pax_size);
+	fprintf(stderr, "rejecting GNU symlink header with size %lu\n",
+		(unsigned long)pax_size);
 	goto fail;
 fail_path_len:
-	fprintf(stderr, "rejecting GNU long path header with size %zu\n",
-		pax_size);
+	fprintf(stderr, "rejecting GNU long path header with size %lu\n",
+		(unsigned long)pax_size);
 	goto fail;
 fail_pax_len:
-	fprintf(stderr, "rejecting PAX header with size %zu\n",
-		pax_size);
+	fprintf(stderr, "rejecting PAX header with size %lu\n",
+		(unsigned long)pax_size);
 	goto fail;
 fail_magic:
 	fputs("input is not a ustar tar archive!\n", stderr);
