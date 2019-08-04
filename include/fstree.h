@@ -323,4 +323,13 @@ file_info_t *fragment_by_chksum(file_info_t *fi, uint32_t chksum,
 uint64_t find_equal_blocks(file_info_t *file, file_info_t *list,
 			   size_t block_size);
 
+/*
+  Optimize the order of the fstree file list for unpacking as to avoid
+  unpacking fragment blocks more than once and to improve locality when
+  fetching data from disk. The resulting list is returned in 'out'.
+  If num_jobs is > 1, the list is split up for parallel processing.
+ */
+void optimize_unpack_order(fstree_t *fs, size_t num_jobs,
+			   file_info_t *out[num_jobs]);
+
 #endif /* FSTREE_H */
