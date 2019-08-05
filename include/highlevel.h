@@ -9,6 +9,7 @@
 
 #include "config.h"
 
+#include "data_reader.h"
 #include "squashfs.h"
 #include "compress.h"
 #include "id_table.h"
@@ -16,6 +17,14 @@
 
 #include <stdint.h>
 #include <stddef.h>
+
+typedef struct {
+	compressor_t *cmp;
+	data_reader_t *data;
+	sqfs_super_t super;
+	fstree_t fs;
+	int sqfsfd;
+} sqfs_reader_t;
 
 enum RDTREE_FLAGS {
 	RDTREE_NO_DEVICES = 0x01,
@@ -95,5 +104,15 @@ int write_export_table(int outfd, fstree_t *fs, sqfs_super_t *super,
 
 /* Print out fancy statistics for squashfs packing tools */
 void sqfs_print_statistics(fstree_t *fs, sqfs_super_t *super);
+
+/* Open a squashfs file, extract all the information we may need and
+   construct datastructures we need to access its contents.
+   Returns 0 on success. Prints error messages to stderr on failure.
+*/
+int sqfs_reader_open(sqfs_reader_t *rd, const char *filename,
+		     int rdtree_flags);
+
+/* Cleanup after a successfull sqfs_reader_open */
+void sqfs_reader_close(sqfs_reader_t *rd);
 
 #endif /* HIGHLEVEL_H */

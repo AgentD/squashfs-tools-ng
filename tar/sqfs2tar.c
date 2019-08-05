@@ -302,89 +302,51 @@ skip_hdr:
 
 int main(int argc, char **argv)
 {
-	int sqfsfd, rdtree_flags = 0;
-	data_reader_t *data = NULL;
-	int status = EXIT_FAILURE;
-	sqfs_super_t super;
-	compressor_t *cmp;
+	int rdtree_flags = 0, status = EXIT_FAILURE;
+	sqfs_reader_t sqfs;
 	tree_node_t *root;
-	fstree_t fs;
 	size_t i;
 
 	process_args(argc, argv);
 
-	sqfsfd = open(filename, O_RDONLY);
-	if (sqfsfd < 0) {
-		perror(filename);
-		return EXIT_FAILURE;
-	}
-
-	if (sqfs_super_read(&super, sqfsfd))
-		goto out_fd;
-
-	if (!compressor_exists(super.compression_id)) {
-		fputs("Image uses a compressor that has not been built in\n",
-		      stderr);
-		goto out_fd;
-	}
-
-	cmp = compressor_create(super.compression_id, false,
-				super.block_size, NULL);
-	if (cmp == NULL)
-		goto out_fd;
-
-	if (super.flags & SQFS_FLAG_COMPRESSOR_OPTIONS) {
-		if (cmp->read_options(cmp, sqfsfd))
-			goto out_cmp;
-	}
-
 	if (!no_xattr)
 		rdtree_flags |= RDTREE_READ_XATTR;
 
-	if (deserialize_fstree(&fs, &super, cmp, sqfsfd, rdtree_flags))
-		goto out_cmp;
-
-	data = data_reader_create(sqfsfd, &super, cmp);
-	if (data == NULL)
-		goto out_fs;
+	if (sqfs_reader_open(&sqfs, filename, rdtree_flags))
+		goto out_dirs;
 
 	for (i = 0; i < num_subdirs; ++i) {
-		root = fstree_node_from_path(&fs, subdirs[i]);
+		root = fstree_node_from_path(&sqfs.fs, subdirs[i]);
 		if (root == NULL) {
 			perror(subdirs[i]);
-			goto out_data;
+			goto out;
 		}
 
 		if (!S_ISDIR(root->mode)) {
 			fprintf(stderr, "%s is not a directory\n", subdirs[i]);
-			goto out_data;
+			goto out;
 		}
 
 		current_subdir = subdirs[i];
 
-		if (write_tree_dfs(&fs, root, data))
-			goto out_data;
+		if (write_tree_dfs(&sqfs.fs, root, sqfs.data))
+			goto out;
 	}
 
 	current_subdir = NULL;
 
 	if (num_subdirs == 0) {
-		if (write_tree_dfs(&fs, fs.root, data))
-			goto out_data;
+		if (write_tree_dfs(&sqfs.fs, sqfs.fs.root, sqfs.data))
+			goto out;
 	}
 
 	if (terminate_archive())
-		goto out_data;
+		goto out;
 
 	status = EXIT_SUCCESS;
-out_data:
-	data_reader_destroy(data);
-out_fs:
-	fstree_cleanup(&fs);
-out_cmp:
-	cmp->destroy(cmp);
-out_fd:
-	close(sqfsfd);
+out:
+	sqfs_reader_close(&sqfs);
+out_dirs:
 	for (i = 0; i < num_subdirs; ++i)
 		free(subdirs[i]);
 	free(subdirs);

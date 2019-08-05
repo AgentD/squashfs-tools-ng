@@ -39,6 +39,7 @@ libsquashfs_a_SOURCES += include/data_writer.h include/xattr_reader.h
 libsquashfs_a_SOURCES += include/data_reader.h lib/sqfs/data_reader.c
 libsquashfs_a_SOURCES += lib/sqfs/write_export_table.c
 libsquashfs_a_SOURCES += lib/sqfs/read_table.c lib/sqfs/statistics.c
+libsquashfs_a_SOURCES += lib/sqfs/sqfs_reader.c
 
 libutil_a_SOURCES = lib/util/canonicalize_name.c lib/util/write_data.c
 libutil_a_SOURCES += lib/util/read_data.c include/util.h
