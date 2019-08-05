@@ -21,6 +21,10 @@
 #define SQFS_DEVBLK_SIZE 4096
 #define SQFS_MAX_DIR_ENT 256
 
+#define SQFS_IS_BLOCK_COMPRESSED(size) (((size) & (1 << 24)) == 0)
+#define SQFS_ON_DISK_BLOCK_SIZE(size) ((size) & ((1 << 24) - 1))
+#define SQFS_IS_SPARSE_BLOCK(size) (SQFS_ON_DISK_BLOCK_SIZE(size) == 0)
+
 typedef struct {
 	uint32_t magic;
 	uint32_t inode_count;
