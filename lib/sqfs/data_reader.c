@@ -225,3 +225,84 @@ fail_sparse:
 	perror("creating sparse output file");
 	return -1;
 }
+
+ssize_t data_reader_read(data_reader_t *data, file_info_t *fi,
+			 uint64_t offset, void *buffer, size_t size)
+{
+	size_t i, diff, fragsz, count, total = 0;
+	off_t off;
+	char *ptr;
+
+	/* work out block count and fragment size */
+	fragsz = fi->size % data->block_size;
+	count = fi->size / data->block_size;
+
+	if (fragsz != 0 && !(fi->flags & FILE_FLAG_HAS_FRAGMENT)) {
+		fragsz = 0;
+		++count;
+	}
+
+	/* work out block index and on-disk location */
+	off = fi->startblock;
+	i = 0;
+
+	while (offset > data->block_size && i < count) {
+		off += SQFS_ON_DISK_BLOCK_SIZE(fi->blocks[i++].size);
+		offset -= data->block_size;
+	}
+
+	/* copy data from blocks */
+	while (i < count && size > 0) {
+		diff = data->block_size - offset;
+		if (size < diff)
+			size = diff;
+
+		if (SQFS_IS_SPARSE_BLOCK(fi->blocks[i].size)) {
+			memset(buffer, 0, diff);
+		} else {
+			if (precache_data_block(data, off, fi->blocks[i].size))
+				return -1;
+
+			memcpy(buffer, (char *)data->block + offset, diff);
+			off += SQFS_ON_DISK_BLOCK_SIZE(fi->blocks[i].size);
+		}
+
+		++i;
+		offset = 0;
+		size -= diff;
+		total += diff;
+		buffer = (char *)buffer + diff;
+	}
+
+	/* copy from fragment */
+	if (i == count && size > 0 && fragsz > 0) {
+		if (precache_fragment_block(data, fi->fragment))
+			return -1;
+
+		if (fi->fragment_offset >= data->frag_used)
+			goto fail_range;
+
+		if ((fi->fragment_offset + fragsz - 1) >= data->frag_used)
+			goto fail_range;
+
+		ptr = (char *)data->frag_block + fi->fragment_offset;
+		ptr += offset;
+
+		if (offset >= fragsz) {
+			offset = 0;
+			size = 0;
+		}
+
+		if (offset + size > fragsz)
+			size = fragsz - offset;
+
+		if (size > 0) {
+			memcpy(buffer, ptr + offset, size);
+			total += size;
+		}
+	}
+	return total;
+fail_range:
+	fputs("attempted to read past fragment block limits\n", stderr);
+	return -1;
+}

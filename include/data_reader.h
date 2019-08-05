@@ -41,4 +41,14 @@ void data_reader_destroy(data_reader_t *data);
 int data_reader_dump_file(data_reader_t *data, file_info_t *fi, int outfd,
 			  bool allow_sparse);
 
+/*
+  Read a chunk of data from a file. Starting from 'offset' into the
+  uncompressed file, read 'size' bytes into 'buffer'.
+
+  Returns the number of bytes read, 0 if EOF, -1 on failure. Prints an
+  error message to stderr on failure.
+ */
+ssize_t data_reader_read(data_reader_t *data, file_info_t *fi,
+			 uint64_t offset, void *buffer, size_t size);
+
 #endif /* DATA_READER_H */
