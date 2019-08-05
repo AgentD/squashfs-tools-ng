@@ -24,3 +24,4 @@ sqfs2tar
 tar2sqfs
 test_*
 test-*
+fscompare

@@ -1,0 +1,6 @@
+fscompare_SOURCES = difftool/fscompare.c difftool/difftool.h difftool/util.c
+fscompare_SOURCES += difftool/compare_dir.c difftool/node_compare.c
+fscompare_SOURCES += difftool/compare_file.c
+fscompare_LDADD = libfstree.a libutil.a
+
+noinst_PROGRAMS += fscompare
