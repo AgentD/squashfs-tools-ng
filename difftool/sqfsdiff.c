@@ -12,11 +12,12 @@ static struct option long_opts[] = {
 	{ "no-contents", no_argument, NULL, 'C' },
 	{ "timestamps", no_argument, NULL, 'T' },
 	{ "inode-num", no_argument, NULL, 'I' },
+	{ "super", no_argument, NULL, 'S' },
 	{ "help", no_argument, NULL, 'h' },
 	{ "version", no_argument, NULL, 'V' },
 };
 
-static const char *short_opts = "OPCTIhV";
+static const char *short_opts = "OPCTIShV";
 
 static const char *usagestr =
 "Usage: sqfsdiff [OPTIONS...] <first> <second>\n"
@@ -42,6 +43,7 @@ static const char *usagestr =
 "\n"
 "  --timestamps, -T            Compare file timestamps.\n"
 "  --inode-num, -I             Compare inode numbers of all files.\n"
+"  --super, -S                 Also compare metadata in super blocks.\n"
 "\n"
 "  --help, -h                  Print help text and exit.\n"
 "  --version, -V               Print version information and exit.\n"
@@ -52,6 +54,7 @@ const char *first_path;
 const char *second_path;
 sqfs_reader_t sqfs_a;
 sqfs_reader_t sqfs_b;
+static bool compare_super = false;
 
 static void process_options(int argc, char **argv)
 {
@@ -77,6 +80,9 @@ static void process_options(int argc, char **argv)
 			break;
 		case 'I':
 			compare_flags |= COMPARE_INODE_NUM;
+			break;
+		case 'S':
+			compare_super = true;
 			break;
 		case 'h':
 			fputs(usagestr, stdout);
@@ -115,22 +121,37 @@ fail_arg:
 
 int main(int argc, char **argv)
 {
-	int ret = EXIT_FAILURE;
+	int status, ret = 0;
 
 	process_options(argc, argv);
 
 	if (sqfs_reader_open(&sqfs_a, first_path, 0))
-		return EXIT_FAILURE;
+		return 2;
 
-	if (sqfs_reader_open(&sqfs_b, second_path, 0))
+	if (sqfs_reader_open(&sqfs_b, second_path, 0)) {
+		status = 2;
 		goto out_sqfs_a;
+	}
 
 	ret = node_compare(sqfs_a.fs.root, sqfs_b.fs.root);
-	if (ret < 0)
-		ret = 2;
+	if (ret != 0)
+		goto out;
 
+	if (compare_super) {
+		ret = compare_super_blocks(&sqfs_a.super, &sqfs_b.super);
+		if (ret != 0)
+			goto out;
+	}
+out:
+	if (ret < 0) {
+		status = 2;
+	} else if (ret > 0) {
+		status = 1;
+	} else {
+		status = 0;
+	}
 	sqfs_reader_close(&sqfs_b);
 out_sqfs_a:
 	sqfs_reader_close(&sqfs_a);
-	return ret;
+	return status;
 }

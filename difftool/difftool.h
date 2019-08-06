@@ -45,4 +45,6 @@ int compare_files(file_info_t *a, file_info_t *b, const char *path);
 
 int node_compare(tree_node_t *a, tree_node_t *b);
 
+int compare_super_blocks(const sqfs_super_t *a, const sqfs_super_t *b);
+
 #endif /* DIFFTOOL_H */
