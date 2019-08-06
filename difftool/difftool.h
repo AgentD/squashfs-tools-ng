@@ -32,6 +32,7 @@ extern sqfs_reader_t sqfs_b;
 enum {
 	COMPARE_NO_PERM = 0x01,
 	COMPARE_NO_OWNER = 0x02,
+	COMPARE_NO_CONTENTS = 0x04,
 };
 
 int compare_dir_entries(tree_node_t *a, tree_node_t *b);

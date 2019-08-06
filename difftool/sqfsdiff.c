@@ -9,31 +9,32 @@
 static struct option long_opts[] = {
 	{ "no-owner", no_argument, NULL, 'O' },
 	{ "no-permissions", no_argument, NULL, 'P' },
+	{ "no-contents", no_argument, NULL, 'C' },
 	{ "help", no_argument, NULL, 'h' },
 	{ "version", no_argument, NULL, 'V' },
 };
 
-static const char *short_opts = "OPhV";
+static const char *short_opts = "OPChV";
 
 static const char *usagestr =
 "Usage: sqfsdiff [OPTIONS...] <first> <second>\n"
 "\n"
-"Compare the contents of two squashfs images. In contrast to doing a direct\n"
-"diff of the images, this actually recovers the file system trees and\n"
-"recursively compares them against each other.\n"
+"Compare two squashfs images. In contrast to doing a direct diff of the\n"
+"images, this actually parses the filesystems and generates a more\n"
+"meaningful difference report.\n"
 "\n"
-"Any differences in packed file layout, ordering, compression, inode\n"
-"allocation and so on is ignored, only the contents are compared.\n"
-"\n"
-"The two images are considered equal if each directory contains the same\n"
-"entries, symlink with the same paths have the same targets, device nodes\n"
-"the same device number and files the same size and contents.\n"
+"If only contents are compared, any differences in packed file layout,\n"
+"ordering, compression, inode allocation and so on is ignored and the two\n"
+"images are considered equal if each directory contains the same entries,\n"
+"symlink with the same paths have the same targets, device nodes the same\n"
+"device number and files the same size and contents.\n"
 "\n"
 "A report of any difference is printed to stdout. The exit status is similar\n"
 "that of diff(1): 0 means equal, 1 means different, 2 means problem.\n"
 "\n"
 "Possible options:\n"
 "\n"
+"  --no-contents, -C           Do not compare file contents.\n"
 "  --no-owner, -O              Do not compare file owners.\n"
 "  --no-permissions, -P        Do not compare permission bits.\n"
 "\n"
@@ -62,6 +63,9 @@ static void process_options(int argc, char **argv)
 			break;
 		case 'P':
 			compare_flags |= COMPARE_NO_PERM;
+			break;
+		case 'C':
+			compare_flags |= COMPARE_NO_CONTENTS;
 			break;
 		case 'h':
 			fputs(usagestr, stdout);

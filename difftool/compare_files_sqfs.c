@@ -17,6 +17,9 @@ int compare_files(file_info_t *a, file_info_t *b, const char *path)
 	if (a->size != b->size)
 		return 1;
 
+	if (compare_flags & COMPARE_NO_CONTENTS)
+		return 0;
+
 	for (offset = 0; offset < a->size; offset += diff) {
 		diff = a->size - offset;
 
