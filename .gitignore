@@ -22,6 +22,7 @@ gensquashfs
 rdsquashfs
 sqfs2tar
 tar2sqfs
+sqfsdiff
 test_*
 test-*
 fscompare

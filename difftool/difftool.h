@@ -8,6 +8,8 @@
 #define DIFFTOOL_H
 
 #include "config.h"
+
+#include "highlevel.h"
 #include "fstree.h"
 #include "util.h"
 
@@ -24,6 +26,8 @@
 extern const char *first_path;
 extern const char *second_path;
 extern int compare_flags;
+extern sqfs_reader_t sqfs_a;
+extern sqfs_reader_t sqfs_b;
 
 enum {
 	COMPARE_NO_PERM = 0x01,
