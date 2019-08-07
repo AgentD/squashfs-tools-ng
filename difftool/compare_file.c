@@ -55,6 +55,7 @@ int compare_files(file_info_t *a, file_info_t *b, const char *path)
 		if (bptr == MAP_FAILED) {
 			fprintf(stderr, "mmap %s/%s: %s\n", second_path, path,
 				strerror(errno));
+			munmap(aptr, diff);
 			goto fail_bfd;
 		}
 
