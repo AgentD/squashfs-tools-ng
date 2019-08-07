@@ -43,6 +43,14 @@ int node_compare(tree_node_t *a, tree_node_t *b)
 		}
 	}
 
+	if (compare_flags & COMPARE_INODE_NUM) {
+		if (a->inode_num != b->inode_num) {
+			fprintf(stdout, "%s has a different inode number\n",
+				path);
+			status = 1;
+		}
+	}
+
 	switch (a->mode & S_IFMT) {
 	case S_IFSOCK:
 	case S_IFIFO:

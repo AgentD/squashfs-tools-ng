@@ -11,11 +11,12 @@ static struct option long_opts[] = {
 	{ "no-permissions", no_argument, NULL, 'P' },
 	{ "no-contents", no_argument, NULL, 'C' },
 	{ "timestamps", no_argument, NULL, 'T' },
+	{ "inode-num", no_argument, NULL, 'I' },
 	{ "help", no_argument, NULL, 'h' },
 	{ "version", no_argument, NULL, 'V' },
 };
 
-static const char *short_opts = "OPCThV";
+static const char *short_opts = "OPCTIhV";
 
 static const char *usagestr =
 "Usage: sqfsdiff [OPTIONS...] <first> <second>\n"
@@ -40,6 +41,7 @@ static const char *usagestr =
 "  --no-permissions, -P        Do not compare permission bits.\n"
 "\n"
 "  --timestamps, -T            Compare file timestamps.\n"
+"  --inode-num, -I             Compare inode numbers of all files.\n"
 "\n"
 "  --help, -h                  Print help text and exit.\n"
 "  --version, -V               Print version information and exit.\n"
@@ -72,6 +74,9 @@ static void process_options(int argc, char **argv)
 			break;
 		case 'T':
 			compare_flags |= COMPARE_TIMESTAMP;
+			break;
+		case 'I':
+			compare_flags |= COMPARE_INODE_NUM;
 			break;
 		case 'h':
 			fputs(usagestr, stdout);

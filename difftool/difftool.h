@@ -34,6 +34,7 @@ enum {
 	COMPARE_NO_OWNER = 0x02,
 	COMPARE_NO_CONTENTS = 0x04,
 	COMPARE_TIMESTAMP = 0x08,
+	COMPARE_INODE_NUM = 0x10,
 };
 
 int compare_dir_entries(tree_node_t *a, tree_node_t *b);
