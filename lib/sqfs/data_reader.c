@@ -75,8 +75,8 @@ static int precache_data_block(data_reader_t *data, off_t location,
 	if (ret < 0)
 		return -1;
 
-	if (size < data->block_size)
-		memset((char *)data->block + size, 0, data->block_size - size);
+	if ((size_t)ret < data->block_size)
+		memset((char *)data->block + ret, 0, data->block_size - ret);
 
 	data->current_block = location;
 	return 0;
