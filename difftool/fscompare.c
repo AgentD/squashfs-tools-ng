@@ -9,11 +9,12 @@
 static struct option long_opts[] = {
 	{ "no-owner", no_argument, NULL, 'O' },
 	{ "no-permissions", no_argument, NULL, 'P' },
+	{ "timestamps", no_argument, NULL, 'T' },
 	{ "help", no_argument, NULL, 'h' },
 	{ "version", no_argument, NULL, 'V' },
 };
 
-static const char *short_opts = "OPhV";
+static const char *short_opts = "OPThV";
 
 static const char *usagestr =
 "Usage: fscompare [OPTIONS...] <first> <second>\n"
@@ -25,6 +26,8 @@ static const char *usagestr =
 "\n"
 "  --no-owner, -O              Do not compare file owners.\n"
 "  --no-permissions, -P        Do not compare permission bits.\n"
+"\n"
+"  --timestamps, -T            Compare file timestamps.\n"
 "\n"
 "  --help, -h                  Print help text and exit.\n"
 "  --version, -V               Print version information and exit.\n"
@@ -49,6 +52,9 @@ static void process_options(int argc, char **argv)
 			break;
 		case 'P':
 			compare_flags |= COMPARE_NO_PERM;
+			break;
+		case 'T':
+			compare_flags |= COMPARE_TIMESTAMP;
 			break;
 		case 'h':
 			fputs(usagestr, stdout);
@@ -98,10 +104,10 @@ int main(int argc, char **argv)
 	if (fstree_init(&bfs, 512, NULL))
 		goto out_afs;
 
-	if (fstree_from_dir(&afs, first_path, false))
+	if (fstree_from_dir(&afs, first_path, true))
 		goto out_bfs;
 
-	if (fstree_from_dir(&bfs, second_path, false))
+	if (fstree_from_dir(&bfs, second_path, true))
 		goto out_bfs;
 
 	tree_node_sort_recursive(afs.root);

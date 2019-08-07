@@ -36,6 +36,13 @@ int node_compare(tree_node_t *a, tree_node_t *b)
 		}
 	}
 
+	if (compare_flags & COMPARE_TIMESTAMP) {
+		if (a->mod_time != b->mod_time) {
+			fprintf(stdout, "%s has a different timestamp\n", path);
+			status = 1;
+		}
+	}
+
 	switch (a->mode & S_IFMT) {
 	case S_IFSOCK:
 	case S_IFIFO:
