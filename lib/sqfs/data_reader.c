@@ -185,9 +185,9 @@ int data_reader_dump_file(data_reader_t *data, file_info_t *fi, int outfd,
 			if (allow_sparse) {
 				if (lseek(outfd, diff, SEEK_CUR) == (off_t)-1)
 					goto fail_sparse;
-			} else {
-				memset(data->block, 0, diff);
+				continue;
 			}
+			memset(data->block, 0, diff);
 		} else {
 			if (precache_data_block(data, off, fi->blocks[i].size))
 				return -1;
