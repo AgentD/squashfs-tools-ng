@@ -1,0 +1,53 @@
+.TH SQFSDIFF "1" "August 2019" "sqfsdiff" "User Commands"
+.SH NAME
+sqfsdiff \- compare two squashfs images by contents and metadata
+.SH SYNOPSIS
+.B sqfsdiff
+[\fI\,OPTIONS\/\fR...] \fI\,<first> <second>\/\fR
+.SH DESCRIPTION
+Compare two squashfs images. In contrast to doing a direct diff of the
+images, this actually parses the filesystems and generates a more
+meaningful difference report.
+.PP
+If only contents are compared, any differences in packed file layout,
+ordering, compression, inode allocation and so on is ignored and the two
+images are considered equal if each directory contains the same entries,
+symlink with the same paths have the same targets, device nodes the same
+device number and files the same size and contents.
+.PP
+A report of any difference is printed to stdout. The exit status is similar
+that of diff(1): 0 means equal, 1 means different, 2 means problem.
+.PP
+Possible options:
+.TP
+\fB\-\-no\-contents\fR, \fB\-C\fR
+Do not compare file contents.
+.TP
+\fB\-\-no\-owner\fR, \fB\-O\fR
+Do not compare file owners.
+.TP
+\fB\-\-no\-permissions\fR, \fB\-P\fR
+Do not compare permission bits.
+.TP
+\fB\-\-timestamps\fR, \fB\-T\fR
+Compare file timestamps.
+.TP
+\fB\-\-inode\-num\fR, \fB\-I\fR
+Compare inode numbers of all files.
+.TP
+\fB\-\-super\fR, \fB\-S\fR
+Also compare metadata in super blocks.
+.TP
+\fB\-\-help\fR, \fB\-h\fR
+Print help text and exit.
+.TP
+\fB\-\-version\fR, \fB\-V\fR
+Print version information and exit.
+.SH AUTHOR
+Written by David Oberhollenzer.
+.SH COPYRIGHT
+Copyright \(co 2019 David Oberhollenzer et al
+License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>.
+.br
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.

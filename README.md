@@ -40,6 +40,7 @@ together with the existing tools:
  - `rdsquashfs` can be used to inspect and unpack SquashFS images.
  - `sqfs2tar` can turn a SquashFS image into a tarball, written to stdout.
  - `tar2sqfs` can turn a tarball (read from stdin) into a SquashFS image.
+ - `sqfsdiff` can compare the contents of two SquashFS images.
 
 # Getting and Building the Source Code
 
