@@ -35,6 +35,7 @@ enum {
 	COMPARE_NO_CONTENTS = 0x04,
 	COMPARE_TIMESTAMP = 0x08,
 	COMPARE_INODE_NUM = 0x10,
+	COMPARE_EXTRACT_FILES = 0x20,
 };
 
 int compare_dir_entries(tree_node_t *a, tree_node_t *b);
@@ -46,5 +47,7 @@ int compare_files(file_info_t *a, file_info_t *b, const char *path);
 int node_compare(tree_node_t *a, tree_node_t *b);
 
 int compare_super_blocks(const sqfs_super_t *a, const sqfs_super_t *b);
+
+int extract_files(file_info_t *a, file_info_t *b, const char *path);
 
 #endif /* DIFFTOOL_H */

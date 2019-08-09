@@ -38,6 +38,12 @@ Compare inode numbers of all files.
 \fB\-\-super\fR, \fB\-S\fR
 Also compare metadata in super blocks.
 .TP
+\fB\-\-extract\fR, \fB\-e\fR <path>
+Extract files that exist in both images but have different contents to the
+specified directory. Contents of the first image end up in a sub directory
+named \fBa\fR and the contents of the second image in a sub directory
+named \fBb\fR.
+.TP
 \fB\-\-help\fR, \fB\-h\fR
 Print help text and exit.
 .TP

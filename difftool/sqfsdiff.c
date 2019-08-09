@@ -13,11 +13,12 @@ static struct option long_opts[] = {
 	{ "timestamps", no_argument, NULL, 'T' },
 	{ "inode-num", no_argument, NULL, 'I' },
 	{ "super", no_argument, NULL, 'S' },
+	{ "extract", required_argument, NULL, 'e' },
 	{ "help", no_argument, NULL, 'h' },
 	{ "version", no_argument, NULL, 'V' },
 };
 
-static const char *short_opts = "OPCTIShV";
+static const char *short_opts = "OPCTISe:hV";
 
 static const char *usagestr =
 "Usage: sqfsdiff [OPTIONS...] <first> <second>\n"
@@ -45,6 +46,11 @@ static const char *usagestr =
 "  --inode-num, -I             Compare inode numbers of all files.\n"
 "  --super, -S                 Also compare metadata in super blocks.\n"
 "\n"
+"  --extract, -e <path>        Extract files that differ to the specified\n"
+"                              directory. Contents of the first image end up\n"
+"                              in a subdirectory 'a' and of the second image\n"
+"                              in a subdirectory 'b'.\n"
+"\n"
 "  --help, -h                  Print help text and exit.\n"
 "  --version, -V               Print version information and exit.\n"
 "\n";
@@ -55,6 +61,7 @@ const char *second_path;
 sqfs_reader_t sqfs_a;
 sqfs_reader_t sqfs_b;
 static bool compare_super = false;
+static const char *extract_dir;
 
 static void process_options(int argc, char **argv)
 {
@@ -83,6 +90,10 @@ static void process_options(int argc, char **argv)
 			break;
 		case 'S':
 			compare_super = true;
+			break;
+		case 'e':
+			compare_flags |= COMPARE_EXTRACT_FILES;
+			extract_dir = optarg;
 			break;
 		case 'h':
 			fputs(usagestr, stdout);
@@ -125,12 +136,25 @@ int main(int argc, char **argv)
 
 	process_options(argc, argv);
 
+	if (extract_dir != NULL) {
+		if (mkdir_p(extract_dir))
+			return EXIT_FAILURE;
+	}
+
 	if (sqfs_reader_open(&sqfs_a, first_path, 0))
 		return 2;
 
 	if (sqfs_reader_open(&sqfs_b, second_path, 0)) {
 		status = 2;
 		goto out_sqfs_a;
+	}
+
+	if (extract_dir != NULL) {
+		if (chdir(extract_dir)) {
+			perror(extract_dir);
+			ret = -1;
+			goto out;
+		}
 	}
 
 	ret = node_compare(sqfs_a.fs.root, sqfs_b.fs.root);

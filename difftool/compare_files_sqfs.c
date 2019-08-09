@@ -15,7 +15,7 @@ int compare_files(file_info_t *a, file_info_t *b, const char *path)
 	ssize_t ret;
 
 	if (a->size != b->size)
-		return 1;
+		goto out_different;
 
 	if (compare_flags & COMPARE_NO_CONTENTS)
 		return 0;
@@ -41,8 +41,14 @@ int compare_files(file_info_t *a, file_info_t *b, const char *path)
 		}
 
 		if (memcmp(a_buf, b_buf, diff) != 0)
-			return 1;
+			goto out_different;
 	}
 
 	return 0;
+out_different:
+	if (compare_flags & COMPARE_EXTRACT_FILES) {
+		if (extract_files(a, b, path))
+			return -1;
+	}
+	return 1;
 }
