@@ -84,7 +84,9 @@ static const char *help_string =
 "  --quiet, -q                 Do not print out progress reports.\n"
 "  --help, -h                  Print help text and exit.\n"
 "  --version, -V               Print version information and exit.\n"
-"\n"
+"\n";
+
+const char *help_details =
 "When using the pack file option, the given file is expected to contain\n"
 "newline separated entries that describe the files to be included in the\n"
 "SquashFS image. The following entry types can be specified:\n"
@@ -215,6 +217,7 @@ void process_command_line(options_t *opt, int argc, char **argv)
 		case 'h':
 			printf(help_string, __progname,
 			       SQFS_DEFAULT_BLOCK_SIZE, SQFS_DEVBLK_SIZE);
+			fputs(help_details, stdout);
 			compressor_print_available();
 			exit(EXIT_SUCCESS);
 		case 'V':
