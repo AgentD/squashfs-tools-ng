@@ -36,6 +36,7 @@ typedef struct {
 	int blksz;
 	int devblksz;
 	bool keep_time;
+	bool one_filesystem;
 	bool exportable;
 	bool quiet;
 	const char *infile;

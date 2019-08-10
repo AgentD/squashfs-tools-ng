@@ -15,6 +15,7 @@ static struct option long_opts[] = {
 	{ "pack-file", required_argument, NULL, 'F' },
 	{ "pack-dir", required_argument, NULL, 'D' },
 	{ "keep-time", required_argument, NULL, 'k' },
+	{ "one-file-system", no_argument, NULL, 'o' },
 	{ "exportable", no_argument, NULL, 'e' },
 	{ "force", no_argument, NULL, 'f' },
 	{ "quiet", no_argument, NULL, 'q' },
@@ -26,9 +27,9 @@ static struct option long_opts[] = {
 };
 
 #ifdef WITH_SELINUX
-static const char *short_opts = "s:F:D:X:c:b:B:d:kefqhV";
+static const char *short_opts = "s:F:D:X:c:b:B:d:koefqhV";
 #else
-static const char *short_opts = "F:D:X:c:b:B:d:kefqhV";
+static const char *short_opts = "F:D:X:c:b:B:d:koefqhV";
 #endif
 
 extern char *__progname;
@@ -76,6 +77,8 @@ static const char *help_string =
 "  --keep-time, -k             When using --pack-dir only, use the timestamps\n"
 "                              from the input files instead of setting\n"
 "                              defaults on all input paths.\n"
+"  --one-file-system, -o       When using --pack-dir only, stay in local file\n"
+"                              system and do not cross mount points.\n"
 "  --exportable, -e            Generate an export table for NFS support.\n"
 "  --force, -f                 Overwrite the output file if it exists.\n"
 "  --quiet, -q                 Do not print out progress reports.\n"
@@ -135,6 +138,7 @@ void process_command_line(options_t *opt, int argc, char **argv)
 	opt->blksz = SQFS_DEFAULT_BLOCK_SIZE;
 	opt->devblksz = SQFS_DEVBLK_SIZE;
 	opt->keep_time = false;
+	opt->one_filesystem = false;
 	opt->exportable = false;
 	opt->quiet = false;
 	opt->infile = NULL;
@@ -181,6 +185,9 @@ void process_command_line(options_t *opt, int argc, char **argv)
 			break;
 		case 'k':
 			opt->keep_time = true;
+			break;
+		case 'o':
+			opt->one_filesystem = true;
 			break;
 		case 'e':
 			opt->exportable = true;

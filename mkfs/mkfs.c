@@ -78,6 +78,9 @@ static int read_fstree(fstree_t *fs, options_t *opt)
 		if (opt->keep_time)
 			flags |= DIR_SCAN_KEEP_TIME;
 
+		if (opt->one_filesystem)
+			flags |= DIR_SCAN_ONE_FILESYSTEM;
+
 		return fstree_from_dir(fs, opt->packdir, flags);
 	}
 

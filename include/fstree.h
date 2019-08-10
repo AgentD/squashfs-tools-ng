@@ -37,6 +37,8 @@ enum {
 
 enum {
 	DIR_SCAN_KEEP_TIME = 0x01,
+
+	DIR_SCAN_ONE_FILESYSTEM = 0x02,
 };
 
 /* Encapsulates a set of key-value pairs attached to a tree_node_t */

@@ -52,7 +52,8 @@ fail:
 	return NULL;
 }
 
-static int populate_dir(fstree_t *fs, tree_node_t *root, unsigned int flags)
+static int populate_dir(fstree_t *fs, tree_node_t *root, dev_t devstart,
+			unsigned int flags)
 {
 	char *extra = NULL;
 	struct dirent *ent;
@@ -85,6 +86,9 @@ static int populate_dir(fstree_t *fs, tree_node_t *root, unsigned int flags)
 			perror(ent->d_name);
 			goto fail;
 		}
+
+		if ((flags & DIR_SCAN_ONE_FILESYSTEM) && sb.st_dev != devstart)
+			continue;
 
 		if (S_ISLNK(sb.st_mode)) {
 			extra = calloc(1, sb.st_size + 1);
@@ -122,7 +126,7 @@ static int populate_dir(fstree_t *fs, tree_node_t *root, unsigned int flags)
 			if (pushd(n->name))
 				return -1;
 
-			if (populate_dir(fs, n, flags))
+			if (populate_dir(fs, n, devstart, flags))
 				return -1;
 
 			if (popd())
@@ -141,12 +145,18 @@ fail:
 
 int fstree_from_dir(fstree_t *fs, const char *path, unsigned int flags)
 {
+	struct stat sb;
 	int ret;
+
+	if (stat(path, &sb)) {
+		perror(path);
+		return -1;
+	}
 
 	if (pushd(path))
 		return -1;
 
-	ret = populate_dir(fs, fs->root, flags);
+	ret = populate_dir(fs, fs->root, sb.st_dev, flags);
 
 	if (popd())
 		ret = -1;
