@@ -14,7 +14,7 @@ static struct option long_opts[] = {
 	{ "comp-extra", required_argument, NULL, 'X' },
 	{ "pack-file", required_argument, NULL, 'F' },
 	{ "pack-dir", required_argument, NULL, 'D' },
-	{ "keep-time", required_argument, NULL, 'k' },
+	{ "keep-time", no_argument, NULL, 'k' },
 	{ "one-file-system", no_argument, NULL, 'o' },
 	{ "exportable", no_argument, NULL, 'e' },
 	{ "force", no_argument, NULL, 'f' },
