@@ -35,6 +35,10 @@ enum {
 	FILE_FLAG_BLOCKS_ARE_DUPLICATE = 0x04,
 };
 
+enum {
+	DIR_SCAN_KEEP_TIME = 0x01,
+};
+
 /* Encapsulates a set of key-value pairs attached to a tree_node_t */
 struct tree_xattr_t {
 	/* Number of key-value pairs */
@@ -271,7 +275,7 @@ int fstree_from_file(fstree_t *fs, const char *filename, FILE *fp);
 
   Returns 0 on success, prints errors to stderr.
  */
-int fstree_from_dir(fstree_t *fs, const char *path, bool keep_time_stamps);
+int fstree_from_dir(fstree_t *fs, const char *path, unsigned int flags);
 
 /* Add labels from an SELinux labeling file to all tree nodes.
    Returns 0 on success. Internally prints errors to stderr. */

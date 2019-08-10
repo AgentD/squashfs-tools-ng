@@ -104,10 +104,10 @@ int main(int argc, char **argv)
 	if (fstree_init(&bfs, 512, NULL))
 		goto out_afs;
 
-	if (fstree_from_dir(&afs, first_path, true))
+	if (fstree_from_dir(&afs, first_path, DIR_SCAN_KEEP_TIME))
 		goto out_bfs;
 
-	if (fstree_from_dir(&bfs, second_path, true))
+	if (fstree_from_dir(&bfs, second_path, DIR_SCAN_KEEP_TIME))
 		goto out_bfs;
 
 	tree_node_sort_recursive(afs.root);
