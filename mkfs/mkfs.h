@@ -35,9 +35,7 @@ typedef struct {
 	int outmode;
 	int blksz;
 	int devblksz;
-	bool keep_time;
-	bool keep_xattr;
-	bool one_filesystem;
+	unsigned int dirscan_flags;
 	bool exportable;
 	bool quiet;
 	const char *infile;

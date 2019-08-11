@@ -147,9 +147,7 @@ void process_command_line(options_t *opt, int argc, char **argv)
 	opt->compressor = compressor_get_default();
 	opt->blksz = SQFS_DEFAULT_BLOCK_SIZE;
 	opt->devblksz = SQFS_DEVBLK_SIZE;
-	opt->keep_xattr = false;
-	opt->keep_time = false;
-	opt->one_filesystem = false;
+	opt->dirscan_flags = 0;
 	opt->exportable = false;
 	opt->quiet = false;
 	opt->infile = NULL;
@@ -195,15 +193,15 @@ void process_command_line(options_t *opt, int argc, char **argv)
 			opt->fs_defaults = optarg;
 			break;
 		case 'k':
-			opt->keep_time = true;
+			opt->dirscan_flags |= DIR_SCAN_KEEP_TIME;
 			break;
 #ifdef HAVE_SYS_XATTR_H
 		case 'x':
-			opt->keep_xattr = true;
+			opt->dirscan_flags |= DIR_SCAN_READ_XATTR;
 			break;
 #endif
 		case 'o':
-			opt->one_filesystem = true;
+			opt->dirscan_flags |= DIR_SCAN_ONE_FILESYSTEM;
 			break;
 		case 'e':
 			opt->exportable = true;

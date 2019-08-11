@@ -68,24 +68,11 @@ static int pack_files(data_writer_t *data, fstree_t *fs, options_t *opt)
 
 static int read_fstree(fstree_t *fs, options_t *opt)
 {
-	unsigned int flags;
 	FILE *fp;
 	int ret;
 
-	if (opt->infile == NULL) {
-		flags = 0;
-
-		if (opt->keep_time)
-			flags |= DIR_SCAN_KEEP_TIME;
-
-		if (opt->one_filesystem)
-			flags |= DIR_SCAN_ONE_FILESYSTEM;
-
-		if (opt->keep_xattr)
-			flags |= DIR_SCAN_READ_XATTR;
-
-		return fstree_from_dir(fs, opt->packdir, flags);
-	}
+	if (opt->infile == NULL)
+		return fstree_from_dir(fs, opt->packdir, opt->dirscan_flags);
 
 	fp = fopen(opt->infile, "rb");
 	if (fp == NULL) {
