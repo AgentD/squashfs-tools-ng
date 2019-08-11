@@ -36,6 +36,7 @@ typedef struct {
 	int blksz;
 	int devblksz;
 	bool keep_time;
+	bool keep_xattr;
 	bool one_filesystem;
 	bool exportable;
 	bool quiet;

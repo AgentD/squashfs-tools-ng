@@ -81,6 +81,9 @@ static int read_fstree(fstree_t *fs, options_t *opt)
 		if (opt->one_filesystem)
 			flags |= DIR_SCAN_ONE_FILESYSTEM;
 
+		if (opt->keep_xattr)
+			flags |= DIR_SCAN_READ_XATTR;
+
 		return fstree_from_dir(fs, opt->packdir, flags);
 	}
 

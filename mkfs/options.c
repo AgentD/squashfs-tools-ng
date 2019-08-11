@@ -15,6 +15,9 @@ static struct option long_opts[] = {
 	{ "pack-file", required_argument, NULL, 'F' },
 	{ "pack-dir", required_argument, NULL, 'D' },
 	{ "keep-time", no_argument, NULL, 'k' },
+#ifdef HAVE_SYS_XATTR_H
+	{ "keep-xattr", no_argument, NULL, 'x' },
+#endif
 	{ "one-file-system", no_argument, NULL, 'o' },
 	{ "exportable", no_argument, NULL, 'e' },
 	{ "force", no_argument, NULL, 'f' },
@@ -26,11 +29,14 @@ static struct option long_opts[] = {
 	{ "help", no_argument, NULL, 'h' },
 };
 
+static const char *short_opts = "F:D:X:c:b:B:d:kxoefqhV"
 #ifdef WITH_SELINUX
-static const char *short_opts = "s:F:D:X:c:b:B:d:koefqhV";
-#else
-static const char *short_opts = "F:D:X:c:b:B:d:koefqhV";
+"s:"
 #endif
+#ifdef HAVE_SYS_XATTR_H
+"x"
+#endif
+;
 
 extern char *__progname;
 
@@ -77,6 +83,8 @@ static const char *help_string =
 "  --keep-time, -k             When using --pack-dir only, use the timestamps\n"
 "                              from the input files instead of setting\n"
 "                              defaults on all input paths.\n"
+"  --keep-xattr, -x            When using --pack-dir only, read and pack the\n"
+"                              extended attributes from the input files.\n"
 "  --one-file-system, -o       When using --pack-dir only, stay in local file\n"
 "                              system and do not cross mount points.\n"
 "  --exportable, -e            Generate an export table for NFS support.\n"
@@ -139,6 +147,7 @@ void process_command_line(options_t *opt, int argc, char **argv)
 	opt->compressor = compressor_get_default();
 	opt->blksz = SQFS_DEFAULT_BLOCK_SIZE;
 	opt->devblksz = SQFS_DEVBLK_SIZE;
+	opt->keep_xattr = false;
 	opt->keep_time = false;
 	opt->one_filesystem = false;
 	opt->exportable = false;
@@ -188,6 +197,11 @@ void process_command_line(options_t *opt, int argc, char **argv)
 		case 'k':
 			opt->keep_time = true;
 			break;
+#ifdef HAVE_SYS_XATTR_H
+		case 'x':
+			opt->keep_xattr = true;
+			break;
+#endif
 		case 'o':
 			opt->one_filesystem = true;
 			break;

@@ -10,6 +10,9 @@
 #include "util.h"
 
 #include <sys/types.h>
+#ifdef HAVE_SYS_XATTR_H
+#include <sys/xattr.h>
+#endif
 #include <dirent.h>
 #include <unistd.h>
 #include <string.h>
@@ -51,6 +54,75 @@ fail:
 	free(ptr);
 	return NULL;
 }
+
+#ifdef HAVE_SYS_XATTR_H
+static int populate_xattr(fstree_t *fs, tree_node_t *node)
+{
+	char *key, *value = NULL, *buffer = NULL;
+	ssize_t buflen, vallen, keylen;
+
+	buflen = listxattr(node->name, NULL, 0);
+
+	if (buflen < 0) {
+		perror("listxattr");
+		return -1;
+	}
+
+	if (buflen == 0)
+		return 0;
+
+	buffer = malloc(buflen);
+	if (buffer == NULL) {
+		perror("xattr name buffer");
+		return -1;
+	}
+
+	buflen = listxattr(node->name, buffer, buflen);
+	if (buflen == -1) {
+		perror("listxattr");
+		goto fail;
+	}
+
+	key = buffer;
+	while (buflen > 0) {
+		vallen = getxattr(node->name, key, NULL, 0);
+		if (vallen == -1)
+			goto fail;
+
+		if (vallen > 0) {
+			value = calloc(1, vallen + 1);
+			if (value == NULL) {
+				perror("xattr value buffer");
+				goto fail;
+			}
+
+			vallen = getxattr(node->name, key, value, vallen);
+			if (vallen == -1) {
+				perror("getxattr");
+				goto fail;
+			}
+
+			value[vallen] = 0;
+			if (fstree_add_xattr(fs, node, key, value))
+				goto fail;
+
+			free(value);
+			value = NULL;
+		}
+
+		keylen = strlen(key) + 1;
+		buflen -= keylen;
+		key += keylen;
+	}
+
+	free(buffer);
+	return 0;
+fail:
+	free(value);
+	free(buffer);
+	return -1;
+}
+#endif
 
 static int populate_dir(fstree_t *fs, tree_node_t *root, dev_t devstart,
 			unsigned int flags)
@@ -114,6 +186,13 @@ static int populate_dir(fstree_t *fs, tree_node_t *root, dev_t devstart,
 			perror("creating tree node");
 			goto fail;
 		}
+
+#ifdef HAVE_SYS_XATTR_H
+		if (flags & DIR_SCAN_READ_XATTR) {
+			if (populate_xattr(fs, n))
+				return -1;
+		}
+#endif
 
 		free(extra);
 		extra = NULL;
