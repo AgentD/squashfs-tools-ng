@@ -143,19 +143,11 @@ void process_command_line(options_t *opt, int argc, char **argv)
 	bool have_compressor;
 	int i;
 
+	memset(opt, 0, sizeof(*opt));
 	opt->outmode = O_WRONLY | O_CREAT | O_EXCL;
 	opt->compressor = compressor_get_default();
 	opt->blksz = SQFS_DEFAULT_BLOCK_SIZE;
 	opt->devblksz = SQFS_DEVBLK_SIZE;
-	opt->dirscan_flags = 0;
-	opt->exportable = false;
-	opt->quiet = false;
-	opt->infile = NULL;
-	opt->packdir = NULL;
-	opt->outfile = NULL;
-	opt->selinux = NULL;
-	opt->comp_extra = NULL;
-	opt->fs_defaults = NULL;
 
 	for (;;) {
 		i = getopt_long(argc, argv, short_opts, long_opts, NULL);
