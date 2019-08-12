@@ -44,6 +44,10 @@ struct compressor_t {
 	ssize_t (*do_block)(compressor_t *cmp, const uint8_t *in, size_t size,
 			    uint8_t *out, size_t outsize);
 
+	/* create another compressor just like this one, i.e.
+	   with the exact same settings */
+	compressor_t *(*create_copy)(compressor_t *cmp);
+
 	void (*destroy)(compressor_t *stream);
 };
 

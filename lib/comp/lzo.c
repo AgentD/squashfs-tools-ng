@@ -177,6 +177,22 @@ static ssize_t lzo_uncomp_block(compressor_t *base, const uint8_t *in,
 	return len;
 }
 
+static compressor_t *lzo_create_copy(compressor_t *cmp)
+{
+	lzo_compressor_t *other = (lzo_compressor_t *)cmp;
+	lzo_compressor_t *lzo;
+
+	lzo = calloc(1, sizeof(*lzo) + lzo_algs[other->algorithm].bufsize);
+
+	if (lzo == NULL) {
+		perror("creating additional lzo compressor");
+		return NULL;
+	}
+
+	memcpy(lzo, other, sizeof(*lzo));
+	return (compressor_t *)lzo;
+}
+
 static void lzo_destroy(compressor_t *base)
 {
 	free(base);
@@ -281,6 +297,7 @@ compressor_t *create_lzo_compressor(bool compress, size_t block_size,
 	base->do_block = compress ? lzo_comp_block : lzo_uncomp_block;
 	base->write_options = lzo_write_options;
 	base->read_options = lzo_read_options;
+	base->create_copy = lzo_create_copy;
 	return base;
 }
 

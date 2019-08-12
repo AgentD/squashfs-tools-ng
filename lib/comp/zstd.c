@@ -88,6 +88,29 @@ static ssize_t zstd_uncomp_block(compressor_t *base, const uint8_t *in,
 	return ret;
 }
 
+static compressor_t *zstd_create_copy(compressor_t *cmp)
+{
+	zstd_compressor_t *zstd = malloc(sizeof(*zstd));
+
+	if (zstd == NULL) {
+		perror("creating additional zstd compressor");
+		return NULL;
+	}
+
+	memcpy(zstd, cmp, sizeof(*zstd));
+
+	zstd->zctx = ZSTD_createCCtx();
+
+	if (zstd->zctx == NULL) {
+		fputs("error creating addtional zstd compression context\n",
+		      stderr);
+		free(zstd);
+		return NULL;
+	}
+
+	return (compressor_t *)zstd;
+}
+
 static void zstd_destroy(compressor_t *base)
 {
 	zstd_compressor_t *zstd = (zstd_compressor_t *)base;
@@ -141,6 +164,7 @@ compressor_t *create_zstd_compressor(bool compress, size_t block_size,
 	base->do_block = compress ? zstd_comp_block : zstd_uncomp_block;
 	base->write_options = zstd_write_options;
 	base->read_options = zstd_read_options;
+	base->create_copy = zstd_create_copy;
 	return base;
 fail_level:
 	fprintf(stderr, "zstd compression level must be a number in the range "

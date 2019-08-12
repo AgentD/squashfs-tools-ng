@@ -308,6 +308,36 @@ fail_value:
 	return -1;
 }
 
+static compressor_t *gzip_create_copy(compressor_t *cmp)
+{
+	gzip_compressor_t *gzip = malloc(sizeof(*gzip));
+	int ret;
+
+	if (gzip == NULL) {
+		perror("creating additional gzip compressor");
+		return NULL;
+	}
+
+	memcpy(gzip, cmp, sizeof(*gzip));
+	memset(&gzip->strm, 0, sizeof(gzip->strm));
+
+	if (gzip->compress) {
+		ret = deflateInit2(&gzip->strm, gzip->opt.level, Z_DEFLATED,
+				   gzip->opt.window, 8, Z_DEFAULT_STRATEGY);
+	} else {
+		ret = inflateInit(&gzip->strm);
+	}
+
+	if (ret != Z_OK) {
+		fputs("internal error creating additional zlib stream\n",
+		      stderr);
+		free(gzip);
+		return NULL;
+	}
+
+	return (compressor_t *)gzip;
+}
+
 compressor_t *create_gzip_compressor(bool compress, size_t block_size,
 				     char *options)
 {
@@ -340,6 +370,7 @@ compressor_t *create_gzip_compressor(bool compress, size_t block_size,
 	base->destroy = gzip_destroy;
 	base->write_options = gzip_write_options;
 	base->read_options = gzip_read_options;
+	base->create_copy = gzip_create_copy;
 
 	if (compress) {
 		ret = deflateInit2(&gzip->strm, level, Z_DEFLATED, window, 8,

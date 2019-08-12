@@ -97,6 +97,19 @@ static ssize_t lz4_uncomp_block(compressor_t *base, const uint8_t *in,
 	return ret;
 }
 
+static compressor_t *lz4_create_copy(compressor_t *cmp)
+{
+	lz4_compressor_t *lz4 = malloc(sizeof(*lz4));
+
+	if (lz4 == NULL) {
+		perror("creating additional lz4 compressor");
+		return NULL;
+	}
+
+	memcpy(lz4, cmp, sizeof(*lz4));
+	return (compressor_t *)lz4;
+}
+
 static void lz4_destroy(compressor_t *base)
 {
 	free(base);
@@ -131,6 +144,7 @@ compressor_t *create_lz4_compressor(bool compress, size_t block_size,
 	base->do_block = compress ? lz4_comp_block : lz4_uncomp_block;
 	base->write_options = lz4_write_options;
 	base->read_options = lz4_read_options;
+	base->create_copy = lz4_create_copy;
 	return base;
 }
 

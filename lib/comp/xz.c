@@ -195,6 +195,19 @@ static ssize_t xz_uncomp_block(compressor_t *base, const uint8_t *in,
 	return -1;
 }
 
+static compressor_t *xz_create_copy(compressor_t *cmp)
+{
+	xz_compressor_t *xz = malloc(sizeof(*xz));
+
+	if (xz == NULL) {
+		perror("creating additional xz compressor");
+		return NULL;
+	}
+
+	memcpy(xz, cmp, sizeof(*xz));
+	return (compressor_t *)xz;
+}
+
 static void xz_destroy(compressor_t *base)
 {
 	free(base);
@@ -318,6 +331,7 @@ compressor_t *create_xz_compressor(bool compress, size_t block_size,
 	base->do_block = compress ? xz_comp_block : xz_uncomp_block;
 	base->write_options = xz_write_options;
 	base->read_options = xz_read_options;
+	base->create_copy = xz_create_copy;
 	return base;
 }
 
