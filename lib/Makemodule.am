@@ -18,6 +18,8 @@ libtar_a_CFLAGS = $(AM_CFLAGS)
 libtar_a_CPPFLAGS = $(AM_CPPFLAGS)
 
 libcompress_a_SOURCES = lib/comp/compressor.c lib/comp/internal.h
+libcompress_a_SOURCES += lib/comp/block_processor.c include/block_processor.h
+libcompress_a_SOURCES += lib/comp/create_block.c lib/comp/process_block.c
 libcompress_a_SOURCES += include/compress.h
 libcompress_a_CFLAGS = $(AM_CFLAGS)
 libcompress_a_CPPFLAGS = $(AM_CPPFLAGS)
