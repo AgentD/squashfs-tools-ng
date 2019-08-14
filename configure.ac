@@ -143,6 +143,10 @@ yes) AM_COND_IF([WITH_SELINUX], [], [AC_MSG_ERROR([cannot find selinux])]) ;;
 no)  AM_CONDITIONAL([WITH_SELINUX], [false]) ;;
 esac
 
+have_pthread="no"
+AX_PTHREAD([have_pthread="yes"], [])
+AM_CONDITIONAL([HAVE_PTHREAD], [test "x$have_pthread" != "xno"])
+
 ##### sanity check #####
 
 have_compressor="no"

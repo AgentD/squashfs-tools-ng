@@ -18,9 +18,8 @@ libtar_a_CFLAGS = $(AM_CFLAGS)
 libtar_a_CPPFLAGS = $(AM_CPPFLAGS)
 
 libcompress_a_SOURCES = lib/comp/compressor.c lib/comp/internal.h
-libcompress_a_SOURCES += lib/comp/block_processor.c include/block_processor.h
+libcompress_a_SOURCES += include/block_processor.h include/compress.h
 libcompress_a_SOURCES += lib/comp/create_block.c lib/comp/process_block.c
-libcompress_a_SOURCES += include/compress.h
 libcompress_a_CFLAGS = $(AM_CFLAGS)
 libcompress_a_CPPFLAGS = $(AM_CPPFLAGS)
 
@@ -50,6 +49,13 @@ libutil_a_SOURCES += lib/util/str_table.c include/str_table.h
 libutil_a_SOURCES += lib/util/dirstack.c lib/util/padd_file.c
 libutil_a_SOURCES += lib/util/read_data_at.c lib/util/crc32.c
 libutil_a_SOURCES += lib/util/source_date_epoch.c
+
+if HAVE_PTHREAD
+libcompress_a_SOURCES += lib/comp/block_processor_parallel.c
+libcompress_a_CFLAGS += $(PTHREAD_CFLAGS)
+else
+libcompress_a_SOURCES += lib/comp/block_processor.c
+endif
 
 if WITH_GZIP
 libcompress_a_SOURCES += lib/comp/gzip.c
