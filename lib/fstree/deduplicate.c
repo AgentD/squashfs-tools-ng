@@ -16,10 +16,8 @@ file_info_t *fragment_by_chksum(file_info_t *fi, uint32_t chksum,
 	file_info_t *it;
 
 	for (it = list; it != NULL; it = it->next) {
-		if (it == fi) {
-			it = NULL;
-			break;
-		}
+		if (it == fi)
+			continue;
 
 		if (!(it->flags & FILE_FLAG_HAS_FRAGMENT))
 			continue;
@@ -82,10 +80,8 @@ uint64_t find_equal_blocks(file_info_t *file, file_info_t *list,
 	}
 
 	for (it = list; it != NULL; it = it->next) {
-		if (it == file) {
-			it = NULL;
-			break;
-		}
+		if (it == file)
+			continue;
 
 		if (it->flags & FILE_FLAG_BLOCKS_ARE_DUPLICATE)
 			continue;

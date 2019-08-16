@@ -6,26 +6,6 @@
  */
 #include "mkfs.h"
 
-static int process_file(data_writer_t *data, file_info_t *fi, bool quiet,
-			file_info_t *list)
-{
-	int ret, infd;
-
-	if (!quiet)
-		printf("packing %s\n", fi->input_file);
-
-	infd = open(fi->input_file, O_RDONLY);
-	if (infd < 0) {
-		perror(fi->input_file);
-		return -1;
-	}
-
-	ret = write_data_from_fd(data, fi, infd, 0, list);
-
-	close(infd);
-	return ret;
-}
-
 static int set_working_dir(options_t *opt)
 {
 	const char *ptr;
@@ -51,12 +31,27 @@ static int restore_working_dir(options_t *opt)
 static int pack_files(data_writer_t *data, fstree_t *fs, options_t *opt)
 {
 	file_info_t *fi;
+	int ret, infd;
 
 	if (set_working_dir(opt))
 		return -1;
 
-	for (fi = fs->files; fi != NULL; fi = fi->next) {
-		if (process_file(data, fi, opt->quiet, fs->files))
+	while (fs->files != NULL) {
+		fi = fs->files;
+		fs->files = fi->next;
+
+		if (!opt->quiet)
+			printf("packing %s\n", fi->input_file);
+
+		infd = open(fi->input_file, O_RDONLY);
+		if (infd < 0) {
+			perror(fi->input_file);
+			return -1;
+		}
+
+		ret = write_data_from_fd(data, fi, infd, 0);
+		close(infd);
+		if (ret)
 			return -1;
 	}
 

@@ -313,7 +313,6 @@ tree_node_t *fstree_node_from_path(fstree_t *fs, const char *path);
 /*
   Walk through 'list' to find a file with a fragment that has
   the same size ('frag_size') and checksum ('chksum') as 'fi'.
-  Processing stopps if 'fi' itself is found in the list.
 
   Returns NULL if no such fragment could be found.
 */
@@ -323,8 +322,7 @@ file_info_t *fragment_by_chksum(file_info_t *fi, uint32_t chksum,
 
 /*
   Walk through 'list' to find a file that contains the same sequence of blocks
-  as 'file', comparing size and checksum. Processing stops if 'file' is found
-  in the list.
+  as 'file', comparing size and checksum.
 
   Returns NULL if no such fragment could be found.
  */

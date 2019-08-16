@@ -199,20 +199,20 @@ fail_arg:
 }
 
 static int write_file(tar_header_decoded_t *hdr, file_info_t *fi,
-		      data_writer_t *data, file_info_t *list)
+		      data_writer_t *data)
 {
 	int ret;
 
 	if (hdr->sparse != NULL) {
 		ret = write_data_from_fd_condensed(data, fi, STDIN_FILENO,
-						   hdr->sparse, 0, list);
+						   hdr->sparse, 0);
 		if (ret)
 			return -1;
 
 		return skip_padding(STDIN_FILENO, hdr->record_size);
 	}
 
-	if (write_data_from_fd(data, fi, STDIN_FILENO, 0, list))
+	if (write_data_from_fd(data, fi, STDIN_FILENO, 0))
 		return -1;
 
 	return skip_padding(STDIN_FILENO, fi->size);
@@ -265,11 +265,8 @@ static int create_node_and_repack_data(tar_header_decoded_t *hdr, fstree_t *fs,
 	}
 
 	if (S_ISREG(hdr->sb.st_mode)) {
-		if (write_file(hdr, node->data.file, data, fs->files))
+		if (write_file(hdr, node->data.file, data))
 			return -1;
-
-		node->data.file->next = fs->files;
-		fs->files = node->data.file;
 	}
 
 	return 0;

@@ -31,6 +31,7 @@ struct data_writer_t {
 
 	int block_idx;
 
+	file_info_t *list;
 	sqfs_super_t *super;
 	compressor_t *cmp;
 	int outfd;
@@ -132,10 +133,10 @@ int data_writer_flush_fragments(data_writer_t *data)
 	return 0;
 }
 
-static int deduplicate_data(data_writer_t *data, file_info_t *fi,
-			    file_info_t *list)
+static int deduplicate_data(data_writer_t *data, file_info_t *fi)
 {
-	uint64_t ref = find_equal_blocks(fi, list, data->super->block_size);
+	uint64_t ref = find_equal_blocks(fi, data->list,
+					 data->super->block_size);
 
 	if (ref > 0) {
 		data->super->bytes_used = fi->startblock;
@@ -159,7 +160,7 @@ fail_truncate:
 }
 
 static int flush_data_block(data_writer_t *data, size_t size, bool is_last,
-			    file_info_t *fi, int flags, file_info_t *list)
+			    file_info_t *fi, int flags)
 {
 	uint32_t out, chksum;
 	file_info_t *ref;
@@ -169,7 +170,7 @@ static int flush_data_block(data_writer_t *data, size_t size, bool is_last,
 		fi->blocks[data->block_idx].chksum = 0;
 		fi->sparse += size;
 		data->block_idx++;
-		return is_last ? deduplicate_data(data, fi, list) : 0;
+		return is_last ? deduplicate_data(data, fi) : 0;
 	}
 
 	chksum = update_crc32(0, data->block, size);
@@ -177,10 +178,10 @@ static int flush_data_block(data_writer_t *data, size_t size, bool is_last,
 	if (size < data->super->block_size && !(flags & DW_DONT_FRAGMENT)) {
 		fi->flags |= FILE_FLAG_HAS_FRAGMENT;
 
-		if (deduplicate_data(data, fi, list))
+		if (deduplicate_data(data, fi))
 			return -1;
 
-		ref = fragment_by_chksum(fi, chksum, size, list,
+		ref = fragment_by_chksum(chksum, size, data->list,
 					 data->super->block_size);
 
 		if (ref != NULL) {
@@ -211,7 +212,7 @@ static int flush_data_block(data_writer_t *data, size_t size, bool is_last,
 		fi->blocks[data->block_idx].size = out;
 		data->block_idx++;
 
-		if (is_last && deduplicate_data(data, fi, list) != 0)
+		if (is_last && deduplicate_data(data, fi) != 0)
 			return -1;
 	}
 
@@ -236,16 +237,18 @@ fail_seek:
 	return -1;
 }
 
-static int end_file(data_writer_t *data, int flags)
+static int end_file(data_writer_t *data, file_info_t *fi, int flags)
 {
 	if ((flags & DW_ALLIGN_DEVBLK) && allign_file(data) != 0)
 		return -1;
 
+	fi->next = data->list;
+	data->list = fi;
 	return 0;
 }
 
 int write_data_from_fd(data_writer_t *data, file_info_t *fi,
-		       int infd, int flags, file_info_t *list)
+		       int infd, int flags)
 {
 	uint64_t count;
 	bool is_last;
@@ -266,16 +269,15 @@ int write_data_from_fd(data_writer_t *data, file_info_t *fi,
 		if (read_data(fi->input_file, infd, data->block, diff))
 			return -1;
 
-		if (flush_data_block(data, diff, is_last, fi, flags, list))
+		if (flush_data_block(data, diff, is_last, fi, flags))
 			return -1;
 	}
 
-	return end_file(data, flags);
+	return end_file(data, fi, flags);
 }
 
 int write_data_from_fd_condensed(data_writer_t *data, file_info_t *fi,
-				 int infd, sparse_map_t *map, int flags,
-				 file_info_t *list)
+				 int infd, sparse_map_t *map, int flags)
 {
 	size_t start, count, diff;
 	sparse_map_t *m;
@@ -330,11 +332,11 @@ int write_data_from_fd_condensed(data_writer_t *data, file_info_t *fi,
 			map = map->next;
 		}
 
-		if (flush_data_block(data, diff, is_last, fi, flags, list))
+		if (flush_data_block(data, diff, is_last, fi, flags))
 			return -1;
 	}
 
-	return end_file(data, flags);
+	return end_file(data, fi, flags);
 fail_map_size:
 	fprintf(stderr, "%s: sparse file map spans beyond file size\n",
 		fi->input_file);

@@ -69,32 +69,25 @@ int data_writer_flush_fragments(data_writer_t *data);
   Blocks or fragments that are all zero bytes automatically detected,
   not written out and the sparse file accounting updated accordingly.
 
-  The flags argument is a combination of DW_* flags.
-
-  If 'list' is not NULL, it is used for fragment and data block deduplication.
-  It is assumed that the list is processed in order and scanning stops as soon
-  as the current file info 'fi' is encountered in the list.
+  The flags argument is a combination of DW_* flags. After completion the
+  data writer collects the 'fi' in an internal list it uses for deduplication.
 
   Returns 0 on success, prints errors to stderr.
 */
 int write_data_from_fd(data_writer_t *data, file_info_t *fi, int infd,
-		       int flags, file_info_t *list);
+		       int flags);
 
 /*
   Does the same as write_data_from_fd but the input file is the condensed
   representation of a sparse file. The layout must be in order and
   non-overlapping.
 
-  The flags argument is a combination of DW_* flags.
-
-  If 'list' is not NULL, it is used for fragment and data block deduplication.
-  It is assumed that the list is processed in order and scanning stops as soon
-  as the current file info 'fi' is encountered in the list.
+  The flags argument is a combination of DW_* flags. After completion the
+  data writer collects the 'fi' in an internal list it uses for deduplication.
 
   Returns 0 on success, prints errors to stderr.
  */
 int write_data_from_fd_condensed(data_writer_t *data, file_info_t *fi,
-				 int infd, sparse_map_t *map, int flags,
-				 file_info_t *list);
+				 int infd, sparse_map_t *map, int flags);
 
 #endif /* DATA_WRITER_H */
