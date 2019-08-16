@@ -51,11 +51,12 @@ void data_writer_destroy(data_writer_t *data);
 int data_writer_write_fragment_table(data_writer_t *data);
 
 /*
-  Compress and flush the current fragment buffer even if it is not full yet.
+  Wait for everything to be written to disk. This also forces a currently
+  pending fragment block to be compressed and wrtten.
 
   Returns 0 on success, prints errors to stderr.
 */
-int data_writer_flush_fragments(data_writer_t *data);
+int data_writer_sync(data_writer_t *data);
 
 /*
   Read data from the given file descriptor, partition it into blocks and

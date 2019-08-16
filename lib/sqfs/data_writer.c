@@ -105,7 +105,7 @@ static int allign_file(data_writer_t *data)
 	return 0;
 }
 
-int data_writer_flush_fragments(data_writer_t *data)
+static int flush_fragments(data_writer_t *data)
 {
 	uint64_t offset;
 	uint32_t out;
@@ -193,7 +193,7 @@ static int flush_data_block(data_writer_t *data, size_t size, bool is_last,
 		}
 
 		if (data->frag_offset + size > data->super->block_size) {
-			if (data_writer_flush_fragments(data))
+			if (flush_fragments(data))
 				return -1;
 		}
 
@@ -397,4 +397,9 @@ int data_writer_write_fragment_table(data_writer_t *data)
 	data->super->fragment_entry_count = data->num_fragments;
 	data->super->fragment_table_start = start;
 	return 0;
+}
+
+int data_writer_sync(data_writer_t *data)
+{
+	return flush_fragments(data);
 }

@@ -55,7 +55,7 @@ static int pack_files(data_writer_t *data, fstree_t *fs, options_t *opt)
 			return -1;
 	}
 
-	if (data_writer_flush_fragments(data))
+	if (data_writer_sync(data))
 		return -1;
 
 	return restore_working_dir(opt);

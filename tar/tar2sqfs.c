@@ -397,7 +397,7 @@ int main(int argc, char **argv)
 	if (process_tar_ball(&fs, data))
 		goto out;
 
-	if (data_writer_flush_fragments(data))
+	if (data_writer_sync(data))
 		goto out;
 
 	tree_node_sort_recursive(fs.root);
