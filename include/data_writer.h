@@ -21,11 +21,8 @@ enum {
 	   block, even if it is incomplete. */
 	DW_DONT_FRAGMENT = 0x01,
 
-	/* Intentionally write all blocks uncompressed. This implies
-	   DW_DONT_FRAGMENT since sharing a fragment block with other files
-	   would otherwise require the entire fragment block to be
-	   uncompressed. */
-	DW_DONT_COMPRESS = 0x03,
+	/* Intentionally write all blocks uncompressed. */
+	DW_DONT_COMPRESS = 0x02,
 
 	/* Make sure the first block of a file is alligned to
 	   device block size */

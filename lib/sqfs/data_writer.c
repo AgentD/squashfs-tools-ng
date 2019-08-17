@@ -6,6 +6,7 @@
  */
 #include "config.h"
 
+#include "block_processor.h"
 #include "data_writer.h"
 #include "highlevel.h"
 #include "util.h"
@@ -17,78 +18,59 @@
 #include <errno.h>
 
 struct data_writer_t {
-	void *block;
-	void *fragment;
-	void *scratch;
-
+	block_t *frag_block;
 	sqfs_fragment_t *fragments;
 	size_t num_fragments;
 	size_t max_fragments;
-	size_t frag_offset;
 
 	size_t devblksz;
+	uint64_t bytes_written;
 	off_t start;
-
-	int block_idx;
 
 	file_info_t *list;
 	sqfs_super_t *super;
 	compressor_t *cmp;
 	int outfd;
+
+	uint8_t scratch[];
 };
 
-static int write_compressed(data_writer_t *data, const void *in, size_t size,
-			    uint32_t *outsize, int flags)
+enum {
+	BLK_FIRST_BLOCK = BLK_USER,
+	BLK_LAST_BLOCK = BLK_USER << 1,
+	BLK_ALLIGN = BLK_USER << 2,
+	BLK_FRAGMENT_BLOCK = BLK_USER << 3,
+};
+
+static int save_position(data_writer_t *data)
 {
-	ssize_t ret = 0;
+	data->bytes_written = data->super->bytes_used;
+	data->start = lseek(data->outfd, 0, SEEK_CUR);
 
-	if (!(flags & DW_DONT_COMPRESS)) {
-		ret = data->cmp->do_block(data->cmp, in, size, data->scratch,
-					  data->super->block_size);
-		if (ret < 0)
-			return -1;
-	}
-
-	if (ret > 0 && (size_t)ret < size) {
-		size = ret;
-		in = data->scratch;
-		*outsize = size;
-	} else {
-		*outsize = size | (1 << 24);
-	}
-
-	if (write_data("writing data block", data->outfd, in, size))
+	if (data->start == (off_t)-1) {
+		perror("querying current position on squashfs image");
 		return -1;
-
-	data->super->bytes_used += size;
-	return 0;
-}
-
-static int grow_fragment_table(data_writer_t *data)
-{
-	size_t newsz;
-	void *new;
-
-	if (data->num_fragments == data->max_fragments) {
-		newsz = data->max_fragments ? data->max_fragments * 2 : 16;
-		new = realloc(data->fragments,
-			      sizeof(data->fragments[0]) * newsz);
-
-		if (new == NULL) {
-			perror("appending to fragment table");
-			return -1;
-		}
-
-		data->max_fragments = newsz;
-		data->fragments = new;
 	}
 
 	return 0;
 }
 
-static bool is_zero_block(unsigned char *ptr, size_t size)
+static int restore_position(data_writer_t *data)
 {
-	return ptr[0] == 0 && memcmp(ptr, ptr + 1, size - 1) == 0;
+	if (lseek(data->outfd, data->start, SEEK_SET) == (off_t)-1)
+		goto fail_seek;
+
+	if (ftruncate(data->outfd, data->start))
+		goto fail_truncate;
+
+	data->super->bytes_used = data->bytes_written;
+	return 0;
+fail_seek:
+	perror("seeking on squashfs image after file deduplication");
+	return -1;
+fail_truncate:
+	perror("truncating squashfs image after file deduplication");
+	return -1;
 }
 
 static int allign_file(data_writer_t *data)
@@ -105,187 +87,261 @@ static int allign_file(data_writer_t *data)
 	return 0;
 }
 
-static int flush_fragments(data_writer_t *data)
+static int handle_data_block(data_writer_t *data, block_t *blk)
 {
-	uint64_t offset;
+	file_info_t *fi = blk->user;
+	uint64_t ref, offset;
 	uint32_t out;
 
-	if (data->frag_offset == 0)
-		return 0;
+	if (blk->flags & BLK_FIRST_BLOCK) {
+		if (save_position(data))
+			goto fail;
 
-	if (grow_fragment_table(data))
-		return -1;
+		if ((blk->flags & BLK_ALLIGN) && allign_file(data) != 0)
+			goto fail;
 
-	offset = data->super->bytes_used;
-
-	if (write_compressed(data, data->fragment, data->frag_offset, &out, 0))
-		return -1;
-
-	data->fragments[data->num_fragments].start_offset = htole64(offset);
-	data->fragments[data->num_fragments].pad0 = 0;
-	data->fragments[data->num_fragments].size = htole32(out);
-
-	data->num_fragments += 1;
-	data->frag_offset = 0;
-
-	data->super->flags &= ~SQFS_FLAG_NO_FRAGMENTS;
-	data->super->flags |= SQFS_FLAG_ALWAYS_FRAGMENTS;
-	return 0;
-}
-
-static int deduplicate_data(data_writer_t *data, file_info_t *fi)
-{
-	uint64_t ref = find_equal_blocks(fi, data->list,
-					 data->super->block_size);
-
-	if (ref > 0) {
-		data->super->bytes_used = fi->startblock;
-
-		fi->startblock = ref;
-		fi->flags |= FILE_FLAG_BLOCKS_ARE_DUPLICATE;
-
-		if (lseek(data->outfd, data->start, SEEK_SET) == (off_t)-1)
-			goto fail_seek;
-
-		if (ftruncate(data->outfd, data->start))
-			goto fail_truncate;
-	}
-	return 0;
-fail_seek:
-	perror("seeking on squashfs image after file deduplication");
-	return -1;
-fail_truncate:
-	perror("truncating squashfs image after file deduplication");
-	return -1;
-}
-
-static int flush_data_block(data_writer_t *data, size_t size, bool is_last,
-			    file_info_t *fi, int flags)
-{
-	uint32_t out, chksum;
-	file_info_t *ref;
-
-	if (is_zero_block(data->block, size)) {
-		fi->blocks[data->block_idx].size = 0;
-		fi->blocks[data->block_idx].chksum = 0;
-		fi->sparse += size;
-		data->block_idx++;
-		return is_last ? deduplicate_data(data, fi) : 0;
+		fi->startblock = data->super->bytes_used;
 	}
 
-	chksum = update_crc32(0, data->block, size);
+	if (blk->size == 0)
+		goto skip_sentinel;
 
-	if (size < data->super->block_size && !(flags & DW_DONT_FRAGMENT)) {
-		fi->flags |= FILE_FLAG_HAS_FRAGMENT;
+	if (process_block(blk, data->cmp, data->scratch,
+			  data->super->block_size)) {
+		goto fail;
+	}
 
-		if (deduplicate_data(data, fi))
-			return -1;
+	out = blk->size;
+	if (!(blk->flags & BLK_IS_COMPRESSED))
+		out |= 1 << 24;
 
-		ref = fragment_by_chksum(chksum, size, data->list,
-					 data->super->block_size);
+	if (blk->flags & BLK_FRAGMENT_BLOCK) {
+		offset = htole64(data->super->bytes_used);
+		data->fragments[blk->index].start_offset = offset;
+		data->fragments[blk->index].pad0 = 0;
+		data->fragments[blk->index].size = htole32(out);
 
-		if (ref != NULL) {
-			fi->fragment_chksum = ref->fragment_chksum;
-			fi->fragment_offset = ref->fragment_offset;
-			fi->fragment = ref->fragment;
-			fi->flags |= FILE_FLAG_FRAGMENT_IS_DUPLICATE;
-			return 0;
-		}
-
-		if (data->frag_offset + size > data->super->block_size) {
-			if (flush_fragments(data))
-				return -1;
-		}
-
-		fi->fragment_chksum = chksum;
-		fi->fragment_offset = data->frag_offset;
-		fi->fragment = data->num_fragments;
-
-		memcpy((char *)data->fragment + data->frag_offset,
-		       data->block, size);
-		data->frag_offset += size;
+		data->super->flags &= ~SQFS_FLAG_NO_FRAGMENTS;
+		data->super->flags |= SQFS_FLAG_ALWAYS_FRAGMENTS;
 	} else {
-		if (write_compressed(data, data->block, size, &out, flags))
+		fi->blocks[blk->index].chksum = blk->checksum;
+		fi->blocks[blk->index].size = htole32(out);
+	}
+
+	if (write_data("writing data block", data->outfd,
+		       blk->data, blk->size)) {
+		goto fail;
+	}
+
+	data->super->bytes_used += blk->size;
+
+skip_sentinel:
+	if (blk->flags & BLK_LAST_BLOCK) {
+		if ((blk->flags & BLK_ALLIGN) && allign_file(data) != 0)
+			goto fail;
+
+		ref = find_equal_blocks(fi, data->list,
+					data->super->block_size);
+		if (ref > 0) {
+			fi->startblock = ref;
+			fi->flags |= FILE_FLAG_BLOCKS_ARE_DUPLICATE;
+
+			if (restore_position(data))
+				goto fail;
+		}
+	}
+
+	free(blk);
+	return 0;
+fail:
+	free(blk);
+	return -1;
+}
+
+/*****************************************************************************/
+
+static int flush_fragment_block(data_writer_t *data)
+{
+	size_t newsz;
+	void *new;
+	int ret;
+
+	if (data->num_fragments == data->max_fragments) {
+		newsz = data->max_fragments ? data->max_fragments * 2 : 16;
+		new = realloc(data->fragments,
+			      sizeof(data->fragments[0]) * newsz);
+
+		if (new == NULL) {
+			perror("appending to fragment table");
 			return -1;
+		}
 
-		fi->blocks[data->block_idx].chksum = chksum;
-		fi->blocks[data->block_idx].size = out;
-		data->block_idx++;
+		data->max_fragments = newsz;
+		data->fragments = new;
+	}
 
-		if (is_last && deduplicate_data(data, fi) != 0)
+	data->frag_block->index = data->num_fragments++;
+
+	ret = block_processor_enqueue(data->proc, data->frag_block);
+	data->frag_block = NULL;
+	return ret;
+}
+
+static int store_fragment(data_writer_t *data, block_t *frag)
+{
+	file_info_t *fi = frag->user;
+	size_t size;
+
+	if (data->frag_block != NULL) {
+		size = data->frag_block->size + frag->size;
+
+		if (size > data->super->block_size) {
+			if (flush_fragment_block(data))
+				goto fail;
+		}
+	}
+
+	if (data->frag_block == NULL) {
+		size = sizeof(block_t) + data->super->block_size;
+
+		data->frag_block = calloc(1, size);
+		if (data->frag_block == NULL) {
+			perror("creating fragment block");
+			goto fail;
+		}
+
+		data->frag_block->flags = BLK_DONT_CHECKSUM;
+		data->frag_block->flags |= BLK_FRAGMENT_BLOCK;
+	}
+
+	fi->fragment_offset = data->frag_block->size;
+	fi->fragment = data->num_fragments;
+
+	data->frag_block->flags |= (frag->flags & BLK_DONT_COMPRESS);
+	memcpy(data->frag_block->data + data->frag_block->size,
+	       frag->data, frag->size);
+
+	data->frag_block->size += frag->size;
+	free(frag);
+	return 0;
+fail:
+	free(frag);
+	return -1;
+}
+
+static bool is_zero_block(unsigned char *ptr, size_t size)
+{
+	return ptr[0] == 0 && memcmp(ptr, ptr + 1, size - 1) == 0;
+}
+
+static int handle_fragment(data_writer_t *data, block_t *blk)
+{
+	file_info_t *fi = blk->user, *ref;
+
+	fi->fragment_chksum = update_crc32(0, blk->data, blk->size);
+
+	ref = fragment_by_chksum(fi, fi->fragment_chksum, blk->size,
+				 data->list, data->super->block_size);
+
+	if (ref != NULL) {
+		fi->fragment_offset = ref->fragment_offset;
+		fi->fragment = ref->fragment;
+		fi->flags |= FILE_FLAG_FRAGMENT_IS_DUPLICATE;
+	} else {
+		if (store_fragment(data, blk))
 			return -1;
 	}
 
 	return 0;
 }
 
-static int begin_file(data_writer_t *data, file_info_t *fi, int flags)
+static int add_sentinel_block(data_writer_t *data, file_info_t *fi,
+			      uint32_t flags)
 {
-	data->start = lseek(data->outfd, 0, SEEK_CUR);
-	if (data->start == (off_t)-1)
-		goto fail_seek;
+	block_t *blk = calloc(1, sizeof(*blk));
 
-	if ((flags & DW_ALLIGN_DEVBLK) && allign_file(data) != 0)
+	if (blk == NULL) {
+		perror("creating sentinel block");
 		return -1;
+	}
 
-	fi->startblock = data->super->bytes_used;
-	fi->sparse = 0;
-	data->block_idx = 0;
-	return 0;
-fail_seek:
-	perror("querying current position on squashfs image");
-	return -1;
+	blk->user = fi;
+	blk->flags = BLK_DONT_COMPRESS | BLK_DONT_CHECKSUM | flags;
+
+	return handle_data_block(data, blk);
 }
 
-static int end_file(data_writer_t *data, file_info_t *fi, int flags)
+int write_data_from_fd(data_writer_t *data, file_info_t *fi,
+		       int infd, int flags)
 {
-	if ((flags & DW_ALLIGN_DEVBLK) && allign_file(data) != 0)
-		return -1;
+	uint32_t blk_flags = BLK_FIRST_BLOCK;
+	uint64_t file_size = fi->size;
+	size_t diff, i = 0;
+	block_t *blk;
+
+	if (flags & DW_DONT_COMPRESS)
+		blk_flags |= BLK_DONT_COMPRESS;
+
+	if (flags & DW_ALLIGN_DEVBLK)
+		blk_flags |= BLK_ALLIGN;
+
+	for (; file_size > 0; file_size -= diff) {
+		if (file_size > data->super->block_size) {
+			diff = data->super->block_size;
+		} else {
+			diff = file_size;
+		}
+
+		blk = create_block(fi->input_file, infd, diff, fi, blk_flags);
+		if (blk == NULL)
+			return -1;
+
+		blk->index = i++;
+
+		if (is_zero_block(blk->data, blk->size)) {
+			fi->blocks[blk->index].chksum = 0;
+			fi->blocks[blk->index].size = 0;
+			free(blk);
+			continue;
+		}
+
+		if (diff < data->super->block_size &&
+		    !(flags & DW_DONT_FRAGMENT)) {
+			fi->flags |= FILE_FLAG_HAS_FRAGMENT;
+
+			if (!(blk_flags & (BLK_FIRST_BLOCK | BLK_LAST_BLOCK))) {
+				blk_flags |= BLK_LAST_BLOCK;
+
+				if (add_sentinel_block(data, fi, blk_flags))
+					return -1;
+			}
+
+			if (handle_fragment(data, blk))
+				return -1;
+		} else {
+			if (handle_data_block(data, blk))
+				return -1;
+
+			blk_flags &= ~BLK_FIRST_BLOCK;
+		}
+	}
+
+	if (!(blk_flags & (BLK_FIRST_BLOCK | BLK_LAST_BLOCK))) {
+		blk_flags |= BLK_LAST_BLOCK;
+
+		if (add_sentinel_block(data, fi, blk_flags))
+			return -1;
+	}
 
 	fi->next = data->list;
 	data->list = fi;
 	return 0;
 }
 
-int write_data_from_fd(data_writer_t *data, file_info_t *fi,
-		       int infd, int flags)
+static int check_map_valid(const sparse_map_t *map, file_info_t *fi)
 {
-	uint64_t count;
-	bool is_last;
-	size_t diff;
-
-	if (begin_file(data, fi, flags))
-		return -1;
-
-	for (count = fi->size; count != 0; count -= diff) {
-		if (count > (uint64_t)data->super->block_size) {
-			diff = data->super->block_size;
-			is_last = false;
-		} else {
-			diff = count;
-			is_last = true;
-		}
-
-		if (read_data(fi->input_file, infd, data->block, diff))
-			return -1;
-
-		if (flush_data_block(data, diff, is_last, fi, flags))
-			return -1;
-	}
-
-	return end_file(data, fi, flags);
-}
-
-int write_data_from_fd_condensed(data_writer_t *data, file_info_t *fi,
-				 int infd, sparse_map_t *map, int flags)
-{
-	size_t start, count, diff;
-	sparse_map_t *m;
+	const sparse_map_t *m;
 	uint64_t offset;
-	bool is_last;
-
-	if (begin_file(data, fi, flags))
-		return -1;
 
 	if (map != NULL) {
 		offset = map->offset;
@@ -300,43 +356,7 @@ int write_data_from_fd_condensed(data_writer_t *data, file_info_t *fi,
 			goto fail_map_size;
 	}
 
-	for (offset = 0; offset < fi->size; offset += diff) {
-		if (fi->size - offset > (uint64_t)data->super->block_size) {
-			diff = data->super->block_size;
-			is_last = false;
-		} else {
-			diff = fi->size - offset;
-			is_last = true;
-		}
-
-		memset(data->block, 0, diff);
-
-		while (map != NULL && map->offset < offset + diff) {
-			start = 0;
-			count = map->count;
-
-			if (map->offset < offset)
-				count -= offset - map->offset;
-
-			if (map->offset > offset)
-				start = map->offset - offset;
-
-			if (start + count > diff)
-				count = diff - start;
-
-			if (read_data(fi->input_file, infd,
-				      (char *)data->block + start, count)) {
-				return -1;
-			}
-
-			map = map->next;
-		}
-
-		if (flush_data_block(data, diff, is_last, fi, flags))
-			return -1;
-	}
-
-	return end_file(data, fi, flags);
+	return 0;
 fail_map_size:
 	fprintf(stderr, "%s: sparse file map spans beyond file size\n",
 		fi->input_file);
@@ -346,6 +366,111 @@ fail_map:
 		"%s: sparse file map is unordered or self overlapping\n",
 		fi->input_file);
 	return -1;
+}
+
+static int get_sparse_block(block_t *blk, file_info_t *fi, int infd,
+			    sparse_map_t **sparse_map, uint64_t offset,
+			    size_t diff)
+{
+	sparse_map_t *map = *sparse_map;
+	size_t start, count;
+
+	while (map != NULL && map->offset < offset + diff) {
+		start = 0;
+		count = map->count;
+
+		if (map->offset < offset)
+			count -= offset - map->offset;
+
+		if (map->offset > offset)
+			start = map->offset - offset;
+
+		if (start + count > diff)
+			count = diff - start;
+
+		if (read_data(fi->input_file, infd, blk->data + start, count))
+			return -1;
+
+		map = map->next;
+	}
+
+	*sparse_map = map;
+	return 0;
+}
+
+int write_data_from_fd_condensed(data_writer_t *data, file_info_t *fi,
+				 int infd, sparse_map_t *map, int flags)
+{
+	uint32_t blk_flags = BLK_FIRST_BLOCK;
+	size_t diff, i = 0;
+	uint64_t offset;
+	block_t *blk;
+
+	if (check_map_valid(map, fi))
+		return -1;
+
+	if (flags & DW_DONT_COMPRESS)
+		blk_flags |= BLK_DONT_COMPRESS;
+
+	if (flags & DW_ALLIGN_DEVBLK)
+		blk_flags |= BLK_ALLIGN;
+
+	for (offset = 0; offset < fi->size; offset += diff) {
+		if (fi->size - offset > (uint64_t)data->super->block_size) {
+			diff = data->super->block_size;
+		} else {
+			diff = fi->size - offset;
+		}
+
+		blk = calloc(1, sizeof(*blk) + diff);
+		blk->size = diff;
+		blk->index = i++;
+		blk->user = fi;
+		blk->flags = blk_flags;
+
+		if (get_sparse_block(blk, fi, infd, &map, offset, diff)) {
+			free(blk);
+			return -1;
+		}
+
+		if (is_zero_block(blk->data, blk->size)) {
+			fi->blocks[blk->index].chksum = 0;
+			fi->blocks[blk->index].size = 0;
+			free(blk);
+			continue;
+		}
+
+		if (diff < data->super->block_size &&
+		    !(flags & DW_DONT_FRAGMENT)) {
+			fi->flags |= FILE_FLAG_HAS_FRAGMENT;
+
+			if (!(blk_flags & (BLK_FIRST_BLOCK | BLK_LAST_BLOCK))) {
+				blk_flags |= BLK_LAST_BLOCK;
+
+				if (add_sentinel_block(data, fi, blk_flags))
+					return -1;
+			}
+
+			if (handle_fragment(data, blk))
+				return -1;
+		} else {
+			if (handle_data_block(data, blk))
+				return -1;
+
+			blk_flags &= ~BLK_FIRST_BLOCK;
+		}
+	}
+
+	if (!(blk_flags & (BLK_FIRST_BLOCK | BLK_LAST_BLOCK))) {
+		blk_flags |= BLK_LAST_BLOCK;
+
+		if (add_sentinel_block(data, fi, blk_flags))
+			return -1;
+	}
+
+	fi->next = data->list;
+	data->list = fi;
+	return 0;
 }
 
 data_writer_t *data_writer_create(sqfs_super_t *super, compressor_t *cmp,
@@ -358,10 +483,6 @@ data_writer_t *data_writer_create(sqfs_super_t *super, compressor_t *cmp,
 		perror("creating data writer");
 		return NULL;
 	}
-
-	data->block = (char *)data + sizeof(*data);
-	data->fragment = (char *)data->block + super->block_size;
-	data->scratch = (char *)data->fragment + super->block_size;
 
 	data->super = super;
 	data->cmp = cmp;
@@ -401,5 +522,10 @@ int data_writer_write_fragment_table(data_writer_t *data)
 
 int data_writer_sync(data_writer_t *data)
 {
-	return flush_fragments(data);
+	if (data->frag_block != NULL) {
+		if (flush_fragment_block(data))
+			return -1;
+	}
+
+	return 0;
 }
