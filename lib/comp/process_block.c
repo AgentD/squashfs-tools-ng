@@ -10,6 +10,7 @@
 #include "util.h"
 
 #include <string.h>
+#include <zlib.h>
 
 int process_block(block_t *block, compressor_t *cmp,
 		  uint8_t *scratch, size_t scratch_size)
@@ -17,7 +18,7 @@ int process_block(block_t *block, compressor_t *cmp,
 	ssize_t ret;
 
 	if (!(block->flags & BLK_DONT_CHECKSUM))
-		block->checksum = update_crc32(0, block->data, block->size);
+		block->checksum = crc32(0, block->data, block->size);
 
 	if (!(block->flags & BLK_DONT_COMPRESS)) {
 		ret = cmp->do_block(cmp, block->data, block->size,

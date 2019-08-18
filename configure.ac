@@ -42,10 +42,6 @@ AC_SUBST([WARN_CFLAGS])
 
 ##### config options #####
 
-AC_ARG_WITH([gzip],
-	[AS_HELP_STRING([--with-gzip], [Build with gzip compression support])],
-	[want_gzip="${withval}"], [want_gzip="maybe"])
-
 AC_ARG_WITH([xz],
 	[AS_HELP_STRING([--with-xz], [Build with xz compression support])],
 	[want_xz="${withval}"], [want_xz="maybe"])
@@ -69,9 +65,8 @@ AC_ARG_WITH([selinux],
 
 ##### search for dependencies #####
 
-PKG_CHECK_MODULES(ZLIB, [zlib],
-			[AM_CONDITIONAL([WITH_GZIP], [true])],
-			[AM_CONDITIONAL([WITH_GZIP], [false])])
+AM_CONDITIONAL([WITH_GZIP], [true])
+PKG_CHECK_MODULES(ZLIB, [zlib], [], [AC_MSG_ERROR([cannot find zlib])])
 
 PKG_CHECK_MODULES(XZ, [liblzma >= 5.0.0],
 		      [AM_CONDITIONAL([WITH_XZ], [true])],
@@ -113,11 +108,6 @@ if test "x$want_selinux" != "xno"; then
 			 [AM_CONDITIONAL([WITH_SELINUX], [false])])
 fi
 
-case "$want_gzip" in
-yes) AM_COND_IF([WITH_GZIP], [], [AC_MSG_ERROR([cannot find zlib])]) ;;
-no)  AM_CONDITIONAL([WITH_GZIP], [false]) ;;
-esac
-
 case "$want_xz" in
 yes) AM_COND_IF([WITH_XZ], [], [AC_MSG_ERROR([cannot find xz sdk])]) ;;
 no)  AM_CONDITIONAL([WITH_XZ], [false]) ;;
@@ -146,19 +136,6 @@ esac
 have_pthread="no"
 AX_PTHREAD([have_pthread="yes"], [])
 AM_CONDITIONAL([HAVE_PTHREAD], [test "x$have_pthread" != "xno"])
-
-##### sanity check #####
-
-have_compressor="no"
-AM_COND_IF([WITH_GZIP], [have_compressor="yes"])
-AM_COND_IF([WITH_XZ], [have_compressor="yes"])
-AM_COND_IF([WITH_LZO], [have_compressor="yes"])
-AM_COND_IF([WITH_LZ4], [have_compressor="yes"])
-AM_COND_IF([WITH_ZSTD], [have_compressor="yes"])
-
-if test "x$have_compressor" != "xyes"; then
-	AC_MSG_ERROR([no compressor available. At lest one is required])
-fi
 
 ##### additional checks #####
 AX_COMPILE_CHECK_SIZEOF(time_t)

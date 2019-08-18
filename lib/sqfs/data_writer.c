@@ -16,6 +16,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <errno.h>
+#include <zlib.h>
 
 struct data_writer_t {
 	block_t *frag_block;
@@ -229,7 +230,7 @@ static int handle_fragment(data_writer_t *data, block_t *blk)
 {
 	file_info_t *fi = blk->user, *ref;
 
-	fi->fragment_chksum = update_crc32(0, blk->data, blk->size);
+	fi->fragment_chksum = crc32(0, blk->data, blk->size);
 
 	ref = fragment_by_chksum(fi, fi->fragment_chksum, blk->size,
 				 data->list, data->super->block_size);

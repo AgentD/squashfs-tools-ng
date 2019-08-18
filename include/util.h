@@ -81,8 +81,6 @@ int popd(void);
 */
 int padd_file(int outfd, uint64_t size, size_t blocksize);
 
-uint32_t update_crc32(uint32_t crc, const void *data, size_t size);
-
 /*
   If the environment variable SOURCE_DATE_EPOCH is set to a parsable number
   that fits into an unsigned 32 bit value, return its value. Otherwise,
