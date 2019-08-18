@@ -14,6 +14,7 @@ static struct option long_opts[] = {
 	{ "comp-extra", required_argument, NULL, 'X' },
 	{ "pack-file", required_argument, NULL, 'F' },
 	{ "pack-dir", required_argument, NULL, 'D' },
+	{ "num-jobs", required_argument, NULL, 'j' },
 	{ "keep-time", no_argument, NULL, 'k' },
 #ifdef HAVE_SYS_XATTR_H
 	{ "keep-xattr", no_argument, NULL, 'x' },
@@ -29,7 +30,7 @@ static struct option long_opts[] = {
 	{ "help", no_argument, NULL, 'h' },
 };
 
-static const char *short_opts = "F:D:X:c:b:B:d:kxoefqhV"
+static const char *short_opts = "F:D:X:c:b:B:d:j:kxoefqhV"
 #ifdef WITH_SELINUX
 "s:"
 #endif
@@ -63,6 +64,7 @@ static const char *help_string =
 "  --comp-extra, -X <options>  A comma seperated list of extra options for\n"
 "                              the selected compressor. Specify 'help' to\n"
 "                              get a list of available options.\n"
+"  --num-jobs, -j <count>      Number of compressor jobs to create.\n"
 "  --block-size, -b <size>     Block size to use for Squashfs image.\n"
 "                              Defaults to %u.\n"
 "  --dev-block-size, -B <size> Device block size to padd the image to.\n"
@@ -148,6 +150,7 @@ void process_command_line(options_t *opt, int argc, char **argv)
 	opt->compressor = compressor_get_default();
 	opt->blksz = SQFS_DEFAULT_BLOCK_SIZE;
 	opt->devblksz = SQFS_DEVBLK_SIZE;
+	opt->num_jobs = 1;
 
 	for (;;) {
 		i = getopt_long(argc, argv, short_opts, long_opts, NULL);
@@ -172,6 +175,9 @@ void process_command_line(options_t *opt, int argc, char **argv)
 			break;
 		case 'b':
 			opt->blksz = strtol(optarg, NULL, 0);
+			break;
+		case 'j':
+			opt->num_jobs = strtol(optarg, NULL, 0);
 			break;
 		case 'B':
 			opt->devblksz = strtol(optarg, NULL, 0);

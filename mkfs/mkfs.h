@@ -36,6 +36,7 @@ typedef struct {
 	int blksz;
 	int devblksz;
 	unsigned int dirscan_flags;
+	unsigned int num_jobs;
 	bool exportable;
 	bool quiet;
 	const char *infile;

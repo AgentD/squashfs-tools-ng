@@ -29,6 +29,11 @@ and the default selection.
 A comma seperated list of extra options for the selected compressor. Specify
 \fBhelp\fR to get a list of available options.
 .TP
+\fB\-\-num\-jobs\fR, \fB\-j\fR <count>
+If gensquashfs was compiled with a built in pthread based parallel data
+compressor, this option can be used to set the number of compressor
+threads. If not set, the default is 1.
+.TP
 \fB\-\-block\-size\fR, \fB\-b\fR <size>
 Block size to use for Squashfs image.
 Defaults to 131072.

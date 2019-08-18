@@ -160,7 +160,8 @@ int main(int argc, char **argv)
 		super.bytes_used += ret;
 	}
 
-	data = data_writer_create(&super, cmp, outfd, opt.devblksz);
+	data = data_writer_create(&super, cmp, outfd,
+				  opt.devblksz, opt.num_jobs);
 	if (data == NULL)
 		goto out_cmp;
 

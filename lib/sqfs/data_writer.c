@@ -27,12 +27,11 @@ struct data_writer_t {
 	uint64_t bytes_written;
 	off_t start;
 
+	block_processor_t *proc;
+	compressor_t *cmp;
 	file_info_t *list;
 	sqfs_super_t *super;
-	compressor_t *cmp;
 	int outfd;
-
-	uint8_t scratch[];
 };
 
 enum {
@@ -87,29 +86,25 @@ static int allign_file(data_writer_t *data)
 	return 0;
 }
 
-static int handle_data_block(data_writer_t *data, block_t *blk)
+static int block_callback(void *user, block_t *blk)
 {
 	file_info_t *fi = blk->user;
+	data_writer_t *data = user;
 	uint64_t ref, offset;
 	uint32_t out;
 
 	if (blk->flags & BLK_FIRST_BLOCK) {
 		if (save_position(data))
-			goto fail;
+			return -1;
 
 		if ((blk->flags & BLK_ALLIGN) && allign_file(data) != 0)
-			goto fail;
+			return -1;
 
 		fi->startblock = data->super->bytes_used;
 	}
 
 	if (blk->size == 0)
 		goto skip_sentinel;
-
-	if (process_block(blk, data->cmp, data->scratch,
-			  data->super->block_size)) {
-		goto fail;
-	}
 
 	out = blk->size;
 	if (!(blk->flags & BLK_IS_COMPRESSED))
@@ -130,7 +125,7 @@ static int handle_data_block(data_writer_t *data, block_t *blk)
 
 	if (write_data("writing data block", data->outfd,
 		       blk->data, blk->size)) {
-		goto fail;
+		return -1;
 	}
 
 	data->super->bytes_used += blk->size;
@@ -138,7 +133,7 @@ static int handle_data_block(data_writer_t *data, block_t *blk)
 skip_sentinel:
 	if (blk->flags & BLK_LAST_BLOCK) {
 		if ((blk->flags & BLK_ALLIGN) && allign_file(data) != 0)
-			goto fail;
+			return -1;
 
 		ref = find_equal_blocks(fi, data->list,
 					data->super->block_size);
@@ -147,15 +142,11 @@ skip_sentinel:
 			fi->flags |= FILE_FLAG_BLOCKS_ARE_DUPLICATE;
 
 			if (restore_position(data))
-				goto fail;
+				return -1;
 		}
 	}
 
-	free(blk);
 	return 0;
-fail:
-	free(blk);
-	return -1;
 }
 
 /*****************************************************************************/
@@ -268,7 +259,7 @@ static int add_sentinel_block(data_writer_t *data, file_info_t *fi,
 	blk->user = fi;
 	blk->flags = BLK_DONT_COMPRESS | BLK_DONT_CHECKSUM | flags;
 
-	return handle_data_block(data, blk);
+	return block_processor_enqueue(data->proc, blk);
 }
 
 int write_data_from_fd(data_writer_t *data, file_info_t *fi,
@@ -284,6 +275,9 @@ int write_data_from_fd(data_writer_t *data, file_info_t *fi,
 
 	if (flags & DW_ALLIGN_DEVBLK)
 		blk_flags |= BLK_ALLIGN;
+
+	fi->next = data->list;
+	data->list = fi;
 
 	for (; file_size > 0; file_size -= diff) {
 		if (file_size > data->super->block_size) {
@@ -319,7 +313,7 @@ int write_data_from_fd(data_writer_t *data, file_info_t *fi,
 			if (handle_fragment(data, blk))
 				return -1;
 		} else {
-			if (handle_data_block(data, blk))
+			if (block_processor_enqueue(data->proc, blk))
 				return -1;
 
 			blk_flags &= ~BLK_FIRST_BLOCK;
@@ -333,8 +327,6 @@ int write_data_from_fd(data_writer_t *data, file_info_t *fi,
 			return -1;
 	}
 
-	fi->next = data->list;
-	data->list = fi;
 	return 0;
 }
 
@@ -454,7 +446,7 @@ int write_data_from_fd_condensed(data_writer_t *data, file_info_t *fi,
 			if (handle_fragment(data, blk))
 				return -1;
 		} else {
-			if (handle_data_block(data, blk))
+			if (block_processor_enqueue(data->proc, blk))
 				return -1;
 
 			blk_flags &= ~BLK_FIRST_BLOCK;
@@ -468,24 +460,24 @@ int write_data_from_fd_condensed(data_writer_t *data, file_info_t *fi,
 			return -1;
 	}
 
-	fi->next = data->list;
-	data->list = fi;
 	return 0;
 }
 
 data_writer_t *data_writer_create(sqfs_super_t *super, compressor_t *cmp,
-				  int outfd, size_t devblksize)
+				  int outfd, size_t devblksize,
+				  unsigned int num_jobs)
 {
-	data_writer_t *data;
+	data_writer_t *data = calloc(1, sizeof(*data));
 
-	data = calloc(1, sizeof(*data) + super->block_size * 3);
 	if (data == NULL) {
 		perror("creating data writer");
 		return NULL;
 	}
 
-	data->super = super;
+	data->proc = block_processor_create(super->block_size, cmp, num_jobs,
+					    data, block_callback);
 	data->cmp = cmp;
+	data->super = super;
 	data->outfd = outfd;
 	data->devblksz = devblksize;
 	return data;
@@ -493,6 +485,7 @@ data_writer_t *data_writer_create(sqfs_super_t *super, compressor_t *cmp,
 
 void data_writer_destroy(data_writer_t *data)
 {
+	block_processor_destroy(data->proc);
 	free(data->fragments);
 	free(data);
 }
@@ -527,5 +520,5 @@ int data_writer_sync(data_writer_t *data)
 			return -1;
 	}
 
-	return 0;
+	return block_processor_finish(data->proc);
 }

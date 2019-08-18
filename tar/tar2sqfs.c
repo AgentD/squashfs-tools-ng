@@ -30,6 +30,7 @@ static struct option long_opts[] = {
 	{ "block-size", required_argument, NULL, 'b' },
 	{ "dev-block-size", required_argument, NULL, 'B' },
 	{ "defaults", required_argument, NULL, 'd' },
+	{ "num-jobs", required_argument, NULL, 'j' },
 	{ "comp-extra", required_argument, NULL, 'X' },
 	{ "no-skip", no_argument, NULL, 's' },
 	{ "no-xattr", no_argument, NULL, 'x' },
@@ -41,7 +42,7 @@ static struct option long_opts[] = {
 	{ "version", no_argument, NULL, 'V' },
 };
 
-static const char *short_opts = "c:b:B:d:X:sxekfqhV";
+static const char *short_opts = "c:b:B:d:X:j:sxekfqhV";
 
 static const char *usagestr =
 "Usage: tar2sqfs [OPTIONS...] <sqfsfile>\n"
@@ -56,6 +57,7 @@ static const char *usagestr =
 "  --comp-extra, -X <options>  A comma seperated list of extra options for\n"
 "                              the selected compressor. Specify 'help' to\n"
 "                              get a list of available options.\n"
+"  --num-jobs, -j <count>      Number of compressor jobs to create.\n"
 "  --block-size, -b <size>     Block size to use for Squashfs image.\n"
 "                              Defaults to %u.\n"
 "  --dev-block-size, -B <size> Device block size to padd the image to.\n"
@@ -92,6 +94,7 @@ static int block_size = SQFS_DEFAULT_BLOCK_SIZE;
 static size_t devblksize = SQFS_DEVBLK_SIZE;
 static bool quiet = false;
 static int outmode = O_WRONLY | O_CREAT | O_EXCL;
+static unsigned int num_jobs = 1;
 static E_SQFS_COMPRESSOR comp_id;
 static char *comp_extra = NULL;
 static char *fs_defaults = NULL;
@@ -138,6 +141,9 @@ static void process_args(int argc, char **argv)
 					optarg);
 				exit(EXIT_FAILURE);
 			}
+			break;
+		case 'j':
+			num_jobs = strtol(optarg, NULL, 0);
 			break;
 		case 'X':
 			comp_extra = optarg;
@@ -387,7 +393,7 @@ int main(int argc, char **argv)
 		super.bytes_used += ret;
 	}
 
-	data = data_writer_create(&super, cmp, outfd, devblksize);
+	data = data_writer_create(&super, cmp, outfd, devblksize, num_jobs);
 	if (data == NULL)
 		goto out_cmp;
 
