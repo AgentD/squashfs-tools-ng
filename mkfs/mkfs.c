@@ -191,8 +191,10 @@ int main(int argc, char **argv)
 	if (padd_file(outfd, super.bytes_used, opt.devblksz))
 		goto out_data;
 
-	if (!opt.quiet)
+	if (!opt.quiet) {
+		fstree_gen_file_list(&fs);
 		sqfs_print_statistics(&fs, &super);
+	}
 
 	status = EXIT_SUCCESS;
 out_data:
