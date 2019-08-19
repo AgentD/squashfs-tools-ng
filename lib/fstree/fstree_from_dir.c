@@ -190,7 +190,7 @@ static int populate_dir(fstree_t *fs, tree_node_t *root, dev_t devstart,
 #ifdef HAVE_SYS_XATTR_H
 		if (flags & DIR_SCAN_READ_XATTR) {
 			if (populate_xattr(fs, n))
-				return -1;
+				goto fail;
 		}
 #endif
 
