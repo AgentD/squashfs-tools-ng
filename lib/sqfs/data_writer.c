@@ -239,12 +239,11 @@ static int handle_fragment(data_writer_t *data, block_t *blk)
 		fi->fragment_offset = ref->fragment_offset;
 		fi->fragment = ref->fragment;
 		fi->flags |= FILE_FLAG_FRAGMENT_IS_DUPLICATE;
-	} else {
-		if (store_fragment(data, blk))
-			return -1;
+		free(blk);
+		return 0;
 	}
 
-	return 0;
+	return store_fragment(data, blk);
 }
 
 static int add_sentinel_block(data_writer_t *data, file_info_t *fi,
