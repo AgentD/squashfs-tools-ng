@@ -21,6 +21,7 @@ static struct option long_opts[] = {
 #ifdef HAVE_SYS_XATTR_H
 	{ "set-xattr", no_argument, NULL, 'X' },
 #endif
+	{ "set-times", no_argument, NULL, 'T' },
 	{ "jobs", required_argument, NULL, 'j' },
 	{ "describe", no_argument, NULL, 'd' },
 	{ "chmod", no_argument, NULL, 'C' },
@@ -31,7 +32,7 @@ static struct option long_opts[] = {
 };
 
 static const char *short_opts =
-	"l:c:u:p:x:DSFLCOEZj:dqhV"
+	"l:c:u:p:x:DSFLCOEZTj:dqhV"
 #ifdef HAVE_SYS_XATTR_H
 	"X"
 #endif
@@ -71,6 +72,8 @@ static const char *help_string =
 "  --set-xattr, -X           When unpacking files to disk, set the extended\n"
 "                            attributes from the squashfs image.\n"
 #endif
+"  --set-times, -T           When unpacking files to disk, set the create\n"
+"                            and modify timestamps from the squashfs image.\n"
 "  --jobs, -j <count>        Number of parallel unpacking jobs to start.\n"
 "  --chmod, -C               Change permission flags of unpacked files to\n"
 "                            those store in the squashfs image.\n"
@@ -153,6 +156,9 @@ void process_command_line(options_t *opt, int argc, char **argv)
 			opt->rdtree_flags |= RDTREE_READ_XATTR;
 			break;
 #endif
+		case 'T':
+			opt->flags |= UNPACK_SET_TIMES;
+			break;
 		case 'j':
 			for (j = 0; optarg[j] != '\0'; ++j) {
 				if (j > 6 || !isdigit(optarg[j]))

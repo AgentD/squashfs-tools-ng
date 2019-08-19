@@ -109,23 +109,6 @@ static int set_attribs(fstree_t *fs, tree_node_t *n, int flags)
 			return -1;
 	}
 
-	if (flags & UNPACK_CHOWN) {
-		if (fchownat(AT_FDCWD, n->name, n->uid, n->gid,
-			     AT_SYMLINK_NOFOLLOW)) {
-			fprintf(stderr, "chown %s: %s\n",
-				n->name, strerror(errno));
-			return -1;
-		}
-	}
-
-	if (flags & UNPACK_CHMOD) {
-		if (fchmodat(AT_FDCWD, n->name, n->mode,
-			     AT_SYMLINK_NOFOLLOW)) {
-			fprintf(stderr, "chmod %s: %s\n",
-				n->name, strerror(errno));
-			return -1;
-		}
-	}
 #ifdef HAVE_SYS_XATTR_H
 	if ((flags & UNPACK_SET_XATTR) && n->xattr != NULL) {
 		size_t i, len, kidx, vidx;
@@ -150,6 +133,38 @@ static int set_attribs(fstree_t *fs, tree_node_t *n, int flags)
 #else
 	(void)fs;
 #endif
+
+	if (flags & UNPACK_SET_TIMES) {
+		struct timespec times[2];
+
+		memset(times, 0, sizeof(times));
+		times[0].tv_sec = n->mod_time;
+		times[1].tv_sec = n->mod_time;
+
+		if (utimensat(AT_FDCWD, n->name, times, AT_SYMLINK_NOFOLLOW)) {
+			fprintf(stderr, "setting timestamp on %s: %s\n",
+				n->name, strerror(errno));
+			return -1;
+		}
+	}
+
+	if (flags & UNPACK_CHOWN) {
+		if (fchownat(AT_FDCWD, n->name, n->uid, n->gid,
+			     AT_SYMLINK_NOFOLLOW)) {
+			fprintf(stderr, "chown %s: %s\n",
+				n->name, strerror(errno));
+			return -1;
+		}
+	}
+
+	if (flags & UNPACK_CHMOD) {
+		if (fchmodat(AT_FDCWD, n->name, n->mode,
+			     AT_SYMLINK_NOFOLLOW)) {
+			fprintf(stderr, "chmod %s: %s\n",
+				n->name, strerror(errno));
+			return -1;
+		}
+	}
 	return 0;
 }
 
@@ -177,7 +192,7 @@ int restore_fstree(tree_node_t *root, int flags)
 
 int update_tree_attribs(fstree_t *fs, tree_node_t *root, int flags)
 {
-	if ((flags & (UNPACK_CHOWN | UNPACK_CHMOD)) == 0)
+	if ((flags & (UNPACK_CHOWN | UNPACK_CHMOD | UNPACK_SET_TIMES)) == 0)
 		return 0;
 
 	return set_attribs(fs, root, flags);
