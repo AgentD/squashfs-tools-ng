@@ -307,8 +307,10 @@ int write_data_from_fd(data_writer_t *data, file_info_t *fi,
 			if (!(blk_flags & (BLK_FIRST_BLOCK | BLK_LAST_BLOCK))) {
 				blk_flags |= BLK_LAST_BLOCK;
 
-				if (add_sentinel_block(data, fi, blk_flags))
+				if (add_sentinel_block(data, fi, blk_flags)) {
+					free(blk);
 					return -1;
+				}
 			}
 
 			if (handle_fragment(data, blk))
@@ -440,8 +442,10 @@ int write_data_from_fd_condensed(data_writer_t *data, file_info_t *fi,
 			if (!(blk_flags & (BLK_FIRST_BLOCK | BLK_LAST_BLOCK))) {
 				blk_flags |= BLK_LAST_BLOCK;
 
-				if (add_sentinel_block(data, fi, blk_flags))
+				if (add_sentinel_block(data, fi, blk_flags)) {
+					free(blk);
 					return -1;
+				}
 			}
 
 			if (handle_fragment(data, blk))
