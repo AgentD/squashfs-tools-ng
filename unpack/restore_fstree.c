@@ -192,8 +192,20 @@ int restore_fstree(tree_node_t *root, int flags)
 
 int update_tree_attribs(fstree_t *fs, tree_node_t *root, int flags)
 {
+	tree_node_t *n;
+
 	if ((flags & (UNPACK_CHOWN | UNPACK_CHMOD | UNPACK_SET_TIMES)) == 0)
 		return 0;
 
-	return set_attribs(fs, root, flags);
+	if (S_ISDIR(root->mode)) {
+		for (n = root->data.dir->children; n != NULL; n = n->next) {
+			if (set_attribs(fs, n, flags))
+				return -1;
+		}
+	} else {
+		if (set_attribs(fs, root, flags))
+			return -1;
+	}
+
+	return 0;
 }
