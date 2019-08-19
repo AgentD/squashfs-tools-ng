@@ -27,7 +27,8 @@ Unpack the specified sub directory from the image. To unpack everything,
 simply specify /.
 .TP
 \fB\-\-describe\fR, \fB\-d\fR
-Produce a file listing from the image.
+Produce a file listing from the image compatible with the format consumed by
+gensquashfs.
 .PP
 The following options can be used to control the behaviour of the specified
 operation:
@@ -38,6 +39,24 @@ data is unpacked to. If used with \fB\-\-describe\fR, this
 is used as a prefix for the input path of
 regular files.
 .TP
+\fB\-\-no\-dev\fR, \fB\-D\fR
+Skip device special files when parsing the filesystem tree.
+.TP
+\fB\-\-no\-sock\fR, \fB\-S\fR
+Skip socket files when parsing the filesystem tree.
+.TP
+\fB\-\-no\-fifo\fR, \fB\-F\fR
+Skip named pipes files when parsing the filesystem tree.
+.TP
+\fB\-\-no\-slink\fR, \fB\-L\fR
+Skip symbolic links when parsing the filesystem tree.
+.TP
+\fB\-\-no\-empty\-dir\fR, \fB\-E\fR
+Skip directories that would end up empty after applying the above rules.
+.PP
+The following options are specific to unpacking files from a SquashFS image
+to disk:
+.TP
 \fB\-\-jobs\fR, \fB\-j\fR <count>
 Specify a number of parallel jobs to spawn for unpacking file data.
 The file hierarchy is created sequentially but the data unpacking is
@@ -45,29 +64,16 @@ distributed over the given number of jobs so that each job has to unpack
 roughly the same amount of data. This can be used to speed up unpacking
 of large SquashFS archives.
 .TP
-\fB\-\-no\-dev\fR, \fB\-D\fR
-Do not unpack device special files.
-.TP
-\fB\-\-no\-sock\fR, \fB\-S\fR
-Do not unpack socket files.
-.TP
-\fB\-\-no\-fifo\fR, \fB\-F\fR
-Do not unpack named pipes.
-.TP
-\fB\-\-no\-slink\fR, \fB\-L\fR
-Do not unpack symbolic links.
-.TP
-\fB\-\-no\-empty\-dir\fR, \fB\-E\fR
-Do not unpack directories that would end up
-empty after applying the above rules.
-.TP
 \fB\-\-no\-sparse\fR, \fB\-Z\fR
 Do not create sparse files. Always unpack sparse files by
 writing blocks of zeros to disk.
 .TP
 \fB\-\-set\-xattr\fR, \fB\-X\fR
-When unpacking files to disk, set the extended attributes from the
-SquashFS image.
+Set the extended attributes from the SquashFS image.
+.TP
+\fB\-\-set\-times\fR, \fB\-T\fR
+Set the create and modify timestamps of the file to the mtime
+from the SquashFS image.
 .TP
 \fB\-\-chmod\fR, \fB\-C\fR
 Change permission flags of unpacked files to
@@ -79,6 +85,8 @@ UID/GID set in the SquashFS image.
 .TP
 \fB\-\-quiet\fR, \fB\-q\fR
 Do not print out progress while unpacking.
+.PP
+Other options:
 .TP
 \fB\-\-help\fR, \fB\-h\fR
 Print help text and exit.
