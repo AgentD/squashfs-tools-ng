@@ -157,9 +157,8 @@ static int set_attribs(fstree_t *fs, tree_node_t *n, int flags)
 		}
 	}
 
-	if (flags & UNPACK_CHMOD) {
-		if (fchmodat(AT_FDCWD, n->name, n->mode,
-			     AT_SYMLINK_NOFOLLOW)) {
+	if (flags & UNPACK_CHMOD && !S_ISLNK(n->mode)) {
+		if (fchmodat(AT_FDCWD, n->name, n->mode, 0)) {
 			fprintf(stderr, "chmod %s: %s\n",
 				n->name, strerror(errno));
 			return -1;
