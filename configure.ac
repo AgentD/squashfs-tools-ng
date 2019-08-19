@@ -63,6 +63,11 @@ AC_ARG_WITH([selinux],
 			[Build with SELinux label file support])],
 	[want_selinux="${withval}"], [want_selinux="maybe"])
 
+AC_ARG_WITH([pthread],
+	[AS_HELP_STRING([--without-pthread],
+			[Build without pthread based block compressor])],
+	[want_pthread="${withval}"], [want_pthread="yes"])
+
 ##### search for dependencies #####
 
 AM_CONDITIONAL([WITH_GZIP], [true])
@@ -133,9 +138,11 @@ yes) AM_COND_IF([WITH_SELINUX], [], [AC_MSG_ERROR([cannot find selinux])]) ;;
 no)  AM_CONDITIONAL([WITH_SELINUX], [false]) ;;
 esac
 
-have_pthread="no"
-AX_PTHREAD([have_pthread="yes"], [])
-AM_CONDITIONAL([HAVE_PTHREAD], [test "x$have_pthread" != "xno"])
+AM_CONDITIONAL([HAVE_PTHREAD], [false])
+if test "x$want_pthread" = "xyes"; then
+	AX_PTHREAD([AM_CONDITIONAL([HAVE_PTHREAD], [true])],
+		   [AC_MSG_ERROR([cannot find pthread])])
+fi
 
 ##### additional checks #####
 AX_COMPILE_CHECK_SIZEOF(time_t)
