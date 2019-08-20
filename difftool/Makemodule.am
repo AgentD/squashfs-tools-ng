@@ -1,8 +1,3 @@
-fscompare_SOURCES = difftool/fscompare.c difftool/difftool.h difftool/util.c
-fscompare_SOURCES += difftool/compare_dir.c difftool/node_compare.c
-fscompare_SOURCES += difftool/compare_file.c
-fscompare_LDADD = libfstree.a libutil.a
-
 sqfsdiff_SOURCES = difftool/sqfsdiff.c difftool/difftool.h difftool/util.c
 sqfsdiff_SOURCES += difftool/compare_dir.c difftool/node_compare.c
 sqfsdiff_SOURCES += difftool/compare_files_sqfs.c difftool/super.c
@@ -10,5 +5,4 @@ sqfsdiff_SOURCES += difftool/extract.c
 sqfsdiff_LDADD = libsquashfs.a libfstree.a libcompress.a libutil.a
 sqfsdiff_LDADD += $(XZ_LIBS) $(ZLIB_LIBS) $(LZO_LIBS) $(LZ4_LIBS) $(ZSTD_LIBS)
 
-noinst_PROGRAMS += fscompare
 bin_PROGRAMS += sqfsdiff
