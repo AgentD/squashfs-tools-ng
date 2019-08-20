@@ -157,6 +157,7 @@ struct tree_node_t {
 	uint32_t inode_num;
 	uint32_t mod_time;
 	uint16_t mode;
+	uint16_t pad0[3];
 
 	/* SquashFS inode refernce number. 32 bit offset of the meta data
 	   block start (relative to inode table start), shifted left by 16
