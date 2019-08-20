@@ -7,6 +7,8 @@
 #include "difftool.h"
 
 static struct option long_opts[] = {
+	{ "old", required_argument, NULL, 'a' },
+	{ "new", required_argument, NULL, 'b' },
 	{ "no-owner", no_argument, NULL, 'O' },
 	{ "no-permissions", no_argument, NULL, 'P' },
 	{ "no-contents", no_argument, NULL, 'C' },
@@ -18,10 +20,10 @@ static struct option long_opts[] = {
 	{ "version", no_argument, NULL, 'V' },
 };
 
-static const char *short_opts = "OPCTISe:hV";
+static const char *short_opts = "a:b:OPCTISe:hV";
 
 static const char *usagestr =
-"Usage: sqfsdiff [OPTIONS...] <first> <second>\n"
+"Usage: sqfsdiff [OPTIONS...] --old,-a <first> --new,-b <second>\n"
 "\n"
 "Compare two squashfs images. In contrast to doing a direct diff of the\n"
 "images, this actually parses the filesystems and generates a more\n"
@@ -37,6 +39,9 @@ static const char *usagestr =
 "that of diff(1): 0 means equal, 1 means different, 2 means problem.\n"
 "\n"
 "Possible options:\n"
+"\n"
+"  --old, -a <first>           The first of the two images to compare.\n"
+"  --new, -b <second>          The second of the two images to compare.\n"
 "\n"
 "  --no-contents, -C           Do not compare file contents.\n"
 "  --no-owner, -O              Do not compare file owners.\n"
@@ -73,6 +78,12 @@ static void process_options(int argc, char **argv)
 			break;
 
 		switch (i) {
+		case 'a':
+			first_path = optarg;
+			break;
+		case 'b':
+			second_path = optarg;
+			break;
 		case 'O':
 			compare_flags |= COMPARE_NO_OWNER;
 			break;
@@ -106,19 +117,15 @@ static void process_options(int argc, char **argv)
 		}
 	}
 
-	if (optind >= argc) {
+	if (first_path == NULL) {
 		fputs("Missing arguments: first filesystem\n", stderr);
 		goto fail_arg;
 	}
 
-	first_path = argv[optind++];
-
-	if (optind >= argc) {
+	if (second_path == NULL) {
 		fputs("Missing arguments: second filesystem\n", stderr);
 		goto fail_arg;
 	}
-
-	second_path = argv[optind++];
 
 	if (optind < argc) {
 		fputs("Unknown extra arguments\n", stderr);

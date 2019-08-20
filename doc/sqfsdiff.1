@@ -3,7 +3,7 @@
 sqfsdiff \- compare two squashfs images by contents and metadata
 .SH SYNOPSIS
 .B sqfsdiff
-[\fI\,OPTIONS\/\fR...] \fI\,<first> <second>\/\fR
+[\fI\,OPTIONS\/\fR...] \-\-old \fI\,<first>\fR \-\-new \fI\,<second>\/\fR
 .SH DESCRIPTION
 Compare two squashfs images. In contrast to doing a direct diff of the
 images, this actually parses the filesystems and generates a more
@@ -19,6 +19,12 @@ A report of any difference is printed to stdout. The exit status is similar
 that of diff(1): 0 means equal, 1 means different, 2 means problem.
 .PP
 Possible options:
+.TP
+\fB\-\-old\fR, \fB\-a\fR <first>
+Specify the first image, relativ to which the changes are evaluated.
+.TP
+\fB\-\-new\fR, \fB\-b\fR <second>
+Specift the second image to compare to the first one.
 .TP
 \fB\-\-no\-contents\fR, \fB\-C\fR
 Do not compare file contents.
