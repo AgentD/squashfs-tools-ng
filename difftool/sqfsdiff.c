@@ -8,7 +8,7 @@
 
 int main(int argc, char **argv)
 {
-	int status, ret = 0;
+	int status, dirscan_flags = 0, ret = 0;
 	sqfsdiff_t sd;
 
 	memset(&sd, 0, sizeof(sd));
@@ -18,6 +18,9 @@ int main(int argc, char **argv)
 		if (mkdir_p(sd.extract_dir))
 			return 2;
 	}
+
+	if (sd.compare_flags & COMPARE_TIMESTAMP)
+		dirscan_flags |= DIR_SCAN_READ_XATTR;
 
 	/* open first source */
 	sd.old_fd = open(sd.old_path, O_DIRECTORY | O_PATH | O_RDONLY);
@@ -36,7 +39,8 @@ int main(int argc, char **argv)
 		if (fstree_init(&sd.sqfs_old.fs, 512, NULL))
 			return 2;
 
-		if (fstree_from_dir(&sd.sqfs_old.fs, sd.old_path, 0)) {
+		if (fstree_from_dir(&sd.sqfs_old.fs, sd.old_path,
+				    dirscan_flags)) {
 			fstree_cleanup(&sd.sqfs_old.fs);
 			return 2;
 		}
@@ -66,7 +70,8 @@ int main(int argc, char **argv)
 			goto out_sqfs_old;
 		}
 
-		if (fstree_from_dir(&sd.sqfs_new.fs, sd.new_path, 0)) {
+		if (fstree_from_dir(&sd.sqfs_new.fs, sd.new_path,
+				    dirscan_flags)) {
 			status = 2;
 			fstree_cleanup(&sd.sqfs_old.fs);
 			goto out_sqfs_old;
