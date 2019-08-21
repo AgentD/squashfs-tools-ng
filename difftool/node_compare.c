@@ -70,7 +70,7 @@ int node_compare(sqfsdiff_t *sd, tree_node_t *a, tree_node_t *b)
 		}
 		break;
 	case S_IFDIR:
-		ret = compare_dir_entries(a, b);
+		ret = compare_dir_entries(sd, a, b);
 		if (ret < 0) {
 			status = -1;
 			break;

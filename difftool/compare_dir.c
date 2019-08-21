@@ -6,7 +6,7 @@
  */
 #include "sqfsdiff.h"
 
-int compare_dir_entries(tree_node_t *old, tree_node_t *new)
+int compare_dir_entries(sqfsdiff_t *sd, tree_node_t *old, tree_node_t *new)
 {
 	tree_node_t *old_it = old->data.dir->children, *old_prev = NULL;
 	tree_node_t *new_it = new->data.dir->children, *new_prev = NULL;
@@ -27,6 +27,15 @@ int compare_dir_entries(tree_node_t *old, tree_node_t *new)
 			path = node_path(old_it);
 			if (path == NULL)
 				return -1;
+
+			if ((sd->compare_flags & COMPARE_EXTRACT_FILES) &&
+			    S_ISREG(old_it->mode)) {
+				if (extract_files(sd, old_it->data.file,
+						  NULL, path)) {
+					return -1;
+				}
+			}
+
 			fprintf(stdout, "< %s\n", path);
 			free(path);
 
@@ -44,6 +53,15 @@ int compare_dir_entries(tree_node_t *old, tree_node_t *new)
 			path = node_path(new_it);
 			if (path == NULL)
 				return -1;
+
+			if ((sd->compare_flags & COMPARE_EXTRACT_FILES) &&
+			    S_ISREG(new_it->mode)) {
+				if (extract_files(sd, NULL, new_it->data.file,
+						  path)) {
+					return -1;
+				}
+			}
+
 			fprintf(stdout, "> %s\n", path);
 			free(path);
 

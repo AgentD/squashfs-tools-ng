@@ -48,7 +48,7 @@ enum {
 	COMPARE_EXTRACT_FILES = 0x20,
 };
 
-int compare_dir_entries(tree_node_t *a, tree_node_t *b);
+int compare_dir_entries(sqfsdiff_t *sd, tree_node_t *a, tree_node_t *b);
 
 char *node_path(tree_node_t *n);
 
