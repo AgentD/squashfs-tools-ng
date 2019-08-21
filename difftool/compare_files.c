@@ -4,7 +4,7 @@
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
-#include "difftool.h"
+#include "sqfsdiff.h"
 
 static unsigned char old_buf[MAX_WINDOW_SIZE];
 static unsigned char new_buf[MAX_WINDOW_SIZE];

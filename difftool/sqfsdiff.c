@@ -4,7 +4,7 @@
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
-#include "difftool.h"
+#include "sqfsdiff.h"
 
 static struct option long_opts[] = {
 	{ "old", required_argument, NULL, 'a' },

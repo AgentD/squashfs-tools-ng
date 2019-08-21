@@ -4,7 +4,7 @@
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
-#include "difftool.h"
+#include "sqfsdiff.h"
 
 static int extract(data_reader_t *data, file_info_t *fi,
 		   const char *path, char prefix)

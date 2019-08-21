@@ -4,7 +4,7 @@
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
-#include "difftool.h"
+#include "sqfsdiff.h"
 
 char *node_path(tree_node_t *n)
 {

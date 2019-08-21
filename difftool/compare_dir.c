@@ -4,7 +4,7 @@
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
-#include "difftool.h"
+#include "sqfsdiff.h"
 
 int compare_dir_entries(tree_node_t *old, tree_node_t *new)
 {

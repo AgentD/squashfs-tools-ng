@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 /*
- * difftool.h
+ * sqfsdiff.h
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
