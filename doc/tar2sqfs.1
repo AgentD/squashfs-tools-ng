@@ -100,13 +100,17 @@ If any unsupported section or extended attribute key is encountered in an
 archive a warning message is written to stderr. If the \fB\-\-no\-skip\fR
 option is set, processing aborts. By default, unknown sections and unsupported
 extended attributes are simply skipped after issuing a warning.
-.SH ENVIRONEMNT VARIABLES
+.SH ENVIRONEMNT
 If the command line switch \fB\-\-defaults\fR is not used or no default mtime
 is specified, the value of the environment variable \fBSOURCE\_DATE\_EPOCH\fR
 is used for all file and filesystem timestamps.
 
 If \fBSOURCE\_DATE\_EPOCH\fR is not set, not a parsable number or it is out of
 range, the timestamps default to 0.
+
+Environment variables are only used if no explicit command line switches
+are set. Explicit command line switches are always preferred over the
+environment variables.
 .SH EXAMPLES
 .TP
 Turn an uncompressed tar archive into a squashfs image:
@@ -120,6 +124,8 @@ zcat rootfs.tar.gz | tar2sqfs rootfs.sqfs
 Turn an LZMA2 compressed tar archive into a squashfs image:
 .IP
 xzcat rootfs.tar.xz | tar2sqfs rootfs.sqfs
+.SH SEE ALSO
+gensquashfs(1), rdsquashfs(1), sqfs2tar(1)
 .SH AUTHOR
 Written by David Oberhollenzer.
 .SH COPYRIGHT
