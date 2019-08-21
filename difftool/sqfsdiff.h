@@ -33,6 +33,10 @@ typedef struct {
 	bool new_is_dir;
 	bool compare_super;
 	const char *extract_dir;
+
+	/* holds the coresponding dirfds if old or new is a directory */
+	int old_fd;
+	int new_fd;
 } sqfsdiff_t;
 
 enum {

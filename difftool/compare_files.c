@@ -9,14 +9,45 @@
 static unsigned char old_buf[MAX_WINDOW_SIZE];
 static unsigned char new_buf[MAX_WINDOW_SIZE];
 
+static int open_file(int dirfd, const char *prefix, const char *path)
+{
+	int fd = openat(dirfd, path, O_RDONLY);
+
+	if (fd < 0) {
+		fprintf(stderr, "open %s/%s: %s\n",
+			prefix, path, strerror(errno));
+	}
+
+	return fd;
+}
+
+static int read_blob(const char *prefix, const char *path, bool is_dir,
+		     int fd, data_reader_t *rd, file_info_t *fi, void *buffer,
+		     off_t offset, size_t size)
+{
+	ssize_t ret;
+
+	if (is_dir) {
+		ret = read_data_at(path, offset, fd, buffer, size);
+	} else {
+		ret = data_reader_read(rd, fi, offset, buffer, size);
+		ret = (ret < 0 || (size_t)ret < size) ? -1 : 0;
+	}
+
+	if (ret) {
+		fprintf(stderr, "Failed to read %s from %s\n",
+			path, prefix);
+		return -1;
+	}
+
+	return 0;
+}
+
 int compare_files(sqfsdiff_t *sd, file_info_t *old, file_info_t *new,
 		  const char *path)
 {
-	char new_name[strlen(sd->new_path) + strlen(path) + 2];
-	char old_name[strlen(sd->old_path) + strlen(path) + 2];
-	int old_fd = -1, new_fd = -1, status = 0;
+	int old_fd = -1, new_fd = -1, status = 0, ret;
 	uint64_t offset, diff;
-	ssize_t ret;
 
 	if (old->size != new->size)
 		goto out_different;
@@ -25,23 +56,15 @@ int compare_files(sqfsdiff_t *sd, file_info_t *old, file_info_t *new,
 		return 0;
 
 	if (sd->old_is_dir) {
-		sprintf(old_name, "%s/%s", sd->old_path, path);
-
-		old_fd = open(old_name, O_RDONLY);
-		if (old_fd < 0) {
-			perror(old_name);
+		old_fd = open_file(sd->old_fd, sd->old_path, path);
+		if (old_fd < 0)
 			goto fail;
-		}
 	}
 
 	if (sd->new_is_dir) {
-		sprintf(new_name, "%s/%s", sd->new_path, path);
-
-		new_fd = open(new_name, O_RDONLY);
-		if (new_fd < 0) {
-			perror(new_name);
+		new_fd = open_file(sd->new_fd, sd->new_path, path);
+		if (new_fd < 0)
 			goto fail;
-		}
 	}
 
 	for (offset = 0; offset < old->size; offset += diff) {
@@ -50,33 +73,15 @@ int compare_files(sqfsdiff_t *sd, file_info_t *old, file_info_t *new,
 		if (diff > MAX_WINDOW_SIZE)
 			diff = MAX_WINDOW_SIZE;
 
-		if (sd->old_is_dir) {
-			if (read_data_at(old_name, offset, old_fd,
-					 old_buf, diff))
-				goto out;
-		} else {
-			ret = data_reader_read(sd->sqfs_old.data, old, offset,
-					       old_buf, diff);
-			if (ret < 0 || (size_t)ret < diff) {
-				fprintf(stderr, "Failed to read %s from %s\n",
-					path, sd->old_path);
-				return -1;
-			}
-		}
+		ret = read_blob(sd->old_path, path, sd->old_is_dir, old_fd,
+				sd->sqfs_old.data, old, old_buf, offset, diff);
+		if (ret)
+			goto fail;
 
-		if (sd->new_is_dir) {
-			if (read_data_at(new_name, offset, new_fd,
-					 new_buf, diff))
-				goto out;
-		} else {
-			ret = data_reader_read(sd->sqfs_new.data, new, offset,
-					       new_buf, diff);
-			if (ret < 0 || (size_t)ret < diff) {
-				fprintf(stderr, "Failed to read %s from %s\n",
-					path, sd->new_path);
-				return -1;
-			}
-		}
+		ret = read_blob(sd->new_path, path, sd->new_is_dir, new_fd,
+				sd->sqfs_new.data, new, new_buf, offset, diff);
+		if (ret)
+			goto fail;
 
 		if (memcmp(old_buf, new_buf, diff) != 0)
 			goto out_different;
