@@ -65,6 +65,8 @@ const char *first_path;
 const char *second_path;
 sqfs_reader_t sqfs_a;
 sqfs_reader_t sqfs_b;
+bool a_is_dir;
+bool b_is_dir;
 static bool compare_super = false;
 static const char *extract_dir;
 

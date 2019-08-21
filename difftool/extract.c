@@ -39,12 +39,12 @@ static int extract(data_reader_t *data, file_info_t *fi,
 
 int extract_files(file_info_t *a, file_info_t *b, const char *path)
 {
-	if (a != NULL) {
+	if (a != NULL && !a_is_dir) {
 		if (extract(sqfs_a.data, a, path, 'a'))
 			return -1;
 	}
 
-	if (b != NULL) {
+	if (b != NULL && !b_is_dir) {
 		if (extract(sqfs_b.data, b, path, 'b'))
 			return -1;
 	}

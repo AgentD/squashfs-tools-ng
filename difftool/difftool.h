@@ -28,6 +28,8 @@ extern const char *second_path;
 extern int compare_flags;
 extern sqfs_reader_t sqfs_a;
 extern sqfs_reader_t sqfs_b;
+extern bool a_is_dir;
+extern bool b_is_dir;
 
 enum {
 	COMPARE_NO_PERM = 0x01,
