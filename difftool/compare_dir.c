@@ -6,90 +6,62 @@
  */
 #include "difftool.h"
 
-int compare_dir_entries(tree_node_t *a, tree_node_t *b)
+int compare_dir_entries(tree_node_t *old, tree_node_t *new)
 {
-	tree_node_t *ait = a->data.dir->children, *aprev = NULL;
-	tree_node_t *bit = b->data.dir->children, *bprev = NULL;
+	tree_node_t *old_it = old->data.dir->children, *old_prev = NULL;
+	tree_node_t *new_it = new->data.dir->children, *new_prev = NULL;
 	int ret, result = 0;
-	char *path, arrow;
+	char *path;
 
-	while (ait != NULL && bit != NULL) {
-		ret = strcmp(ait->name, bit->name);
+	while (old_it != NULL || new_it != NULL) {
+		if (old_it != NULL && new_it != NULL) {
+			ret = strcmp(old_it->name, new_it->name);
+		} else if (old_it == NULL) {
+			ret = 1;
+		} else {
+			ret = -1;
+		}
 
 		if (ret < 0) {
 			result = 1;
-			path = node_path(ait);
+			path = node_path(old_it);
 			if (path == NULL)
 				return -1;
 			fprintf(stdout, "< %s\n", path);
 			free(path);
 
-			if (aprev == NULL) {
-				a->data.dir->children = ait->next;
-				free(ait);
-				ait = a->data.dir->children;
+			if (old_prev == NULL) {
+				old->data.dir->children = old_it->next;
+				free(old_it);
+				old_it = old->data.dir->children;
 			} else {
-				aprev->next = ait->next;
-				free(ait);
-				ait = aprev->next;
+				old_prev->next = old_it->next;
+				free(old_it);
+				old_it = old_prev->next;
 			}
 		} else if (ret > 0) {
 			result = 1;
-			path = node_path(bit);
+			path = node_path(new_it);
 			if (path == NULL)
 				return -1;
 			fprintf(stdout, "> %s\n", path);
 			free(path);
 
-			if (bprev == NULL) {
-				b->data.dir->children = bit->next;
-				free(bit);
-				bit = b->data.dir->children;
+			if (new_prev == NULL) {
+				new->data.dir->children = new_it->next;
+				free(new_it);
+				new_it = new->data.dir->children;
 			} else {
-				bprev->next = bit->next;
-				free(bit);
-				bit = bprev->next;
+				new_prev->next = new_it->next;
+				free(new_it);
+				new_it = new_prev->next;
 			}
 		} else {
-			aprev = ait;
-			ait = ait->next;
+			old_prev = old_it;
+			old_it = old_it->next;
 
-			bprev = bit;
-			bit = bit->next;
-		}
-	}
-
-	if (ait != NULL || bit != NULL) {
-		result = 1;
-
-		if (ait != NULL) {
-			if (aprev == NULL) {
-				a->data.dir->children = NULL;
-			} else {
-				aprev->next = NULL;
-			}
-			arrow = '<';
-		} else {
-			if (bprev == NULL) {
-				b->data.dir->children = NULL;
-			} else {
-				bprev->next = NULL;
-			}
-			arrow = '>';
-			ait = bit;
-		}
-
-		while (ait != NULL) {
-			path = node_path(ait);
-			if (path == NULL) {
-				result = -1;
-			} else {
-				fprintf(stdout, "%c %s\n", arrow, path);
-				free(path);
-			}
-			aprev = ait;
-			ait = ait->next;
-			free(aprev);
+			new_prev = new_it;
+			new_it = new_it->next;
 		}
 	}
 
