@@ -23,13 +23,13 @@
 
 #define MAX_WINDOW_SIZE (1024 * 1024 * 4)
 
-extern const char *first_path;
-extern const char *second_path;
+extern const char *old_path;
+extern const char *new_path;
 extern int compare_flags;
-extern sqfs_reader_t sqfs_a;
-extern sqfs_reader_t sqfs_b;
-extern bool a_is_dir;
-extern bool b_is_dir;
+extern sqfs_reader_t sqfs_old;
+extern sqfs_reader_t sqfs_new;
+extern bool old_is_dir;
+extern bool new_is_dir;
 
 enum {
 	COMPARE_NO_PERM = 0x01,

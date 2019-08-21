@@ -61,12 +61,12 @@ static const char *usagestr =
 "\n";
 
 int compare_flags = 0;
-const char *first_path;
-const char *second_path;
-sqfs_reader_t sqfs_a;
-sqfs_reader_t sqfs_b;
-bool a_is_dir;
-bool b_is_dir;
+const char *old_path;
+const char *new_path;
+sqfs_reader_t sqfs_old;
+sqfs_reader_t sqfs_new;
+bool old_is_dir;
+bool new_is_dir;
 static bool compare_super = false;
 static const char *extract_dir;
 
@@ -81,10 +81,10 @@ static void process_options(int argc, char **argv)
 
 		switch (i) {
 		case 'a':
-			first_path = optarg;
+			old_path = optarg;
 			break;
 		case 'b':
-			second_path = optarg;
+			new_path = optarg;
 			break;
 		case 'O':
 			compare_flags |= COMPARE_NO_OWNER;
@@ -119,12 +119,12 @@ static void process_options(int argc, char **argv)
 		}
 	}
 
-	if (first_path == NULL) {
+	if (old_path == NULL) {
 		fputs("Missing arguments: first filesystem\n", stderr);
 		goto fail_arg;
 	}
 
-	if (second_path == NULL) {
+	if (new_path == NULL) {
 		fputs("Missing arguments: second filesystem\n", stderr);
 		goto fail_arg;
 	}
@@ -150,12 +150,12 @@ int main(int argc, char **argv)
 			return EXIT_FAILURE;
 	}
 
-	if (sqfs_reader_open(&sqfs_a, first_path, 0))
+	if (sqfs_reader_open(&sqfs_old, old_path, 0))
 		return 2;
 
-	if (sqfs_reader_open(&sqfs_b, second_path, 0)) {
+	if (sqfs_reader_open(&sqfs_new, new_path, 0)) {
 		status = 2;
-		goto out_sqfs_a;
+		goto out_sqfs_old;
 	}
 
 	if (extract_dir != NULL) {
@@ -166,12 +166,12 @@ int main(int argc, char **argv)
 		}
 	}
 
-	ret = node_compare(sqfs_a.fs.root, sqfs_b.fs.root);
+	ret = node_compare(sqfs_old.fs.root, sqfs_new.fs.root);
 	if (ret != 0)
 		goto out;
 
 	if (compare_super) {
-		ret = compare_super_blocks(&sqfs_a.super, &sqfs_b.super);
+		ret = compare_super_blocks(&sqfs_old.super, &sqfs_new.super);
 		if (ret != 0)
 			goto out;
 	}
@@ -183,8 +183,8 @@ out:
 	} else {
 		status = 0;
 	}
-	sqfs_reader_close(&sqfs_b);
-out_sqfs_a:
-	sqfs_reader_close(&sqfs_a);
+	sqfs_reader_close(&sqfs_new);
+out_sqfs_old:
+	sqfs_reader_close(&sqfs_old);
 	return status;
 }
