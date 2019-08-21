@@ -6,7 +6,7 @@
  */
 #include "sqfsdiff.h"
 
-int node_compare(tree_node_t *a, tree_node_t *b)
+int node_compare(sqfsdiff_t *sd, tree_node_t *a, tree_node_t *b)
 {
 	char *path = node_path(a);
 	tree_node_t *ait, *bit;
@@ -21,7 +21,7 @@ int node_compare(tree_node_t *a, tree_node_t *b)
 		return 1;
 	}
 
-	if (!(compare_flags & COMPARE_NO_PERM)) {
+	if (!(sd->compare_flags & COMPARE_NO_PERM)) {
 		if ((a->mode & ~S_IFMT) != (b->mode & ~S_IFMT)) {
 			fprintf(stdout, "%s has different permissions\n",
 				path);
@@ -29,21 +29,21 @@ int node_compare(tree_node_t *a, tree_node_t *b)
 		}
 	}
 
-	if (!(compare_flags & COMPARE_NO_OWNER)) {
+	if (!(sd->compare_flags & COMPARE_NO_OWNER)) {
 		if (a->uid != b->uid || a->gid != b->gid) {
 			fprintf(stdout, "%s has different ownership\n", path);
 			status = 1;
 		}
 	}
 
-	if (compare_flags & COMPARE_TIMESTAMP) {
+	if (sd->compare_flags & COMPARE_TIMESTAMP) {
 		if (a->mod_time != b->mod_time) {
 			fprintf(stdout, "%s has a different timestamp\n", path);
 			status = 1;
 		}
 	}
 
-	if (compare_flags & COMPARE_INODE_NUM) {
+	if (sd->compare_flags & COMPARE_INODE_NUM) {
 		if (a->inode_num != b->inode_num) {
 			fprintf(stdout, "%s has a different inode number\n",
 				path);
@@ -85,7 +85,7 @@ int node_compare(tree_node_t *a, tree_node_t *b)
 		bit = b->data.dir->children;
 
 		while (ait != NULL && bit != NULL) {
-			ret = node_compare(ait, bit);
+			ret = node_compare(sd, ait, bit);
 			if (ret < 0)
 				return -1;
 			if (ret > 0)
@@ -96,7 +96,7 @@ int node_compare(tree_node_t *a, tree_node_t *b)
 		}
 		break;
 	case S_IFREG:
-		ret = compare_files(a->data.file, b->data.file, path);
+		ret = compare_files(sd, a->data.file, b->data.file, path);
 		if (ret < 0) {
 			status = -1;
 		} else if (ret > 0) {

@@ -23,13 +23,17 @@
 
 #define MAX_WINDOW_SIZE (1024 * 1024 * 4)
 
-extern const char *old_path;
-extern const char *new_path;
-extern int compare_flags;
-extern sqfs_reader_t sqfs_old;
-extern sqfs_reader_t sqfs_new;
-extern bool old_is_dir;
-extern bool new_is_dir;
+typedef struct {
+	const char *old_path;
+	const char *new_path;
+	int compare_flags;
+	sqfs_reader_t sqfs_old;
+	sqfs_reader_t sqfs_new;
+	bool old_is_dir;
+	bool new_is_dir;
+	bool compare_super;
+	const char *extract_dir;
+} sqfsdiff_t;
 
 enum {
 	COMPARE_NO_PERM = 0x01,
@@ -44,12 +48,16 @@ int compare_dir_entries(tree_node_t *a, tree_node_t *b);
 
 char *node_path(tree_node_t *n);
 
-int compare_files(file_info_t *a, file_info_t *b, const char *path);
+int compare_files(sqfsdiff_t *sd, file_info_t *a, file_info_t *b,
+		  const char *path);
 
-int node_compare(tree_node_t *a, tree_node_t *b);
+int node_compare(sqfsdiff_t *sd, tree_node_t *a, tree_node_t *b);
 
 int compare_super_blocks(const sqfs_super_t *a, const sqfs_super_t *b);
 
-int extract_files(file_info_t *a, file_info_t *b, const char *path);
+int extract_files(sqfsdiff_t *sd, file_info_t *old, file_info_t *new,
+		  const char *path);
+
+void process_options(sqfsdiff_t *sd, int argc, char **argv);
 
 #endif /* DIFFTOOL_H */

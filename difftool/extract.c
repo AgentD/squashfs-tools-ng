@@ -37,15 +37,16 @@ static int extract(data_reader_t *data, file_info_t *fi,
 	return 0;
 }
 
-int extract_files(file_info_t *old, file_info_t *new, const char *path)
+int extract_files(sqfsdiff_t *sd, file_info_t *old, file_info_t *new,
+		  const char *path)
 {
-	if (old != NULL && !old_is_dir) {
-		if (extract(sqfs_old.data, old, path, 'a'))
+	if (old != NULL && !sd->old_is_dir) {
+		if (extract(sd->sqfs_old.data, old, path, 'a'))
 			return -1;
 	}
 
-	if (new != NULL && !new_is_dir) {
-		if (extract(sqfs_new.data, new, path, 'b'))
+	if (new != NULL && !sd->new_is_dir) {
+		if (extract(sd->sqfs_new.data, new, path, 'b'))
 			return -1;
 	}
 	return 0;
