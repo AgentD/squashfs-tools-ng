@@ -7,14 +7,13 @@
 #include "sqfsdiff.h"
 
 static int extract(data_reader_t *data, file_info_t *fi,
-		   const char *path, char prefix)
+		   const char *prefix, const char *path)
 {
-	char *ptr, *temp = alloca(strlen(path) + 3);
+	char *ptr, *temp;
 	int fd;
 
-	temp[0] = prefix;
-	temp[1] = '/';
-	strcpy(temp + 2, path);
+	temp = alloca(strlen(prefix) + strlen(path) + 2);
+	sprintf(temp, "%s/%s", prefix, path);
 
 	ptr = strrchr(temp, '/');
 	*ptr = '\0';
@@ -41,12 +40,12 @@ int extract_files(sqfsdiff_t *sd, file_info_t *old, file_info_t *new,
 		  const char *path)
 {
 	if (old != NULL && !sd->old_is_dir) {
-		if (extract(sd->sqfs_old.data, old, path, 'a'))
+		if (extract(sd->sqfs_old.data, old, "old", path))
 			return -1;
 	}
 
 	if (new != NULL && !sd->new_is_dir) {
-		if (extract(sd->sqfs_new.data, new, path, 'b'))
+		if (extract(sd->sqfs_new.data, new, "new", path))
 			return -1;
 	}
 	return 0;
