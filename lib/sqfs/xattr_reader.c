@@ -90,7 +90,8 @@ static int get_xattr_desc(xattr_reader_t *xr, uint32_t idx,
 	size_t block, offset;
 
 	if (idx >= xr->num_ids) {
-		fputs("Tried to access out of bounds xattr index\n", stderr);
+		fprintf(stderr, "Tried to access out of bounds "
+			"xattr index: 0x%08X\n", idx);
 		return -1;
 	}
 
@@ -285,6 +286,9 @@ int xattr_reader_restore_node(xattr_reader_t *xr, fstree_t *fs,
 	size_t size;
 
 	if (xr->kvrd == NULL || xr->idrd == NULL)
+		return 0;
+
+	if (xattr == 0xFFFFFFFF)
 		return 0;
 
 	for (it = fs->xattr; it != NULL; it = it->next) {
