@@ -16,7 +16,7 @@ int main(int argc, char **argv)
 
 	if (sd.extract_dir != NULL) {
 		if (mkdir_p(sd.extract_dir))
-			return EXIT_FAILURE;
+			return 2;
 	}
 
 	/* open first source */

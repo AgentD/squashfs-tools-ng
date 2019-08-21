@@ -100,10 +100,10 @@ void process_options(sqfsdiff_t *sd, int argc, char **argv)
 			break;
 		case 'h':
 			fputs(usagestr, stdout);
-			exit(EXIT_SUCCESS);
+			exit(0);
 		case 'V':
 			print_version();
-			exit(EXIT_SUCCESS);
+			exit(0);
 		default:
 			goto fail_arg;
 		}
@@ -126,5 +126,5 @@ void process_options(sqfsdiff_t *sd, int argc, char **argv)
 	return;
 fail_arg:
 	fprintf(stderr, "Try `sqfsdiff --help' for more information.\n");
-	exit(EXIT_FAILURE);
+	exit(2);
 }
