@@ -115,4 +115,20 @@ int padd_file(int outfd, uint64_t size, size_t blocksize);
  */
 uint32_t get_source_date_epoch(void);
 
+/*
+  Helper for allocating data structures with flexible array members.
+
+  'base_size' is the size of the struct itself, 'item_size' the size of a
+  single array element and 'nmemb' the number of elements.
+
+  Iternally checks for arithmetic overflows when allocating the combined thing.
+ */
+void *alloc_flex(size_t base_size, size_t item_size, size_t nmemb);
+
+/* Basically the same as calloc, but *ALWAYS* does overflow checking */
+void *alloc_array(size_t item_size, size_t nmemb);
+
+/* allocates len + 1 (for the null-terminator) and does overflow checking */
+void *alloc_string(size_t len);
+
 #endif /* UTIL_H */
