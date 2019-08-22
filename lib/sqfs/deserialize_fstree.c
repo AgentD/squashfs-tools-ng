@@ -65,6 +65,18 @@ static int restore_xattr(xattr_reader_t *xr, fstree_t *fs, tree_node_t *node,
 	return xattr_reader_restore_node(xr, fs, node, idx);
 }
 
+static bool node_would_be_own_parent(tree_node_t *root, tree_node_t *n)
+{
+	while (root != NULL) {
+		if (root->inode_num == n->inode_num)
+			return true;
+
+		root = root->parent;
+	}
+
+	return false;
+}
+
 static int fill_dir(meta_reader_t *ir, meta_reader_t *dr, tree_node_t *root,
 		    sqfs_super_t *super, id_table_t *idtbl, fstree_t *fs,
 		    xattr_reader_t *xr, int flags)
@@ -126,6 +138,16 @@ static int fill_dir(meta_reader_t *ir, meta_reader_t *dr, tree_node_t *root,
 				free(ent);
 				free(inode);
 				return -1;
+			}
+
+			if (node_would_be_own_parent(root, n)) {
+				fputs("WARNING: Found a directory that "
+				      "contains itself, skipping loop back "
+				      "reference!\n", stderr);
+				free(n);
+				free(ent);
+				free(inode);
+				continue;
 			}
 
 			if (flags & RDTREE_READ_XATTR) {
