@@ -32,6 +32,7 @@ int compare_dir_entries(sqfsdiff_t *sd, tree_node_t *old, tree_node_t *new)
 			    S_ISREG(old_it->mode)) {
 				if (extract_files(sd, old_it->data.file,
 						  NULL, path)) {
+					free(path);
 					return -1;
 				}
 			}
@@ -58,6 +59,7 @@ int compare_dir_entries(sqfsdiff_t *sd, tree_node_t *old, tree_node_t *new)
 			    S_ISREG(new_it->mode)) {
 				if (extract_files(sd, NULL, new_it->data.file,
 						  path)) {
+					free(path);
 					return -1;
 				}
 			}
