@@ -182,7 +182,7 @@ static compressor_t *lzo_create_copy(compressor_t *cmp)
 	lzo_compressor_t *other = (lzo_compressor_t *)cmp;
 	lzo_compressor_t *lzo;
 
-	lzo = calloc(1, sizeof(*lzo) + lzo_algs[other->algorithm].bufsize);
+	lzo = alloc_flex(sizeof(*lzo), 1, lzo_algs[other->algorithm].bufsize);
 
 	if (lzo == NULL) {
 		perror("creating additional lzo compressor");
@@ -282,7 +282,7 @@ compressor_t *create_lzo_compressor(bool compress, size_t block_size,
 	if (options != NULL && process_options(options, &alg, &level) != 0)
 		return NULL;
 
-	lzo = calloc(1, sizeof(*lzo) + lzo_algs[alg].bufsize);
+	lzo = alloc_flex(sizeof(*lzo), 1, lzo_algs[alg].bufsize);
 	base = (compressor_t *)lzo;
 
 	if (lzo == NULL) {

@@ -16,7 +16,7 @@
 block_t *create_block(const char *filename, int fd, size_t size,
 		      void *user, uint32_t flags)
 {
-	block_t *blk = calloc(1, sizeof(*blk) + size);
+	block_t *blk = alloc_flex(sizeof(*blk), 1, size);
 
 	if (blk == NULL) {
 		perror(filename);

@@ -119,15 +119,13 @@ block_processor_t *block_processor_create(size_t max_block_size,
 {
 	block_processor_t *proc;
 	unsigned int i;
-	size_t size;
 	int ret;
 
 	if (num_workers < 1)
 		num_workers = 1;
 
-	size = sizeof(proc->workers[0]) * num_workers;
-
-	proc = calloc(1, sizeof(*proc) + size);
+	proc = alloc_flex(sizeof(*proc),
+			  sizeof(proc->workers[0]), num_workers);
 	if (proc == NULL) {
 		perror("Creating block processor");
 		return NULL;
@@ -153,10 +151,9 @@ block_processor_t *block_processor_create(size_t max_block_size,
 		goto fail_cond;
 	}
 
-	size = sizeof(compress_worker_t) + max_block_size;
-
 	for (i = 0; i < num_workers; ++i) {
-		proc->workers[i] = calloc(1, size);
+		proc->workers[i] = alloc_flex(sizeof(compress_worker_t),
+					      1, max_block_size);
 
 		if (proc->workers[i] == NULL) {
 			perror("Creating block worker data");

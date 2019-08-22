@@ -90,7 +90,7 @@ static int populate_xattr(fstree_t *fs, tree_node_t *node)
 			goto fail;
 
 		if (vallen > 0) {
-			value = calloc(1, vallen + 1);
+			value = alloc_string(vallen);
 			if (value == NULL) {
 				perror("xattr value buffer");
 				goto fail;
@@ -163,7 +163,7 @@ static int populate_dir(fstree_t *fs, tree_node_t *root, dev_t devstart,
 			continue;
 
 		if (S_ISLNK(sb.st_mode)) {
-			extra = calloc(1, sb.st_size + 1);
+			extra = alloc_string(sb.st_size);
 			if (extra == NULL)
 				goto fail_rdlink;
 

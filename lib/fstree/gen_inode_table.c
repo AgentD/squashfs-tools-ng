@@ -7,6 +7,7 @@
 #include "config.h"
 
 #include "fstree.h"
+#include "util.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -60,7 +61,8 @@ int fstree_gen_inode_table(fstree_t *fs)
 	size_t inum = 2;
 
 	fs->inode_tbl_size = count_nodes(fs->root) + 2;
-	fs->inode_table = calloc(sizeof(tree_node_t *), fs->inode_tbl_size);
+	fs->inode_table = alloc_array(sizeof(tree_node_t *),
+				      fs->inode_tbl_size);
 
 	if (fs->inode_table == NULL) {
 		perror("allocating inode table");

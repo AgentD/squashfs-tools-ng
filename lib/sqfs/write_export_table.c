@@ -7,6 +7,7 @@
 #include "config.h"
 
 #include "highlevel.h"
+#include "util.h"
 
 #include <stdlib.h>
 #include <stdio.h>

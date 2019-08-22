@@ -10,6 +10,7 @@
 #include "config.h"
 
 #include "compress.h"
+#include "util.h"
 
 int generic_write_options(int fd, const void *data, size_t size);
 

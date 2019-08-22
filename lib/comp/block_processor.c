@@ -29,7 +29,7 @@ block_processor_t *block_processor_create(size_t max_block_size,
 					  void *user,
 					  block_cb callback)
 {
-	block_processor_t *proc = calloc(1, sizeof(*proc) + max_block_size);
+	block_processor_t *proc = alloc_flex(sizeof(*proc), 1, max_block_size);
 	(void)num_workers;
 
 	if (proc == NULL) {

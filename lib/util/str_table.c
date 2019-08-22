@@ -12,6 +12,7 @@
 #include <stdio.h>
 
 #include "str_table.h"
+#include "util.h"
 
 /* R5 hash function (borrowed from reiserfs) */
 static uint32_t strhash(const char *s)
@@ -54,7 +55,7 @@ int str_table_init(str_table_t *table, size_t size)
 {
 	memset(table, 0, sizeof(*table));
 
-	table->buckets = calloc(size, sizeof(table->buckets[0]));
+	table->buckets = alloc_array(size, sizeof(table->buckets[0]));
 	table->num_buckets = size;
 
 	if (table->buckets == NULL) {

@@ -107,7 +107,7 @@ static int precache_fragment_block(data_reader_t *data, size_t idx)
 data_reader_t *data_reader_create(int fd, sqfs_super_t *super,
 				  compressor_t *cmp)
 {
-	data_reader_t *data = calloc(1, sizeof(*data) + 3 * super->block_size);
+	data_reader_t *data = alloc_flex(sizeof(*data), super->block_size, 3);
 	size_t i, size;
 
 	if (data == NULL) {
@@ -136,7 +136,11 @@ data_reader_t *data_reader_create(int fd, sqfs_super_t *super,
 		return NULL;
 	}
 
-	size = sizeof(data->frag[0]) * data->num_fragments;
+	if (SZ_MUL_OV(sizeof(data->frag[0]), data->num_fragments, &size)) {
+		fputs("Too many fragments: overflow\n", stderr);
+		free(data);
+		return NULL;
+	}
 
 	data->frag = sqfs_read_table(fd, cmp, size,
 				     super->fragment_table_start);

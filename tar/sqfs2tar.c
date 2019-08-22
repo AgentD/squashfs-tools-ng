@@ -187,7 +187,7 @@ static tar_xattr_t *gen_xattr_list(fstree_t *fs, tree_xattr_t *xattr)
 	tar_xattr_t *list;
 	size_t i;
 
-	list = malloc(sizeof(list[0]) * xattr->num_attr);
+	list = alloc_array(sizeof(list[0]), xattr->num_attr);
 	if (list == NULL) {
 		perror("creating xattr list");
 		return NULL;

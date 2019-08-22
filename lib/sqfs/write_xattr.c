@@ -152,7 +152,7 @@ static uint64_t *create_ool_locations_table(fstree_t *fs)
 	uint64_t *table;
 	size_t i;
 
-	table = malloc(sizeof(uint64_t) * fs->xattr_values.num_strings);
+	table = alloc_array(sizeof(uint64_t), fs->xattr_values.num_strings);
 
 	if (table == NULL) {
 		perror("allocating Xattr OOL locations table");

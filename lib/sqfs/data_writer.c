@@ -416,7 +416,7 @@ int write_data_from_fd_condensed(data_writer_t *data, file_info_t *fi,
 			diff = fi->size - offset;
 		}
 
-		blk = calloc(1, sizeof(*blk) + diff);
+		blk = alloc_flex(sizeof(*blk), 1, diff);
 		blk->size = diff;
 		blk->index = i++;
 		blk->user = fi;

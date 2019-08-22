@@ -7,6 +7,7 @@
 #include "config.h"
 
 #include "meta_reader.h"
+#include "util.h"
 
 #include <sys/stat.h>
 #include <stdlib.h>
@@ -89,7 +90,7 @@ static sqfs_inode_generic_t *read_inode_file(meta_reader_t *ir,
 	count = get_block_count(file.file_size, block_size,
 				file.fragment_index, file.fragment_offset);
 
-	out = calloc(1, sizeof(*out) + count * sizeof(uint32_t));
+	out = alloc_flex(sizeof(*out), sizeof(uint32_t), count);
 	if (out == NULL) {
 		perror("reading extended file inode");
 		return NULL;
@@ -132,7 +133,7 @@ static sqfs_inode_generic_t *read_inode_file_ext(meta_reader_t *ir,
 	count = get_block_count(file.file_size, block_size,
 				file.fragment_idx, file.fragment_offset);
 
-	out = calloc(1, sizeof(*out) + count * sizeof(uint32_t));
+	out = alloc_flex(sizeof(*out), sizeof(uint32_t), count);
 	if (out == NULL) {
 		perror("reading extended file inode");
 		return NULL;
