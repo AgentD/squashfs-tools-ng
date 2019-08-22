@@ -146,6 +146,11 @@ fi
 
 ##### additional checks #####
 AX_COMPILE_CHECK_SIZEOF(time_t)
+AX_COMPILE_CHECK_SIZEOF(size_t)
+AX_COMPILE_CHECK_SIZEOF(short)
+AX_COMPILE_CHECK_SIZEOF(int)
+AX_COMPILE_CHECK_SIZEOF(long)
+AX_COMPILE_CHECK_SIZEOF(long long)
 
 AC_CHECK_HEADERS([sys/xattr.h], [], [])
 

@@ -11,6 +11,33 @@
 
 #include <sys/types.h>
 #include <stdint.h>
+#include <stddef.h>
+
+#if defined(__GNUC__) || defined(__clang__)
+#define UI_ADD_OV __builtin_uadd_overflow
+#define UL_ADD_OV __builtin_uaddl_overflow
+#define ULL_ADD_OV __builtin_uaddll_overflow
+
+#define UI_MUL_OV __builtin_umul_overflow
+#define UL_MUL_OV __builtin_umull_overflow
+#define ULL_MUL_OV __builtin_umulll_overflow
+#else
+#error Sorry, I do not know how to trap integer overflows with this compiler
+#endif
+
+#if SIZEOF_SIZE_T <= SIZEOF_INT
+#define SZ_ADD_OV UI_ADD_OV
+#define SZ_MUL_OV UI_MUL_OV
+#elif SIZEOF_SIZE_T == SIZEOF_LONG
+#define SZ_ADD_OV UL_ADD_OV
+#define SZ_MUL_OV UL_MUL_OV
+#elif SIZEOF_SIZE_T == SIZEOF_LONG_LONG
+#define SZ_ADD_OV ULL_ADD_OV
+#define SZ_MUL_OV ULL_MUL_OV
+#else
+#error Cannot determine maximum value of size_t
+#endif
+
 
 /* layout structure for sparse files, indicating where the actual data is */
 typedef struct sparse_map_t {
