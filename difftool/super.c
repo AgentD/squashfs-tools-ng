@@ -36,7 +36,8 @@ static void print_value_difference(const char *name, uint64_t a, uint64_t b)
 			c = '-';
 			diff = a - b;
 		}
-		fprintf(stdout, "%s: %c%lu\n", name, c, diff);
+		fprintf(stdout, "%s: %c%llu\n", name, c,
+			(unsigned long long)diff);
 	}
 }
 
