@@ -27,8 +27,7 @@ int sqfs_write_table(int outfd, sqfs_super_t *super, compressor_t *cmp,
 	if ((table_size % SQFS_META_BLOCK_SIZE) != 0)
 		++block_count;
 
-	list_size = sizeof(uint64_t) * block_count;
-	locations = malloc(list_size);
+	locations = alloc_array(sizeof(uint64_t), block_count);
 
 	if (locations == NULL) {
 		perror("writing table");
@@ -64,6 +63,7 @@ int sqfs_write_table(int outfd, sqfs_super_t *super, compressor_t *cmp,
 	/* write location list */
 	*start = super->bytes_used;
 
+	list_size = sizeof(uint64_t) * block_count;
 	if (write_data("writing table locations", outfd, locations, list_size))
 		goto out;
 

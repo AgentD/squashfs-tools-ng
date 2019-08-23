@@ -215,7 +215,7 @@ int write_xattr(int outfd, fstree_t *fs, sqfs_super_t *super,
 	if ((count * sizeof(id_ent)) % SQFS_META_BLOCK_SIZE)
 		++blocks;
 
-	tbl = calloc(sizeof(uint64_t), blocks);
+	tbl = alloc_array(sizeof(uint64_t), blocks);
 
 	if (tbl == NULL) {
 		perror("generating xattr ID table");

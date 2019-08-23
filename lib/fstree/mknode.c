@@ -17,7 +17,7 @@ tree_node_t *fstree_mknode(fstree_t *fs, tree_node_t *parent, const char *name,
 			   size_t name_len, const char *extra,
 			   const struct stat *sb)
 {
-	size_t size = sizeof(tree_node_t), block_count = 0;
+	size_t size = sizeof(tree_node_t), block_count = 0, total;
 	tree_node_t *n;
 	char *ptr;
 
@@ -27,24 +27,45 @@ tree_node_t *fstree_mknode(fstree_t *fs, tree_node_t *parent, const char *name,
 			errno = EINVAL;
 			return NULL;
 		}
-		size += strlen(extra) + 1;
+		if (SZ_ADD_OV(size, strlen(extra), &size) ||
+		    SZ_ADD_OV(size, 1, &size)) {
+			goto fail_ov;
+		}
 		break;
 	case S_IFDIR:
-		size += sizeof(*n->data.dir);
+		if (SZ_ADD_OV(size, sizeof(*n->data.dir), &size))
+			goto fail_ov;
 		break;
 	case S_IFREG:
 		block_count = (sb->st_size / fs->block_size);
 		if ((sb->st_size % fs->block_size) != 0)
 			++block_count;
 
-		size += sizeof(*n->data.file);
-		size += block_count * sizeof(n->data.file->blocks[0]);
-		if (extra != NULL)
-			size += strlen(extra) + 1;
+		if (SZ_MUL_OV(block_count, sizeof(n->data.file->blocks[0]),
+			      &total)) {
+			goto fail_ov;
+		}
+
+		if (SZ_ADD_OV(size, sizeof(*n->data.file), &size) ||
+		    SZ_ADD_OV(size, total, &size)) {
+			goto fail_ov;
+		}
+
+		if (extra != NULL) {
+			if (SZ_ADD_OV(size, strlen(extra), &size) ||
+			    SZ_ADD_OV(size, 1, &size)) {
+				goto fail_ov;
+			}
+		}
 		break;
 	}
 
-	n = calloc(1, size + name_len + 1);
+	if (SZ_ADD_OV(size, name_len, &total) ||
+	    SZ_ADD_OV(total, 1, &total)) {
+		goto fail_ov;
+	}
+
+	n = calloc(1, total);
 	if (n == NULL)
 		return NULL;
 
@@ -91,4 +112,7 @@ tree_node_t *fstree_mknode(fstree_t *fs, tree_node_t *parent, const char *name,
 	n->name = (char *)n + size;
 	memcpy(n->name, name, name_len);
 	return n;
+fail_ov:
+	errno = EOVERFLOW;
+	return NULL;
 }

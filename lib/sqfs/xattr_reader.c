@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <errno.h>
 
 struct xattr_reader_t {
 	uint64_t xattr_start;
@@ -54,7 +55,7 @@ static int get_id_block_locations(xattr_reader_t *xr, int sqfsfd,
 	if ((xr->num_ids * sizeof(sqfs_xattr_id_t)) % SQFS_META_BLOCK_SIZE)
 		xr->num_id_blocks += 1;
 
-	xr->id_block_starts = calloc(sizeof(uint64_t), xr->num_id_blocks);
+	xr->id_block_starts = alloc_array(sizeof(uint64_t), xr->num_id_blocks);
 	if (xr->id_block_starts == NULL) {
 		perror("allocating xattr ID location table");
 		return -1;
@@ -63,7 +64,7 @@ static int get_id_block_locations(xattr_reader_t *xr, int sqfsfd,
 	if (read_data_at("reading xattr ID block locations",
 			 super->xattr_id_table_start + sizeof(idtbl),
 			 sqfsfd, xr->id_block_starts,
-			 sizeof(xr->id_block_starts[0]) * xr->num_id_blocks)) {
+			 sizeof(uint64_t) * xr->num_id_blocks)) {
 		goto fail;
 	}
 
@@ -127,7 +128,7 @@ static sqfs_xattr_entry_t *read_key(xattr_reader_t *xr)
 {
 	sqfs_xattr_entry_t key, *out;
 	const char *prefix;
-	size_t plen;
+	size_t plen, total;
 
 	if (meta_reader_read(xr->kvrd, &key, sizeof(key)))
 		return NULL;
@@ -143,10 +144,16 @@ static sqfs_xattr_entry_t *read_key(xattr_reader_t *xr)
 	}
 
 	plen = strlen(prefix);
-	out = calloc(1, sizeof(*out) + plen + key.size + 1);
+
+	if (SZ_ADD_OV(plen, key.size, &total) || SZ_ADD_OV(total, 1, &total) ||
+	    SZ_ADD_OV(sizeof(*out), total, &total)) {
+		errno = EOVERFLOW;
+		goto fail_alloc;
+	}
+
+	out = calloc(1, total);
 	if (out == NULL) {
-		perror("restoring xattr key");
-		return NULL;
+		goto fail_alloc;
 	}
 
 	*out = key;
@@ -158,14 +165,17 @@ static sqfs_xattr_entry_t *read_key(xattr_reader_t *xr)
 	}
 
 	return out;
+fail_alloc:
+	perror("allocating xattr key");
+	return NULL;
 }
 
 static sqfs_xattr_value_t *read_value(xattr_reader_t *xr,
 				      const sqfs_xattr_entry_t *key)
 {
+	size_t offset, new_offset, size;
 	sqfs_xattr_value_t value, *out;
 	uint64_t ref, start, new_start;
-	size_t offset, new_offset;
 
 	if (meta_reader_read(xr->kvrd, &value, sizeof(value)))
 		return NULL;
@@ -197,11 +207,15 @@ static sqfs_xattr_value_t *read_value(xattr_reader_t *xr,
 
 	value.size = le32toh(value.size);
 
-	out = calloc(1, sizeof(*out) + value.size);
-	if (out == NULL) {
-		perror("reading xattr value");
-		return NULL;
+	if (SZ_ADD_OV(sizeof(*out), value.size, &size) ||
+	    SZ_ADD_OV(size, 1, &size)) {
+		errno = EOVERFLOW;
+		goto fail_alloc;
 	}
+
+	out = calloc(1, size);
+	if (out == NULL)
+		goto fail_alloc;
 
 	*out = value;
 
@@ -214,6 +228,9 @@ static sqfs_xattr_value_t *read_value(xattr_reader_t *xr,
 	}
 
 	return out;
+fail_alloc:
+	perror("allocating xattr value");
+	return NULL;
 fail:
 	free(out);
 	return NULL;
@@ -283,7 +300,6 @@ int xattr_reader_restore_node(xattr_reader_t *xr, fstree_t *fs,
 {
 	sqfs_xattr_id_t desc;
 	tree_xattr_t *it;
-	size_t size;
 
 	if (xr->kvrd == NULL || xr->idrd == NULL)
 		return 0;
@@ -301,10 +317,8 @@ int xattr_reader_restore_node(xattr_reader_t *xr, fstree_t *fs,
 	if (get_xattr_desc(xr, xattr, &desc))
 		return -1;
 
-	size = sizeof(*node->xattr);
-	size += sizeof(node->xattr->attr[0]) * desc.count;
-
-	node->xattr = calloc(1, size);
+	node->xattr = alloc_flex(sizeof(*node->xattr),
+				 sizeof(node->xattr->attr[0]), desc.count);
 	if (node->xattr == NULL) {
 		perror("creating xattr structure");
 		return -1;

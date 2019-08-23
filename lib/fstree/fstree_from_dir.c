@@ -25,6 +25,7 @@
 static char *get_file_path(tree_node_t *n, const char *name)
 {
 	char *ptr, *new;
+	size_t len;
 	int ret;
 
 	if (n->parent == NULL) {
@@ -41,7 +42,13 @@ static char *get_file_path(tree_node_t *n, const char *name)
 	ret = canonicalize_name(ptr);
 	assert(ret == 0);
 
-	new = realloc(ptr, strlen(ptr) + strlen(name) + 2);
+	if (SZ_ADD_OV(strlen(ptr), strlen(name), &len) ||
+	    SZ_ADD_OV(len, 2, &len)) {
+		errno = EOVERFLOW;
+		goto fail;
+	}
+
+	new = realloc(ptr, len);
 	if (new == NULL)
 		goto fail;
 

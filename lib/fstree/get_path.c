@@ -7,9 +7,11 @@
 #include "config.h"
 
 #include "fstree.h"
+#include "util.h"
 
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h>
 
 char *fstree_get_path(tree_node_t *node)
 {
@@ -21,14 +23,19 @@ char *fstree_get_path(tree_node_t *node)
 		return strdup("/");
 
 	for (it = node; it != NULL && it->parent != NULL; it = it->parent) {
-		len += strlen(it->name) + 1;
+		if (SZ_ADD_OV(len, strlen(it->name), &len) ||
+		    SZ_ADD_OV(len, 1, &len))
+			goto fail_ov;
 	}
 
-	str = malloc(len + 1);
+	if (SZ_ADD_OV(len, 1, &len))
+		goto fail_ov;
+
+	str = malloc(len);
 	if (str == NULL)
 		return NULL;
 
-	ptr = str + len;
+	ptr = str + len - 1;
 	*ptr = '\0';
 
 	for (it = node; it != NULL && it->parent != NULL; it = it->parent) {
@@ -40,4 +47,7 @@ char *fstree_get_path(tree_node_t *node)
 	}
 
 	return str;
+fail_ov:
+	errno = EOVERFLOW;
+	return NULL;
 }

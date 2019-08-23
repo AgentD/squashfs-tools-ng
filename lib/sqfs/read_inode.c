@@ -159,6 +159,7 @@ static sqfs_inode_generic_t *read_inode_slink(meta_reader_t *ir,
 {
 	sqfs_inode_generic_t *out;
 	sqfs_inode_slink_t slink;
+	size_t size;
 
 	if (meta_reader_read(ir, &slink, sizeof(slink)))
 		return NULL;
@@ -166,11 +167,14 @@ static sqfs_inode_generic_t *read_inode_slink(meta_reader_t *ir,
 	SWAB32(slink.nlink);
 	SWAB32(slink.target_size);
 
-	out = calloc(1, sizeof(*out) + slink.target_size + 1);
-	if (out == NULL) {
-		perror("reading symlink inode");
-		return NULL;
+	if (SZ_ADD_OV(slink.target_size, 1, &size) ||
+	    SZ_ADD_OV(sizeof(*out), size, &size)) {
+		goto fail;
 	}
+
+	out = calloc(1, size);
+	if (out == NULL)
+		goto fail;
 
 	out->slink_target = (char *)out->extra;
 	out->base = *base;
@@ -182,6 +186,9 @@ static sqfs_inode_generic_t *read_inode_slink(meta_reader_t *ir,
 	}
 
 	return out;
+fail:
+	perror("reading symlink inode");
+	return NULL;
 }
 
 static sqfs_inode_generic_t *read_inode_slink_ext(meta_reader_t *ir,

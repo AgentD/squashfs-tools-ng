@@ -18,7 +18,7 @@ void *sqfs_read_table(int fd, compressor_t *cmp, size_t table_size,
 		      uint64_t location, uint64_t lower_limit,
 		      uint64_t upper_limit)
 {
-	size_t diff, block_count, list_size, blk_idx = 0;
+	size_t diff, block_count, blk_idx = 0;
 	uint64_t start, *locations;
 	meta_reader_t *m;
 	void *data, *ptr;
@@ -35,8 +35,7 @@ void *sqfs_read_table(int fd, compressor_t *cmp, size_t table_size,
 	if ((table_size % SQFS_META_BLOCK_SIZE) != 0)
 		++block_count;
 
-	list_size = sizeof(uint64_t) * block_count;
-	locations = malloc(list_size);
+	locations = alloc_array(sizeof(uint64_t), block_count);
 
 	if (locations == NULL) {
 		perror("allocation table location list");
@@ -44,7 +43,7 @@ void *sqfs_read_table(int fd, compressor_t *cmp, size_t table_size,
 	}
 
 	if (read_data_at("reading table locations", location,
-			 fd, locations, list_size)) {
+			 fd, locations, sizeof(uint64_t) * block_count)) {
 		goto fail_idx;
 	}
 
