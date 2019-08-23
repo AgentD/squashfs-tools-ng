@@ -20,6 +20,13 @@ int meta_reader_read_dir_header(meta_reader_t *m, sqfs_dir_header_t *hdr)
 	hdr->count = le32toh(hdr->count);
 	hdr->start_block = le32toh(hdr->start_block);
 	hdr->inode_number = le32toh(hdr->inode_number);
+
+	if (hdr->count > (SQFS_MAX_DIR_ENT - 1)) {
+		fputs("Found a directory header with too many entries\n",
+		      stderr);
+		return -1;
+	}
+
 	return 0;
 }
 
