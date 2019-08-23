@@ -143,6 +143,8 @@ data_reader_t *data_reader_create(int fd, sqfs_super_t *super,
 	}
 
 	data->frag = sqfs_read_table(fd, cmp, size,
+				     super->fragment_table_start,
+				     super->directory_table_start,
 				     super->fragment_table_start);
 	if (data->frag == NULL) {
 		free(data);

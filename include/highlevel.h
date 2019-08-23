@@ -50,7 +50,8 @@ int sqfs_write_table(int outfd, sqfs_super_t *super, compressor_t *cmp,
 		     const void *data, size_t table_size, uint64_t *start);
 
 void *sqfs_read_table(int fd, compressor_t *cmp, size_t table_size,
-		      uint64_t location);
+		      uint64_t location, uint64_t lower_limit,
+		      uint64_t upper_limit);
 
 /*
   High level helper function to serialize an entire file system tree to

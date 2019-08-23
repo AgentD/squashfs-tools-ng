@@ -15,6 +15,10 @@
 #include <stdio.h>
 
 struct meta_reader_t {
+	uint64_t start;
+	uint64_t limit;
+	size_t data_used;
+
 	/* The location of the current block in the image */
 	uint64_t block_offset;
 
@@ -37,7 +41,8 @@ struct meta_reader_t {
 	uint8_t scratch[SQFS_META_BLOCK_SIZE];
 };
 
-meta_reader_t *meta_reader_create(int fd, compressor_t *cmp)
+meta_reader_t *meta_reader_create(int fd, compressor_t *cmp,
+				  uint64_t start, uint64_t limit)
 {
 	meta_reader_t *m = calloc(1, sizeof(*m));
 
@@ -46,6 +51,8 @@ meta_reader_t *meta_reader_create(int fd, compressor_t *cmp)
 		return NULL;
 	}
 
+	m->start = start;
+	m->limit = limit;
 	m->fd = fd;
 	m->cmp = cmp;
 	return m;
@@ -63,12 +70,13 @@ int meta_reader_seek(meta_reader_t *m, uint64_t block_start, size_t offset)
 	ssize_t ret;
 	size_t size;
 
-	if (offset >= sizeof(m->data)) {
-		fputs("Tried to seek past end of meta data block.\n", stderr);
-		return -1;
-	}
+	if (block_start < m->start || block_start >= m->limit)
+		goto fail_range;
 
 	if (block_start == m->block_offset) {
+		if (offset >= m->data_used)
+			goto fail_offset;
+
 		m->offset = offset;
 		return 0;
 	}
@@ -82,17 +90,11 @@ int meta_reader_seek(meta_reader_t *m, uint64_t block_start, size_t offset)
 	compressed = (header & 0x8000) == 0;
 	size = header & 0x7FFF;
 
-	if (size > sizeof(m->data)) {
-		fputs("found meta data block larger than maximum size\n",
-		      stderr);
-		return -1;
-	}
+	if (size > sizeof(m->data))
+		goto fail_too_large;
 
-	m->block_offset = block_start;
-	m->offset = offset;
-	m->next_block = block_start + size + 2;
-
-	memset(m->data, 0, sizeof(m->data));
+	if ((block_start + 2 + size) > m->limit)
+		goto fail_block_bounds;
 
 	if (read_data_at("reading meta data block", block_start + 2,
 			 m->fd, m->data, size)) {
@@ -109,12 +111,32 @@ int meta_reader_seek(meta_reader_t *m, uint64_t block_start, size_t offset)
 		}
 
 		memcpy(m->data, m->scratch, ret);
-
-		if ((size_t)ret < sizeof(m->data))
-			memset(m->data + ret, 0, sizeof(m->data) - ret);
+		m->data_used = ret;
+	} else {
+		m->data_used = size;
 	}
 
+	if (offset >= m->data_used)
+		goto fail_offset;
+
+	m->block_offset = block_start;
+	m->next_block = block_start + size + 2;
+	m->offset = offset;
 	return 0;
+fail_block_bounds:
+	fputs("found metadata block that exceeds filesystem bounds.\n",
+	      stderr);
+	return -1;
+fail_too_large:
+	fputs("found metadata block larger than maximum size.\n", stderr);
+	return -1;
+fail_offset:
+	fputs("Tried to seek past end of metadata block.\n", stderr);
+	return -1;
+fail_range:
+	fputs("Tried to read meta data block past filesystem bounds.\n",
+	      stderr);
+	return -1;
 }
 
 void meta_reader_get_position(meta_reader_t *m, uint64_t *block_start,
@@ -129,12 +151,12 @@ int meta_reader_read(meta_reader_t *m, void *data, size_t size)
 	size_t diff;
 
 	while (size != 0) {
-		diff = sizeof(m->data) - m->offset;
+		diff = m->data_used - m->offset;
 
 		if (diff == 0) {
 			if (meta_reader_seek(m, m->next_block, 0))
 				return -1;
-			diff = sizeof(m->data);
+			diff = m->data_used;
 		}
 
 		if (diff > size)

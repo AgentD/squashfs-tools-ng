@@ -15,8 +15,13 @@
 typedef struct meta_reader_t meta_reader_t;
 
 /* Create a meta data reader using a given compressor to extract data.
-   Internally prints error message to stderr on failure. */
-meta_reader_t *meta_reader_create(int fd, compressor_t *cmp);
+   Internally prints error message to stderr on failure.
+
+   Start offset and limit can be specified to do bounds checking against
+   a subregion of the filesystem image.
+*/
+meta_reader_t *meta_reader_create(int fd, compressor_t *cmp,
+				  uint64_t start, uint64_t limit);
 
 void meta_reader_destroy(meta_reader_t *m);
 

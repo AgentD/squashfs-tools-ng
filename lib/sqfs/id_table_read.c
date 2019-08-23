@@ -15,6 +15,7 @@
 int id_table_read(id_table_t *tbl, int fd, sqfs_super_t *super,
 		  compressor_t *cmp)
 {
+	uint64_t upper_limit, lower_limit;
 	size_t i;
 
 	if (tbl->ids != NULL) {
@@ -29,10 +30,24 @@ int id_table_read(id_table_t *tbl, int fd, sqfs_super_t *super,
 		return -1;
 	}
 
+	upper_limit = super->id_table_start;
+	lower_limit = super->directory_table_start;
+
+	if (super->fragment_table_start > lower_limit &&
+	    super->fragment_table_start < upper_limit) {
+		lower_limit = super->fragment_table_start;
+	}
+
+	if (super->export_table_start > lower_limit &&
+	    super->export_table_start < upper_limit) {
+		lower_limit = super->export_table_start;
+	}
+
 	tbl->num_ids = super->id_count;
 	tbl->max_ids = super->id_count;
 	tbl->ids = sqfs_read_table(fd, cmp, tbl->num_ids * sizeof(uint32_t),
-				   super->id_table_start);
+				   super->id_table_start, lower_limit,
+				   upper_limit);
 	if (tbl->ids == NULL)
 		return -1;
 

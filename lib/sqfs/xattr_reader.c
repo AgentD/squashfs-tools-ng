@@ -359,11 +359,15 @@ xattr_reader_t *xattr_reader_create(int sqfsfd, sqfs_super_t *super,
 	if (get_id_block_locations(xr, sqfsfd, super))
 		goto fail;
 
-	xr->idrd = meta_reader_create(sqfsfd, cmp);
+	xr->idrd = meta_reader_create(sqfsfd, cmp,
+				      super->id_table_start,
+				      super->bytes_used);
 	if (xr->idrd == NULL)
 		goto fail;
 
-	xr->kvrd = meta_reader_create(sqfsfd, cmp);
+	xr->kvrd = meta_reader_create(sqfsfd, cmp,
+				      super->id_table_start,
+				      super->bytes_used);
 	if (xr->kvrd == NULL)
 		goto fail;
 

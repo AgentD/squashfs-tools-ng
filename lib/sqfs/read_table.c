@@ -15,7 +15,8 @@
 #include <stdio.h>
 
 void *sqfs_read_table(int fd, compressor_t *cmp, size_t table_size,
-		      uint64_t location)
+		      uint64_t location, uint64_t lower_limit,
+		      uint64_t upper_limit)
 {
 	size_t diff, block_count, list_size, blk_idx = 0;
 	uint64_t start, *locations;
@@ -48,7 +49,7 @@ void *sqfs_read_table(int fd, compressor_t *cmp, size_t table_size,
 	}
 
 	/* Read the actual data */
-	m = meta_reader_create(fd, cmp);
+	m = meta_reader_create(fd, cmp, lower_limit, upper_limit);
 	if (m == NULL)
 		goto fail_idx;
 

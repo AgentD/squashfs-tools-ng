@@ -201,19 +201,26 @@ static int fill_dir(meta_reader_t *ir, meta_reader_t *dr, tree_node_t *root,
 int deserialize_fstree(fstree_t *out, sqfs_super_t *super, compressor_t *cmp,
 		       int fd, int flags)
 {
+	uint64_t block_start, limit;
 	sqfs_inode_generic_t *root;
 	meta_reader_t *ir, *dr;
-	uint64_t block_start;
 	xattr_reader_t *xr;
 	id_table_t idtbl;
 	int status = -1;
 	size_t offset;
 
-	ir = meta_reader_create(fd, cmp);
+	ir = meta_reader_create(fd, cmp, super->inode_table_start,
+				super->directory_table_start);
 	if (ir == NULL)
 		return -1;
 
-	dr = meta_reader_create(fd, cmp);
+	limit = super->id_table_start;
+	if (super->export_table_start < limit)
+		limit = super->export_table_start;
+	if (super->fragment_table_start < limit)
+		limit = super->fragment_table_start;
+
+	dr = meta_reader_create(fd, cmp, super->directory_table_start, limit);
 	if (dr == NULL)
 		goto out_ir;
 
