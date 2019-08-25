@@ -24,6 +24,7 @@ sqfs2tar
 tar2sqfs
 sqfsdiff
 tar_fuzz
+fstree_fuzz
 test_*
 test-*
 fscompare
