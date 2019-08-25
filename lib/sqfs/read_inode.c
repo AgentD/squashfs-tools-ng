@@ -12,6 +12,7 @@
 #include <sys/stat.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <errno.h>
 
 #define SWAB16(x) x = le16toh(x)
 #define SWAB32(x) x = le32toh(x)
@@ -169,6 +170,7 @@ static sqfs_inode_generic_t *read_inode_slink(meta_reader_t *ir,
 
 	if (SZ_ADD_OV(slink.target_size, 1, &size) ||
 	    SZ_ADD_OV(sizeof(*out), size, &size)) {
+		errno = EOVERFLOW;
 		goto fail;
 	}
 
