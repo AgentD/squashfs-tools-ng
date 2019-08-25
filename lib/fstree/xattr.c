@@ -7,10 +7,12 @@
 #include "config.h"
 
 #include "fstree.h"
+#include "util.h"
 
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <errno.h>
 
 static void remove_from_list(fstree_t *fs, tree_xattr_t *xattr)
 {
@@ -34,24 +36,31 @@ static tree_xattr_t *grow_xattr_block(tree_xattr_t *xattr)
 	void *new;
 
 	if (xattr != NULL) {
-		new_count = xattr->max_attr * 2;
+		if (SZ_MUL_OV(xattr->max_attr, 2, &new_count))
+			goto fail_ov;
 		old_size = sizeof(*xattr) + sizeof(uint64_t) * xattr->max_attr;
 	}
 
-	new_size = sizeof(*xattr) + sizeof(uint64_t) * new_count;
-	new = realloc(xattr, new_size);
-
-	if (new == NULL) {
-		perror("adding extended attributes");
-		free(xattr);
-		return NULL;
+	if (SZ_MUL_OV(sizeof(uint64_t), new_count, &new_size) ||
+	    SZ_ADD_OV(sizeof(*xattr), new_size, &new_size)) {
+		goto fail_ov;
 	}
+
+	new = realloc(xattr, new_size);
+	if (new == NULL)
+		goto fail;
 
 	memset((char *)new + old_size, 0, new_size - old_size);
 
 	xattr = new;
 	xattr->max_attr = new_count;
 	return xattr;
+fail_ov:
+	errno = EOVERFLOW;
+fail:
+	perror("adding extended attributes");
+	free(xattr);
+	return NULL;
 }
 
 int fstree_add_xattr(fstree_t *fs, tree_node_t *node,
