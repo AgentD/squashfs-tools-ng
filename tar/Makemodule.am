@@ -8,8 +8,4 @@ tar2sqfs_CFLAGS = $(AM_CFLAGS) $(PTHREAD_CFLAGS)
 tar2sqfs_LDADD += $(XZ_LIBS) $(ZLIB_LIBS) $(LZO_LIBS) $(LZ4_LIBS) $(ZSTD_LIBS)
 tar2sqfs_LDADD += $(PTHREAD_LIBS)
 
-tar_fuzz_SOURCES = tar/tar_fuzz.c
-tar_fuzz_LDADD = libtar.a libutil.a
-
 bin_PROGRAMS += sqfs2tar tar2sqfs
-noinst_PROGRAMS += tar_fuzz
