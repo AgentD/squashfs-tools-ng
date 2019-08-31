@@ -1,6 +1,7 @@
 .deps
 .dirstamp
 .gdb_history
+.libs
 Makefile
 Makefile.in
 aclocal.m4
@@ -16,6 +17,8 @@ missing
 stamp-h1
 config.*
 *.o
+*.lo
+*.la
 *.a
 *~
 gensquashfs
@@ -28,3 +31,7 @@ fstree_fuzz
 test_*
 test-*
 fscompare
+libtool
+ltmain.sh
+m4/libtool.m4
+m4/lt*.m4

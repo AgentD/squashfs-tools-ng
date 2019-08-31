@@ -3,9 +3,9 @@ AC_INIT([squashfs-tools-ng], [0.6.1], [goliath@infraroot.at], squashfs-tools-ng)
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([foreign dist-xz subdir-objects])
 AM_SILENT_RULES([yes])
+LT_INIT
 AC_PROG_CC
 AC_PROG_CC_C99
-AC_PROG_RANLIB
 AC_PROG_INSTALL
 AC_SYS_LARGEFILE
 
