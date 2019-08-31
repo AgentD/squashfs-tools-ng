@@ -17,12 +17,6 @@ libtar_a_SOURCES += include/tar.h
 libtar_a_CFLAGS = $(AM_CFLAGS)
 libtar_a_CPPFLAGS = $(AM_CPPFLAGS)
 
-libcompress_a_SOURCES = lib/comp/compressor.c lib/comp/internal.h
-libcompress_a_SOURCES += include/block_processor.h include/compress.h
-libcompress_a_SOURCES += lib/comp/create_block.c lib/comp/process_block.c
-libcompress_a_CFLAGS = $(AM_CFLAGS)
-libcompress_a_CPPFLAGS = $(AM_CPPFLAGS)
-
 libsquashfs_a_SOURCES = include/meta_writer.h include/squashfs.h
 libsquashfs_a_SOURCES += lib/sqfs/meta_writer.c lib/sqfs/super.c
 libsquashfs_a_SOURCES += lib/sqfs/id_table.c include/id_table.h
@@ -41,6 +35,12 @@ libsquashfs_a_SOURCES += include/data_reader.h lib/sqfs/data_reader.c
 libsquashfs_a_SOURCES += lib/sqfs/write_export_table.c
 libsquashfs_a_SOURCES += lib/sqfs/read_table.c lib/sqfs/statistics.c
 libsquashfs_a_SOURCES += lib/sqfs/sqfs_reader.c
+libsquashfs_a_SOURCES += lib/sqfs/comp/compressor.c lib/sqfs/comp/internal.h
+libsquashfs_a_SOURCES += include/block_processor.h include/compress.h
+libsquashfs_a_SOURCES += lib/sqfs/comp/create_block.c
+libsquashfs_a_SOURCES += lib/sqfs/comp/process_block.c
+libsquashfs_a_CFLAGS = $(AM_CFLAGS)
+libsquashfs_a_CPPFLAGS = $(AM_CPPFLAGS)
 
 libutil_a_SOURCES = lib/util/canonicalize_name.c lib/util/write_data.c
 libutil_a_SOURCES += lib/util/read_data.c include/util.h
@@ -53,48 +53,48 @@ libutil_a_CFLAGS = $(AM_CFLAGS)
 libutil_a_CPPFLAGS = $(AM_CPPFLAGS)
 
 if HAVE_PTHREAD
-libcompress_a_SOURCES += lib/comp/block_processor_parallel.c
-libcompress_a_CFLAGS += $(PTHREAD_CFLAGS)
+libsquashfs_a_SOURCES += lib/sqfs/comp/block_processor_parallel.c
+libsquashfs_a_CFLAGS += $(PTHREAD_CFLAGS)
 else
-libcompress_a_SOURCES += lib/comp/block_processor.c
+libsquashfs_a_SOURCES += lib/sqfs/comp/block_processor.c
 endif
 
 if WITH_GZIP
-libcompress_a_SOURCES += lib/comp/gzip.c
+libsquashfs_a_SOURCES += lib/sqfs/comp/gzip.c
 
-libcompress_a_CFLAGS += $(ZLIB_CFLAGS)
-libcompress_a_CPPFLAGS += -DWITH_GZIP
+libsquashfs_a_CFLAGS += $(ZLIB_CFLAGS)
+libsquashfs_a_CPPFLAGS += -DWITH_GZIP
 
 libutil_a_CFLAGS += $(ZLIB_CFLAGS)
 libutil_a_CPPFLAGS += -DWITH_GZIP
 endif
 
 if WITH_XZ
-libcompress_a_SOURCES += lib/comp/xz.c
+libsquashfs_a_SOURCES += lib/sqfs/comp/xz.c
 
-libcompress_a_CFLAGS += $(XZ_CFLAGS)
-libcompress_a_CPPFLAGS += -DWITH_XZ
+libsquashfs_a_CFLAGS += $(XZ_CFLAGS)
+libsquashfs_a_CPPFLAGS += -DWITH_XZ
 endif
 
 if WITH_LZO
-libcompress_a_SOURCES += lib/comp/lzo.c
+libsquashfs_a_SOURCES += lib/sqfs/comp/lzo.c
 
-libcompress_a_CFLAGS += $(LZO_CFLAGS)
-libcompress_a_CPPFLAGS += -DWITH_LZO
+libsquashfs_a_CFLAGS += $(LZO_CFLAGS)
+libsquashfs_a_CPPFLAGS += -DWITH_LZO
 endif
 
 if WITH_LZ4
-libcompress_a_SOURCES += lib/comp/lz4.c
+libsquashfs_a_SOURCES += lib/sqfs/comp/lz4.c
 
-libcompress_a_CFLAGS += $(LZ4_CFLAGS)
-libcompress_a_CPPFLAGS += -DWITH_LZ4
+libsquashfs_a_CFLAGS += $(LZ4_CFLAGS)
+libsquashfs_a_CPPFLAGS += -DWITH_LZ4
 endif
 
 if WITH_ZSTD
-libcompress_a_SOURCES += lib/comp/zstd.c
+libsquashfs_a_SOURCES += lib/sqfs/comp/zstd.c
 
-libcompress_a_CFLAGS += $(ZSTD_CFLAGS)
-libcompress_a_CPPFLAGS += -DWITH_ZSTD
+libsquashfs_a_CFLAGS += $(ZSTD_CFLAGS)
+libsquashfs_a_CPPFLAGS += -DWITH_ZSTD
 endif
 
 if WITH_SELINUX
@@ -104,4 +104,4 @@ libfstree_a_CFLAGS += $(LIBSELINUX_CFLAGS)
 libfstree_a_CPPFLAGS += -DWITH_SELINUX
 endif
 
-noinst_LIBRARIES += libfstree.a libcompress.a libutil.a libsquashfs.a libtar.a
+noinst_LIBRARIES += libfstree.a libutil.a libsquashfs.a libtar.a

@@ -76,7 +76,7 @@ test_str_table_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(top_srcdir)/tests
 test_blk_proc_order_SOURCES = tests/blk_proc_order.c
 test_blk_proc_order_CPPFLAGS = $(AM_CPPFLAGS)
 test_blk_proc_order_CFLAGS = $(AM_CFLAGS) $(PTHREAD_CFLAGS)
-test_blk_proc_order_LDADD = libcompress.a libutil.a $(ZLIB_LIBS) $(PTHREAD_LIBS)
+test_blk_proc_order_LDADD = libsquashfs.a libutil.a $(ZLIB_LIBS) $(PTHREAD_LIBS)
 
 if HAVE_PTHREAD
 test_blk_proc_order_CPPFLAGS += -DHAVE_PTHREAD
