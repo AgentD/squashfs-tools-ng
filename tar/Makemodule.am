@@ -1,9 +1,9 @@
 sqfs2tar_SOURCES = tar/sqfs2tar.c
-sqfs2tar_LDADD = libsquashfs.a libtar.a libfstree.a libutil.a
+sqfs2tar_LDADD = libsqfshelper.a libsquashfs.a libtar.a libfstree.a libutil.a
 sqfs2tar_LDADD += $(XZ_LIBS) $(ZLIB_LIBS) $(LZO_LIBS) $(LZ4_LIBS) $(ZSTD_LIBS)
 
 tar2sqfs_SOURCES = tar/tar2sqfs.c
-tar2sqfs_LDADD = libsquashfs.a libtar.a libfstree.a libutil.a
+tar2sqfs_LDADD = libsqfshelper.a libsquashfs.a libtar.a libfstree.a libutil.a
 tar2sqfs_CFLAGS = $(AM_CFLAGS) $(PTHREAD_CFLAGS)
 tar2sqfs_LDADD += $(XZ_LIBS) $(ZLIB_LIBS) $(LZO_LIBS) $(LZ4_LIBS) $(ZSTD_LIBS)
 tar2sqfs_LDADD += $(PTHREAD_LIBS)
