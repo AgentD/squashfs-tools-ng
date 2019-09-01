@@ -6,11 +6,12 @@
  */
 #include "config.h"
 
-#include "sqfs/meta_writer.h"
 #include "sqfs/inode.h"
 #include "sqfs/dir.h"
+#include "highlevel.h"
 #include "util.h"
 
+#include <sys/stat.h>
 #include <assert.h>
 #include <endian.h>
 #include <stdlib.h>

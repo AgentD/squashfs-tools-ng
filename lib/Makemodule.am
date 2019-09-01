@@ -47,6 +47,7 @@ libsquashfs_la_SOURCES += include/sqfs/meta_reader.h include/sqfs/id_table.h
 libsquashfs_la_SOURCES += include/sqfs/compress.h include/sqfs/block_processor.h
 libsquashfs_la_SOURCES += include/sqfs/super.h include/sqfs/inode.h
 libsquashfs_la_SOURCES += include/sqfs/dir.h include/sqfs/xattr.h
+libsquashfs_la_SOURCES += include/sqfs/table.h
 libsquashfs_la_SOURCES += lib/sqfs/meta_writer.c lib/sqfs/super.c
 libsquashfs_la_SOURCES += lib/sqfs/id_table.c
 libsquashfs_la_SOURCES += lib/sqfs/write_table.c include/highlevel.h
@@ -111,6 +112,7 @@ sqfsinclude_HEADERS += include/sqfs/meta_reader.h include/sqfs/id_table.h
 sqfsinclude_HEADERS += include/sqfs/compress.h include/sqfs/block_processor.h
 sqfsinclude_HEADERS += include/sqfs/super.h include/sqfs/inode.h
 sqfsinclude_HEADERS += include/sqfs/dir.h include/sqfs/xattr.h
+sqfsinclude_HEADERS += include/sqfs/table.h
 
 noinst_LIBRARIES += libfstree.a libtar.a libsqfshelper.a
 noinst_LTLIBRARIES += libutil.la

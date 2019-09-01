@@ -9,6 +9,8 @@
 
 #include "config.h"
 
+#include "sqfs/meta_reader.h"
+
 #include <stdint.h>
 
 #define SQFS_MAX_DIR_ENT 256
@@ -33,5 +35,12 @@ typedef struct {
 	uint32_t size;
 	uint8_t name[];
 } sqfs_dir_index_t;
+
+/* Returns 0 on success. Internally prints to stderr on failure */
+int meta_reader_read_dir_header(meta_reader_t *m, sqfs_dir_header_t *hdr);
+
+/* Entry can be freed with a single free() call.
+   The function internally prints to stderr on failure */
+sqfs_dir_entry_t *meta_reader_read_dir_ent(meta_reader_t *m);
 
 #endif /* SQFS_DIR_H */

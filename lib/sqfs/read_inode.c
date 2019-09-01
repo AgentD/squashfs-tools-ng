@@ -6,7 +6,7 @@
  */
 #include "config.h"
 
-#include "sqfs/meta_reader.h"
+#include "sqfs/inode.h"
 #include "util.h"
 
 #include <sys/stat.h>

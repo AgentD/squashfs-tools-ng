@@ -13,11 +13,25 @@
 #include "sqfs/id_table.h"
 #include "sqfs/inode.h"
 #include "sqfs/data.h"
+#include "sqfs/table.h"
+#include "sqfs/meta_writer.h"
 #include "data_reader.h"
 #include "fstree.h"
 
 #include <stdint.h>
 #include <stddef.h>
+
+typedef struct {
+	tree_node_t *node;
+	uint32_t block;
+	uint32_t index;
+} idx_ref_t;
+
+typedef struct {
+	size_t num_nodes;
+	size_t max_nodes;
+	idx_ref_t idx_nodes[];
+} dir_index_t;
 
 typedef struct {
 	compressor_t *cmp;
@@ -35,24 +49,6 @@ enum RDTREE_FLAGS {
 	RDTREE_NO_EMPTY = 0x10,
 	RDTREE_READ_XATTR = 0x20,
 };
-
-/*
-  Convenience function for writing meta data to a SquashFS image
-
-  This function internally creates a meta data writer and writes the given
-  'data' blob with 'table_size' bytes to disk, neatly partitioned into meta
-  data blocks. For each meta data block, it remembers the 64 bit start address,
-  writes out all addresses to an uncompressed list and returns the location
-  where the address list starts in 'start'.
-
-  Returns 0 on success. Internally prints error messages to stderr.
- */
-int sqfs_write_table(int outfd, sqfs_super_t *super, compressor_t *cmp,
-		     const void *data, size_t table_size, uint64_t *start);
-
-void *sqfs_read_table(int fd, compressor_t *cmp, size_t table_size,
-		      uint64_t location, uint64_t lower_limit,
-		      uint64_t upper_limit);
 
 /*
   High level helper function to serialize an entire file system tree to
@@ -116,5 +112,33 @@ int sqfs_reader_open(sqfs_reader_t *rd, const char *filename,
 
 /* Cleanup after a successfull sqfs_reader_open */
 void sqfs_reader_close(sqfs_reader_t *rd);
+
+/*
+  High level helper function that writes squashfs directory entries to
+  a meta data writer.
+
+  The dir_info_t structure is used to generate the listing and updated
+  accordingly (such as writing back the header position and total size).
+  A directory index is created on the fly and returned in *index.
+  A single free() call is sufficient.
+
+  Returns 0 on success. Prints error messages to stderr on failure.
+ */
+int meta_writer_write_dir(meta_writer_t *dm, dir_info_t *dir,
+			  dir_index_t **index);
+
+/*
+  High level helper function to serialize a tree_node_t to a squashfs inode
+  and write it to a meta data writer.
+
+  The inode is written to `im`. If it is a directory node, the directory
+  contents are written to `dm` using meta_writer_write_dir. The given
+  id_table_t is used to store the uid and gid on the fly and write the
+  coresponding indices to the inode structure.
+
+  Returns 0 on success. Prints error messages to stderr on failure.
+ */
+int meta_writer_write_inode(fstree_t *fs, id_table_t *idtbl, meta_writer_t *im,
+			    meta_writer_t *dm, tree_node_t *node);
 
 #endif /* HIGHLEVEL_H */

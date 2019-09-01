@@ -7,6 +7,8 @@
 #include "config.h"
 
 #include "sqfs/meta_reader.h"
+#include "sqfs/dir.h"
+
 #include "xattr_reader.h"
 #include "highlevel.h"
 
