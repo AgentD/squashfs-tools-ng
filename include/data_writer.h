@@ -9,8 +9,8 @@
 
 #include "config.h"
 
-#include "sqfs/squashfs.h"
 #include "sqfs/compress.h"
+#include "sqfs/data.h"
 #include "fstree.h"
 #include "util.h"
 

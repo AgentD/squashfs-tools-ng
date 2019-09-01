@@ -10,9 +10,9 @@
 #include "config.h"
 
 #include "sqfs/meta_writer.h"
-#include "sqfs/squashfs.h"
 #include "sqfs/compress.h"
 #include "sqfs/id_table.h"
+#include "sqfs/data.h"
 #include "data_writer.h"
 #include "highlevel.h"
 #include "fstree.h"

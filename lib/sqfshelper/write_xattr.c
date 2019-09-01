@@ -7,6 +7,7 @@
 #include "config.h"
 
 #include "sqfs/meta_writer.h"
+#include "sqfs/xattr.h"
 #include "highlevel.h"
 #include "util.h"
 

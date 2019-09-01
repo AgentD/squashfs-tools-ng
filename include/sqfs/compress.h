@@ -14,7 +14,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "squashfs.h"
+#include "sqfs/super.h"
 
 typedef struct compressor_t compressor_t;
 

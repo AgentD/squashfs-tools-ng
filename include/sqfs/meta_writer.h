@@ -9,9 +9,9 @@
 
 #include "config.h"
 
-#include "compress.h"
-#include "squashfs.h"
-#include "id_table.h"
+#include "sqfs/compress.h"
+#include "sqfs/id_table.h"
+#include "sqfs/data.h"
 #include "fstree.h"
 
 typedef struct {

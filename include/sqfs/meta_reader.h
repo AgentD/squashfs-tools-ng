@@ -9,8 +9,10 @@
 
 #include "config.h"
 
-#include "compress.h"
-#include "squashfs.h"
+#include "sqfs/compress.h"
+#include "sqfs/inode.h"
+#include "sqfs/data.h"
+#include "sqfs/dir.h"
 
 typedef struct meta_reader_t meta_reader_t;
 
