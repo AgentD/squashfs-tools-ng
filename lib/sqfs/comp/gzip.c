@@ -15,32 +15,6 @@
 
 #include "internal.h"
 
-#define GZIP_DEFAULT_LEVEL 9
-#define GZIP_DEFAULT_WINDOW 15
-#define GZIP_NUM_STRATEGIES (sizeof(strategies) / sizeof(strategies[0]))
-
-typedef enum {
-	GZIP_STRATEGY_DEFAULT = 0x01,
-	GZIP_STRATEGY_FILTERED = 0x02,
-	GZIP_STRATEGY_HUFFMAN = 0x04,
-	GZIP_STARTEGY_RLE = 0x08,
-	GZIP_STRATEGY_FIXED = 0x10,
-
-	GZIP_ALL_STRATEGIES = 0x1F,
-} GZIP_STRATEGIES;
-
-static const struct {
-	const char *name;
-	int flag;
-	int zlib;
-} strategies[] = {
-	{ "default", GZIP_STRATEGY_DEFAULT, Z_DEFAULT_STRATEGY },
-	{ "filtered", GZIP_STRATEGY_FILTERED, Z_FILTERED },
-	{ "huffman", GZIP_STRATEGY_HUFFMAN, Z_HUFFMAN_ONLY },
-	{ "rle", GZIP_STARTEGY_RLE, Z_RLE },
-	{ "fixed", GZIP_STRATEGY_FIXED, Z_FIXED },
-};
-
 typedef struct {
 	uint32_t level;
 	uint16_t window;
@@ -75,8 +49,8 @@ static int gzip_write_options(compressor_t *base, int fd)
 	gzip_compressor_t *gzip = (gzip_compressor_t *)base;
 	gzip_options_t opt;
 
-	if (gzip->opt.level == GZIP_DEFAULT_LEVEL &&
-	    gzip->opt.window == GZIP_DEFAULT_WINDOW &&
+	if (gzip->opt.level == SQFS_GZIP_DEFAULT_LEVEL &&
+	    gzip->opt.window == SQFS_GZIP_DEFAULT_WINDOW &&
 	    gzip->opt.strategies == 0) {
 		return 0;
 	}
@@ -112,9 +86,27 @@ static int gzip_read_options(compressor_t *base, int fd)
 		return -1;
 	}
 
-	if (gzip->opt.strategies & ~GZIP_ALL_STRATEGIES) {
+	if (gzip->opt.strategies & ~SQFS_COMP_FLAG_GZIP_ALL) {
 		fputs("Unknown gzip strategies selected.\n", stderr);
 		return -1;
+	}
+
+	return 0;
+}
+
+static int flag_to_zlib_strategy(int flag)
+{
+	switch (flag) {
+	case SQFS_COMP_FLAG_GZIP_DEFAULT:
+		return Z_DEFAULT_STRATEGY;
+	case SQFS_COMP_FLAG_GZIP_FILTERED:
+		return Z_FILTERED;
+	case SQFS_COMP_FLAG_GZIP_HUFFMAN:
+		return Z_HUFFMAN_ONLY;
+	case SQFS_COMP_FLAG_GZIP_RLE:
+		return Z_RLE;
+	case SQFS_COMP_FLAG_GZIP_FIXED:
+		return Z_FIXED;
 	}
 
 	return 0;
@@ -123,11 +115,11 @@ static int gzip_read_options(compressor_t *base, int fd)
 static int find_strategy(gzip_compressor_t *gzip, const uint8_t *in,
 			 size_t size, uint8_t *out, size_t outsize)
 {
-	int ret, selected = Z_DEFAULT_STRATEGY;
+	int ret, strategy, selected = Z_DEFAULT_STRATEGY;
 	size_t i, length, minlength = 0;
 
-	for (i = 0; i < GZIP_NUM_STRATEGIES; ++i) {
-		if (!(strategies[i].flag & gzip->opt.strategies))
+	for (i = 0x01; i & SQFS_COMP_FLAG_GZIP_ALL; i <<= 1) {
+		if ((gzip->opt.strategies & i) == 0)
 			continue;
 
 		ret = deflateReset(&gzip->strm);
@@ -137,13 +129,14 @@ static int find_strategy(gzip_compressor_t *gzip, const uint8_t *in,
 			return -1;
 		}
 
+		strategy = flag_to_zlib_strategy(i);
+
 		gzip->strm.next_in = (void *)in;
 		gzip->strm.avail_in = size;
 		gzip->strm.next_out = out;
 		gzip->strm.avail_out = outsize;
 
-		ret = deflateParams(&gzip->strm, gzip->opt.level,
-				    strategies[i].zlib);
+		ret = deflateParams(&gzip->strm, gzip->opt.level, strategy);
 		if (ret != Z_OK) {
 			fputs("setting deflate parameters failed\n",
 			      stderr);
@@ -157,7 +150,7 @@ static int find_strategy(gzip_compressor_t *gzip, const uint8_t *in,
 
 			if (minlength == 0 || length < minlength) {
 				minlength = length;
-				selected = strategies[i].zlib;
+				selected = strategy;
 			}
 		} else if (ret != Z_OK && ret != Z_BUF_ERROR) {
 			fputs("gzip block processing failed\n", stderr);
@@ -229,85 +222,6 @@ static ssize_t gzip_do_block(compressor_t *base, const uint8_t *in,
 	return 0;
 }
 
-static int process_options(char *options, int *level, int *window, int *flags)
-{
-	enum {
-		OPT_WINDOW = 0,
-		OPT_LEVEL,
-	};
-	char *const token[] = {
-		[OPT_WINDOW] = (char *)"window",
-		[OPT_LEVEL] = (char *)"level",
-		NULL
-	};
-	char *subopts, *value;
-	size_t i;
-	int opt;
-
-	subopts = options;
-
-	while (*subopts != '\0') {
-		opt = getsubopt(&subopts, token, &value);
-
-		switch (opt) {
-		case OPT_WINDOW:
-			if (value == NULL)
-				goto fail_value;
-
-			for (i = 0; isdigit(value[i]); ++i)
-				;
-
-			if (i < 1 || i > 3 || value[i] != '\0')
-				goto fail_window;
-
-			*window = atoi(value);
-
-			if (*window < 8 || *window > 15)
-				goto fail_window;
-			break;
-		case OPT_LEVEL:
-			if (value == NULL)
-				goto fail_value;
-
-			for (i = 0; isdigit(value[i]); ++i)
-				;
-
-			if (i < 1 || i > 3 || value[i] != '\0')
-				goto fail_level;
-
-			*level = atoi(value);
-
-			if (*level < 1 || *level > 9)
-				goto fail_level;
-			break;
-		default:
-			for (i = 0; i < GZIP_NUM_STRATEGIES; ++i) {
-				if (strcmp(value, strategies[i].name) == 0) {
-					*flags |= strategies[i].flag;
-					break;
-				}
-			}
-			if (i == GZIP_NUM_STRATEGIES)
-				goto fail_opt;
-			break;
-		}
-	}
-
-	return 0;
-fail_window:
-	fputs("Window size must be a number between 8 and 15.\n", stderr);
-	return -1;
-fail_level:
-	fputs("Compression level must be a number between 1 and 9.\n", stderr);
-	return -1;
-fail_opt:
-	fprintf(stderr, "Unknown option '%s'.\n", value);
-	return -1;
-fail_value:
-	fprintf(stderr, "Missing value for '%s'.\n", token[opt]);
-	return -1;
-}
-
 static compressor_t *gzip_create_copy(compressor_t *cmp)
 {
 	gzip_compressor_t *gzip = malloc(sizeof(*gzip));
@@ -338,19 +252,33 @@ static compressor_t *gzip_create_copy(compressor_t *cmp)
 	return (compressor_t *)gzip;
 }
 
-compressor_t *create_gzip_compressor(bool compress, size_t block_size,
-				     char *options)
+compressor_t *create_gzip_compressor(const compressor_config_t *cfg)
 {
-	int window = GZIP_DEFAULT_WINDOW;
-	int level = GZIP_DEFAULT_LEVEL;
 	gzip_compressor_t *gzip;
 	compressor_t *base;
-	int flags = 0;
 	int ret;
 
-	if (options != NULL) {
-		if (process_options(options, &level, &window, &flags))
-			return NULL;
+	if (cfg->flags & ~(SQFS_COMP_FLAG_GZIP_ALL |
+			   SQFS_COMP_FLAG_GENERIC_ALL)) {
+		fputs("creating gzip compressor: unknown compressor flags\n",
+		      stderr);
+		return NULL;
+	}
+
+	if (cfg->opt.gzip.level < SQFS_GZIP_MIN_LEVEL ||
+	    cfg->opt.gzip.level > SQFS_GZIP_MAX_LEVEL) {
+		fprintf(stderr, "creating gzip compressor: compression level"
+			"must be between %d and %d inclusive\n",
+			SQFS_GZIP_MIN_LEVEL, SQFS_GZIP_MAX_LEVEL);
+		return NULL;
+	}
+
+	if (cfg->opt.gzip.window_size < SQFS_GZIP_MIN_WINDOW ||
+	    cfg->opt.gzip.window_size > SQFS_GZIP_MAX_WINDOW) {
+		fprintf(stderr, "creating gzip compressor: window size"
+			"must be between %d and %d inclusive\n",
+			SQFS_GZIP_MIN_WINDOW, SQFS_GZIP_MAX_WINDOW);
+		return NULL;
 	}
 
 	gzip = calloc(1, sizeof(*gzip));
@@ -361,19 +289,20 @@ compressor_t *create_gzip_compressor(bool compress, size_t block_size,
 		return NULL;
 	}
 
-	gzip->opt.level = level;
-	gzip->opt.window = window;
-	gzip->opt.strategies = flags;
-	gzip->compress = compress;
-	gzip->block_size = block_size;
+	gzip->opt.level = cfg->opt.gzip.level;
+	gzip->opt.window = cfg->opt.gzip.window_size;
+	gzip->opt.strategies = cfg->flags & SQFS_COMP_FLAG_GZIP_ALL;
+	gzip->compress = (cfg->flags & SQFS_COMP_FLAG_UNCOMPRESS) == 0;
+	gzip->block_size = cfg->block_size;
 	base->do_block = gzip_do_block;
 	base->destroy = gzip_destroy;
 	base->write_options = gzip_write_options;
 	base->read_options = gzip_read_options;
 	base->create_copy = gzip_create_copy;
 
-	if (compress) {
-		ret = deflateInit2(&gzip->strm, level, Z_DEFLATED, window, 8,
+	if (gzip->compress) {
+		ret = deflateInit2(&gzip->strm, cfg->opt.gzip.level,
+				   Z_DEFLATED, cfg->opt.gzip.window_size, 8,
 				   Z_DEFAULT_STRATEGY);
 	} else {
 		ret = inflateInit(&gzip->strm);
@@ -386,27 +315,4 @@ compressor_t *create_gzip_compressor(bool compress, size_t block_size,
 	}
 
 	return base;
-}
-
-void compressor_gzip_print_help(void)
-{
-	size_t i;
-
-	printf(
-"Available options for gzip compressor:\n"
-"\n"
-"    level=<value>    Compression level. Value from 1 to 9.\n"
-"                     Defaults to %d.\n"
-"    window=<size>    Deflate compression window size. Value from 8 to 15.\n"
-"                     Defaults to %d.\n"
-"\n"
-"In additon to the options, one or more strategies can be specified.\n"
-"If multiple stratgies are provided, the one yielding the best compression\n"
-"ratio will be used.\n"
-"\n"
-"The following strategies are available:\n",
-	GZIP_DEFAULT_LEVEL, GZIP_DEFAULT_WINDOW);
-
-	for (i = 0; i < GZIP_NUM_STRATEGIES; ++i)
-		printf("\t%s\n", strategies[i].name);
 }

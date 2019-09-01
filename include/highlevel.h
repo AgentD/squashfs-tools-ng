@@ -141,4 +141,13 @@ int meta_writer_write_dir(meta_writer_t *dm, dir_info_t *dir,
 int meta_writer_write_inode(fstree_t *fs, id_table_t *idtbl, meta_writer_t *im,
 			    meta_writer_t *dm, tree_node_t *node);
 
+void compressor_print_available(void);
+
+E_SQFS_COMPRESSOR compressor_get_default(void);
+
+int compressor_cfg_init_options(compressor_config_t *cfg, E_SQFS_COMPRESSOR id,
+				size_t block_size, char *options);
+
+void compressor_print_help(E_SQFS_COMPRESSOR id);
+
 #endif /* HIGHLEVEL_H */

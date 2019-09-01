@@ -14,6 +14,8 @@
 
 int sqfs_reader_open(sqfs_reader_t *rd, const char *filename, int rdtree_flags)
 {
+	compressor_config_t cfg;
+
 	memset(rd, 0, sizeof(*rd));
 
 	rd->sqfsfd = open(filename, O_RDONLY);
@@ -30,8 +32,11 @@ int sqfs_reader_open(sqfs_reader_t *rd, const char *filename, int rdtree_flags)
 		goto fail_fd;
 	}
 
-	rd->cmp = compressor_create(rd->super.compression_id, false,
-				    rd->super.block_size, NULL);
+	compressor_config_init(&cfg, rd->super.compression_id,
+			       rd->super.block_size,
+			       SQFS_COMP_FLAG_UNCOMPRESS);
+
+	rd->cmp = compressor_create(&cfg);
 	if (rd->cmp == NULL)
 		goto fail_fd;
 

@@ -27,14 +27,14 @@ typedef struct {
 } lz4_options;
 
 #define LZ4LEGACY 1
-#define LZ4_FLAG_HC 0x01
 
 static int lz4_write_options(compressor_t *base, int fd)
 {
 	lz4_compressor_t *lz4 = (lz4_compressor_t *)base;
 	lz4_options opt = {
 		.version = htole32(LZ4LEGACY),
-		.flags = htole32(lz4->high_compression ? LZ4_FLAG_HC : 0),
+		.flags = htole32(lz4->high_compression ?
+				 SQFS_COMP_FLAG_LZ4_HC : 0),
 	};
 
 	return generic_write_options(fd, &opt, sizeof(opt));
@@ -115,45 +115,31 @@ static void lz4_destroy(compressor_t *base)
 	free(base);
 }
 
-compressor_t *create_lz4_compressor(bool compress, size_t block_size,
-				    char *options)
+compressor_t *create_lz4_compressor(const compressor_config_t *cfg)
 {
 	lz4_compressor_t *lz4 = calloc(1, sizeof(*lz4));
 	compressor_t *base = (compressor_t *)lz4;
-	(void)block_size;
 
+	if (cfg->flags & ~(SQFS_COMP_FLAG_LZ4_ALL |
+			   SQFS_COMP_FLAG_GENERIC_ALL)) {
+		fputs("creating lz4 compressor: unknown compressor flags\n",
+		      stderr);
+	}
+
+	lz4 = calloc(1, sizeof(*lz4));
+	base = (compressor_t *)lz4;
 	if (lz4 == NULL) {
 		perror("creating lz4 compressor");
 		return NULL;
 	}
 
-	lz4->high_compression = false;
-
-	if (options != NULL) {
-		if (strcmp(options, "hc") == 0) {
-			lz4->high_compression = true;
-		} else {
-			fputs("Unsupported extra options for lz4 "
-			      "compressor.\n", stderr);
-			free(lz4);
-			return NULL;
-		}
-	}
+	lz4->high_compression = (cfg->flags & SQFS_COMP_FLAG_LZ4_HC) != 0;
 
 	base->destroy = lz4_destroy;
-	base->do_block = compress ? lz4_comp_block : lz4_uncomp_block;
+	base->do_block = (cfg->flags & SQFS_COMP_FLAG_UNCOMPRESS) ?
+		lz4_uncomp_block : lz4_comp_block;
 	base->write_options = lz4_write_options;
 	base->read_options = lz4_read_options;
 	base->create_copy = lz4_create_copy;
 	return base;
-}
-
-void compressor_lz4_print_help(void)
-{
-	fputs("Available options for lz4 compressor:\n"
-	      "\n"
-	      "    hc    If present, use slower but better compressing\n"
-	      "          variant of lz4.\n"
-	      "\n",
-	      stdout);
 }

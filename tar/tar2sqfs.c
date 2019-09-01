@@ -355,6 +355,7 @@ fail:
 int main(int argc, char **argv)
 {
 	int outfd, status = EXIT_SUCCESS;
+	compressor_config_t cfg;
 	data_writer_t *data;
 	sqfs_super_t super;
 	compressor_t *cmp;
@@ -363,6 +364,11 @@ int main(int argc, char **argv)
 	int ret;
 
 	process_args(argc, argv);
+
+	if (compressor_cfg_init_options(&cfg, comp_id,
+					block_size, comp_extra)) {
+		return EXIT_FAILURE;
+	}
 
 	outfd = open(filename, outmode, 0644);
 	if (outfd < 0) {
@@ -373,7 +379,7 @@ int main(int argc, char **argv)
 	if (fstree_init(&fs, block_size, fs_defaults))
 		goto out_fd;
 
-	cmp = compressor_create(comp_id, true, block_size, comp_extra);
+	cmp = compressor_create(&cfg);
 	if (cmp == NULL) {
 		fputs("Error creating compressor\n", stderr);
 		goto out_fs;

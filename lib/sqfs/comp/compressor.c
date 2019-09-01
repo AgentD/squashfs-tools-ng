@@ -13,10 +13,7 @@
 #include "internal.h"
 #include "util.h"
 
-typedef compressor_t *(*compressor_fun_t)(bool compress, size_t block_size,
-					  char *options);
-
-typedef void (*compressor_help_fun_t)(void);
+typedef compressor_t *(*compressor_fun_t)(const compressor_config_t *cfg);
 
 static compressor_fun_t compressors[SQFS_COMP_MAX + 1] = {
 #ifdef WITH_GZIP
@@ -33,24 +30,6 @@ static compressor_fun_t compressors[SQFS_COMP_MAX + 1] = {
 #endif
 #ifdef WITH_ZSTD
 	[SQFS_COMP_ZSTD] = create_zstd_compressor,
-#endif
-};
-
-static const compressor_help_fun_t helpfuns[SQFS_COMP_MAX + 1] = {
-#ifdef WITH_GZIP
-	[SQFS_COMP_GZIP] = compressor_gzip_print_help,
-#endif
-#ifdef WITH_XZ
-	[SQFS_COMP_XZ] = compressor_xz_print_help,
-#endif
-#ifdef WITH_LZO
-	[SQFS_COMP_LZO] = compressor_lzo_print_help,
-#endif
-#ifdef WITH_LZ4
-	[SQFS_COMP_LZ4] = compressor_lz4_print_help,
-#endif
-#ifdef WITH_ZSTD
-	[SQFS_COMP_ZSTD] = compressor_zstd_print_help,
 #endif
 };
 
@@ -105,41 +84,15 @@ bool compressor_exists(E_SQFS_COMPRESSOR id)
 	return (compressors[id] != NULL);
 }
 
-compressor_t *compressor_create(E_SQFS_COMPRESSOR id, bool compress,
-				size_t block_size, char *options)
+compressor_t *compressor_create(const compressor_config_t *cfg)
 {
-	if (id < SQFS_COMP_MIN || id > SQFS_COMP_MAX)
+	if (cfg == NULL || cfg->id < SQFS_COMP_MIN || cfg->id > SQFS_COMP_MAX)
 		return NULL;
 
-	if (compressors[id] == NULL)
+	if (compressors[cfg->id] == NULL)
 		return NULL;
 
-	return compressors[id](compress, block_size, options);
-}
-
-void compressor_print_help(E_SQFS_COMPRESSOR id)
-{
-	if (id < SQFS_COMP_MIN || id > SQFS_COMP_MAX)
-		return;
-
-	if (compressors[id] == NULL)
-		return;
-
-	helpfuns[id]();
-}
-
-void compressor_print_available(void)
-{
-	size_t i;
-
-	fputs("Available compressors:\n", stdout);
-
-	for (i = 0; i < sizeof(names) / sizeof(names[0]); ++i) {
-		if (compressor_exists(i))
-			printf("\t%s\n", names[i]);
-	}
-
-	printf("\nDefault compressor: %s\n", names[compressor_get_default()]);
+	return compressors[cfg->id](cfg);
 }
 
 const char *compressor_name_from_id(E_SQFS_COMPRESSOR id)
@@ -164,20 +117,33 @@ int compressor_id_from_name(const char *name, E_SQFS_COMPRESSOR *out)
 	return -1;
 }
 
-E_SQFS_COMPRESSOR compressor_get_default(void)
+int compressor_config_init(compressor_config_t *cfg, E_SQFS_COMPRESSOR id,
+			   size_t block_size, uint16_t flags)
 {
-#if defined(WITH_XZ)
-	return SQFS_COMP_XZ;
-#elif defined(WITH_ZSTD)
-	return SQFS_COMP_ZSTD;
-#elif defined(WITH_GZIP)
-	return SQFS_COMP_GZIP;
-#elif defined(WITH_LZO)
-	return SQFS_COMP_LZO;
-#elif defined(WITH_LZ4)
-	return SQFS_COMP_LZ4;
-#else
-	fputs("No compressor implementation available!\n", stderr);
-	exit(EXIT_FAILURE);
-#endif
+	memset(cfg, 0, sizeof(*cfg));
+
+	cfg->id = id;
+	cfg->flags = flags;
+	cfg->block_size = block_size;
+
+	switch (id) {
+	case SQFS_COMP_GZIP:
+		cfg->opt.gzip.level = SQFS_GZIP_DEFAULT_LEVEL;
+		cfg->opt.gzip.window_size = SQFS_GZIP_DEFAULT_WINDOW;
+		break;
+	case SQFS_COMP_LZO:
+		cfg->opt.lzo.algorithm = SQFS_LZO_DEFAULT_ALG;
+		cfg->opt.lzo.level = SQFS_LZO_DEFAULT_LEVEL;
+		break;
+	case SQFS_COMP_ZSTD:
+		cfg->opt.zstd.level = SQFS_ZSTD_DEFAULT_LEVEL;
+		break;
+	case SQFS_COMP_XZ:
+		cfg->opt.xz.dict_size = block_size;
+		break;
+	default:
+		break;
+	}
+
+	return 0;
 }

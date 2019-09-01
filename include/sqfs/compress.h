@@ -51,22 +51,93 @@ struct compressor_t {
 	void (*destroy)(compressor_t *stream);
 };
 
+typedef struct {
+	uint16_t id;
+	uint16_t flags;
+	uint32_t block_size;
+
+	union {
+		struct {
+			uint16_t level;
+			uint16_t window_size;
+		} gzip;
+
+		struct {
+			uint16_t level;
+		} zstd;
+
+		struct {
+			uint16_t algorithm;
+			uint16_t level;
+		} lzo;
+
+		struct {
+			uint32_t dict_size;
+		} xz;
+	} opt;
+} compressor_config_t;
+
+typedef enum {
+	SQFS_COMP_FLAG_LZ4_HC = 0x0001,
+	SQFS_COMP_FLAG_LZ4_ALL = 0x0001,
+
+	SQFS_COMP_FLAG_XZ_X86 = 0x0001,
+	SQFS_COMP_FLAG_XZ_POWERPC = 0x0002,
+	SQFS_COMP_FLAG_XZ_IA64 = 0x0004,
+	SQFS_COMP_FLAG_XZ_ARM = 0x0008,
+	SQFS_COMP_FLAG_XZ_ARMTHUMB = 0x0010,
+	SQFS_COMP_FLAG_XZ_SPARC = 0x0020,
+	SQFS_COMP_FLAG_XZ_ALL = 0x003F,
+
+	SQFS_COMP_FLAG_GZIP_DEFAULT = 0x0001,
+	SQFS_COMP_FLAG_GZIP_FILTERED = 0x0002,
+	SQFS_COMP_FLAG_GZIP_HUFFMAN = 0x0004,
+	SQFS_COMP_FLAG_GZIP_RLE = 0x0008,
+	SQFS_COMP_FLAG_GZIP_FIXED = 0x0010,
+	SQFS_COMP_FLAG_GZIP_ALL = 0x001F,
+
+	SQFS_COMP_FLAG_UNCOMPRESS = 0x8000,
+	SQFS_COMP_FLAG_GENERIC_ALL = 0x8000,
+} SQFS_COMP_FLAG;
+
+typedef enum {
+	SQFS_LZO1X_1 = 0,
+	SQFS_LZO1X_1_11 = 1,
+	SQFS_LZO1X_1_12 = 2,
+	SQFS_LZO1X_1_15 = 3,
+	SQFS_LZO1X_999	= 4,
+} SQFS_LZO_ALGORITHM;
+
+#define SQFS_GZIP_DEFAULT_LEVEL (9)
+#define SQFS_GZIP_DEFAULT_WINDOW (15)
+
+#define SQFS_LZO_DEFAULT_ALG SQFS_LZO1X_999
+#define SQFS_LZO_DEFAULT_LEVEL (8)
+
+#define SQFS_ZSTD_DEFAULT_LEVEL (15)
+
+#define SQFS_GZIP_MIN_LEVEL (1)
+#define SQFS_GZIP_MAX_LEVEL (9)
+
+#define SQFS_LZO_MIN_LEVEL (0)
+#define SQFS_LZO_MAX_LEVEL (9)
+
+#define SQFS_ZSTD_MIN_LEVEL (1)
+#define SQFS_ZSTD_MAX_LEVEL (22)
+
+#define SQFS_GZIP_MIN_WINDOW (8)
+#define SQFS_GZIP_MAX_WINDOW (15)
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+int compressor_config_init(compressor_config_t *cfg, E_SQFS_COMPRESSOR id,
+			   size_t block_size, uint16_t flags);
+
 bool compressor_exists(E_SQFS_COMPRESSOR id);
 
-/* block_size is the configured block size for the SquashFS image. Needed
-   by some compressors to set internal defaults. */
-compressor_t *compressor_create(E_SQFS_COMPRESSOR id, bool compress,
-				size_t block_size, char *options);
-
-void compressor_print_help(E_SQFS_COMPRESSOR id);
-
-void compressor_print_available(void);
-
-E_SQFS_COMPRESSOR compressor_get_default(void);
+compressor_t *compressor_create(const compressor_config_t *cfg);
 
 const char *compressor_name_from_id(E_SQFS_COMPRESSOR id);
 

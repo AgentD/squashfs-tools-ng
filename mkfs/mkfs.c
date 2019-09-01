@@ -93,6 +93,7 @@ static int read_fstree(fstree_t *fs, options_t *opt)
 int main(int argc, char **argv)
 {
 	int status = EXIT_FAILURE, ret;
+	compressor_config_t cfg;
 	data_writer_t *data;
 	sqfs_super_t super;
 	compressor_t *cmp;
@@ -102,6 +103,11 @@ int main(int argc, char **argv)
 	int outfd;
 
 	process_command_line(&opt, argc, argv);
+
+	if (compressor_cfg_init_options(&cfg, opt.compressor,
+					opt.blksz, opt.comp_extra)) {
+		return EXIT_FAILURE;
+	}
 
 	if (fstree_init(&fs, opt.blksz, opt.fs_defaults))
 		return EXIT_FAILURE;
@@ -144,8 +150,7 @@ int main(int argc, char **argv)
 
 	fstree_xattr_deduplicate(&fs);
 
-	cmp = compressor_create(super.compression_id, true, super.block_size,
-				opt.comp_extra);
+	cmp = compressor_create(&cfg);
 	if (cmp == NULL) {
 		fputs("Error creating compressor\n", stderr);
 		goto out_outfd;
