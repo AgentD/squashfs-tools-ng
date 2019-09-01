@@ -63,6 +63,10 @@ typedef struct block_processor_t block_processor_t;
  */
 typedef int (*block_cb)(void *user, block_t *blk);
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 block_processor_t *block_processor_create(size_t max_block_size,
 					  compressor_t *cmp,
 					  unsigned int num_workers,
@@ -107,5 +111,9 @@ block_t *create_block(const char *filename, int fd, size_t size,
  */
 int process_block(block_t *block, compressor_t *cmp,
 		  uint8_t *scratch, size_t scratch_size);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* BLOCK_PROCESSOR_H */

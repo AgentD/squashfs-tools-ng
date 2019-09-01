@@ -13,6 +13,10 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
   Convenience function for writing meta data to a SquashFS image
 
@@ -30,5 +34,9 @@ int sqfs_write_table(int outfd, sqfs_super_t *super, compressor_t *cmp,
 void *sqfs_read_table(int fd, compressor_t *cmp, size_t table_size,
 		      uint64_t location, uint64_t lower_limit,
 		      uint64_t upper_limit);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* SQFS_TABLE_H */

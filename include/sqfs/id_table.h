@@ -26,6 +26,10 @@ typedef struct {
 	size_t max_ids;
 } id_table_t;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Returns 0 on success. Prints error message to stderr on failure. */
 int id_table_init(id_table_t *tbl);
 
@@ -44,5 +48,9 @@ int id_table_write(id_table_t *tbl, int outfd, sqfs_super_t *super,
    Returns 0 on success. Internally prints error messages to stderr. */
 int id_table_read(id_table_t *tbl, int fd, sqfs_super_t *super,
 		  compressor_t *cmp);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ID_TABLE_H */

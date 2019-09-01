@@ -45,6 +45,10 @@ typedef struct {
 	uint32_t unused;
 } sqfs_xattr_id_table_t;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Get a prefix string from the ID or NULL if unknown */
 const char *sqfs_get_xattr_prefix(E_SQFS_XATTR_TYPE id);
 
@@ -53,5 +57,9 @@ int sqfs_get_xattr_prefix_id(const char *key);
 
 /* Check if a given xattr key can be encoded in squashfs at all. */
 bool sqfs_has_xattr(const char *key);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* SQFS_XATTR_H */

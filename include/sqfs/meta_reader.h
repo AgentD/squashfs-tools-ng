@@ -14,6 +14,10 @@
 
 typedef struct meta_reader_t meta_reader_t;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Create a meta data reader using a given compressor to extract data.
    Internally prints error message to stderr on failure.
 
@@ -34,5 +38,9 @@ void meta_reader_get_position(meta_reader_t *m, uint64_t *block_start,
 
 /* Returns 0 on success. Internally prints to stderr on failure */
 int meta_reader_read(meta_reader_t *m, void *data, size_t size);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* META_READER_H */

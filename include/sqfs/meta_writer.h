@@ -15,6 +15,10 @@
 
 typedef struct meta_writer_t meta_writer_t;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Create a meta data reader using a given compressor to compress data.
    Internally prints error message to stderr on failure.
    If keep_in_mem is true, the blocks are collected in memory and must
@@ -42,5 +46,9 @@ void meta_writer_reset(meta_writer_t *m);
    Does not flush the current block. Writes error messages to stderr and
    returns non-zero on failure. */
 int meta_write_write_to_file(meta_writer_t *m);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* META_WRITER_H */

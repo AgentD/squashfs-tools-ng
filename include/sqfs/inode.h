@@ -130,6 +130,9 @@ typedef struct {
 	uint8_t extra[];
 } sqfs_inode_generic_t;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Inode can be freed with a single free() call.
    The function internally prints error message to stderr on failure. */
@@ -137,5 +140,9 @@ sqfs_inode_generic_t *meta_reader_read_inode(meta_reader_t *ir,
 					     sqfs_super_t *super,
 					     uint64_t block_start,
 					     size_t offset);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* SQFS_INODE_H */

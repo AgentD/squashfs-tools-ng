@@ -66,6 +66,10 @@ typedef enum {
 	SQFS_FLAG_UNCOMPRESSED_IDS = 0x0800,
 } E_SQFS_SUPER_FLAGS;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Returns 0 on success. Prints error messages to stderr on failure. */
 int sqfs_super_init(sqfs_super_t *super, size_t block_size, uint32_t mtime,
 		    E_SQFS_COMPRESSOR compressor);
@@ -75,5 +79,9 @@ int sqfs_super_write(sqfs_super_t *super, int fd);
 
 /* Returns 0 on success. Prints error messages to stderr on failure. */
 int sqfs_super_read(sqfs_super_t *super, int fd);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* SQFS_SUPER_H */

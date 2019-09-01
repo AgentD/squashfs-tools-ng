@@ -51,6 +51,10 @@ struct compressor_t {
 	void (*destroy)(compressor_t *stream);
 };
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 bool compressor_exists(E_SQFS_COMPRESSOR id);
 
 /* block_size is the configured block size for the SquashFS image. Needed
@@ -67,5 +71,9 @@ E_SQFS_COMPRESSOR compressor_get_default(void);
 const char *compressor_name_from_id(E_SQFS_COMPRESSOR id);
 
 int compressor_id_from_name(const char *name, E_SQFS_COMPRESSOR *out);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* COMPRESS_H */
