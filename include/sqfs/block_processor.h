@@ -8,7 +8,7 @@
 #define BLOCK_PROCESSOR_H
 
 #include "config.h"
-#include "compress.h"
+#include "sqfs/compress.h"
 
 enum {
 	/* only calculate checksum, do NOT compress the data */

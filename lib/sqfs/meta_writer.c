@@ -6,8 +6,8 @@
  */
 #include "config.h"
 
-#include "meta_writer.h"
-#include "squashfs.h"
+#include "sqfs/meta_writer.h"
+#include "sqfs/squashfs.h"
 #include "util.h"
 
 #include <string.h>

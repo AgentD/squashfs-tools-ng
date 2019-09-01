@@ -6,7 +6,7 @@
  */
 #include "config.h"
 
-#include "meta_writer.h"
+#include "sqfs/meta_writer.h"
 #include "util.h"
 
 #include <assert.h>

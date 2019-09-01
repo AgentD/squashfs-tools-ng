@@ -6,7 +6,7 @@
  */
 #include "config.h"
 
-#include "block_processor.h"
+#include "sqfs/block_processor.h"
 #include "data_writer.h"
 #include "highlevel.h"
 #include "util.h"

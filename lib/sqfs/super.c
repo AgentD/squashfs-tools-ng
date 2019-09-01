@@ -6,7 +6,7 @@
  */
 #include "config.h"
 
-#include "squashfs.h"
+#include "sqfs/squashfs.h"
 #include "util.h"
 
 #include <endian.h>

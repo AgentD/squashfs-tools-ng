@@ -42,18 +42,19 @@ libutil_la_SOURCES += lib/util/read_data_at.c lib/util/alloc.c
 libutil_la_CFLAGS = $(AM_CFLAGS)
 libutil_la_CPPFLAGS = $(AM_CPPFLAGS)
 
-libsquashfs_la_SOURCES = include/meta_writer.h include/squashfs.h
+libsquashfs_la_SOURCES = include/sqfs/squashfs.h include/sqfs/meta_writer.h
+libsquashfs_la_SOURCES += include/sqfs/meta_reader.h include/sqfs/id_table.h
+libsquashfs_la_SOURCES += include/sqfs/compress.h include/sqfs/block_processor.h
 libsquashfs_la_SOURCES += lib/sqfs/meta_writer.c lib/sqfs/super.c
-libsquashfs_la_SOURCES += lib/sqfs/id_table.c include/id_table.h
+libsquashfs_la_SOURCES += lib/sqfs/id_table.c
 libsquashfs_la_SOURCES += lib/sqfs/write_table.c include/highlevel.h
 libsquashfs_la_SOURCES += lib/sqfs/read_super.c lib/sqfs/meta_reader.c
-libsquashfs_la_SOURCES += include/meta_reader.h lib/sqfs/id_table_write.c
+libsquashfs_la_SOURCES += lib/sqfs/id_table_write.c
 libsquashfs_la_SOURCES += lib/sqfs/id_table_read.c lib/sqfs/read_inode.c
 libsquashfs_la_SOURCES += lib/sqfs/readdir.c
 libsquashfs_la_SOURCES += lib/sqfs/xattr.c
 libsquashfs_la_SOURCES += lib/sqfs/read_table.c
 libsquashfs_la_SOURCES += lib/sqfs/comp/compressor.c lib/sqfs/comp/internal.h
-libsquashfs_la_SOURCES += include/block_processor.h include/compress.h
 libsquashfs_la_SOURCES += lib/sqfs/comp/create_block.c
 libsquashfs_la_SOURCES += lib/sqfs/comp/process_block.c
 libsquashfs_la_CPPFLAGS = $(AM_CPPFLAGS)
@@ -101,6 +102,11 @@ if WITH_SELINUX
 libfstree_a_SOURCES += lib/fstree/selinux.c
 libfstree_a_CPPFLAGS += -DWITH_SELINUX
 endif
+
+sqfsincludedir = $(includedir)/sqfs
+sqfsinclude_HEADERS = include/sqfs/squashfs.h include/sqfs/meta_writer.h
+sqfsinclude_HEADERS += include/sqfs/meta_reader.h include/sqfs/id_table.h
+sqfsinclude_HEADERS += include/sqfs/compress.h include/sqfs/block_processor.h
 
 noinst_LIBRARIES += libfstree.a libtar.a libsqfshelper.a
 noinst_LTLIBRARIES += libutil.la

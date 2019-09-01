@@ -6,8 +6,8 @@
  */
 #include "config.h"
 
-#include "block_processor.h"
-#include "compress.h"
+#include "sqfs/block_processor.h"
+#include "sqfs/compress.h"
 
 #include <stdlib.h>
 #include <string.h>

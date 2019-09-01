@@ -6,10 +6,10 @@
  */
 #include "config.h"
 
-#include "meta_reader.h"
+#include "sqfs/meta_reader.h"
+#include "sqfs/compress.h"
 #include "data_reader.h"
 #include "highlevel.h"
-#include "compress.h"
 #include "fstree.h"
 #include "util.h"
 #include "tar.h"

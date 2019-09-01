@@ -6,7 +6,7 @@
  */
 #include "config.h"
 
-#include "meta_reader.h"
+#include "sqfs/meta_reader.h"
 #include "highlevel.h"
 #include "util.h"
 

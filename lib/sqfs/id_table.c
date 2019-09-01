@@ -6,7 +6,7 @@
  */
 #include "config.h"
 
-#include "id_table.h"
+#include "sqfs/id_table.h"
 
 #include <stdlib.h>
 #include <string.h>

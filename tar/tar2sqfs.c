@@ -6,11 +6,11 @@
  */
 #include "config.h"
 
+#include "sqfs/squashfs.h"
+#include "sqfs/compress.h"
+#include "sqfs/id_table.h"
 #include "data_writer.h"
 #include "highlevel.h"
-#include "squashfs.h"
-#include "compress.h"
-#include "id_table.h"
 #include "fstree.h"
 #include "util.h"
 #include "tar.h"

@@ -5,7 +5,7 @@
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
 #include "config.h"
-#include "squashfs.h"
+#include "sqfs/squashfs.h"
 
 #include <string.h>
 
