@@ -73,26 +73,22 @@ tree_node_t *tree_node_from_inode(sqfs_inode_generic_t *inode,
 {
 	tree_node_t *out;
 
-	if (inode->base.uid_idx >= idtbl->num_ids) {
-		fputs("converting inode to fs tree node: UID out of range\n",
-		      stderr);
-		return NULL;
-	}
-
-	if (inode->base.gid_idx >= idtbl->num_ids) {
-		fputs("converting inode to fs tree node: GID out of range\n",
-		      stderr);
-		return NULL;
-	}
-
 	out = calloc(1, compute_size(inode, name, block_size));
 	if (out == NULL) {
 		perror("converting inode to fs tree node");
 		return NULL;
 	}
 
-	out->uid = idtbl->ids[inode->base.uid_idx];
-	out->gid = idtbl->ids[inode->base.gid_idx];
+	if (id_table_index_to_id(idtbl, inode->base.uid_idx, &out->uid)) {
+		free(out);
+		return NULL;
+	}
+
+	if (id_table_index_to_id(idtbl, inode->base.gid_idx, &out->gid)) {
+		free(out);
+		return NULL;
+	}
+
 	out->mode = inode->base.mode;
 	out->inode_num = inode->base.inode_number;
 	out->mod_time = inode->base.mod_time;

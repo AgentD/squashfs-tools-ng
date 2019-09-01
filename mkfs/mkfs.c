@@ -97,7 +97,7 @@ int main(int argc, char **argv)
 	data_writer_t *data;
 	sqfs_super_t super;
 	compressor_t *cmp;
-	id_table_t idtbl;
+	id_table_t *idtbl;
 	options_t opt;
 	fstree_t fs;
 	int outfd;
@@ -117,7 +117,8 @@ int main(int argc, char **argv)
 		goto out_fstree;
 	}
 
-	if (id_table_init(&idtbl))
+	idtbl = id_table_create();
+	if (idtbl == NULL)
 		goto out_fstree;
 
 	outfd = open(opt.outfile, opt.outmode, 0644);
@@ -173,7 +174,7 @@ int main(int argc, char **argv)
 	if (pack_files(data, &fs, &opt))
 		goto out_data;
 
-	if (sqfs_serialize_fstree(outfd, &super, &fs, cmp, &idtbl))
+	if (sqfs_serialize_fstree(outfd, &super, &fs, cmp, idtbl))
 		goto out_data;
 
 	if (data_writer_write_fragment_table(data))
@@ -184,7 +185,7 @@ int main(int argc, char **argv)
 			goto out_data;
 	}
 
-	if (id_table_write(&idtbl, outfd, &super, cmp))
+	if (id_table_write(idtbl, outfd, &super, cmp))
 		goto out_data;
 
 	if (write_xattr(outfd, &fs, &super, cmp))
@@ -209,7 +210,7 @@ out_cmp:
 out_outfd:
 	close(outfd);
 out_idtbl:
-	id_table_cleanup(&idtbl);
+	id_table_destroy(idtbl);
 out_fstree:
 	fstree_cleanup(&fs);
 	return status;

@@ -207,7 +207,7 @@ int deserialize_fstree(fstree_t *out, sqfs_super_t *super, compressor_t *cmp,
 	sqfs_inode_generic_t *root;
 	meta_reader_t *ir, *dr;
 	xattr_reader_t *xr;
-	id_table_t idtbl;
+	id_table_t *idtbl;
 	int status = -1;
 	size_t offset;
 
@@ -226,10 +226,11 @@ int deserialize_fstree(fstree_t *out, sqfs_super_t *super, compressor_t *cmp,
 	if (dr == NULL)
 		goto out_ir;
 
-	if (id_table_init(&idtbl))
+	idtbl = id_table_create();
+	if (idtbl == NULL)
 		goto out_dr;
 
-	if (id_table_read(&idtbl, fd, super, cmp))
+	if (id_table_read(idtbl, fd, super, cmp))
 		goto out_id;
 
 	xr = xattr_reader_create(fd, super, cmp);
@@ -257,7 +258,7 @@ int deserialize_fstree(fstree_t *out, sqfs_super_t *super, compressor_t *cmp,
 	out->defaults.st_mode = 0755;
 	out->defaults.st_mtime = super->modification_time;
 
-	out->root = tree_node_from_inode(root, &idtbl, "", super->block_size);
+	out->root = tree_node_from_inode(root, idtbl, "", super->block_size);
 
 	if (out->root == NULL) {
 		free(root);
@@ -285,7 +286,7 @@ int deserialize_fstree(fstree_t *out, sqfs_super_t *super, compressor_t *cmp,
 
 	free(root);
 
-	if (fill_dir(ir, dr, out->root, super, &idtbl, out, xr, flags))
+	if (fill_dir(ir, dr, out->root, super, idtbl, out, xr, flags))
 		goto fail_fs;
 
 	tree_node_sort_recursive(out->root);
@@ -294,7 +295,7 @@ int deserialize_fstree(fstree_t *out, sqfs_super_t *super, compressor_t *cmp,
 out_xr:
 	xattr_reader_destroy(xr);
 out_id:
-	id_table_cleanup(&idtbl);
+	id_table_destroy(idtbl);
 out_dr:
 	meta_reader_destroy(dr);
 out_ir:

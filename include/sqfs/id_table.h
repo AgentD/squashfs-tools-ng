@@ -14,26 +14,16 @@
 
 #include "compress.h"
 
-/* Encapsulates the ID table used by SquashFS */
-typedef struct {
-	/* Array of unique 32 bit IDs */
-	uint32_t *ids;
-
-	/* Number of 32 bit IDs stored in the array */
-	size_t num_ids;
-
-	/* Actual size of the array, i.e. maximum available */
-	size_t max_ids;
-} id_table_t;
+typedef struct id_table_t id_table_t;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* Returns 0 on success. Prints error message to stderr on failure. */
-int id_table_init(id_table_t *tbl);
+/* Prints error message to stderr on failure. */
+id_table_t *id_table_create(void);
 
-void id_table_cleanup(id_table_t *tbl);
+void id_table_destroy(id_table_t *tbl);
 
 /* Resolve a 32 bit to a 16 bit table index.
    Returns 0 on success. Internally prints errors to stderr. */
@@ -48,6 +38,8 @@ int id_table_write(id_table_t *tbl, int outfd, sqfs_super_t *super,
    Returns 0 on success. Internally prints error messages to stderr. */
 int id_table_read(id_table_t *tbl, int fd, sqfs_super_t *super,
 		  compressor_t *cmp);
+
+int id_table_index_to_id(const id_table_t *tbl, uint16_t index, uint32_t *out);
 
 #ifdef __cplusplus
 }

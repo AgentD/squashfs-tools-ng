@@ -7,20 +7,32 @@
 #include "config.h"
 
 #include "sqfs/id_table.h"
+#include "sqfs/table.h"
 
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 
-int id_table_init(id_table_t *tbl)
+struct id_table_t {
+	uint32_t *ids;
+	size_t num_ids;
+	size_t max_ids;
+};
+
+id_table_t *id_table_create(void)
 {
-	memset(tbl, 0, sizeof(*tbl));
-	return 0;
+	id_table_t *tbl = calloc(1, sizeof(*tbl));
+
+	if (tbl == NULL)
+		perror("Creating ID table");
+
+	return tbl;
 }
 
-void id_table_cleanup(id_table_t *tbl)
+void id_table_destroy(id_table_t *tbl)
 {
 	free(tbl->ids);
+	free(tbl);
 }
 
 int id_table_id_to_index(id_table_t *tbl, uint32_t id, uint16_t *out)
@@ -56,4 +68,83 @@ int id_table_id_to_index(id_table_t *tbl, uint32_t id, uint16_t *out)
 	*out = tbl->num_ids;
 	tbl->ids[tbl->num_ids++] = id;
 	return 0;
+}
+
+int id_table_index_to_id(const id_table_t *tbl, uint16_t index, uint32_t *out)
+{
+	if (index >= tbl->num_ids) {
+		fputs("attempted out of bounds ID table access\n", stderr);
+		return -1;
+	}
+
+	*out = tbl->ids[index];
+	return 0;
+}
+
+int id_table_read(id_table_t *tbl, int fd, sqfs_super_t *super,
+		  compressor_t *cmp)
+{
+	uint64_t upper_limit, lower_limit;
+	size_t i;
+
+	if (tbl->ids != NULL) {
+		free(tbl->ids);
+		tbl->num_ids = 0;
+		tbl->max_ids = 0;
+		tbl->ids = NULL;
+	}
+
+	if (!super->id_count || super->id_table_start >= super->bytes_used) {
+		fputs("ID table missing from file system\n", stderr);
+		return -1;
+	}
+
+	upper_limit = super->id_table_start;
+	lower_limit = super->directory_table_start;
+
+	if (super->fragment_table_start > lower_limit &&
+	    super->fragment_table_start < upper_limit) {
+		lower_limit = super->fragment_table_start;
+	}
+
+	if (super->export_table_start > lower_limit &&
+	    super->export_table_start < upper_limit) {
+		lower_limit = super->export_table_start;
+	}
+
+	tbl->num_ids = super->id_count;
+	tbl->max_ids = super->id_count;
+	tbl->ids = sqfs_read_table(fd, cmp, tbl->num_ids * sizeof(uint32_t),
+				   super->id_table_start, lower_limit,
+				   upper_limit);
+	if (tbl->ids == NULL)
+		return -1;
+
+	for (i = 0; i < tbl->num_ids; ++i)
+		tbl->ids[i] = le32toh(tbl->ids[i]);
+
+	return 0;
+}
+
+int id_table_write(id_table_t *tbl, int outfd, sqfs_super_t *super,
+		   compressor_t *cmp)
+{
+	uint64_t start;
+	size_t i;
+	int ret;
+
+	for (i = 0; i < tbl->num_ids; ++i)
+		tbl->ids[i] = htole32(tbl->ids[i]);
+
+	super->id_count = tbl->num_ids;
+
+	ret = sqfs_write_table(outfd, super, cmp, tbl->ids,
+			       sizeof(tbl->ids[0]) * tbl->num_ids, &start);
+
+	super->id_table_start = start;
+
+	for (i = 0; i < tbl->num_ids; ++i)
+		tbl->ids[i] = le32toh(tbl->ids[i]);
+
+	return ret;
 }
