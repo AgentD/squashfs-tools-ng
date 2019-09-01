@@ -1,5 +1,5 @@
 test_canonicalize_name_SOURCES = tests/canonicalize_name.c
-test_canonicalize_name_LDADD = libutil.la
+test_canonicalize_name_LDADD = libfstree.a
 
 test_mknode_simple_SOURCES = tests/mknode_simple.c
 test_mknode_simple_LDADD = libfstree.a

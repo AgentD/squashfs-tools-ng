@@ -6,6 +6,8 @@ libfstree_a_SOURCES += lib/fstree/add_by_path.c lib/fstree/xattr.c
 libfstree_a_SOURCES += lib/fstree/node_from_path.c include/fstree.h
 libfstree_a_SOURCES += lib/fstree/gen_file_list.c lib/fstree/deduplicate.c
 libfstree_a_SOURCES += lib/fstree/optimize_unpack_order.c
+libfstree_a_SOURCES += lib/fstree/canonicalize_name.c
+libfstree_a_SOURCES += lib/fstree/source_date_epoch.c
 libfstree_a_CFLAGS = $(AM_CFLAGS) $(LIBSELINUX_CFLAGS)
 libfstree_a_CPPFLAGS = $(AM_CPPFLAGS)
 
@@ -26,17 +28,17 @@ libsqfshelper_a_SOURCES += lib/sqfshelper/write_dir.c
 libsqfshelper_a_SOURCES += lib/sqfshelper/write_inode.c
 libsqfshelper_a_SOURCES += lib/sqfshelper/write_export_table.c
 libsqfshelper_a_SOURCES += lib/sqfshelper/xattr_reader.c
+libsqfshelper_a_SOURCES += lib/sqfshelper/print_version.c
 libsqfshelper_a_SOURCES += include/data_reader.h lib/sqfshelper/data_reader.c
 libsqfshelper_a_SOURCES += include/data_writer.h lib/sqfshelper/data_writer.c
 libsqfshelper_a_SOURCES += include/xattr_reader.h lib/sqfshelper/write_xattr.c
 
-libutil_la_SOURCES = lib/util/canonicalize_name.c lib/util/write_data.c
+libutil_la_SOURCES = lib/util/write_data.c
 libutil_la_SOURCES += lib/util/read_data.c include/util.h
-libutil_la_SOURCES += lib/util/print_version.c lib/util/mkdir_p.c
+libutil_la_SOURCES += lib/util/mkdir_p.c
 libutil_la_SOURCES += lib/util/str_table.c include/str_table.h
 libutil_la_SOURCES += lib/util/dirstack.c lib/util/padd_file.c
 libutil_la_SOURCES += lib/util/read_data_at.c lib/util/alloc.c
-libutil_la_SOURCES += lib/util/source_date_epoch.c
 libutil_la_CFLAGS = $(AM_CFLAGS)
 libutil_la_CPPFLAGS = $(AM_CPPFLAGS)
 

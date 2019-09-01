@@ -6,7 +6,7 @@
  */
 #include "config.h"
 
-#include "util.h"
+#include "fstree.h"
 
 static void normalize_slashes(char *filename)
 {

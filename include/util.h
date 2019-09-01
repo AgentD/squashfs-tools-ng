@@ -47,15 +47,6 @@ typedef struct sparse_map_t {
 } sparse_map_t;
 
 /*
-  Convert back to forward slashed, remove all preceeding and trailing slashes,
-  collapse all sequences of slashes, remove all path components that are '.'
-  and returns failure state if one of the path components is '..'.
-
-  Returns 0 on success.
-*/
-int canonicalize_name(char *filename);
-
-/*
   A wrapper around the write() system call. It retries the write if it is
   interrupted by a signal or only part of the data was written. Returns 0
   on success. Writes to stderr on failure using 'errstr' as a perror style
@@ -107,13 +98,6 @@ int popd(void);
   Returns 0 on success. On failure, prints error message to stderr.
 */
 int padd_file(int outfd, uint64_t size, size_t blocksize);
-
-/*
-  If the environment variable SOURCE_DATE_EPOCH is set to a parsable number
-  that fits into an unsigned 32 bit value, return its value. Otherwise,
-  default to 0.
- */
-uint32_t get_source_date_epoch(void);
 
 /*
   Helper for allocating data structures with flexible array members.

@@ -5,7 +5,7 @@
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
 #include "config.h"
-#include "util.h"
+#include "fstree.h"
 
 #include <stdlib.h>
 #include <stdio.h>
