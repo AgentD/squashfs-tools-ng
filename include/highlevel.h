@@ -15,6 +15,7 @@
 #include "sqfs/data.h"
 #include "sqfs/table.h"
 #include "sqfs/meta_writer.h"
+#include "sqfs/xattr.h"
 #include "data_reader.h"
 #include "fstree.h"
 
@@ -149,5 +150,8 @@ int compressor_cfg_init_options(compressor_config_t *cfg, E_SQFS_COMPRESSOR id,
 				size_t block_size, char *options);
 
 void compressor_print_help(E_SQFS_COMPRESSOR id);
+
+int xattr_reader_restore_node(xattr_reader_t *xr, fstree_t *fs,
+			      tree_node_t *node, uint32_t xattr);
 
 #endif /* HIGHLEVEL_H */
