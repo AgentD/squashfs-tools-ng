@@ -10,6 +10,7 @@
 #include "config.h"
 
 #include "sqfs/meta_reader.h"
+#include "sqfs/meta_writer.h"
 
 #include <stdint.h>
 
@@ -36,6 +37,8 @@ typedef struct {
 	uint8_t name[];
 } sqfs_dir_index_t;
 
+typedef struct sqfs_dir_writer_t sqfs_dir_writer_t;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -46,6 +49,27 @@ int meta_reader_read_dir_header(meta_reader_t *m, sqfs_dir_header_t *hdr);
 /* Entry can be freed with a single free() call.
    The function internally prints to stderr on failure */
 sqfs_dir_entry_t *meta_reader_read_dir_ent(meta_reader_t *m);
+
+sqfs_dir_writer_t *sqfs_dir_writer_create(meta_writer_t *dm);
+
+void sqfs_dir_writer_destroy(sqfs_dir_writer_t *writer);
+
+int sqfs_dir_writer_begin(sqfs_dir_writer_t *writer);
+
+int sqfs_dir_writer_add_entry(sqfs_dir_writer_t *writer, const char *name,
+			      uint32_t inode_num, uint64_t inode_ref,
+			      mode_t mode);
+
+int sqfs_dir_writer_end(sqfs_dir_writer_t *writer);
+
+size_t sqfs_dir_writer_get_size(sqfs_dir_writer_t *writer);
+
+uint64_t sqfs_dir_writer_get_dir_reference(sqfs_dir_writer_t *writer);
+
+size_t sqfs_dir_writer_get_index_size(sqfs_dir_writer_t *writer);
+
+int sqfs_dir_writer_write_index(sqfs_dir_writer_t *writer,
+				meta_writer_t *im);
 
 #ifdef __cplusplus
 }

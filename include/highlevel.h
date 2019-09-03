@@ -16,23 +16,12 @@
 #include "sqfs/table.h"
 #include "sqfs/meta_writer.h"
 #include "sqfs/xattr.h"
+#include "sqfs/dir.h"
 #include "data_reader.h"
 #include "fstree.h"
 
 #include <stdint.h>
 #include <stddef.h>
-
-typedef struct {
-	tree_node_t *node;
-	uint32_t block;
-	uint32_t index;
-} idx_ref_t;
-
-typedef struct {
-	size_t num_nodes;
-	size_t max_nodes;
-	idx_ref_t idx_nodes[];
-} dir_index_t;
 
 typedef struct {
 	compressor_t *cmp;
@@ -115,20 +104,6 @@ int sqfs_reader_open(sqfs_reader_t *rd, const char *filename,
 void sqfs_reader_close(sqfs_reader_t *rd);
 
 /*
-  High level helper function that writes squashfs directory entries to
-  a meta data writer.
-
-  The dir_info_t structure is used to generate the listing and updated
-  accordingly (such as writing back the header position and total size).
-  A directory index is created on the fly and returned in *index.
-  A single free() call is sufficient.
-
-  Returns 0 on success. Prints error messages to stderr on failure.
- */
-int meta_writer_write_dir(meta_writer_t *dm, dir_info_t *dir,
-			  dir_index_t **index);
-
-/*
   High level helper function to serialize a tree_node_t to a squashfs inode
   and write it to a meta data writer.
 
@@ -140,7 +115,7 @@ int meta_writer_write_dir(meta_writer_t *dm, dir_info_t *dir,
   Returns 0 on success. Prints error messages to stderr on failure.
  */
 int meta_writer_write_inode(fstree_t *fs, id_table_t *idtbl, meta_writer_t *im,
-			    meta_writer_t *dm, tree_node_t *node);
+			    sqfs_dir_writer_t *dirw, tree_node_t *node);
 
 void compressor_print_available(void);
 

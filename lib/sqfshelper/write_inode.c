@@ -103,32 +103,36 @@ static int write_file_blocks(fstree_t *fs, file_info_t *fi, meta_writer_t *im)
 	return 0;
 }
 
-static int write_dir_index(dir_index_t *diridx, meta_writer_t *im)
+static int write_dir_entries(sqfs_dir_writer_t *dirw, tree_node_t *node)
 {
-	sqfs_dir_index_t idx;
-	size_t i;
+	tree_node_t *it;
+	uint64_t ref;
+	int ret;
 
-	for (i = 0; i < diridx->num_nodes; ++i) {
-		idx.start_block = htole32(diridx->idx_nodes[i].block);
-		idx.index = htole32(diridx->idx_nodes[i].index);
-		idx.size = strlen(diridx->idx_nodes[i].node->name) - 1;
-		idx.size = htole32(idx.size);
+	if (sqfs_dir_writer_begin(dirw))
+		return -1;
 
-		if (meta_writer_append(im, &idx, sizeof(idx)))
+	for (it = node->data.dir->children; it != NULL; it = it->next) {
+		ret = sqfs_dir_writer_add_entry(dirw, it->name, it->inode_num,
+						it->inode_ref, it->mode);
+		if (ret)
 			return -1;
-
-		if (meta_writer_append(im, diridx->idx_nodes[i].node->name,
-				       le32toh(idx.size) + 1)) {
-			return -1;
-		}
 	}
+
+	if (sqfs_dir_writer_end(dirw))
+		return -1;
+
+	ref = sqfs_dir_writer_get_dir_reference(dirw);
+
+	node->data.dir->size = sqfs_dir_writer_get_size(dirw);
+	node->data.dir->start_block = ref >> 16;
+	node->data.dir->block_offset = ref & 0xFFFF;
 	return 0;
 }
 
 int meta_writer_write_inode(fstree_t *fs, id_table_t *idtbl, meta_writer_t *im,
-			    meta_writer_t *dm, tree_node_t *node)
+			    sqfs_dir_writer_t *dirw, tree_node_t *node)
 {
-	dir_index_t *diridx = NULL;
 	uint16_t uid_idx, gid_idx;
 	sqfs_inode_t base;
 	uint32_t offset;
@@ -144,7 +148,7 @@ int meta_writer_write_inode(fstree_t *fs, id_table_t *idtbl, meta_writer_t *im,
 	node->inode_ref = (block << 16) | offset;
 
 	if (S_ISDIR(node->mode)) {
-		if (meta_writer_write_dir(dm, node->data.dir, &diridx))
+		if (write_dir_entries(dirw, node))
 			return -1;
 	}
 
@@ -155,10 +159,8 @@ int meta_writer_write_inode(fstree_t *fs, id_table_t *idtbl, meta_writer_t *im,
 	base.mod_time = htole32(node->mod_time);
 	base.inode_number = htole32(node->inode_num);
 
-	if (meta_writer_append(im, &base, sizeof(base))) {
-		free(diridx);
+	if (meta_writer_append(im, &base, sizeof(base)))
 		return -1;
-	}
 
 	switch (le16toh(base.type)) {
 	case SQFS_INODE_FIFO:
@@ -292,6 +294,7 @@ int meta_writer_write_inode(fstree_t *fs, id_table_t *idtbl, meta_writer_t *im,
 		return meta_writer_append(im, &dir, sizeof(dir));
 	}
 	case SQFS_INODE_EXT_DIR: {
+		size_t idx_size;
 		sqfs_inode_dir_ext_t ext = {
 			.nlink = htole32(hard_link_count(node)),
 			.size = htole32(node->data.dir->size),
@@ -306,20 +309,16 @@ int meta_writer_write_inode(fstree_t *fs, id_table_t *idtbl, meta_writer_t *im,
 		if (node->xattr != NULL)
 			ext.xattr_idx = htole32(node->xattr->index);
 
-		if (diridx != NULL)
-			ext.inodex_count = htole32(diridx->num_nodes - 1);
+		idx_size = sqfs_dir_writer_get_index_size(dirw);
 
-		if (meta_writer_append(im, &ext, sizeof(ext))) {
-			free(diridx);
+		if (idx_size > 0)
+			ext.inodex_count = htole32(idx_size - 1);
+
+		if (meta_writer_append(im, &ext, sizeof(ext)))
 			return -1;
-		}
 
-		if (diridx != NULL && write_dir_index(diridx, im) != 0) {
-			free(diridx);
+		if (sqfs_dir_writer_write_index(dirw, im))
 			return -1;
-		}
-
-		free(diridx);
 		break;
 	}
 	default:

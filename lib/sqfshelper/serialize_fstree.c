@@ -16,6 +16,7 @@
 int sqfs_serialize_fstree(int outfd, sqfs_super_t *super, fstree_t *fs,
 			  compressor_t *cmp, id_table_t *idtbl)
 {
+	sqfs_dir_writer_t *dirwr;
 	meta_writer_t *im, *dm;
 	uint32_t offset;
 	uint64_t block;
@@ -30,8 +31,12 @@ int sqfs_serialize_fstree(int outfd, sqfs_super_t *super, fstree_t *fs,
 	if (dm == NULL)
 		goto out_im;
 
+	dirwr = sqfs_dir_writer_create(dm);
+	if (dirwr == NULL)
+		goto out_dm;
+
 	for (i = 2; i < fs->inode_tbl_size; ++i) {
-		if (meta_writer_write_inode(fs, idtbl, im, dm,
+		if (meta_writer_write_inode(fs, idtbl, im, dirwr,
 					    fs->inode_table[i])) {
 			goto out;
 		}
@@ -58,6 +63,8 @@ int sqfs_serialize_fstree(int outfd, sqfs_super_t *super, fstree_t *fs,
 
 	ret = 0;
 out:
+	sqfs_dir_writer_destroy(dirwr);
+out_dm:
 	meta_writer_destroy(dm);
 out_im:
 	meta_writer_destroy(im);
