@@ -100,6 +100,7 @@ static sqfs_inode_generic_t *read_inode_file(meta_reader_t *ir,
 	out->base = *base;
 	out->data.file = file;
 	out->block_sizes = (uint32_t *)out->extra;
+	out->num_file_blocks = count;
 
 	if (meta_reader_read(ir, out->block_sizes, count * sizeof(uint32_t))) {
 		free(out);
@@ -143,6 +144,7 @@ static sqfs_inode_generic_t *read_inode_file_ext(meta_reader_t *ir,
 	out->base = *base;
 	out->data.file_ext = file;
 	out->block_sizes = (uint32_t *)out->extra;
+	out->num_file_blocks = count;
 
 	if (meta_reader_read(ir, out->block_sizes, count * sizeof(uint32_t))) {
 		free(out);

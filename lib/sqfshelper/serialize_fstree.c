@@ -47,10 +47,10 @@ int sqfs_serialize_fstree(int outfd, sqfs_super_t *super, fstree_t *fs,
 	sqfs_inode_generic_t *inode;
 	sqfs_dir_writer_t *dirwr;
 	meta_writer_t *im, *dm;
-	size_t i, count;
 	uint32_t offset;
 	uint64_t block;
 	int ret = -1;
+	size_t i;
 
 	im = meta_writer_create(outfd, cmp, false);
 	if (im == NULL)
@@ -70,8 +70,7 @@ int sqfs_serialize_fstree(int outfd, sqfs_super_t *super, fstree_t *fs,
 				goto out;
 		}
 
-		inode = tree_node_to_inode(fs, idtbl, fs->inode_table[i],
-					   &count);
+		inode = tree_node_to_inode(fs, idtbl, fs->inode_table[i]);
 		if (inode == NULL)
 			goto out;
 
@@ -83,7 +82,7 @@ int sqfs_serialize_fstree(int outfd, sqfs_super_t *super, fstree_t *fs,
 		meta_writer_get_position(im, &block, &offset);
 		fs->inode_table[i]->inode_ref = (block << 16) | offset;
 
-		if (meta_writer_write_inode(im, inode, count)) {
+		if (meta_writer_write_inode(im, inode)) {
 			free(inode);
 			goto out;
 		}

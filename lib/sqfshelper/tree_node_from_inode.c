@@ -12,11 +12,9 @@
 #include <string.h>
 #include <stdio.h>
 
-static size_t compute_size(sqfs_inode_generic_t *inode, const char *name,
-			   size_t block_size)
+static size_t compute_size(sqfs_inode_generic_t *inode, const char *name)
 {
 	size_t size = sizeof(tree_node_t) + strlen(name) + 1;
-	size_t block_count = 0;
 
 	switch (inode->base.type) {
 	case SQFS_INODE_DIR:
@@ -24,16 +22,10 @@ static size_t compute_size(sqfs_inode_generic_t *inode, const char *name,
 		size += sizeof(dir_info_t);
 		break;
 	case SQFS_INODE_FILE:
-		size += sizeof(file_info_t);
-		block_count = inode->data.file.file_size / block_size;
-		if ((inode->data.file.file_size % block_size) != 0)
-			++block_count;
-		break;
 	case SQFS_INODE_EXT_FILE:
 		size += sizeof(file_info_t);
-		block_count = inode->data.file_ext.file_size / block_size;
-		if ((inode->data.file_ext.file_size % block_size) != 0)
-			++block_count;
+		size += inode->num_file_blocks *
+			sizeof(((file_info_t *)0)->blocks[0]);
 		break;
 	case SQFS_INODE_SLINK:
 	case SQFS_INODE_EXT_SLINK:
@@ -43,26 +35,25 @@ static size_t compute_size(sqfs_inode_generic_t *inode, const char *name,
 		break;
 	}
 
-	return size + block_count * sizeof(((file_info_t *)0)->blocks[0]);
+	return size;
 }
 
 static void copy_block_sizes(sqfs_inode_generic_t *inode, tree_node_t *out,
 			     size_t block_size)
 {
-	size_t i, block_count = out->data.file->size / block_size;
+	size_t i;
 
 	if ((out->data.file->size % block_size) != 0) {
-		if (out->data.file->fragment == 0xFFFFFFFF ||
-		    out->data.file->fragment_offset == 0xFFFFFFFF) {
-			++block_count;
-		} else {
+		if (out->data.file->fragment != 0xFFFFFFFF &&
+		    out->data.file->fragment_offset != 0xFFFFFFFF) {
 			out->data.file->flags |= FILE_FLAG_HAS_FRAGMENT;
 		}
 	}
 
-	out->name += block_count * sizeof(out->data.file->blocks[0]);
+	out->name += inode->num_file_blocks *
+		sizeof(out->data.file->blocks[0]);
 
-	for (i = 0; i < block_count; ++i)
+	for (i = 0; i < inode->num_file_blocks; ++i)
 		out->data.file->blocks[i].size = inode->block_sizes[i];
 }
 
@@ -73,7 +64,7 @@ tree_node_t *tree_node_from_inode(sqfs_inode_generic_t *inode,
 {
 	tree_node_t *out;
 
-	out = calloc(1, compute_size(inode, name, block_size));
+	out = calloc(1, compute_size(inode, name));
 	if (out == NULL) {
 		perror("converting inode to fs tree node");
 		return NULL;

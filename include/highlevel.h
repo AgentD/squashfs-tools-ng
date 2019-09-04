@@ -116,7 +116,6 @@ int xattr_reader_restore_node(xattr_reader_t *xr, fstree_t *fs,
 			      tree_node_t *node, uint32_t xattr);
 
 sqfs_inode_generic_t *tree_node_to_inode(fstree_t *fs, id_table_t *idtbl,
-					 tree_node_t *node,
-					 size_t *file_num_blocks);
+					 tree_node_t *node);
 
 #endif /* HIGHLEVEL_H */

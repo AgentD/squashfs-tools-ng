@@ -114,6 +114,7 @@ typedef struct {
 	sqfs_inode_t base;
 	char *slink_target;
 	uint32_t *block_sizes;
+	size_t num_file_blocks;
 
 	union {
 		sqfs_inode_dev_t dev;
@@ -142,8 +143,7 @@ sqfs_inode_generic_t *meta_reader_read_inode(meta_reader_t *ir,
 					     uint64_t block_start,
 					     size_t offset);
 
-int meta_writer_write_inode(meta_writer_t *ir, sqfs_inode_generic_t *n,
-			    size_t file_num_blocks);
+int meta_writer_write_inode(meta_writer_t *ir, sqfs_inode_generic_t *n);
 
 #ifdef __cplusplus
 }

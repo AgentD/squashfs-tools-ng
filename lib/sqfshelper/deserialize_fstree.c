@@ -133,7 +133,7 @@ static int fill_dir(meta_reader_t *ir, meta_reader_t *dr, tree_node_t *root,
 
 			n = tree_node_from_inode(inode, idtbl,
 						 (char *)ent->name,
-						 super->block_size);
+						 fs->block_size);
 
 			if (n == NULL) {
 				free(ent);
@@ -257,7 +257,7 @@ int deserialize_fstree(fstree_t *out, sqfs_super_t *super, compressor_t *cmp,
 	out->defaults.st_mode = 0755;
 	out->defaults.st_mtime = super->modification_time;
 
-	out->root = tree_node_from_inode(root, idtbl, "", super->block_size);
+	out->root = tree_node_from_inode(root, idtbl, "", out->block_size);
 
 	if (out->root == NULL) {
 		free(root);

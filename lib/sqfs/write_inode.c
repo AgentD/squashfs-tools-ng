@@ -8,21 +8,19 @@
 
 #include "sqfs/inode.h"
 
-static int write_block_sizes(meta_writer_t *ir, sqfs_inode_generic_t *n,
-			     size_t file_num_blocks)
+static int write_block_sizes(meta_writer_t *ir, sqfs_inode_generic_t *n)
 {
-	uint32_t sizes[file_num_blocks];
+	uint32_t sizes[n->num_file_blocks];
 	size_t i;
 
-	for (i = 0; i < file_num_blocks; ++i)
+	for (i = 0; i < n->num_file_blocks; ++i)
 		sizes[i] = htole32(n->block_sizes[i]);
 
 	return meta_writer_append(ir, sizes,
-				  sizeof(uint32_t) * file_num_blocks);
+				  sizeof(uint32_t) * n->num_file_blocks);
 }
 
-int meta_writer_write_inode(meta_writer_t *ir, sqfs_inode_generic_t *n,
-			    size_t file_num_blocks)
+int meta_writer_write_inode(meta_writer_t *ir, sqfs_inode_generic_t *n)
 {
 	sqfs_inode_t base;
 
@@ -57,7 +55,7 @@ int meta_writer_write_inode(meta_writer_t *ir, sqfs_inode_generic_t *n,
 		};
 		if (meta_writer_append(ir, &file, sizeof(file)))
 			return -1;
-		return write_block_sizes(ir, n, file_num_blocks);
+		return write_block_sizes(ir, n);
 	}
 	case SQFS_INODE_SLINK: {
 		sqfs_inode_slink_t slink = {
@@ -109,7 +107,7 @@ int meta_writer_write_inode(meta_writer_t *ir, sqfs_inode_generic_t *n,
 		};
 		if (meta_writer_append(ir, &file, sizeof(file)))
 			return -1;
-		return write_block_sizes(ir, n, file_num_blocks);
+		return write_block_sizes(ir, n);
 	}
 	case SQFS_INODE_EXT_SLINK: {
 		sqfs_inode_slink_t slink = {

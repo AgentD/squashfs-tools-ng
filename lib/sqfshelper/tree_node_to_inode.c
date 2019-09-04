@@ -82,8 +82,7 @@ static int get_type(tree_node_t *node)
 }
 
 sqfs_inode_generic_t *tree_node_to_inode(fstree_t *fs, id_table_t *idtbl,
-					 tree_node_t *node,
-					 size_t *file_num_blocks)
+					 tree_node_t *node)
 {
 	size_t i, extra = 0, block_count = 0;
 	sqfs_inode_generic_t *inode;
@@ -220,7 +219,7 @@ sqfs_inode_generic_t *tree_node_to_inode(fstree_t *fs, id_table_t *idtbl,
 		goto fail;
 	}
 
-	*file_num_blocks = block_count;
+	inode->num_file_blocks = block_count;
 	return inode;
 fail:
 	free(inode);
