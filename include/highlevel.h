@@ -103,20 +103,6 @@ int sqfs_reader_open(sqfs_reader_t *rd, const char *filename,
 /* Cleanup after a successfull sqfs_reader_open */
 void sqfs_reader_close(sqfs_reader_t *rd);
 
-/*
-  High level helper function to serialize a tree_node_t to a squashfs inode
-  and write it to a meta data writer.
-
-  The inode is written to `im`. If it is a directory node, the directory
-  contents are written to `dm` using meta_writer_write_dir. The given
-  id_table_t is used to store the uid and gid on the fly and write the
-  coresponding indices to the inode structure.
-
-  Returns 0 on success. Prints error messages to stderr on failure.
- */
-int meta_writer_write_inode(fstree_t *fs, id_table_t *idtbl, meta_writer_t *im,
-			    sqfs_dir_writer_t *dirw, tree_node_t *node);
-
 void compressor_print_available(void);
 
 E_SQFS_COMPRESSOR compressor_get_default(void);
@@ -128,5 +114,9 @@ void compressor_print_help(E_SQFS_COMPRESSOR id);
 
 int xattr_reader_restore_node(xattr_reader_t *xr, fstree_t *fs,
 			      tree_node_t *node, uint32_t xattr);
+
+sqfs_inode_generic_t *tree_node_to_inode(fstree_t *fs, id_table_t *idtbl,
+					 tree_node_t *node,
+					 size_t *file_num_blocks);
 
 #endif /* HIGHLEVEL_H */

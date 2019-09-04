@@ -10,6 +10,7 @@
 #include "config.h"
 
 #include "sqfs/meta_reader.h"
+#include "sqfs/meta_writer.h"
 
 #include <stdint.h>
 
@@ -140,6 +141,9 @@ sqfs_inode_generic_t *meta_reader_read_inode(meta_reader_t *ir,
 					     sqfs_super_t *super,
 					     uint64_t block_start,
 					     size_t offset);
+
+int meta_writer_write_inode(meta_writer_t *ir, sqfs_inode_generic_t *n,
+			    size_t file_num_blocks);
 
 #ifdef __cplusplus
 }
