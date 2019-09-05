@@ -138,10 +138,10 @@ extern "C" {
 
 /* Inode can be freed with a single free() call.
    The function internally prints error message to stderr on failure. */
-sqfs_inode_generic_t *meta_reader_read_inode(meta_reader_t *ir,
-					     sqfs_super_t *super,
-					     uint64_t block_start,
-					     size_t offset);
+sqfs_inode_generic_t *sqfs_meta_reader_read_inode(sqfs_meta_reader_t *ir,
+						  sqfs_super_t *super,
+						  uint64_t block_start,
+						  size_t offset);
 
 int sqfs_meta_writer_write_inode(sqfs_meta_writer_t *iw,
 				 sqfs_inode_generic_t *n);

@@ -72,7 +72,7 @@ static uint64_t get_block_count(uint64_t size, uint64_t block_size,
 	return count;
 }
 
-static sqfs_inode_generic_t *read_inode_file(meta_reader_t *ir,
+static sqfs_inode_generic_t *read_inode_file(sqfs_meta_reader_t *ir,
 					     sqfs_inode_t *base,
 					     size_t block_size)
 {
@@ -80,7 +80,7 @@ static sqfs_inode_generic_t *read_inode_file(meta_reader_t *ir,
 	sqfs_inode_file_t file;
 	uint64_t i, count;
 
-	if (meta_reader_read(ir, &file, sizeof(file)))
+	if (sqfs_meta_reader_read(ir, &file, sizeof(file)))
 		return NULL;
 
 	SWAB32(file.blocks_start);
@@ -102,7 +102,8 @@ static sqfs_inode_generic_t *read_inode_file(meta_reader_t *ir,
 	out->block_sizes = (uint32_t *)out->extra;
 	out->num_file_blocks = count;
 
-	if (meta_reader_read(ir, out->block_sizes, count * sizeof(uint32_t))) {
+	if (sqfs_meta_reader_read(ir, out->block_sizes,
+				  count * sizeof(uint32_t))) {
 		free(out);
 		return NULL;
 	}
@@ -113,7 +114,7 @@ static sqfs_inode_generic_t *read_inode_file(meta_reader_t *ir,
 	return out;
 }
 
-static sqfs_inode_generic_t *read_inode_file_ext(meta_reader_t *ir,
+static sqfs_inode_generic_t *read_inode_file_ext(sqfs_meta_reader_t *ir,
 						 sqfs_inode_t *base,
 						 size_t block_size)
 {
@@ -121,7 +122,7 @@ static sqfs_inode_generic_t *read_inode_file_ext(meta_reader_t *ir,
 	sqfs_inode_generic_t *out;
 	uint64_t i, count;
 
-	if (meta_reader_read(ir, &file, sizeof(file)))
+	if (sqfs_meta_reader_read(ir, &file, sizeof(file)))
 		return NULL;
 
 	SWAB64(file.blocks_start);
@@ -146,7 +147,8 @@ static sqfs_inode_generic_t *read_inode_file_ext(meta_reader_t *ir,
 	out->block_sizes = (uint32_t *)out->extra;
 	out->num_file_blocks = count;
 
-	if (meta_reader_read(ir, out->block_sizes, count * sizeof(uint32_t))) {
+	if (sqfs_meta_reader_read(ir, out->block_sizes,
+				  count * sizeof(uint32_t))) {
 		free(out);
 		return NULL;
 	}
@@ -157,14 +159,14 @@ static sqfs_inode_generic_t *read_inode_file_ext(meta_reader_t *ir,
 	return out;
 }
 
-static sqfs_inode_generic_t *read_inode_slink(meta_reader_t *ir,
+static sqfs_inode_generic_t *read_inode_slink(sqfs_meta_reader_t *ir,
 					      sqfs_inode_t *base)
 {
 	sqfs_inode_generic_t *out;
 	sqfs_inode_slink_t slink;
 	size_t size;
 
-	if (meta_reader_read(ir, &slink, sizeof(slink)))
+	if (sqfs_meta_reader_read(ir, &slink, sizeof(slink)))
 		return NULL;
 
 	SWAB32(slink.nlink);
@@ -184,7 +186,7 @@ static sqfs_inode_generic_t *read_inode_slink(meta_reader_t *ir,
 	out->base = *base;
 	out->data.slink = slink;
 
-	if (meta_reader_read(ir, out->slink_target, slink.target_size)) {
+	if (sqfs_meta_reader_read(ir, out->slink_target, slink.target_size)) {
 		free(out);
 		return NULL;
 	}
@@ -195,14 +197,14 @@ fail:
 	return NULL;
 }
 
-static sqfs_inode_generic_t *read_inode_slink_ext(meta_reader_t *ir,
+static sqfs_inode_generic_t *read_inode_slink_ext(sqfs_meta_reader_t *ir,
 						  sqfs_inode_t *base)
 {
 	sqfs_inode_generic_t *out = read_inode_slink(ir, base);
 	uint32_t xattr;
 
 	if (out != NULL) {
-		if (meta_reader_read(ir, &xattr, sizeof(xattr))) {
+		if (sqfs_meta_reader_read(ir, &xattr, sizeof(xattr))) {
 			free(out);
 			return NULL;
 		}
@@ -213,10 +215,10 @@ static sqfs_inode_generic_t *read_inode_slink_ext(meta_reader_t *ir,
 	return out;
 }
 
-sqfs_inode_generic_t *meta_reader_read_inode(meta_reader_t *ir,
-					     sqfs_super_t *super,
-					     uint64_t block_start,
-					     size_t offset)
+sqfs_inode_generic_t *sqfs_meta_reader_read_inode(sqfs_meta_reader_t *ir,
+						  sqfs_super_t *super,
+						  uint64_t block_start,
+						  size_t offset)
 {
 	sqfs_inode_generic_t *out;
 	sqfs_inode_t inode;
@@ -224,10 +226,10 @@ sqfs_inode_generic_t *meta_reader_read_inode(meta_reader_t *ir,
 	/* read base inode */
 	block_start += super->inode_table_start;
 
-	if (meta_reader_seek(ir, block_start, offset))
+	if (sqfs_meta_reader_seek(ir, block_start, offset))
 		return NULL;
 
-	if (meta_reader_read(ir, &inode, sizeof(inode)))
+	if (sqfs_meta_reader_read(ir, &inode, sizeof(inode)))
 		return NULL;
 
 	SWAB16(inode.type);
@@ -265,8 +267,8 @@ sqfs_inode_generic_t *meta_reader_read_inode(meta_reader_t *ir,
 
 	switch (inode.type) {
 	case SQFS_INODE_DIR:
-		if (meta_reader_read(ir, &out->data.dir,
-				     sizeof(out->data.dir))) {
+		if (sqfs_meta_reader_read(ir, &out->data.dir,
+					  sizeof(out->data.dir))) {
 			goto fail_free;
 		}
 		SWAB32(out->data.dir.start_block);
@@ -277,8 +279,8 @@ sqfs_inode_generic_t *meta_reader_read_inode(meta_reader_t *ir,
 		break;
 	case SQFS_INODE_BDEV:
 	case SQFS_INODE_CDEV:
-		if (meta_reader_read(ir, &out->data.dev,
-				     sizeof(out->data.dev))) {
+		if (sqfs_meta_reader_read(ir, &out->data.dev,
+					  sizeof(out->data.dev))) {
 			goto fail_free;
 		}
 		SWAB32(out->data.dev.nlink);
@@ -286,15 +288,15 @@ sqfs_inode_generic_t *meta_reader_read_inode(meta_reader_t *ir,
 		break;
 	case SQFS_INODE_FIFO:
 	case SQFS_INODE_SOCKET:
-		if (meta_reader_read(ir, &out->data.ipc,
-				     sizeof(out->data.ipc))) {
+		if (sqfs_meta_reader_read(ir, &out->data.ipc,
+					  sizeof(out->data.ipc))) {
 			goto fail_free;
 		}
 		SWAB32(out->data.ipc.nlink);
 		break;
 	case SQFS_INODE_EXT_DIR:
-		if (meta_reader_read(ir, &out->data.dir_ext,
-				     sizeof(out->data.dir_ext))) {
+		if (sqfs_meta_reader_read(ir, &out->data.dir_ext,
+					  sizeof(out->data.dir_ext))) {
 			goto fail_free;
 		}
 		SWAB32(out->data.dir_ext.nlink);
@@ -307,8 +309,8 @@ sqfs_inode_generic_t *meta_reader_read_inode(meta_reader_t *ir,
 		break;
 	case SQFS_INODE_EXT_BDEV:
 	case SQFS_INODE_EXT_CDEV:
-		if (meta_reader_read(ir, &out->data.dev_ext,
-				     sizeof(out->data.dev_ext))) {
+		if (sqfs_meta_reader_read(ir, &out->data.dev_ext,
+					  sizeof(out->data.dev_ext))) {
 			goto fail_free;
 		}
 		SWAB32(out->data.dev_ext.nlink);
@@ -317,8 +319,8 @@ sqfs_inode_generic_t *meta_reader_read_inode(meta_reader_t *ir,
 		break;
 	case SQFS_INODE_EXT_FIFO:
 	case SQFS_INODE_EXT_SOCKET:
-		if (meta_reader_read(ir, &out->data.ipc_ext,
-				     sizeof(out->data.ipc_ext))) {
+		if (sqfs_meta_reader_read(ir, &out->data.ipc_ext,
+					  sizeof(out->data.ipc_ext))) {
 			goto fail_free;
 		}
 		SWAB32(out->data.ipc_ext.nlink);

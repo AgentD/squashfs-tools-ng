@@ -12,9 +12,10 @@
 #include <string.h>
 #include <stdio.h>
 
-int meta_reader_read_dir_header(meta_reader_t *m, sqfs_dir_header_t *hdr)
+int sqfs_meta_reader_read_dir_header(sqfs_meta_reader_t *m,
+				     sqfs_dir_header_t *hdr)
 {
-	if (meta_reader_read(m, hdr, sizeof(*hdr)))
+	if (sqfs_meta_reader_read(m, hdr, sizeof(*hdr)))
 		return -1;
 
 	hdr->count = le32toh(hdr->count);
@@ -30,12 +31,12 @@ int meta_reader_read_dir_header(meta_reader_t *m, sqfs_dir_header_t *hdr)
 	return 0;
 }
 
-sqfs_dir_entry_t *meta_reader_read_dir_ent(meta_reader_t *m)
+sqfs_dir_entry_t *sqfs_meta_reader_read_dir_ent(sqfs_meta_reader_t *m)
 {
 	sqfs_dir_entry_t ent, *out;
 	uint16_t *diff_u16;
 
-	if (meta_reader_read(m, &ent, sizeof(ent)))
+	if (sqfs_meta_reader_read(m, &ent, sizeof(ent)))
 		return NULL;
 
 	diff_u16 = (uint16_t *)&ent.inode_diff;
@@ -52,7 +53,7 @@ sqfs_dir_entry_t *meta_reader_read_dir_ent(meta_reader_t *m)
 	}
 
 	*out = ent;
-	if (meta_reader_read(m, out->name, ent.size + 1)) {
+	if (sqfs_meta_reader_read(m, out->name, ent.size + 1)) {
 		free(out);
 		return NULL;
 	}

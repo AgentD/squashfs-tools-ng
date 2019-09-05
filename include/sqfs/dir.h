@@ -44,11 +44,12 @@ extern "C" {
 #endif
 
 /* Returns 0 on success. Internally prints to stderr on failure */
-int meta_reader_read_dir_header(meta_reader_t *m, sqfs_dir_header_t *hdr);
+int sqfs_meta_reader_read_dir_header(sqfs_meta_reader_t *m,
+				     sqfs_dir_header_t *hdr);
 
 /* Entry can be freed with a single free() call.
    The function internally prints to stderr on failure */
-sqfs_dir_entry_t *meta_reader_read_dir_ent(meta_reader_t *m);
+sqfs_dir_entry_t *sqfs_meta_reader_read_dir_ent(sqfs_meta_reader_t *m);
 
 sqfs_dir_writer_t *sqfs_dir_writer_create(sqfs_meta_writer_t *dm);
 

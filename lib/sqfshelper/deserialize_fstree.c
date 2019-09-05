@@ -78,9 +78,9 @@ static bool node_would_be_own_parent(tree_node_t *root, tree_node_t *n)
 	return false;
 }
 
-static int fill_dir(meta_reader_t *ir, meta_reader_t *dr, tree_node_t *root,
-		    sqfs_super_t *super, id_table_t *idtbl, fstree_t *fs,
-		    sqfs_xattr_reader_t *xr, int flags)
+static int fill_dir(sqfs_meta_reader_t *ir, sqfs_meta_reader_t *dr,
+		    tree_node_t *root, sqfs_super_t *super, id_table_t *idtbl,
+		    fstree_t *fs, sqfs_xattr_reader_t *xr, int flags)
 {
 	sqfs_inode_generic_t *inode;
 	sqfs_dir_header_t hdr;
@@ -97,17 +97,19 @@ static int fill_dir(meta_reader_t *ir, meta_reader_t *dr, tree_node_t *root,
 	block_start = root->data.dir->start_block;
 	block_start += super->directory_table_start;
 
-	if (meta_reader_seek(dr, block_start, root->data.dir->block_offset))
+	if (sqfs_meta_reader_seek(dr, block_start,
+				  root->data.dir->block_offset)) {
 		return -1;
+	}
 
 	while (size > sizeof(hdr)) {
-		if (meta_reader_read_dir_header(dr, &hdr))
+		if (sqfs_meta_reader_read_dir_header(dr, &hdr))
 			return -1;
 
 		size -= sizeof(hdr);
 
 		for (i = 0; i <= hdr.count && size > sizeof(*ent); ++i) {
-			ent = meta_reader_read_dir_ent(dr);
+			ent = sqfs_meta_reader_read_dir_ent(dr);
 			if (ent == NULL)
 				return -1;
 
@@ -123,9 +125,9 @@ static int fill_dir(meta_reader_t *ir, meta_reader_t *dr, tree_node_t *root,
 				continue;
 			}
 
-			inode = meta_reader_read_inode(ir, super,
-						       hdr.start_block,
-						       ent->offset);
+			inode = sqfs_meta_reader_read_inode(ir, super,
+							    hdr.start_block,
+							    ent->offset);
 			if (inode == NULL) {
 				free(ent);
 				return -1;
@@ -203,15 +205,15 @@ int deserialize_fstree(fstree_t *out, sqfs_super_t *super, compressor_t *cmp,
 		       int fd, int flags)
 {
 	uint64_t block_start, limit;
+	sqfs_meta_reader_t *ir, *dr;
 	sqfs_inode_generic_t *root;
 	sqfs_xattr_reader_t *xr;
-	meta_reader_t *ir, *dr;
 	id_table_t *idtbl;
 	int status = -1;
 	size_t offset;
 
-	ir = meta_reader_create(fd, cmp, super->inode_table_start,
-				super->directory_table_start);
+	ir = sqfs_meta_reader_create(fd, cmp, super->inode_table_start,
+				     super->directory_table_start);
 	if (ir == NULL)
 		return -1;
 
@@ -221,7 +223,8 @@ int deserialize_fstree(fstree_t *out, sqfs_super_t *super, compressor_t *cmp,
 	if (super->fragment_table_start < limit)
 		limit = super->fragment_table_start;
 
-	dr = meta_reader_create(fd, cmp, super->directory_table_start, limit);
+	dr = sqfs_meta_reader_create(fd, cmp, super->directory_table_start,
+				     limit);
 	if (dr == NULL)
 		goto out_ir;
 
@@ -238,7 +241,7 @@ int deserialize_fstree(fstree_t *out, sqfs_super_t *super, compressor_t *cmp,
 
 	block_start = super->root_inode_ref >> 16;
 	offset = super->root_inode_ref & 0xFFFF;
-	root = meta_reader_read_inode(ir, super, block_start, offset);
+	root = sqfs_meta_reader_read_inode(ir, super, block_start, offset);
 	if (root == NULL)
 		goto out_xr;
 
@@ -296,9 +299,9 @@ out_xr:
 out_id:
 	id_table_destroy(idtbl);
 out_dr:
-	meta_reader_destroy(dr);
+	sqfs_meta_reader_destroy(dr);
 out_ir:
-	meta_reader_destroy(ir);
+	sqfs_meta_reader_destroy(ir);
 	return status;
 fail_fs:
 	fstree_cleanup(out);

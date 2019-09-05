@@ -23,8 +23,8 @@ struct sqfs_xattr_reader_t {
 
 	uint64_t *id_block_starts;
 
-	meta_reader_t *idrd;
-	meta_reader_t *kvrd;
+	sqfs_meta_reader_t *idrd;
+	sqfs_meta_reader_t *kvrd;
 	sqfs_super_t *super;
 };
 
@@ -90,7 +90,7 @@ sqfs_xattr_entry_t *sqfs_xattr_reader_read_key(sqfs_xattr_reader_t *xr)
 	const char *prefix;
 	size_t plen, total;
 
-	if (meta_reader_read(xr->kvrd, &key, sizeof(key)))
+	if (sqfs_meta_reader_read(xr->kvrd, &key, sizeof(key)))
 		return NULL;
 
 	key.type = le16toh(key.type);
@@ -119,7 +119,7 @@ sqfs_xattr_entry_t *sqfs_xattr_reader_read_key(sqfs_xattr_reader_t *xr)
 	*out = key;
 	memcpy(out->key, prefix, plen);
 
-	if (meta_reader_read(xr->kvrd, out->key + plen, key.size)) {
+	if (sqfs_meta_reader_read(xr->kvrd, out->key + plen, key.size)) {
 		free(out);
 		return NULL;
 	}
@@ -137,14 +137,14 @@ sqfs_xattr_value_t *sqfs_xattr_reader_read_value(sqfs_xattr_reader_t *xr,
 	sqfs_xattr_value_t value, *out;
 	uint64_t ref, start, new_start;
 
-	if (meta_reader_read(xr->kvrd, &value, sizeof(value)))
+	if (sqfs_meta_reader_read(xr->kvrd, &value, sizeof(value)))
 		return NULL;
 
 	if (key->type & SQFS_XATTR_FLAG_OOL) {
-		if (meta_reader_read(xr->kvrd, &ref, sizeof(ref)))
+		if (sqfs_meta_reader_read(xr->kvrd, &ref, sizeof(ref)))
 			return NULL;
 
-		meta_reader_get_position(xr->kvrd, &start, &offset);
+		sqfs_meta_reader_get_position(xr->kvrd, &start, &offset);
 
 		new_start = xr->xattr_start + (ref >> 16);
 		new_offset = ref & 0xFFFF;
@@ -161,7 +161,7 @@ sqfs_xattr_value_t *sqfs_xattr_reader_read_value(sqfs_xattr_reader_t *xr,
 			return NULL;
 		}
 
-		if (meta_reader_seek(xr->kvrd, new_start, new_offset))
+		if (sqfs_meta_reader_seek(xr->kvrd, new_start, new_offset))
 			return NULL;
 	}
 
@@ -179,11 +179,11 @@ sqfs_xattr_value_t *sqfs_xattr_reader_read_value(sqfs_xattr_reader_t *xr,
 
 	*out = value;
 
-	if (meta_reader_read(xr->kvrd, out->value, value.size))
+	if (sqfs_meta_reader_read(xr->kvrd, out->value, value.size))
 		goto fail;
 
 	if (key->type & SQFS_XATTR_FLAG_OOL) {
-		if (meta_reader_seek(xr->kvrd, start, offset))
+		if (sqfs_meta_reader_seek(xr->kvrd, start, offset))
 			goto fail;
 	}
 
@@ -202,7 +202,7 @@ int sqfs_xattr_reader_seek_kv(sqfs_xattr_reader_t *xr,
 	uint32_t offset = desc->xattr & 0xFFFF;
 	uint64_t block = xr->xattr_start + (desc->xattr >> 16);
 
-	return meta_reader_seek(xr->kvrd, block, offset);
+	return sqfs_meta_reader_seek(xr->kvrd, block, offset);
 }
 
 int sqfs_xattr_reader_get_desc(sqfs_xattr_reader_t *xr, uint32_t idx,
@@ -227,10 +227,10 @@ int sqfs_xattr_reader_get_desc(sqfs_xattr_reader_t *xr, uint32_t idx,
 	offset = (idx * sizeof(*desc)) % SQFS_META_BLOCK_SIZE;
 	block = (idx * sizeof(*desc)) / SQFS_META_BLOCK_SIZE;
 
-	if (meta_reader_seek(xr->idrd, xr->id_block_starts[block], offset))
+	if (sqfs_meta_reader_seek(xr->idrd, xr->id_block_starts[block], offset))
 		return -1;
 
-	if (meta_reader_read(xr->idrd, desc, sizeof(*desc)))
+	if (sqfs_meta_reader_read(xr->idrd, desc, sizeof(*desc)))
 		return -1;
 
 	desc->xattr = le64toh(desc->xattr);
@@ -246,10 +246,10 @@ fail_bounds:
 void sqfs_xattr_reader_destroy(sqfs_xattr_reader_t *xr)
 {
 	if (xr->kvrd != NULL)
-		meta_reader_destroy(xr->kvrd);
+		sqfs_meta_reader_destroy(xr->kvrd);
 
 	if (xr->idrd != NULL)
-		meta_reader_destroy(xr->idrd);
+		sqfs_meta_reader_destroy(xr->idrd);
 
 	free(xr->id_block_starts);
 	free(xr);
@@ -274,15 +274,15 @@ sqfs_xattr_reader_t *sqfs_xattr_reader_create(int sqfsfd, sqfs_super_t *super,
 	if (get_id_block_locations(xr, sqfsfd, super))
 		goto fail;
 
-	xr->idrd = meta_reader_create(sqfsfd, cmp,
-				      super->id_table_start,
-				      super->bytes_used);
+	xr->idrd = sqfs_meta_reader_create(sqfsfd, cmp,
+					   super->id_table_start,
+					   super->bytes_used);
 	if (xr->idrd == NULL)
 		goto fail;
 
-	xr->kvrd = meta_reader_create(sqfsfd, cmp,
-				      super->id_table_start,
-				      super->bytes_used);
+	xr->kvrd = sqfs_meta_reader_create(sqfsfd, cmp,
+					   super->id_table_start,
+					   super->bytes_used);
 	if (xr->kvrd == NULL)
 		goto fail;
 

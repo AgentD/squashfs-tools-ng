@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdio.h>
 
-struct meta_reader_t {
+struct sqfs_meta_reader_t {
 	uint64_t start;
 	uint64_t limit;
 	size_t data_used;
@@ -41,10 +41,10 @@ struct meta_reader_t {
 	uint8_t scratch[SQFS_META_BLOCK_SIZE];
 };
 
-meta_reader_t *meta_reader_create(int fd, compressor_t *cmp,
-				  uint64_t start, uint64_t limit)
+sqfs_meta_reader_t *sqfs_meta_reader_create(int fd, compressor_t *cmp,
+					    uint64_t start, uint64_t limit)
 {
-	meta_reader_t *m = calloc(1, sizeof(*m));
+	sqfs_meta_reader_t *m = calloc(1, sizeof(*m));
 
 	if (m == NULL) {
 		perror("creating meta data reader");
@@ -58,12 +58,13 @@ meta_reader_t *meta_reader_create(int fd, compressor_t *cmp,
 	return m;
 }
 
-void meta_reader_destroy(meta_reader_t *m)
+void sqfs_meta_reader_destroy(sqfs_meta_reader_t *m)
 {
 	free(m);
 }
 
-int meta_reader_seek(meta_reader_t *m, uint64_t block_start, size_t offset)
+int sqfs_meta_reader_seek(sqfs_meta_reader_t *m, uint64_t block_start,
+			  size_t offset)
 {
 	bool compressed;
 	uint16_t header;
@@ -139,14 +140,14 @@ fail_range:
 	return -1;
 }
 
-void meta_reader_get_position(meta_reader_t *m, uint64_t *block_start,
-			      size_t *offset)
+void sqfs_meta_reader_get_position(sqfs_meta_reader_t *m, uint64_t *block_start,
+				   size_t *offset)
 {
 	*block_start = m->block_offset;
 	*offset = m->offset;
 }
 
-int meta_reader_read(meta_reader_t *m, void *data, size_t size)
+int sqfs_meta_reader_read(sqfs_meta_reader_t *m, void *data, size_t size)
 {
 	size_t diff;
 
@@ -154,7 +155,7 @@ int meta_reader_read(meta_reader_t *m, void *data, size_t size)
 		diff = m->data_used - m->offset;
 
 		if (diff == 0) {
-			if (meta_reader_seek(m, m->next_block, 0))
+			if (sqfs_meta_reader_seek(m, m->next_block, 0))
 				return -1;
 			diff = m->data_used;
 		}

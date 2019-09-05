@@ -20,7 +20,7 @@ void *sqfs_read_table(int fd, compressor_t *cmp, size_t table_size,
 {
 	size_t diff, block_count, blk_idx = 0;
 	uint64_t start, *locations;
-	meta_reader_t *m;
+	sqfs_meta_reader_t *m;
 	void *data, *ptr;
 
 	data = malloc(table_size);
@@ -48,7 +48,7 @@ void *sqfs_read_table(int fd, compressor_t *cmp, size_t table_size,
 	}
 
 	/* Read the actual data */
-	m = meta_reader_create(fd, cmp, lower_limit, upper_limit);
+	m = sqfs_meta_reader_create(fd, cmp, lower_limit, upper_limit);
 	if (m == NULL)
 		goto fail_idx;
 
@@ -57,25 +57,25 @@ void *sqfs_read_table(int fd, compressor_t *cmp, size_t table_size,
 	while (table_size > 0) {
 		start = le64toh(locations[blk_idx++]);
 
-		if (meta_reader_seek(m, start, 0))
+		if (sqfs_meta_reader_seek(m, start, 0))
 			goto fail;
 
 		diff = SQFS_META_BLOCK_SIZE;
 		if (diff > table_size)
 			diff = table_size;
 
-		if (meta_reader_read(m, ptr, diff))
+		if (sqfs_meta_reader_read(m, ptr, diff))
 			goto fail;
 
 		ptr = (char *)ptr + diff;
 		table_size -= diff;
 	}
 
-	meta_reader_destroy(m);
+	sqfs_meta_reader_destroy(m);
 	free(locations);
 	return data;
 fail:
-	meta_reader_destroy(m);
+	sqfs_meta_reader_destroy(m);
 fail_idx:
 	free(locations);
 fail_data:
