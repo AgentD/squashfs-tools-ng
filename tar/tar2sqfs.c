@@ -356,10 +356,10 @@ int main(int argc, char **argv)
 {
 	int outfd, status = EXIT_SUCCESS;
 	compressor_config_t cfg;
+	sqfs_id_table_t *idtbl;
 	data_writer_t *data;
 	sqfs_super_t super;
 	compressor_t *cmp;
-	id_table_t *idtbl;
 	fstree_t fs;
 	int ret;
 
@@ -404,7 +404,7 @@ int main(int argc, char **argv)
 	if (data == NULL)
 		goto out_cmp;
 
-	idtbl = id_table_create();
+	idtbl = sqfs_id_table_create();
 	if (idtbl == NULL)
 		goto out_data;
 
@@ -433,7 +433,7 @@ int main(int argc, char **argv)
 			goto out;
 	}
 
-	if (id_table_write(idtbl, outfd, &super, cmp))
+	if (sqfs_id_table_write(idtbl, outfd, &super, cmp))
 		goto out;
 
 	if (write_xattr(outfd, &fs, &super, cmp))
@@ -452,7 +452,7 @@ int main(int argc, char **argv)
 
 	status = EXIT_SUCCESS;
 out:
-	id_table_destroy(idtbl);
+	sqfs_id_table_destroy(idtbl);
 out_data:
 	data_writer_destroy(data);
 out_cmp:

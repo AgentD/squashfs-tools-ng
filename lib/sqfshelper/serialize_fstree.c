@@ -42,7 +42,7 @@ static int write_dir_entries(sqfs_dir_writer_t *dirw, tree_node_t *node)
 }
 
 int sqfs_serialize_fstree(int outfd, sqfs_super_t *super, fstree_t *fs,
-			  compressor_t *cmp, id_table_t *idtbl)
+			  compressor_t *cmp, sqfs_id_table_t *idtbl)
 {
 	sqfs_inode_generic_t *inode;
 	sqfs_meta_writer_t *im, *dm;

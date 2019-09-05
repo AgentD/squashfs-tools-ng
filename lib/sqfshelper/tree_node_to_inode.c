@@ -81,7 +81,7 @@ static int get_type(tree_node_t *node)
 	assert(0);
 }
 
-sqfs_inode_generic_t *tree_node_to_inode(fstree_t *fs, id_table_t *idtbl,
+sqfs_inode_generic_t *tree_node_to_inode(fstree_t *fs, sqfs_id_table_t *idtbl,
 					 tree_node_t *node)
 {
 	size_t i, extra = 0, block_count = 0;
@@ -124,10 +124,10 @@ sqfs_inode_generic_t *tree_node_to_inode(fstree_t *fs, id_table_t *idtbl,
 		}
 	}
 
-	if (id_table_id_to_index(idtbl, node->uid, &uid_idx))
+	if (sqfs_id_table_id_to_index(idtbl, node->uid, &uid_idx))
 		goto fail;
 
-	if (id_table_id_to_index(idtbl, node->gid, &gid_idx))
+	if (sqfs_id_table_id_to_index(idtbl, node->gid, &gid_idx))
 		goto fail;
 
 	if (node->xattr != NULL)

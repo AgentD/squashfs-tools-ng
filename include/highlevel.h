@@ -53,7 +53,7 @@ enum RDTREE_FLAGS {
   Returns 0 on success. Prints error messages to stderr on failure.
  */
 int sqfs_serialize_fstree(int outfd, sqfs_super_t *super, fstree_t *fs,
-			  compressor_t *cmp, id_table_t *idtbl);
+			  compressor_t *cmp, sqfs_id_table_t *idtbl);
 
 /*
   Convert a generic squashfs tree node to an fstree_t node.
@@ -61,7 +61,7 @@ int sqfs_serialize_fstree(int outfd, sqfs_super_t *super, fstree_t *fs,
   Prints error messages to stderr on failure.
  */
 tree_node_t *tree_node_from_inode(sqfs_inode_generic_t *inode,
-				  const id_table_t *idtbl,
+				  const sqfs_id_table_t *idtbl,
 				  const char *name,
 				  size_t block_size);
 
@@ -115,7 +115,7 @@ void compressor_print_help(E_SQFS_COMPRESSOR id);
 int xattr_reader_restore_node(sqfs_xattr_reader_t *xr, fstree_t *fs,
 			      tree_node_t *node, uint32_t xattr);
 
-sqfs_inode_generic_t *tree_node_to_inode(fstree_t *fs, id_table_t *idtbl,
+sqfs_inode_generic_t *tree_node_to_inode(fstree_t *fs, sqfs_id_table_t *idtbl,
 					 tree_node_t *node);
 
 #endif /* HIGHLEVEL_H */

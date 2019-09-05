@@ -13,15 +13,15 @@
 #include <string.h>
 #include <stdio.h>
 
-struct id_table_t {
+struct sqfs_id_table_t {
 	uint32_t *ids;
 	size_t num_ids;
 	size_t max_ids;
 };
 
-id_table_t *id_table_create(void)
+sqfs_id_table_t *sqfs_id_table_create(void)
 {
-	id_table_t *tbl = calloc(1, sizeof(*tbl));
+	sqfs_id_table_t *tbl = calloc(1, sizeof(*tbl));
 
 	if (tbl == NULL)
 		perror("Creating ID table");
@@ -29,13 +29,13 @@ id_table_t *id_table_create(void)
 	return tbl;
 }
 
-void id_table_destroy(id_table_t *tbl)
+void sqfs_id_table_destroy(sqfs_id_table_t *tbl)
 {
 	free(tbl->ids);
 	free(tbl);
 }
 
-int id_table_id_to_index(id_table_t *tbl, uint32_t id, uint16_t *out)
+int sqfs_id_table_id_to_index(sqfs_id_table_t *tbl, uint32_t id, uint16_t *out)
 {
 	size_t i, sz;
 	void *ptr;
@@ -70,7 +70,8 @@ int id_table_id_to_index(id_table_t *tbl, uint32_t id, uint16_t *out)
 	return 0;
 }
 
-int id_table_index_to_id(const id_table_t *tbl, uint16_t index, uint32_t *out)
+int sqfs_id_table_index_to_id(const sqfs_id_table_t *tbl, uint16_t index,
+			      uint32_t *out)
 {
 	if (index >= tbl->num_ids) {
 		fputs("attempted out of bounds ID table access\n", stderr);
@@ -81,8 +82,8 @@ int id_table_index_to_id(const id_table_t *tbl, uint16_t index, uint32_t *out)
 	return 0;
 }
 
-int id_table_read(id_table_t *tbl, int fd, sqfs_super_t *super,
-		  compressor_t *cmp)
+int sqfs_id_table_read(sqfs_id_table_t *tbl, int fd, sqfs_super_t *super,
+		       compressor_t *cmp)
 {
 	uint64_t upper_limit, lower_limit;
 	size_t i;
@@ -126,8 +127,8 @@ int id_table_read(id_table_t *tbl, int fd, sqfs_super_t *super,
 	return 0;
 }
 
-int id_table_write(id_table_t *tbl, int outfd, sqfs_super_t *super,
-		   compressor_t *cmp)
+int sqfs_id_table_write(sqfs_id_table_t *tbl, int outfd, sqfs_super_t *super,
+			compressor_t *cmp)
 {
 	uint64_t start;
 	size_t i;

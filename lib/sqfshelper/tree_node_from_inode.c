@@ -58,7 +58,7 @@ static void copy_block_sizes(sqfs_inode_generic_t *inode, tree_node_t *out,
 }
 
 tree_node_t *tree_node_from_inode(sqfs_inode_generic_t *inode,
-				  const id_table_t *idtbl,
+				  const sqfs_id_table_t *idtbl,
 				  const char *name,
 				  size_t block_size)
 {
@@ -70,12 +70,12 @@ tree_node_t *tree_node_from_inode(sqfs_inode_generic_t *inode,
 		return NULL;
 	}
 
-	if (id_table_index_to_id(idtbl, inode->base.uid_idx, &out->uid)) {
+	if (sqfs_id_table_index_to_id(idtbl, inode->base.uid_idx, &out->uid)) {
 		free(out);
 		return NULL;
 	}
 
-	if (id_table_index_to_id(idtbl, inode->base.gid_idx, &out->gid)) {
+	if (sqfs_id_table_index_to_id(idtbl, inode->base.gid_idx, &out->gid)) {
 		free(out);
 		return NULL;
 	}
