@@ -47,7 +47,7 @@ static const char *lzo_algs[] = {
 	[SQFS_LZO1X_999] = "lzo1x_999",
 };
 
-static int set_flag(compressor_config_t *cfg, const char *name,
+static int set_flag(sqfs_compressor_config_t *cfg, const char *name,
 		    const flag_t *flags, size_t num_flags)
 {
 	size_t i;
@@ -62,7 +62,7 @@ static int set_flag(compressor_config_t *cfg, const char *name,
 	return -1;
 }
 
-static int find_lzo_alg(compressor_config_t *cfg, const char *name)
+static int find_lzo_alg(sqfs_compressor_config_t *cfg, const char *name)
 {
 	size_t i;
 
@@ -123,7 +123,8 @@ static char *const token[] = {
 	NULL
 };
 
-int compressor_cfg_init_options(compressor_config_t *cfg, E_SQFS_COMPRESSOR id,
+int compressor_cfg_init_options(sqfs_compressor_config_t *cfg,
+				E_SQFS_COMPRESSOR id,
 				size_t block_size, char *options)
 {
 	size_t num_flags = 0, min_level = 0, max_level = 0, level;
@@ -131,7 +132,7 @@ int compressor_cfg_init_options(compressor_config_t *cfg, E_SQFS_COMPRESSOR id,
 	char *subopts, *value;
 	int i, opt;
 
-	if (compressor_config_init(cfg, id, block_size, 0))
+	if (sqfs_compressor_config_init(cfg, id, block_size, 0))
 		return -1;
 
 	if (options == NULL)

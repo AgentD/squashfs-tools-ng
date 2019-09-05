@@ -65,7 +65,7 @@ bool sqfs_has_xattr(const char *key);
 void sqfs_xattr_reader_destroy(sqfs_xattr_reader_t *xr);
 
 sqfs_xattr_reader_t *sqfs_xattr_reader_create(int sqfsfd, sqfs_super_t *super,
-					      compressor_t *cmp);
+					      sqfs_compressor_t *cmp);
 
 int sqfs_xattr_reader_get_desc(sqfs_xattr_reader_t *xr, uint32_t idx,
 			       sqfs_xattr_id_t *desc);

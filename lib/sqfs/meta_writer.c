@@ -33,7 +33,7 @@ struct sqfs_meta_writer_t {
 	int outfd;
 
 	/* A pointer to the compressor to use for compressing the data */
-	compressor_t *cmp;
+	sqfs_compressor_t *cmp;
 
 	/* The raw data chunk that data is appended to */
 	uint8_t data[SQFS_META_BLOCK_SIZE];
@@ -51,7 +51,7 @@ static int write_block(int fd, meta_block_t *outblk)
 			  outblk->data, count + 2);
 }
 
-sqfs_meta_writer_t *sqfs_meta_writer_create(int fd, compressor_t *cmp,
+sqfs_meta_writer_t *sqfs_meta_writer_create(int fd, sqfs_compressor_t *cmp,
 					    bool keep_in_mem)
 {
 	sqfs_meta_writer_t *m = calloc(1, sizeof(*m));

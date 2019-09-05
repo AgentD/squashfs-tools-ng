@@ -12,7 +12,7 @@
 #include <string.h>
 #include <zlib.h>
 
-int sqfs_block_process(sqfs_block_t *block, compressor_t *cmp,
+int sqfs_block_process(sqfs_block_t *block, sqfs_compressor_t *cmp,
 		       uint8_t *scratch, size_t scratch_size)
 {
 	ssize_t ret;

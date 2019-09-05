@@ -32,7 +32,7 @@ struct sqfs_meta_reader_t {
 	int fd;
 
 	/* A pointer to the compressor to use for extracting data */
-	compressor_t *cmp;
+	sqfs_compressor_t *cmp;
 
 	/* The raw data read from the input file */
 	uint8_t data[SQFS_META_BLOCK_SIZE];
@@ -41,7 +41,7 @@ struct sqfs_meta_reader_t {
 	uint8_t scratch[SQFS_META_BLOCK_SIZE];
 };
 
-sqfs_meta_reader_t *sqfs_meta_reader_create(int fd, compressor_t *cmp,
+sqfs_meta_reader_t *sqfs_meta_reader_create(int fd, sqfs_compressor_t *cmp,
 					    uint64_t start, uint64_t limit)
 {
 	sqfs_meta_reader_t *m = calloc(1, sizeof(*m));

@@ -93,11 +93,11 @@ static int read_fstree(fstree_t *fs, options_t *opt)
 int main(int argc, char **argv)
 {
 	int status = EXIT_FAILURE, ret;
-	compressor_config_t cfg;
+	sqfs_compressor_config_t cfg;
+	sqfs_compressor_t *cmp;
 	sqfs_id_table_t *idtbl;
 	data_writer_t *data;
 	sqfs_super_t super;
-	compressor_t *cmp;
 	options_t opt;
 	fstree_t fs;
 	int outfd;
@@ -151,7 +151,7 @@ int main(int argc, char **argv)
 
 	fstree_xattr_deduplicate(&fs);
 
-	cmp = compressor_create(&cfg);
+	cmp = sqfs_compressor_create(&cfg);
 	if (cmp == NULL) {
 		fputs("Error creating compressor\n", stderr);
 		goto out_outfd;

@@ -256,7 +256,7 @@ void sqfs_xattr_reader_destroy(sqfs_xattr_reader_t *xr)
 }
 
 sqfs_xattr_reader_t *sqfs_xattr_reader_create(int sqfsfd, sqfs_super_t *super,
-					      compressor_t *cmp)
+					      sqfs_compressor_t *cmp)
 {
 	sqfs_xattr_reader_t *xr = calloc(1, sizeof(*xr));
 

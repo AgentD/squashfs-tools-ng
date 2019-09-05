@@ -24,7 +24,7 @@ extern "C" {
    Start offset and limit can be specified to do bounds checking against
    a subregion of the filesystem image.
 */
-sqfs_meta_reader_t *sqfs_meta_reader_create(int fd, compressor_t *cmp,
+sqfs_meta_reader_t *sqfs_meta_reader_create(int fd, sqfs_compressor_t *cmp,
 					    uint64_t start, uint64_t limit);
 
 void sqfs_meta_reader_destroy(sqfs_meta_reader_t *m);

@@ -16,7 +16,7 @@
 #include "internal.h"
 
 typedef struct {
-	compressor_t base;
+	sqfs_compressor_t base;
 	size_t block_size;
 	size_t dict_size;
 	int flags;
@@ -37,7 +37,7 @@ static bool is_dict_size_valid(size_t size)
 	return size == (x | (x >> 1));
 }
 
-static int xz_write_options(compressor_t *base, int fd)
+static int xz_write_options(sqfs_compressor_t *base, int fd)
 {
 	xz_compressor_t *xz = (xz_compressor_t *)base;
 	xz_options_t opt;
@@ -48,15 +48,15 @@ static int xz_write_options(compressor_t *base, int fd)
 	opt.dict_size = htole32(xz->dict_size);
 	opt.flags = htole32(xz->flags);
 
-	return generic_write_options(fd, &opt, sizeof(opt));
+	return sqfs_generic_write_options(fd, &opt, sizeof(opt));
 }
 
-static int xz_read_options(compressor_t *base, int fd)
+static int xz_read_options(sqfs_compressor_t *base, int fd)
 {
 	xz_compressor_t *xz = (xz_compressor_t *)base;
 	xz_options_t opt;
 
-	if (generic_read_options(fd, &opt, sizeof(opt)))
+	if (sqfs_generic_read_options(fd, &opt, sizeof(opt)))
 		return -1;
 
 	opt.dict_size = le32toh(opt.dict_size);
@@ -142,8 +142,8 @@ static lzma_vli flag_to_vli(int flag)
 	return LZMA_VLI_UNKNOWN;
 }
 
-static ssize_t xz_comp_block(compressor_t *base, const uint8_t *in,
-			       size_t size, uint8_t *out, size_t outsize)
+static ssize_t xz_comp_block(sqfs_compressor_t *base, const uint8_t *in,
+			     size_t size, uint8_t *out, size_t outsize)
 {
 	xz_compressor_t *xz = (xz_compressor_t *)base;
 	lzma_vli filter, selected = LZMA_VLI_UNKNOWN;
@@ -178,7 +178,7 @@ static ssize_t xz_comp_block(compressor_t *base, const uint8_t *in,
 	return compress(xz, selected, in, size, out, outsize);
 }
 
-static ssize_t xz_uncomp_block(compressor_t *base, const uint8_t *in,
+static ssize_t xz_uncomp_block(sqfs_compressor_t *base, const uint8_t *in,
 			       size_t size, uint8_t *out, size_t outsize)
 {
 	uint64_t memlimit = 32 * 1024 * 1024;
@@ -198,7 +198,7 @@ static ssize_t xz_uncomp_block(compressor_t *base, const uint8_t *in,
 	return -1;
 }
 
-static compressor_t *xz_create_copy(compressor_t *cmp)
+static sqfs_compressor_t *xz_create_copy(sqfs_compressor_t *cmp)
 {
 	xz_compressor_t *xz = malloc(sizeof(*xz));
 
@@ -208,18 +208,18 @@ static compressor_t *xz_create_copy(compressor_t *cmp)
 	}
 
 	memcpy(xz, cmp, sizeof(*xz));
-	return (compressor_t *)xz;
+	return (sqfs_compressor_t *)xz;
 }
 
-static void xz_destroy(compressor_t *base)
+static void xz_destroy(sqfs_compressor_t *base)
 {
 	free(base);
 }
 
-compressor_t *create_xz_compressor(const compressor_config_t *cfg)
+sqfs_compressor_t *xz_compressor_create(const sqfs_compressor_config_t *cfg)
 {
+	sqfs_compressor_t *base;
 	xz_compressor_t *xz;
-	compressor_t *base;
 
 	if (cfg->flags & ~(SQFS_COMP_FLAG_GENERIC_ALL |
 			   SQFS_COMP_FLAG_XZ_ALL)) {
@@ -235,7 +235,7 @@ compressor_t *create_xz_compressor(const compressor_config_t *cfg)
 	}
 
 	xz = calloc(1, sizeof(*xz));
-	base = (compressor_t *)xz;
+	base = (sqfs_compressor_t *)xz;
 	if (xz == NULL) {
 		perror("creating xz compressor");
 		return NULL;

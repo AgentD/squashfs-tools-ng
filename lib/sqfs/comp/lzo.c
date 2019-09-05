@@ -48,7 +48,7 @@ static const struct {
 };
 
 typedef struct {
-	compressor_t base;
+	sqfs_compressor_t base;
 	int algorithm;
 	int level;
 
@@ -60,7 +60,7 @@ typedef struct {
 	uint32_t level;
 } lzo_options_t;
 
-static int lzo_write_options(compressor_t *base, int fd)
+static int lzo_write_options(sqfs_compressor_t *base, int fd)
 {
 	lzo_compressor_t *lzo = (lzo_compressor_t *)base;
 	lzo_options_t opt;
@@ -78,15 +78,15 @@ static int lzo_write_options(compressor_t *base, int fd)
 		opt.level = 0;
 	}
 
-	return generic_write_options(fd, &opt, sizeof(opt));
+	return sqfs_generic_write_options(fd, &opt, sizeof(opt));
 }
 
-static int lzo_read_options(compressor_t *base, int fd)
+static int lzo_read_options(sqfs_compressor_t *base, int fd)
 {
 	lzo_compressor_t *lzo = (lzo_compressor_t *)base;
 	lzo_options_t opt;
 
-	if (generic_read_options(fd, &opt, sizeof(opt)))
+	if (sqfs_generic_read_options(fd, &opt, sizeof(opt)))
 		return -1;
 
 	lzo->algorithm = le32toh(opt.algorithm);
@@ -115,7 +115,7 @@ fail_level:
 	return -1;
 }
 
-static ssize_t lzo_comp_block(compressor_t *base, const uint8_t *in,
+static ssize_t lzo_comp_block(sqfs_compressor_t *base, const uint8_t *in,
 			      size_t size, uint8_t *out, size_t outsize)
 {
 	lzo_compressor_t *lzo = (lzo_compressor_t *)base;
@@ -143,7 +143,7 @@ static ssize_t lzo_comp_block(compressor_t *base, const uint8_t *in,
 	return 0;
 }
 
-static ssize_t lzo_uncomp_block(compressor_t *base, const uint8_t *in,
+static ssize_t lzo_uncomp_block(sqfs_compressor_t *base, const uint8_t *in,
 				size_t size, uint8_t *out, size_t outsize)
 {
 	lzo_compressor_t *lzo = (lzo_compressor_t *)base;
@@ -160,7 +160,7 @@ static ssize_t lzo_uncomp_block(compressor_t *base, const uint8_t *in,
 	return len;
 }
 
-static compressor_t *lzo_create_copy(compressor_t *cmp)
+static sqfs_compressor_t *lzo_create_copy(sqfs_compressor_t *cmp)
 {
 	lzo_compressor_t *other = (lzo_compressor_t *)cmp;
 	lzo_compressor_t *lzo;
@@ -173,18 +173,18 @@ static compressor_t *lzo_create_copy(compressor_t *cmp)
 	}
 
 	memcpy(lzo, other, sizeof(*lzo));
-	return (compressor_t *)lzo;
+	return (sqfs_compressor_t *)lzo;
 }
 
-static void lzo_destroy(compressor_t *base)
+static void lzo_destroy(sqfs_compressor_t *base)
 {
 	free(base);
 }
 
-compressor_t *create_lzo_compressor(const compressor_config_t *cfg)
+sqfs_compressor_t *lzo_compressor_create(const sqfs_compressor_config_t *cfg)
 {
+	sqfs_compressor_t *base;
 	lzo_compressor_t *lzo;
-	compressor_t *base;
 
 	if (cfg->flags & ~SQFS_COMP_FLAG_GENERIC_ALL) {
 		fputs("creating lzo compressor: unknown compressor flags\n",
@@ -213,7 +213,7 @@ compressor_t *create_lzo_compressor(const compressor_config_t *cfg)
 
 	lzo = alloc_flex(sizeof(*lzo), 1,
 			 lzo_algs[cfg->opt.lzo.algorithm].bufsize);
-	base = (compressor_t *)lzo;
+	base = (sqfs_compressor_t *)lzo;
 
 	if (lzo == NULL) {
 		perror("creating lzo compressor");

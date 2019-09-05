@@ -161,10 +161,12 @@ void process_command_line(options_t *opt, int argc, char **argv)
 		case 'c':
 			have_compressor = true;
 
-			if (compressor_id_from_name(optarg, &opt->compressor))
+			if (sqfs_compressor_id_from_name(optarg,
+							 &opt->compressor)) {
 				have_compressor = false;
+			}
 
-			if (!compressor_exists(opt->compressor))
+			if (!sqfs_compressor_exists(opt->compressor))
 				have_compressor = false;
 
 			if (!have_compressor) {

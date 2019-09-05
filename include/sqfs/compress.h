@@ -4,8 +4,8 @@
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
-#ifndef COMPRESS_H
-#define COMPRESS_H
+#ifndef SQFS_COMPRESS_H
+#define SQFS_COMPRESS_H
 
 #include "config.h"
 
@@ -16,20 +16,22 @@
 
 #include "sqfs/super.h"
 
-typedef struct compressor_t compressor_t;
+typedef struct sqfs_compressor_t sqfs_compressor_t;
 
 /* Encapsultes a compressor with a simple interface to compress or
    uncompress/extract blocks of data. */
-struct compressor_t {
+struct sqfs_compressor_t {
+	void (*destroy)(sqfs_compressor_t *cmp);
+
 	/* Write compressor options to the output file if necessary.
 	   Returns the number of bytes written or -1 on failure.
 	   Internally prints error messages to stderr. */
-	int (*write_options)(compressor_t *cmp, int fd);
+	int (*write_options)(sqfs_compressor_t *cmp, int fd);
 
 	/* Read compressor options to the input file.
 	   Returns zero on success, -1 on failure.
 	   Internally prints error messages to stderr. */
-	int (*read_options)(compressor_t *cmp, int fd);
+	int (*read_options)(sqfs_compressor_t *cmp, int fd);
 
 	/*
 	  Compress or uncompress a chunk of data.
@@ -41,14 +43,12 @@ struct compressor_t {
 
 	  Internally prints compressor specific error messages to stderr.
 	*/
-	ssize_t (*do_block)(compressor_t *cmp, const uint8_t *in, size_t size,
-			    uint8_t *out, size_t outsize);
+	ssize_t (*do_block)(sqfs_compressor_t *cmp, const uint8_t *in,
+			    size_t size, uint8_t *out, size_t outsize);
 
 	/* create another compressor just like this one, i.e.
 	   with the exact same settings */
-	compressor_t *(*create_copy)(compressor_t *cmp);
-
-	void (*destroy)(compressor_t *stream);
+	sqfs_compressor_t *(*create_copy)(sqfs_compressor_t *cmp);
 };
 
 typedef struct {
@@ -75,7 +75,7 @@ typedef struct {
 			uint32_t dict_size;
 		} xz;
 	} opt;
-} compressor_config_t;
+} sqfs_compressor_config_t;
 
 typedef enum {
 	SQFS_COMP_FLAG_LZ4_HC = 0x0001,
@@ -132,19 +132,20 @@ typedef enum {
 extern "C" {
 #endif
 
-int compressor_config_init(compressor_config_t *cfg, E_SQFS_COMPRESSOR id,
-			   size_t block_size, uint16_t flags);
+int sqfs_compressor_config_init(sqfs_compressor_config_t *cfg,
+				E_SQFS_COMPRESSOR id,
+				size_t block_size, uint16_t flags);
 
-bool compressor_exists(E_SQFS_COMPRESSOR id);
+bool sqfs_compressor_exists(E_SQFS_COMPRESSOR id);
 
-compressor_t *compressor_create(const compressor_config_t *cfg);
+sqfs_compressor_t *sqfs_compressor_create(const sqfs_compressor_config_t *cfg);
 
-const char *compressor_name_from_id(E_SQFS_COMPRESSOR id);
+const char *sqfs_compressor_name_from_id(E_SQFS_COMPRESSOR id);
 
-int compressor_id_from_name(const char *name, E_SQFS_COMPRESSOR *out);
+int sqfs_compressor_id_from_name(const char *name, E_SQFS_COMPRESSOR *out);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* COMPRESS_H */
+#endif /* SQFS_COMPRESS_H */

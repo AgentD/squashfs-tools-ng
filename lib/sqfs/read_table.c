@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-void *sqfs_read_table(int fd, compressor_t *cmp, size_t table_size,
+void *sqfs_read_table(int fd, sqfs_compressor_t *cmp, size_t table_size,
 		      uint64_t location, uint64_t lower_limit,
 		      uint64_t upper_limit)
 {

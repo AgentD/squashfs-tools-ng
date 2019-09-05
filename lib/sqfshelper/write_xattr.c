@@ -168,7 +168,7 @@ static uint64_t *create_ool_locations_table(fstree_t *fs)
 }
 
 int write_xattr(int outfd, fstree_t *fs, sqfs_super_t *super,
-		compressor_t *cmp)
+		sqfs_compressor_t *cmp)
 {
 	uint64_t kv_start, id_start, block, *tbl, *ool_locations;
 	size_t i = 0, count = 0, blocks;

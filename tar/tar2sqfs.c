@@ -131,10 +131,10 @@ static void process_args(int argc, char **argv)
 		case 'c':
 			have_compressor = true;
 
-			if (compressor_id_from_name(optarg, &comp_id))
+			if (sqfs_compressor_id_from_name(optarg, &comp_id))
 				have_compressor = false;
 
-			if (!compressor_exists(comp_id))
+			if (!sqfs_compressor_exists(comp_id))
 				have_compressor = false;
 
 			if (!have_compressor) {
@@ -355,11 +355,11 @@ fail:
 int main(int argc, char **argv)
 {
 	int outfd, status = EXIT_SUCCESS;
-	compressor_config_t cfg;
+	sqfs_compressor_config_t cfg;
+	sqfs_compressor_t *cmp;
 	sqfs_id_table_t *idtbl;
 	data_writer_t *data;
 	sqfs_super_t super;
-	compressor_t *cmp;
 	fstree_t fs;
 	int ret;
 
@@ -379,7 +379,7 @@ int main(int argc, char **argv)
 	if (fstree_init(&fs, block_size, fs_defaults))
 		goto out_fd;
 
-	cmp = compressor_create(&cfg);
+	cmp = sqfs_compressor_create(&cfg);
 	if (cmp == NULL) {
 		fputs("Error creating compressor\n", stderr);
 		goto out_fs;

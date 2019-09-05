@@ -22,7 +22,7 @@ typedef struct {
 } gzip_options_t;
 
 typedef struct {
-	compressor_t base;
+	sqfs_compressor_t base;
 
 	z_stream strm;
 	bool compress;
@@ -31,7 +31,7 @@ typedef struct {
 	gzip_options_t opt;
 } gzip_compressor_t;
 
-static void gzip_destroy(compressor_t *base)
+static void gzip_destroy(sqfs_compressor_t *base)
 {
 	gzip_compressor_t *gzip = (gzip_compressor_t *)base;
 
@@ -44,7 +44,7 @@ static void gzip_destroy(compressor_t *base)
 	free(gzip);
 }
 
-static int gzip_write_options(compressor_t *base, int fd)
+static int gzip_write_options(sqfs_compressor_t *base, int fd)
 {
 	gzip_compressor_t *gzip = (gzip_compressor_t *)base;
 	gzip_options_t opt;
@@ -59,15 +59,15 @@ static int gzip_write_options(compressor_t *base, int fd)
 	opt.window = htole16(gzip->opt.window);
 	opt.strategies = htole16(gzip->opt.strategies);
 
-	return generic_write_options(fd, &opt, sizeof(opt));
+	return sqfs_generic_write_options(fd, &opt, sizeof(opt));
 }
 
-static int gzip_read_options(compressor_t *base, int fd)
+static int gzip_read_options(sqfs_compressor_t *base, int fd)
 {
 	gzip_compressor_t *gzip = (gzip_compressor_t *)base;
 	gzip_options_t opt;
 
-	if (generic_read_options(fd, &opt, sizeof(opt)))
+	if (sqfs_generic_read_options(fd, &opt, sizeof(opt)))
 		return -1;
 
 	gzip->opt.level = le32toh(opt.level);
@@ -161,7 +161,7 @@ static int find_strategy(gzip_compressor_t *gzip, const uint8_t *in,
 	return selected;
 }
 
-static ssize_t gzip_do_block(compressor_t *base, const uint8_t *in,
+static ssize_t gzip_do_block(sqfs_compressor_t *base, const uint8_t *in,
 			     size_t size, uint8_t *out, size_t outsize)
 {
 	gzip_compressor_t *gzip = (gzip_compressor_t *)base;
@@ -222,7 +222,7 @@ static ssize_t gzip_do_block(compressor_t *base, const uint8_t *in,
 	return 0;
 }
 
-static compressor_t *gzip_create_copy(compressor_t *cmp)
+static sqfs_compressor_t *gzip_create_copy(sqfs_compressor_t *cmp)
 {
 	gzip_compressor_t *gzip = malloc(sizeof(*gzip));
 	int ret;
@@ -249,13 +249,13 @@ static compressor_t *gzip_create_copy(compressor_t *cmp)
 		return NULL;
 	}
 
-	return (compressor_t *)gzip;
+	return (sqfs_compressor_t *)gzip;
 }
 
-compressor_t *create_gzip_compressor(const compressor_config_t *cfg)
+sqfs_compressor_t *gzip_compressor_create(const sqfs_compressor_config_t *cfg)
 {
 	gzip_compressor_t *gzip;
-	compressor_t *base;
+	sqfs_compressor_t *base;
 	int ret;
 
 	if (cfg->flags & ~(SQFS_COMP_FLAG_GZIP_ALL |
@@ -282,7 +282,7 @@ compressor_t *create_gzip_compressor(const compressor_config_t *cfg)
 	}
 
 	gzip = calloc(1, sizeof(*gzip));
-	base = (compressor_t *)gzip;
+	base = (sqfs_compressor_t *)gzip;
 
 	if (gzip == NULL) {
 		perror("creating gzip compressor");

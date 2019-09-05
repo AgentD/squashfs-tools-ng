@@ -29,7 +29,7 @@ struct data_writer_t {
 	off_t start;
 
 	sqfs_block_processor_t *proc;
-	compressor_t *cmp;
+	sqfs_compressor_t *cmp;
 	file_info_t *list;
 	sqfs_super_t *super;
 	int outfd;
@@ -488,7 +488,7 @@ int write_data_from_fd_condensed(data_writer_t *data, file_info_t *fi,
 	return 0;
 }
 
-data_writer_t *data_writer_create(sqfs_super_t *super, compressor_t *cmp,
+data_writer_t *data_writer_create(sqfs_super_t *super, sqfs_compressor_t *cmp,
 				  int outfd, size_t devblksize,
 				  unsigned int num_jobs)
 {

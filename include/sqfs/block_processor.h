@@ -68,7 +68,7 @@ extern "C" {
 #endif
 
 sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
-						    compressor_t *cmp,
+						    sqfs_compressor_t *cmp,
 						    unsigned int num_workers,
 						    void *user,
 						    sqfs_block_cb callback);
@@ -99,7 +99,7 @@ int sqfs_block_processor_finish(sqfs_block_processor_t *proc);
   Convenience function to process a data block. Returns 0 on success,
   prints to stderr on failure.
  */
-int sqfs_block_process(sqfs_block_t *block, compressor_t *cmp,
+int sqfs_block_process(sqfs_block_t *block, sqfs_compressor_t *cmp,
 		       uint8_t *scratch, size_t scratch_size);
 
 #ifdef __cplusplus

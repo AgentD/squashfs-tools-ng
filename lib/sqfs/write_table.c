@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-int sqfs_write_table(int outfd, sqfs_super_t *super, compressor_t *cmp,
+int sqfs_write_table(int outfd, sqfs_super_t *super, sqfs_compressor_t *cmp,
 		     const void *data, size_t table_size, uint64_t *start)
 {
 	size_t block_count, list_size, diff, blkidx = 0;

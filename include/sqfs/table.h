@@ -28,10 +28,10 @@ extern "C" {
 
   Returns 0 on success. Internally prints error messages to stderr.
  */
-int sqfs_write_table(int outfd, sqfs_super_t *super, compressor_t *cmp,
+int sqfs_write_table(int outfd, sqfs_super_t *super, sqfs_compressor_t *cmp,
 		     const void *data, size_t table_size, uint64_t *start);
 
-void *sqfs_read_table(int fd, compressor_t *cmp, size_t table_size,
+void *sqfs_read_table(int fd, sqfs_compressor_t *cmp, size_t table_size,
 		      uint64_t location, uint64_t lower_limit,
 		      uint64_t upper_limit);
 

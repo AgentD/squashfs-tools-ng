@@ -83,7 +83,7 @@ int sqfs_id_table_index_to_id(const sqfs_id_table_t *tbl, uint16_t index,
 }
 
 int sqfs_id_table_read(sqfs_id_table_t *tbl, int fd, sqfs_super_t *super,
-		       compressor_t *cmp)
+		       sqfs_compressor_t *cmp)
 {
 	uint64_t upper_limit, lower_limit;
 	size_t i;
@@ -128,7 +128,7 @@ int sqfs_id_table_read(sqfs_id_table_t *tbl, int fd, sqfs_super_t *super,
 }
 
 int sqfs_id_table_write(sqfs_id_table_t *tbl, int outfd, sqfs_super_t *super,
-			compressor_t *cmp)
+			sqfs_compressor_t *cmp)
 {
 	uint64_t start;
 	size_t i;

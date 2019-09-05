@@ -13,23 +13,24 @@
 #include "internal.h"
 #include "util.h"
 
-typedef compressor_t *(*compressor_fun_t)(const compressor_config_t *cfg);
+typedef sqfs_compressor_t *(*compressor_fun_t)
+	(const sqfs_compressor_config_t *cfg);
 
 static compressor_fun_t compressors[SQFS_COMP_MAX + 1] = {
 #ifdef WITH_GZIP
-	[SQFS_COMP_GZIP] = create_gzip_compressor,
+	[SQFS_COMP_GZIP] = gzip_compressor_create,
 #endif
 #ifdef WITH_XZ
-	[SQFS_COMP_XZ] = create_xz_compressor,
+	[SQFS_COMP_XZ] = xz_compressor_create,
 #endif
 #ifdef WITH_LZO
-	[SQFS_COMP_LZO] = create_lzo_compressor,
+	[SQFS_COMP_LZO] = lzo_compressor_create,
 #endif
 #ifdef WITH_LZ4
-	[SQFS_COMP_LZ4] = create_lz4_compressor,
+	[SQFS_COMP_LZ4] = lz4_compressor_create,
 #endif
 #ifdef WITH_ZSTD
-	[SQFS_COMP_ZSTD] = create_zstd_compressor,
+	[SQFS_COMP_ZSTD] = zstd_compressor_create,
 #endif
 };
 
@@ -42,7 +43,7 @@ static const char *names[] = {
 	[SQFS_COMP_ZSTD] = "zstd",
 };
 
-int generic_write_options(int fd, const void *data, size_t size)
+int sqfs_generic_write_options(int fd, const void *data, size_t size)
 {
 	uint8_t buffer[size + 2];
 
@@ -57,7 +58,7 @@ int generic_write_options(int fd, const void *data, size_t size)
 	return sizeof(buffer);
 }
 
-int generic_read_options(int fd, void *data, size_t size)
+int sqfs_generic_read_options(int fd, void *data, size_t size)
 {
 	uint8_t buffer[size + 2];
 
@@ -76,7 +77,7 @@ int generic_read_options(int fd, void *data, size_t size)
 	return 0;
 }
 
-bool compressor_exists(E_SQFS_COMPRESSOR id)
+bool sqfs_compressor_exists(E_SQFS_COMPRESSOR id)
 {
 	if (id < SQFS_COMP_MIN || id > SQFS_COMP_MAX)
 		return false;
@@ -84,7 +85,7 @@ bool compressor_exists(E_SQFS_COMPRESSOR id)
 	return (compressors[id] != NULL);
 }
 
-compressor_t *compressor_create(const compressor_config_t *cfg)
+sqfs_compressor_t *sqfs_compressor_create(const sqfs_compressor_config_t *cfg)
 {
 	if (cfg == NULL || cfg->id < SQFS_COMP_MIN || cfg->id > SQFS_COMP_MAX)
 		return NULL;
@@ -95,7 +96,7 @@ compressor_t *compressor_create(const compressor_config_t *cfg)
 	return compressors[cfg->id](cfg);
 }
 
-const char *compressor_name_from_id(E_SQFS_COMPRESSOR id)
+const char *sqfs_compressor_name_from_id(E_SQFS_COMPRESSOR id)
 {
 	if (id < 0 || (size_t)id >= sizeof(names) / sizeof(names[0]))
 		return NULL;
@@ -103,7 +104,7 @@ const char *compressor_name_from_id(E_SQFS_COMPRESSOR id)
 	return names[id];
 }
 
-int compressor_id_from_name(const char *name, E_SQFS_COMPRESSOR *out)
+int sqfs_compressor_id_from_name(const char *name, E_SQFS_COMPRESSOR *out)
 {
 	size_t i;
 
@@ -117,8 +118,9 @@ int compressor_id_from_name(const char *name, E_SQFS_COMPRESSOR *out)
 	return -1;
 }
 
-int compressor_config_init(compressor_config_t *cfg, E_SQFS_COMPRESSOR id,
-			   size_t block_size, uint16_t flags)
+int sqfs_compressor_config_init(sqfs_compressor_config_t *cfg,
+				E_SQFS_COMPRESSOR id,
+				size_t block_size, uint16_t flags)
 {
 	memset(cfg, 0, sizeof(*cfg));
 

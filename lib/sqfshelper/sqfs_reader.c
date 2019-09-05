@@ -14,7 +14,7 @@
 
 int sqfs_reader_open(sqfs_reader_t *rd, const char *filename, int rdtree_flags)
 {
-	compressor_config_t cfg;
+	sqfs_compressor_config_t cfg;
 
 	memset(rd, 0, sizeof(*rd));
 
@@ -27,16 +27,16 @@ int sqfs_reader_open(sqfs_reader_t *rd, const char *filename, int rdtree_flags)
 	if (sqfs_super_read(&rd->super, rd->sqfsfd))
 		goto fail_fd;
 
-	if (!compressor_exists(rd->super.compression_id)) {
+	if (!sqfs_compressor_exists(rd->super.compression_id)) {
 		fprintf(stderr, "%s: unknown compressor used.\n", filename);
 		goto fail_fd;
 	}
 
-	compressor_config_init(&cfg, rd->super.compression_id,
-			       rd->super.block_size,
-			       SQFS_COMP_FLAG_UNCOMPRESS);
+	sqfs_compressor_config_init(&cfg, rd->super.compression_id,
+				    rd->super.block_size,
+				    SQFS_COMP_FLAG_UNCOMPRESS);
 
-	rd->cmp = compressor_create(&cfg);
+	rd->cmp = sqfs_compressor_create(&cfg);
 	if (rd->cmp == NULL)
 		goto fail_fd;
 

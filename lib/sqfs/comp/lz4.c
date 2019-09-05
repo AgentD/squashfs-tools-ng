@@ -17,7 +17,7 @@
 #include "internal.h"
 
 typedef struct {
-	compressor_t base;
+	sqfs_compressor_t base;
 	bool high_compression;
 } lz4_compressor_t;
 
@@ -28,7 +28,7 @@ typedef struct {
 
 #define LZ4LEGACY 1
 
-static int lz4_write_options(compressor_t *base, int fd)
+static int lz4_write_options(sqfs_compressor_t *base, int fd)
 {
 	lz4_compressor_t *lz4 = (lz4_compressor_t *)base;
 	lz4_options opt = {
@@ -37,15 +37,15 @@ static int lz4_write_options(compressor_t *base, int fd)
 				 SQFS_COMP_FLAG_LZ4_HC : 0),
 	};
 
-	return generic_write_options(fd, &opt, sizeof(opt));
+	return sqfs_generic_write_options(fd, &opt, sizeof(opt));
 }
 
-static int lz4_read_options(compressor_t *base, int fd)
+static int lz4_read_options(sqfs_compressor_t *base, int fd)
 {
 	lz4_options opt;
 	(void)base;
 
-	if (generic_read_options(fd, &opt, sizeof(opt)))
+	if (sqfs_generic_read_options(fd, &opt, sizeof(opt)))
 		return -1;
 
 	opt.version = le32toh(opt.version);
@@ -59,7 +59,7 @@ static int lz4_read_options(compressor_t *base, int fd)
 	return 0;
 }
 
-static ssize_t lz4_comp_block(compressor_t *base, const uint8_t *in,
+static ssize_t lz4_comp_block(sqfs_compressor_t *base, const uint8_t *in,
 			      size_t size, uint8_t *out, size_t outsize)
 {
 	lz4_compressor_t *lz4 = (lz4_compressor_t *)base;
@@ -81,7 +81,7 @@ static ssize_t lz4_comp_block(compressor_t *base, const uint8_t *in,
 	return ret;
 }
 
-static ssize_t lz4_uncomp_block(compressor_t *base, const uint8_t *in,
+static ssize_t lz4_uncomp_block(sqfs_compressor_t *base, const uint8_t *in,
 				size_t size, uint8_t *out, size_t outsize)
 {
 	int ret;
@@ -97,7 +97,7 @@ static ssize_t lz4_uncomp_block(compressor_t *base, const uint8_t *in,
 	return ret;
 }
 
-static compressor_t *lz4_create_copy(compressor_t *cmp)
+static sqfs_compressor_t *lz4_create_copy(sqfs_compressor_t *cmp)
 {
 	lz4_compressor_t *lz4 = malloc(sizeof(*lz4));
 
@@ -107,18 +107,18 @@ static compressor_t *lz4_create_copy(compressor_t *cmp)
 	}
 
 	memcpy(lz4, cmp, sizeof(*lz4));
-	return (compressor_t *)lz4;
+	return (sqfs_compressor_t *)lz4;
 }
 
-static void lz4_destroy(compressor_t *base)
+static void lz4_destroy(sqfs_compressor_t *base)
 {
 	free(base);
 }
 
-compressor_t *create_lz4_compressor(const compressor_config_t *cfg)
+sqfs_compressor_t *lz4_compressor_create(const sqfs_compressor_config_t *cfg)
 {
-	lz4_compressor_t *lz4 = calloc(1, sizeof(*lz4));
-	compressor_t *base = (compressor_t *)lz4;
+	sqfs_compressor_t *base;
+	lz4_compressor_t *lz4;
 
 	if (cfg->flags & ~(SQFS_COMP_FLAG_LZ4_ALL |
 			   SQFS_COMP_FLAG_GENERIC_ALL)) {
@@ -127,7 +127,7 @@ compressor_t *create_lz4_compressor(const compressor_config_t *cfg)
 	}
 
 	lz4 = calloc(1, sizeof(*lz4));
-	base = (compressor_t *)lz4;
+	base = (sqfs_compressor_t *)lz4;
 	if (lz4 == NULL) {
 		perror("creating lz4 compressor");
 		return NULL;

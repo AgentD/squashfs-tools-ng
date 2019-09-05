@@ -12,18 +12,18 @@
 #include "sqfs/compress.h"
 #include "util.h"
 
-int generic_write_options(int fd, const void *data, size_t size);
+int sqfs_generic_write_options(int fd, const void *data, size_t size);
 
-int generic_read_options(int fd, void *data, size_t size);
+int sqfs_generic_read_options(int fd, void *data, size_t size);
 
-compressor_t *create_xz_compressor(const compressor_config_t *cfg);
+sqfs_compressor_t *xz_compressor_create(const sqfs_compressor_config_t *cfg);
 
-compressor_t *create_gzip_compressor(const compressor_config_t *cfg);
+sqfs_compressor_t *gzip_compressor_create(const sqfs_compressor_config_t *cfg);
 
-compressor_t *create_lzo_compressor(const compressor_config_t *cfg);
+sqfs_compressor_t *lzo_compressor_create(const sqfs_compressor_config_t *cfg);
 
-compressor_t *create_lz4_compressor(const compressor_config_t *cfg);
+sqfs_compressor_t *lz4_compressor_create(const sqfs_compressor_config_t *cfg);
 
-compressor_t *create_zstd_compressor(const compressor_config_t *cfg);
+sqfs_compressor_t *zstd_compressor_create(const sqfs_compressor_config_t *cfg);
 
 #endif /* INTERNAL_H */

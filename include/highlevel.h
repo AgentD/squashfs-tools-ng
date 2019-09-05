@@ -24,7 +24,7 @@
 #include <stddef.h>
 
 typedef struct {
-	compressor_t *cmp;
+	sqfs_compressor_t *cmp;
 	data_reader_t *data;
 	sqfs_super_t super;
 	fstree_t fs;
@@ -53,7 +53,7 @@ enum RDTREE_FLAGS {
   Returns 0 on success. Prints error messages to stderr on failure.
  */
 int sqfs_serialize_fstree(int outfd, sqfs_super_t *super, fstree_t *fs,
-			  compressor_t *cmp, sqfs_id_table_t *idtbl);
+			  sqfs_compressor_t *cmp, sqfs_id_table_t *idtbl);
 
 /*
   Convert a generic squashfs tree node to an fstree_t node.
@@ -71,8 +71,8 @@ tree_node_t *tree_node_from_inode(sqfs_inode_generic_t *inode,
 
   Returns 0 on success. Prints error messages to stderr on failure.
  */
-int deserialize_fstree(fstree_t *out, sqfs_super_t *super, compressor_t *cmp,
-		       int fd, int flags);
+int deserialize_fstree(fstree_t *out, sqfs_super_t *super,
+		       sqfs_compressor_t *cmp, int fd, int flags);
 
 /*
   Generate a squahfs xattr table from a file system tree.
@@ -80,7 +80,7 @@ int deserialize_fstree(fstree_t *out, sqfs_super_t *super, compressor_t *cmp,
   Returns 0 on success. Prints error messages to stderr on failure.
  */
 int write_xattr(int outfd, fstree_t *fs, sqfs_super_t *super,
-		compressor_t *cmp);
+		sqfs_compressor_t *cmp);
 
 /*
   Generate an NFS export table.
@@ -88,7 +88,7 @@ int write_xattr(int outfd, fstree_t *fs, sqfs_super_t *super,
   Returns 0 on success. Prints error messages to stderr on failure.
  */
 int write_export_table(int outfd, fstree_t *fs, sqfs_super_t *super,
-		       compressor_t *cmp);
+		       sqfs_compressor_t *cmp);
 
 /* Print out fancy statistics for squashfs packing tools */
 void sqfs_print_statistics(fstree_t *fs, sqfs_super_t *super);
@@ -107,7 +107,8 @@ void compressor_print_available(void);
 
 E_SQFS_COMPRESSOR compressor_get_default(void);
 
-int compressor_cfg_init_options(compressor_config_t *cfg, E_SQFS_COMPRESSOR id,
+int compressor_cfg_init_options(sqfs_compressor_config_t *cfg,
+				E_SQFS_COMPRESSOR id,
 				size_t block_size, char *options);
 
 void compressor_print_help(E_SQFS_COMPRESSOR id);

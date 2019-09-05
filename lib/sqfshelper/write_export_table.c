@@ -13,7 +13,7 @@
 #include <stdio.h>
 
 int write_export_table(int outfd, fstree_t *fs, sqfs_super_t *super,
-		       compressor_t *cmp)
+		       sqfs_compressor_t *cmp)
 {
 	uint64_t *table, start;
 	size_t i, size;

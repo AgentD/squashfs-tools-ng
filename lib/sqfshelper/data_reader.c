@@ -23,7 +23,7 @@ struct data_reader_t {
 
 	off_t current_block;
 
-	compressor_t *cmp;
+	sqfs_compressor_t *cmp;
 	size_t block_size;
 	int sqfsfd;
 
@@ -105,7 +105,7 @@ static int precache_fragment_block(data_reader_t *data, size_t idx)
 }
 
 data_reader_t *data_reader_create(int fd, sqfs_super_t *super,
-				  compressor_t *cmp)
+				  sqfs_compressor_t *cmp)
 {
 	data_reader_t *data = alloc_flex(sizeof(*data), super->block_size, 3);
 	size_t i, size;

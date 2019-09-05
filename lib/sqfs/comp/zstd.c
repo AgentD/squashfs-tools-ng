@@ -17,7 +17,7 @@
 #include "internal.h"
 
 typedef struct {
-	compressor_t base;
+	sqfs_compressor_t base;
 	ZSTD_CCtx *zctx;
 	int level;
 } zstd_compressor_t;
@@ -26,7 +26,7 @@ typedef struct {
 	uint32_t level;
 } zstd_options_t;
 
-static int zstd_write_options(compressor_t *base, int fd)
+static int zstd_write_options(sqfs_compressor_t *base, int fd)
 {
 	zstd_compressor_t *zstd = (zstd_compressor_t *)base;
 	zstd_options_t opt;
@@ -36,22 +36,22 @@ static int zstd_write_options(compressor_t *base, int fd)
 		return 0;
 
 	opt.level = htole32(zstd->level);
-	return generic_write_options(fd, &opt, sizeof(opt));
+	return sqfs_generic_write_options(fd, &opt, sizeof(opt));
 }
 
-static int zstd_read_options(compressor_t *base, int fd)
+static int zstd_read_options(sqfs_compressor_t *base, int fd)
 {
 	zstd_options_t opt;
 	(void)base;
 
-	if (generic_read_options(fd, &opt, sizeof(opt)))
+	if (sqfs_generic_read_options(fd, &opt, sizeof(opt)))
 		return -1;
 
 	opt.level = le32toh(opt.level);
 	return 0;
 }
 
-static ssize_t zstd_comp_block(compressor_t *base, const uint8_t *in,
+static ssize_t zstd_comp_block(sqfs_compressor_t *base, const uint8_t *in,
 			       size_t size, uint8_t *out, size_t outsize)
 {
 	zstd_compressor_t *zstd = (zstd_compressor_t *)base;
@@ -69,7 +69,7 @@ static ssize_t zstd_comp_block(compressor_t *base, const uint8_t *in,
 	return ret < size ? ret : 0;
 }
 
-static ssize_t zstd_uncomp_block(compressor_t *base, const uint8_t *in,
+static ssize_t zstd_uncomp_block(sqfs_compressor_t *base, const uint8_t *in,
 				 size_t size, uint8_t *out, size_t outsize)
 {
 	size_t ret;
@@ -86,7 +86,7 @@ static ssize_t zstd_uncomp_block(compressor_t *base, const uint8_t *in,
 	return ret;
 }
 
-static compressor_t *zstd_create_copy(compressor_t *cmp)
+static sqfs_compressor_t *zstd_create_copy(sqfs_compressor_t *cmp)
 {
 	zstd_compressor_t *zstd = malloc(sizeof(*zstd));
 
@@ -106,10 +106,10 @@ static compressor_t *zstd_create_copy(compressor_t *cmp)
 		return NULL;
 	}
 
-	return (compressor_t *)zstd;
+	return (sqfs_compressor_t *)zstd;
 }
 
-static void zstd_destroy(compressor_t *base)
+static void zstd_destroy(sqfs_compressor_t *base)
 {
 	zstd_compressor_t *zstd = (zstd_compressor_t *)base;
 
@@ -117,10 +117,10 @@ static void zstd_destroy(compressor_t *base)
 	free(zstd);
 }
 
-compressor_t *create_zstd_compressor(const compressor_config_t *cfg)
+sqfs_compressor_t *zstd_compressor_create(const sqfs_compressor_config_t *cfg)
 {
 	zstd_compressor_t *zstd;
-	compressor_t *base;
+	sqfs_compressor_t *base;
 
 	if (cfg->flags & ~SQFS_COMP_FLAG_GENERIC_ALL) {
 		fputs("creating zstd compressor: unknown compressor flags\n",
@@ -133,7 +133,7 @@ compressor_t *create_zstd_compressor(const compressor_config_t *cfg)
 	}
 
 	zstd = calloc(1, sizeof(*zstd));
-	base = (compressor_t *)zstd;
+	base = (sqfs_compressor_t *)zstd;
 	if (zstd == NULL) {
 		perror("creating zstd compressor");
 		return NULL;

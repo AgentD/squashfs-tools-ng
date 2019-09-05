@@ -100,8 +100,8 @@ int compare_super_blocks(const sqfs_super_t *a, const sqfs_super_t *b)
 
 	if (a->compression_id != b->compression_id) {
 		fprintf(stdout, "compressor: %s vs %s\n",
-			compressor_name_from_id(a->compression_id),
-			compressor_name_from_id(b->compression_id));
+			sqfs_compressor_name_from_id(a->compression_id),
+			sqfs_compressor_name_from_id(b->compression_id));
 	}
 
 	print_flag_diff(a->flags, b->flags);

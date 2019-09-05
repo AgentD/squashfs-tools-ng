@@ -202,8 +202,8 @@ static int fill_dir(sqfs_meta_reader_t *ir, sqfs_meta_reader_t *dr,
 	return 0;
 }
 
-int deserialize_fstree(fstree_t *out, sqfs_super_t *super, compressor_t *cmp,
-		       int fd, int flags)
+int deserialize_fstree(fstree_t *out, sqfs_super_t *super,
+		       sqfs_compressor_t *cmp, int fd, int flags)
 {
 	uint64_t block_start, limit;
 	sqfs_meta_reader_t *ir, *dr;

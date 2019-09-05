@@ -18,7 +18,7 @@
 
 typedef struct {
 	sqfs_block_processor_t *shared;
-	compressor_t *cmp;
+	sqfs_compressor_t *cmp;
 	pthread_t thread;
 	uint8_t scratch[];
 } compress_worker_t;
@@ -113,7 +113,7 @@ static void *worker_proc(void *arg)
 }
 
 sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
-						    compressor_t *cmp,
+						    sqfs_compressor_t *cmp,
 						    unsigned int num_workers,
 						    void *user,
 						    sqfs_block_cb callback)

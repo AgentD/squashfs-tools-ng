@@ -15,7 +15,7 @@
 
 struct sqfs_block_processor_t {
 	size_t max_block_size;
-	compressor_t *cmp;
+	sqfs_compressor_t *cmp;
 	sqfs_block_cb cb;
 	void *user;
 	int status;
@@ -24,7 +24,7 @@ struct sqfs_block_processor_t {
 };
 
 sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
-						    compressor_t *cmp,
+						    sqfs_compressor_t *cmp,
 						    unsigned int num_workers,
 						    void *user,
 						    sqfs_block_cb callback)
