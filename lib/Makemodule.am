@@ -57,7 +57,7 @@ libsquashfs_la_SOURCES += lib/sqfs/readdir.c
 libsquashfs_la_SOURCES += lib/sqfs/xattr.c lib/sqfs/xattr_reader.c
 libsquashfs_la_SOURCES += lib/sqfs/read_table.c
 libsquashfs_la_SOURCES += lib/sqfs/comp/compressor.c lib/sqfs/comp/internal.h
-libsquashfs_la_SOURCES += lib/sqfs/comp/process_block.c
+libsquashfs_la_SOURCES += lib/sqfs/process_block.c
 libsquashfs_la_CPPFLAGS = $(AM_CPPFLAGS)
 libsquashfs_la_CFLAGS = $(AM_CFLAGS) $(PTHREAD_CFLAGS) $(ZLIB_CFLAGS)
 libsquashfs_la_CFLAGS += $(XZ_CFLAGS) $(LZO_CFLAGS) $(LZ4_CFLAGS)
@@ -66,9 +66,9 @@ libsquashfs_la_LIBADD = $(XZ_LIBS) $(ZLIB_LIBS) $(LZO_LIBS) $(LZ4_LIBS)
 libsquashfs_la_LIBADD += $(ZSTD_LIBS) $(PTHREAD_LIBS) libutil.la
 
 if HAVE_PTHREAD
-libsquashfs_la_SOURCES += lib/sqfs/comp/block_processor_parallel.c
+libsquashfs_la_SOURCES += lib/sqfs/block_processor_parallel.c
 else
-libsquashfs_la_SOURCES += lib/sqfs/comp/block_processor.c
+libsquashfs_la_SOURCES += lib/sqfs/block_processor.c
 endif
 
 if WITH_GZIP
