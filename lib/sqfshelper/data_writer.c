@@ -104,34 +104,32 @@ static int block_callback(void *user, block_t *blk)
 		fi->startblock = data->super->bytes_used;
 	}
 
-	if (blk->size == 0)
-		goto skip_sentinel;
+	if (blk->size != 0) {
+		out = blk->size;
+		if (!(blk->flags & BLK_IS_COMPRESSED))
+			out |= 1 << 24;
 
-	out = blk->size;
-	if (!(blk->flags & BLK_IS_COMPRESSED))
-		out |= 1 << 24;
+		if (blk->flags & BLK_FRAGMENT_BLOCK) {
+			offset = htole64(data->super->bytes_used);
+			data->fragments[blk->index].start_offset = offset;
+			data->fragments[blk->index].pad0 = 0;
+			data->fragments[blk->index].size = htole32(out);
 
-	if (blk->flags & BLK_FRAGMENT_BLOCK) {
-		offset = htole64(data->super->bytes_used);
-		data->fragments[blk->index].start_offset = offset;
-		data->fragments[blk->index].pad0 = 0;
-		data->fragments[blk->index].size = htole32(out);
+			data->super->flags &= ~SQFS_FLAG_NO_FRAGMENTS;
+			data->super->flags |= SQFS_FLAG_ALWAYS_FRAGMENTS;
+		} else {
+			fi->blocks[blk->index].chksum = blk->checksum;
+			fi->blocks[blk->index].size = htole32(out);
+		}
 
-		data->super->flags &= ~SQFS_FLAG_NO_FRAGMENTS;
-		data->super->flags |= SQFS_FLAG_ALWAYS_FRAGMENTS;
-	} else {
-		fi->blocks[blk->index].chksum = blk->checksum;
-		fi->blocks[blk->index].size = htole32(out);
+		if (write_data("writing data block", data->outfd,
+			       blk->data, blk->size)) {
+			return -1;
+		}
+
+		data->super->bytes_used += blk->size;
 	}
 
-	if (write_data("writing data block", data->outfd,
-		       blk->data, blk->size)) {
-		return -1;
-	}
-
-	data->super->bytes_used += blk->size;
-
-skip_sentinel:
 	if (blk->flags & BLK_LAST_BLOCK) {
 		if ((blk->flags & BLK_ALLIGN) && allign_file(data) != 0)
 			return -1;
