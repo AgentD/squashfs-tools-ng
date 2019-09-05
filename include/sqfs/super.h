@@ -11,9 +11,6 @@
 
 #include "sqfs/predef.h"
 
-#include <stdint.h>
-#include <stddef.h>
-
 #define SQFS_MAGIC 0x73717368
 #define SQFS_VERSION_MAJOR 4
 #define SQFS_VERSION_MINOR 0

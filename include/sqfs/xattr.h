@@ -12,10 +12,6 @@
 #include "sqfs/predef.h"
 #include "sqfs/compress.h"
 
-#include <stdbool.h>
-#include <stdint.h>
-#include <stddef.h>
-
 typedef enum {
 	SQFS_XATTR_USER = 0,
 	SQFS_XATTR_TRUSTED = 1,

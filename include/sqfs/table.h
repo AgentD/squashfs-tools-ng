@@ -11,9 +11,6 @@
 #include "sqfs/compress.h"
 #include "sqfs/super.h"
 
-#include <stdint.h>
-#include <stddef.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif

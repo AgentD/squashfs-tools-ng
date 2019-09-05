@@ -7,6 +7,11 @@
 #ifndef SQFS_PREDEF_H
 #define SQFS_PREDEF_H
 
+#include <sys/types.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+
 #if defined(_WIN32) || defined(__CYGWIN__)
 	#ifdef SQFS_BUILDING_DLL
 		#if defined(__GNUC__) || defined(__clang__)

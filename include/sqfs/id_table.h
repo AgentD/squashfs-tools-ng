@@ -9,9 +9,6 @@
 
 #include "config.h"
 
-#include <stdint.h>
-#include <stddef.h>
-
 #include "sqfs/predef.h"
 #include "sqfs/compress.h"
 

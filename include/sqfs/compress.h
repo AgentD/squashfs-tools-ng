@@ -9,11 +9,6 @@
 
 #include "config.h"
 
-#include <sys/types.h>
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
-
 #include "sqfs/predef.h"
 #include "sqfs/super.h"
 

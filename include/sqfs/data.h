@@ -9,9 +9,7 @@
 
 #include "config.h"
 
-#include <stdbool.h>
-#include <stdint.h>
-#include <stddef.h>
+#include "sqfs/predef.h"
 
 #define SQFS_META_BLOCK_SIZE 8192
 

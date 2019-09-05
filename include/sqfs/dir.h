@@ -13,8 +13,6 @@
 #include "sqfs/meta_reader.h"
 #include "sqfs/meta_writer.h"
 
-#include <stdint.h>
-
 #define SQFS_MAX_DIR_ENT 256
 
 typedef struct {

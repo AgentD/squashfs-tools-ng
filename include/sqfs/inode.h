@@ -13,8 +13,6 @@
 #include "sqfs/meta_reader.h"
 #include "sqfs/meta_writer.h"
 
-#include <stdint.h>
-
 typedef enum {
 	SQFS_INODE_DIR = 1,
 	SQFS_INODE_FILE = 2,
