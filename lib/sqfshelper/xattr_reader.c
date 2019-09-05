@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <errno.h>
 
-static int restore_kv_pairs(xattr_reader_t *xr, fstree_t *fs,
+static int restore_kv_pairs(sqfs_xattr_reader_t *xr, fstree_t *fs,
 			    tree_node_t *node)
 {
 	size_t i, key_idx, val_idx;
@@ -24,11 +24,11 @@ static int restore_kv_pairs(xattr_reader_t *xr, fstree_t *fs,
 	int ret;
 
 	for (i = 0; i < node->xattr->num_attr; ++i) {
-		key = xattr_reader_read_key(xr);
+		key = sqfs_xattr_reader_read_key(xr);
 		if (key == NULL)
 			return -1;
 
-		val = xattr_reader_read_value(xr, key);
+		val = sqfs_xattr_reader_read_value(xr, key);
 		if (val == NULL)
 			goto fail_key;
 
@@ -69,7 +69,7 @@ fail_key:
 	return -1;
 }
 
-int xattr_reader_restore_node(xattr_reader_t *xr, fstree_t *fs,
+int xattr_reader_restore_node(sqfs_xattr_reader_t *xr, fstree_t *fs,
 			      tree_node_t *node, uint32_t xattr)
 {
 	sqfs_xattr_id_t desc;
@@ -82,7 +82,7 @@ int xattr_reader_restore_node(xattr_reader_t *xr, fstree_t *fs,
 		}
 	}
 
-	if (xattr_reader_get_desc(xr, xattr, &desc))
+	if (sqfs_xattr_reader_get_desc(xr, xattr, &desc))
 		return -1;
 
 	if (desc.count == 0 || desc.size == 0)
@@ -101,7 +101,7 @@ int xattr_reader_restore_node(xattr_reader_t *xr, fstree_t *fs,
 	node->xattr->index = xattr;
 	node->xattr->owner = node;
 
-	if (xattr_reader_seek_kv(xr, &desc))
+	if (sqfs_xattr_reader_seek_kv(xr, &desc))
 		return -1;
 
 	if (restore_kv_pairs(xr, fs, node)) {

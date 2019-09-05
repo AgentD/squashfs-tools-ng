@@ -36,8 +36,8 @@ static int should_skip(int type, int flags)
 	return 0;
 }
 
-static int restore_xattr(xattr_reader_t *xr, fstree_t *fs, tree_node_t *node,
-			 sqfs_inode_generic_t *inode)
+static int restore_xattr(sqfs_xattr_reader_t *xr, fstree_t *fs,
+			 tree_node_t *node, sqfs_inode_generic_t *inode)
 {
 	uint32_t idx;
 
@@ -80,7 +80,7 @@ static bool node_would_be_own_parent(tree_node_t *root, tree_node_t *n)
 
 static int fill_dir(meta_reader_t *ir, meta_reader_t *dr, tree_node_t *root,
 		    sqfs_super_t *super, id_table_t *idtbl, fstree_t *fs,
-		    xattr_reader_t *xr, int flags)
+		    sqfs_xattr_reader_t *xr, int flags)
 {
 	sqfs_inode_generic_t *inode;
 	sqfs_dir_header_t hdr;
@@ -204,8 +204,8 @@ int deserialize_fstree(fstree_t *out, sqfs_super_t *super, compressor_t *cmp,
 {
 	uint64_t block_start, limit;
 	sqfs_inode_generic_t *root;
+	sqfs_xattr_reader_t *xr;
 	meta_reader_t *ir, *dr;
-	xattr_reader_t *xr;
 	id_table_t *idtbl;
 	int status = -1;
 	size_t offset;
@@ -232,7 +232,7 @@ int deserialize_fstree(fstree_t *out, sqfs_super_t *super, compressor_t *cmp,
 	if (id_table_read(idtbl, fd, super, cmp))
 		goto out_id;
 
-	xr = xattr_reader_create(fd, super, cmp);
+	xr = sqfs_xattr_reader_create(fd, super, cmp);
 	if (xr == NULL)
 		goto out_id;
 
@@ -292,7 +292,7 @@ int deserialize_fstree(fstree_t *out, sqfs_super_t *super, compressor_t *cmp,
 
 	status = 0;
 out_xr:
-	xattr_reader_destroy(xr);
+	sqfs_xattr_reader_destroy(xr);
 out_id:
 	id_table_destroy(idtbl);
 out_dr:

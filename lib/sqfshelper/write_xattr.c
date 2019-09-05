@@ -33,7 +33,7 @@ static int write_key(meta_writer_t *mw, const char *key, tree_xattr_t *xattr,
 	++key;
 
 	if (value_is_ool)
-		type |= SQUASHFS_XATTR_FLAG_OOL;
+		type |= SQFS_XATTR_FLAG_OOL;
 
 	kent.type = htole16(type);
 	kent.size = htole16(strlen(key));

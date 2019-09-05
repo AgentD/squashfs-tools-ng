@@ -13,9 +13,9 @@ static const struct {
 	const char *prefix;
 	E_SQFS_XATTR_TYPE type;
 } xattr_types[] = {
-	{ "user.", SQUASHFS_XATTR_USER },
-	{ "trusted.", SQUASHFS_XATTR_TRUSTED },
-	{ "security.", SQUASHFS_XATTR_SECURITY },
+	{ "user.", SQFS_XATTR_USER },
+	{ "trusted.", SQFS_XATTR_TRUSTED },
+	{ "security.", SQFS_XATTR_SECURITY },
 };
 
 int sqfs_get_xattr_prefix_id(const char *key)

@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <errno.h>
 
-struct xattr_reader_t {
+struct sqfs_xattr_reader_t {
 	uint64_t xattr_start;
 
 	size_t num_id_blocks;
@@ -28,7 +28,7 @@ struct xattr_reader_t {
 	sqfs_super_t *super;
 };
 
-static int get_id_block_locations(xattr_reader_t *xr, int sqfsfd,
+static int get_id_block_locations(sqfs_xattr_reader_t *xr, int sqfsfd,
 				  sqfs_super_t *super)
 {
 	sqfs_xattr_id_table_t idtbl;
@@ -84,7 +84,7 @@ fail:
 	return -1;
 }
 
-sqfs_xattr_entry_t *xattr_reader_read_key(xattr_reader_t *xr)
+sqfs_xattr_entry_t *sqfs_xattr_reader_read_key(sqfs_xattr_reader_t *xr)
 {
 	sqfs_xattr_entry_t key, *out;
 	const char *prefix;
@@ -96,10 +96,10 @@ sqfs_xattr_entry_t *xattr_reader_read_key(xattr_reader_t *xr)
 	key.type = le16toh(key.type);
 	key.size = le16toh(key.size);
 
-	prefix = sqfs_get_xattr_prefix(key.type & SQUASHFS_XATTR_PREFIX_MASK);
+	prefix = sqfs_get_xattr_prefix(key.type & SQFS_XATTR_PREFIX_MASK);
 	if (prefix == NULL) {
 		fprintf(stderr, "found unknown xattr type %u\n",
-			key.type & SQUASHFS_XATTR_PREFIX_MASK);
+			key.type & SQFS_XATTR_PREFIX_MASK);
 		return NULL;
 	}
 
@@ -130,8 +130,8 @@ fail_alloc:
 	return NULL;
 }
 
-sqfs_xattr_value_t *xattr_reader_read_value(xattr_reader_t *xr,
-					    const sqfs_xattr_entry_t *key)
+sqfs_xattr_value_t *sqfs_xattr_reader_read_value(sqfs_xattr_reader_t *xr,
+						 const sqfs_xattr_entry_t *key)
 {
 	size_t offset, new_offset, size;
 	sqfs_xattr_value_t value, *out;
@@ -140,7 +140,7 @@ sqfs_xattr_value_t *xattr_reader_read_value(xattr_reader_t *xr,
 	if (meta_reader_read(xr->kvrd, &value, sizeof(value)))
 		return NULL;
 
-	if (key->type & SQUASHFS_XATTR_FLAG_OOL) {
+	if (key->type & SQFS_XATTR_FLAG_OOL) {
 		if (meta_reader_read(xr->kvrd, &ref, sizeof(ref)))
 			return NULL;
 
@@ -182,7 +182,7 @@ sqfs_xattr_value_t *xattr_reader_read_value(xattr_reader_t *xr,
 	if (meta_reader_read(xr->kvrd, out->value, value.size))
 		goto fail;
 
-	if (key->type & SQUASHFS_XATTR_FLAG_OOL) {
+	if (key->type & SQFS_XATTR_FLAG_OOL) {
 		if (meta_reader_seek(xr->kvrd, start, offset))
 			goto fail;
 	}
@@ -196,7 +196,8 @@ fail:
 	return NULL;
 }
 
-int xattr_reader_seek_kv(xattr_reader_t *xr, const sqfs_xattr_id_t *desc)
+int sqfs_xattr_reader_seek_kv(sqfs_xattr_reader_t *xr,
+			      const sqfs_xattr_id_t *desc)
 {
 	uint32_t offset = desc->xattr & 0xFFFF;
 	uint64_t block = xr->xattr_start + (desc->xattr >> 16);
@@ -204,8 +205,8 @@ int xattr_reader_seek_kv(xattr_reader_t *xr, const sqfs_xattr_id_t *desc)
 	return meta_reader_seek(xr->kvrd, block, offset);
 }
 
-int xattr_reader_get_desc(xattr_reader_t *xr, uint32_t idx,
-			  sqfs_xattr_id_t *desc)
+int sqfs_xattr_reader_get_desc(sqfs_xattr_reader_t *xr, uint32_t idx,
+			       sqfs_xattr_id_t *desc)
 {
 	size_t block, offset;
 
@@ -242,7 +243,7 @@ fail_bounds:
 	return -1;
 }
 
-void xattr_reader_destroy(xattr_reader_t *xr)
+void sqfs_xattr_reader_destroy(sqfs_xattr_reader_t *xr)
 {
 	if (xr->kvrd != NULL)
 		meta_reader_destroy(xr->kvrd);
@@ -254,10 +255,10 @@ void xattr_reader_destroy(xattr_reader_t *xr)
 	free(xr);
 }
 
-xattr_reader_t *xattr_reader_create(int sqfsfd, sqfs_super_t *super,
-				    compressor_t *cmp)
+sqfs_xattr_reader_t *sqfs_xattr_reader_create(int sqfsfd, sqfs_super_t *super,
+					      compressor_t *cmp)
 {
-	xattr_reader_t *xr = calloc(1, sizeof(*xr));
+	sqfs_xattr_reader_t *xr = calloc(1, sizeof(*xr));
 
 	if (xr == NULL) {
 		perror("creating xattr reader");
@@ -288,6 +289,6 @@ xattr_reader_t *xattr_reader_create(int sqfsfd, sqfs_super_t *super,
 	xr->super = super;
 	return xr;
 fail:
-	xattr_reader_destroy(xr);
+	sqfs_xattr_reader_destroy(xr);
 	return NULL;
 }
