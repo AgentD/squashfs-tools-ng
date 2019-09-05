@@ -18,7 +18,7 @@
 #include <pthread.h>
 #endif
 
-static ssize_t dummy_do_block(compressor_t *cmp, const uint8_t *in,
+static ssize_t dummy_do_block(sqfs_compressor_t *cmp, const uint8_t *in,
 			      size_t size, uint8_t *out, size_t outsize)
 {
 	int delay, result;
@@ -32,22 +32,22 @@ static ssize_t dummy_do_block(compressor_t *cmp, const uint8_t *in,
 	return (size_t)result >= size ? 0 : result;
 }
 
-static compressor_t *dummy_create_copy(compressor_t *cmp)
+static sqfs_compressor_t *dummy_create_copy(sqfs_compressor_t *cmp)
 {
-	compressor_t *cpy = malloc(sizeof(*cpy));
+	sqfs_compressor_t *cpy = malloc(sizeof(*cpy));
 	assert(cpy != NULL);
 	*cpy = *cmp;
 	return cpy;
 }
 
-static void dummy_destroy(compressor_t *cmp)
+static void dummy_destroy(sqfs_compressor_t *cmp)
 {
 	free(cmp);
 }
 
-static compressor_t *dummy_create(void)
+static sqfs_compressor_t *dummy_create(void)
 {
-	compressor_t *cmp = calloc(1, sizeof(*cmp));
+	sqfs_compressor_t *cmp = calloc(1, sizeof(*cmp));
 	assert(cmp != NULL);
 
 	cmp->do_block = dummy_do_block;
@@ -63,22 +63,22 @@ static unsigned int blk_index = 0;
 static pthread_t main_thread;
 #endif
 
-static int block_callback(void *user, block_t *blk)
+static int block_callback(void *user, sqfs_block_t *blk)
 {
 	assert(main_thread == pthread_self());
 	assert(blk->index == blk_index++);
 
 	if (blk->index == 4) {
 		assert(blk->size == 4 * sizeof(int));
-		assert(blk->flags & BLK_DONT_COMPRESS);
-		assert(blk->flags & BLK_DONT_CHECKSUM);
-		assert(!(blk->flags & BLK_IS_COMPRESSED));
+		assert(blk->flags & SQFS_BLK_DONT_COMPRESS);
+		assert(blk->flags & SQFS_BLK_DONT_CHECKSUM);
+		assert(!(blk->flags & SQFS_BLK_IS_COMPRESSED));
 	} else {
 		if (blk->index & 0x01) {
-			assert(!(blk->flags & BLK_IS_COMPRESSED));
+			assert(!(blk->flags & SQFS_BLK_IS_COMPRESSED));
 			assert(blk->size == 4 * sizeof(int));
 		} else {
-			assert(blk->flags & BLK_IS_COMPRESSED);
+			assert(blk->flags & SQFS_BLK_IS_COMPRESSED);
 			assert(blk->size == 2 * sizeof(int));
 		}
 	}
@@ -89,17 +89,17 @@ static int block_callback(void *user, block_t *blk)
 
 int main(void)
 {
-	block_processor_t *proc;
-	compressor_t *cmp = dummy_create();
-	block_t *blk;
+	sqfs_compressor_t *cmp = dummy_create();
+	sqfs_block_processor_t *proc;
+	sqfs_block_t *blk;
 	int i;
 
 #ifdef HAVE_PTHREAD
 	main_thread = pthread_self();
 #endif
 
-	proc = block_processor_create(4 * sizeof(int), cmp, 4,
-				      NULL, block_callback);
+	proc = sqfs_block_processor_create(4 * sizeof(int), cmp, 4,
+					   NULL, block_callback);
 	assert(proc != NULL);
 
 	for (i = 0; i < 4; ++i) {
@@ -110,21 +110,21 @@ int main(void)
 		((int *)blk->data)[0] = 4 - i;
 		((int *)blk->data)[1] = (i & 0x01 ? 4 : 2) * sizeof(int);
 
-		assert(block_processor_enqueue(proc, blk) == 0);
+		assert(sqfs_block_processor_enqueue(proc, blk) == 0);
 	}
 
 	blk = calloc(1, sizeof(*blk) + 4 * sizeof(int));
 	assert(blk != NULL);
 	blk->size = 4 * sizeof(int);
 	blk->index = i;
-	blk->flags |= BLK_DONT_COMPRESS | BLK_DONT_CHECKSUM;
+	blk->flags |= SQFS_BLK_DONT_COMPRESS | SQFS_BLK_DONT_CHECKSUM;
 	((int *)blk->data)[0] = 0;
 	((int *)blk->data)[1] = (i & 0x01 ? 4 : 2) * sizeof(int);
-	assert(block_processor_enqueue(proc, blk) == 0);
+	assert(sqfs_block_processor_enqueue(proc, blk) == 0);
 
-	assert(block_processor_finish(proc) == 0);
+	assert(sqfs_block_processor_finish(proc) == 0);
 
-	block_processor_destroy(proc);
+	sqfs_block_processor_destroy(proc);
 	cmp->destroy(cmp);
 	return EXIT_SUCCESS;
 }
