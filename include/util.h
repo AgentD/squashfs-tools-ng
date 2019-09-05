@@ -8,6 +8,7 @@
 #define UTIL_H
 
 #include "config.h"
+#include "sqfs/predef.h"
 
 #include <sys/types.h>
 #include <stdint.h>
@@ -52,6 +53,7 @@ typedef struct sparse_map_t {
   on success. Writes to stderr on failure using 'errstr' as a perror style
   error prefix.
 */
+SQFS_INTERNAL
 int write_data(const char *errstr, int fd, const void *data, size_t size);
 
 /*
@@ -60,11 +62,13 @@ int write_data(const char *errstr, int fd, const void *data, size_t size);
   on success. Writes to stderr on failure using 'errstr' as a perror style
   error prefix.
 */
+SQFS_INTERNAL
 int read_data(const char *errstr, int fd, void *buffer, size_t size);
 
 /*
   Similar to read_data but wrapps pread() instead of read().
 */
+SQFS_INTERNAL
 int read_data_at(const char *errstr, off_t location,
 		 int fd, void *buffer, size_t size);
 
@@ -74,6 +78,7 @@ int read_data_at(const char *errstr, off_t location,
   Prints out version information. The program name is extracted from the
   BSD style __progname global variable.
 */
+SQFS_INTERNAL
 void print_version(void);
 
 /*
@@ -82,21 +87,26 @@ void print_version(void);
 
   Returns 0 on success.
 */
+SQFS_INTERNAL
 int mkdir_p(const char *path);
 
 /* Returns 0 on success. On failure, prints error message to stderr. */
+SQFS_INTERNAL
 int pushd(const char *path);
 
 /* Same as pushd, but the string doesn't have to be null-terminated. */
+SQFS_INTERNAL
 int pushdn(const char *path, size_t len);
 
 /* Returns 0 on success. On failure, prints error message to stderr. */
+SQFS_INTERNAL
 int popd(void);
 
 /*
   Write zero bytes to an output file to padd it to specified block size.
   Returns 0 on success. On failure, prints error message to stderr.
 */
+SQFS_INTERNAL
 int padd_file(int outfd, uint64_t size, size_t blocksize);
 
 /*
@@ -107,12 +117,15 @@ int padd_file(int outfd, uint64_t size, size_t blocksize);
 
   Iternally checks for arithmetic overflows when allocating the combined thing.
  */
+SQFS_INTERNAL
 void *alloc_flex(size_t base_size, size_t item_size, size_t nmemb);
 
 /* Basically the same as calloc, but *ALWAYS* does overflow checking */
+SQFS_INTERNAL
 void *alloc_array(size_t item_size, size_t nmemb);
 
 /* allocates len + 1 (for the null-terminator) and does overflow checking */
+SQFS_INTERNAL
 void *alloc_string(size_t len);
 
 #endif /* UTIL_H */

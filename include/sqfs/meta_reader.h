@@ -9,6 +9,7 @@
 
 #include "config.h"
 
+#include "sqfs/predef.h"
 #include "sqfs/compress.h"
 #include "sqfs/data.h"
 
@@ -24,21 +25,24 @@ extern "C" {
    Start offset and limit can be specified to do bounds checking against
    a subregion of the filesystem image.
 */
-sqfs_meta_reader_t *sqfs_meta_reader_create(int fd, sqfs_compressor_t *cmp,
-					    uint64_t start, uint64_t limit);
+SQFS_API sqfs_meta_reader_t *sqfs_meta_reader_create(int fd,
+						     sqfs_compressor_t *cmp,
+						     uint64_t start,
+						     uint64_t limit);
 
-void sqfs_meta_reader_destroy(sqfs_meta_reader_t *m);
-
-/* Returns 0 on success. Internally prints to stderr on failure */
-int sqfs_meta_reader_seek(sqfs_meta_reader_t *m, uint64_t block_start,
-			  size_t offset);
-
-void sqfs_meta_reader_get_position(sqfs_meta_reader_t *m,
-				   uint64_t *block_start,
-				   size_t *offset);
+SQFS_API void sqfs_meta_reader_destroy(sqfs_meta_reader_t *m);
 
 /* Returns 0 on success. Internally prints to stderr on failure */
-int sqfs_meta_reader_read(sqfs_meta_reader_t *m, void *data, size_t size);
+SQFS_API int sqfs_meta_reader_seek(sqfs_meta_reader_t *m, uint64_t block_start,
+				   size_t offset);
+
+SQFS_API void sqfs_meta_reader_get_position(sqfs_meta_reader_t *m,
+					    uint64_t *block_start,
+					    size_t *offset);
+
+/* Returns 0 on success. Internally prints to stderr on failure */
+SQFS_API int sqfs_meta_reader_read(sqfs_meta_reader_t *m, void *data,
+				   size_t size);
 
 #ifdef __cplusplus
 }

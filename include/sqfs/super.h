@@ -9,6 +9,8 @@
 
 #include "config.h"
 
+#include "sqfs/predef.h"
+
 #include <stdint.h>
 #include <stddef.h>
 
@@ -71,14 +73,15 @@ extern "C" {
 #endif
 
 /* Returns 0 on success. Prints error messages to stderr on failure. */
-int sqfs_super_init(sqfs_super_t *super, size_t block_size, uint32_t mtime,
-		    E_SQFS_COMPRESSOR compressor);
+SQFS_API int sqfs_super_init(sqfs_super_t *super, size_t block_size,
+			     uint32_t mtime,
+			     E_SQFS_COMPRESSOR compressor);
 
 /* Returns 0 on success. Prints error messages to stderr on failure. */
-int sqfs_super_write(sqfs_super_t *super, int fd);
+SQFS_API int sqfs_super_write(sqfs_super_t *super, int fd);
 
 /* Returns 0 on success. Prints error messages to stderr on failure. */
-int sqfs_super_read(sqfs_super_t *super, int fd);
+SQFS_API int sqfs_super_read(sqfs_super_t *super, int fd);
 
 #ifdef __cplusplus
 }

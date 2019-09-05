@@ -14,6 +14,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "sqfs/predef.h"
 #include "sqfs/super.h"
 
 typedef struct sqfs_compressor_t sqfs_compressor_t;
@@ -132,16 +133,18 @@ typedef enum {
 extern "C" {
 #endif
 
-int sqfs_compressor_config_init(sqfs_compressor_config_t *cfg,
-				E_SQFS_COMPRESSOR id,
-				size_t block_size, uint16_t flags);
+SQFS_API int sqfs_compressor_config_init(sqfs_compressor_config_t *cfg,
+					 E_SQFS_COMPRESSOR id,
+					 size_t block_size, uint16_t flags);
 
-bool sqfs_compressor_exists(E_SQFS_COMPRESSOR id);
+SQFS_API bool sqfs_compressor_exists(E_SQFS_COMPRESSOR id);
 
+SQFS_API
 sqfs_compressor_t *sqfs_compressor_create(const sqfs_compressor_config_t *cfg);
 
-const char *sqfs_compressor_name_from_id(E_SQFS_COMPRESSOR id);
+SQFS_API const char *sqfs_compressor_name_from_id(E_SQFS_COMPRESSOR id);
 
+SQFS_API
 int sqfs_compressor_id_from_name(const char *name, E_SQFS_COMPRESSOR *out);
 
 #ifdef __cplusplus

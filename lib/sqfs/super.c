@@ -4,6 +4,7 @@
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
+#define SQFS_BUILDING_DLL
 #include "config.h"
 
 #include "sqfs/super.h"

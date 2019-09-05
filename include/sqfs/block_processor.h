@@ -8,6 +8,7 @@
 #define SFQS_BLOCK_PROCESSOR_H
 
 #include "config.h"
+#include "sqfs/predef.h"
 #include "sqfs/compress.h"
 
 enum {
@@ -67,13 +68,14 @@ typedef int (*sqfs_block_cb)(void *user, sqfs_block_t *blk);
 extern "C" {
 #endif
 
+SQFS_API
 sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
 						    sqfs_compressor_t *cmp,
 						    unsigned int num_workers,
 						    void *user,
 						    sqfs_block_cb callback);
 
-void sqfs_block_processor_destroy(sqfs_block_processor_t *proc);
+SQFS_API void sqfs_block_processor_destroy(sqfs_block_processor_t *proc);
 
 /*
   Add a block to be processed. Returns non-zero on error and prints a message
@@ -85,22 +87,22 @@ void sqfs_block_processor_destroy(sqfs_block_processor_t *proc);
   Even on failure, the workers may still be running and
   sqfs_block_processor_finish must be called before cleaning up.
 */
-int sqfs_block_processor_enqueue(sqfs_block_processor_t *proc,
-				 sqfs_block_t *block);
+SQFS_API int sqfs_block_processor_enqueue(sqfs_block_processor_t *proc,
+					  sqfs_block_t *block);
 
 /*
   Wait for the compressor workers to finish. Returns zero on success, non-zero
   if an internal error occoured or one of the block callbacks returned a
   non-zero value.
  */
-int sqfs_block_processor_finish(sqfs_block_processor_t *proc);
+SQFS_API int sqfs_block_processor_finish(sqfs_block_processor_t *proc);
 
 /*
   Convenience function to process a data block. Returns 0 on success,
   prints to stderr on failure.
  */
-int sqfs_block_process(sqfs_block_t *block, sqfs_compressor_t *cmp,
-		       uint8_t *scratch, size_t scratch_size);
+SQFS_API int sqfs_block_process(sqfs_block_t *block, sqfs_compressor_t *cmp,
+				uint8_t *scratch, size_t scratch_size);
 
 #ifdef __cplusplus
 }

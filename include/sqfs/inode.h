@@ -9,6 +9,7 @@
 
 #include "config.h"
 
+#include "sqfs/predef.h"
 #include "sqfs/meta_reader.h"
 #include "sqfs/meta_writer.h"
 
@@ -138,13 +139,14 @@ extern "C" {
 
 /* Inode can be freed with a single free() call.
    The function internally prints error message to stderr on failure. */
+SQFS_API
 sqfs_inode_generic_t *sqfs_meta_reader_read_inode(sqfs_meta_reader_t *ir,
 						  sqfs_super_t *super,
 						  uint64_t block_start,
 						  size_t offset);
 
-int sqfs_meta_writer_write_inode(sqfs_meta_writer_t *iw,
-				 sqfs_inode_generic_t *n);
+SQFS_API int sqfs_meta_writer_write_inode(sqfs_meta_writer_t *iw,
+					  sqfs_inode_generic_t *n);
 
 #ifdef __cplusplus
 }

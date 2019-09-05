@@ -9,6 +9,7 @@
 
 #include "config.h"
 
+#include "sqfs/predef.h"
 #include "sqfs/compress.h"
 
 #include <stdbool.h>
@@ -54,28 +55,31 @@ extern "C" {
 #endif
 
 /* Get a prefix string from the ID or NULL if unknown */
-const char *sqfs_get_xattr_prefix(E_SQFS_XATTR_TYPE id);
+SQFS_API const char *sqfs_get_xattr_prefix(E_SQFS_XATTR_TYPE id);
 
 /* Get id from xattr key prefix or -1 if not supported */
-int sqfs_get_xattr_prefix_id(const char *key);
+SQFS_API int sqfs_get_xattr_prefix_id(const char *key);
 
 /* Check if a given xattr key can be encoded in squashfs at all. */
-bool sqfs_has_xattr(const char *key);
+SQFS_API bool sqfs_has_xattr(const char *key);
 
-void sqfs_xattr_reader_destroy(sqfs_xattr_reader_t *xr);
+SQFS_API void sqfs_xattr_reader_destroy(sqfs_xattr_reader_t *xr);
 
-sqfs_xattr_reader_t *sqfs_xattr_reader_create(int sqfsfd, sqfs_super_t *super,
-					      sqfs_compressor_t *cmp);
+SQFS_API sqfs_xattr_reader_t *sqfs_xattr_reader_create(int sqfsfd,
+						       sqfs_super_t *super,
+						       sqfs_compressor_t *cmp);
 
-int sqfs_xattr_reader_get_desc(sqfs_xattr_reader_t *xr, uint32_t idx,
-			       sqfs_xattr_id_t *desc);
+SQFS_API int sqfs_xattr_reader_get_desc(sqfs_xattr_reader_t *xr, uint32_t idx,
+					sqfs_xattr_id_t *desc);
 
-int sqfs_xattr_reader_seek_kv(sqfs_xattr_reader_t *xr,
-			      const sqfs_xattr_id_t *desc);
+SQFS_API int sqfs_xattr_reader_seek_kv(sqfs_xattr_reader_t *xr,
+				       const sqfs_xattr_id_t *desc);
 
+SQFS_API
 sqfs_xattr_value_t *sqfs_xattr_reader_read_value(sqfs_xattr_reader_t *xr,
 						 const sqfs_xattr_entry_t *key);
 
+SQFS_API
 sqfs_xattr_entry_t *sqfs_xattr_reader_read_key(sqfs_xattr_reader_t *xr);
 
 #ifdef __cplusplus

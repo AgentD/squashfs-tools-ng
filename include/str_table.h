@@ -7,6 +7,8 @@
 #ifndef STR_TABLE_H
 #define STR_TABLE_H
 
+#include "sqfs/predef.h"
+
 typedef struct str_bucket_t {
 	struct str_bucket_t *next;
 	char *str;
@@ -28,22 +30,24 @@ typedef struct {
 
 /* `size` is the number of hash table buckets to use internally.
    Returns 0 on success. Internally writes errors to stderr. */
-int str_table_init(str_table_t *table, size_t size);
+SQFS_INTERNAL int str_table_init(str_table_t *table, size_t size);
 
-void str_table_cleanup(str_table_t *table);
+SQFS_INTERNAL void str_table_cleanup(str_table_t *table);
 
 /* Resolve a string to an incremental, unique ID
    Returns 0 on success. Internally writes errors to stderr. */
+SQFS_INTERNAL
 int str_table_get_index(str_table_t *table, const char *str, size_t *idx);
 
 /* Resolve a unique ID to the string it represents.
    Returns NULL if the ID is unknown, i.e. out of bounds. */
+SQFS_INTERNAL
 const char *str_table_get_string(str_table_t *table, size_t index);
 
-void str_table_reset_ref_count(str_table_t *table);
+SQFS_INTERNAL void str_table_reset_ref_count(str_table_t *table);
 
-void str_table_add_ref(str_table_t *table, size_t index);
+SQFS_INTERNAL void str_table_add_ref(str_table_t *table, size_t index);
 
-size_t str_table_get_ref_count(str_table_t *table, size_t index);
+SQFS_INTERNAL size_t str_table_get_ref_count(str_table_t *table, size_t index);
 
 #endif /* STR_TABLE_H */

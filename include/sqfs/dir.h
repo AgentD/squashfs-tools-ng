@@ -9,6 +9,7 @@
 
 #include "config.h"
 
+#include "sqfs/predef.h"
 #include "sqfs/meta_reader.h"
 #include "sqfs/meta_writer.h"
 
@@ -44,33 +45,34 @@ extern "C" {
 #endif
 
 /* Returns 0 on success. Internally prints to stderr on failure */
-int sqfs_meta_reader_read_dir_header(sqfs_meta_reader_t *m,
-				     sqfs_dir_header_t *hdr);
+SQFS_API int sqfs_meta_reader_read_dir_header(sqfs_meta_reader_t *m,
+					      sqfs_dir_header_t *hdr);
 
 /* Entry can be freed with a single free() call.
    The function internally prints to stderr on failure */
-sqfs_dir_entry_t *sqfs_meta_reader_read_dir_ent(sqfs_meta_reader_t *m);
+SQFS_API sqfs_dir_entry_t *sqfs_meta_reader_read_dir_ent(sqfs_meta_reader_t *m);
 
-sqfs_dir_writer_t *sqfs_dir_writer_create(sqfs_meta_writer_t *dm);
+SQFS_API sqfs_dir_writer_t *sqfs_dir_writer_create(sqfs_meta_writer_t *dm);
 
-void sqfs_dir_writer_destroy(sqfs_dir_writer_t *writer);
+SQFS_API void sqfs_dir_writer_destroy(sqfs_dir_writer_t *writer);
 
-int sqfs_dir_writer_begin(sqfs_dir_writer_t *writer);
+SQFS_API int sqfs_dir_writer_begin(sqfs_dir_writer_t *writer);
 
-int sqfs_dir_writer_add_entry(sqfs_dir_writer_t *writer, const char *name,
-			      uint32_t inode_num, uint64_t inode_ref,
-			      mode_t mode);
+SQFS_API int sqfs_dir_writer_add_entry(sqfs_dir_writer_t *writer,
+				       const char *name,
+				       uint32_t inode_num, uint64_t inode_ref,
+				       mode_t mode);
 
-int sqfs_dir_writer_end(sqfs_dir_writer_t *writer);
+SQFS_API int sqfs_dir_writer_end(sqfs_dir_writer_t *writer);
 
-size_t sqfs_dir_writer_get_size(sqfs_dir_writer_t *writer);
+SQFS_API size_t sqfs_dir_writer_get_size(sqfs_dir_writer_t *writer);
 
-uint64_t sqfs_dir_writer_get_dir_reference(sqfs_dir_writer_t *writer);
+SQFS_API uint64_t sqfs_dir_writer_get_dir_reference(sqfs_dir_writer_t *writer);
 
-size_t sqfs_dir_writer_get_index_size(sqfs_dir_writer_t *writer);
+SQFS_API size_t sqfs_dir_writer_get_index_size(sqfs_dir_writer_t *writer);
 
-int sqfs_dir_writer_write_index(sqfs_dir_writer_t *writer,
-				sqfs_meta_writer_t *im);
+SQFS_API int sqfs_dir_writer_write_index(sqfs_dir_writer_t *writer,
+					 sqfs_meta_writer_t *im);
 
 #ifdef __cplusplus
 }
