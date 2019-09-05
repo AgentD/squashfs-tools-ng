@@ -262,6 +262,29 @@ static int add_sentinel_block(data_writer_t *data, file_info_t *fi,
 	return block_processor_enqueue(data->proc, blk);
 }
 
+static block_t *create_block(file_info_t *fi, int fd, size_t size,
+			     uint32_t flags)
+{
+	block_t *blk = alloc_flex(sizeof(*blk), 1, size);
+
+	if (blk == NULL) {
+		perror(fi->input_file);
+		return NULL;
+	}
+
+	if (fd >= 0) {
+		if (read_data(fi->input_file, fd, blk->data, size)) {
+			free(blk);
+			return NULL;
+		}
+	}
+
+	blk->size = size;
+	blk->user = fi;
+	blk->flags = flags;
+	return blk;
+}
+
 int write_data_from_fd(data_writer_t *data, file_info_t *fi,
 		       int infd, int flags)
 {
@@ -286,7 +309,7 @@ int write_data_from_fd(data_writer_t *data, file_info_t *fi,
 			diff = file_size;
 		}
 
-		blk = create_block(fi->input_file, infd, diff, fi, blk_flags);
+		blk = create_block(fi, infd, diff, blk_flags);
 		if (blk == NULL)
 			return -1;
 

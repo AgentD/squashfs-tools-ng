@@ -95,17 +95,6 @@ int block_processor_enqueue(block_processor_t *proc, block_t *block);
 int block_processor_finish(block_processor_t *proc);
 
 /*
-  Convenience function to create a block structure and optionally fill it with
-  content.
-
-  filename is used for printing error messages. If fd is a valid file
-  descriptor (>= 0), the function attempts to populate the payload data
-  from the input file.
- */
-block_t *create_block(const char *filename, int fd, size_t size,
-		      void *user, uint32_t flags);
-
-/*
   Convenience function to process a data block. Returns 0 on success,
   prints to stderr on failure.
  */

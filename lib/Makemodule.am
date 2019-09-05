@@ -57,7 +57,6 @@ libsquashfs_la_SOURCES += lib/sqfs/readdir.c
 libsquashfs_la_SOURCES += lib/sqfs/xattr.c lib/sqfs/xattr_reader.c
 libsquashfs_la_SOURCES += lib/sqfs/read_table.c
 libsquashfs_la_SOURCES += lib/sqfs/comp/compressor.c lib/sqfs/comp/internal.h
-libsquashfs_la_SOURCES += lib/sqfs/comp/create_block.c
 libsquashfs_la_SOURCES += lib/sqfs/comp/process_block.c
 libsquashfs_la_CPPFLAGS = $(AM_CPPFLAGS)
 libsquashfs_la_CFLAGS = $(AM_CFLAGS) $(PTHREAD_CFLAGS) $(ZLIB_CFLAGS)
