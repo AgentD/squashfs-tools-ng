@@ -46,5 +46,5 @@ void *alloc_string(size_t len)
 		return NULL;
 	}
 
-	return calloc(1, len);
+	return calloc(1, size);
 }
