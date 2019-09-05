@@ -45,18 +45,18 @@ int sqfs_serialize_fstree(int outfd, sqfs_super_t *super, fstree_t *fs,
 			  compressor_t *cmp, id_table_t *idtbl)
 {
 	sqfs_inode_generic_t *inode;
+	sqfs_meta_writer_t *im, *dm;
 	sqfs_dir_writer_t *dirwr;
-	meta_writer_t *im, *dm;
 	uint32_t offset;
 	uint64_t block;
 	int ret = -1;
 	size_t i;
 
-	im = meta_writer_create(outfd, cmp, false);
+	im = sqfs_meta_writer_create(outfd, cmp, false);
 	if (im == NULL)
 		return -1;
 
-	dm = meta_writer_create(outfd, cmp, true);
+	dm = sqfs_meta_writer_create(outfd, cmp, true);
 	if (dm == NULL)
 		goto out_im;
 
@@ -79,10 +79,10 @@ int sqfs_serialize_fstree(int outfd, sqfs_super_t *super, fstree_t *fs,
 				sqfs_dir_writer_get_index_size(dirwr);
 		}
 
-		meta_writer_get_position(im, &block, &offset);
+		sqfs_meta_writer_get_position(im, &block, &offset);
 		fs->inode_table[i]->inode_ref = (block << 16) | offset;
 
-		if (meta_writer_write_inode(im, inode)) {
+		if (sqfs_meta_writer_write_inode(im, inode)) {
 			free(inode);
 			goto out;
 		}
@@ -97,31 +97,31 @@ int sqfs_serialize_fstree(int outfd, sqfs_super_t *super, fstree_t *fs,
 		free(inode);
 	}
 
-	if (meta_writer_flush(im))
+	if (sqfs_meta_writer_flush(im))
 		goto out;
 
-	if (meta_writer_flush(dm))
+	if (sqfs_meta_writer_flush(dm))
 		goto out;
 
 	super->root_inode_ref = fs->root->inode_ref;
 
-	meta_writer_get_position(im, &block, &offset);
+	sqfs_meta_writer_get_position(im, &block, &offset);
 	super->inode_table_start = super->bytes_used;
 	super->bytes_used += block;
 
-	meta_writer_get_position(dm, &block, &offset);
+	sqfs_meta_writer_get_position(dm, &block, &offset);
 	super->directory_table_start = super->bytes_used;
 	super->bytes_used += block;
 
-	if (meta_write_write_to_file(dm))
+	if (sqfs_meta_write_write_to_file(dm))
 		goto out;
 
 	ret = 0;
 out:
 	sqfs_dir_writer_destroy(dirwr);
 out_dm:
-	meta_writer_destroy(dm);
+	sqfs_meta_writer_destroy(dm);
 out_im:
-	meta_writer_destroy(im);
+	sqfs_meta_writer_destroy(im);
 	return ret;
 }

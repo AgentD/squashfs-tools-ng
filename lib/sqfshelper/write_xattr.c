@@ -16,8 +16,8 @@
 #include <string.h>
 #include <stdio.h>
 
-static int write_key(meta_writer_t *mw, const char *key, tree_xattr_t *xattr,
-		     bool value_is_ool)
+static int write_key(sqfs_meta_writer_t *mw, const char *key,
+		     tree_xattr_t *xattr, bool value_is_ool)
 {
 	sqfs_xattr_entry_t kent;
 	int type;
@@ -38,49 +38,49 @@ static int write_key(meta_writer_t *mw, const char *key, tree_xattr_t *xattr,
 	kent.type = htole16(type);
 	kent.size = htole16(strlen(key));
 
-	if (meta_writer_append(mw, &kent, sizeof(kent)))
+	if (sqfs_meta_writer_append(mw, &kent, sizeof(kent)))
 		return -1;
-	if (meta_writer_append(mw, key, strlen(key)))
+	if (sqfs_meta_writer_append(mw, key, strlen(key)))
 		return -1;
 
 	xattr->size += sizeof(sqfs_xattr_entry_t) + strlen(key);
 	return 0;
 }
 
-static int write_value(meta_writer_t *mw, const char *value,
+static int write_value(sqfs_meta_writer_t *mw, const char *value,
 		       tree_xattr_t *xattr, uint64_t *value_ref_out)
 {
 	sqfs_xattr_value_t vent;
 	uint32_t offset;
 	uint64_t block;
 
-	meta_writer_get_position(mw, &block, &offset);
+	sqfs_meta_writer_get_position(mw, &block, &offset);
 	*value_ref_out = (block << 16) | (offset & 0xFFFF);
 
 	vent.size = htole32(strlen(value));
 
-	if (meta_writer_append(mw, &vent, sizeof(vent)))
+	if (sqfs_meta_writer_append(mw, &vent, sizeof(vent)))
 		return -1;
 
-	if (meta_writer_append(mw, value, strlen(value)))
+	if (sqfs_meta_writer_append(mw, value, strlen(value)))
 		return -1;
 
 	xattr->size += sizeof(vent) + strlen(value);
 	return 0;
 }
 
-static int write_value_ool(meta_writer_t *mw, uint64_t location,
+static int write_value_ool(sqfs_meta_writer_t *mw, uint64_t location,
 			   tree_xattr_t *xattr)
 {
 	sqfs_xattr_value_t vent;
 	uint64_t ref;
 
 	vent.size = htole32(sizeof(location));
-	if (meta_writer_append(mw, &vent, sizeof(vent)))
+	if (sqfs_meta_writer_append(mw, &vent, sizeof(vent)))
 		return -1;
 
 	ref = htole64(location);
-	if (meta_writer_append(mw, &ref, sizeof(ref)))
+	if (sqfs_meta_writer_append(mw, &ref, sizeof(ref)))
 		return -1;
 
 	xattr->size += sizeof(vent) + sizeof(ref);
@@ -112,8 +112,8 @@ static bool should_store_ool(fstree_t *fs, const char *value, size_t index)
 	return strlen(value) > sizeof(uint64_t);
 }
 
-static int write_kv_pairs(fstree_t *fs, meta_writer_t *mw, tree_xattr_t *xattr,
-			  uint64_t *ool_locations)
+static int write_kv_pairs(fstree_t *fs, sqfs_meta_writer_t *mw,
+			  tree_xattr_t *xattr, uint64_t *ool_locations)
 {
 	uint32_t key_idx, val_idx;
 	const char *key, *value;
@@ -174,7 +174,7 @@ int write_xattr(int outfd, fstree_t *fs, sqfs_super_t *super,
 	size_t i = 0, count = 0, blocks;
 	sqfs_xattr_id_table_t idtbl;
 	sqfs_xattr_id_t id_ent;
-	meta_writer_t *mw;
+	sqfs_meta_writer_t *mw;
 	tree_xattr_t *it;
 	uint32_t offset;
 
@@ -185,7 +185,7 @@ int write_xattr(int outfd, fstree_t *fs, sqfs_super_t *super,
 	if (ool_locations == NULL)
 		return -1;
 
-	mw = meta_writer_create(outfd, cmp, false);
+	mw = sqfs_meta_writer_create(outfd, cmp, false);
 	if (mw == NULL)
 		goto fail_ool;
 
@@ -193,7 +193,7 @@ int write_xattr(int outfd, fstree_t *fs, sqfs_super_t *super,
 	kv_start = super->bytes_used;
 
 	for (it = fs->xattr; it != NULL; it = it->next) {
-		meta_writer_get_position(mw, &it->block, &it->offset);
+		sqfs_meta_writer_get_position(mw, &it->block, &it->offset);
 		it->size = 0;
 
 		if (write_kv_pairs(fs, mw, it, ool_locations))
@@ -202,11 +202,11 @@ int write_xattr(int outfd, fstree_t *fs, sqfs_super_t *super,
 		++count;
 	}
 
-	if (meta_writer_flush(mw))
+	if (sqfs_meta_writer_flush(mw))
 		goto fail_mw;
 
-	meta_writer_get_position(mw, &block, &offset);
-	meta_writer_reset(mw);
+	sqfs_meta_writer_get_position(mw, &block, &offset);
+	sqfs_meta_writer_reset(mw);
 
 	super->bytes_used += block;
 
@@ -232,10 +232,10 @@ int write_xattr(int outfd, fstree_t *fs, sqfs_super_t *super,
 		id_ent.count = htole32(it->num_attr);
 		id_ent.size = htole32(it->size);
 
-		if (meta_writer_append(mw, &id_ent, sizeof(id_ent)))
+		if (sqfs_meta_writer_append(mw, &id_ent, sizeof(id_ent)))
 			goto fail_tbl;
 
-		meta_writer_get_position(mw, &block, &offset);
+		sqfs_meta_writer_get_position(mw, &block, &offset);
 
 		if (block != id_start) {
 			id_start = block;
@@ -243,10 +243,10 @@ int write_xattr(int outfd, fstree_t *fs, sqfs_super_t *super,
 		}
 	}
 
-	if (meta_writer_flush(mw))
+	if (sqfs_meta_writer_flush(mw))
 		goto fail_tbl;
 
-	meta_writer_get_position(mw, &block, &offset);
+	sqfs_meta_writer_get_position(mw, &block, &offset);
 	super->bytes_used += block;
 
 	/* write offset table */
@@ -267,13 +267,13 @@ int write_xattr(int outfd, fstree_t *fs, sqfs_super_t *super,
 	super->flags &= ~SQFS_FLAG_NO_XATTRS;
 
 	free(tbl);
-	meta_writer_destroy(mw);
+	sqfs_meta_writer_destroy(mw);
 	free(ool_locations);
 	return 0;
 fail_tbl:
 	free(tbl);
 fail_mw:
-	meta_writer_destroy(mw);
+	sqfs_meta_writer_destroy(mw);
 fail_ool:
 	free(ool_locations);
 	return -1;

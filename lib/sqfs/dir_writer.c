@@ -43,7 +43,7 @@ struct sqfs_dir_writer_t {
 	uint64_t dir_ref;
 	size_t dir_size;
 	size_t idx_size;
-	meta_writer_t *dm;
+	sqfs_meta_writer_t *dm;
 };
 
 static int get_type(mode_t mode)
@@ -85,7 +85,7 @@ static void writer_reset(sqfs_dir_writer_t *writer)
 	writer->idx_size = 0;
 }
 
-sqfs_dir_writer_t *sqfs_dir_writer_create(meta_writer_t *dm)
+sqfs_dir_writer_t *sqfs_dir_writer_create(sqfs_meta_writer_t *dm)
 {
 	sqfs_dir_writer_t *writer = calloc(1, sizeof(*writer));
 
@@ -111,7 +111,7 @@ int sqfs_dir_writer_begin(sqfs_dir_writer_t *writer)
 
 	writer_reset(writer);
 
-	meta_writer_get_position(writer->dm, &block, &offset);
+	sqfs_meta_writer_get_position(writer->dm, &block, &offset);
 	writer->dir_ref = (block << 16) | offset;
 	return 0;
 }
@@ -185,7 +185,7 @@ static int add_header(sqfs_dir_writer_t *writer, size_t count,
 	hdr.start_block = htole32(ref->inode_ref >> 16);
 	hdr.inode_number = htole32(ref->inode_num);
 
-	if (meta_writer_append(writer->dm, &hdr, sizeof(hdr)))
+	if (sqfs_meta_writer_append(writer->dm, &hdr, sizeof(hdr)))
 		return -1;
 
 	idx = calloc(1, sizeof(*idx));
@@ -220,7 +220,7 @@ int sqfs_dir_writer_end(sqfs_dir_writer_t *writer)
 	uint64_t block;
 
 	for (it = writer->list; it != NULL; ) {
-		meta_writer_get_position(writer->dm, &block, &offset);
+		sqfs_meta_writer_get_position(writer->dm, &block, &offset);
 		count = get_conseq_entry_count(offset, it);
 
 		if (add_header(writer, count, it, block))
@@ -237,11 +237,15 @@ int sqfs_dir_writer_end(sqfs_dir_writer_t *writer)
 			diff_u16 = (uint16_t *)&ent.inode_diff;
 			*diff_u16 = htole16(*diff_u16);
 
-			if (meta_writer_append(writer->dm, &ent, sizeof(ent)))
+			if (sqfs_meta_writer_append(writer->dm, &ent,
+						    sizeof(ent))) {
 				return -1;
+			}
 
-			if (meta_writer_append(writer->dm, it->name, it->name_len))
+			if (sqfs_meta_writer_append(writer->dm, it->name,
+						    it->name_len)) {
 				return -1;
+			}
 
 			it = it->next;
 		}
@@ -266,7 +270,7 @@ size_t sqfs_dir_writer_get_index_size(sqfs_dir_writer_t *writer)
 }
 
 int sqfs_dir_writer_write_index(sqfs_dir_writer_t *writer,
-				meta_writer_t *im)
+				sqfs_meta_writer_t *im)
 {
 	sqfs_dir_index_t ent;
 	index_ent_t *idx;
@@ -276,11 +280,13 @@ int sqfs_dir_writer_write_index(sqfs_dir_writer_t *writer,
 		ent.index = htole32(idx->index);
 		ent.size = htole32(idx->ent->name_len - 1);
 
-		if (meta_writer_append(im, &ent, sizeof(ent)))
+		if (sqfs_meta_writer_append(im, &ent, sizeof(ent)))
 			return -1;
 
-		if (meta_writer_append(im, idx->ent->name, idx->ent->name_len))
+		if (sqfs_meta_writer_append(im, idx->ent->name,
+					    idx->ent->name_len)) {
 			return -1;
+		}
 	}
 
 	return 0;

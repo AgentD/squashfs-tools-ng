@@ -8,7 +8,7 @@
 
 #include "sqfs/inode.h"
 
-static int write_block_sizes(meta_writer_t *ir, sqfs_inode_generic_t *n)
+static int write_block_sizes(sqfs_meta_writer_t *ir, sqfs_inode_generic_t *n)
 {
 	uint32_t sizes[n->num_file_blocks];
 	size_t i;
@@ -16,11 +16,12 @@ static int write_block_sizes(meta_writer_t *ir, sqfs_inode_generic_t *n)
 	for (i = 0; i < n->num_file_blocks; ++i)
 		sizes[i] = htole32(n->block_sizes[i]);
 
-	return meta_writer_append(ir, sizes,
-				  sizeof(uint32_t) * n->num_file_blocks);
+	return sqfs_meta_writer_append(ir, sizes,
+				       sizeof(uint32_t) * n->num_file_blocks);
 }
 
-int meta_writer_write_inode(meta_writer_t *ir, sqfs_inode_generic_t *n)
+int sqfs_meta_writer_write_inode(sqfs_meta_writer_t *ir,
+				 sqfs_inode_generic_t *n)
 {
 	sqfs_inode_t base;
 
@@ -31,7 +32,7 @@ int meta_writer_write_inode(meta_writer_t *ir, sqfs_inode_generic_t *n)
 	base.mod_time = htole32(n->base.mod_time);
 	base.inode_number = htole32(n->base.inode_number);
 
-	if (meta_writer_append(ir, &base, sizeof(base)))
+	if (sqfs_meta_writer_append(ir, &base, sizeof(base)))
 		return -1;
 
 	switch (n->base.type) {
@@ -43,7 +44,7 @@ int meta_writer_write_inode(meta_writer_t *ir, sqfs_inode_generic_t *n)
 			.offset = htole16(n->data.dir.offset),
 			.parent_inode = htole32(n->data.dir.parent_inode),
 		};
-		return meta_writer_append(ir, &dir, sizeof(dir));
+		return sqfs_meta_writer_append(ir, &dir, sizeof(dir));
 	}
 	case SQFS_INODE_FILE: {
 		sqfs_inode_file_t file = {
@@ -53,7 +54,7 @@ int meta_writer_write_inode(meta_writer_t *ir, sqfs_inode_generic_t *n)
 				htole32(n->data.file.fragment_offset),
 			.file_size = htole32(n->data.file.file_size),
 		};
-		if (meta_writer_append(ir, &file, sizeof(file)))
+		if (sqfs_meta_writer_append(ir, &file, sizeof(file)))
 			return -1;
 		return write_block_sizes(ir, n);
 	}
@@ -62,10 +63,10 @@ int meta_writer_write_inode(meta_writer_t *ir, sqfs_inode_generic_t *n)
 			.nlink = htole32(n->data.slink.nlink),
 			.target_size = htole32(n->data.slink.target_size),
 		};
-		if (meta_writer_append(ir, &slink, sizeof(slink)))
+		if (sqfs_meta_writer_append(ir, &slink, sizeof(slink)))
 			return -1;
-		return meta_writer_append(ir, n->slink_target,
-					  n->data.slink.target_size);
+		return sqfs_meta_writer_append(ir, n->slink_target,
+					       n->data.slink.target_size);
 	}
 	case SQFS_INODE_BDEV:
 	case SQFS_INODE_CDEV: {
@@ -73,14 +74,14 @@ int meta_writer_write_inode(meta_writer_t *ir, sqfs_inode_generic_t *n)
 			.nlink = htole32(n->data.dev.nlink),
 			.devno = htole32(n->data.dev.devno),
 		};
-		return meta_writer_append(ir, &dev, sizeof(dev));
+		return sqfs_meta_writer_append(ir, &dev, sizeof(dev));
 	}
 	case SQFS_INODE_FIFO:
 	case SQFS_INODE_SOCKET: {
 		sqfs_inode_ipc_t ipc = {
 			.nlink = htole32(n->data.ipc.nlink),
 		};
-		return meta_writer_append(ir, &ipc, sizeof(ipc));
+		return sqfs_meta_writer_append(ir, &ipc, sizeof(ipc));
 	}
 	case SQFS_INODE_EXT_DIR: {
 		sqfs_inode_dir_ext_t dir = {
@@ -92,7 +93,7 @@ int meta_writer_write_inode(meta_writer_t *ir, sqfs_inode_generic_t *n)
 			.offset = htole16(n->data.dir_ext.offset),
 			.xattr_idx = htole32(n->data.dir_ext.xattr_idx),
 		};
-		return meta_writer_append(ir, &dir, sizeof(dir));
+		return sqfs_meta_writer_append(ir, &dir, sizeof(dir));
 	}
 	case SQFS_INODE_EXT_FILE: {
 		sqfs_inode_file_ext_t file = {
@@ -105,7 +106,7 @@ int meta_writer_write_inode(meta_writer_t *ir, sqfs_inode_generic_t *n)
 				htole32(n->data.file_ext.fragment_offset),
 			.xattr_idx = htole32(n->data.file_ext.xattr_idx),
 		};
-		if (meta_writer_append(ir, &file, sizeof(file)))
+		if (sqfs_meta_writer_append(ir, &file, sizeof(file)))
 			return -1;
 		return write_block_sizes(ir, n);
 	}
@@ -116,13 +117,13 @@ int meta_writer_write_inode(meta_writer_t *ir, sqfs_inode_generic_t *n)
 		};
 		uint32_t xattr = htole32(n->data.slink_ext.xattr_idx);
 
-		if (meta_writer_append(ir, &slink, sizeof(slink)))
+		if (sqfs_meta_writer_append(ir, &slink, sizeof(slink)))
 			return -1;
-		if (meta_writer_append(ir, n->slink_target,
-				       n->data.slink_ext.target_size)) {
+		if (sqfs_meta_writer_append(ir, n->slink_target,
+					    n->data.slink_ext.target_size)) {
 			return -1;
 		}
-		return meta_writer_append(ir, &xattr, sizeof(xattr));
+		return sqfs_meta_writer_append(ir, &xattr, sizeof(xattr));
 	}
 	case SQFS_INODE_EXT_BDEV:
 	case SQFS_INODE_EXT_CDEV: {
@@ -131,7 +132,7 @@ int meta_writer_write_inode(meta_writer_t *ir, sqfs_inode_generic_t *n)
 			.devno = htole32(n->data.dev_ext.devno),
 			.xattr_idx = htole32(n->data.dev_ext.xattr_idx),
 		};
-		return meta_writer_append(ir, &dev, sizeof(dev));
+		return sqfs_meta_writer_append(ir, &dev, sizeof(dev));
 	}
 	case SQFS_INODE_EXT_FIFO:
 	case SQFS_INODE_EXT_SOCKET: {
@@ -139,7 +140,7 @@ int meta_writer_write_inode(meta_writer_t *ir, sqfs_inode_generic_t *n)
 			.nlink = htole32(n->data.ipc_ext.nlink),
 			.xattr_idx = htole32(n->data.ipc_ext.xattr_idx),
 		};
-		return meta_writer_append(ir, &ipc, sizeof(ipc));
+		return sqfs_meta_writer_append(ir, &ipc, sizeof(ipc));
 	}
 	}
 

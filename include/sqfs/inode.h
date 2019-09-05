@@ -143,7 +143,8 @@ sqfs_inode_generic_t *meta_reader_read_inode(meta_reader_t *ir,
 					     uint64_t block_start,
 					     size_t offset);
 
-int meta_writer_write_inode(meta_writer_t *ir, sqfs_inode_generic_t *n);
+int sqfs_meta_writer_write_inode(sqfs_meta_writer_t *iw,
+				 sqfs_inode_generic_t *n);
 
 #ifdef __cplusplus
 }

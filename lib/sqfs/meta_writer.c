@@ -22,7 +22,7 @@ typedef struct meta_block_t {
 	uint8_t data[SQFS_META_BLOCK_SIZE + 2];
 } meta_block_t;
 
-struct meta_writer_t {
+struct sqfs_meta_writer_t {
 	/* A byte offset into the uncompressed data of the current block */
 	size_t offset;
 
@@ -51,9 +51,10 @@ static int write_block(int fd, meta_block_t *outblk)
 			  outblk->data, count + 2);
 }
 
-meta_writer_t *meta_writer_create(int fd, compressor_t *cmp, bool keep_in_mem)
+sqfs_meta_writer_t *sqfs_meta_writer_create(int fd, compressor_t *cmp,
+					    bool keep_in_mem)
 {
-	meta_writer_t *m = calloc(1, sizeof(*m));
+	sqfs_meta_writer_t *m = calloc(1, sizeof(*m));
 
 	if (m == NULL) {
 		perror("creating meta data writer");
@@ -66,7 +67,7 @@ meta_writer_t *meta_writer_create(int fd, compressor_t *cmp, bool keep_in_mem)
 	return m;
 }
 
-void meta_writer_destroy(meta_writer_t *m)
+void sqfs_meta_writer_destroy(sqfs_meta_writer_t *m)
 {
 	meta_block_t *blk;
 
@@ -79,7 +80,7 @@ void meta_writer_destroy(meta_writer_t *m)
 	free(m);
 }
 
-int meta_writer_flush(meta_writer_t *m)
+int sqfs_meta_writer_flush(sqfs_meta_writer_t *m)
 {
 	meta_block_t *outblk;
 	size_t count;
@@ -129,7 +130,8 @@ int meta_writer_flush(meta_writer_t *m)
 	return ret;
 }
 
-int meta_writer_append(meta_writer_t *m, const void *data, size_t size)
+int sqfs_meta_writer_append(sqfs_meta_writer_t *m, const void *data,
+			    size_t size)
 {
 	size_t diff;
 
@@ -137,7 +139,7 @@ int meta_writer_append(meta_writer_t *m, const void *data, size_t size)
 		diff = sizeof(m->data) - m->offset;
 
 		if (diff == 0) {
-			if (meta_writer_flush(m))
+			if (sqfs_meta_writer_flush(m))
 				return -1;
 			diff = sizeof(m->data);
 		}
@@ -152,25 +154,26 @@ int meta_writer_append(meta_writer_t *m, const void *data, size_t size)
 	}
 
 	if (m->offset == sizeof(m->data))
-		return meta_writer_flush(m);
+		return sqfs_meta_writer_flush(m);
 
 	return 0;
 }
 
-void meta_writer_get_position(const meta_writer_t *m, uint64_t *block_start,
-			      uint32_t *offset)
+void sqfs_meta_writer_get_position(const sqfs_meta_writer_t *m,
+				   uint64_t *block_start,
+				   uint32_t *offset)
 {
 	*block_start = m->block_offset;
 	*offset = m->offset;
 }
 
-void meta_writer_reset(meta_writer_t *m)
+void sqfs_meta_writer_reset(sqfs_meta_writer_t *m)
 {
 	m->block_offset = 0;
 	m->offset = 0;
 }
 
-int meta_write_write_to_file(meta_writer_t *m)
+int sqfs_meta_write_write_to_file(sqfs_meta_writer_t *m)
 {
 	meta_block_t *blk;
 

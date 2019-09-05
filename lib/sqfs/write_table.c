@@ -19,7 +19,7 @@ int sqfs_write_table(int outfd, sqfs_super_t *super, compressor_t *cmp,
 {
 	size_t block_count, list_size, diff, blkidx = 0;
 	uint64_t block, *locations;
-	meta_writer_t *m;
+	sqfs_meta_writer_t *m;
 	uint32_t offset;
 	int ret = -1;
 
@@ -35,29 +35,29 @@ int sqfs_write_table(int outfd, sqfs_super_t *super, compressor_t *cmp,
 	}
 
 	/* Write actual data */
-	m = meta_writer_create(outfd, cmp, false);
+	m = sqfs_meta_writer_create(outfd, cmp, false);
 	if (m == NULL)
 		goto out_idx;
 
 	while (table_size > 0) {
-		meta_writer_get_position(m, &block, &offset);
+		sqfs_meta_writer_get_position(m, &block, &offset);
 		locations[blkidx++] = htole64(super->bytes_used + block);
 
 		diff = SQFS_META_BLOCK_SIZE;
 		if (diff > table_size)
 			diff = table_size;
 
-		if (meta_writer_append(m, data, diff))
+		if (sqfs_meta_writer_append(m, data, diff))
 			goto out;
 
 		data = (const char *)data + diff;
 		table_size -= diff;
 	}
 
-	if (meta_writer_flush(m))
+	if (sqfs_meta_writer_flush(m))
 		goto out;
 
-	meta_writer_get_position(m, &block, &offset);
+	sqfs_meta_writer_get_position(m, &block, &offset);
 	super->bytes_used += block;
 
 	/* write location list */
@@ -72,7 +72,7 @@ int sqfs_write_table(int outfd, sqfs_super_t *super, compressor_t *cmp,
 	/* cleanup */
 	ret = 0;
 out:
-	meta_writer_destroy(m);
+	sqfs_meta_writer_destroy(m);
 out_idx:
 	free(locations);
 	return ret;
