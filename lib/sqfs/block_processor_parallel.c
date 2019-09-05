@@ -17,22 +17,22 @@
 #define MAX_BACKLOG_FACTOR (10)
 
 typedef struct {
-	block_processor_t *shared;
+	sqfs_block_processor_t *shared;
 	compressor_t *cmp;
 	pthread_t thread;
 	uint8_t scratch[];
 } compress_worker_t;
 
-struct block_processor_t {
+struct sqfs_block_processor_t {
 	pthread_mutex_t mtx;
 	pthread_cond_t queue_cond;
 	pthread_cond_t done_cond;
 
 	/* needs rw access by worker and main thread */
-	block_t *queue;
-	block_t *queue_last;
+	sqfs_block_t *queue;
+	sqfs_block_t *queue_last;
 
-	block_t *done;
+	sqfs_block_t *done;
 	bool terminate;
 	size_t backlog;
 
@@ -41,7 +41,7 @@ struct block_processor_t {
 	uint32_t dequeue_id;
 
 	unsigned int num_workers;
-	block_cb cb;
+	sqfs_block_cb cb;
 	void *user;
 	int status;
 
@@ -51,9 +51,10 @@ struct block_processor_t {
 	compress_worker_t *workers[];
 };
 
-static void store_completed_block(block_processor_t *shared, block_t *blk)
+static void store_completed_block(sqfs_block_processor_t *shared,
+				  sqfs_block_t *blk)
 {
-	block_t *it = shared->done, *prev = NULL;
+	sqfs_block_t *it = shared->done, *prev = NULL;
 
 	while (it != NULL) {
 		if (it->sequence_number >= blk->sequence_number)
@@ -74,8 +75,8 @@ static void store_completed_block(block_processor_t *shared, block_t *blk)
 static void *worker_proc(void *arg)
 {
 	compress_worker_t *worker = arg;
-	block_processor_t *shared = worker->shared;
-	block_t *blk = NULL;
+	sqfs_block_processor_t *shared = worker->shared;
+	sqfs_block_t *blk = NULL;
 
 	for (;;) {
 		pthread_mutex_lock(&shared->mtx);
@@ -103,21 +104,21 @@ static void *worker_proc(void *arg)
 			shared->queue_last = NULL;
 		pthread_mutex_unlock(&shared->mtx);
 
-		if (process_block(blk, worker->cmp, worker->scratch,
-				  shared->max_block_size)) {
-			blk->flags |= BLK_COMPRESS_ERROR;
+		if (sqfs_block_process(blk, worker->cmp, worker->scratch,
+				       shared->max_block_size)) {
+			blk->flags |= SQFS_BLK_COMPRESS_ERROR;
 		}
 	}
 	return NULL;
 }
 
-block_processor_t *block_processor_create(size_t max_block_size,
-					  compressor_t *cmp,
-					  unsigned int num_workers,
-					  void *user,
-					  block_cb callback)
+sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
+						    compressor_t *cmp,
+						    unsigned int num_workers,
+						    void *user,
+						    sqfs_block_cb callback)
 {
-	block_processor_t *proc;
+	sqfs_block_processor_t *proc;
 	unsigned int i;
 	int ret;
 
@@ -210,10 +211,10 @@ fail_free:
 	return NULL;
 }
 
-void block_processor_destroy(block_processor_t *proc)
+void sqfs_block_processor_destroy(sqfs_block_processor_t *proc)
 {
+	sqfs_block_t *blk;
 	unsigned int i;
-	block_t *blk;
 
 	pthread_mutex_lock(&proc->mtx);
 	proc->terminate = true;
@@ -246,15 +247,16 @@ void block_processor_destroy(block_processor_t *proc)
 	free(proc);
 }
 
-static int process_completed_blocks(block_processor_t *proc, block_t *queue)
+static int process_completed_blocks(sqfs_block_processor_t *proc,
+				    sqfs_block_t *queue)
 {
-	block_t *it;
+	sqfs_block_t *it;
 
 	while (queue != NULL) {
 		it = queue;
 		queue = queue->next;
 
-		if (it->flags & BLK_COMPRESS_ERROR) {
+		if (it->flags & SQFS_BLK_COMPRESS_ERROR) {
 			proc->status = -1;
 		} else {
 			if (proc->cb(proc->user, it))
@@ -267,16 +269,17 @@ static int process_completed_blocks(block_processor_t *proc, block_t *queue)
 	return proc->status;
 }
 
-int block_processor_enqueue(block_processor_t *proc, block_t *block)
+int sqfs_block_processor_enqueue(sqfs_block_processor_t *proc,
+				 sqfs_block_t *block)
 {
-	block_t *queue = NULL, *it, *prev;
+	sqfs_block_t *queue = NULL, *it, *prev;
 
 	block->sequence_number = proc->enqueue_id++;
 	block->next = NULL;
 
 	pthread_mutex_lock(&proc->mtx);
-	if ((block->flags & BLK_DONT_COMPRESS) &&
-	    (block->flags & BLK_DONT_CHECKSUM)) {
+	if ((block->flags & SQFS_BLK_DONT_COMPRESS) &&
+	    (block->flags & SQFS_BLK_DONT_CHECKSUM)) {
 		store_completed_block(proc, block);
 	} else {
 		while (proc->backlog > proc->num_workers * MAX_BACKLOG_FACTOR)
@@ -313,9 +316,9 @@ int block_processor_enqueue(block_processor_t *proc, block_t *block)
 	return process_completed_blocks(proc, queue);
 }
 
-int block_processor_finish(block_processor_t *proc)
+int sqfs_block_processor_finish(sqfs_block_processor_t *proc)
 {
-	block_t *queue, *it;
+	sqfs_block_t *queue, *it;
 
 	pthread_mutex_lock(&proc->mtx);
 	while (proc->backlog > 0)

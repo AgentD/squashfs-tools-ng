@@ -19,7 +19,7 @@
 #include <zlib.h>
 
 struct data_writer_t {
-	block_t *frag_block;
+	sqfs_block_t *frag_block;
 	sqfs_fragment_t *fragments;
 	size_t num_fragments;
 	size_t max_fragments;
@@ -28,7 +28,7 @@ struct data_writer_t {
 	uint64_t bytes_written;
 	off_t start;
 
-	block_processor_t *proc;
+	sqfs_block_processor_t *proc;
 	compressor_t *cmp;
 	file_info_t *list;
 	sqfs_super_t *super;
@@ -36,10 +36,10 @@ struct data_writer_t {
 };
 
 enum {
-	BLK_FIRST_BLOCK = BLK_USER,
-	BLK_LAST_BLOCK = BLK_USER << 1,
-	BLK_ALLIGN = BLK_USER << 2,
-	BLK_FRAGMENT_BLOCK = BLK_USER << 3,
+	BLK_FIRST_BLOCK = SQFS_BLK_USER,
+	BLK_LAST_BLOCK = SQFS_BLK_USER << 1,
+	BLK_ALLIGN = SQFS_BLK_USER << 2,
+	BLK_FRAGMENT_BLOCK = SQFS_BLK_USER << 3,
 };
 
 static int save_position(data_writer_t *data)
@@ -87,7 +87,7 @@ static int allign_file(data_writer_t *data)
 	return 0;
 }
 
-static int block_callback(void *user, block_t *blk)
+static int block_callback(void *user, sqfs_block_t *blk)
 {
 	file_info_t *fi = blk->user;
 	data_writer_t *data = user;
@@ -106,7 +106,7 @@ static int block_callback(void *user, block_t *blk)
 
 	if (blk->size != 0) {
 		out = blk->size;
-		if (!(blk->flags & BLK_IS_COMPRESSED))
+		if (!(blk->flags & SQFS_BLK_IS_COMPRESSED))
 			out |= 1 << 24;
 
 		if (blk->flags & BLK_FRAGMENT_BLOCK) {
@@ -172,12 +172,12 @@ static int flush_fragment_block(data_writer_t *data)
 
 	data->frag_block->index = data->num_fragments++;
 
-	ret = block_processor_enqueue(data->proc, data->frag_block);
+	ret = sqfs_block_processor_enqueue(data->proc, data->frag_block);
 	data->frag_block = NULL;
 	return ret;
 }
 
-static int store_fragment(data_writer_t *data, block_t *frag)
+static int store_fragment(data_writer_t *data, sqfs_block_t *frag)
 {
 	file_info_t *fi = frag->user;
 	size_t size;
@@ -192,7 +192,7 @@ static int store_fragment(data_writer_t *data, block_t *frag)
 	}
 
 	if (data->frag_block == NULL) {
-		size = sizeof(block_t) + data->super->block_size;
+		size = sizeof(sqfs_block_t) + data->super->block_size;
 
 		data->frag_block = calloc(1, size);
 		if (data->frag_block == NULL) {
@@ -200,14 +200,14 @@ static int store_fragment(data_writer_t *data, block_t *frag)
 			goto fail;
 		}
 
-		data->frag_block->flags = BLK_DONT_CHECKSUM;
+		data->frag_block->flags = SQFS_BLK_DONT_CHECKSUM;
 		data->frag_block->flags |= BLK_FRAGMENT_BLOCK;
 	}
 
 	fi->fragment_offset = data->frag_block->size;
 	fi->fragment = data->num_fragments;
 
-	data->frag_block->flags |= (frag->flags & BLK_DONT_COMPRESS);
+	data->frag_block->flags |= (frag->flags & SQFS_BLK_DONT_COMPRESS);
 	memcpy(data->frag_block->data + data->frag_block->size,
 	       frag->data, frag->size);
 
@@ -224,7 +224,7 @@ static bool is_zero_block(unsigned char *ptr, size_t size)
 	return ptr[0] == 0 && memcmp(ptr, ptr + 1, size - 1) == 0;
 }
 
-static int handle_fragment(data_writer_t *data, block_t *blk)
+static int handle_fragment(data_writer_t *data, sqfs_block_t *blk)
 {
 	file_info_t *fi = blk->user, *ref;
 
@@ -247,7 +247,7 @@ static int handle_fragment(data_writer_t *data, block_t *blk)
 static int add_sentinel_block(data_writer_t *data, file_info_t *fi,
 			      uint32_t flags)
 {
-	block_t *blk = calloc(1, sizeof(*blk));
+	sqfs_block_t *blk = calloc(1, sizeof(*blk));
 
 	if (blk == NULL) {
 		perror("creating sentinel block");
@@ -255,15 +255,15 @@ static int add_sentinel_block(data_writer_t *data, file_info_t *fi,
 	}
 
 	blk->user = fi;
-	blk->flags = BLK_DONT_COMPRESS | BLK_DONT_CHECKSUM | flags;
+	blk->flags = SQFS_BLK_DONT_COMPRESS | SQFS_BLK_DONT_CHECKSUM | flags;
 
-	return block_processor_enqueue(data->proc, blk);
+	return sqfs_block_processor_enqueue(data->proc, blk);
 }
 
-static block_t *create_block(file_info_t *fi, int fd, size_t size,
-			     uint32_t flags)
+static sqfs_block_t *create_block(file_info_t *fi, int fd, size_t size,
+				  uint32_t flags)
 {
-	block_t *blk = alloc_flex(sizeof(*blk), 1, size);
+	sqfs_block_t *blk = alloc_flex(sizeof(*blk), 1, size);
 
 	if (blk == NULL) {
 		perror(fi->input_file);
@@ -289,10 +289,10 @@ int write_data_from_fd(data_writer_t *data, file_info_t *fi,
 	uint32_t blk_flags = BLK_FIRST_BLOCK;
 	uint64_t file_size = fi->size;
 	size_t diff, i = 0;
-	block_t *blk;
+	sqfs_block_t *blk;
 
 	if (flags & DW_DONT_COMPRESS)
-		blk_flags |= BLK_DONT_COMPRESS;
+		blk_flags |= SQFS_BLK_DONT_COMPRESS;
 
 	if (flags & DW_ALLIGN_DEVBLK)
 		blk_flags |= BLK_ALLIGN;
@@ -336,7 +336,7 @@ int write_data_from_fd(data_writer_t *data, file_info_t *fi,
 			if (handle_fragment(data, blk))
 				return -1;
 		} else {
-			if (block_processor_enqueue(data->proc, blk))
+			if (sqfs_block_processor_enqueue(data->proc, blk))
 				return -1;
 
 			blk_flags &= ~BLK_FIRST_BLOCK;
@@ -383,7 +383,7 @@ fail_map:
 	return -1;
 }
 
-static int get_sparse_block(block_t *blk, file_info_t *fi, int infd,
+static int get_sparse_block(sqfs_block_t *blk, file_info_t *fi, int infd,
 			    sparse_map_t **sparse_map, uint64_t offset,
 			    size_t diff)
 {
@@ -418,14 +418,14 @@ int write_data_from_fd_condensed(data_writer_t *data, file_info_t *fi,
 {
 	uint32_t blk_flags = BLK_FIRST_BLOCK;
 	size_t diff, i = 0;
+	sqfs_block_t *blk;
 	uint64_t offset;
-	block_t *blk;
 
 	if (check_map_valid(map, fi))
 		return -1;
 
 	if (flags & DW_DONT_COMPRESS)
-		blk_flags |= BLK_DONT_COMPRESS;
+		blk_flags |= SQFS_BLK_DONT_COMPRESS;
 
 	if (flags & DW_ALLIGN_DEVBLK)
 		blk_flags |= BLK_ALLIGN;
@@ -471,7 +471,7 @@ int write_data_from_fd_condensed(data_writer_t *data, file_info_t *fi,
 			if (handle_fragment(data, blk))
 				return -1;
 		} else {
-			if (block_processor_enqueue(data->proc, blk))
+			if (sqfs_block_processor_enqueue(data->proc, blk))
 				return -1;
 
 			blk_flags &= ~BLK_FIRST_BLOCK;
@@ -499,8 +499,9 @@ data_writer_t *data_writer_create(sqfs_super_t *super, compressor_t *cmp,
 		return NULL;
 	}
 
-	data->proc = block_processor_create(super->block_size, cmp, num_jobs,
-					    data, block_callback);
+	data->proc = sqfs_block_processor_create(super->block_size, cmp,
+						 num_jobs, data,
+						 block_callback);
 	data->cmp = cmp;
 	data->super = super;
 	data->outfd = outfd;
@@ -510,7 +511,7 @@ data_writer_t *data_writer_create(sqfs_super_t *super, compressor_t *cmp,
 
 void data_writer_destroy(data_writer_t *data)
 {
-	block_processor_destroy(data->proc);
+	sqfs_block_processor_destroy(data->proc);
 	free(data->fragments);
 	free(data);
 }
@@ -545,5 +546,5 @@ int data_writer_sync(data_writer_t *data)
 			return -1;
 	}
 
-	return block_processor_finish(data->proc);
+	return sqfs_block_processor_finish(data->proc);
 }

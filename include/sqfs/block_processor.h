@@ -4,32 +4,32 @@
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
-#ifndef BLOCK_PROCESSOR_H
-#define BLOCK_PROCESSOR_H
+#ifndef SFQS_BLOCK_PROCESSOR_H
+#define SFQS_BLOCK_PROCESSOR_H
 
 #include "config.h"
 #include "sqfs/compress.h"
 
 enum {
 	/* only calculate checksum, do NOT compress the data */
-	BLK_DONT_COMPRESS = 0x0001,
+	SQFS_BLK_DONT_COMPRESS = 0x0001,
 
 	/* set by compressor worker if the block was actually compressed */
-	BLK_IS_COMPRESSED = 0x0002,
+	SQFS_BLK_IS_COMPRESSED = 0x0002,
 
 	/* do not calculate block checksum */
-	BLK_DONT_CHECKSUM = 0x0004,
+	SQFS_BLK_DONT_CHECKSUM = 0x0004,
 
 	/* set by compressor worker if compression failed */
-	BLK_COMPRESS_ERROR = 0x0008,
+	SQFS_BLK_COMPRESS_ERROR = 0x0008,
 
 	/* first user setable block flag */
-	BLK_USER = 0x0080
+	SQFS_BLK_USER = 0x0080
 };
 
-typedef struct block_t {
+typedef struct sqfs_block_t {
 	/* used internally, ignored and overwritten when enqueueing blocks */
-	struct block_t *next;
+	struct sqfs_block_t *next;
 	uint32_t sequence_number;
 
 	/* Size of the data area */
@@ -49,9 +49,9 @@ typedef struct block_t {
 
 	/* raw data to be processed */
 	uint8_t data[];
-} block_t;
+} sqfs_block_t;
 
-typedef struct block_processor_t block_processor_t;
+typedef struct sqfs_block_processor_t sqfs_block_processor_t;
 
 /*
   Gets called for each processed block. May be called from a different thread
@@ -61,19 +61,19 @@ typedef struct block_processor_t block_processor_t;
 
   A non-zero return value is interpreted as fatal error.
  */
-typedef int (*block_cb)(void *user, block_t *blk);
+typedef int (*sqfs_block_cb)(void *user, sqfs_block_t *blk);
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-block_processor_t *block_processor_create(size_t max_block_size,
-					  compressor_t *cmp,
-					  unsigned int num_workers,
-					  void *user,
-					  block_cb callback);
+sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
+						    compressor_t *cmp,
+						    unsigned int num_workers,
+						    void *user,
+						    sqfs_block_cb callback);
 
-void block_processor_destroy(block_processor_t *proc);
+void sqfs_block_processor_destroy(sqfs_block_processor_t *proc);
 
 /*
   Add a block to be processed. Returns non-zero on error and prints a message
@@ -83,26 +83,27 @@ void block_processor_destroy(block_processor_t *proc);
   a after processing and calling the block callback.
 
   Even on failure, the workers may still be running and
-  block_processor_finish must be called before cleaning up.
+  sqfs_block_processor_finish must be called before cleaning up.
 */
-int block_processor_enqueue(block_processor_t *proc, block_t *block);
+int sqfs_block_processor_enqueue(sqfs_block_processor_t *proc,
+				 sqfs_block_t *block);
 
 /*
   Wait for the compressor workers to finish. Returns zero on success, non-zero
   if an internal error occoured or one of the block callbacks returned a
   non-zero value.
  */
-int block_processor_finish(block_processor_t *proc);
+int sqfs_block_processor_finish(sqfs_block_processor_t *proc);
 
 /*
   Convenience function to process a data block. Returns 0 on success,
   prints to stderr on failure.
  */
-int process_block(block_t *block, compressor_t *cmp,
-		  uint8_t *scratch, size_t scratch_size);
+int sqfs_block_process(sqfs_block_t *block, compressor_t *cmp,
+		       uint8_t *scratch, size_t scratch_size);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* BLOCK_PROCESSOR_H */
+#endif /* SFQS_BLOCK_PROCESSOR_H */

@@ -13,24 +13,26 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-struct block_processor_t {
+struct sqfs_block_processor_t {
 	size_t max_block_size;
 	compressor_t *cmp;
-	block_cb cb;
+	sqfs_block_cb cb;
 	void *user;
 	int status;
 
 	uint8_t scratch[];
 };
 
-block_processor_t *block_processor_create(size_t max_block_size,
-					  compressor_t *cmp,
-					  unsigned int num_workers,
-					  void *user,
-					  block_cb callback)
+sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
+						    compressor_t *cmp,
+						    unsigned int num_workers,
+						    void *user,
+						    sqfs_block_cb callback)
 {
-	block_processor_t *proc = alloc_flex(sizeof(*proc), 1, max_block_size);
+	sqfs_block_processor_t *proc;
 	(void)num_workers;
+
+	proc = alloc_flex(sizeof(*proc), 1, max_block_size);
 
 	if (proc == NULL) {
 		perror("Creating block processor");
@@ -44,15 +46,16 @@ block_processor_t *block_processor_create(size_t max_block_size,
 	return proc;
 }
 
-void block_processor_destroy(block_processor_t *proc)
+void sqfs_block_processor_destroy(sqfs_block_processor_t *proc)
 {
 	free(proc);
 }
 
-int block_processor_enqueue(block_processor_t *proc, block_t *block)
+int sqfs_block_processor_enqueue(sqfs_block_processor_t *proc,
+				 sqfs_block_t *block)
 {
-	if (process_block(block, proc->cmp,
-			  proc->scratch, proc->max_block_size))
+	if (sqfs_block_process(block, proc->cmp,
+			       proc->scratch, proc->max_block_size))
 		goto fail;
 
 	if (proc->cb(proc->user, block))
@@ -66,7 +69,7 @@ fail:
 	return -1;
 }
 
-int block_processor_finish(block_processor_t *proc)
+int sqfs_block_processor_finish(sqfs_block_processor_t *proc)
 {
 	return proc->status;
 }
