@@ -7,7 +7,6 @@
 #ifndef SFQS_BLOCK_PROCESSOR_H
 #define SFQS_BLOCK_PROCESSOR_H
 
-#include "config.h"
 #include "sqfs/predef.h"
 #include "sqfs/compress.h"
 

@@ -7,8 +7,6 @@
 #ifndef SQFS_INODE_H
 #define SQFS_INODE_H
 
-#include "config.h"
-
 #include "sqfs/predef.h"
 #include "sqfs/meta_reader.h"
 #include "sqfs/meta_writer.h"

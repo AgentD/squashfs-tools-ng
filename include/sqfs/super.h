@@ -7,8 +7,6 @@
 #ifndef SQFS_SUPER_H
 #define SQFS_SUPER_H
 
-#include "config.h"
-
 #include "sqfs/predef.h"
 
 #define SQFS_MAGIC 0x73717368

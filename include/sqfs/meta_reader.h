@@ -7,8 +7,6 @@
 #ifndef SQFS_META_READER_H
 #define SQFS_META_READER_H
 
-#include "config.h"
-
 #include "sqfs/predef.h"
 #include "sqfs/compress.h"
 #include "sqfs/data.h"

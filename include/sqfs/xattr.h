@@ -7,8 +7,6 @@
 #ifndef SQFS_XATTR_H
 #define SQFS_XATTR_H
 
-#include "config.h"
-
 #include "sqfs/predef.h"
 #include "sqfs/compress.h"
 

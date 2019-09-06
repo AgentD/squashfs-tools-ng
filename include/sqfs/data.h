@@ -7,8 +7,6 @@
 #ifndef SQFS_DATA_H
 #define SQFS_DATA_H
 
-#include "config.h"
-
 #include "sqfs/predef.h"
 
 #define SQFS_META_BLOCK_SIZE 8192

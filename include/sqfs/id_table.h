@@ -7,8 +7,6 @@
 #ifndef SQFS_ID_TABLE_H
 #define SQFS_ID_TABLE_H
 
-#include "config.h"
-
 #include "sqfs/predef.h"
 #include "sqfs/compress.h"
 

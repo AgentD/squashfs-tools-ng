@@ -7,8 +7,6 @@
 #ifndef SQFS_META_WRITER_H
 #define SQFS_META_WRITER_H
 
-#include "config.h"
-
 #include "sqfs/predef.h"
 #include "sqfs/compress.h"
 #include "sqfs/id_table.h"

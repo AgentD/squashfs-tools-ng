@@ -7,8 +7,6 @@
 #ifndef SQFS_COMPRESS_H
 #define SQFS_COMPRESS_H
 
-#include "config.h"
-
 #include "sqfs/predef.h"
 #include "sqfs/super.h"
 
