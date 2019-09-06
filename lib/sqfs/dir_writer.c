@@ -7,7 +7,9 @@
 #define SQFS_BUILDING_DLL
 #include "config.h"
 
+#include "sqfs/meta_writer.h"
 #include "sqfs/inode.h"
+#include "sqfs/data.h"
 #include "sqfs/dir.h"
 #include "util.h"
 

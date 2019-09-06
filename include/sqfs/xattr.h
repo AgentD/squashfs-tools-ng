@@ -8,7 +8,6 @@
 #define SQFS_XATTR_H
 
 #include "sqfs/predef.h"
-#include "sqfs/compress.h"
 
 typedef enum {
 	SQFS_XATTR_USER = 0,
@@ -41,8 +40,6 @@ typedef struct {
 	uint32_t xattr_ids;
 	uint32_t unused;
 } sqfs_xattr_id_table_t;
-
-typedef struct sqfs_xattr_reader_t sqfs_xattr_reader_t;
 
 #ifdef __cplusplus
 extern "C" {

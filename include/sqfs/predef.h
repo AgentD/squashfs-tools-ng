@@ -38,4 +38,32 @@
 	#endif
 #endif
 
+typedef struct sqfs_block_t sqfs_block_t;
+typedef struct sqfs_block_processor_t sqfs_block_processor_t;
+typedef struct sqfs_compressor_config_t sqfs_compressor_config_t;
+typedef struct sqfs_compressor_t sqfs_compressor_t;
+typedef struct sqfs_dir_writer_t sqfs_dir_writer_t;
+typedef struct sqfs_id_table_t sqfs_id_table_t;
+typedef struct sqfs_meta_reader_t sqfs_meta_reader_t;
+typedef struct sqfs_meta_writer_t sqfs_meta_writer_t;
+typedef struct sqfs_xattr_reader_t sqfs_xattr_reader_t;
+
+typedef struct sqfs_fragment_t sqfs_fragment_t;
+typedef struct sqfs_dir_header_t sqfs_dir_header_t;
+typedef struct sqfs_dir_entry_t sqfs_dir_entry_t;
+typedef struct sqfs_dir_index_t sqfs_dir_index_t;
+typedef struct sqfs_inode_t sqfs_inode_t;
+typedef struct sqfs_inode_dev_t sqfs_inode_dev_t;
+typedef struct sqfs_inode_dev_ext_t sqfs_inode_dev_ext_t;
+typedef struct sqfs_inode_ipc_t sqfs_inode_ipc_t;
+typedef struct sqfs_inode_ipc_ext_t sqfs_inode_ipc_ext_t;
+typedef struct sqfs_inode_slink_t sqfs_inode_slink_t;
+typedef struct sqfs_inode_slink_ext_t sqfs_inode_slink_ext_t;
+typedef struct sqfs_inode_file_t sqfs_inode_file_t;
+typedef struct sqfs_inode_file_ext_t sqfs_inode_file_ext_t;
+typedef struct sqfs_inode_dir_t sqfs_inode_dir_t;
+typedef struct sqfs_inode_dir_ext_t sqfs_inode_dir_ext_t;
+typedef struct sqfs_inode_generic_t sqfs_inode_generic_t;
+typedef struct sqfs_super_t sqfs_super_t;
+
 #endif /* SQFS_PREDEF_H */

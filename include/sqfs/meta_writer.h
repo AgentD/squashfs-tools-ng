@@ -8,11 +8,6 @@
 #define SQFS_META_WRITER_H
 
 #include "sqfs/predef.h"
-#include "sqfs/compress.h"
-#include "sqfs/id_table.h"
-#include "sqfs/data.h"
-
-typedef struct sqfs_meta_writer_t sqfs_meta_writer_t;
 
 #ifdef __cplusplus
 extern "C" {

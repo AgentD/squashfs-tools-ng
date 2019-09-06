@@ -15,10 +15,10 @@
 #define SQFS_ON_DISK_BLOCK_SIZE(size) ((size) & ((1 << 24) - 1))
 #define SQFS_IS_SPARSE_BLOCK(size) (SQFS_ON_DISK_BLOCK_SIZE(size) == 0)
 
-typedef struct {
+struct sqfs_fragment_t {
 	uint64_t start_offset;
 	uint32_t size;
 	uint32_t pad0;
-} sqfs_fragment_t;
+};
 
 #endif /* SQFS_DATA_H */

@@ -7,6 +7,7 @@
 #define SQFS_BUILDING_DLL
 #include "config.h"
 
+#include "sqfs/meta_writer.h"
 #include "sqfs/inode.h"
 
 static int write_block_sizes(sqfs_meta_writer_t *ir, sqfs_inode_generic_t *n)

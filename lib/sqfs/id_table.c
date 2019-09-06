@@ -8,6 +8,7 @@
 #include "config.h"
 
 #include "sqfs/id_table.h"
+#include "sqfs/super.h"
 #include "sqfs/table.h"
 
 #include <stdlib.h>

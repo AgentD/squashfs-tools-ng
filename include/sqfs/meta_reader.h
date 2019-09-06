@@ -8,10 +8,6 @@
 #define SQFS_META_READER_H
 
 #include "sqfs/predef.h"
-#include "sqfs/compress.h"
-#include "sqfs/data.h"
-
-typedef struct sqfs_meta_reader_t sqfs_meta_reader_t;
 
 #ifdef __cplusplus
 extern "C" {

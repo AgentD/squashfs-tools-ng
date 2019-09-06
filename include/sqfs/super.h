@@ -15,7 +15,7 @@
 #define SQFS_DEVBLK_SIZE 4096
 #define SQFS_DEFAULT_BLOCK_SIZE 131072
 
-typedef struct {
+struct sqfs_super_t {
 	uint32_t magic;
 	uint32_t inode_count;
 	uint32_t modification_time;
@@ -35,7 +35,7 @@ typedef struct {
 	uint64_t directory_table_start;
 	uint64_t fragment_table_start;
 	uint64_t export_table_start;
-} __attribute__((packed)) sqfs_super_t;
+};
 
 typedef enum {
 	SQFS_COMP_GZIP = 1,

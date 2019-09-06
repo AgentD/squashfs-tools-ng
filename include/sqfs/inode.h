@@ -8,8 +8,6 @@
 #define SQFS_INODE_H
 
 #include "sqfs/predef.h"
-#include "sqfs/meta_reader.h"
-#include "sqfs/meta_writer.h"
 
 typedef enum {
 	SQFS_INODE_DIR = 1,
@@ -28,57 +26,57 @@ typedef enum {
 	SQFS_INODE_EXT_SOCKET = 14,
 } E_SQFS_INODE_TYPE;
 
-typedef struct {
+struct sqfs_inode_t {
 	uint16_t type;
 	uint16_t mode;
 	uint16_t uid_idx;
 	uint16_t gid_idx;
 	uint32_t mod_time;
 	uint32_t inode_number;
-} sqfs_inode_t;
+};
 
-typedef struct {
+struct sqfs_inode_dev_t {
 	uint32_t nlink;
 	uint32_t devno;
-} sqfs_inode_dev_t;
+};
 
-typedef struct {
+struct sqfs_inode_dev_ext_t {
 	uint32_t nlink;
 	uint32_t devno;
 	uint32_t xattr_idx;
-} sqfs_inode_dev_ext_t;
+};
 
-typedef struct {
+struct sqfs_inode_ipc_t {
 	uint32_t nlink;
-} sqfs_inode_ipc_t;
+};
 
-typedef struct {
+struct sqfs_inode_ipc_ext_t {
 	uint32_t nlink;
 	uint32_t xattr_idx;
-} sqfs_inode_ipc_ext_t;
+};
 
-typedef struct {
+struct sqfs_inode_slink_t {
 	uint32_t nlink;
 	uint32_t target_size;
 	/*uint8_t target[];*/
-} sqfs_inode_slink_t;
+};
 
-typedef struct {
+struct sqfs_inode_slink_ext_t {
 	uint32_t nlink;
 	uint32_t target_size;
 	/*uint8_t target[];*/
 	uint32_t xattr_idx;
-} sqfs_inode_slink_ext_t;
+};
 
-typedef struct {
+struct sqfs_inode_file_t {
 	uint32_t blocks_start;
 	uint32_t fragment_index;
 	uint32_t fragment_offset;
 	uint32_t file_size;
 	/*uint32_t block_sizes[];*/
-} sqfs_inode_file_t;
+};
 
-typedef struct {
+struct sqfs_inode_file_ext_t {
 	uint64_t blocks_start;
 	uint64_t file_size;
 	uint64_t sparse;
@@ -87,17 +85,17 @@ typedef struct {
 	uint32_t fragment_offset;
 	uint32_t xattr_idx;
 	/*uint32_t block_sizes[];*/
-} sqfs_inode_file_ext_t;
+};
 
-typedef struct {
+struct sqfs_inode_dir_t {
 	uint32_t start_block;
 	uint32_t nlink;
 	uint16_t size;
 	uint16_t offset;
 	uint32_t parent_inode;
-} sqfs_inode_dir_t;
+};
 
-typedef struct {
+struct sqfs_inode_dir_ext_t {
 	uint32_t nlink;
 	uint32_t size;
 	uint32_t start_block;
@@ -105,9 +103,9 @@ typedef struct {
 	uint16_t inodex_count;
 	uint16_t offset;
 	uint32_t xattr_idx;
-} sqfs_inode_dir_ext_t;
+};
 
-typedef struct {
+struct sqfs_inode_generic_t {
 	sqfs_inode_t base;
 	char *slink_target;
 	uint32_t *block_sizes;
@@ -127,7 +125,7 @@ typedef struct {
 	} data;
 
 	uint8_t extra[];
-} sqfs_inode_generic_t;
+};
 
 #ifdef __cplusplus
 extern "C" {

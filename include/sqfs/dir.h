@@ -8,33 +8,29 @@
 #define SQFS_DIR_H
 
 #include "sqfs/predef.h"
-#include "sqfs/meta_reader.h"
-#include "sqfs/meta_writer.h"
 
 #define SQFS_MAX_DIR_ENT 256
 
-typedef struct {
+struct sqfs_dir_header_t {
 	uint32_t count;
 	uint32_t start_block;
 	uint32_t inode_number;
-} sqfs_dir_header_t;
+};
 
-typedef struct {
+struct sqfs_dir_entry_t {
 	uint16_t offset;
 	int16_t inode_diff;
 	uint16_t type;
 	uint16_t size;
 	uint8_t name[];
-} sqfs_dir_entry_t;
+};
 
-typedef struct {
+struct sqfs_dir_index_t {
 	uint32_t index;
 	uint32_t start_block;
 	uint32_t size;
 	uint8_t name[];
-} sqfs_dir_index_t;
-
-typedef struct sqfs_dir_writer_t sqfs_dir_writer_t;
+};
 
 #ifdef __cplusplus
 extern "C" {

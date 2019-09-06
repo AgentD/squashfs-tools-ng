@@ -8,7 +8,9 @@
 #include "config.h"
 
 #include "sqfs/meta_reader.h"
+#include "sqfs/super.h"
 #include "sqfs/xattr.h"
+#include "sqfs/data.h"
 #include "util.h"
 
 #include <stdlib.h>

@@ -10,8 +10,6 @@
 #include "sqfs/predef.h"
 #include "sqfs/super.h"
 
-typedef struct sqfs_compressor_t sqfs_compressor_t;
-
 /* Encapsultes a compressor with a simple interface to compress or
    uncompress/extract blocks of data. */
 struct sqfs_compressor_t {
@@ -45,7 +43,7 @@ struct sqfs_compressor_t {
 	sqfs_compressor_t *(*create_copy)(sqfs_compressor_t *cmp);
 };
 
-typedef struct {
+struct sqfs_compressor_config_t {
 	uint16_t id;
 	uint16_t flags;
 	uint32_t block_size;
@@ -69,7 +67,7 @@ typedef struct {
 			uint32_t dict_size;
 		} xz;
 	} opt;
-} sqfs_compressor_config_t;
+};
 
 typedef enum {
 	SQFS_COMP_FLAG_LZ4_HC = 0x0001,

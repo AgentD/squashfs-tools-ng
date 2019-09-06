@@ -8,7 +8,6 @@
 #define SFQS_BLOCK_PROCESSOR_H
 
 #include "sqfs/predef.h"
-#include "sqfs/compress.h"
 
 enum {
 	/* only calculate checksum, do NOT compress the data */
@@ -27,9 +26,9 @@ enum {
 	SQFS_BLK_USER = 0x0080
 };
 
-typedef struct sqfs_block_t {
+struct sqfs_block_t {
 	/* used internally, ignored and overwritten when enqueueing blocks */
-	struct sqfs_block_t *next;
+	sqfs_block_t *next;
 	uint32_t sequence_number;
 
 	/* Size of the data area */
@@ -49,9 +48,7 @@ typedef struct sqfs_block_t {
 
 	/* raw data to be processed */
 	uint8_t data[];
-} sqfs_block_t;
-
-typedef struct sqfs_block_processor_t sqfs_block_processor_t;
+};
 
 /*
   Gets called for each processed block. May be called from a different thread

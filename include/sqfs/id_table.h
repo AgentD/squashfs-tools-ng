@@ -8,9 +8,6 @@
 #define SQFS_ID_TABLE_H
 
 #include "sqfs/predef.h"
-#include "sqfs/compress.h"
-
-typedef struct sqfs_id_table_t sqfs_id_table_t;
 
 #ifdef __cplusplus
 extern "C" {

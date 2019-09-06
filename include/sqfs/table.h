@@ -8,8 +8,6 @@
 #define SQFS_TABLE_H
 
 #include "sqfs/predef.h"
-#include "sqfs/compress.h"
-#include "sqfs/super.h"
 
 #ifdef __cplusplus
 extern "C" {

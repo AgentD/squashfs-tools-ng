@@ -8,6 +8,8 @@
 #include "config.h"
 
 #include "sqfs/meta_reader.h"
+#include "sqfs/compress.h"
+#include "sqfs/data.h"
 #include "util.h"
 
 #include <stdlib.h>

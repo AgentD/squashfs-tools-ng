@@ -8,6 +8,7 @@
 #include "config.h"
 
 #include "sqfs/block_processor.h"
+#include "sqfs/compress.h"
 #include "util.h"
 
 #include <string.h>
