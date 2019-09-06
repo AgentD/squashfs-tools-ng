@@ -38,6 +38,22 @@ SQFS_API void sqfs_meta_reader_get_position(sqfs_meta_reader_t *m,
 SQFS_API int sqfs_meta_reader_read(sqfs_meta_reader_t *m, void *data,
 				   size_t size);
 
+/* Returns 0 on success. Internally prints to stderr on failure */
+SQFS_API int sqfs_meta_reader_read_dir_header(sqfs_meta_reader_t *m,
+					      sqfs_dir_header_t *hdr);
+
+/* Entry can be freed with a single free() call.
+   The function internally prints to stderr on failure */
+SQFS_API sqfs_dir_entry_t *sqfs_meta_reader_read_dir_ent(sqfs_meta_reader_t *m);
+
+/* Inode can be freed with a single free() call.
+   The function internally prints error message to stderr on failure. */
+SQFS_API
+sqfs_inode_generic_t *sqfs_meta_reader_read_inode(sqfs_meta_reader_t *ir,
+						  sqfs_super_t *super,
+						  uint64_t block_start,
+						  size_t offset);
+
 #ifdef __cplusplus
 }
 #endif

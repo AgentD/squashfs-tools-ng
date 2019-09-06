@@ -45,6 +45,9 @@ SQFS_API void sqfs_meta_writer_reset(sqfs_meta_writer_t *m);
    returns non-zero on failure. */
 SQFS_API int sqfs_meta_write_write_to_file(sqfs_meta_writer_t *m);
 
+SQFS_API int sqfs_meta_writer_write_inode(sqfs_meta_writer_t *iw,
+					  sqfs_inode_generic_t *n);
+
 #ifdef __cplusplus
 }
 #endif

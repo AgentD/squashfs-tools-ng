@@ -36,14 +36,6 @@ struct sqfs_dir_index_t {
 extern "C" {
 #endif
 
-/* Returns 0 on success. Internally prints to stderr on failure */
-SQFS_API int sqfs_meta_reader_read_dir_header(sqfs_meta_reader_t *m,
-					      sqfs_dir_header_t *hdr);
-
-/* Entry can be freed with a single free() call.
-   The function internally prints to stderr on failure */
-SQFS_API sqfs_dir_entry_t *sqfs_meta_reader_read_dir_ent(sqfs_meta_reader_t *m);
-
 SQFS_API sqfs_dir_writer_t *sqfs_dir_writer_create(sqfs_meta_writer_t *dm);
 
 SQFS_API void sqfs_dir_writer_destroy(sqfs_dir_writer_t *writer);
