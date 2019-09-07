@@ -9,12 +9,12 @@
 
 #include "sqfs/block_processor.h"
 #include "sqfs/compress.h"
+#include "sqfs/error.h"
 #include "util.h"
 
 #include <pthread.h>
 #include <string.h>
 #include <stdlib.h>
-#include <stdio.h>
 
 #define MAX_BACKLOG_FACTOR (10)
 
@@ -129,39 +129,29 @@ sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
 
 	proc = alloc_flex(sizeof(*proc),
 			  sizeof(proc->workers[0]), num_workers);
-	if (proc == NULL) {
-		perror("Creating block processor");
+	if (proc == NULL)
 		return NULL;
-	}
 
 	proc->max_block_size = max_block_size;
 	proc->cb = callback;
 	proc->user = user;
 	proc->num_workers = num_workers;
 
-	if (pthread_mutex_init(&proc->mtx, NULL)) {
-		perror("Creating block processor mutex");
+	if (pthread_mutex_init(&proc->mtx, NULL))
 		goto fail_free;
-	}
 
-	if (pthread_cond_init(&proc->queue_cond, NULL)) {
-		perror("Creating block processor conditional");
+	if (pthread_cond_init(&proc->queue_cond, NULL))
 		goto fail_mtx;
-	}
 
-	if (pthread_cond_init(&proc->done_cond, NULL)) {
-		perror("Creating block processor completion conditional");
+	if (pthread_cond_init(&proc->done_cond, NULL))
 		goto fail_cond;
-	}
 
 	for (i = 0; i < num_workers; ++i) {
 		proc->workers[i] = alloc_flex(sizeof(compress_worker_t),
 					      1, max_block_size);
 
-		if (proc->workers[i] == NULL) {
-			perror("Creating block worker data");
+		if (proc->workers[i] == NULL)
 			goto fail_init;
-		}
 
 		proc->workers[i]->shared = proc;
 		proc->workers[i]->cmp = cmp->create_copy(cmp);
@@ -174,10 +164,8 @@ sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
 		ret = pthread_create(&proc->workers[i]->thread, NULL,
 				     worker_proc, proc->workers[i]);
 
-		if (ret != 0) {
-			perror("Creating block processor thread");
+		if (ret != 0)
 			goto fail_thread;
-		}
 	}
 
 	return proc;
@@ -253,16 +241,18 @@ static int process_completed_blocks(sqfs_block_processor_t *proc,
 				    sqfs_block_t *queue)
 {
 	sqfs_block_t *it;
+	int ret;
 
 	while (queue != NULL) {
 		it = queue;
 		queue = queue->next;
 
 		if (it->flags & SQFS_BLK_COMPRESS_ERROR) {
-			proc->status = -1;
+			proc->status = SQFS_ERROR_COMRPESSOR;
 		} else {
-			if (proc->cb(proc->user, it))
-				proc->status = -1;
+			ret = proc->cb(proc->user, it);
+			if (ret)
+				proc->status = ret;
 		}
 
 		free(it);
@@ -329,7 +319,9 @@ int sqfs_block_processor_finish(sqfs_block_processor_t *proc)
 	for (it = proc->done; it != NULL; it = it->next) {
 		if (it->sequence_number != proc->dequeue_id++) {
 			pthread_mutex_unlock(&proc->mtx);
-			goto bug_seqnum;
+
+			/* XXX: this would actually be a BUG */
+			return SQFS_ERROR_INTERNAL;
 		}
 	}
 
@@ -338,8 +330,4 @@ int sqfs_block_processor_finish(sqfs_block_processor_t *proc)
 	pthread_mutex_unlock(&proc->mtx);
 
 	return process_completed_blocks(proc, queue);
-bug_seqnum:
-	fputs("[BUG][parallel block processor] "
-	      "gap in sequence numbers!\n", stderr);
-	return -1;
 }

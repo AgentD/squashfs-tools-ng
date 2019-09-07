@@ -10,8 +10,6 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
-#include <ctype.h>
 
 #include <lzo/lzo1x.h>
 
@@ -86,9 +84,11 @@ static int lzo_read_options(sqfs_compressor_t *base, int fd)
 {
 	lzo_compressor_t *lzo = (lzo_compressor_t *)base;
 	lzo_options_t opt;
+	int ret;
 
-	if (sqfs_generic_read_options(fd, &opt, sizeof(opt)))
-		return -1;
+	ret = sqfs_generic_read_options(fd, &opt, sizeof(opt));
+	if (ret)
+		return ret;
 
 	lzo->algorithm = le32toh(opt.algorithm);
 	lzo->level = le32toh(opt.level);
@@ -99,21 +99,17 @@ static int lzo_read_options(sqfs_compressor_t *base, int fd)
 	case SQFS_LZO1X_1_12:
 	case SQFS_LZO1X_1_15:
 		if (lzo->level != 0)
-			goto fail_level;
+			return SQFS_ERROR_UNSUPPORTED;
 		break;
 	case SQFS_LZO1X_999:
 		if (lzo->level < 1 || lzo->level > 9)
-			goto fail_level;
+			return SQFS_ERROR_UNSUPPORTED;
 		break;
 	default:
-		fputs("Unsupported LZO variant specified.\n", stderr);
-		return -1;
+		return SQFS_ERROR_UNSUPPORTED;
 	}
 
 	return 0;
-fail_level:
-	fputs("Unsupported LZO compression level specified.\n", stderr);
-	return -1;
 }
 
 static ssize_t lzo_comp_block(sqfs_compressor_t *base, const uint8_t *in,
@@ -133,10 +129,8 @@ static ssize_t lzo_comp_block(sqfs_compressor_t *base, const uint8_t *in,
 							&len, lzo->buffer);
 	}
 
-	if (ret != LZO_E_OK) {
-		fputs("LZO compression failed.\n", stderr);
-		return -1;
-	}
+	if (ret != LZO_E_OK)
+		return SQFS_ERROR_COMRPESSOR;
 
 	if (len < size)
 		return len;
@@ -153,10 +147,8 @@ static ssize_t lzo_uncomp_block(sqfs_compressor_t *base, const uint8_t *in,
 
 	ret = lzo1x_decompress_safe(in, size, out, &len, lzo->buffer);
 
-	if (ret != LZO_E_OK) {
-		fputs("lzo decompress: input data is corrupted\n", stderr);
-		return -1;
-	}
+	if (ret != LZO_E_OK)
+		return SQFS_ERROR_COMRPESSOR;
 
 	return len;
 }
@@ -167,11 +159,8 @@ static sqfs_compressor_t *lzo_create_copy(sqfs_compressor_t *cmp)
 	lzo_compressor_t *lzo;
 
 	lzo = alloc_flex(sizeof(*lzo), 1, lzo_algs[other->algorithm].bufsize);
-
-	if (lzo == NULL) {
-		perror("creating additional lzo compressor");
+	if (lzo == NULL)
 		return NULL;
-	}
 
 	memcpy(lzo, other, sizeof(*lzo));
 	return (sqfs_compressor_t *)lzo;
@@ -187,28 +176,18 @@ sqfs_compressor_t *lzo_compressor_create(const sqfs_compressor_config_t *cfg)
 	sqfs_compressor_t *base;
 	lzo_compressor_t *lzo;
 
-	if (cfg->flags & ~SQFS_COMP_FLAG_GENERIC_ALL) {
-		fputs("creating lzo compressor: unknown compressor flags\n",
-		      stderr);
+	if (cfg->flags & ~SQFS_COMP_FLAG_GENERIC_ALL)
 		return NULL;
-	}
 
 	if (cfg->opt.lzo.algorithm > LZO_NUM_ALGS ||
 	    lzo_algs[cfg->opt.lzo.algorithm].compress == NULL) {
-		fputs("creating lzo compressor: unknown LZO variant\n",
-		      stderr);
 		return NULL;
 	}
 
 	if (cfg->opt.lzo.algorithm == SQFS_LZO1X_999) {
-		if (cfg->opt.lzo.level > SQFS_LZO_MAX_LEVEL) {
-			fputs("creating lzo compressor: compression level "
-			      "must be between 0 and 9 inclusive\n", stderr);
+		if (cfg->opt.lzo.level > SQFS_LZO_MAX_LEVEL)
 			return NULL;
-		}
 	} else if (cfg->opt.lzo.level != 0) {
-		fputs("creating lzo compressor: level argument "
-		      "only supported by lzo1x 999\n", stderr);
 		return NULL;
 	}
 
@@ -216,10 +195,8 @@ sqfs_compressor_t *lzo_compressor_create(const sqfs_compressor_config_t *cfg)
 			 lzo_algs[cfg->opt.lzo.algorithm].bufsize);
 	base = (sqfs_compressor_t *)lzo;
 
-	if (lzo == NULL) {
-		perror("creating lzo compressor");
+	if (lzo == NULL)
 		return NULL;
-	}
 
 	lzo->algorithm = cfg->opt.lzo.algorithm;
 	lzo->level = cfg->opt.lzo.level;

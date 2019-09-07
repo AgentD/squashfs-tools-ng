@@ -10,7 +10,6 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 
 #include <lz4.h>
 #include <lz4hc.h>
@@ -44,18 +43,18 @@ static int lz4_write_options(sqfs_compressor_t *base, int fd)
 static int lz4_read_options(sqfs_compressor_t *base, int fd)
 {
 	lz4_options opt;
+	int ret;
 	(void)base;
 
-	if (sqfs_generic_read_options(fd, &opt, sizeof(opt)))
-		return -1;
+	ret = sqfs_generic_read_options(fd, &opt, sizeof(opt));
+	if (ret)
+		return ret;
 
 	opt.version = le32toh(opt.version);
 	opt.flags = le32toh(opt.flags);
 
-	if (opt.version != LZ4LEGACY) {
-		fprintf(stderr, "unsupported lz4 version '%d'\n", opt.version);
-		return -1;
-	}
+	if (opt.version != LZ4LEGACY)
+		return SQFS_ERROR_UNSUPPORTED;
 
 	return 0;
 }
@@ -74,10 +73,8 @@ static ssize_t lz4_comp_block(sqfs_compressor_t *base, const uint8_t *in,
 					   size, outsize);
 	}
 
-	if (ret < 0) {
-		fputs("internal error in lz4 compressor\n", stderr);
-		return -1;
-	}
+	if (ret < 0)
+		return SQFS_ERROR_COMRPESSOR;
 
 	return ret;
 }
@@ -90,10 +87,8 @@ static ssize_t lz4_uncomp_block(sqfs_compressor_t *base, const uint8_t *in,
 
 	ret = LZ4_decompress_safe((void *)in, (void *)out, size, outsize);
 
-	if (ret < 0) {
-		fputs("internal error in lz4 decompressor\n", stderr);
-		return -1;
-	}
+	if (ret < 0)
+		return SQFS_ERROR_COMRPESSOR;
 
 	return ret;
 }
@@ -102,10 +97,8 @@ static sqfs_compressor_t *lz4_create_copy(sqfs_compressor_t *cmp)
 {
 	lz4_compressor_t *lz4 = malloc(sizeof(*lz4));
 
-	if (lz4 == NULL) {
-		perror("creating additional lz4 compressor");
+	if (lz4 == NULL)
 		return NULL;
-	}
 
 	memcpy(lz4, cmp, sizeof(*lz4));
 	return (sqfs_compressor_t *)lz4;
@@ -123,16 +116,13 @@ sqfs_compressor_t *lz4_compressor_create(const sqfs_compressor_config_t *cfg)
 
 	if (cfg->flags & ~(SQFS_COMP_FLAG_LZ4_ALL |
 			   SQFS_COMP_FLAG_GENERIC_ALL)) {
-		fputs("creating lz4 compressor: unknown compressor flags\n",
-		      stderr);
+		return NULL;
 	}
 
 	lz4 = calloc(1, sizeof(*lz4));
 	base = (sqfs_compressor_t *)lz4;
-	if (lz4 == NULL) {
-		perror("creating lz4 compressor");
+	if (lz4 == NULL)
 		return NULL;
-	}
 
 	lz4->high_compression = (cfg->flags & SQFS_COMP_FLAG_LZ4_HC) != 0;
 

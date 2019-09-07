@@ -27,7 +27,7 @@ int sqfs_block_process(sqfs_block_t *block, sqfs_compressor_t *cmp,
 				    scratch, scratch_size);
 
 		if (ret < 0)
-			return -1;
+			return ret;
 
 		if (ret > 0) {
 			memcpy(block->data, scratch, ret);

@@ -109,6 +109,8 @@ data_reader_t *data_reader_create(int fd, sqfs_super_t *super,
 {
 	data_reader_t *data = alloc_flex(sizeof(*data), super->block_size, 3);
 	size_t i, size;
+	void *raw_frag;
+	int ret;
 
 	if (data == NULL) {
 		perror("creating data reader");
@@ -142,14 +144,16 @@ data_reader_t *data_reader_create(int fd, sqfs_super_t *super,
 		return NULL;
 	}
 
-	data->frag = sqfs_read_table(fd, cmp, size,
-				     super->fragment_table_start,
-				     super->directory_table_start,
-				     super->fragment_table_start);
-	if (data->frag == NULL) {
+	ret = sqfs_read_table(fd, cmp, size, super->fragment_table_start,
+			      super->directory_table_start,
+			      super->fragment_table_start, &raw_frag);
+
+	if (ret) {
 		free(data);
 		return NULL;
 	}
+
+	data->frag = raw_frag;
 
 	for (i = 0; i < data->num_fragments; ++i) {
 		data->frag[i].size = le32toh(data->frag[i].size);

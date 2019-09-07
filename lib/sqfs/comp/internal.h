@@ -11,6 +11,7 @@
 
 #include "sqfs/predef.h"
 #include "sqfs/compress.h"
+#include "sqfs/error.h"
 #include "util.h"
 
 SQFS_INTERNAL

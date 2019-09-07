@@ -9,6 +9,7 @@
 
 #include "sqfs/meta_writer.h"
 #include "sqfs/inode.h"
+#include "sqfs/error.h"
 #include "sqfs/data.h"
 #include "sqfs/dir.h"
 #include "util.h"
@@ -17,8 +18,6 @@
 #include <endian.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
-#include <stdio.h>
 
 typedef struct dir_entry_t {
 	struct dir_entry_t *next;
@@ -59,9 +58,9 @@ static int get_type(mode_t mode)
 	case S_IFCHR:  return SQFS_INODE_CDEV;
 	case S_IFDIR:  return SQFS_INODE_DIR;
 	case S_IFREG:  return SQFS_INODE_FILE;
-	default:
-		assert(0);
 	}
+
+	return SQFS_ERROR_UNSUPPORTED;
 }
 
 static void writer_reset(sqfs_dir_writer_t *writer)
@@ -92,10 +91,8 @@ sqfs_dir_writer_t *sqfs_dir_writer_create(sqfs_meta_writer_t *dm)
 {
 	sqfs_dir_writer_t *writer = calloc(1, sizeof(*writer));
 
-	if (writer == NULL) {
-		perror("creating directory writer");
+	if (writer == NULL)
 		return NULL;
-	}
 
 	writer->dm = dm;
 	return writer;
@@ -123,16 +120,20 @@ int sqfs_dir_writer_add_entry(sqfs_dir_writer_t *writer, const char *name,
 			      uint32_t inode_num, uint64_t inode_ref,
 			      mode_t mode)
 {
-	dir_entry_t *ent = alloc_flex(sizeof(*ent), 1, strlen(name));
+	dir_entry_t *ent;
+	int type;
 
-	if (ent == NULL) {
-		perror("creating directory entry");
-		return -1;
-	}
+	type = get_type(mode);
+	if (type < 0)
+		return type;
+
+	ent = alloc_flex(sizeof(*ent), 1, strlen(name));
+	if (ent == NULL)
+		return SQFS_ERROR_ALLOC;
 
 	ent->inode_ref = inode_ref;
 	ent->inode_num = inode_num;
-	ent->type = get_type(mode);
+	ent->type = type;
 	ent->name_len = strlen(name);
 	memcpy(ent->name, name, ent->name_len);
 
@@ -183,19 +184,19 @@ static int add_header(sqfs_dir_writer_t *writer, size_t count,
 {
 	sqfs_dir_header_t hdr;
 	index_ent_t *idx;
+	int err;
 
 	hdr.count = htole32(count - 1);
 	hdr.start_block = htole32(ref->inode_ref >> 16);
 	hdr.inode_number = htole32(ref->inode_num);
 
-	if (sqfs_meta_writer_append(writer->dm, &hdr, sizeof(hdr)))
-		return -1;
+	err = sqfs_meta_writer_append(writer->dm, &hdr, sizeof(hdr));
+	if (err)
+		return err;
 
 	idx = calloc(1, sizeof(*idx));
-	if (idx == NULL) {
-		perror("creating directory index entry");
-		return -1;
-	}
+	if (idx == NULL)
+		return SQFS_ERROR_ALLOC;
 
 	idx->ent = ref;
 	idx->block = block;
@@ -221,13 +222,15 @@ int sqfs_dir_writer_end(sqfs_dir_writer_t *writer)
 	size_t i, count;
 	uint32_t offset;
 	uint64_t block;
+	int err;
 
 	for (it = writer->list; it != NULL; ) {
 		sqfs_meta_writer_get_position(writer->dm, &block, &offset);
 		count = get_conseq_entry_count(offset, it);
 
-		if (add_header(writer, count, it, block))
-			return -1;
+		err = add_header(writer, count, it, block);
+		if (err)
+			return err;
 
 		first = it;
 
@@ -240,15 +243,15 @@ int sqfs_dir_writer_end(sqfs_dir_writer_t *writer)
 			diff_u16 = (uint16_t *)&ent.inode_diff;
 			*diff_u16 = htole16(*diff_u16);
 
-			if (sqfs_meta_writer_append(writer->dm, &ent,
-						    sizeof(ent))) {
-				return -1;
-			}
+			err = sqfs_meta_writer_append(writer->dm, &ent,
+						      sizeof(ent));
+			if (err)
+				return err;
 
-			if (sqfs_meta_writer_append(writer->dm, it->name,
-						    it->name_len)) {
-				return -1;
-			}
+			err = sqfs_meta_writer_append(writer->dm, it->name,
+						      it->name_len);
+			if (err)
+				return err;
 
 			it = it->next;
 		}
@@ -277,19 +280,21 @@ int sqfs_dir_writer_write_index(sqfs_dir_writer_t *writer,
 {
 	sqfs_dir_index_t ent;
 	index_ent_t *idx;
+	int err;
 
 	for (idx = writer->idx; idx != NULL; idx = idx->next) {
 		ent.start_block = htole32(idx->block);
 		ent.index = htole32(idx->index);
 		ent.size = htole32(idx->ent->name_len - 1);
 
-		if (sqfs_meta_writer_append(im, &ent, sizeof(ent)))
-			return -1;
+		err = sqfs_meta_writer_append(im, &ent, sizeof(ent));
+		if (err)
+			return err;
 
-		if (sqfs_meta_writer_append(im, idx->ent->name,
-					    idx->ent->name_len)) {
-			return -1;
-		}
+		err = sqfs_meta_writer_append(im, idx->ent->name,
+					      idx->ent->name_len);
+		if (err)
+			return err;
 	}
 
 	return 0;

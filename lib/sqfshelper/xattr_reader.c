@@ -24,12 +24,10 @@ static int restore_kv_pairs(sqfs_xattr_reader_t *xr, fstree_t *fs,
 	int ret;
 
 	for (i = 0; i < node->xattr->num_attr; ++i) {
-		key = sqfs_xattr_reader_read_key(xr);
-		if (key == NULL)
+		if (sqfs_xattr_reader_read_key(xr, &key))
 			return -1;
 
-		val = sqfs_xattr_reader_read_value(xr, key);
-		if (val == NULL)
+		if (sqfs_xattr_reader_read_value(xr, key, &val))
 			goto fail_key;
 
 		ret = str_table_get_index(&fs->xattr_keys,

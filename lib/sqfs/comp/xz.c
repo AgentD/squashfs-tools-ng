@@ -10,8 +10,6 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
-#include <ctype.h>
 #include <lzma.h>
 
 #include "internal.h"
@@ -56,22 +54,20 @@ static int xz_read_options(sqfs_compressor_t *base, int fd)
 {
 	xz_compressor_t *xz = (xz_compressor_t *)base;
 	xz_options_t opt;
+	int ret;
 
-	if (sqfs_generic_read_options(fd, &opt, sizeof(opt)))
-		return -1;
+	ret = sqfs_generic_read_options(fd, &opt, sizeof(opt));
+	if (ret)
+		return ret;
 
 	opt.dict_size = le32toh(opt.dict_size);
 	opt.flags = le32toh(opt.flags);
 
-	if (!is_dict_size_valid(opt.dict_size)) {
-		fputs("Invalid lzma dictionary size.\n", stderr);
-		return -1;
-	}
+	if (!is_dict_size_valid(opt.dict_size))
+		return SQFS_ERROR_CORRUPTED;
 
-	if (opt.flags & ~SQFS_COMP_FLAG_XZ_ALL) {
-		fputs("Unknown BCJ filter used.\n", stderr);
-		return -1;
-	}
+	if (opt.flags & ~SQFS_COMP_FLAG_XZ_ALL)
+		return SQFS_ERROR_UNSUPPORTED;
 
 	xz->flags = opt.flags;
 	xz->dict_size = opt.dict_size;
@@ -88,10 +84,8 @@ static ssize_t compress(xz_compressor_t *xz, lzma_vli filter,
 	lzma_ret ret;
 	int i = 0;
 
-	if (lzma_lzma_preset(&opt, LZMA_PRESET_DEFAULT)) {
-		fputs("error initializing xz options\n", stderr);
-		return -1;
-	}
+	if (lzma_lzma_preset(&opt, LZMA_PRESET_DEFAULT))
+		return SQFS_ERROR_COMRPESSOR;
 
 	opt.dict_size = xz->dict_size;
 
@@ -115,10 +109,8 @@ static ssize_t compress(xz_compressor_t *xz, lzma_vli filter,
 	if (ret == LZMA_OK)
 		return (written >= size) ? 0 : written;
 
-	if (ret != LZMA_BUF_ERROR) {
-		fputs("xz block compress failed\n", stderr);
-		return -1;
-	}
+	if (ret != LZMA_BUF_ERROR)
+		return SQFS_ERROR_COMRPESSOR;
 
 	return 0;
 }
@@ -165,7 +157,7 @@ static ssize_t xz_comp_block(sqfs_compressor_t *base, const uint8_t *in,
 
 		ret = compress(xz, filter, in, size, out, outsize);
 		if (ret < 0)
-			return -1;
+			return ret;
 
 		if (ret > 0 && (smallest == 0 || (size_t)ret < smallest)) {
 			smallest = ret;
@@ -195,18 +187,15 @@ static ssize_t xz_uncomp_block(sqfs_compressor_t *base, const uint8_t *in,
 	if (ret == LZMA_OK && size == src_pos)
 		return (ssize_t)dest_pos;
 
-	fputs("xz block extract failed\n", stderr);
-	return -1;
+	return SQFS_ERROR_COMRPESSOR;
 }
 
 static sqfs_compressor_t *xz_create_copy(sqfs_compressor_t *cmp)
 {
 	xz_compressor_t *xz = malloc(sizeof(*xz));
 
-	if (xz == NULL) {
-		perror("creating additional xz compressor");
+	if (xz == NULL)
 		return NULL;
-	}
 
 	memcpy(xz, cmp, sizeof(*xz));
 	return (sqfs_compressor_t *)xz;
@@ -224,23 +213,16 @@ sqfs_compressor_t *xz_compressor_create(const sqfs_compressor_config_t *cfg)
 
 	if (cfg->flags & ~(SQFS_COMP_FLAG_GENERIC_ALL |
 			   SQFS_COMP_FLAG_XZ_ALL)) {
-		fputs("creating xz compressor: unknown compressor flags\n",
-		      stderr);
 		return NULL;
 	}
 
-	if (!is_dict_size_valid(cfg->opt.xz.dict_size)) {
-		fputs("creating xz compressor: invalid dictionary size\n",
-		      stderr);
+	if (!is_dict_size_valid(cfg->opt.xz.dict_size))
 		return NULL;
-	}
 
 	xz = calloc(1, sizeof(*xz));
 	base = (sqfs_compressor_t *)xz;
-	if (xz == NULL) {
-		perror("creating xz compressor");
+	if (xz == NULL)
 		return NULL;
-	}
 
 	xz->flags = cfg->flags;
 	xz->dict_size = cfg->opt.xz.dict_size;

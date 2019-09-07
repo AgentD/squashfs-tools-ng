@@ -8,12 +8,14 @@
 #include "config.h"
 
 #include "sqfs/meta_writer.h"
-#include "highlevel.h"
+#include "sqfs/error.h"
+#include "sqfs/super.h"
+#include "sqfs/table.h"
+#include "sqfs/data.h"
 #include "util.h"
 
 #include <endian.h>
 #include <stdlib.h>
-#include <stdio.h>
 
 int sqfs_write_table(int outfd, sqfs_super_t *super, sqfs_compressor_t *cmp,
 		     const void *data, size_t table_size, uint64_t *start)
@@ -22,7 +24,7 @@ int sqfs_write_table(int outfd, sqfs_super_t *super, sqfs_compressor_t *cmp,
 	uint64_t block, *locations;
 	sqfs_meta_writer_t *m;
 	uint32_t offset;
-	int ret = -1;
+	int ret;
 
 	block_count = table_size / SQFS_META_BLOCK_SIZE;
 	if ((table_size % SQFS_META_BLOCK_SIZE) != 0)
@@ -30,15 +32,15 @@ int sqfs_write_table(int outfd, sqfs_super_t *super, sqfs_compressor_t *cmp,
 
 	locations = alloc_array(sizeof(uint64_t), block_count);
 
-	if (locations == NULL) {
-		perror("writing table");
-		return -1;
-	}
+	if (locations == NULL)
+		return SQFS_ERROR_ALLOC;
 
 	/* Write actual data */
 	m = sqfs_meta_writer_create(outfd, cmp, false);
-	if (m == NULL)
+	if (m == NULL) {
+		ret = SQFS_ERROR_ALLOC;
 		goto out_idx;
+	}
 
 	while (table_size > 0) {
 		sqfs_meta_writer_get_position(m, &block, &offset);
@@ -48,14 +50,16 @@ int sqfs_write_table(int outfd, sqfs_super_t *super, sqfs_compressor_t *cmp,
 		if (diff > table_size)
 			diff = table_size;
 
-		if (sqfs_meta_writer_append(m, data, diff))
+		ret = sqfs_meta_writer_append(m, data, diff);
+		if (ret)
 			goto out;
 
 		data = (const char *)data + diff;
 		table_size -= diff;
 	}
 
-	if (sqfs_meta_writer_flush(m))
+	ret = sqfs_meta_writer_flush(m);
+	if (ret)
 		goto out;
 
 	sqfs_meta_writer_get_position(m, &block, &offset);
@@ -65,8 +69,11 @@ int sqfs_write_table(int outfd, sqfs_super_t *super, sqfs_compressor_t *cmp,
 	*start = super->bytes_used;
 
 	list_size = sizeof(uint64_t) * block_count;
-	if (write_data("writing table locations", outfd, locations, list_size))
+	if (write_data("writing table locations", outfd,
+		       locations, list_size)) {
+		ret = SQFS_ERROR_IO;
 		goto out;
+	}
 
 	super->bytes_used += list_size;
 

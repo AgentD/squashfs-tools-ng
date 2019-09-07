@@ -10,10 +10,10 @@
 #include "sqfs/id_table.h"
 #include "sqfs/super.h"
 #include "sqfs/table.h"
+#include "sqfs/error.h"
 
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 
 struct sqfs_id_table_t {
 	uint32_t *ids;
@@ -23,12 +23,7 @@ struct sqfs_id_table_t {
 
 sqfs_id_table_t *sqfs_id_table_create(void)
 {
-	sqfs_id_table_t *tbl = calloc(1, sizeof(*tbl));
-
-	if (tbl == NULL)
-		perror("Creating ID table");
-
-	return tbl;
+	return calloc(1, sizeof(sqfs_id_table_t));
 }
 
 void sqfs_id_table_destroy(sqfs_id_table_t *tbl)
@@ -49,19 +44,15 @@ int sqfs_id_table_id_to_index(sqfs_id_table_t *tbl, uint32_t id, uint16_t *out)
 		}
 	}
 
-	if (tbl->num_ids == 0x10000) {
-		fputs("Too many unique UIDs/GIDs (more than 64k)!\n", stderr);
-		return -1;
-	}
+	if (tbl->num_ids == 0x10000)
+		return SQFS_ERROR_OVERFLOW;
 
 	if (tbl->num_ids == tbl->max_ids) {
 		sz = (tbl->max_ids ? tbl->max_ids * 2 : 16);
 		ptr = realloc(tbl->ids, sizeof(tbl->ids[0]) * sz);
 
-		if (ptr == NULL) {
-			perror("growing ID table");
-			return -1;
-		}
+		if (ptr == NULL)
+			return SQFS_ERROR_ALLOC;
 
 		tbl->ids = ptr;
 		tbl->max_ids = sz;
@@ -75,10 +66,8 @@ int sqfs_id_table_id_to_index(sqfs_id_table_t *tbl, uint32_t id, uint16_t *out)
 int sqfs_id_table_index_to_id(const sqfs_id_table_t *tbl, uint16_t index,
 			      uint32_t *out)
 {
-	if (index >= tbl->num_ids) {
-		fputs("attempted out of bounds ID table access\n", stderr);
-		return -1;
-	}
+	if (index >= tbl->num_ids)
+		return SQFS_ERROR_OUT_OF_BOUNDS;
 
 	*out = tbl->ids[index];
 	return 0;
@@ -88,7 +77,9 @@ int sqfs_id_table_read(sqfs_id_table_t *tbl, int fd, sqfs_super_t *super,
 		       sqfs_compressor_t *cmp)
 {
 	uint64_t upper_limit, lower_limit;
+	void *raw_ids;
 	size_t i;
+	int ret;
 
 	if (tbl->ids != NULL) {
 		free(tbl->ids);
@@ -97,10 +88,8 @@ int sqfs_id_table_read(sqfs_id_table_t *tbl, int fd, sqfs_super_t *super,
 		tbl->ids = NULL;
 	}
 
-	if (!super->id_count || super->id_table_start >= super->bytes_used) {
-		fputs("ID table missing from file system\n", stderr);
-		return -1;
-	}
+	if (!super->id_count || super->id_table_start >= super->bytes_used)
+		return SQFS_ERROR_CORRUPTED;
 
 	upper_limit = super->id_table_start;
 	lower_limit = super->directory_table_start;
@@ -117,11 +106,13 @@ int sqfs_id_table_read(sqfs_id_table_t *tbl, int fd, sqfs_super_t *super,
 
 	tbl->num_ids = super->id_count;
 	tbl->max_ids = super->id_count;
-	tbl->ids = sqfs_read_table(fd, cmp, tbl->num_ids * sizeof(uint32_t),
-				   super->id_table_start, lower_limit,
-				   upper_limit);
-	if (tbl->ids == NULL)
-		return -1;
+	ret = sqfs_read_table(fd, cmp, tbl->num_ids * sizeof(uint32_t),
+			      super->id_table_start, lower_limit,
+			      upper_limit, &raw_ids);
+	if (ret)
+		return ret;
+
+	tbl->ids = raw_ids;
 
 	for (i = 0; i < tbl->num_ids; ++i)
 		tbl->ids[i] = le32toh(tbl->ids[i]);

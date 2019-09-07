@@ -10,7 +10,6 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 #include <ctype.h>
 #include <zlib.h>
 
@@ -67,30 +66,24 @@ static int gzip_read_options(sqfs_compressor_t *base, int fd)
 {
 	gzip_compressor_t *gzip = (gzip_compressor_t *)base;
 	gzip_options_t opt;
+	int ret;
 
-	if (sqfs_generic_read_options(fd, &opt, sizeof(opt)))
-		return -1;
+	ret = sqfs_generic_read_options(fd, &opt, sizeof(opt));
+	if (ret)
+		return ret;
 
 	gzip->opt.level = le32toh(opt.level);
 	gzip->opt.window = le16toh(opt.window);
 	gzip->opt.strategies = le16toh(opt.strategies);
 
-	if (gzip->opt.level < 1 || gzip->opt.level > 9) {
-		fprintf(stderr, "Invalid gzip compression level '%d'.\n",
-			gzip->opt.level);
-		return -1;
-	}
+	if (gzip->opt.level < 1 || gzip->opt.level > 9)
+		return SQFS_ERROR_UNSUPPORTED;
 
-	if (gzip->opt.window < 8 || gzip->opt.window > 15) {
-		fprintf(stderr, "Invalid gzip window size '%d'.\n",
-			gzip->opt.window);
-		return -1;
-	}
+	if (gzip->opt.window < 8 || gzip->opt.window > 15)
+		return SQFS_ERROR_UNSUPPORTED;
 
-	if (gzip->opt.strategies & ~SQFS_COMP_FLAG_GZIP_ALL) {
-		fputs("Unknown gzip strategies selected.\n", stderr);
-		return -1;
-	}
+	if (gzip->opt.strategies & ~SQFS_COMP_FLAG_GZIP_ALL)
+		return SQFS_ERROR_UNSUPPORTED;
 
 	return 0;
 }
@@ -124,11 +117,8 @@ static int find_strategy(gzip_compressor_t *gzip, const uint8_t *in,
 			continue;
 
 		ret = deflateReset(&gzip->strm);
-		if (ret != Z_OK) {
-			fputs("resetting zlib stream failed\n",
-			      stderr);
-			return -1;
-		}
+		if (ret != Z_OK)
+			return SQFS_ERROR_COMRPESSOR;
 
 		strategy = flag_to_zlib_strategy(i);
 
@@ -138,11 +128,8 @@ static int find_strategy(gzip_compressor_t *gzip, const uint8_t *in,
 		gzip->strm.avail_out = outsize;
 
 		ret = deflateParams(&gzip->strm, gzip->opt.level, strategy);
-		if (ret != Z_OK) {
-			fputs("setting deflate parameters failed\n",
-			      stderr);
-			return -1;
-		}
+		if (ret != Z_OK)
+			return SQFS_ERROR_COMRPESSOR;
 
 		ret = deflate(&gzip->strm, Z_FINISH);
 
@@ -154,8 +141,7 @@ static int find_strategy(gzip_compressor_t *gzip, const uint8_t *in,
 				selected = strategy;
 			}
 		} else if (ret != Z_OK && ret != Z_BUF_ERROR) {
-			fputs("gzip block processing failed\n", stderr);
-			return -1;
+			return SQFS_ERROR_COMRPESSOR;
 		}
 	}
 
@@ -172,7 +158,7 @@ static ssize_t gzip_do_block(sqfs_compressor_t *base, const uint8_t *in,
 	if (gzip->compress && gzip->opt.strategies != 0) {
 		strategy = find_strategy(gzip, in, size, out, outsize);
 		if (strategy < 0)
-			return -1;
+			return strategy;
 	}
 
 	if (gzip->compress) {
@@ -181,10 +167,8 @@ static ssize_t gzip_do_block(sqfs_compressor_t *base, const uint8_t *in,
 		ret = inflateReset(&gzip->strm);
 	}
 
-	if (ret != Z_OK) {
-		fputs("resetting zlib stream failed\n", stderr);
-		return -1;
-	}
+	if (ret != Z_OK)
+		return SQFS_ERROR_COMRPESSOR;
 
 	gzip->strm.next_in = (void *)in;
 	gzip->strm.avail_in = size;
@@ -193,11 +177,8 @@ static ssize_t gzip_do_block(sqfs_compressor_t *base, const uint8_t *in,
 
 	if (gzip->compress && gzip->opt.strategies != 0) {
 		ret = deflateParams(&gzip->strm, gzip->opt.level, strategy);
-		if (ret != Z_OK) {
-			fputs("setting selcted deflate parameters failed\n",
-			      stderr);
-			return -1;
-		}
+		if (ret != Z_OK)
+			return SQFS_ERROR_COMRPESSOR;
 	}
 
 	if (gzip->compress) {
@@ -215,10 +196,8 @@ static ssize_t gzip_do_block(sqfs_compressor_t *base, const uint8_t *in,
 		return (ssize_t)written;
 	}
 
-	if (ret != Z_OK && ret != Z_BUF_ERROR) {
-		fputs("gzip block processing failed\n", stderr);
-		return -1;
-	}
+	if (ret != Z_OK && ret != Z_BUF_ERROR)
+		return SQFS_ERROR_COMRPESSOR;
 
 	return 0;
 }
@@ -228,10 +207,8 @@ static sqfs_compressor_t *gzip_create_copy(sqfs_compressor_t *cmp)
 	gzip_compressor_t *gzip = malloc(sizeof(*gzip));
 	int ret;
 
-	if (gzip == NULL) {
-		perror("creating additional gzip compressor");
+	if (gzip == NULL)
 		return NULL;
-	}
 
 	memcpy(gzip, cmp, sizeof(*gzip));
 	memset(&gzip->strm, 0, sizeof(gzip->strm));
@@ -244,8 +221,6 @@ static sqfs_compressor_t *gzip_create_copy(sqfs_compressor_t *cmp)
 	}
 
 	if (ret != Z_OK) {
-		fputs("internal error creating additional zlib stream\n",
-		      stderr);
 		free(gzip);
 		return NULL;
 	}
@@ -261,34 +236,24 @@ sqfs_compressor_t *gzip_compressor_create(const sqfs_compressor_config_t *cfg)
 
 	if (cfg->flags & ~(SQFS_COMP_FLAG_GZIP_ALL |
 			   SQFS_COMP_FLAG_GENERIC_ALL)) {
-		fputs("creating gzip compressor: unknown compressor flags\n",
-		      stderr);
 		return NULL;
 	}
 
 	if (cfg->opt.gzip.level < SQFS_GZIP_MIN_LEVEL ||
 	    cfg->opt.gzip.level > SQFS_GZIP_MAX_LEVEL) {
-		fprintf(stderr, "creating gzip compressor: compression level"
-			"must be between %d and %d inclusive\n",
-			SQFS_GZIP_MIN_LEVEL, SQFS_GZIP_MAX_LEVEL);
 		return NULL;
 	}
 
 	if (cfg->opt.gzip.window_size < SQFS_GZIP_MIN_WINDOW ||
 	    cfg->opt.gzip.window_size > SQFS_GZIP_MAX_WINDOW) {
-		fprintf(stderr, "creating gzip compressor: window size"
-			"must be between %d and %d inclusive\n",
-			SQFS_GZIP_MIN_WINDOW, SQFS_GZIP_MAX_WINDOW);
 		return NULL;
 	}
 
 	gzip = calloc(1, sizeof(*gzip));
 	base = (sqfs_compressor_t *)gzip;
 
-	if (gzip == NULL) {
-		perror("creating gzip compressor");
+	if (gzip == NULL)
 		return NULL;
-	}
 
 	gzip->opt.level = cfg->opt.gzip.level;
 	gzip->opt.window = cfg->opt.gzip.window_size;
@@ -310,7 +275,6 @@ sqfs_compressor_t *gzip_compressor_create(const sqfs_compressor_config_t *cfg)
 	}
 
 	if (ret != Z_OK) {
-		fputs("internal error creating zlib stream\n", stderr);
 		free(gzip);
 		return NULL;
 	}

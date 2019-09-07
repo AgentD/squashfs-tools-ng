@@ -29,9 +29,10 @@ SQFS_API int sqfs_write_table(int outfd, sqfs_super_t *super,
 			      const void *data, size_t table_size,
 			      uint64_t *start);
 
-SQFS_API void *sqfs_read_table(int fd, sqfs_compressor_t *cmp,
-			       size_t table_size, uint64_t location,
-			       uint64_t lower_limit, uint64_t upper_limit);
+SQFS_API int sqfs_read_table(int fd, sqfs_compressor_t *cmp,
+			     size_t table_size, uint64_t location,
+			     uint64_t lower_limit, uint64_t upper_limit,
+			     void **out);
 
 #ifdef __cplusplus
 }

@@ -10,8 +10,6 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
-#include <ctype.h>
 
 #include <zstd.h>
 
@@ -43,10 +41,12 @@ static int zstd_write_options(sqfs_compressor_t *base, int fd)
 static int zstd_read_options(sqfs_compressor_t *base, int fd)
 {
 	zstd_options_t opt;
+	int ret;
 	(void)base;
 
-	if (sqfs_generic_read_options(fd, &opt, sizeof(opt)))
-		return -1;
+	ret = sqfs_generic_read_options(fd, &opt, sizeof(opt));
+	if (ret)
+		return ret;
 
 	opt.level = le32toh(opt.level);
 	return 0;
@@ -61,11 +61,8 @@ static ssize_t zstd_comp_block(sqfs_compressor_t *base, const uint8_t *in,
 	ret = ZSTD_compressCCtx(zstd->zctx, out, outsize, in, size,
 				zstd->level);
 
-	if (ZSTD_isError(ret)) {
-		fprintf(stderr, "internal error in ZSTD compressor: %s\n",
-			ZSTD_getErrorName(ret));
-		return -1;
-	}
+	if (ZSTD_isError(ret))
+		return SQFS_ERROR_COMRPESSOR;
 
 	return ret < size ? ret : 0;
 }
@@ -78,11 +75,8 @@ static ssize_t zstd_uncomp_block(sqfs_compressor_t *base, const uint8_t *in,
 
 	ret = ZSTD_decompress(out, outsize, in, size);
 
-	if (ZSTD_isError(ret)) {
-		fprintf(stderr, "error uncompressing ZSTD compressed data: %s",
-			ZSTD_getErrorName(ret));
-		return -1;
-	}
+	if (ZSTD_isError(ret))
+		return SQFS_ERROR_COMRPESSOR;
 
 	return ret;
 }
@@ -91,18 +85,14 @@ static sqfs_compressor_t *zstd_create_copy(sqfs_compressor_t *cmp)
 {
 	zstd_compressor_t *zstd = malloc(sizeof(*zstd));
 
-	if (zstd == NULL) {
-		perror("creating additional zstd compressor");
+	if (zstd == NULL)
 		return NULL;
-	}
 
 	memcpy(zstd, cmp, sizeof(*zstd));
 
 	zstd->zctx = ZSTD_createCCtx();
 
 	if (zstd->zctx == NULL) {
-		fputs("error creating addtional zstd compression context\n",
-		      stderr);
 		free(zstd);
 		return NULL;
 	}
@@ -123,26 +113,21 @@ sqfs_compressor_t *zstd_compressor_create(const sqfs_compressor_config_t *cfg)
 	zstd_compressor_t *zstd;
 	sqfs_compressor_t *base;
 
-	if (cfg->flags & ~SQFS_COMP_FLAG_GENERIC_ALL) {
-		fputs("creating zstd compressor: unknown compressor flags\n",
-		      stderr);
-	}
+	if (cfg->flags & ~SQFS_COMP_FLAG_GENERIC_ALL)
+		return NULL;
 
 	if (cfg->opt.zstd.level < 1 ||
 	    cfg->opt.zstd.level > ZSTD_maxCLevel()) {
-		goto fail_level;
+		return NULL;
 	}
 
 	zstd = calloc(1, sizeof(*zstd));
 	base = (sqfs_compressor_t *)zstd;
-	if (zstd == NULL) {
-		perror("creating zstd compressor");
+	if (zstd == NULL)
 		return NULL;
-	}
 
 	zstd->zctx = ZSTD_createCCtx();
 	if (zstd->zctx == NULL) {
-		fputs("error creating zstd compression context\n", stderr);
 		free(zstd);
 		return NULL;
 	}
@@ -154,8 +139,4 @@ sqfs_compressor_t *zstd_compressor_create(const sqfs_compressor_config_t *cfg)
 	base->read_options = zstd_read_options;
 	base->create_copy = zstd_create_copy;
 	return base;
-fail_level:
-	fprintf(stderr, "zstd compression level must be a number in the range "
-		"1...%d\n", ZSTD_maxCLevel());
-	return NULL;
 }

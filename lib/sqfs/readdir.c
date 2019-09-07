@@ -8,38 +8,39 @@
 #include "config.h"
 
 #include "sqfs/meta_reader.h"
+#include "sqfs/error.h"
 #include "sqfs/dir.h"
 
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 
 int sqfs_meta_reader_read_dir_header(sqfs_meta_reader_t *m,
 				     sqfs_dir_header_t *hdr)
 {
-	if (sqfs_meta_reader_read(m, hdr, sizeof(*hdr)))
-		return -1;
+	int err = sqfs_meta_reader_read(m, hdr, sizeof(*hdr));
+	if (err)
+		return err;
 
 	hdr->count = le32toh(hdr->count);
 	hdr->start_block = le32toh(hdr->start_block);
 	hdr->inode_number = le32toh(hdr->inode_number);
 
-	if (hdr->count > (SQFS_MAX_DIR_ENT - 1)) {
-		fputs("Found a directory header with too many entries\n",
-		      stderr);
-		return -1;
-	}
+	if (hdr->count > (SQFS_MAX_DIR_ENT - 1))
+		return SQFS_ERROR_CORRUPTED;
 
 	return 0;
 }
 
-sqfs_dir_entry_t *sqfs_meta_reader_read_dir_ent(sqfs_meta_reader_t *m)
+int sqfs_meta_reader_read_dir_ent(sqfs_meta_reader_t *m,
+				  sqfs_dir_entry_t **result)
 {
 	sqfs_dir_entry_t ent, *out;
 	uint16_t *diff_u16;
+	int err;
 
-	if (sqfs_meta_reader_read(m, &ent, sizeof(ent)))
-		return NULL;
+	err = sqfs_meta_reader_read(m, &ent, sizeof(ent));
+	if (err)
+		return err;
 
 	diff_u16 = (uint16_t *)&ent.inode_diff;
 	*diff_u16 = le16toh(*diff_u16);
@@ -49,30 +50,28 @@ sqfs_dir_entry_t *sqfs_meta_reader_read_dir_ent(sqfs_meta_reader_t *m)
 	ent.size = le16toh(ent.size);
 
 	out = calloc(1, sizeof(*out) + ent.size + 2);
-	if (out == NULL) {
-		perror("reading dir entry");
-		return NULL;
-	}
+	if (out == NULL)
+		return SQFS_ERROR_ALLOC;
 
 	*out = ent;
-	if (sqfs_meta_reader_read(m, out->name, ent.size + 1)) {
+	err = sqfs_meta_reader_read(m, out->name, ent.size + 1);
+	if (err) {
 		free(out);
-		return NULL;
+		return err;
 	}
 
 	if (strchr((char *)out->name, '/') != NULL ||
 	    strchr((char *)out->name, '\\') != NULL) {
-		fputs("Found a file name that contains slashes\n", stderr);
 		free(out);
-		return NULL;
+		return SQFS_ERROR_CORRUPTED;
 	}
 
 	if (strcmp((char *)out->name, "..") == 0 ||
 	    strcmp((char *)out->name, ".") == 0) {
-		fputs("Found '..' or '.' in file names\n", stderr);
 		free(out);
-		return NULL;
+		return SQFS_ERROR_CORRUPTED;
 	}
 
-	return out;
+	*result = out;
+	return 0;
 }

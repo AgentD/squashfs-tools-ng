@@ -8,12 +8,11 @@
 #include "config.h"
 
 #include "sqfs/super.h"
+#include "sqfs/error.h"
 #include "util.h"
 
 #include <endian.h>
 #include <string.h>
-#include <unistd.h>
-#include <stdio.h>
 
 int sqfs_super_read(sqfs_super_t *super, int fd)
 {
@@ -22,7 +21,7 @@ int sqfs_super_read(sqfs_super_t *super, int fd)
 	int i;
 
 	if (read_data_at("reading super block", 0, fd, &temp, sizeof(temp)))
-		return -1;
+		return SQFS_ERROR_IO;
 
 	temp.magic = le32toh(temp.magic);
 	temp.inode_count = le32toh(temp.inode_count);
@@ -44,33 +43,21 @@ int sqfs_super_read(sqfs_super_t *super, int fd)
 	temp.fragment_table_start = le64toh(temp.fragment_table_start);
 	temp.export_table_start = le64toh(temp.export_table_start);
 
-	if (temp.magic != SQFS_MAGIC) {
-		fputs("Magic number missing. Not a squashfs image.\n", stderr);
-		return -1;
-	}
+	if (temp.magic != SQFS_MAGIC)
+		return SFQS_ERROR_SUPER_MAGIC;
 
 	if ((temp.version_major != SQFS_VERSION_MAJOR) ||
-	    (temp.version_minor != SQFS_VERSION_MINOR)) {
-		fprintf(stderr,
-			"The squashfs image uses squashfs version %d.%d\n"
-			"This tool currently only supports version %d.%d.\n",
-			temp.version_major, temp.version_minor,
-			SQFS_VERSION_MAJOR, SQFS_VERSION_MINOR);
-		return -1;
-	}
+	    (temp.version_minor != SQFS_VERSION_MINOR))
+		return SFQS_ERROR_SUPER_VERSION;
 
-	if ((temp.block_size - 1) & temp.block_size) {
-		fputs("Block size in image is not a power of 2!\n", stderr);
-		return -1;
-	}
+	if ((temp.block_size - 1) & temp.block_size)
+		return SQFS_ERROR_SUPER_BLOCK_SIZE;
 
-	if (temp.block_size < 4096 || temp.block_size >= (1 << 20)) {
-		fputs("Block size in iamge not between 4k and 1M\n", stderr);
-		return -1;
-	}
+	if (temp.block_size < 4096 || temp.block_size >= (1 << 20))
+		return SQFS_ERROR_SUPER_BLOCK_SIZE;
 
 	if (temp.block_log < 12 || temp.block_log > 20)
-		goto fail_block_log;
+		return SQFS_ERROR_CORRUPTED;
 
 	block_size = 1;
 
@@ -78,23 +65,15 @@ int sqfs_super_read(sqfs_super_t *super, int fd)
 		block_size <<= 1;
 
 	if (temp.block_size != block_size)
-		goto fail_block_log;
+		return SQFS_ERROR_CORRUPTED;
 
 	if (temp.compression_id < SQFS_COMP_MIN ||
-	    temp.compression_id > SQFS_COMP_MAX) {
-		fputs("Image uses an unsupported compressor\n", stderr);
-		return -1;
-	}
+	    temp.compression_id > SQFS_COMP_MAX)
+		return SQFS_ERROR_UNSUPPORTED;
 
-	if (temp.id_count == 0) {
-		fputs("ID table in squashfs image is empty.\n", stderr);
-		return -1;
-	}
+	if (temp.id_count == 0)
+		return SQFS_ERROR_CORRUPTED;
 
 	memcpy(super, &temp, sizeof(temp));
 	return 0;
-fail_block_log:
-	fputs("Mismatch between block size and block log\n", stderr);
-	fputs("Filesystem probably currupted.\n", stderr);
-	return -1;
 }

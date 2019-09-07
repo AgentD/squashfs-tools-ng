@@ -54,6 +54,8 @@ SQFS_API int sqfs_get_xattr_prefix_id(const char *key);
 /* Check if a given xattr key can be encoded in squashfs at all. */
 SQFS_API bool sqfs_has_xattr(const char *key);
 
+SQFS_API int sqfs_xattr_reader_load_locations(sqfs_xattr_reader_t *xr);
+
 SQFS_API void sqfs_xattr_reader_destroy(sqfs_xattr_reader_t *xr);
 
 SQFS_API sqfs_xattr_reader_t *sqfs_xattr_reader_create(int sqfsfd,
@@ -67,11 +69,13 @@ SQFS_API int sqfs_xattr_reader_seek_kv(sqfs_xattr_reader_t *xr,
 				       const sqfs_xattr_id_t *desc);
 
 SQFS_API
-sqfs_xattr_value_t *sqfs_xattr_reader_read_value(sqfs_xattr_reader_t *xr,
-						 const sqfs_xattr_entry_t *key);
+int sqfs_xattr_reader_read_value(sqfs_xattr_reader_t *xr,
+				 const sqfs_xattr_entry_t *key,
+				 sqfs_xattr_value_t **val_out);
 
 SQFS_API
-sqfs_xattr_entry_t *sqfs_xattr_reader_read_key(sqfs_xattr_reader_t *xr);
+int sqfs_xattr_reader_read_key(sqfs_xattr_reader_t *xr,
+			       sqfs_xattr_entry_t **key_out);
 
 #ifdef __cplusplus
 }

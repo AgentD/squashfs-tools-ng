@@ -9,13 +9,13 @@
 
 #include "sqfs/meta_writer.h"
 #include "sqfs/compress.h"
+#include "sqfs/error.h"
 #include "sqfs/data.h"
 #include "util.h"
 
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <stdio.h>
 
 typedef struct meta_block_t {
 	struct meta_block_t *next;
@@ -58,10 +58,8 @@ sqfs_meta_writer_t *sqfs_meta_writer_create(int fd, sqfs_compressor_t *cmp,
 {
 	sqfs_meta_writer_t *m = calloc(1, sizeof(*m));
 
-	if (m == NULL) {
-		perror("creating meta data writer");
+	if (m == NULL)
 		return NULL;
-	}
 
 	m->cmp = cmp;
 	m->outfd = fd;
@@ -92,16 +90,14 @@ int sqfs_meta_writer_flush(sqfs_meta_writer_t *m)
 		return 0;
 
 	outblk = calloc(1, sizeof(*outblk));
-	if (outblk == NULL) {
-		perror("generating meta data block");
-		return -1;
-	}
+	if (outblk == NULL)
+		return SQFS_ERROR_ALLOC;
 
 	ret = m->cmp->do_block(m->cmp, m->data, m->offset,
 			       outblk->data + 2, sizeof(outblk->data) - 2);
 	if (ret < 0) {
 		free(outblk);
-		return -1;
+		return ret;
 	}
 
 	if (ret > 0) {
@@ -113,6 +109,8 @@ int sqfs_meta_writer_flush(sqfs_meta_writer_t *m)
 		count = m->offset + 2;
 	}
 
+	ret = 0;
+
 	if (m->keep_in_mem) {
 		if (m->list == NULL) {
 			m->list = outblk;
@@ -120,9 +118,9 @@ int sqfs_meta_writer_flush(sqfs_meta_writer_t *m)
 			m->list_end->next = outblk;
 		}
 		m->list_end = outblk;
-		ret = 0;
 	} else {
-		ret = write_block(m->outfd, outblk);
+		if (write_block(m->outfd, outblk))
+			ret = SQFS_ERROR_IO;
 		free(outblk);
 	}
 
@@ -136,13 +134,15 @@ int sqfs_meta_writer_append(sqfs_meta_writer_t *m, const void *data,
 			    size_t size)
 {
 	size_t diff;
+	int ret;
 
 	while (size != 0) {
 		diff = sizeof(m->data) - m->offset;
 
 		if (diff == 0) {
-			if (sqfs_meta_writer_flush(m))
-				return -1;
+			ret = sqfs_meta_writer_flush(m);
+			if (ret)
+				return ret;
 			diff = sizeof(m->data);
 		}
 
@@ -183,7 +183,7 @@ int sqfs_meta_write_write_to_file(sqfs_meta_writer_t *m)
 		blk = m->list;
 
 		if (write_block(m->outfd, blk))
-			return -1;
+			return SQFS_ERROR_IO;
 
 		m->list = blk->next;
 		free(blk);

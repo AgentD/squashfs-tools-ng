@@ -8,27 +8,23 @@
 #include "config.h"
 
 #include "sqfs/super.h"
+#include "sqfs/error.h"
 #include "util.h"
 
 #include <endian.h>
 #include <string.h>
 #include <unistd.h>
-#include <stdio.h>
 
 int sqfs_super_init(sqfs_super_t *super, size_t block_size, uint32_t mtime,
 		    E_SQFS_COMPRESSOR compressor)
 {
 	unsigned int i;
 
-	if (block_size & (block_size - 1)) {
-		fputs("Block size must be a power of 2!\n", stderr);
-		return -1;
-	}
+	if (block_size & (block_size - 1))
+		return SQFS_ERROR_SUPER_BLOCK_SIZE;
 
-	if (block_size < 4096 || block_size >= (1 << 20)) {
-		fputs("Block size must be between 4k and 1M\n", stderr);
-		return -1;
-	}
+	if (block_size < 4096 || block_size >= (1 << 20))
+		return SQFS_ERROR_SUPER_BLOCK_SIZE;
 
 	memset(super, 0, sizeof(*super));
 	super->magic = SQFS_MAGIC;
@@ -77,16 +73,13 @@ int sqfs_super_write(sqfs_super_t *super, int fd)
 	copy.export_table_start = htole64(super->export_table_start);
 
 	if (lseek(fd, 0, SEEK_SET) == (off_t)-1)
-		goto fail_seek;
+		return SQFS_ERROR_IO;
 
 	if (write_data("writing super block", fd, &copy, sizeof(copy)))
-		return -1;
+		return SQFS_ERROR_IO;
 
 	if (lseek(fd, 0, SEEK_END) == (off_t)-1)
-		goto fail_seek;
+		return SQFS_ERROR_IO;
 
 	return 0;
-fail_seek:
-	perror("squashfs writing super block: seek on output file");
-	return -1;
 }

@@ -90,6 +90,7 @@ static int fill_dir(sqfs_meta_reader_t *ir, sqfs_meta_reader_t *dr,
 	uint64_t block_start;
 	size_t size, diff;
 	uint32_t i;
+	int err;
 
 	size = root->data.dir->size;
 	if (size <= sizeof(hdr))
@@ -110,8 +111,7 @@ static int fill_dir(sqfs_meta_reader_t *ir, sqfs_meta_reader_t *dr,
 		size -= sizeof(hdr);
 
 		for (i = 0; i <= hdr.count && size > sizeof(*ent); ++i) {
-			ent = sqfs_meta_reader_read_dir_ent(dr);
-			if (ent == NULL)
+			if (sqfs_meta_reader_read_dir_ent(dr, &ent))
 				return -1;
 
 			diff = sizeof(*ent) + strlen((char *)ent->name);
@@ -126,12 +126,12 @@ static int fill_dir(sqfs_meta_reader_t *ir, sqfs_meta_reader_t *dr,
 				continue;
 			}
 
-			inode = sqfs_meta_reader_read_inode(ir, super,
-							    hdr.start_block,
-							    ent->offset);
-			if (inode == NULL) {
+			err = sqfs_meta_reader_read_inode(ir, super,
+							  hdr.start_block,
+							  ent->offset, &inode);
+			if (err) {
 				free(ent);
-				return -1;
+				return err;
 			}
 
 			n = tree_node_from_inode(inode, idtbl,
@@ -240,10 +240,12 @@ int deserialize_fstree(fstree_t *out, sqfs_super_t *super,
 	if (xr == NULL)
 		goto out_id;
 
+	if (sqfs_xattr_reader_load_locations(xr))
+		goto out_xr;
+
 	block_start = super->root_inode_ref >> 16;
 	offset = super->root_inode_ref & 0xFFFF;
-	root = sqfs_meta_reader_read_inode(ir, super, block_start, offset);
-	if (root == NULL)
+	if (sqfs_meta_reader_read_inode(ir, super, block_start, offset, &root))
 		goto out_xr;
 
 	if (root->base.type != SQFS_INODE_DIR &&

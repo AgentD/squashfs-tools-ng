@@ -8,13 +8,13 @@
 #include "config.h"
 
 #include "sqfs/meta_reader.h"
+#include "sqfs/error.h"
 #include "sqfs/super.h"
 #include "sqfs/inode.h"
 #include "util.h"
 
 #include <sys/stat.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <errno.h>
 
 #define SWAB16(x) x = le16toh(x)
@@ -55,8 +55,7 @@ static int set_mode(sqfs_inode_t *inode)
 		inode->mode |= S_IFIFO;
 		break;
 	default:
-		fputs("Found inode with unknown file mode\n", stderr);
-		return -1;
+		return SQFS_ERROR_UNSUPPORTED;
 	}
 
 	return 0;
@@ -75,16 +74,17 @@ static uint64_t get_block_count(uint64_t size, uint64_t block_size,
 	return count;
 }
 
-static sqfs_inode_generic_t *read_inode_file(sqfs_meta_reader_t *ir,
-					     sqfs_inode_t *base,
-					     size_t block_size)
+static int read_inode_file(sqfs_meta_reader_t *ir, sqfs_inode_t *base,
+			   size_t block_size, sqfs_inode_generic_t **result)
 {
 	sqfs_inode_generic_t *out;
 	sqfs_inode_file_t file;
 	uint64_t i, count;
+	int err;
 
-	if (sqfs_meta_reader_read(ir, &file, sizeof(file)))
-		return NULL;
+	err = sqfs_meta_reader_read(ir, &file, sizeof(file));
+	if (err)
+		return err;
 
 	SWAB32(file.blocks_start);
 	SWAB32(file.fragment_index);
@@ -95,38 +95,39 @@ static sqfs_inode_generic_t *read_inode_file(sqfs_meta_reader_t *ir,
 				file.fragment_index, file.fragment_offset);
 
 	out = alloc_flex(sizeof(*out), sizeof(uint32_t), count);
-	if (out == NULL) {
-		perror("reading extended file inode");
-		return NULL;
-	}
+	if (out == NULL)
+		return SQFS_ERROR_ALLOC;
 
 	out->base = *base;
 	out->data.file = file;
 	out->block_sizes = (uint32_t *)out->extra;
 	out->num_file_blocks = count;
 
-	if (sqfs_meta_reader_read(ir, out->block_sizes,
-				  count * sizeof(uint32_t))) {
+	err = sqfs_meta_reader_read(ir, out->block_sizes,
+				    count * sizeof(uint32_t));
+	if (err) {
 		free(out);
-		return NULL;
+		return err;
 	}
 
 	for (i = 0; i < count; ++i)
 		SWAB32(out->block_sizes[i]);
 
-	return out;
+	*result = out;
+	return 0;
 }
 
-static sqfs_inode_generic_t *read_inode_file_ext(sqfs_meta_reader_t *ir,
-						 sqfs_inode_t *base,
-						 size_t block_size)
+static int read_inode_file_ext(sqfs_meta_reader_t *ir, sqfs_inode_t *base,
+			       size_t block_size, sqfs_inode_generic_t **result)
 {
 	sqfs_inode_file_ext_t file;
 	sqfs_inode_generic_t *out;
 	uint64_t i, count;
+	int err;
 
-	if (sqfs_meta_reader_read(ir, &file, sizeof(file)))
-		return NULL;
+	err = sqfs_meta_reader_read(ir, &file, sizeof(file));
+	if (err)
+		return err;
 
 	SWAB64(file.blocks_start);
 	SWAB64(file.file_size);
@@ -141,8 +142,8 @@ static sqfs_inode_generic_t *read_inode_file_ext(sqfs_meta_reader_t *ir,
 
 	out = alloc_flex(sizeof(*out), sizeof(uint32_t), count);
 	if (out == NULL) {
-		perror("reading extended file inode");
-		return NULL;
+		return errno == EOVERFLOW ? SQFS_ERROR_OVERFLOW :
+			SQFS_ERROR_ALLOC;
 	}
 
 	out->base = *base;
@@ -150,90 +151,96 @@ static sqfs_inode_generic_t *read_inode_file_ext(sqfs_meta_reader_t *ir,
 	out->block_sizes = (uint32_t *)out->extra;
 	out->num_file_blocks = count;
 
-	if (sqfs_meta_reader_read(ir, out->block_sizes,
-				  count * sizeof(uint32_t))) {
+	err = sqfs_meta_reader_read(ir, out->block_sizes,
+				    count * sizeof(uint32_t));
+	if (err) {
 		free(out);
-		return NULL;
+		return err;
 	}
 
 	for (i = 0; i < count; ++i)
 		SWAB32(out->block_sizes[i]);
 
-	return out;
+	*result = out;
+	return 0;
 }
 
-static sqfs_inode_generic_t *read_inode_slink(sqfs_meta_reader_t *ir,
-					      sqfs_inode_t *base)
+static int read_inode_slink(sqfs_meta_reader_t *ir, sqfs_inode_t *base,
+			    sqfs_inode_generic_t **result)
 {
 	sqfs_inode_generic_t *out;
 	sqfs_inode_slink_t slink;
 	size_t size;
+	int err;
 
-	if (sqfs_meta_reader_read(ir, &slink, sizeof(slink)))
-		return NULL;
+	err = sqfs_meta_reader_read(ir, &slink, sizeof(slink));
+	if (err)
+		return err;
 
 	SWAB32(slink.nlink);
 	SWAB32(slink.target_size);
 
 	if (SZ_ADD_OV(slink.target_size, 1, &size) ||
 	    SZ_ADD_OV(sizeof(*out), size, &size)) {
-		errno = EOVERFLOW;
-		goto fail;
+		return SQFS_ERROR_OVERFLOW;
 	}
 
 	out = calloc(1, size);
 	if (out == NULL)
-		goto fail;
+		return SQFS_ERROR_ALLOC;
 
 	out->slink_target = (char *)out->extra;
 	out->base = *base;
 	out->data.slink = slink;
 
-	if (sqfs_meta_reader_read(ir, out->slink_target, slink.target_size)) {
+	err = sqfs_meta_reader_read(ir, out->slink_target, slink.target_size);
+	if (err) {
 		free(out);
-		return NULL;
+		return err;
 	}
 
-	return out;
-fail:
-	perror("reading symlink inode");
-	return NULL;
+	*result = out;
+	return 0;
 }
 
-static sqfs_inode_generic_t *read_inode_slink_ext(sqfs_meta_reader_t *ir,
-						  sqfs_inode_t *base)
+static int read_inode_slink_ext(sqfs_meta_reader_t *ir, sqfs_inode_t *base,
+				sqfs_inode_generic_t **result)
 {
-	sqfs_inode_generic_t *out = read_inode_slink(ir, base);
 	uint32_t xattr;
+	int err;
 
-	if (out != NULL) {
-		if (sqfs_meta_reader_read(ir, &xattr, sizeof(xattr))) {
-			free(out);
-			return NULL;
-		}
+	err = read_inode_slink(ir, base, result);
+	if (err)
+		return err;
 
-		out->data.slink_ext.xattr_idx = le32toh(xattr);
+	err = sqfs_meta_reader_read(ir, &xattr, sizeof(xattr));
+	if (err) {
+		free(*result);
+		return err;
 	}
 
-	return out;
+	(*result)->data.slink_ext.xattr_idx = le32toh(xattr);
+	return 0;
 }
 
-sqfs_inode_generic_t *sqfs_meta_reader_read_inode(sqfs_meta_reader_t *ir,
-						  sqfs_super_t *super,
-						  uint64_t block_start,
-						  size_t offset)
+int sqfs_meta_reader_read_inode(sqfs_meta_reader_t *ir, sqfs_super_t *super,
+				uint64_t block_start, size_t offset,
+				sqfs_inode_generic_t **result)
 {
 	sqfs_inode_generic_t *out;
 	sqfs_inode_t inode;
+	int err;
 
 	/* read base inode */
 	block_start += super->inode_table_start;
 
-	if (sqfs_meta_reader_seek(ir, block_start, offset))
-		return NULL;
+	err = sqfs_meta_reader_seek(ir, block_start, offset);
+	if (err)
+		return err;
 
-	if (sqfs_meta_reader_read(ir, &inode, sizeof(inode)))
-		return NULL;
+	err = sqfs_meta_reader_read(ir, &inode, sizeof(inode));
+	if (err)
+		return err;
 
 	SWAB16(inode.type);
 	SWAB16(inode.mode);
@@ -242,38 +249,39 @@ sqfs_inode_generic_t *sqfs_meta_reader_read_inode(sqfs_meta_reader_t *ir,
 	SWAB32(inode.mod_time);
 	SWAB32(inode.inode_number);
 
-	if (set_mode(&inode))
-		return NULL;
+	err = set_mode(&inode);
+	if (err)
+		return err;
 
 	/* inode types where the size is variable */
 	switch (inode.type) {
 	case SQFS_INODE_FILE:
-		return read_inode_file(ir, &inode, super->block_size);
+		return read_inode_file(ir, &inode, super->block_size, result);
 	case SQFS_INODE_SLINK:
-		return read_inode_slink(ir, &inode);
+		return read_inode_slink(ir, &inode, result);
 	case SQFS_INODE_EXT_FILE:
-		return read_inode_file_ext(ir, &inode, super->block_size);
+		return read_inode_file_ext(ir, &inode, super->block_size,
+					   result);
 	case SQFS_INODE_EXT_SLINK:
-		return read_inode_slink_ext(ir, &inode);
+		return read_inode_slink_ext(ir, &inode, result);
 	default:
 		break;
 	}
 
 	/* everything else */
 	out = calloc(1, sizeof(*out));
-	if (out == NULL) {
-		perror("reading symlink inode");
-		return NULL;
-	}
+	if (out == NULL)
+		return SQFS_ERROR_ALLOC;
 
 	out->base = inode;
 
 	switch (inode.type) {
 	case SQFS_INODE_DIR:
-		if (sqfs_meta_reader_read(ir, &out->data.dir,
-					  sizeof(out->data.dir))) {
+		err = sqfs_meta_reader_read(ir, &out->data.dir,
+					    sizeof(out->data.dir));
+		if (err)
 			goto fail_free;
-		}
+
 		SWAB32(out->data.dir.start_block);
 		SWAB32(out->data.dir.nlink);
 		SWAB16(out->data.dir.size);
@@ -282,26 +290,26 @@ sqfs_inode_generic_t *sqfs_meta_reader_read_inode(sqfs_meta_reader_t *ir,
 		break;
 	case SQFS_INODE_BDEV:
 	case SQFS_INODE_CDEV:
-		if (sqfs_meta_reader_read(ir, &out->data.dev,
-					  sizeof(out->data.dev))) {
+		err = sqfs_meta_reader_read(ir, &out->data.dev,
+					    sizeof(out->data.dev));
+		if (err)
 			goto fail_free;
-		}
 		SWAB32(out->data.dev.nlink);
 		SWAB32(out->data.dev.devno);
 		break;
 	case SQFS_INODE_FIFO:
 	case SQFS_INODE_SOCKET:
-		if (sqfs_meta_reader_read(ir, &out->data.ipc,
-					  sizeof(out->data.ipc))) {
+		err = sqfs_meta_reader_read(ir, &out->data.ipc,
+					    sizeof(out->data.ipc));
+		if (err)
 			goto fail_free;
-		}
 		SWAB32(out->data.ipc.nlink);
 		break;
 	case SQFS_INODE_EXT_DIR:
-		if (sqfs_meta_reader_read(ir, &out->data.dir_ext,
-					  sizeof(out->data.dir_ext))) {
+		err = sqfs_meta_reader_read(ir, &out->data.dir_ext,
+					    sizeof(out->data.dir_ext));
+		if (err)
 			goto fail_free;
-		}
 		SWAB32(out->data.dir_ext.nlink);
 		SWAB32(out->data.dir_ext.size);
 		SWAB32(out->data.dir_ext.start_block);
@@ -312,30 +320,30 @@ sqfs_inode_generic_t *sqfs_meta_reader_read_inode(sqfs_meta_reader_t *ir,
 		break;
 	case SQFS_INODE_EXT_BDEV:
 	case SQFS_INODE_EXT_CDEV:
-		if (sqfs_meta_reader_read(ir, &out->data.dev_ext,
-					  sizeof(out->data.dev_ext))) {
+		err = sqfs_meta_reader_read(ir, &out->data.dev_ext,
+					    sizeof(out->data.dev_ext));
+		if (err)
 			goto fail_free;
-		}
 		SWAB32(out->data.dev_ext.nlink);
 		SWAB32(out->data.dev_ext.devno);
 		SWAB32(out->data.dev_ext.xattr_idx);
 		break;
 	case SQFS_INODE_EXT_FIFO:
 	case SQFS_INODE_EXT_SOCKET:
-		if (sqfs_meta_reader_read(ir, &out->data.ipc_ext,
-					  sizeof(out->data.ipc_ext))) {
+		err = sqfs_meta_reader_read(ir, &out->data.ipc_ext,
+					    sizeof(out->data.ipc_ext));
+		if (err)
 			goto fail_free;
-		}
 		SWAB32(out->data.ipc_ext.nlink);
 		SWAB32(out->data.ipc_ext.xattr_idx);
 		break;
 	default:
-		fputs("Unknown inode type found\n", stderr);
-		goto fail_free;
+		return SQFS_ERROR_UNSUPPORTED;
 	}
 
-	return out;
+	*result = out;
+	return 0;
 fail_free:
 	free(out);
-	return NULL;
+	return err;
 }

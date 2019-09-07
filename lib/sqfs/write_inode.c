@@ -8,6 +8,7 @@
 #include "config.h"
 
 #include "sqfs/meta_writer.h"
+#include "sqfs/error.h"
 #include "sqfs/inode.h"
 
 static int write_block_sizes(sqfs_meta_writer_t *ir, sqfs_inode_generic_t *n)
@@ -26,6 +27,7 @@ int sqfs_meta_writer_write_inode(sqfs_meta_writer_t *ir,
 				 sqfs_inode_generic_t *n)
 {
 	sqfs_inode_t base;
+	int ret;
 
 	base.type = htole16(n->base.type);
 	base.mode = htole16(n->base.mode);
@@ -34,8 +36,9 @@ int sqfs_meta_writer_write_inode(sqfs_meta_writer_t *ir,
 	base.mod_time = htole32(n->base.mod_time);
 	base.inode_number = htole32(n->base.inode_number);
 
-	if (sqfs_meta_writer_append(ir, &base, sizeof(base)))
-		return -1;
+	ret = sqfs_meta_writer_append(ir, &base, sizeof(base));
+	if (ret)
+		return ret;
 
 	switch (n->base.type) {
 	case SQFS_INODE_DIR: {
@@ -56,8 +59,9 @@ int sqfs_meta_writer_write_inode(sqfs_meta_writer_t *ir,
 				htole32(n->data.file.fragment_offset),
 			.file_size = htole32(n->data.file.file_size),
 		};
-		if (sqfs_meta_writer_append(ir, &file, sizeof(file)))
-			return -1;
+		ret = sqfs_meta_writer_append(ir, &file, sizeof(file));
+		if (ret)
+			return ret;
 		return write_block_sizes(ir, n);
 	}
 	case SQFS_INODE_SLINK: {
@@ -65,8 +69,9 @@ int sqfs_meta_writer_write_inode(sqfs_meta_writer_t *ir,
 			.nlink = htole32(n->data.slink.nlink),
 			.target_size = htole32(n->data.slink.target_size),
 		};
-		if (sqfs_meta_writer_append(ir, &slink, sizeof(slink)))
-			return -1;
+		ret = sqfs_meta_writer_append(ir, &slink, sizeof(slink));
+		if (ret)
+			return ret;
 		return sqfs_meta_writer_append(ir, n->slink_target,
 					       n->data.slink.target_size);
 	}
@@ -108,8 +113,9 @@ int sqfs_meta_writer_write_inode(sqfs_meta_writer_t *ir,
 				htole32(n->data.file_ext.fragment_offset),
 			.xattr_idx = htole32(n->data.file_ext.xattr_idx),
 		};
-		if (sqfs_meta_writer_append(ir, &file, sizeof(file)))
-			return -1;
+		ret = sqfs_meta_writer_append(ir, &file, sizeof(file));
+		if (ret)
+			return ret;
 		return write_block_sizes(ir, n);
 	}
 	case SQFS_INODE_EXT_SLINK: {
@@ -119,12 +125,13 @@ int sqfs_meta_writer_write_inode(sqfs_meta_writer_t *ir,
 		};
 		uint32_t xattr = htole32(n->data.slink_ext.xattr_idx);
 
-		if (sqfs_meta_writer_append(ir, &slink, sizeof(slink)))
-			return -1;
-		if (sqfs_meta_writer_append(ir, n->slink_target,
-					    n->data.slink_ext.target_size)) {
-			return -1;
-		}
+		ret = sqfs_meta_writer_append(ir, &slink, sizeof(slink));
+		if (ret)
+			return ret;
+		ret = sqfs_meta_writer_append(ir, n->slink_target,
+					      n->data.slink_ext.target_size);
+		if (ret)
+			return ret;
 		return sqfs_meta_writer_append(ir, &xattr, sizeof(xattr));
 	}
 	case SQFS_INODE_EXT_BDEV:
@@ -146,5 +153,5 @@ int sqfs_meta_writer_write_inode(sqfs_meta_writer_t *ir,
 	}
 	}
 
-	return -1;
+	return SQFS_ERROR_UNSUPPORTED;
 }

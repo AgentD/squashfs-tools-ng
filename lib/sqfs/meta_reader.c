@@ -9,13 +9,13 @@
 
 #include "sqfs/meta_reader.h"
 #include "sqfs/compress.h"
+#include "sqfs/error.h"
 #include "sqfs/data.h"
 #include "util.h"
 
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <stdio.h>
 
 struct sqfs_meta_reader_t {
 	uint64_t start;
@@ -49,10 +49,8 @@ sqfs_meta_reader_t *sqfs_meta_reader_create(int fd, sqfs_compressor_t *cmp,
 {
 	sqfs_meta_reader_t *m = calloc(1, sizeof(*m));
 
-	if (m == NULL) {
-		perror("creating meta data reader");
+	if (m == NULL)
 		return NULL;
-	}
 
 	m->start = start;
 	m->limit = limit;
@@ -75,11 +73,11 @@ int sqfs_meta_reader_seek(sqfs_meta_reader_t *m, uint64_t block_start,
 	size_t size;
 
 	if (block_start < m->start || block_start >= m->limit)
-		goto fail_range;
+		return SQFS_ERROR_OUT_OF_BOUNDS;
 
 	if (block_start == m->block_offset) {
 		if (offset >= m->data_used)
-			goto fail_offset;
+			return SQFS_ERROR_OUT_OF_BOUNDS;
 
 		m->offset = offset;
 		return 0;
@@ -87,7 +85,7 @@ int sqfs_meta_reader_seek(sqfs_meta_reader_t *m, uint64_t block_start,
 
 	if (read_data_at("reading meta data header", block_start,
 			 m->fd, &header, 2)) {
-		return -1;
+		return SQFS_ERROR_IO;
 	}
 
 	header = le16toh(header);
@@ -95,24 +93,22 @@ int sqfs_meta_reader_seek(sqfs_meta_reader_t *m, uint64_t block_start,
 	size = header & 0x7FFF;
 
 	if (size > sizeof(m->data))
-		goto fail_too_large;
+		return SQFS_ERROR_CORRUPTED;
 
 	if ((block_start + 2 + size) > m->limit)
-		goto fail_block_bounds;
+		return SQFS_ERROR_OUT_OF_BOUNDS;
 
 	if (read_data_at("reading meta data block", block_start + 2,
 			 m->fd, m->data, size)) {
-		return -1;
+		return SQFS_ERROR_IO;
 	}
 
 	if (compressed) {
 		ret = m->cmp->do_block(m->cmp, m->data, size,
 				       m->scratch, sizeof(m->scratch));
 
-		if (ret <= 0) {
-			fputs("error uncompressing meta data block\n", stderr);
-			return -1;
-		}
+		if (ret < 0)
+			return ret;
 
 		memcpy(m->data, m->scratch, ret);
 		m->data_used = ret;
@@ -121,26 +117,12 @@ int sqfs_meta_reader_seek(sqfs_meta_reader_t *m, uint64_t block_start,
 	}
 
 	if (offset >= m->data_used)
-		goto fail_offset;
+		return SQFS_ERROR_OUT_OF_BOUNDS;
 
 	m->block_offset = block_start;
 	m->next_block = block_start + size + 2;
 	m->offset = offset;
 	return 0;
-fail_block_bounds:
-	fputs("found metadata block that exceeds filesystem bounds.\n",
-	      stderr);
-	return -1;
-fail_too_large:
-	fputs("found metadata block larger than maximum size.\n", stderr);
-	return -1;
-fail_offset:
-	fputs("Tried to seek past end of metadata block.\n", stderr);
-	return -1;
-fail_range:
-	fputs("Tried to read meta data block past filesystem bounds.\n",
-	      stderr);
-	return -1;
 }
 
 void sqfs_meta_reader_get_position(sqfs_meta_reader_t *m, uint64_t *block_start,
@@ -153,13 +135,15 @@ void sqfs_meta_reader_get_position(sqfs_meta_reader_t *m, uint64_t *block_start,
 int sqfs_meta_reader_read(sqfs_meta_reader_t *m, void *data, size_t size)
 {
 	size_t diff;
+	int ret;
 
 	while (size != 0) {
 		diff = m->data_used - m->offset;
 
 		if (diff == 0) {
-			if (sqfs_meta_reader_seek(m, m->next_block, 0))
-				return -1;
+			ret = sqfs_meta_reader_seek(m, m->next_block, 0);
+			if (ret)
+				return ret;
 			diff = m->data_used;
 		}
 

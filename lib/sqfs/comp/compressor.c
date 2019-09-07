@@ -9,7 +9,6 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <stdio.h>
 
 #include "internal.h"
 #include "util.h"
@@ -53,7 +52,7 @@ int sqfs_generic_write_options(int fd, const void *data, size_t size)
 
 	if (write_data("writing compressor options",
 		       fd, buffer, sizeof(buffer))) {
-		return -1;
+		return SQFS_ERROR_IO;
 	}
 
 	return sizeof(buffer);
@@ -65,14 +64,11 @@ int sqfs_generic_read_options(int fd, void *data, size_t size)
 
 	if (read_data_at("reading compressor options", sizeof(sqfs_super_t),
 			 fd, buffer, sizeof(buffer))) {
-		return -1;
+		return SQFS_ERROR_IO;
 	}
 
-	if (le16toh(*((uint16_t *)buffer)) != (0x8000 | size)) {
-		fputs("reading compressor options: invalid meta data header\n",
-		      stderr);
-		return -1;
-	}
+	if (le16toh(*((uint16_t *)buffer)) != (0x8000 | size))
+		return SQFS_ERROR_CORRUPTED;
 
 	memcpy(data, buffer + 2, size);
 	return 0;
