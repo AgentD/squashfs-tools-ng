@@ -17,6 +17,7 @@
 #include "sqfs/meta_writer.h"
 #include "sqfs/xattr.h"
 #include "sqfs/dir.h"
+#include "sqfs/io.h"
 #include "data_reader.h"
 #include "fstree.h"
 
@@ -26,9 +27,9 @@
 typedef struct {
 	sqfs_compressor_t *cmp;
 	data_reader_t *data;
+	sqfs_file_t *file;
 	sqfs_super_t super;
 	fstree_t fs;
-	int sqfsfd;
 } sqfs_reader_t;
 
 enum RDTREE_FLAGS {
@@ -52,7 +53,7 @@ enum RDTREE_FLAGS {
 
   Returns 0 on success. Prints error messages to stderr on failure.
  */
-int sqfs_serialize_fstree(int outfd, sqfs_super_t *super, fstree_t *fs,
+int sqfs_serialize_fstree(sqfs_file_t *file, sqfs_super_t *super, fstree_t *fs,
 			  sqfs_compressor_t *cmp, sqfs_id_table_t *idtbl);
 
 /*
@@ -72,14 +73,14 @@ tree_node_t *tree_node_from_inode(sqfs_inode_generic_t *inode,
   Returns 0 on success. Prints error messages to stderr on failure.
  */
 int deserialize_fstree(fstree_t *out, sqfs_super_t *super,
-		       sqfs_compressor_t *cmp, int fd, int flags);
+		       sqfs_compressor_t *cmp, sqfs_file_t *file, int flags);
 
 /*
   Generate a squahfs xattr table from a file system tree.
 
   Returns 0 on success. Prints error messages to stderr on failure.
  */
-int write_xattr(int outfd, fstree_t *fs, sqfs_super_t *super,
+int write_xattr(sqfs_file_t *file, fstree_t *fs, sqfs_super_t *super,
 		sqfs_compressor_t *cmp);
 
 /*
@@ -87,7 +88,7 @@ int write_xattr(int outfd, fstree_t *fs, sqfs_super_t *super,
 
   Returns 0 on success. Prints error messages to stderr on failure.
  */
-int write_export_table(int outfd, fstree_t *fs, sqfs_super_t *super,
+int write_export_table(sqfs_file_t *file, fstree_t *fs, sqfs_super_t *super,
 		       sqfs_compressor_t *cmp);
 
 /* Print out fancy statistics for squashfs packing tools */

@@ -203,7 +203,7 @@ static int fill_dir(sqfs_meta_reader_t *ir, sqfs_meta_reader_t *dr,
 }
 
 int deserialize_fstree(fstree_t *out, sqfs_super_t *super,
-		       sqfs_compressor_t *cmp, int fd, int flags)
+		       sqfs_compressor_t *cmp, sqfs_file_t *file, int flags)
 {
 	uint64_t block_start, limit;
 	sqfs_meta_reader_t *ir, *dr;
@@ -213,7 +213,7 @@ int deserialize_fstree(fstree_t *out, sqfs_super_t *super,
 	int status = -1;
 	size_t offset;
 
-	ir = sqfs_meta_reader_create(fd, cmp, super->inode_table_start,
+	ir = sqfs_meta_reader_create(file, cmp, super->inode_table_start,
 				     super->directory_table_start);
 	if (ir == NULL)
 		return -1;
@@ -224,7 +224,7 @@ int deserialize_fstree(fstree_t *out, sqfs_super_t *super,
 	if (super->fragment_table_start < limit)
 		limit = super->fragment_table_start;
 
-	dr = sqfs_meta_reader_create(fd, cmp, super->directory_table_start,
+	dr = sqfs_meta_reader_create(file, cmp, super->directory_table_start,
 				     limit);
 	if (dr == NULL)
 		goto out_ir;
@@ -233,10 +233,10 @@ int deserialize_fstree(fstree_t *out, sqfs_super_t *super,
 	if (idtbl == NULL)
 		goto out_dr;
 
-	if (sqfs_id_table_read(idtbl, fd, super, cmp))
+	if (sqfs_id_table_read(idtbl, file, super, cmp))
 		goto out_id;
 
-	xr = sqfs_xattr_reader_create(fd, super, cmp);
+	xr = sqfs_xattr_reader_create(file, super, cmp);
 	if (xr == NULL)
 		goto out_id;
 

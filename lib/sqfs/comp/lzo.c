@@ -59,7 +59,7 @@ typedef struct {
 	uint32_t level;
 } lzo_options_t;
 
-static int lzo_write_options(sqfs_compressor_t *base, int fd)
+static int lzo_write_options(sqfs_compressor_t *base, sqfs_file_t *file)
 {
 	lzo_compressor_t *lzo = (lzo_compressor_t *)base;
 	lzo_options_t opt;
@@ -77,16 +77,16 @@ static int lzo_write_options(sqfs_compressor_t *base, int fd)
 		opt.level = 0;
 	}
 
-	return sqfs_generic_write_options(fd, &opt, sizeof(opt));
+	return sqfs_generic_write_options(file, &opt, sizeof(opt));
 }
 
-static int lzo_read_options(sqfs_compressor_t *base, int fd)
+static int lzo_read_options(sqfs_compressor_t *base, sqfs_file_t *file)
 {
 	lzo_compressor_t *lzo = (lzo_compressor_t *)base;
 	lzo_options_t opt;
 	int ret;
 
-	ret = sqfs_generic_read_options(fd, &opt, sizeof(opt));
+	ret = sqfs_generic_read_options(file, &opt, sizeof(opt));
 	if (ret)
 		return ret;
 

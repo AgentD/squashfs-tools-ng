@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-int write_export_table(int outfd, fstree_t *fs, sqfs_super_t *super,
+int write_export_table(sqfs_file_t *file, fstree_t *fs, sqfs_super_t *super,
 		       sqfs_compressor_t *cmp)
 {
 	uint64_t *table, start;
@@ -38,7 +38,7 @@ int write_export_table(int outfd, fstree_t *fs, sqfs_super_t *super,
 	}
 
 	size = sizeof(uint64_t) * (fs->inode_tbl_size - 1);
-	ret = sqfs_write_table(outfd, super, cmp, table, size, &start);
+	ret = sqfs_write_table(file, super, cmp, table, size, &start);
 
 	super->export_table_start = start;
 	super->flags |= SQFS_FLAG_EXPORTABLE;

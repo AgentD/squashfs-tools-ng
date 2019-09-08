@@ -96,11 +96,11 @@ int main(int argc, char **argv)
 	sqfs_compressor_config_t cfg;
 	sqfs_compressor_t *cmp;
 	sqfs_id_table_t *idtbl;
+	sqfs_file_t *outfile;
 	data_writer_t *data;
 	sqfs_super_t super;
 	options_t opt;
 	fstree_t fs;
-	int outfd;
 
 	process_command_line(&opt, argc, argv);
 
@@ -121,22 +121,22 @@ int main(int argc, char **argv)
 	if (idtbl == NULL)
 		goto out_fstree;
 
-	outfd = open(opt.outfile, opt.outmode, 0644);
-	if (outfd < 0) {
+	outfile = sqfs_open_file(opt.outfile, opt.outmode);
+	if (outfile == NULL) {
 		perror(opt.outfile);
 		goto out_idtbl;
 	}
 
-	if (sqfs_super_write(&super, outfd))
-		goto out_outfd;
+	if (sqfs_super_write(&super, outfile))
+		goto out_outfile;
 
 	if (read_fstree(&fs, &opt))
-		goto out_outfd;
+		goto out_outfile;
 
 	tree_node_sort_recursive(fs.root);
 
 	if (fstree_gen_inode_table(&fs))
-		goto out_outfd;
+		goto out_outfile;
 
 	fstree_gen_file_list(&fs);
 
@@ -145,7 +145,7 @@ int main(int argc, char **argv)
 #ifdef WITH_SELINUX
 	if (opt.selinux != NULL) {
 		if (fstree_relabel_selinux(&fs, opt.selinux))
-			goto out_outfd;
+			goto out_outfile;
 	}
 #endif
 
@@ -154,10 +154,10 @@ int main(int argc, char **argv)
 	cmp = sqfs_compressor_create(&cfg);
 	if (cmp == NULL) {
 		fputs("Error creating compressor\n", stderr);
-		goto out_outfd;
+		goto out_outfile;
 	}
 
-	ret = cmp->write_options(cmp, outfd);
+	ret = cmp->write_options(cmp, outfile);
 	if (ret < 0)
 		goto out_cmp;
 
@@ -166,7 +166,7 @@ int main(int argc, char **argv)
 		super.bytes_used += ret;
 	}
 
-	data = data_writer_create(&super, cmp, outfd,
+	data = data_writer_create(&super, cmp, outfile,
 				  opt.devblksz, opt.num_jobs);
 	if (data == NULL)
 		goto out_cmp;
@@ -174,27 +174,27 @@ int main(int argc, char **argv)
 	if (pack_files(data, &fs, &opt))
 		goto out_data;
 
-	if (sqfs_serialize_fstree(outfd, &super, &fs, cmp, idtbl))
+	if (sqfs_serialize_fstree(outfile, &super, &fs, cmp, idtbl))
 		goto out_data;
 
 	if (data_writer_write_fragment_table(data))
 		goto out_data;
 
 	if (opt.exportable) {
-		if (write_export_table(outfd, &fs, &super, cmp))
+		if (write_export_table(outfile, &fs, &super, cmp))
 			goto out_data;
 	}
 
-	if (sqfs_id_table_write(idtbl, outfd, &super, cmp))
+	if (sqfs_id_table_write(idtbl, outfile, &super, cmp))
 		goto out_data;
 
-	if (write_xattr(outfd, &fs, &super, cmp))
+	if (write_xattr(outfile, &fs, &super, cmp))
 		goto out_data;
 
-	if (sqfs_super_write(&super, outfd))
+	if (sqfs_super_write(&super, outfile))
 		goto out_data;
 
-	if (padd_file(outfd, super.bytes_used, opt.devblksz))
+	if (padd_sqfs(outfile, super.bytes_used, opt.devblksz))
 		goto out_data;
 
 	if (!opt.quiet) {
@@ -207,8 +207,8 @@ out_data:
 	data_writer_destroy(data);
 out_cmp:
 	cmp->destroy(cmp);
-out_outfd:
-	close(outfd);
+out_outfile:
+	outfile->destroy(outfile);
 out_idtbl:
 	sqfs_id_table_destroy(idtbl);
 out_fstree:

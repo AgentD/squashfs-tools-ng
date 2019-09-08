@@ -11,6 +11,7 @@
 #include "sqfs/compress.h"
 #include "sqfs/error.h"
 #include "sqfs/data.h"
+#include "sqfs/io.h"
 #include "util.h"
 
 #include <string.h>
@@ -32,7 +33,7 @@ struct sqfs_meta_writer_t {
 	size_t block_offset;
 
 	/* The underlying file descriptor to write to */
-	int outfd;
+	sqfs_file_t *file;
 
 	/* A pointer to the compressor to use for compressing the data */
 	sqfs_compressor_t *cmp;
@@ -45,15 +46,16 @@ struct sqfs_meta_writer_t {
 	meta_block_t *list_end;
 };
 
-static int write_block(int fd, meta_block_t *outblk)
+static int write_block(sqfs_file_t *file, meta_block_t *outblk)
 {
 	size_t count = le16toh(((uint16_t *)outblk->data)[0]) & 0x7FFF;
+	uint64_t off = file->get_size(file);
 
-	return write_data("writing meta data block", fd,
-			  outblk->data, count + 2);
+	return file->write_at(file, off, outblk->data, count + 2);
 }
 
-sqfs_meta_writer_t *sqfs_meta_writer_create(int fd, sqfs_compressor_t *cmp,
+sqfs_meta_writer_t *sqfs_meta_writer_create(sqfs_file_t *file,
+					    sqfs_compressor_t *cmp,
 					    bool keep_in_mem)
 {
 	sqfs_meta_writer_t *m = calloc(1, sizeof(*m));
@@ -62,7 +64,7 @@ sqfs_meta_writer_t *sqfs_meta_writer_create(int fd, sqfs_compressor_t *cmp,
 		return NULL;
 
 	m->cmp = cmp;
-	m->outfd = fd;
+	m->file = file;
 	m->keep_in_mem = keep_in_mem;
 	return m;
 }
@@ -119,8 +121,7 @@ int sqfs_meta_writer_flush(sqfs_meta_writer_t *m)
 		}
 		m->list_end = outblk;
 	} else {
-		if (write_block(m->outfd, outblk))
-			ret = SQFS_ERROR_IO;
+		ret = write_block(m->file, outblk);
 		free(outblk);
 	}
 
@@ -178,12 +179,14 @@ void sqfs_meta_writer_reset(sqfs_meta_writer_t *m)
 int sqfs_meta_write_write_to_file(sqfs_meta_writer_t *m)
 {
 	meta_block_t *blk;
+	int ret;
 
 	while (m->list != NULL) {
 		blk = m->list;
 
-		if (write_block(m->outfd, blk))
-			return SQFS_ERROR_IO;
+		ret = write_block(m->file, blk);
+		if (ret)
+			return ret;
 
 		m->list = blk->next;
 		free(blk);

@@ -23,7 +23,7 @@ typedef struct data_reader_t data_reader_t;
 
   Prints error messsages to stderr on failure.
  */
-data_reader_t *data_reader_create(int fd, sqfs_super_t *super,
+data_reader_t *data_reader_create(sqfs_file_t *file, sqfs_super_t *super,
 				  sqfs_compressor_t *cmp);
 
 void data_reader_destroy(data_reader_t *data);

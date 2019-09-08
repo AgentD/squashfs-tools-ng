@@ -109,6 +109,9 @@ int popd(void);
 SQFS_INTERNAL
 int padd_file(int outfd, uint64_t size, size_t blocksize);
 
+SQFS_INTERNAL
+int padd_sqfs(sqfs_file_t *file, uint64_t size, size_t blocksize);
+
 /*
   Helper for allocating data structures with flexible array members.
 

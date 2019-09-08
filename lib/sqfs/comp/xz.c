@@ -36,7 +36,7 @@ static bool is_dict_size_valid(size_t size)
 	return size == (x | (x >> 1));
 }
 
-static int xz_write_options(sqfs_compressor_t *base, int fd)
+static int xz_write_options(sqfs_compressor_t *base, sqfs_file_t *file)
 {
 	xz_compressor_t *xz = (xz_compressor_t *)base;
 	xz_options_t opt;
@@ -47,16 +47,16 @@ static int xz_write_options(sqfs_compressor_t *base, int fd)
 	opt.dict_size = htole32(xz->dict_size);
 	opt.flags = htole32(xz->flags);
 
-	return sqfs_generic_write_options(fd, &opt, sizeof(opt));
+	return sqfs_generic_write_options(file, &opt, sizeof(opt));
 }
 
-static int xz_read_options(sqfs_compressor_t *base, int fd)
+static int xz_read_options(sqfs_compressor_t *base, sqfs_file_t *file)
 {
 	xz_compressor_t *xz = (xz_compressor_t *)base;
 	xz_options_t opt;
 	int ret;
 
-	ret = sqfs_generic_read_options(fd, &opt, sizeof(opt));
+	ret = sqfs_generic_read_options(file, &opt, sizeof(opt));
 	if (ret)
 		return ret;
 

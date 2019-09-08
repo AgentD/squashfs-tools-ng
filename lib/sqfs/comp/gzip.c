@@ -44,7 +44,7 @@ static void gzip_destroy(sqfs_compressor_t *base)
 	free(gzip);
 }
 
-static int gzip_write_options(sqfs_compressor_t *base, int fd)
+static int gzip_write_options(sqfs_compressor_t *base, sqfs_file_t *file)
 {
 	gzip_compressor_t *gzip = (gzip_compressor_t *)base;
 	gzip_options_t opt;
@@ -59,16 +59,16 @@ static int gzip_write_options(sqfs_compressor_t *base, int fd)
 	opt.window = htole16(gzip->opt.window);
 	opt.strategies = htole16(gzip->opt.strategies);
 
-	return sqfs_generic_write_options(fd, &opt, sizeof(opt));
+	return sqfs_generic_write_options(file, &opt, sizeof(opt));
 }
 
-static int gzip_read_options(sqfs_compressor_t *base, int fd)
+static int gzip_read_options(sqfs_compressor_t *base, sqfs_file_t *file)
 {
 	gzip_compressor_t *gzip = (gzip_compressor_t *)base;
 	gzip_options_t opt;
 	int ret;
 
-	ret = sqfs_generic_read_options(fd, &opt, sizeof(opt));
+	ret = sqfs_generic_read_options(file, &opt, sizeof(opt));
 	if (ret)
 		return ret;
 

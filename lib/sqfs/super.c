@@ -9,6 +9,7 @@
 
 #include "sqfs/super.h"
 #include "sqfs/error.h"
+#include "sqfs/io.h"
 #include "util.h"
 
 #include <endian.h>
@@ -48,7 +49,7 @@ int sqfs_super_init(sqfs_super_t *super, size_t block_size, uint32_t mtime,
 	return 0;
 }
 
-int sqfs_super_write(sqfs_super_t *super, int fd)
+int sqfs_super_write(sqfs_super_t *super, sqfs_file_t *file)
 {
 	sqfs_super_t copy;
 
@@ -72,14 +73,5 @@ int sqfs_super_write(sqfs_super_t *super, int fd)
 	copy.fragment_table_start = htole64(super->fragment_table_start);
 	copy.export_table_start = htole64(super->export_table_start);
 
-	if (lseek(fd, 0, SEEK_SET) == (off_t)-1)
-		return SQFS_ERROR_IO;
-
-	if (write_data("writing super block", fd, &copy, sizeof(copy)))
-		return SQFS_ERROR_IO;
-
-	if (lseek(fd, 0, SEEK_END) == (off_t)-1)
-		return SQFS_ERROR_IO;
-
-	return 0;
+	return file->write_at(file, 0, &copy, sizeof(copy));
 }

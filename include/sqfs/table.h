@@ -24,12 +24,12 @@ extern "C" {
 
   Returns 0 on success. Internally prints error messages to stderr.
  */
-SQFS_API int sqfs_write_table(int outfd, sqfs_super_t *super,
+SQFS_API int sqfs_write_table(sqfs_file_t *file, sqfs_super_t *super,
 			      sqfs_compressor_t *cmp,
 			      const void *data, size_t table_size,
 			      uint64_t *start);
 
-SQFS_API int sqfs_read_table(int fd, sqfs_compressor_t *cmp,
+SQFS_API int sqfs_read_table(sqfs_file_t *file, sqfs_compressor_t *cmp,
 			     size_t table_size, uint64_t location,
 			     uint64_t lower_limit, uint64_t upper_limit,
 			     void **out);

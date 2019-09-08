@@ -9,19 +9,21 @@
 
 #include "sqfs/super.h"
 #include "sqfs/error.h"
+#include "sqfs/io.h"
 #include "util.h"
 
 #include <endian.h>
 #include <string.h>
 
-int sqfs_super_read(sqfs_super_t *super, int fd)
+int sqfs_super_read(sqfs_super_t *super, sqfs_file_t *file)
 {
 	size_t block_size = 0;
 	sqfs_super_t temp;
-	int i;
+	int i, ret;
 
-	if (read_data_at("reading super block", 0, fd, &temp, sizeof(temp)))
-		return SQFS_ERROR_IO;
+	ret = file->read_at(file, 0, &temp, sizeof(temp));
+	if (ret)
+		return ret;
 
 	temp.magic = le32toh(temp.magic);
 	temp.inode_count = le32toh(temp.inode_count);

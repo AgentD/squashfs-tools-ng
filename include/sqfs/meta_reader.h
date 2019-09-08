@@ -19,7 +19,7 @@ extern "C" {
    Start offset and limit can be specified to do bounds checking against
    a subregion of the filesystem image.
 */
-SQFS_API sqfs_meta_reader_t *sqfs_meta_reader_create(int fd,
+SQFS_API sqfs_meta_reader_t *sqfs_meta_reader_create(sqfs_file_t *file,
 						     sqfs_compressor_t *cmp,
 						     uint64_t start,
 						     uint64_t limit);

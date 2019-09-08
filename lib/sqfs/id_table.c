@@ -73,8 +73,8 @@ int sqfs_id_table_index_to_id(const sqfs_id_table_t *tbl, uint16_t index,
 	return 0;
 }
 
-int sqfs_id_table_read(sqfs_id_table_t *tbl, int fd, sqfs_super_t *super,
-		       sqfs_compressor_t *cmp)
+int sqfs_id_table_read(sqfs_id_table_t *tbl, sqfs_file_t *file,
+		       sqfs_super_t *super, sqfs_compressor_t *cmp)
 {
 	uint64_t upper_limit, lower_limit;
 	void *raw_ids;
@@ -106,7 +106,7 @@ int sqfs_id_table_read(sqfs_id_table_t *tbl, int fd, sqfs_super_t *super,
 
 	tbl->num_ids = super->id_count;
 	tbl->max_ids = super->id_count;
-	ret = sqfs_read_table(fd, cmp, tbl->num_ids * sizeof(uint32_t),
+	ret = sqfs_read_table(file, cmp, tbl->num_ids * sizeof(uint32_t),
 			      super->id_table_start, lower_limit,
 			      upper_limit, &raw_ids);
 	if (ret)
@@ -120,8 +120,8 @@ int sqfs_id_table_read(sqfs_id_table_t *tbl, int fd, sqfs_super_t *super,
 	return 0;
 }
 
-int sqfs_id_table_write(sqfs_id_table_t *tbl, int outfd, sqfs_super_t *super,
-			sqfs_compressor_t *cmp)
+int sqfs_id_table_write(sqfs_id_table_t *tbl, sqfs_file_t *file,
+			sqfs_super_t *super, sqfs_compressor_t *cmp)
 {
 	uint64_t start;
 	size_t i;
@@ -132,7 +132,7 @@ int sqfs_id_table_write(sqfs_id_table_t *tbl, int outfd, sqfs_super_t *super,
 
 	super->id_count = tbl->num_ids;
 
-	ret = sqfs_write_table(outfd, super, cmp, tbl->ids,
+	ret = sqfs_write_table(file, super, cmp, tbl->ids,
 			       sizeof(tbl->ids[0]) * tbl->num_ids, &start);
 
 	super->id_table_start = start;

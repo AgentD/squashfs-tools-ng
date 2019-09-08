@@ -11,13 +11,14 @@
 #include "sqfs/error.h"
 #include "sqfs/table.h"
 #include "sqfs/data.h"
+#include "sqfs/io.h"
 #include "util.h"
 
 #include <endian.h>
 #include <stdlib.h>
 
-int sqfs_read_table(int fd, sqfs_compressor_t *cmp, size_t table_size,
-		    uint64_t location, uint64_t lower_limit,
+int sqfs_read_table(sqfs_file_t *file, sqfs_compressor_t *cmp,
+		    size_t table_size, uint64_t location, uint64_t lower_limit,
 		    uint64_t upper_limit, void **out)
 {
 	size_t diff, block_count, blk_idx = 0;
@@ -43,14 +44,13 @@ int sqfs_read_table(int fd, sqfs_compressor_t *cmp, size_t table_size,
 		goto fail_data;
 	}
 
-	if (read_data_at("reading table locations", location,
-			 fd, locations, sizeof(uint64_t) * block_count)) {
-		err = SQFS_ERROR_IO;
+	err = file->read_at(file, location, locations,
+			    sizeof(uint64_t) * block_count);
+	if (err)
 		goto fail_idx;
-	}
 
 	/* Read the actual data */
-	m = sqfs_meta_reader_create(fd, cmp, lower_limit, upper_limit);
+	m = sqfs_meta_reader_create(file, cmp, lower_limit, upper_limit);
 	if (m == NULL) {
 		err = SQFS_ERROR_ALLOC;
 		goto fail_idx;

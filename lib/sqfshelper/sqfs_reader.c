@@ -18,13 +18,11 @@ int sqfs_reader_open(sqfs_reader_t *rd, const char *filename, int rdtree_flags)
 
 	memset(rd, 0, sizeof(*rd));
 
-	rd->sqfsfd = open(filename, O_RDONLY);
-	if (rd->sqfsfd < 0) {
-		perror(filename);
+	rd->file = sqfs_open_file(filename, SQFS_FILE_OPEN_READ_ONLY);
+	if (rd->file == NULL)
 		return -1;
-	}
 
-	if (sqfs_super_read(&rd->super, rd->sqfsfd))
+	if (sqfs_super_read(&rd->super, rd->file))
 		goto fail_fd;
 
 	if (!sqfs_compressor_exists(rd->super.compression_id)) {
@@ -41,21 +39,21 @@ int sqfs_reader_open(sqfs_reader_t *rd, const char *filename, int rdtree_flags)
 		goto fail_fd;
 
 	if (rd->super.flags & SQFS_FLAG_COMPRESSOR_OPTIONS) {
-		if (rd->cmp->read_options(rd->cmp, rd->sqfsfd))
+		if (rd->cmp->read_options(rd->cmp, rd->file))
 			goto fail_cmp;
 	}
 
 	if (rd->super.flags & SQFS_FLAG_NO_XATTRS)
 		rdtree_flags &= ~RDTREE_READ_XATTR;
 
-	if (deserialize_fstree(&rd->fs, &rd->super, rd->cmp, rd->sqfsfd,
+	if (deserialize_fstree(&rd->fs, &rd->super, rd->cmp, rd->file,
 			       rdtree_flags)) {
 		goto fail_cmp;
 	}
 
 	fstree_gen_file_list(&rd->fs);
 
-	rd->data = data_reader_create(rd->sqfsfd, &rd->super, rd->cmp);
+	rd->data = data_reader_create(rd->file, &rd->super, rd->cmp);
 	if (rd->data == NULL)
 		goto fail_fs;
 
@@ -65,7 +63,7 @@ fail_fs:
 fail_cmp:
 	rd->cmp->destroy(rd->cmp);
 fail_fd:
-	close(rd->sqfsfd);
+	rd->file->destroy(rd->file);
 	memset(rd, 0, sizeof(*rd));
 	return -1;
 }
@@ -75,6 +73,6 @@ void sqfs_reader_close(sqfs_reader_t *rd)
 	data_reader_destroy(rd->data);
 	fstree_cleanup(&rd->fs);
 	rd->cmp->destroy(rd->cmp);
-	close(rd->sqfsfd);
+	rd->file->destroy(rd->file);
 	memset(rd, 0, sizeof(*rd));
 }

@@ -28,7 +28,7 @@ typedef struct {
 
 #define LZ4LEGACY 1
 
-static int lz4_write_options(sqfs_compressor_t *base, int fd)
+static int lz4_write_options(sqfs_compressor_t *base, sqfs_file_t *file)
 {
 	lz4_compressor_t *lz4 = (lz4_compressor_t *)base;
 	lz4_options opt = {
@@ -37,16 +37,16 @@ static int lz4_write_options(sqfs_compressor_t *base, int fd)
 				 SQFS_COMP_FLAG_LZ4_HC : 0),
 	};
 
-	return sqfs_generic_write_options(fd, &opt, sizeof(opt));
+	return sqfs_generic_write_options(file, &opt, sizeof(opt));
 }
 
-static int lz4_read_options(sqfs_compressor_t *base, int fd)
+static int lz4_read_options(sqfs_compressor_t *base, sqfs_file_t *file)
 {
 	lz4_options opt;
 	int ret;
 	(void)base;
 
-	ret = sqfs_generic_read_options(fd, &opt, sizeof(opt));
+	ret = sqfs_generic_read_options(file, &opt, sizeof(opt));
 	if (ret)
 		return ret;
 

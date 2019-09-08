@@ -12,13 +12,15 @@
 #include "sqfs/predef.h"
 #include "sqfs/compress.h"
 #include "sqfs/error.h"
+#include "sqfs/io.h"
 #include "util.h"
 
 SQFS_INTERNAL
-int sqfs_generic_write_options(int fd, const void *data, size_t size);
+int sqfs_generic_write_options(sqfs_file_t *file, const void *data,
+			       size_t size);
 
 SQFS_INTERNAL
-int sqfs_generic_read_options(int fd, void *data, size_t size);
+int sqfs_generic_read_options(sqfs_file_t *file, void *data, size_t size);
 
 SQFS_INTERNAL
 sqfs_compressor_t *xz_compressor_create(const sqfs_compressor_config_t *cfg);

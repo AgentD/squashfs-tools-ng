@@ -73,10 +73,10 @@ SQFS_API int sqfs_super_init(sqfs_super_t *super, size_t block_size,
 			     E_SQFS_COMPRESSOR compressor);
 
 /* Returns 0 on success. Prints error messages to stderr on failure. */
-SQFS_API int sqfs_super_write(sqfs_super_t *super, int fd);
+SQFS_API int sqfs_super_write(sqfs_super_t *super, sqfs_file_t *file);
 
 /* Returns 0 on success. Prints error messages to stderr on failure. */
-SQFS_API int sqfs_super_read(sqfs_super_t *super, int fd);
+SQFS_API int sqfs_super_read(sqfs_super_t *super, sqfs_file_t *file);
 
 #ifdef __cplusplus
 }

@@ -10,6 +10,8 @@
 #include "sqfs/id_table.h"
 #include "sqfs/xattr.h"
 #include "sqfs/data.h"
+#include "sqfs/io.h"
+
 #include "data_writer.h"
 #include "highlevel.h"
 #include "fstree.h"
@@ -94,7 +96,7 @@ static const char *filename;
 static int block_size = SQFS_DEFAULT_BLOCK_SIZE;
 static size_t devblksize = SQFS_DEVBLK_SIZE;
 static bool quiet = false;
-static int outmode = O_WRONLY | O_CREAT | O_EXCL;
+static int outmode = 0;
 static unsigned int num_jobs = 1;
 static E_SQFS_COMPRESSOR comp_id;
 static char *comp_extra = NULL;
@@ -165,7 +167,7 @@ static void process_args(int argc, char **argv)
 			exportable = true;
 			break;
 		case 'f':
-			outmode = O_WRONLY | O_CREAT | O_TRUNC;
+			outmode |= SQFS_FILE_OPEN_OVERWRITE;
 			break;
 		case 'q':
 			quiet = true;
@@ -354,10 +356,11 @@ fail:
 
 int main(int argc, char **argv)
 {
-	int outfd, status = EXIT_SUCCESS;
 	sqfs_compressor_config_t cfg;
+	int status = EXIT_SUCCESS;
 	sqfs_compressor_t *cmp;
 	sqfs_id_table_t *idtbl;
+	sqfs_file_t *outfile;
 	data_writer_t *data;
 	sqfs_super_t super;
 	fstree_t fs;
@@ -370,8 +373,8 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	outfd = open(filename, outmode, 0644);
-	if (outfd < 0) {
+	outfile = sqfs_open_file(filename, outmode);
+	if (outfile == NULL) {
 		perror(filename);
 		return EXIT_FAILURE;
 	}
@@ -388,10 +391,10 @@ int main(int argc, char **argv)
 	if (sqfs_super_init(&super, block_size, fs.defaults.st_mtime, comp_id))
 		goto out_cmp;
 
-	if (sqfs_super_write(&super, outfd))
+	if (sqfs_super_write(&super, outfile))
 		goto out_cmp;
 
-	ret = cmp->write_options(cmp, outfd);
+	ret = cmp->write_options(cmp, outfile);
 	if (ret < 0)
 		goto out_cmp;
 
@@ -400,7 +403,7 @@ int main(int argc, char **argv)
 		super.bytes_used += ret;
 	}
 
-	data = data_writer_create(&super, cmp, outfd, devblksize, num_jobs);
+	data = data_writer_create(&super, cmp, outfile, devblksize, num_jobs);
 	if (data == NULL)
 		goto out_cmp;
 
@@ -422,27 +425,27 @@ int main(int argc, char **argv)
 
 	fstree_xattr_deduplicate(&fs);
 
-	if (sqfs_serialize_fstree(outfd, &super, &fs, cmp, idtbl))
+	if (sqfs_serialize_fstree(outfile, &super, &fs, cmp, idtbl))
 		goto out;
 
 	if (data_writer_write_fragment_table(data))
 		goto out;
 
 	if (exportable) {
-		if (write_export_table(outfd, &fs, &super, cmp))
+		if (write_export_table(outfile, &fs, &super, cmp))
 			goto out;
 	}
 
-	if (sqfs_id_table_write(idtbl, outfd, &super, cmp))
+	if (sqfs_id_table_write(idtbl, outfile, &super, cmp))
 		goto out;
 
-	if (write_xattr(outfd, &fs, &super, cmp))
+	if (write_xattr(outfile, &fs, &super, cmp))
 		goto out;
 
-	if (sqfs_super_write(&super, outfd))
+	if (sqfs_super_write(&super, outfile))
 		goto out;
 
-	if (padd_file(outfd, super.bytes_used, devblksize))
+	if (padd_sqfs(outfile, super.bytes_used, devblksize))
 		goto out;
 
 	if (!quiet) {
@@ -460,6 +463,6 @@ out_cmp:
 out_fs:
 	fstree_cleanup(&fs);
 out_fd:
-	close(outfd);
+	outfile->destroy(outfile);
 	return status;
 }

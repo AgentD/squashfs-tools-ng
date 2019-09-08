@@ -167,7 +167,7 @@ static uint64_t *create_ool_locations_table(fstree_t *fs)
 	return table;
 }
 
-int write_xattr(int outfd, fstree_t *fs, sqfs_super_t *super,
+int write_xattr(sqfs_file_t *file, fstree_t *fs, sqfs_super_t *super,
 		sqfs_compressor_t *cmp)
 {
 	uint64_t kv_start, id_start, block, *tbl, *ool_locations;
@@ -185,7 +185,7 @@ int write_xattr(int outfd, fstree_t *fs, sqfs_super_t *super,
 	if (ool_locations == NULL)
 		return -1;
 
-	mw = sqfs_meta_writer_create(outfd, cmp, false);
+	mw = sqfs_meta_writer_create(file, cmp, false);
 	if (mw == NULL)
 		goto fail_ool;
 
@@ -254,11 +254,14 @@ int write_xattr(int outfd, fstree_t *fs, sqfs_super_t *super,
 	idtbl.xattr_ids = htole32(count);
 	idtbl.unused = 0;
 
-	if (write_data("writing xattr ID table", outfd, &idtbl, sizeof(idtbl)))
+	if (file->write_at(file, file->get_size(file), &idtbl, sizeof(idtbl))) {
+		perror("writing xattr ID table");
 		goto fail_tbl;
+	}
 
-	if (write_data("writing xattr ID table",
-		       outfd, tbl, sizeof(tbl[0]) * blocks)) {
+	if (file->write_at(file, file->get_size(file),
+			   tbl, sizeof(tbl[0]) * blocks)) {
+		perror("writing xattr ID table");
 		goto fail_tbl;
 	}
 

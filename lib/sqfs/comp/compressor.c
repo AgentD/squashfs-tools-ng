@@ -43,29 +43,31 @@ static const char *names[] = {
 	[SQFS_COMP_ZSTD] = "zstd",
 };
 
-int sqfs_generic_write_options(int fd, const void *data, size_t size)
+int sqfs_generic_write_options(sqfs_file_t *file, const void *data, size_t size)
 {
 	uint8_t buffer[size + 2];
+	int ret;
 
 	*((uint16_t *)buffer) = htole16(0x8000 | size);
 	memcpy(buffer + 2, data, size);
 
-	if (write_data("writing compressor options",
-		       fd, buffer, sizeof(buffer))) {
-		return SQFS_ERROR_IO;
-	}
+	ret = file->write_at(file, sizeof(sqfs_super_t),
+			     buffer, sizeof(buffer));
+	if (ret)
+		return ret;
 
 	return sizeof(buffer);
 }
 
-int sqfs_generic_read_options(int fd, void *data, size_t size)
+int sqfs_generic_read_options(sqfs_file_t *file, void *data, size_t size)
 {
 	uint8_t buffer[size + 2];
+	int ret;
 
-	if (read_data_at("reading compressor options", sizeof(sqfs_super_t),
-			 fd, buffer, sizeof(buffer))) {
-		return SQFS_ERROR_IO;
-	}
+	ret = file->read_at(file, sizeof(sqfs_super_t),
+			    buffer, sizeof(buffer));
+	if (ret)
+		return ret;
 
 	if (le16toh(*((uint16_t *)buffer)) != (0x8000 | size))
 		return SQFS_ERROR_CORRUPTED;

@@ -12,6 +12,7 @@
 #include "sqfs/xattr.h"
 #include "sqfs/error.h"
 #include "sqfs/data.h"
+#include "sqfs/io.h"
 #include "util.h"
 
 #include <stdlib.h>
@@ -29,7 +30,7 @@ struct sqfs_xattr_reader_t {
 	sqfs_meta_reader_t *idrd;
 	sqfs_meta_reader_t *kvrd;
 	sqfs_super_t *super;
-	int sqfsfd;
+	sqfs_file_t *file;
 };
 
 int sqfs_xattr_reader_load_locations(sqfs_xattr_reader_t *xr)
@@ -47,11 +48,10 @@ int sqfs_xattr_reader_load_locations(sqfs_xattr_reader_t *xr)
 	if (xr->super->xattr_id_table_start >= xr->super->bytes_used)
 		return SQFS_ERROR_OUT_OF_BOUNDS;
 
-	if (read_data_at("reading xattr ID location table",
-			 xr->super->xattr_id_table_start,
-			 xr->sqfsfd, &idtbl, sizeof(idtbl))) {
-		return SQFS_ERROR_IO;
-	}
+	err = xr->file->read_at(xr->file, xr->super->xattr_id_table_start,
+				&idtbl, sizeof(idtbl));
+	if (err)
+		return err;
 
 	xr->xattr_start = le64toh(idtbl.xattr_table_start);
 	xr->num_ids = le32toh(idtbl.xattr_ids);
@@ -68,13 +68,12 @@ int sqfs_xattr_reader_load_locations(sqfs_xattr_reader_t *xr)
 		return SQFS_ERROR_ALLOC;
 	}
 
-	if (read_data_at("reading xattr ID block locations",
-			 xr->super->xattr_id_table_start + sizeof(idtbl),
-			 xr->sqfsfd, xr->id_block_starts,
-			 sizeof(uint64_t) * xr->num_id_blocks)) {
-		err = SQFS_ERROR_IO;
+	err = xr->file->read_at(xr->file,
+				xr->super->xattr_id_table_start + sizeof(idtbl),
+				xr->id_block_starts,
+				sizeof(uint64_t) * xr->num_id_blocks);
+	if (err)
 		goto fail;
-	}
 
 	for (i = 0; i < xr->num_id_blocks; ++i) {
 		xr->id_block_starts[i] = le64toh(xr->id_block_starts[i]);
@@ -254,7 +253,8 @@ void sqfs_xattr_reader_destroy(sqfs_xattr_reader_t *xr)
 	free(xr);
 }
 
-sqfs_xattr_reader_t *sqfs_xattr_reader_create(int sqfsfd, sqfs_super_t *super,
+sqfs_xattr_reader_t *sqfs_xattr_reader_create(sqfs_file_t *file,
+					      sqfs_super_t *super,
 					      sqfs_compressor_t *cmp)
 {
 	sqfs_xattr_reader_t *xr = calloc(1, sizeof(*xr));
@@ -262,26 +262,27 @@ sqfs_xattr_reader_t *sqfs_xattr_reader_create(int sqfsfd, sqfs_super_t *super,
 	if (xr == NULL)
 		return NULL;
 
+	xr->file = file;
+	xr->super = super;
+
 	if (super->flags & SQFS_FLAG_NO_XATTRS)
 		return xr;
 
 	if (super->xattr_id_table_start == 0xFFFFFFFFFFFFFFFF)
 		return xr;
 
-	xr->idrd = sqfs_meta_reader_create(sqfsfd, cmp,
+	xr->idrd = sqfs_meta_reader_create(file, cmp,
 					   super->id_table_start,
 					   super->bytes_used);
 	if (xr->idrd == NULL)
 		goto fail;
 
-	xr->kvrd = sqfs_meta_reader_create(sqfsfd, cmp,
+	xr->kvrd = sqfs_meta_reader_create(file, cmp,
 					   super->id_table_start,
 					   super->bytes_used);
 	if (xr->kvrd == NULL)
 		goto fail;
 
-	xr->sqfsfd = sqfsfd;
-	xr->super = super;
 	return xr;
 fail:
 	sqfs_xattr_reader_destroy(xr);

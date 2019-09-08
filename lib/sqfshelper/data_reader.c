@@ -25,7 +25,7 @@ struct data_reader_t {
 
 	sqfs_compressor_t *cmp;
 	size_t block_size;
-	int sqfsfd;
+	sqfs_file_t *file;
 
 	void *block;
 	void *scratch;
@@ -44,8 +44,10 @@ static ssize_t read_block(data_reader_t *data, off_t offset, uint32_t size,
 	if (size > data->block_size)
 		goto fail_bs;
 
-	if (read_data_at("reading block", offset, data->sqfsfd, ptr, size))
+	if (data->file->read_at(data->file, offset, ptr, size)) {
+		fputs("error reading data block from input file\n", stderr);
 		return -1;
+	}
 
 	if (compressed) {
 		ret = data->cmp->do_block(data->cmp, data->scratch, size,
@@ -104,7 +106,7 @@ static int precache_fragment_block(data_reader_t *data, size_t idx)
 	return 0;
 }
 
-data_reader_t *data_reader_create(int fd, sqfs_super_t *super,
+data_reader_t *data_reader_create(sqfs_file_t *file, sqfs_super_t *super,
 				  sqfs_compressor_t *cmp)
 {
 	data_reader_t *data = alloc_flex(sizeof(*data), super->block_size, 3);
@@ -123,7 +125,7 @@ data_reader_t *data_reader_create(int fd, sqfs_super_t *super,
 	data->scratch = (char *)data->block + super->block_size;
 	data->frag_block = (char *)data->scratch + super->block_size;
 	data->current_block = -1;
-	data->sqfsfd = fd;
+	data->file = file;
 	data->block_size = super->block_size;
 	data->cmp = cmp;
 
@@ -144,7 +146,7 @@ data_reader_t *data_reader_create(int fd, sqfs_super_t *super,
 		return NULL;
 	}
 
-	ret = sqfs_read_table(fd, cmp, size, super->fragment_table_start,
+	ret = sqfs_read_table(file, cmp, size, super->fragment_table_start,
 			      super->directory_table_start,
 			      super->fragment_table_start, &raw_frag);
 

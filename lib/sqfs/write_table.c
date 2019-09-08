@@ -12,16 +12,18 @@
 #include "sqfs/super.h"
 #include "sqfs/table.h"
 #include "sqfs/data.h"
+#include "sqfs/io.h"
 #include "util.h"
 
 #include <endian.h>
 #include <stdlib.h>
 
-int sqfs_write_table(int outfd, sqfs_super_t *super, sqfs_compressor_t *cmp,
-		     const void *data, size_t table_size, uint64_t *start)
+int sqfs_write_table(sqfs_file_t *file, sqfs_super_t *super,
+		     sqfs_compressor_t *cmp, const void *data,
+		     size_t table_size, uint64_t *start)
 {
 	size_t block_count, list_size, diff, blkidx = 0;
-	uint64_t block, *locations;
+	uint64_t off, block, *locations;
 	sqfs_meta_writer_t *m;
 	uint32_t offset;
 	int ret;
@@ -36,7 +38,7 @@ int sqfs_write_table(int outfd, sqfs_super_t *super, sqfs_compressor_t *cmp,
 		return SQFS_ERROR_ALLOC;
 
 	/* Write actual data */
-	m = sqfs_meta_writer_create(outfd, cmp, false);
+	m = sqfs_meta_writer_create(file, cmp, false);
 	if (m == NULL) {
 		ret = SQFS_ERROR_ALLOC;
 		goto out_idx;
@@ -69,11 +71,12 @@ int sqfs_write_table(int outfd, sqfs_super_t *super, sqfs_compressor_t *cmp,
 	*start = super->bytes_used;
 
 	list_size = sizeof(uint64_t) * block_count;
-	if (write_data("writing table locations", outfd,
-		       locations, list_size)) {
-		ret = SQFS_ERROR_IO;
+
+	off = file->get_size(file);
+
+	ret = file->write_at(file, off, locations, list_size);
+	if (ret)
 		goto out;
-	}
 
 	super->bytes_used += list_size;
 

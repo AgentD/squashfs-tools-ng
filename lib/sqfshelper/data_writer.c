@@ -32,7 +32,7 @@ struct data_writer_t {
 	sqfs_compressor_t *cmp;
 	file_info_t *list;
 	sqfs_super_t *super;
-	int outfd;
+	sqfs_file_t *file;
 };
 
 enum {
@@ -45,32 +45,19 @@ enum {
 static int save_position(data_writer_t *data)
 {
 	data->bytes_written = data->super->bytes_used;
-	data->start = lseek(data->outfd, 0, SEEK_CUR);
-
-	if (data->start == (off_t)-1) {
-		perror("querying current position on squashfs image");
-		return -1;
-	}
-
+	data->start = data->file->get_size(data->file);
 	return 0;
 }
 
 static int restore_position(data_writer_t *data)
 {
-	if (lseek(data->outfd, data->start, SEEK_SET) == (off_t)-1)
-		goto fail_seek;
-
-	if (ftruncate(data->outfd, data->start))
-		goto fail_truncate;
+	if (data->file->truncate(data->file, data->start)) {
+		perror("truncating squashfs image after file deduplication");
+		return -1;
+	}
 
 	data->super->bytes_used = data->bytes_written;
 	return 0;
-fail_seek:
-	perror("seeking on squashfs image after file deduplication");
-	return -1;
-fail_truncate:
-	perror("truncating squashfs image after file deduplication");
-	return -1;
 }
 
 static int allign_file(data_writer_t *data)
@@ -80,7 +67,7 @@ static int allign_file(data_writer_t *data)
 	if (diff == 0)
 		return 0;
 
-	if (padd_file(data->outfd, data->super->bytes_used, data->devblksz))
+	if (padd_sqfs(data->file, data->super->bytes_used, data->devblksz))
 		return -1;
 
 	data->super->bytes_used += data->devblksz - diff;
@@ -122,8 +109,10 @@ static int block_callback(void *user, sqfs_block_t *blk)
 			fi->blocks[blk->index].size = htole32(out);
 		}
 
-		if (write_data("writing data block", data->outfd,
-			       blk->data, blk->size)) {
+		offset = data->file->get_size(data->file);
+
+		if (data->file->write_at(data->file, offset,
+					 blk->data, blk->size)) {
 			return -1;
 		}
 
@@ -489,7 +478,7 @@ int write_data_from_fd_condensed(data_writer_t *data, file_info_t *fi,
 }
 
 data_writer_t *data_writer_create(sqfs_super_t *super, sqfs_compressor_t *cmp,
-				  int outfd, size_t devblksize,
+				  sqfs_file_t *file, size_t devblksize,
 				  unsigned int num_jobs)
 {
 	data_writer_t *data = calloc(1, sizeof(*data));
@@ -504,7 +493,7 @@ data_writer_t *data_writer_create(sqfs_super_t *super, sqfs_compressor_t *cmp,
 						 block_callback);
 	data->cmp = cmp;
 	data->super = super;
-	data->outfd = outfd;
+	data->file = file;
 	data->devblksz = devblksize;
 	return data;
 }
@@ -529,7 +518,7 @@ int data_writer_write_fragment_table(data_writer_t *data)
 	}
 
 	size = sizeof(data->fragments[0]) * data->num_fragments;
-	ret = sqfs_write_table(data->outfd, data->super, data->cmp,
+	ret = sqfs_write_table(data->file, data->super, data->cmp,
 			       data->fragments, size, &start);
 	if (ret)
 		return -1;

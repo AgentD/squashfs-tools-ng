@@ -47,6 +47,7 @@ typedef struct sqfs_id_table_t sqfs_id_table_t;
 typedef struct sqfs_meta_reader_t sqfs_meta_reader_t;
 typedef struct sqfs_meta_writer_t sqfs_meta_writer_t;
 typedef struct sqfs_xattr_reader_t sqfs_xattr_reader_t;
+typedef struct sqfs_file_t sqfs_file_t;
 
 typedef struct sqfs_fragment_t sqfs_fragment_t;
 typedef struct sqfs_dir_header_t sqfs_dir_header_t;

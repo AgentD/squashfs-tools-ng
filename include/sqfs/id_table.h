@@ -25,12 +25,12 @@ SQFS_API int sqfs_id_table_id_to_index(sqfs_id_table_t *tbl, uint32_t id,
 
 /* Write an ID table to a SquashFS image.
    Returns 0 on success. Internally prints error message to stderr. */
-SQFS_API int sqfs_id_table_write(sqfs_id_table_t *tbl, int outfd,
+SQFS_API int sqfs_id_table_write(sqfs_id_table_t *tbl, sqfs_file_t *file,
 				 sqfs_super_t *super, sqfs_compressor_t *cmp);
 
 /* Read an ID table from a SquashFS image.
    Returns 0 on success. Internally prints error messages to stderr. */
-SQFS_API int sqfs_id_table_read(sqfs_id_table_t *tbl, int fd,
+SQFS_API int sqfs_id_table_read(sqfs_id_table_t *tbl, sqfs_file_t *file,
 				sqfs_super_t *super, sqfs_compressor_t *cmp);
 
 SQFS_API int sqfs_id_table_index_to_id(const sqfs_id_table_t *tbl,

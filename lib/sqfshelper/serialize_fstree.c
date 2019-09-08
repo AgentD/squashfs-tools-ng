@@ -41,7 +41,7 @@ static int write_dir_entries(sqfs_dir_writer_t *dirw, tree_node_t *node)
 	return 0;
 }
 
-int sqfs_serialize_fstree(int outfd, sqfs_super_t *super, fstree_t *fs,
+int sqfs_serialize_fstree(sqfs_file_t *file, sqfs_super_t *super, fstree_t *fs,
 			  sqfs_compressor_t *cmp, sqfs_id_table_t *idtbl)
 {
 	sqfs_inode_generic_t *inode;
@@ -52,11 +52,11 @@ int sqfs_serialize_fstree(int outfd, sqfs_super_t *super, fstree_t *fs,
 	int ret = -1;
 	size_t i;
 
-	im = sqfs_meta_writer_create(outfd, cmp, false);
+	im = sqfs_meta_writer_create(file, cmp, false);
 	if (im == NULL)
 		return -1;
 
-	dm = sqfs_meta_writer_create(outfd, cmp, true);
+	dm = sqfs_meta_writer_create(file, cmp, true);
 	if (dm == NULL)
 		goto out_im;
 

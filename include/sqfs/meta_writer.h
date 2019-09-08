@@ -18,7 +18,7 @@ extern "C" {
    If keep_in_mem is true, the blocks are collected in memory and must
    be explicitly flushed to disk using meta_write_write_to_file.
 */
-SQFS_API sqfs_meta_writer_t *sqfs_meta_writer_create(int fd,
+SQFS_API sqfs_meta_writer_t *sqfs_meta_writer_create(sqfs_file_t *file,
 						     sqfs_compressor_t *cmp,
 						     bool keep_in_mem);
 

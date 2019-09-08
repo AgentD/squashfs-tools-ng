@@ -13,6 +13,8 @@
 #include "sqfs/compress.h"
 #include "sqfs/id_table.h"
 #include "sqfs/data.h"
+#include "sqfs/io.h"
+
 #include "data_writer.h"
 #include "highlevel.h"
 #include "fstree.h"

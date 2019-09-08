@@ -11,6 +11,7 @@
 #include "sqfs/compress.h"
 #include "sqfs/error.h"
 #include "sqfs/data.h"
+#include "sqfs/io.h"
 #include "util.h"
 
 #include <stdlib.h>
@@ -32,7 +33,7 @@ struct sqfs_meta_reader_t {
 	size_t offset;
 
 	/* The underlying file descriptor to read from */
-	int fd;
+	sqfs_file_t *file;
 
 	/* A pointer to the compressor to use for extracting data */
 	sqfs_compressor_t *cmp;
@@ -44,7 +45,8 @@ struct sqfs_meta_reader_t {
 	uint8_t scratch[SQFS_META_BLOCK_SIZE];
 };
 
-sqfs_meta_reader_t *sqfs_meta_reader_create(int fd, sqfs_compressor_t *cmp,
+sqfs_meta_reader_t *sqfs_meta_reader_create(sqfs_file_t *file,
+					    sqfs_compressor_t *cmp,
 					    uint64_t start, uint64_t limit)
 {
 	sqfs_meta_reader_t *m = calloc(1, sizeof(*m));
@@ -54,7 +56,7 @@ sqfs_meta_reader_t *sqfs_meta_reader_create(int fd, sqfs_compressor_t *cmp,
 
 	m->start = start;
 	m->limit = limit;
-	m->fd = fd;
+	m->file = file;
 	m->cmp = cmp;
 	return m;
 }
@@ -71,6 +73,7 @@ int sqfs_meta_reader_seek(sqfs_meta_reader_t *m, uint64_t block_start,
 	uint16_t header;
 	ssize_t ret;
 	size_t size;
+	int err;
 
 	if (block_start < m->start || block_start >= m->limit)
 		return SQFS_ERROR_OUT_OF_BOUNDS;
@@ -83,10 +86,9 @@ int sqfs_meta_reader_seek(sqfs_meta_reader_t *m, uint64_t block_start,
 		return 0;
 	}
 
-	if (read_data_at("reading meta data header", block_start,
-			 m->fd, &header, 2)) {
-		return SQFS_ERROR_IO;
-	}
+	err = m->file->read_at(m->file, block_start, &header, 2);
+	if (err)
+		return err;
 
 	header = le16toh(header);
 	compressed = (header & 0x8000) == 0;
@@ -98,10 +100,9 @@ int sqfs_meta_reader_seek(sqfs_meta_reader_t *m, uint64_t block_start,
 	if ((block_start + 2 + size) > m->limit)
 		return SQFS_ERROR_OUT_OF_BOUNDS;
 
-	if (read_data_at("reading meta data block", block_start + 2,
-			 m->fd, m->data, size)) {
-		return SQFS_ERROR_IO;
-	}
+	err = m->file->read_at(m->file, block_start + 2, m->data, size);
+	if (err)
+		return err;
 
 	if (compressed) {
 		ret = m->cmp->do_block(m->cmp, m->data, size,

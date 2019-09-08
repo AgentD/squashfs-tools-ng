@@ -18,12 +18,12 @@ struct sqfs_compressor_t {
 	/* Write compressor options to the output file if necessary.
 	   Returns the number of bytes written or -1 on failure.
 	   Internally prints error messages to stderr. */
-	int (*write_options)(sqfs_compressor_t *cmp, int fd);
+	int (*write_options)(sqfs_compressor_t *cmp, sqfs_file_t *file);
 
 	/* Read compressor options to the input file.
 	   Returns zero on success, -1 on failure.
 	   Internally prints error messages to stderr. */
-	int (*read_options)(sqfs_compressor_t *cmp, int fd);
+	int (*read_options)(sqfs_compressor_t *cmp, sqfs_file_t *file);
 
 	/*
 	  Compress or uncompress a chunk of data.

@@ -58,7 +58,7 @@ SQFS_API int sqfs_xattr_reader_load_locations(sqfs_xattr_reader_t *xr);
 
 SQFS_API void sqfs_xattr_reader_destroy(sqfs_xattr_reader_t *xr);
 
-SQFS_API sqfs_xattr_reader_t *sqfs_xattr_reader_create(int sqfsfd,
+SQFS_API sqfs_xattr_reader_t *sqfs_xattr_reader_create(sqfs_file_t *file,
 						       sqfs_super_t *super,
 						       sqfs_compressor_t *cmp);
 

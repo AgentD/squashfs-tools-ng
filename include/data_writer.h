@@ -36,7 +36,7 @@ enum {
   Returns NULL on failure and prints errors to stderr.
  */
 data_writer_t *data_writer_create(sqfs_super_t *super, sqfs_compressor_t *cmp,
-				  int outfd, size_t devblksize,
+				  sqfs_file_t *file, size_t devblksize,
 				  unsigned int num_jobs);
 
 void data_writer_destroy(data_writer_t *data);

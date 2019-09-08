@@ -146,7 +146,7 @@ void process_command_line(options_t *opt, int argc, char **argv)
 	int i;
 
 	memset(opt, 0, sizeof(*opt));
-	opt->outmode = O_WRONLY | O_CREAT | O_EXCL;
+	opt->outmode = 0;
 	opt->compressor = compressor_get_default();
 	opt->blksz = SQFS_DEFAULT_BLOCK_SIZE;
 	opt->devblksz = SQFS_DEVBLK_SIZE;
@@ -207,7 +207,7 @@ void process_command_line(options_t *opt, int argc, char **argv)
 			opt->exportable = true;
 			break;
 		case 'f':
-			opt->outmode = O_WRONLY | O_CREAT | O_TRUNC;
+			opt->outmode |= SQFS_FILE_OPEN_OVERWRITE;
 			break;
 		case 'q':
 			opt->quiet = true;

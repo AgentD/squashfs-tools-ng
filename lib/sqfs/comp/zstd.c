@@ -25,26 +25,25 @@ typedef struct {
 	uint32_t level;
 } zstd_options_t;
 
-static int zstd_write_options(sqfs_compressor_t *base, int fd)
+static int zstd_write_options(sqfs_compressor_t *base, sqfs_file_t *file)
 {
 	zstd_compressor_t *zstd = (zstd_compressor_t *)base;
 	zstd_options_t opt;
-	(void)fd;
 
 	if (zstd->level == SQFS_ZSTD_DEFAULT_LEVEL)
 		return 0;
 
 	opt.level = htole32(zstd->level);
-	return sqfs_generic_write_options(fd, &opt, sizeof(opt));
+	return sqfs_generic_write_options(file, &opt, sizeof(opt));
 }
 
-static int zstd_read_options(sqfs_compressor_t *base, int fd)
+static int zstd_read_options(sqfs_compressor_t *base, sqfs_file_t *file)
 {
 	zstd_options_t opt;
 	int ret;
 	(void)base;
 
-	ret = sqfs_generic_read_options(fd, &opt, sizeof(opt));
+	ret = sqfs_generic_read_options(file, &opt, sizeof(opt));
 	if (ret)
 		return ret;
 
