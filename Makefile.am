@@ -11,7 +11,7 @@ lib_LTLIBRARIES =
 dist_man1_MANS =
 check_PROGRAMS =
 
-EXTRA_DIST = autogen.sh LICENSE README.md CHANGELOG.md
+EXTRA_DIST = autogen.sh LICENSE-gpl.txt LICENSE-lgpl.txt README.md CHANGELOG.md
 TESTS =
 
 include doc/Makemodule.am
