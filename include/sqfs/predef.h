@@ -79,5 +79,9 @@ typedef struct sqfs_inode_dir_t sqfs_inode_dir_t;
 typedef struct sqfs_inode_dir_ext_t sqfs_inode_dir_ext_t;
 typedef struct sqfs_inode_generic_t sqfs_inode_generic_t;
 typedef struct sqfs_super_t sqfs_super_t;
+typedef struct sqfs_xattr_entry_t sqfs_xattr_entry_t;
+typedef struct sqfs_xattr_value_t sqfs_xattr_value_t;
+typedef struct sqfs_xattr_id_t sqfs_xattr_id_t;
+typedef struct sqfs_xattr_id_table_t sqfs_xattr_id_table_t;
 
 #endif /* SQFS_PREDEF_H */

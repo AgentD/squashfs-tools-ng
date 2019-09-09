@@ -31,28 +31,28 @@ typedef enum {
 	SQFS_XATTR_PREFIX_MASK = 0xFF,
 } E_SQFS_XATTR_TYPE;
 
-typedef struct {
+struct sqfs_xattr_entry_t {
 	uint16_t type;
 	uint16_t size;
 	uint8_t key[];
-} sqfs_xattr_entry_t;
+};
 
-typedef struct {
+struct sqfs_xattr_value_t {
 	uint32_t size;
 	uint8_t value[];
-} sqfs_xattr_value_t;
+};
 
-typedef struct {
+struct sqfs_xattr_id_t {
 	uint64_t xattr;
 	uint32_t count;
 	uint32_t size;
-} sqfs_xattr_id_t;
+};
 
-typedef struct {
+struct sqfs_xattr_id_table_t {
 	uint64_t xattr_table_start;
 	uint32_t xattr_ids;
 	uint32_t unused;
-} sqfs_xattr_id_table_t;
+};
 
 #ifdef __cplusplus
 extern "C" {
