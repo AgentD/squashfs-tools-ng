@@ -68,6 +68,29 @@ AC_ARG_WITH([pthread],
 			[Build without pthread based block compressor])],
 	[want_pthread="${withval}"], [want_pthread="yes"])
 
+##### Doxygen reference manual #####
+
+AC_CHECK_PROGS([DOXYGEN], [doxygen])
+AM_CONDITIONAL([HAVE_DOXYGEN], [test -n "$DOXYGEN"])
+
+if test -z "$DOXYGEN"; then
+	AC_MSG_WARN([Doxygen not found - continuing without Doxygen support])
+else
+	AC_CONFIG_FILES([Doxyfile])
+
+	DX_DOXYGEN_FEATURE(ON)
+	DX_DOT_FEATURE(ON)
+	DX_HTML_FEATURE(ON)
+	DX_CHM_FEATURE(OFF)
+	DX_CHI_FEATURE(OFF)
+	DX_MAN_FEATURE(OFF)
+	DX_RTF_FEATURE(OFF)
+	DX_XML_FEATURE(OFF)
+	DX_PDF_FEATURE(OFF)
+	DX_PS_FEATURE(OFF)
+	DX_INIT_DOXYGEN(libsquashfs, Doxyfile)
+fi
+
 ##### search for dependencies #####
 
 AM_CONDITIONAL([WITH_GZIP], [true])

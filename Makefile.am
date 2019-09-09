@@ -21,3 +21,9 @@ include mkfs/Makemodule.am
 include unpack/Makemodule.am
 include difftool/Makemodule.am
 include tests/Makemodule.am
+
+if HAVE_DOXYGEN
+@DX_RULES@
+
+MOSTLYCLEANFILES = $(DX_CLEANFILES)
+endif
