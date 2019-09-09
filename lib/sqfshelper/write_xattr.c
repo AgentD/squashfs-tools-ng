@@ -170,7 +170,7 @@ static uint64_t *create_ool_locations_table(fstree_t *fs)
 int write_xattr(sqfs_file_t *file, fstree_t *fs, sqfs_super_t *super,
 		sqfs_compressor_t *cmp)
 {
-	uint64_t kv_start, id_start, block, *tbl, *ool_locations;
+	uint64_t kv_start, id_start, block, off, *tbl, *ool_locations;
 	size_t i = 0, count = 0, blocks;
 	sqfs_xattr_id_table_t idtbl;
 	sqfs_xattr_id_t id_ent;
@@ -190,7 +190,7 @@ int write_xattr(sqfs_file_t *file, fstree_t *fs, sqfs_super_t *super,
 		goto fail_ool;
 
 	/* write xattr key-value pairs */
-	kv_start = super->bytes_used;
+	kv_start = file->get_size(file);
 
 	for (it = fs->xattr; it != NULL; it = it->next) {
 		sqfs_meta_writer_get_position(mw, &it->block, &it->offset);
@@ -205,10 +205,7 @@ int write_xattr(sqfs_file_t *file, fstree_t *fs, sqfs_super_t *super,
 	if (sqfs_meta_writer_flush(mw))
 		goto fail_mw;
 
-	sqfs_meta_writer_get_position(mw, &block, &offset);
 	sqfs_meta_writer_reset(mw);
-
-	super->bytes_used += block;
 
 	/* allocate location table */
 	blocks = (count * sizeof(id_ent)) / SQFS_META_BLOCK_SIZE;
@@ -225,7 +222,8 @@ int write_xattr(sqfs_file_t *file, fstree_t *fs, sqfs_super_t *super,
 
 	/* write ID table referring to key value pairs, record offsets */
 	id_start = 0;
-	tbl[i++] = htole64(super->bytes_used);
+	off = file->get_size(file);
+	tbl[i++] = htole64(off);
 
 	for (it = fs->xattr; it != NULL; it = it->next) {
 		id_ent.xattr = htole64((it->block << 16) | it->offset);
@@ -239,35 +237,32 @@ int write_xattr(sqfs_file_t *file, fstree_t *fs, sqfs_super_t *super,
 
 		if (block != id_start) {
 			id_start = block;
-			tbl[i++] = htole64(super->bytes_used + id_start);
+			tbl[i++] = htole64(off + id_start);
 		}
 	}
 
 	if (sqfs_meta_writer_flush(mw))
 		goto fail_tbl;
 
-	sqfs_meta_writer_get_position(mw, &block, &offset);
-	super->bytes_used += block;
-
 	/* write offset table */
 	idtbl.xattr_table_start = htole64(kv_start);
 	idtbl.xattr_ids = htole32(count);
 	idtbl.unused = 0;
 
-	if (file->write_at(file, file->get_size(file), &idtbl, sizeof(idtbl))) {
+	super->xattr_id_table_start = file->get_size(file);
+	super->flags &= ~SQFS_FLAG_NO_XATTRS;
+
+	if (file->write_at(file, super->xattr_id_table_start,
+			   &idtbl, sizeof(idtbl))) {
 		perror("writing xattr ID table");
 		goto fail_tbl;
 	}
 
-	if (file->write_at(file, file->get_size(file),
+	if (file->write_at(file, super->xattr_id_table_start + sizeof(idtbl),
 			   tbl, sizeof(tbl[0]) * blocks)) {
 		perror("writing xattr ID table");
 		goto fail_tbl;
 	}
-
-	super->xattr_id_table_start = super->bytes_used;
-	super->bytes_used += sizeof(idtbl) + sizeof(tbl[0]) * blocks;
-	super->flags &= ~SQFS_FLAG_NO_XATTRS;
 
 	free(tbl);
 	sqfs_meta_writer_destroy(mw);

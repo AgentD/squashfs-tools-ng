@@ -132,7 +132,7 @@ int sqfs_id_table_write(sqfs_id_table_t *tbl, sqfs_file_t *file,
 
 	super->id_count = tbl->num_ids;
 
-	ret = sqfs_write_table(file, super, cmp, tbl->ids,
+	ret = sqfs_write_table(file, cmp, tbl->ids,
 			       sizeof(tbl->ids[0]) * tbl->num_ids, &start);
 
 	super->id_table_start = start;

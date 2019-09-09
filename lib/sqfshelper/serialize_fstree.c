@@ -64,6 +64,8 @@ int sqfs_serialize_fstree(sqfs_file_t *file, sqfs_super_t *super, fstree_t *fs,
 	if (dirwr == NULL)
 		goto out_dm;
 
+	super->inode_table_start = file->get_size(file);
+
 	for (i = 2; i < fs->inode_tbl_size; ++i) {
 		if (S_ISDIR(fs->inode_table[i]->mode)) {
 			if (write_dir_entries(dirwr, fs->inode_table[i]))
@@ -104,14 +106,7 @@ int sqfs_serialize_fstree(sqfs_file_t *file, sqfs_super_t *super, fstree_t *fs,
 		goto out;
 
 	super->root_inode_ref = fs->root->inode_ref;
-
-	sqfs_meta_writer_get_position(im, &block, &offset);
-	super->inode_table_start = super->bytes_used;
-	super->bytes_used += block;
-
-	sqfs_meta_writer_get_position(dm, &block, &offset);
-	super->directory_table_start = super->bytes_used;
-	super->bytes_used += block;
+	super->directory_table_start = file->get_size(file);
 
 	if (sqfs_meta_write_write_to_file(dm))
 		goto out;

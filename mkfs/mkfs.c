@@ -161,10 +161,8 @@ int main(int argc, char **argv)
 	if (ret < 0)
 		goto out_cmp;
 
-	if (ret > 0) {
+	if (ret > 0)
 		super.flags |= SQFS_FLAG_COMPRESSOR_OPTIONS;
-		super.bytes_used += ret;
-	}
 
 	data = data_writer_create(&super, cmp, outfile,
 				  opt.devblksz, opt.num_jobs);
@@ -190,6 +188,8 @@ int main(int argc, char **argv)
 
 	if (write_xattr(outfile, &fs, &super, cmp))
 		goto out_data;
+
+	super.bytes_used = outfile->get_size(outfile);
 
 	if (sqfs_super_write(&super, outfile))
 		goto out_data;

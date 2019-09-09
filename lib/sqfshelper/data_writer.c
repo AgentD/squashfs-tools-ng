@@ -25,8 +25,7 @@ struct data_writer_t {
 	size_t max_fragments;
 
 	size_t devblksz;
-	uint64_t bytes_written;
-	off_t start;
+	uint64_t start;
 
 	sqfs_block_processor_t *proc;
 	sqfs_compressor_t *cmp;
@@ -42,36 +41,10 @@ enum {
 	BLK_FRAGMENT_BLOCK = SQFS_BLK_USER << 3,
 };
 
-static int save_position(data_writer_t *data)
-{
-	data->bytes_written = data->super->bytes_used;
-	data->start = data->file->get_size(data->file);
-	return 0;
-}
-
-static int restore_position(data_writer_t *data)
-{
-	if (data->file->truncate(data->file, data->start)) {
-		perror("truncating squashfs image after file deduplication");
-		return -1;
-	}
-
-	data->super->bytes_used = data->bytes_written;
-	return 0;
-}
-
 static int allign_file(data_writer_t *data)
 {
-	size_t diff = data->super->bytes_used % data->devblksz;
-
-	if (diff == 0)
-		return 0;
-
-	if (padd_sqfs(data->file, data->super->bytes_used, data->devblksz))
-		return -1;
-
-	data->super->bytes_used += data->devblksz - diff;
-	return 0;
+	return padd_sqfs(data->file, data->file->get_size(data->file),
+			 data->devblksz);
 }
 
 static int block_callback(void *user, sqfs_block_t *blk)
@@ -82,13 +55,12 @@ static int block_callback(void *user, sqfs_block_t *blk)
 	uint32_t out;
 
 	if (blk->flags & BLK_FIRST_BLOCK) {
-		if (save_position(data))
-			return -1;
+		data->start = data->file->get_size(data->file);
 
 		if ((blk->flags & BLK_ALLIGN) && allign_file(data) != 0)
 			return -1;
 
-		fi->startblock = data->super->bytes_used;
+		fi->startblock = data->file->get_size(data->file);
 	}
 
 	if (blk->size != 0) {
@@ -97,7 +69,7 @@ static int block_callback(void *user, sqfs_block_t *blk)
 			out |= 1 << 24;
 
 		if (blk->flags & BLK_FRAGMENT_BLOCK) {
-			offset = htole64(data->super->bytes_used);
+			offset = htole64(data->file->get_size(data->file));
 			data->fragments[blk->index].start_offset = offset;
 			data->fragments[blk->index].pad0 = 0;
 			data->fragments[blk->index].size = htole32(out);
@@ -115,8 +87,6 @@ static int block_callback(void *user, sqfs_block_t *blk)
 					 blk->data, blk->size)) {
 			return -1;
 		}
-
-		data->super->bytes_used += blk->size;
 	}
 
 	if (blk->flags & BLK_LAST_BLOCK) {
@@ -129,8 +99,11 @@ static int block_callback(void *user, sqfs_block_t *blk)
 			fi->startblock = ref;
 			fi->flags |= FILE_FLAG_BLOCKS_ARE_DUPLICATE;
 
-			if (restore_position(data))
+			if (data->file->truncate(data->file, data->start)) {
+				perror("truncating squashfs image after "
+				       "file deduplication");
 				return -1;
+			}
 		}
 	}
 
@@ -518,7 +491,7 @@ int data_writer_write_fragment_table(data_writer_t *data)
 	}
 
 	size = sizeof(data->fragments[0]) * data->num_fragments;
-	ret = sqfs_write_table(data->file, data->super, data->cmp,
+	ret = sqfs_write_table(data->file, data->cmp,
 			       data->fragments, size, &start);
 	if (ret)
 		return -1;
