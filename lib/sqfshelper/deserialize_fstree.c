@@ -78,6 +78,21 @@ static bool node_would_be_own_parent(tree_node_t *root, tree_node_t *n)
 	return false;
 }
 
+static bool is_name_sane(const char *name)
+{
+	if (strchr(name, '/') != NULL || strchr(name, '\\') != NULL)
+		goto fail;
+
+	if (strcmp(name, "..") == 0 || strcmp(name, ".") == 0)
+		goto fail;
+
+	return true;
+fail:
+	fprintf(stderr, "WARNING: Found directory entry named '%s', "
+		"skipping\n", name);
+	return false;
+}
+
 static int fill_dir(sqfs_meta_reader_t *ir, sqfs_meta_reader_t *dr,
 		    tree_node_t *root, sqfs_super_t *super,
 		    sqfs_id_table_t *idtbl,
@@ -122,6 +137,11 @@ static int fill_dir(sqfs_meta_reader_t *ir, sqfs_meta_reader_t *dr,
 			size -= diff;
 
 			if (should_skip(ent->type, flags)) {
+				free(ent);
+				continue;
+			}
+
+			if (!is_name_sane((const char *)ent->name)) {
 				free(ent);
 				continue;
 			}

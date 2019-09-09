@@ -60,18 +60,6 @@ int sqfs_meta_reader_read_dir_ent(sqfs_meta_reader_t *m,
 		return err;
 	}
 
-	if (strchr((char *)out->name, '/') != NULL ||
-	    strchr((char *)out->name, '\\') != NULL) {
-		free(out);
-		return SQFS_ERROR_CORRUPTED;
-	}
-
-	if (strcmp((char *)out->name, "..") == 0 ||
-	    strcmp((char *)out->name, ".") == 0) {
-		free(out);
-		return SQFS_ERROR_CORRUPTED;
-	}
-
 	*result = out;
 	return 0;
 }
