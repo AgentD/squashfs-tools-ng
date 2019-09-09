@@ -20,18 +20,88 @@
 #ifndef SQFS_ERROR_H
 #define SQFS_ERROR_H
 
+/**
+ * @file error.h
+ *
+ * @brief Contains the @ref E_SQFS_ERROR enumerator.
+ */
+
+/**
+ * @enum E_SQFS_ERROR
+ *
+ * @brief Error codes that can be returned by various libsquashfs functions.
+ */
 typedef enum {
+	/**
+	 * @brief Allocation using malloc or calloc failed (returned NULL).
+	 */
 	SQFS_ERROR_ALLOC = -1,
+
+	/**
+	 * @brief Generic I/O error if a file read or write operation failed.
+	 */
 	SQFS_ERROR_IO = -2,
+
+	/**
+	 * @brief Generic compressor error returned if compressing data failed
+	 *        (some kind of internal error) or extracting failed (typically
+	 *        means the data is corrupted).
+	 */
 	SQFS_ERROR_COMRPESSOR = -3,
+
+	/**
+	 * @brief An internal error of the "this wasn't supposed to happen"
+	 *        kind that cannot easily be mapped to something usefull.
+	 */
 	SQFS_ERROR_INTERNAL = -4,
+
+	/**
+	 * @brief Attempted to read an on-disk data structure that appears to
+	 *        be corrupted, i.e. contains obvious non-sense values.
+	 */
 	SQFS_ERROR_CORRUPTED = -5,
+
+	/**
+	 * @brief Attempted to use an unsupported feature (e.g. an unknown
+	 *        compressor or xattr type).
+	 */
 	SQFS_ERROR_UNSUPPORTED = -6,
+
+	/**
+	 * @brief Attempted to read a data structure into memory would
+	 *        overflow the addressable memory. Usually indicates a
+	 *        corrupted or maliciously manipulated SquashFS filesystem.
+	 */
 	SQFS_ERROR_OVERFLOW = -7,
+
+	/**
+	 * @brief Attempted to perform an out-of-bounds read. If this happens
+	 *        when following a reference stored in a data structure, it
+	 *        usually indicates a corrupted or maliciously manipulated
+	 *        SquashFS filesystem.
+	 */
 	SQFS_ERROR_OUT_OF_BOUNDS = -8,
 
+	/**
+	 * @brief Specific error when reading the super block.
+	 *
+	 * Could not find the magic.
+	 */
 	SFQS_ERROR_SUPER_MAGIC = -9,
+
+	/**
+	 * @brief Specific error when reading the super block.
+	 *
+	 * The version indicated be the filesystem is not supported.
+	 */
 	SFQS_ERROR_SUPER_VERSION = -10,
+
+	/**
+	 * @brief Specific error when reading or initializing the super block.
+	 *
+	 * The block size specified is either not a power of 2, or outside the
+	 * legal range (4k to 1M).
+	 */
 	SQFS_ERROR_SUPER_BLOCK_SIZE = -11,
 } E_SQFS_ERROR;
 

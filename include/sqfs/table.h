@@ -22,25 +22,61 @@
 
 #include "sqfs/predef.h"
 
+/**
+ * @file table.h
+ *
+ * @brief Contains helper functions for reading or writing tables.
+ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/*
-  Convenience function for writing meta data to a SquashFS image
-
-  This function internally creates a meta data writer and writes the given
-  'data' blob with 'table_size' bytes to disk, neatly partitioned into meta
-  data blocks. For each meta data block, it remembers the 64 bit start address,
-  writes out all addresses to an uncompressed list and returns the location
-  where the address list starts in 'start'.
-
-  Returns 0 on success. Internally prints error messages to stderr.
+/**
+ * @brief Write a table to disk.
+ *
+ * This function takes an in-memory array, breaks it down into meta data
+ * blocks, compresses and writes those blocks to the given output file and
+ * then writes a raw list of 64 bit absolute locations of each meta data
+ * block. The position of the location list is returned through a pointer.
+ *
+ * @param file The output file to write to.
+ * @param cmp A compressor to use for compressing the meta data blocks.
+ * @param data A pointer to a array to divide into blocks and write to disk.
+ * @param table_size The size of the input array in bytes.
+ * @param start Returns the absolute position of the location list.
+ *
+ * @return Zero on success, an @ref E_SQFS_ERROR value on failure.
  */
 SQFS_API int sqfs_write_table(sqfs_file_t *file, sqfs_compressor_t *cmp,
 			      const void *data, size_t table_size,
 			      uint64_t *start);
 
+/**
+ * @brief Read a table from a SquashFS filesystem.
+ *
+ * This function takes an absolute position and an array size as input. It
+ * then computes the number of meta data blocks required to store this array
+ * and reads that many 64 bit integers from the given start location. Each
+ * integer is interpreted as the location of a meta data block containing the
+ * respective array chunk.
+ *
+ * The entire data encoded in that way is read and uncompressed into memory.
+ *
+ * @param file An input file to read from.
+ * @param cmp A compressor to use for uncompressing the meta data block.
+ * @param table_size The size of the entire array in bytes.
+ * @param location The absolute position of the location list.
+ * @param lower_limit The lowest "sane" position at which to expect a meta
+ *                    data block. Anything less than that is interpreted
+ *                    as an out-of-bounds read.
+ * @param upper_limit The highest "sane" position at which to expect a meta
+ *                    data block. Anything after that is interpreted as an
+ *                    out-of-bounds read.
+ * @param out Returns a pointer to the table in memory.
+ *
+ * @return Zero on success, an @ref E_SQFS_ERROR value on failure.
+ */
 SQFS_API int sqfs_read_table(sqfs_file_t *file, sqfs_compressor_t *cmp,
 			     size_t table_size, uint64_t location,
 			     uint64_t lower_limit, uint64_t upper_limit,

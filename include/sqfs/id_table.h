@@ -22,30 +22,104 @@
 
 #include "sqfs/predef.h"
 
+/**
+ * @file id_table.h
+ *
+ * @brief Contains declarations for the @ref sqfs_id_table_t data structure.
+ */
+
+/**
+ * @struct sqfs_id_table_t
+ *
+ * @brief A simple data structure that encapsulates ID to index mapping for
+ *        user and group IDs.
+ *
+ * SquashFS does not store user and group IDs in inodes directly. Instead, it
+ * collects the unique 32 bit IDs in a table with at most 64k entries and
+ * stores a 16 bit index into the inode. This allows SquashFS to only have 16
+ * bit UID/GID entries in the inodes but actually have 32 bit UIDs/GIDs under
+ * the hood (at least 64k selected ones).
+ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* Prints error message to stderr on failure. */
+/**
+ * @brief Create an ID table object.
+ *
+ * @memberof sqfs_id_table_t
+ *
+ * @return A pointer to an ID table object, NULL on allocation failure.
+ */
 SQFS_API sqfs_id_table_t *sqfs_id_table_create(void);
 
+/**
+ * @brief Destroy an ID table object and free all memory used by it.
+ *
+ * @memberof sqfs_id_table_t
+ *
+ * @param tbl A pointer to an ID table object.
+ */
 SQFS_API void sqfs_id_table_destroy(sqfs_id_table_t *tbl);
 
-/* Resolve a 32 bit to a 16 bit table index.
-   Returns 0 on success. Internally prints errors to stderr. */
+/**
+ * @brief Resolve a 32 bit ID to a unique 16 bit index.
+ *
+ * @memberof sqfs_id_table_t
+ *
+ * @param tbl A pointer to an ID table object.
+ * @param id The ID to resolve.
+ * @param out Returns the unique table index.
+ *
+ * @return Zero on success, an @ref E_SQFS_ERROR on failure.
+ */
 SQFS_API int sqfs_id_table_id_to_index(sqfs_id_table_t *tbl, uint32_t id,
 				       uint16_t *out);
 
-/* Write an ID table to a SquashFS image.
-   Returns 0 on success. Internally prints error message to stderr. */
+/**
+ * @brief Write an ID table to disk.
+ *
+ * @memberof sqfs_id_table_t
+ *
+ * @param tbl A pointer to an ID table object.
+ * @param file The underlying file to append the table to.
+ * @param super A pointer to a super block in which to store the ID table
+ *              start location.
+ * @param cmp A compressor to use to compress the ID table.
+ *
+ * @return Zero on success, an @ref E_SQFS_ERROR on failure.
+ */
 SQFS_API int sqfs_id_table_write(sqfs_id_table_t *tbl, sqfs_file_t *file,
 				 sqfs_super_t *super, sqfs_compressor_t *cmp);
 
-/* Read an ID table from a SquashFS image.
-   Returns 0 on success. Internally prints error messages to stderr. */
+/**
+ * @brief Read an ID table from disk.
+ *
+ * @memberof sqfs_id_table_t
+ *
+ * @param tbl A pointer to an ID table object.
+ * @param file The underlying file to read the table from.
+ * @param super A pointer to a super block from which to get
+ *              the ID table location.
+ * @param cmp A compressor to use to extract compressed table blocks.
+ *
+ * @return Zero on success, an @ref E_SQFS_ERROR on failure.
+ */
 SQFS_API int sqfs_id_table_read(sqfs_id_table_t *tbl, sqfs_file_t *file,
 				sqfs_super_t *super, sqfs_compressor_t *cmp);
 
+/**
+ * @brief Resolve a 16 bit index to a 32 bit ID.
+ *
+ * @memberof sqfs_id_table_t
+ *
+ * @param tbl A pointer to an ID table object.
+ * @param index The table index to resolve.
+ * @param out Returns the underlying 32 bit ID that the index maps to.
+ *
+ * @return Zero on success, an @ref E_SQFS_ERROR on failure.
+ */
 SQFS_API int sqfs_id_table_index_to_id(const sqfs_id_table_t *tbl,
 				       uint16_t index, uint32_t *out);
 

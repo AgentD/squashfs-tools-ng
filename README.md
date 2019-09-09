@@ -72,6 +72,10 @@ If you work on the git tree, you need to bootstrap the build system first:
 
 	./autogen.sh
 
+If Doxygen is available, a reference manual can be built as follows:
+
+	make doxygen-doc
+
 ## Structure of the Source Code
 
 The main functionality of the package is split up into a number libraries.

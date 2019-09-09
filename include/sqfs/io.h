@@ -22,25 +22,101 @@
 
 #include "sqfs/predef.h"
 
+/**
+ * @file io.h
+ *
+ * @brief Contains the @ref sqfs_file_t interface for abstracting file I/O
+ */
+
+/**
+ * @enum E_SQFS_FILE_OPEN_FLAGS
+ *
+ * @brief Flags for @ref sqfs_open_file
+ */
 typedef enum {
+	/**
+	 * @brief If set, access the file for reading only
+	 *
+	 * If not set, the file is expected to have a zero size after opening
+	 * which can be grown with successive writes to end of the file.
+	 *
+	 * Opening an existing file with this flag cleared results in failure,
+	 * unless the @ref SQFS_FILE_OPEN_OVERWRITE flag is also set.
+	 */
 	SQFS_FILE_OPEN_READ_ONLY = 0x01,
 
+	/**
+	 * @brief If the read only flag is not set, overwrite any
+	 *        existing file.
+	 *
+	 * If the file alrady exists, it is truncated to zero bytes size and
+	 * overwritten.
+	 */
 	SQFS_FILE_OPEN_OVERWRITE = 0x02,
 
 	SQFS_FILE_OPEN_ALL_FLAGS = 0x03,
 } E_SQFS_FILE_OPEN_FLAGS;
 
+/**
+ * @interface sqfs_file_t
+ *
+ * @brief Abstracts file I/O to make it easy to embedd SquashFS.
+ */
 struct sqfs_file_t {
+	/**
+	 * @brief Close the file and destroy the interface implementation.
+	 *
+	 * @param file A pointer to the file object.
+	 */
 	void (*destroy)(sqfs_file_t *file);
 
+	/**
+	 * @brief Read a chunk of data from an absolute position.
+	 *
+	 * @param file A pointer to the file object.
+	 * @param offset An absolute offset to read data from.
+	 * @param buffer A pointer to a buffer to copy the data to.
+	 * @param size The number of bytes to read from the file.
+	 *
+	 * @return Zero on success, an @ref E_SQFS_ERROR identifier on failure
+	 *         that the data structures in libsquashfs that use this return
+	 *         directly to the caller.
+	 */
 	int (*read_at)(sqfs_file_t *file, uint64_t offset,
 		       void *buffer, size_t size);
 
+	/**
+	 * @brief Write a chunk of data at an absolute position.
+	 *
+	 * @param file A pointer to the file object.
+	 * @param offset An absolute offset to write data to.
+	 * @param buffer A pointer to a buffer to write to the file.
+	 * @param size The number of bytes to write from the buffer.
+	 *
+	 * @return Zero on success, an @ref E_SQFS_ERROR identifier on failure
+	 *         that the data structures in libsquashfs that use this return
+	 *         directly to the caller.
+	 */
 	int (*write_at)(sqfs_file_t *file, uint64_t offset,
 			const void *buffer, size_t size);
 
+	/**
+	 * @brief Get the number of bytes currently stored in the file.
+	 *
+	 * @param file A pointer to the file object.
+	 */
 	uint64_t (*get_size)(sqfs_file_t *file);
 
+	/**
+	 * @brief Extend or shrink a file to a specified size.
+	 *
+	 * @param file A pointer to the file object.
+	 * @param size The new capacity of the file in bytes.
+	 *
+	 * @return Zero on success, an @ref E_SQFS_ERROR identifier on failure
+	 *         that the data structures in libsquashfs that use this return
+	 *         directly to the caller.
+	 */
 	int (*truncate)(sqfs_file_t *file, uint64_t size);
 };
 
@@ -48,6 +124,22 @@ struct sqfs_file_t {
 extern "C" {
 #endif
 
+/**
+ * @brief Open a file through the operating systems filesystem API
+ *
+ * This function internally creates an instance of a reference implementation
+ * of the @ref sqfs_file_t interface that uses the operating systems native
+ * API for file I/O.
+ *
+ * On Unix-like systems, if the open call fails, this function makes sure to
+ * preserves the value in errno indicating the underlying problem.
+ *
+ * @param filename The name of the file to open.
+ * @param flags A set of @ref E_SQFS_FILE_OPEN_FLAGS.
+ *
+ * @return A pointer to a file object on success, NULL on allocation failure,
+ *         failure to open the file or if an unknown flag was set.
+ */
 SQFS_API sqfs_file_t *sqfs_open_file(const char *filename, int flags);
 
 #ifdef __cplusplus

@@ -20,6 +20,13 @@
 #ifndef SQFS_PREDEF_H
 #define SQFS_PREDEF_H
 
+/**
+ * @file predef.h
+ *
+ * @brief Includes forward declarations of data structures,
+ *        macros and integer types.
+ */
+
 #include <sys/types.h>
 #include <stdbool.h>
 #include <stddef.h>

@@ -22,15 +22,38 @@
 
 #include "sqfs/predef.h"
 
+/**
+ * @file data.h
+ *
+ * @brief Contains on-disk data structures for data block management
+ *        and helper macros.
+ */
+
 #define SQFS_META_BLOCK_SIZE 8192
 
 #define SQFS_IS_BLOCK_COMPRESSED(size) (((size) & (1 << 24)) == 0)
 #define SQFS_ON_DISK_BLOCK_SIZE(size) ((size) & ((1 << 24) - 1))
 #define SQFS_IS_SPARSE_BLOCK(size) (SQFS_ON_DISK_BLOCK_SIZE(size) == 0)
 
+/**
+ * @struct sqfs_fragment_t
+ *
+ * @brief Data structure that makes up the fragment table entries.
+ */
 struct sqfs_fragment_t {
+	/**
+	 * @brief Location of the fragment block on-disk.
+	 */
 	uint64_t start_offset;
+
+	/**
+	 * @brief Size of the fragment block in bytes.
+	 */
 	uint32_t size;
+
+	/**
+	 * @brief Unused. Always initialize this to 0.
+	 */
 	uint32_t pad0;
 };
 
