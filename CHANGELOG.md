@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+### Changed
+- Move most of the SquashFS code to a shared library called `libsquashfs.so`
+- Install the headers for this library on the target system
+- Relicense the code for `libsquashfs.so` under the LGPLv3
+
 ## [0.6.1] - 2019-08-27
 ### Added
 - Add a change log
