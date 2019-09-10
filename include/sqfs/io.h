@@ -105,7 +105,7 @@ struct sqfs_file_t {
 	 *
 	 * @param file A pointer to the file object.
 	 */
-	uint64_t (*get_size)(sqfs_file_t *file);
+	uint64_t (*get_size)(const sqfs_file_t *file);
 
 	/**
 	 * @brief Extend or shrink a file to a specified size.

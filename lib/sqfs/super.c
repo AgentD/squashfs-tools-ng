@@ -49,7 +49,7 @@ int sqfs_super_init(sqfs_super_t *super, size_t block_size, uint32_t mtime,
 	return 0;
 }
 
-int sqfs_super_write(sqfs_super_t *super, sqfs_file_t *file)
+int sqfs_super_write(const sqfs_super_t *super, sqfs_file_t *file)
 {
 	sqfs_super_t copy;
 

@@ -176,7 +176,7 @@ SQFS_API int sqfs_meta_write_write_to_file(sqfs_meta_writer_t *m);
  * @return Zero on success, an @ref E_SQFS_ERROR value on failure.
  */
 SQFS_API int sqfs_meta_writer_write_inode(sqfs_meta_writer_t *iw,
-					  sqfs_inode_generic_t *n);
+					  const sqfs_inode_generic_t *n);
 
 #ifdef __cplusplus
 }

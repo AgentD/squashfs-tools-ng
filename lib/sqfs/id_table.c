@@ -74,7 +74,7 @@ int sqfs_id_table_index_to_id(const sqfs_id_table_t *tbl, uint16_t index,
 }
 
 int sqfs_id_table_read(sqfs_id_table_t *tbl, sqfs_file_t *file,
-		       sqfs_super_t *super, sqfs_compressor_t *cmp)
+		       const sqfs_super_t *super, sqfs_compressor_t *cmp)
 {
 	uint64_t upper_limit, lower_limit;
 	void *raw_ids;

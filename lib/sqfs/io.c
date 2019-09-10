@@ -87,9 +87,9 @@ static int stdio_write_at(sqfs_file_t *base, uint64_t offset,
 	return 0;
 }
 
-static uint64_t stdio_get_size(sqfs_file_t *base)
+static uint64_t stdio_get_size(const sqfs_file_t *base)
 {
-	sqfs_file_stdio_t *file = (sqfs_file_stdio_t *)base;
+	const sqfs_file_stdio_t *file = (const sqfs_file_stdio_t *)base;
 
 	return file->size;
 }

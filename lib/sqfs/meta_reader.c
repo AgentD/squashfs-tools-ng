@@ -126,8 +126,8 @@ int sqfs_meta_reader_seek(sqfs_meta_reader_t *m, uint64_t block_start,
 	return 0;
 }
 
-void sqfs_meta_reader_get_position(sqfs_meta_reader_t *m, uint64_t *block_start,
-				   size_t *offset)
+void sqfs_meta_reader_get_position(const sqfs_meta_reader_t *m,
+				   uint64_t *block_start, size_t *offset)
 {
 	*block_start = m->block_offset;
 	*offset = m->offset;

@@ -254,7 +254,7 @@ SQFS_API int sqfs_dir_writer_end(sqfs_dir_writer_t *writer);
  *
  * @return The size of the entire, uncompressed listing in bytes.
  */
-SQFS_API size_t sqfs_dir_writer_get_size(sqfs_dir_writer_t *writer);
+SQFS_API size_t sqfs_dir_writer_get_size(const sqfs_dir_writer_t *writer);
 
 /**
  * @brief Get the location of the last written directory.
@@ -269,7 +269,8 @@ SQFS_API size_t sqfs_dir_writer_get_size(sqfs_dir_writer_t *writer);
  * @return A meta data reference, i.e. bits 16 to 48 contain the block start
  *         and the lower 16 bit an offset into the uncompressed block.
  */
-SQFS_API uint64_t sqfs_dir_writer_get_dir_reference(sqfs_dir_writer_t *writer);
+SQFS_API uint64_t
+sqfs_dir_writer_get_dir_reference(const sqfs_dir_writer_t *writer);
 
 /**
  * @brief Get the size of the index of the last written directory.
@@ -283,7 +284,7 @@ SQFS_API uint64_t sqfs_dir_writer_get_dir_reference(sqfs_dir_writer_t *writer);
  *
  * @return The number of index entries.
  */
-SQFS_API size_t sqfs_dir_writer_get_index_size(sqfs_dir_writer_t *writer);
+SQFS_API size_t sqfs_dir_writer_get_index_size(const sqfs_dir_writer_t *writer);
 
 /**
  * @brief Write the index of the index of the last written directory to
@@ -296,7 +297,7 @@ SQFS_API size_t sqfs_dir_writer_get_index_size(sqfs_dir_writer_t *writer);
  *
  * @return Zero on success, a @ref E_SQFS_ERROR value on failure.
  */
-SQFS_API int sqfs_dir_writer_write_index(sqfs_dir_writer_t *writer,
+SQFS_API int sqfs_dir_writer_write_index(const sqfs_dir_writer_t *writer,
 					 sqfs_meta_writer_t *im);
 
 #ifdef __cplusplus

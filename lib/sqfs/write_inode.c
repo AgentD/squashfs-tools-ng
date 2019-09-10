@@ -11,7 +11,8 @@
 #include "sqfs/error.h"
 #include "sqfs/inode.h"
 
-static int write_block_sizes(sqfs_meta_writer_t *ir, sqfs_inode_generic_t *n)
+static int write_block_sizes(sqfs_meta_writer_t *ir,
+			     const sqfs_inode_generic_t *n)
 {
 	uint32_t sizes[n->num_file_blocks];
 	size_t i;
@@ -24,7 +25,7 @@ static int write_block_sizes(sqfs_meta_writer_t *ir, sqfs_inode_generic_t *n)
 }
 
 int sqfs_meta_writer_write_inode(sqfs_meta_writer_t *ir,
-				 sqfs_inode_generic_t *n)
+				 const sqfs_inode_generic_t *n)
 {
 	sqfs_inode_t base;
 	int ret;

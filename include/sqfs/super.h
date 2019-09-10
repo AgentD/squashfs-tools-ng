@@ -301,7 +301,7 @@ SQFS_API int sqfs_super_init(sqfs_super_t *super, size_t block_size,
  * @return Zero on success, an @ref E_SQFS_ERROR value if one of the
  *         fields does not hold a valid value.
  */
-SQFS_API int sqfs_super_write(sqfs_super_t *super, sqfs_file_t *file);
+SQFS_API int sqfs_super_write(const sqfs_super_t *super, sqfs_file_t *file);
 
 /**
  * @brief Read a SquashFS super block from disk, decode it and check the fields

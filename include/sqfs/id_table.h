@@ -107,7 +107,8 @@ SQFS_API int sqfs_id_table_write(sqfs_id_table_t *tbl, sqfs_file_t *file,
  * @return Zero on success, an @ref E_SQFS_ERROR on failure.
  */
 SQFS_API int sqfs_id_table_read(sqfs_id_table_t *tbl, sqfs_file_t *file,
-				sqfs_super_t *super, sqfs_compressor_t *cmp);
+				const sqfs_super_t *super,
+				sqfs_compressor_t *cmp);
 
 /**
  * @brief Resolve a 16 bit index to a 32 bit ID.

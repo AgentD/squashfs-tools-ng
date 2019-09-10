@@ -260,22 +260,22 @@ int sqfs_dir_writer_end(sqfs_dir_writer_t *writer)
 	return 0;
 }
 
-size_t sqfs_dir_writer_get_size(sqfs_dir_writer_t *writer)
+size_t sqfs_dir_writer_get_size(const sqfs_dir_writer_t *writer)
 {
 	return writer->dir_size;
 }
 
-uint64_t sqfs_dir_writer_get_dir_reference(sqfs_dir_writer_t *writer)
+uint64_t sqfs_dir_writer_get_dir_reference(const sqfs_dir_writer_t *writer)
 {
 	return writer->dir_ref;
 }
 
-size_t sqfs_dir_writer_get_index_size(sqfs_dir_writer_t *writer)
+size_t sqfs_dir_writer_get_index_size(const sqfs_dir_writer_t *writer)
 {
 	return writer->idx_size;
 }
 
-int sqfs_dir_writer_write_index(sqfs_dir_writer_t *writer,
+int sqfs_dir_writer_write_index(const sqfs_dir_writer_t *writer,
 				sqfs_meta_writer_t *im)
 {
 	sqfs_dir_index_t ent;

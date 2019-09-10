@@ -223,7 +223,8 @@ static int read_inode_slink_ext(sqfs_meta_reader_t *ir, sqfs_inode_t *base,
 	return 0;
 }
 
-int sqfs_meta_reader_read_inode(sqfs_meta_reader_t *ir, sqfs_super_t *super,
+int sqfs_meta_reader_read_inode(sqfs_meta_reader_t *ir,
+				const sqfs_super_t *super,
 				uint64_t block_start, size_t offset,
 				sqfs_inode_generic_t **result)
 {

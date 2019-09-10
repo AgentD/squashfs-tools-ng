@@ -104,7 +104,7 @@ SQFS_API int sqfs_meta_reader_seek(sqfs_meta_reader_t *m, uint64_t block_start,
  * @param block_start Absolute position where the current block is.
  * @param offset A byte offset into the uncompressed block.
  */
-SQFS_API void sqfs_meta_reader_get_position(sqfs_meta_reader_t *m,
+SQFS_API void sqfs_meta_reader_get_position(const sqfs_meta_reader_t *m,
 					    uint64_t *block_start,
 					    size_t *offset);
 
@@ -179,7 +179,8 @@ SQFS_API int sqfs_meta_reader_read_dir_ent(sqfs_meta_reader_t *m,
  * @return Zero on success, an @ref E_SQFS_ERROR value on failure.
  */
 SQFS_API
-int sqfs_meta_reader_read_inode(sqfs_meta_reader_t *ir, sqfs_super_t *super,
+int sqfs_meta_reader_read_inode(sqfs_meta_reader_t *ir,
+				const sqfs_super_t *super,
 				uint64_t block_start, size_t offset,
 				sqfs_inode_generic_t **out);
 
