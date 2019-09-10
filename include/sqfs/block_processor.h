@@ -161,6 +161,9 @@ extern "C" {
  *            the deep copy function of the compressor is used to create
  *            several instances that don't interfere with each other.
  * @param num_workers The number of worker threads to create.
+ * @param max_backlog The maximum number of blocks currently in flight. When
+ *                    trying to add more, enqueueing blocks until the in-flight
+ *                    block count drops below the threshold.
  * @param user An arbitrary user pointer to pass to the block callback.
  * @param callback A function to call for each finished data block.
  *
@@ -172,6 +175,7 @@ SQFS_API
 sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
 						    sqfs_compressor_t *cmp,
 						    unsigned int num_workers,
+						    size_t max_backlog,
 						    void *user,
 						    sqfs_block_cb callback);
 

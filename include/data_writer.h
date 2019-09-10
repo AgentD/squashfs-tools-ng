@@ -37,7 +37,7 @@ enum {
  */
 data_writer_t *data_writer_create(sqfs_super_t *super, sqfs_compressor_t *cmp,
 				  sqfs_file_t *file, size_t devblksize,
-				  unsigned int num_jobs);
+				  unsigned int num_jobs, size_t max_backlog);
 
 void data_writer_destroy(data_writer_t *data);
 

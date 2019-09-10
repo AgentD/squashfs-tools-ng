@@ -15,6 +15,7 @@ static struct option long_opts[] = {
 	{ "pack-file", required_argument, NULL, 'F' },
 	{ "pack-dir", required_argument, NULL, 'D' },
 	{ "num-jobs", required_argument, NULL, 'j' },
+	{ "queue-backlog", required_argument, NULL, 'Q' },
 	{ "keep-time", no_argument, NULL, 'k' },
 #ifdef HAVE_SYS_XATTR_H
 	{ "keep-xattr", no_argument, NULL, 'x' },
@@ -30,7 +31,7 @@ static struct option long_opts[] = {
 	{ "help", no_argument, NULL, 'h' },
 };
 
-static const char *short_opts = "F:D:X:c:b:B:d:j:kxoefqhV"
+static const char *short_opts = "F:D:X:c:b:B:d:j:Q:kxoefqhV"
 #ifdef WITH_SELINUX
 "s:"
 #endif
@@ -65,6 +66,10 @@ static const char *help_string =
 "                              the selected compressor. Specify 'help' to\n"
 "                              get a list of available options.\n"
 "  --num-jobs, -j <count>      Number of compressor jobs to create.\n"
+"  --queue-backlog, -Q <count> Maximum number of data blocks in the thread\n"
+"                              worker queue before the packer starts waiting\n"
+"                              for the block processors to catch up.\n"
+"                              Defaults to 10 times the number of jobs.\n"
 "  --block-size, -b <size>     Block size to use for Squashfs image.\n"
 "                              Defaults to %u.\n"
 "  --dev-block-size, -B <size> Device block size to padd the image to.\n"
@@ -151,6 +156,7 @@ void process_command_line(options_t *opt, int argc, char **argv)
 	opt->blksz = SQFS_DEFAULT_BLOCK_SIZE;
 	opt->devblksz = SQFS_DEVBLK_SIZE;
 	opt->num_jobs = 1;
+	opt->max_backlog = 0;
 
 	for (;;) {
 		i = getopt_long(argc, argv, short_opts, long_opts, NULL);
@@ -180,6 +186,9 @@ void process_command_line(options_t *opt, int argc, char **argv)
 			break;
 		case 'j':
 			opt->num_jobs = strtol(optarg, NULL, 0);
+			break;
+		case 'Q':
+			opt->max_backlog = strtol(optarg, NULL, 0);
 			break;
 		case 'B':
 			opt->devblksz = strtol(optarg, NULL, 0);
@@ -239,6 +248,12 @@ void process_command_line(options_t *opt, int argc, char **argv)
 			goto fail_arg;
 		}
 	}
+
+	if (opt->num_jobs < 1)
+		opt->num_jobs = 1;
+
+	if (opt->max_backlog < 1)
+		opt->max_backlog = 10 * opt->num_jobs;
 
 	if (opt->comp_extra != NULL && strcmp(opt->comp_extra, "help") == 0) {
 		compressor_print_help(opt->compressor);

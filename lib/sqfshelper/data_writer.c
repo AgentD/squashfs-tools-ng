@@ -452,7 +452,7 @@ int write_data_from_fd_condensed(data_writer_t *data, file_info_t *fi,
 
 data_writer_t *data_writer_create(sqfs_super_t *super, sqfs_compressor_t *cmp,
 				  sqfs_file_t *file, size_t devblksize,
-				  unsigned int num_jobs)
+				  unsigned int num_jobs, size_t max_backlog)
 {
 	data_writer_t *data = calloc(1, sizeof(*data));
 
@@ -462,7 +462,7 @@ data_writer_t *data_writer_create(sqfs_super_t *super, sqfs_compressor_t *cmp,
 	}
 
 	data->proc = sqfs_block_processor_create(super->block_size, cmp,
-						 num_jobs, data,
+						 num_jobs, max_backlog, data,
 						 block_callback);
 	data->cmp = cmp;
 	data->super = super;

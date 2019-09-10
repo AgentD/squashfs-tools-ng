@@ -16,8 +16,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define MAX_BACKLOG_FACTOR (10)
-
 typedef struct {
 	sqfs_block_processor_t *shared;
 	sqfs_compressor_t *cmp;
@@ -46,6 +44,7 @@ struct sqfs_block_processor_t {
 	sqfs_block_cb cb;
 	void *user;
 	int status;
+	size_t max_backlog;
 
 	/* used only by workers */
 	size_t max_block_size;
@@ -117,6 +116,7 @@ static void *worker_proc(void *arg)
 sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
 						    sqfs_compressor_t *cmp,
 						    unsigned int num_workers,
+						    size_t max_backlog,
 						    void *user,
 						    sqfs_block_cb callback)
 {
@@ -136,6 +136,7 @@ sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
 	proc->cb = callback;
 	proc->user = user;
 	proc->num_workers = num_workers;
+	proc->max_backlog = max_backlog;
 
 	if (pthread_mutex_init(&proc->mtx, NULL))
 		goto fail_free;
@@ -274,7 +275,7 @@ int sqfs_block_processor_enqueue(sqfs_block_processor_t *proc,
 	    (block->flags & SQFS_BLK_DONT_CHECKSUM)) {
 		store_completed_block(proc, block);
 	} else {
-		while (proc->backlog > proc->num_workers * MAX_BACKLOG_FACTOR)
+		while (proc->backlog > proc->max_backlog)
 			pthread_cond_wait(&proc->done_cond, &proc->mtx);
 
 		if (proc->queue_last == NULL) {

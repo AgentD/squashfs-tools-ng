@@ -34,6 +34,7 @@ static struct option long_opts[] = {
 	{ "dev-block-size", required_argument, NULL, 'B' },
 	{ "defaults", required_argument, NULL, 'd' },
 	{ "num-jobs", required_argument, NULL, 'j' },
+	{ "queue-backlog", required_argument, NULL, 'Q' },
 	{ "comp-extra", required_argument, NULL, 'X' },
 	{ "no-skip", no_argument, NULL, 's' },
 	{ "no-xattr", no_argument, NULL, 'x' },
@@ -45,7 +46,7 @@ static struct option long_opts[] = {
 	{ "version", no_argument, NULL, 'V' },
 };
 
-static const char *short_opts = "c:b:B:d:X:j:sxekfqhV";
+static const char *short_opts = "c:b:B:d:X:j:Q:sxekfqhV";
 
 static const char *usagestr =
 "Usage: tar2sqfs [OPTIONS...] <sqfsfile>\n"
@@ -61,6 +62,10 @@ static const char *usagestr =
 "                              the selected compressor. Specify 'help' to\n"
 "                              get a list of available options.\n"
 "  --num-jobs, -j <count>      Number of compressor jobs to create.\n"
+"  --queue-backlog, -Q <count> Maximum number of data blocks in the thread\n"
+"                              worker queue before the packer starts waiting\n"
+"                              for the block processors to catch up.\n"
+"                              Defaults to 10 times the number of jobs.\n"
 "  --block-size, -b <size>     Block size to use for Squashfs image.\n"
 "                              Defaults to %u.\n"
 "  --dev-block-size, -B <size> Device block size to padd the image to.\n"
@@ -98,6 +103,7 @@ static size_t devblksize = SQFS_DEVBLK_SIZE;
 static bool quiet = false;
 static int outmode = 0;
 static unsigned int num_jobs = 1;
+static size_t max_backlog = 0;
 static E_SQFS_COMPRESSOR comp_id;
 static char *comp_extra = NULL;
 static char *fs_defaults = NULL;
@@ -148,6 +154,9 @@ static void process_args(int argc, char **argv)
 		case 'j':
 			num_jobs = strtol(optarg, NULL, 0);
 			break;
+		case 'Q':
+			max_backlog = strtol(optarg, NULL, 0);
+			break;
 		case 'X':
 			comp_extra = optarg;
 			break;
@@ -184,6 +193,12 @@ static void process_args(int argc, char **argv)
 			goto fail_arg;
 		}
 	}
+
+	if (num_jobs < 1)
+		num_jobs = 1;
+
+	if (max_backlog < 1)
+		max_backlog = 10 * num_jobs;
 
 	if (comp_extra != NULL && strcmp(comp_extra, "help") == 0) {
 		compressor_print_help(comp_id);
@@ -401,7 +416,8 @@ int main(int argc, char **argv)
 	if (ret > 0)
 		super.flags |= SQFS_FLAG_COMPRESSOR_OPTIONS;
 
-	data = data_writer_create(&super, cmp, outfile, devblksize, num_jobs);
+	data = data_writer_create(&super, cmp, outfile, devblksize,
+				  num_jobs, max_backlog);
 	if (data == NULL)
 		goto out_cmp;
 

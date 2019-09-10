@@ -39,6 +39,7 @@ typedef struct {
 	int devblksz;
 	unsigned int dirscan_flags;
 	unsigned int num_jobs;
+	size_t max_backlog;
 	bool exportable;
 	bool quiet;
 	const char *infile;

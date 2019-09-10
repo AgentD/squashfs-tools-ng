@@ -27,11 +27,13 @@ struct sqfs_block_processor_t {
 sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
 						    sqfs_compressor_t *cmp,
 						    unsigned int num_workers,
+						    size_t max_backlog,
 						    void *user,
 						    sqfs_block_cb callback)
 {
 	sqfs_block_processor_t *proc;
 	(void)num_workers;
+	(void)max_backlog;
 
 	proc = alloc_flex(sizeof(*proc), 1, max_block_size);
 

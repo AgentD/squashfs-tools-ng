@@ -28,6 +28,11 @@ If tar2sqfs was compiled with a built in pthread based parallel data
 compressor, this option can be used to set the number of compressor
 threads. If not set, the default is 1.
 .TP
+\fB\-\-queue\-backlog\fR, \fB\-Q\fR <count>
+Maximum number of data blocks in the thread worker queue before the packer
+starts waiting for the block processors to catch up. Higher values result
+in higher memory consumption. Defaults to 10 times the number of workers.
+.TP
 \fB\-\-block\-size\fR, \fB\-b\fR <size>
 Block size to use for Squashfs image.
 Defaults to 131072.

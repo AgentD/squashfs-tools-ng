@@ -165,7 +165,7 @@ int main(int argc, char **argv)
 		super.flags |= SQFS_FLAG_COMPRESSOR_OPTIONS;
 
 	data = data_writer_create(&super, cmp, outfile,
-				  opt.devblksz, opt.num_jobs);
+				  opt.devblksz, opt.num_jobs, opt.max_backlog);
 	if (data == NULL)
 		goto out_cmp;
 
