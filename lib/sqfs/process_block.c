@@ -26,8 +26,10 @@ int sqfs_block_process(sqfs_block_t *block, sqfs_compressor_t *cmp,
 		ret = cmp->do_block(cmp, block->data, block->size,
 				    scratch, scratch_size);
 
-		if (ret < 0)
+		if (ret < 0) {
+			block->flags |= SQFS_BLK_COMPRESS_ERROR;
 			return ret;
+		}
 
 		if (ret > 0) {
 			memcpy(block->data, scratch, ret);

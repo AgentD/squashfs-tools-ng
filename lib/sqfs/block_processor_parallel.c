@@ -105,10 +105,8 @@ static void *worker_proc(void *arg)
 			shared->queue_last = NULL;
 		pthread_mutex_unlock(&shared->mtx);
 
-		if (sqfs_block_process(blk, worker->cmp, worker->scratch,
-				       shared->max_block_size)) {
-			blk->flags |= SQFS_BLK_COMPRESS_ERROR;
-		}
+		sqfs_block_process(blk, worker->cmp, worker->scratch,
+				   shared->max_block_size);
 	}
 	return NULL;
 }
@@ -137,15 +135,9 @@ sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
 	proc->user = user;
 	proc->num_workers = num_workers;
 	proc->max_backlog = max_backlog;
-
-	if (pthread_mutex_init(&proc->mtx, NULL))
-		goto fail_free;
-
-	if (pthread_cond_init(&proc->queue_cond, NULL))
-		goto fail_mtx;
-
-	if (pthread_cond_init(&proc->done_cond, NULL))
-		goto fail_cond;
+	proc->mtx = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
+	proc->queue_cond = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
+	proc->done_cond = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
 
 	for (i = 0; i < num_workers; ++i) {
 		proc->workers[i] = alloc_flex(sizeof(compress_worker_t),
@@ -193,11 +185,8 @@ fail_init:
 		}
 	}
 	pthread_cond_destroy(&proc->done_cond);
-fail_cond:
 	pthread_cond_destroy(&proc->queue_cond);
-fail_mtx:
 	pthread_mutex_destroy(&proc->mtx);
-fail_free:
 	free(proc);
 	return NULL;
 }
