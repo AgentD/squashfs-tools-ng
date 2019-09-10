@@ -52,11 +52,12 @@ int sqfs_serialize_fstree(sqfs_file_t *file, sqfs_super_t *super, fstree_t *fs,
 	int ret = -1;
 	size_t i;
 
-	im = sqfs_meta_writer_create(file, cmp, false);
+	im = sqfs_meta_writer_create(file, cmp, 0);
 	if (im == NULL)
 		return -1;
 
-	dm = sqfs_meta_writer_create(file, cmp, true);
+	dm = sqfs_meta_writer_create(file, cmp,
+				     SQFS_META_WRITER_KEEP_IN_MEMORY);
 	if (dm == NULL)
 		goto out_im;
 

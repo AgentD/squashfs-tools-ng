@@ -46,6 +46,23 @@
  * compressing the blocks and pre-pending a header.
  */
 
+/**
+ * @enum E_SQFS_META_WRITER_FLAGS
+ *
+ * @brief Possible flags for @ref sqfs_meta_writer_create.
+ */
+typedef enum {
+	/**
+	 * @brief If set, keep finished blocks in memory.
+	 *
+	 * To write them to disk, explicitly call
+	 * @ref sqfs_meta_write_write_to_file.
+	 */
+	SQFS_META_WRITER_KEEP_IN_MEMORY = 0x01,
+
+	SQFS_META_WRITER_ALL_FLAGS = 0x01,
+} E_SQFS_META_WRITER_FLAGS;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -61,15 +78,14 @@ extern "C" {
  *
  * @param file An output file to write the data to.
  * @param cmp A compressor to use.
- * @param keep_in_memory Set to true to store the compressed blocks
- *                       internally until they are explicilty told
- *                       to write them to disk.
+ * @param flags A combination of @ref E_SQFS_META_WRITER_FLAGS.
  *
- * @return A pointer to a meta writer on success, NULL on allocation failure.
+ * @return A pointer to a meta writer on success, NULL on allocation failure
+ *         or if an unknown flag was set.
  */
 SQFS_API sqfs_meta_writer_t *sqfs_meta_writer_create(sqfs_file_t *file,
 						     sqfs_compressor_t *cmp,
-						     bool keep_in_mem);
+						     int flags);
 
 /**
  * @brief Destroy a meta data writer and free all memory used by it.

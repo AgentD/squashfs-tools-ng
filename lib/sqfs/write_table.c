@@ -36,7 +36,7 @@ int sqfs_write_table(sqfs_file_t *file, sqfs_compressor_t *cmp,
 		return SQFS_ERROR_ALLOC;
 
 	/* Write actual data */
-	m = sqfs_meta_writer_create(file, cmp, false);
+	m = sqfs_meta_writer_create(file, cmp, 0);
 	if (m == NULL) {
 		ret = SQFS_ERROR_ALLOC;
 		goto out_idx;

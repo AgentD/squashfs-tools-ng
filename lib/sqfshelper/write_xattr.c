@@ -185,7 +185,7 @@ int write_xattr(sqfs_file_t *file, fstree_t *fs, sqfs_super_t *super,
 	if (ool_locations == NULL)
 		return -1;
 
-	mw = sqfs_meta_writer_create(file, cmp, false);
+	mw = sqfs_meta_writer_create(file, cmp, 0);
 	if (mw == NULL)
 		goto fail_ool;
 

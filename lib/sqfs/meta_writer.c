@@ -41,7 +41,7 @@ struct sqfs_meta_writer_t {
 	/* The raw data chunk that data is appended to */
 	uint8_t data[SQFS_META_BLOCK_SIZE];
 
-	bool keep_in_mem;
+	int flags;
 	meta_block_t *list;
 	meta_block_t *list_end;
 };
@@ -56,16 +56,20 @@ static int write_block(sqfs_file_t *file, meta_block_t *outblk)
 
 sqfs_meta_writer_t *sqfs_meta_writer_create(sqfs_file_t *file,
 					    sqfs_compressor_t *cmp,
-					    bool keep_in_mem)
+					    int flags)
 {
-	sqfs_meta_writer_t *m = calloc(1, sizeof(*m));
+	sqfs_meta_writer_t *m;
 
+	if (flags & ~SQFS_META_WRITER_ALL_FLAGS)
+		return NULL;
+
+	m = calloc(1, sizeof(*m));
 	if (m == NULL)
 		return NULL;
 
 	m->cmp = cmp;
 	m->file = file;
-	m->keep_in_mem = keep_in_mem;
+	m->flags = flags;
 	return m;
 }
 
@@ -113,7 +117,7 @@ int sqfs_meta_writer_flush(sqfs_meta_writer_t *m)
 
 	ret = 0;
 
-	if (m->keep_in_mem) {
+	if (m->flags & SQFS_META_WRITER_KEEP_IN_MEMORY) {
 		if (m->list == NULL) {
 			m->list = outblk;
 		} else {
