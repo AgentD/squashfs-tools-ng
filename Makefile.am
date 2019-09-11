@@ -15,7 +15,11 @@ EXTRA_DIST = autogen.sh LICENSE-gpl.txt LICENSE-lgpl.txt README.md CHANGELOG.md
 TESTS =
 
 include doc/Makemodule.am
-include lib/Makemodule.am
+include lib/fstree/Makemodule.am
+include lib/sqfs/Makemodule.am
+include lib/sqfshelper/Makemodule.am
+include lib/tar/Makemodule.am
+include lib/util/Makemodule.am
 include tar/Makemodule.am
 include mkfs/Makemodule.am
 include unpack/Makemodule.am

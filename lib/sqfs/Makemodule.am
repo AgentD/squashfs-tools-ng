@@ -1,0 +1,58 @@
+LIBSQFS_HEARDS = include/sqfs/data.h include/sqfs/meta_writer.h \
+		include/sqfs/meta_reader.h include/sqfs/id_table.h \
+		include/sqfs/compress.h include/sqfs/block_processor.h \
+		include/sqfs/super.h include/sqfs/inode.h \
+		include/sqfs/dir.h include/sqfs/xattr.h \
+		include/sqfs/table.h include/sqfs/predef.h \
+		include/sqfs/error.h include/sqfs/io.h
+
+libsquashfs_la_SOURCES = $(LIBSQFS_HEARDS) lib/sqfs/id_table.c lib/sqfs/super.c
+libsquashfs_la_SOURCES += lib/sqfs/readdir.c lib/sqfs/io.c lib/sqfs/xattr.c
+libsquashfs_la_SOURCES += lib/sqfs/write_table.c lib/sqfs/meta_writer.c
+libsquashfs_la_SOURCES += lib/sqfs/read_super.c lib/sqfs/meta_reader.c
+libsquashfs_la_SOURCES += lib/sqfs/read_inode.c lib/sqfs/write_inode.c
+libsquashfs_la_SOURCES += lib/sqfs/dir_writer.c lib/sqfs/xattr_reader.c
+libsquashfs_la_SOURCES += lib/sqfs/read_table.c lib/sqfs/comp/compressor.c
+libsquashfs_la_SOURCES += lib/sqfs/process_block.c lib/sqfs/comp/internal.h
+libsquashfs_la_CPPFLAGS = $(AM_CPPFLAGS)
+libsquashfs_la_CFLAGS = $(AM_CFLAGS) $(PTHREAD_CFLAGS) $(ZLIB_CFLAGS)
+libsquashfs_la_CFLAGS += $(XZ_CFLAGS) $(LZO_CFLAGS) $(LZ4_CFLAGS)
+libsquashfs_la_CFLAGS += $(ZSTD_CFLAGS) $(PTHREAD_CFLAGS)
+libsquashfs_la_LIBADD = $(XZ_LIBS) $(ZLIB_LIBS) $(LZO_LIBS) $(LZ4_LIBS)
+libsquashfs_la_LIBADD += $(ZSTD_LIBS) $(PTHREAD_LIBS) libutil.la
+
+if HAVE_PTHREAD
+libsquashfs_la_SOURCES += lib/sqfs/block_processor_parallel.c
+else
+libsquashfs_la_SOURCES += lib/sqfs/block_processor.c
+endif
+
+if WITH_GZIP
+libsquashfs_la_SOURCES += lib/sqfs/comp/gzip.c
+libsquashfs_la_CPPFLAGS += -DWITH_GZIP
+endif
+
+if WITH_XZ
+libsquashfs_la_SOURCES += lib/sqfs/comp/xz.c
+libsquashfs_la_CPPFLAGS += -DWITH_XZ
+endif
+
+if WITH_LZO
+libsquashfs_la_SOURCES += lib/sqfs/comp/lzo.c
+libsquashfs_la_CPPFLAGS += -DWITH_LZO
+endif
+
+if WITH_LZ4
+libsquashfs_la_SOURCES += lib/sqfs/comp/lz4.c
+libsquashfs_la_CPPFLAGS += -DWITH_LZ4
+endif
+
+if WITH_ZSTD
+libsquashfs_la_SOURCES += lib/sqfs/comp/zstd.c
+libsquashfs_la_CPPFLAGS += -DWITH_ZSTD
+endif
+
+sqfsincludedir = $(includedir)/sqfs
+sqfsinclude_HEADERS = $(LIBSQFS_HEARDS)
+
+lib_LTLIBRARIES += libsquashfs.la
