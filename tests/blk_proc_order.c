@@ -98,7 +98,7 @@ int main(void)
 	main_thread = pthread_self();
 #endif
 
-	proc = sqfs_block_processor_create(4 * sizeof(int), cmp, 4,
+	proc = sqfs_block_processor_create(4 * sizeof(int), cmp, 4, 10,
 					   NULL, block_callback);
 	assert(proc != NULL);
 
