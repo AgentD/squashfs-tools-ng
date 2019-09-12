@@ -196,7 +196,7 @@ void process_command_line(options_t *opt, int argc, char **argv)
 	}
 
 	if (opt->op == OP_NONE) {
-		fputs("No opteration specified\n", stderr);
+		fputs("No operation specified\n", stderr);
 		goto fail_arg;
 	}
 
