@@ -5,12 +5,7 @@
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
 #define SQFS_BUILDING_DLL
-#include "config.h"
-
-#include "sqfs/block_processor.h"
-#include "sqfs/compress.h"
-#include "sqfs/error.h"
-#include "util.h"
+#include "internal.h"
 
 #include <pthread.h>
 #include <string.h>

@@ -222,22 +222,6 @@ SQFS_API int sqfs_block_processor_enqueue(sqfs_block_processor_t *proc,
  */
 SQFS_API int sqfs_block_processor_finish(sqfs_block_processor_t *proc);
 
-/**
- * @brief Convenience function to process a data block.
- *
- * This function actually contains the implementation of what each worker in
- * the block processor actually does to the data blocks.
- *
- * @param block A pointer to a data block.
- * @param cmp A pointer to a compressor to use.
- * @param scratch A pointer to a scratch buffer to user for compressing.
- * @param scratch_size The available size in the scratch buffer.
- *
- * @return Zero on success, an @ref E_SQFS_ERROR value on failure.
- */
-SQFS_API int sqfs_block_process(sqfs_block_t *block, sqfs_compressor_t *cmp,
-				uint8_t *scratch, size_t scratch_size);
-
 #ifdef __cplusplus
 }
 #endif
