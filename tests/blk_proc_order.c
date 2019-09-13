@@ -65,7 +65,9 @@ static pthread_t main_thread;
 
 static int block_callback(void *user, sqfs_block_t *blk)
 {
+#ifdef HAVE_PTHREAD
 	assert(main_thread == pthread_self());
+#endif
 	assert(blk->index == blk_index++);
 
 	if (blk->index == 4) {
