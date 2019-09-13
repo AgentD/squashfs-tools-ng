@@ -36,10 +36,7 @@ static int pack_files(data_writer_t *data, fstree_t *fs, options_t *opt)
 	if (set_working_dir(opt))
 		return -1;
 
-	while (fs->files != NULL) {
-		fi = fs->files;
-		fs->files = fi->next;
-
+	for (fi = fs->files; fi != NULL; fi = fi->next) {
 		if (!opt->quiet)
 			printf("packing %s\n", fi->input_file);
 

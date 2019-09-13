@@ -193,7 +193,7 @@ int data_reader_dump_file(data_reader_t *data, file_info_t *fi, int outfd,
 		diff = filesz > data->block_size ? data->block_size : filesz;
 		filesz -= diff;
 
-		if (SQFS_IS_SPARSE_BLOCK(fi->blocks[i].size)) {
+		if (SQFS_IS_SPARSE_BLOCK(fi->block_size[i])) {
 			if (allow_sparse) {
 				if (lseek(outfd, diff, SEEK_CUR) == (off_t)-1)
 					goto fail_sparse;
@@ -201,9 +201,9 @@ int data_reader_dump_file(data_reader_t *data, file_info_t *fi, int outfd,
 			}
 			memset(data->block, 0, diff);
 		} else {
-			if (precache_data_block(data, off, fi->blocks[i].size))
+			if (precache_data_block(data, off, fi->block_size[i]))
 				return -1;
-			off += SQFS_ON_DISK_BLOCK_SIZE(fi->blocks[i].size);
+			off += SQFS_ON_DISK_BLOCK_SIZE(fi->block_size[i]);
 		}
 
 		if (write_data("writing uncompressed block",
@@ -259,7 +259,7 @@ ssize_t data_reader_read(data_reader_t *data, file_info_t *fi,
 	i = 0;
 
 	while (offset > data->block_size && i < count) {
-		off += SQFS_ON_DISK_BLOCK_SIZE(fi->blocks[i++].size);
+		off += SQFS_ON_DISK_BLOCK_SIZE(fi->block_size[i++]);
 		offset -= data->block_size;
 	}
 
@@ -269,14 +269,14 @@ ssize_t data_reader_read(data_reader_t *data, file_info_t *fi,
 		if (size < diff)
 			size = diff;
 
-		if (SQFS_IS_SPARSE_BLOCK(fi->blocks[i].size)) {
+		if (SQFS_IS_SPARSE_BLOCK(fi->block_size[i])) {
 			memset(buffer, 0, diff);
 		} else {
-			if (precache_data_block(data, off, fi->blocks[i].size))
+			if (precache_data_block(data, off, fi->block_size[i]))
 				return -1;
 
 			memcpy(buffer, (char *)data->block + offset, diff);
-			off += SQFS_ON_DISK_BLOCK_SIZE(fi->blocks[i].size);
+			off += SQFS_ON_DISK_BLOCK_SIZE(fi->block_size[i]);
 		}
 
 		++i;

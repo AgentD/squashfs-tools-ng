@@ -25,7 +25,7 @@ static size_t compute_size(sqfs_inode_generic_t *inode, const char *name)
 	case SQFS_INODE_EXT_FILE:
 		size += sizeof(file_info_t);
 		size += inode->num_file_blocks *
-			sizeof(((file_info_t *)0)->blocks[0]);
+			sizeof(((file_info_t *)0)->block_size[0]);
 		break;
 	case SQFS_INODE_SLINK:
 	case SQFS_INODE_EXT_SLINK:
@@ -51,10 +51,10 @@ static void copy_block_sizes(sqfs_inode_generic_t *inode, tree_node_t *out,
 	}
 
 	out->name += inode->num_file_blocks *
-		sizeof(out->data.file->blocks[0]);
+		sizeof(out->data.file->block_size[0]);
 
 	for (i = 0; i < inode->num_file_blocks; ++i)
-		out->data.file->blocks[i].size = inode->block_sizes[i];
+		out->data.file->block_size[i] = inode->block_sizes[i];
 }
 
 tree_node_t *tree_node_from_inode(sqfs_inode_generic_t *inode,

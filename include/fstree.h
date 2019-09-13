@@ -99,18 +99,12 @@ struct file_info_t {
 	/* Byte offset into the fragment block. */
 	uint32_t fragment_offset;
 
-	uint32_t fragment_chksum;
-
 	/* combination of FILE_FLAG_* flags */
 	uint32_t flags;
 
 	/* Stores data about each full data block. */
-	struct {
-		uint32_t chksum;
-
-		/* Bit (1 << 24) is set if the block is stored uncompressed. */
-		uint32_t size;
-	} blocks[];
+	/* Bit (1 << 24) is set if the block is stored uncompressed. */
+	uint32_t block_size[];
 };
 
 /* Additional meta data stored in a tree_node_t for directories */
@@ -310,25 +304,6 @@ void tree_node_sort_recursive(tree_node_t *root);
 
 /* resolve a path to a tree node. Returns NULL on failure and sets errno */
 tree_node_t *fstree_node_from_path(fstree_t *fs, const char *path);
-
-/*
-  Walk through 'list' to find a file with a fragment that has
-  the same size ('frag_size') and checksum ('chksum') as 'fi'.
-
-  Returns NULL if no such fragment could be found.
-*/
-file_info_t *fragment_by_chksum(file_info_t *fi, uint32_t chksum,
-				size_t frag_size, file_info_t *list,
-				size_t block_size);
-
-/*
-  Walk through 'list' to find a file that contains the same sequence of blocks
-  as 'file', comparing size and checksum.
-
-  Returns NULL if no such fragment could be found.
- */
-uint64_t find_equal_blocks(file_info_t *file, file_info_t *list,
-			   size_t block_size);
 
 /*
   Optimize the order of the fstree file list for unpacking as to avoid

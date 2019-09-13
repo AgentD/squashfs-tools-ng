@@ -30,7 +30,7 @@ void sqfs_print_statistics(fstree_t *fs, sqfs_super_t *super)
 		}
 
 		for (sparse = 0, i = 0; i < num_blocks; ++i) {
-			if (fi->blocks[i].size == 0)
+			if (fi->block_size[i] == 0)
 				sparse += 1;
 		}
 

@@ -18,6 +18,24 @@
 #include <errno.h>
 #include <zlib.h>
 
+#define MK_BLK_SIG(chksum, size) \
+	(((uint64_t)(size) << 32) | (uint64_t)(chksum))
+
+#define BLK_SIZE(sig) ((sig) >> 32)
+
+#define INIT_BLOCK_COUNT (128)
+
+typedef struct {
+	uint64_t offset;
+	uint64_t signature;
+} blk_info_t;
+
+typedef struct {
+	uint32_t index;
+	uint32_t offset;
+	uint64_t signature;
+} frag_info_t;
+
 struct data_writer_t {
 	sqfs_block_t *frag_block;
 	sqfs_fragment_t *fragments;
@@ -29,9 +47,17 @@ struct data_writer_t {
 
 	sqfs_block_processor_t *proc;
 	sqfs_compressor_t *cmp;
-	file_info_t *list;
 	sqfs_super_t *super;
 	sqfs_file_t *file;
+
+	size_t file_start;
+	size_t num_blocks;
+	size_t max_blocks;
+	blk_info_t *blocks;
+
+	size_t frag_list_num;
+	size_t frag_list_max;
+	frag_info_t *frag_list;
 };
 
 enum {
@@ -47,20 +73,63 @@ static int allign_file(data_writer_t *data)
 			 data->devblksz);
 }
 
+static int store_block_location(data_writer_t *data, uint64_t offset,
+				uint32_t size, uint32_t chksum)
+{
+	size_t new_sz;
+	void *new;
+
+	if (data->num_blocks == data->max_blocks) {
+		new_sz = data->max_blocks * 2;
+		new = realloc(data->blocks, sizeof(data->blocks[0]) * new_sz);
+
+		if (new == NULL) {
+			perror("growing data block checksum table");
+			return -1;
+		}
+
+		data->blocks = new;
+		data->max_blocks = new_sz;
+	}
+
+	data->blocks[data->num_blocks].offset = offset;
+	data->blocks[data->num_blocks].signature = MK_BLK_SIG(chksum, size);
+	data->num_blocks += 1;
+	return 0;
+}
+
+static size_t deduplicate_blocks(data_writer_t *data, size_t count)
+{
+	size_t i, j;
+
+	for (i = 0; i < data->file_start; ++i) {
+		for (j = 0; j < count; ++j) {
+			if (data->blocks[i + j].signature !=
+			    data->blocks[data->file_start + j].signature)
+				break;
+		}
+
+		if (j == count)
+			break;
+	}
+
+	return i;
+}
+
 static int block_callback(void *user, sqfs_block_t *blk)
 {
 	file_info_t *fi = blk->user;
 	data_writer_t *data = user;
-	uint64_t ref, offset;
+	size_t start, count;
+	uint64_t offset;
 	uint32_t out;
 
 	if (blk->flags & BLK_FIRST_BLOCK) {
 		data->start = data->file->get_size(data->file);
+		data->file_start = data->num_blocks;
 
 		if ((blk->flags & BLK_ALLIGN) && allign_file(data) != 0)
 			return -1;
-
-		fi->startblock = data->file->get_size(data->file);
 	}
 
 	if (blk->size != 0) {
@@ -68,20 +137,22 @@ static int block_callback(void *user, sqfs_block_t *blk)
 		if (!(blk->flags & SQFS_BLK_IS_COMPRESSED))
 			out |= 1 << 24;
 
+		offset = data->file->get_size(data->file);
+
 		if (blk->flags & BLK_FRAGMENT_BLOCK) {
-			offset = htole64(data->file->get_size(data->file));
-			data->fragments[blk->index].start_offset = offset;
+			data->fragments[blk->index].start_offset = htole64(offset);
 			data->fragments[blk->index].pad0 = 0;
 			data->fragments[blk->index].size = htole32(out);
 
 			data->super->flags &= ~SQFS_FLAG_NO_FRAGMENTS;
 			data->super->flags |= SQFS_FLAG_ALWAYS_FRAGMENTS;
 		} else {
-			fi->blocks[blk->index].chksum = blk->checksum;
-			fi->blocks[blk->index].size = htole32(out);
-		}
+			fi->block_size[blk->index] = htole32(out);
 
-		offset = data->file->get_size(data->file);
+			if (store_block_location(data, offset, out,
+						 blk->checksum))
+				return -1;
+		}
 
 		if (data->file->write_at(data->file, offset,
 					 blk->data, blk->size)) {
@@ -93,11 +164,14 @@ static int block_callback(void *user, sqfs_block_t *blk)
 		if ((blk->flags & BLK_ALLIGN) && allign_file(data) != 0)
 			return -1;
 
-		ref = find_equal_blocks(fi, data->list,
-					data->super->block_size);
-		if (ref > 0) {
-			fi->startblock = ref;
+		count = data->num_blocks - data->file_start;
+		start = deduplicate_blocks(data, count);
+
+		fi->startblock = data->blocks[start].offset;
+
+		if (start + count < data->file_start) {
 			fi->flags |= FILE_FLAG_BLOCKS_ARE_DUPLICATE;
+			data->num_blocks = data->file_start;
 
 			if (data->file->truncate(data->file, data->start)) {
 				perror("truncating squashfs image after "
@@ -139,10 +213,25 @@ static int flush_fragment_block(data_writer_t *data)
 	return ret;
 }
 
-static int store_fragment(data_writer_t *data, sqfs_block_t *frag)
+static int handle_fragment(data_writer_t *data, sqfs_block_t *frag)
 {
 	file_info_t *fi = frag->user;
-	size_t size;
+	size_t i, size, new_sz;
+	uint64_t signature;
+	void *new;
+
+	frag->checksum = crc32(0, frag->data, frag->size);
+	signature = MK_BLK_SIG(frag->checksum, frag->size);
+
+	for (i = 0; i < data->frag_list_num; ++i) {
+		if (data->frag_list[i].signature == signature) {
+			fi->fragment_offset = data->frag_list[i].offset;
+			fi->fragment = data->frag_list[i].index;
+			fi->flags |= FILE_FLAG_FRAGMENT_IS_DUPLICATE;
+			free(frag);
+			return 0;
+		}
+	}
 
 	if (data->frag_block != NULL) {
 		size = data->frag_block->size + frag->size;
@@ -162,9 +251,27 @@ static int store_fragment(data_writer_t *data, sqfs_block_t *frag)
 			goto fail;
 		}
 
-		data->frag_block->flags = SQFS_BLK_DONT_CHECKSUM;
-		data->frag_block->flags |= BLK_FRAGMENT_BLOCK;
+		data->frag_block->flags = BLK_FRAGMENT_BLOCK;
 	}
+
+	if (data->frag_list_num == data->frag_list_max) {
+		new_sz = data->frag_list_max * 2;
+		new = realloc(data->frag_list,
+			      sizeof(data->frag_list[0]) * new_sz);
+
+		if (new == NULL) {
+			perror("growing fragment checksum table");
+			return -1;
+		}
+
+		data->frag_list = new;
+		data->frag_list_max = new_sz;
+	}
+
+	data->frag_list[data->frag_list_num].index = data->num_fragments;
+	data->frag_list[data->frag_list_num].offset = data->frag_block->size;
+	data->frag_list[data->frag_list_num].signature = signature;
+	data->frag_list_num += 1;
 
 	fi->fragment_offset = data->frag_block->size;
 	fi->fragment = data->num_fragments;
@@ -184,26 +291,6 @@ fail:
 static bool is_zero_block(unsigned char *ptr, size_t size)
 {
 	return ptr[0] == 0 && memcmp(ptr, ptr + 1, size - 1) == 0;
-}
-
-static int handle_fragment(data_writer_t *data, sqfs_block_t *blk)
-{
-	file_info_t *fi = blk->user, *ref;
-
-	fi->fragment_chksum = crc32(0, blk->data, blk->size);
-
-	ref = fragment_by_chksum(fi, fi->fragment_chksum, blk->size,
-				 data->list, data->super->block_size);
-
-	if (ref != NULL) {
-		fi->fragment_offset = ref->fragment_offset;
-		fi->fragment = ref->fragment;
-		fi->flags |= FILE_FLAG_FRAGMENT_IS_DUPLICATE;
-		free(blk);
-		return 0;
-	}
-
-	return store_fragment(data, blk);
 }
 
 static int add_sentinel_block(data_writer_t *data, file_info_t *fi,
@@ -259,9 +346,6 @@ int write_data_from_fd(data_writer_t *data, file_info_t *fi,
 	if (flags & DW_ALLIGN_DEVBLK)
 		blk_flags |= BLK_ALLIGN;
 
-	fi->next = data->list;
-	data->list = fi;
-
 	for (; file_size > 0; file_size -= diff) {
 		if (file_size > data->super->block_size) {
 			diff = data->super->block_size;
@@ -276,8 +360,7 @@ int write_data_from_fd(data_writer_t *data, file_info_t *fi,
 		blk->index = i++;
 
 		if (is_zero_block(blk->data, blk->size)) {
-			fi->blocks[blk->index].chksum = 0;
-			fi->blocks[blk->index].size = 0;
+			fi->block_size[blk->index] = 0;
 			free(blk);
 			continue;
 		}
@@ -411,8 +494,7 @@ int write_data_from_fd_condensed(data_writer_t *data, file_info_t *fi,
 		}
 
 		if (is_zero_block(blk->data, blk->size)) {
-			fi->blocks[blk->index].chksum = 0;
-			fi->blocks[blk->index].size = 0;
+			fi->block_size[blk->index] = 0;
 			free(blk);
 			continue;
 		}
@@ -461,9 +543,39 @@ data_writer_t *data_writer_create(sqfs_super_t *super, sqfs_compressor_t *cmp,
 		return NULL;
 	}
 
+	data->max_blocks = INIT_BLOCK_COUNT;
+	data->frag_list_max = INIT_BLOCK_COUNT;
+
+	data->blocks = alloc_array(sizeof(data->blocks[0]),
+				   data->max_blocks);
+
+	if (data->blocks == NULL) {
+		perror("creating data writer");
+		free(data);
+		return NULL;
+	}
+
+	data->frag_list = alloc_array(sizeof(data->frag_list[0]),
+				      data->frag_list_max);
+
+	if (data->frag_list == NULL) {
+		perror("creating data writer");
+		free(data->blocks);
+		free(data);
+		return NULL;
+	}
+
 	data->proc = sqfs_block_processor_create(super->block_size, cmp,
 						 num_jobs, max_backlog, data,
 						 block_callback);
+	if (data->proc == NULL) {
+		perror("creating data block processor");
+		free(data->frag_list);
+		free(data->blocks);
+		free(data);
+		return NULL;
+	}
+
 	data->cmp = cmp;
 	data->super = super;
 	data->file = file;
@@ -475,6 +587,7 @@ void data_writer_destroy(data_writer_t *data)
 {
 	sqfs_block_processor_destroy(data->proc);
 	free(data->fragments);
+	free(data->blocks);
 	free(data);
 }
 

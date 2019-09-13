@@ -41,7 +41,7 @@ tree_node_t *fstree_mknode(fstree_t *fs, tree_node_t *parent, const char *name,
 		if ((sb->st_size % fs->block_size) != 0)
 			++block_count;
 
-		if (SZ_MUL_OV(block_count, sizeof(n->data.file->blocks[0]),
+		if (SZ_MUL_OV(block_count, sizeof(n->data.file->block_size[0]),
 			      &total)) {
 			goto fail_ov;
 		}
@@ -92,8 +92,8 @@ tree_node_t *fstree_mknode(fstree_t *fs, tree_node_t *parent, const char *name,
 		if (extra == NULL)
 			break;
 
-		ptr = (char *)n->data.file->blocks;
-		ptr += block_count * sizeof(n->data.file->blocks[0]);
+		ptr = (char *)n->data.file->block_size;
+		ptr += block_count * sizeof(n->data.file->block_size[0]);
 		n->data.file->input_file = ptr;
 		strcpy(n->data.file->input_file, extra);
 		break;

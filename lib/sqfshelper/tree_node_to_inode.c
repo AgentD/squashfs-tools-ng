@@ -120,7 +120,7 @@ sqfs_inode_generic_t *tree_node_to_inode(fstree_t *fs, sqfs_id_table_t *idtbl,
 
 		for (i = 0; i < block_count; ++i) {
 			inode->block_sizes[i] =
-				node->data.file->blocks[i].size;
+				node->data.file->block_size[i];
 		}
 	}
 
