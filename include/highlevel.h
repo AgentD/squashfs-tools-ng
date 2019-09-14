@@ -19,6 +19,7 @@
 #include "sqfs/dir.h"
 #include "sqfs/io.h"
 #include "data_reader.h"
+#include "data_writer.h"
 #include "fstree.h"
 
 #include <stdint.h>
@@ -63,8 +64,7 @@ int sqfs_serialize_fstree(sqfs_file_t *file, sqfs_super_t *super, fstree_t *fs,
  */
 tree_node_t *tree_node_from_inode(sqfs_inode_generic_t *inode,
 				  const sqfs_id_table_t *idtbl,
-				  const char *name,
-				  size_t block_size);
+				  const char *name);
 
 /*
   Restore a file system tree from a squashfs image. The given flags are a
@@ -92,7 +92,7 @@ int write_export_table(sqfs_file_t *file, fstree_t *fs, sqfs_super_t *super,
 		       sqfs_compressor_t *cmp);
 
 /* Print out fancy statistics for squashfs packing tools */
-void sqfs_print_statistics(fstree_t *fs, sqfs_super_t *super);
+void sqfs_print_statistics(sqfs_super_t *super, data_writer_stats_t *stats);
 
 /* Open a squashfs file, extract all the information we may need and
    construct datastructures we need to access its contents.

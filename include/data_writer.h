@@ -16,6 +16,17 @@
 
 typedef struct data_writer_t data_writer_t;
 
+typedef struct {
+	size_t file_count;
+	size_t blocks_written;
+	size_t frag_blocks_written;
+	size_t duplicate_blocks;
+	size_t sparse_blocks;
+	size_t frag_count;
+	size_t frag_dup;
+	uint64_t bytes_read;
+} data_writer_stats_t;
+
 enum {
 	/* Don't generate fragments, always write the last block to disk as a
 	   block, even if it is incomplete. */
@@ -88,5 +99,7 @@ int write_data_from_fd(data_writer_t *data, file_info_t *fi, int infd,
  */
 int write_data_from_fd_condensed(data_writer_t *data, file_info_t *fi,
 				 int infd, sparse_map_t *map, int flags);
+
+data_writer_stats_t *data_writer_get_stats(data_writer_t *data);
 
 #endif /* DATA_WRITER_H */

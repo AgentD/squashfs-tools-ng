@@ -196,7 +196,7 @@ int main(int argc, char **argv)
 
 	if (!opt.quiet) {
 		fstree_gen_file_list(&fs);
-		sqfs_print_statistics(&fs, &super);
+		sqfs_print_statistics(&super, data_writer_get_stats(data));
 	}
 
 	status = EXIT_SUCCESS;

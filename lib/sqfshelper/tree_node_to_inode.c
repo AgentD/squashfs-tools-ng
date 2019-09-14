@@ -81,6 +81,15 @@ static int get_type(tree_node_t *node)
 	assert(0);
 }
 
+static bool has_fragment(const fstree_t *fs, const file_info_t *file)
+{
+	if (file->size % fs->block_size == 0)
+		return false;
+
+	return file->fragment_offset < fs->block_size &&
+		(file->fragment != 0xFFFFFFFF);
+}
+
 sqfs_inode_generic_t *tree_node_to_inode(fstree_t *fs, sqfs_id_table_t *idtbl,
 					 tree_node_t *node)
 {
@@ -97,10 +106,8 @@ sqfs_inode_generic_t *tree_node_to_inode(fstree_t *fs, sqfs_id_table_t *idtbl,
 
 		block_count = fi->size / fs->block_size;
 
-		if ((fi->size % fs->block_size) != 0 &&
-		    !(fi->flags & FILE_FLAG_HAS_FRAGMENT)) {
+		if ((fi->size % fs->block_size) != 0 && !has_fragment(fs, fi))
 			++block_count;
-		}
 
 		extra = block_count * sizeof(uint32_t);
 	}
@@ -176,8 +183,7 @@ sqfs_inode_generic_t *tree_node_to_inode(fstree_t *fs, sqfs_id_table_t *idtbl,
 		inode->data.file.fragment_offset = 0xFFFFFFFF;
 		inode->data.file.file_size = fi->size;
 
-		if ((fi->size % fs->block_size) != 0 &&
-		    (fi->flags & FILE_FLAG_HAS_FRAGMENT)) {
+		if (has_fragment(fs, fi)) {
 			inode->data.file.fragment_index = fi->fragment;
 			inode->data.file.fragment_offset = fi->fragment_offset;
 		}
@@ -191,8 +197,7 @@ sqfs_inode_generic_t *tree_node_to_inode(fstree_t *fs, sqfs_id_table_t *idtbl,
 		inode->data.file_ext.fragment_offset = 0xFFFFFFFF;
 		inode->data.file_ext.xattr_idx = xattr;
 
-		if ((fi->size % fs->block_size) != 0 &&
-		    (fi->flags & FILE_FLAG_HAS_FRAGMENT)) {
+		if (has_fragment(fs, fi)) {
 			inode->data.file_ext.fragment_idx = fi->fragment;
 			inode->data.file_ext.fragment_offset =
 				fi->fragment_offset;

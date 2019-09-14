@@ -28,14 +28,6 @@ typedef struct fstree_t fstree_t;
 typedef struct tree_xattr_t tree_xattr_t;
 
 enum {
-	FILE_FLAG_HAS_FRAGMENT = 0x01,
-
-	FILE_FLAG_FRAGMENT_IS_DUPLICATE = 0x02,
-
-	FILE_FLAG_BLOCKS_ARE_DUPLICATE = 0x04,
-};
-
-enum {
 	DIR_SCAN_KEEP_TIME = 0x01,
 
 	DIR_SCAN_ONE_FILESYSTEM = 0x02,
@@ -98,9 +90,6 @@ struct file_info_t {
 
 	/* Byte offset into the fragment block. */
 	uint32_t fragment_offset;
-
-	/* combination of FILE_FLAG_* flags */
-	uint32_t flags;
 
 	/* Stores data about each full data block. */
 	/* Bit (1 << 24) is set if the block is stored uncompressed. */

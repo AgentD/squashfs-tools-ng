@@ -58,6 +58,8 @@ struct data_writer_t {
 	size_t frag_list_num;
 	size_t frag_list_max;
 	frag_info_t *frag_list;
+
+	data_writer_stats_t stats;
 };
 
 enum {
@@ -146,12 +148,16 @@ static int block_callback(void *user, sqfs_block_t *blk)
 
 			data->super->flags &= ~SQFS_FLAG_NO_FRAGMENTS;
 			data->super->flags |= SQFS_FLAG_ALWAYS_FRAGMENTS;
+
+			data->stats.frag_blocks_written += 1;
 		} else {
 			fi->block_size[blk->index] = htole32(out);
 
 			if (store_block_location(data, offset, out,
 						 blk->checksum))
 				return -1;
+
+			data->stats.blocks_written += 1;
 		}
 
 		if (data->file->write_at(data->file, offset,
@@ -170,8 +176,9 @@ static int block_callback(void *user, sqfs_block_t *blk)
 		fi->startblock = data->blocks[start].offset;
 
 		if (start + count < data->file_start) {
-			fi->flags |= FILE_FLAG_BLOCKS_ARE_DUPLICATE;
 			data->num_blocks = data->file_start;
+
+			data->stats.duplicate_blocks += count;
 
 			if (data->file->truncate(data->file, data->start)) {
 				perror("truncating squashfs image after "
@@ -227,8 +234,9 @@ static int handle_fragment(data_writer_t *data, sqfs_block_t *frag)
 		if (data->frag_list[i].signature == signature) {
 			fi->fragment_offset = data->frag_list[i].offset;
 			fi->fragment = data->frag_list[i].index;
-			fi->flags |= FILE_FLAG_FRAGMENT_IS_DUPLICATE;
 			free(frag);
+
+			data->stats.frag_dup += 1;
 			return 0;
 		}
 	}
@@ -282,6 +290,8 @@ static int handle_fragment(data_writer_t *data, sqfs_block_t *frag)
 
 	data->frag_block->size += frag->size;
 	free(frag);
+
+	data->stats.frag_count += 1;
 	return 0;
 fail:
 	free(frag);
@@ -360,6 +370,8 @@ int write_data_from_fd(data_writer_t *data, file_info_t *fi,
 		blk->index = i++;
 
 		if (is_zero_block(blk->data, blk->size)) {
+			data->stats.sparse_blocks += 1;
+
 			fi->block_size[blk->index] = 0;
 			free(blk);
 			continue;
@@ -367,8 +379,6 @@ int write_data_from_fd(data_writer_t *data, file_info_t *fi,
 
 		if (diff < data->super->block_size &&
 		    !(flags & DW_DONT_FRAGMENT)) {
-			fi->flags |= FILE_FLAG_HAS_FRAGMENT;
-
 			if (!(blk_flags & (BLK_FIRST_BLOCK | BLK_LAST_BLOCK))) {
 				blk_flags |= BLK_LAST_BLOCK;
 
@@ -395,6 +405,8 @@ int write_data_from_fd(data_writer_t *data, file_info_t *fi,
 			return -1;
 	}
 
+	data->stats.bytes_read += fi->size;
+	data->stats.file_count += 1;
 	return 0;
 }
 
@@ -494,6 +506,8 @@ int write_data_from_fd_condensed(data_writer_t *data, file_info_t *fi,
 		}
 
 		if (is_zero_block(blk->data, blk->size)) {
+			data->stats.sparse_blocks += 1;
+
 			fi->block_size[blk->index] = 0;
 			free(blk);
 			continue;
@@ -501,8 +515,6 @@ int write_data_from_fd_condensed(data_writer_t *data, file_info_t *fi,
 
 		if (diff < data->super->block_size &&
 		    !(flags & DW_DONT_FRAGMENT)) {
-			fi->flags |= FILE_FLAG_HAS_FRAGMENT;
-
 			if (!(blk_flags & (BLK_FIRST_BLOCK | BLK_LAST_BLOCK))) {
 				blk_flags |= BLK_LAST_BLOCK;
 
@@ -529,6 +541,8 @@ int write_data_from_fd_condensed(data_writer_t *data, file_info_t *fi,
 			return -1;
 	}
 
+	data->stats.bytes_read += fi->size;
+	data->stats.file_count += 1;
 	return 0;
 }
 
@@ -622,4 +636,9 @@ int data_writer_sync(data_writer_t *data)
 	}
 
 	return sqfs_block_processor_finish(data->proc);
+}
+
+data_writer_stats_t *data_writer_get_stats(data_writer_t *data)
+{
+	return &data->stats;
 }

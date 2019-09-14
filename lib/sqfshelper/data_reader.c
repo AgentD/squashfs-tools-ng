@@ -181,7 +181,8 @@ int data_reader_dump_file(data_reader_t *data, file_info_t *fi, int outfd,
 	off_t off = fi->startblock;
 	size_t i, diff;
 
-	if (fragsz != 0 && !(fi->flags & FILE_FLAG_HAS_FRAGMENT)) {
+	if (fragsz != 0 && (fi->fragment_offset >= data->block_size ||
+			    fi->fragment == 0xFFFFFFFF)) {
 		fragsz = 0;
 		++count;
 	}
@@ -249,7 +250,8 @@ ssize_t data_reader_read(data_reader_t *data, file_info_t *fi,
 	fragsz = fi->size % data->block_size;
 	count = fi->size / data->block_size;
 
-	if (fragsz != 0 && !(fi->flags & FILE_FLAG_HAS_FRAGMENT)) {
+	if (fragsz != 0 && (fi->fragment_offset >= data->block_size ||
+			    fi->fragment == 0xFFFFFFFF)) {
 		fragsz = 0;
 		++count;
 	}

@@ -7,6 +7,15 @@
 #include "config.h"
 #include "fstree.h"
 
+static bool has_fragment(const fstree_t *fs, const file_info_t *file)
+{
+	if (file->size % fs->block_size == 0)
+		return false;
+
+	return file->fragment_offset < fs->block_size &&
+		(file->fragment != 0xFFFFFFFF);
+}
+
 static int compare_files(const fstree_t *fs, const file_info_t *lhs,
 			 const file_info_t *rhs)
 {
@@ -20,8 +29,8 @@ static int compare_files(const fstree_t *fs, const file_info_t *lhs,
 	/* Files with fragments come first, ordered by ID.
 	   In case of tie, files without data blocks come first,
 	   and the others are ordered by start block. */
-	if (lhs->flags & FILE_FLAG_HAS_FRAGMENT) {
-		if (!(rhs->flags & FILE_FLAG_HAS_FRAGMENT))
+	if (has_fragment(fs, lhs)) {
+		if (!(has_fragment(fs, rhs)))
 			return -1;
 
 		if (lhs->fragment < rhs->fragment)
@@ -36,7 +45,7 @@ static int compare_files(const fstree_t *fs, const file_info_t *lhs,
 		goto order_by_start;
 	}
 
-	if (rhs->flags & FILE_FLAG_HAS_FRAGMENT)
+	if (has_fragment(fs, rhs))
 		return 1;
 
 	/* order the rest by start block */

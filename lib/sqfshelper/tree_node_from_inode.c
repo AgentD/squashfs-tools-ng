@@ -38,17 +38,9 @@ static size_t compute_size(sqfs_inode_generic_t *inode, const char *name)
 	return size;
 }
 
-static void copy_block_sizes(sqfs_inode_generic_t *inode, tree_node_t *out,
-			     size_t block_size)
+static void copy_block_sizes(sqfs_inode_generic_t *inode, tree_node_t *out)
 {
 	size_t i;
-
-	if ((out->data.file->size % block_size) != 0) {
-		if (out->data.file->fragment != 0xFFFFFFFF &&
-		    out->data.file->fragment_offset != 0xFFFFFFFF) {
-			out->data.file->flags |= FILE_FLAG_HAS_FRAGMENT;
-		}
-	}
 
 	out->name += inode->num_file_blocks *
 		sizeof(out->data.file->block_size[0]);
@@ -59,8 +51,7 @@ static void copy_block_sizes(sqfs_inode_generic_t *inode, tree_node_t *out,
 
 tree_node_t *tree_node_from_inode(sqfs_inode_generic_t *inode,
 				  const sqfs_id_table_t *idtbl,
-				  const char *name,
-				  size_t block_size)
+				  const char *name)
 {
 	tree_node_t *out;
 
@@ -112,7 +103,7 @@ tree_node_t *tree_node_from_inode(sqfs_inode_generic_t *inode,
 		out->data.file->fragment_offset =
 			inode->data.file.fragment_offset;
 
-		copy_block_sizes(inode, out, block_size);
+		copy_block_sizes(inode, out);
 		break;
 	case SQFS_INODE_EXT_FILE:
 		out->data.file = (file_info_t *)out->payload;
@@ -125,7 +116,7 @@ tree_node_t *tree_node_from_inode(sqfs_inode_generic_t *inode,
 		out->data.file->fragment_offset =
 			inode->data.file_ext.fragment_offset;
 
-		copy_block_sizes(inode, out, block_size);
+		copy_block_sizes(inode, out);
 		break;
 	case SQFS_INODE_SLINK:
 	case SQFS_INODE_EXT_SLINK:
