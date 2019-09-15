@@ -390,76 +390,14 @@ int write_data_from_file(data_writer_t *data, file_info_t *fi,
 	return 0;
 }
 
-static int check_map_valid(const sqfs_sparse_map_t *map, file_info_t *fi)
-{
-	const sqfs_sparse_map_t *m;
-	uint64_t offset;
-
-	if (map != NULL) {
-		offset = map->offset;
-
-		for (m = map; m != NULL; m = m->next) {
-			if (m->offset < offset)
-				goto fail_map;
-			offset = m->offset + m->count;
-		}
-
-		if (offset > fi->size)
-			goto fail_map_size;
-	}
-
-	return 0;
-fail_map_size:
-	fprintf(stderr, "%s: sparse file map spans beyond file size\n",
-		fi->input_file);
-	return -1;
-fail_map:
-	fprintf(stderr,
-		"%s: sparse file map is unordered or self overlapping\n",
-		fi->input_file);
-	return -1;
-}
-
-static int get_sparse_block(sqfs_block_t *blk, file_info_t *fi, int infd,
-			    sqfs_sparse_map_t **sparse_map, uint64_t offset,
-			    size_t diff)
-{
-	sqfs_sparse_map_t *map = *sparse_map;
-	size_t start, count;
-
-	while (map != NULL && map->offset < offset + diff) {
-		start = 0;
-		count = map->count;
-
-		if (map->offset < offset)
-			count -= offset - map->offset;
-
-		if (map->offset > offset)
-			start = map->offset - offset;
-
-		if (start + count > diff)
-			count = diff - start;
-
-		if (read_data(fi->input_file, infd, blk->data + start, count))
-			return -1;
-
-		map = map->next;
-	}
-
-	*sparse_map = map;
-	return 0;
-}
-
-int write_data_from_fd_condensed(data_writer_t *data, file_info_t *fi,
-				 int infd, sqfs_sparse_map_t *map, int flags)
+int write_data_from_file_condensed(data_writer_t *data, sqfs_file_t *file,
+				   file_info_t *fi,
+				   const sqfs_sparse_map_t *map, int flags)
 {
 	uint32_t blk_flags = BLK_FIRST_BLOCK;
 	size_t diff, i = 0;
 	sqfs_block_t *blk;
 	uint64_t offset;
-
-	if (check_map_valid(map, fi))
-		return -1;
 
 	if (flags & DW_DONT_COMPRESS)
 		blk_flags |= SQFS_BLK_DONT_COMPRESS;
@@ -474,16 +412,12 @@ int write_data_from_fd_condensed(data_writer_t *data, file_info_t *fi,
 			diff = fi->size - offset;
 		}
 
-		blk = alloc_flex(sizeof(*blk), 1, diff);
-		blk->size = diff;
-		blk->index = i++;
-		blk->user = fi;
-		blk->flags = blk_flags;
-
-		if (get_sparse_block(blk, fi, infd, &map, offset, diff)) {
-			free(blk);
+		if (sqfs_file_create_block_dense(file, offset, diff, fi,
+						 blk_flags, map, &blk)) {
 			return -1;
 		}
+
+		blk->index = i++;
 
 		if (is_zero_block(blk->data, blk->size)) {
 			data->stats.sparse_blocks += 1;

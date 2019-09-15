@@ -225,12 +225,24 @@ fail_arg:
 static int write_file(tar_header_decoded_t *hdr, file_info_t *fi,
 		      data_writer_t *data)
 {
+	const sqfs_sparse_map_t *it;
 	sqfs_file_t *file;
+	uint64_t sum;
 	int ret;
 
 	if (hdr->sparse != NULL) {
-		ret = write_data_from_fd_condensed(data, fi, STDIN_FILENO,
-						   hdr->sparse, 0);
+		for (sum = 0, it = hdr->sparse; it != NULL; it = it->next)
+			sum += it->count;
+
+		file = sqfs_get_stdin_file(sum);
+		if (file == NULL) {
+			perror("packing files");
+			return -1;
+		}
+
+		ret = write_data_from_file_condensed(data, file, fi,
+						     hdr->sparse, 0);
+		file->destroy(file);
 		if (ret)
 			return -1;
 
@@ -243,10 +255,12 @@ static int write_file(tar_header_decoded_t *hdr, file_info_t *fi,
 		return -1;
 	}
 
-	if (write_data_from_file(data, fi, file, 0))
+	ret = write_data_from_file(data, fi, file, 0);
+	file->destroy(file);
+
+	if (ret)
 		return -1;
 
-	file->destroy(file);
 	return skip_padding(STDIN_FILENO, fi->size);
 }
 
