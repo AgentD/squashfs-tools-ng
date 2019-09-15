@@ -45,6 +45,7 @@ struct sqfs_dir_writer_t {
 	uint64_t dir_ref;
 	size_t dir_size;
 	size_t idx_size;
+	size_t ent_count;
 	sqfs_meta_writer_t *dm;
 };
 
@@ -85,6 +86,7 @@ static void writer_reset(sqfs_dir_writer_t *writer)
 	writer->dir_ref = 0;
 	writer->dir_size = 0;
 	writer->idx_size = 0;
+	writer->ent_count = 0;
 }
 
 sqfs_dir_writer_t *sqfs_dir_writer_create(sqfs_meta_writer_t *dm)
@@ -145,6 +147,7 @@ int sqfs_dir_writer_add_entry(sqfs_dir_writer_t *writer, const char *name,
 	}
 
 	writer->dir_size += sizeof(ent) + ent->name_len;
+	writer->ent_count += 1;
 	return 0;
 }
 
@@ -273,6 +276,53 @@ uint64_t sqfs_dir_writer_get_dir_reference(const sqfs_dir_writer_t *writer)
 size_t sqfs_dir_writer_get_index_size(const sqfs_dir_writer_t *writer)
 {
 	return writer->idx_size;
+}
+
+size_t sqfs_dir_writer_get_entry_count(const sqfs_dir_writer_t *writer)
+{
+	return writer->ent_count;
+}
+
+sqfs_inode_generic_t
+*sqfs_dir_writer_create_inode(const sqfs_dir_writer_t *writer,
+			      size_t hlinks, uint32_t xattr,
+			      uint32_t parent_ino)
+{
+	sqfs_inode_generic_t *inode;
+	uint64_t start_block;
+	uint16_t block_offset;
+
+	inode = calloc(1, sizeof(*inode));
+	if (inode == NULL)
+		return NULL;
+
+	start_block = writer->dir_ref >> 16;
+	block_offset = writer->dir_ref & 0xFFFF;
+
+	if (xattr != 0xFFFFFFFF || start_block > 0xFFFFFFFFUL ||
+	    writer->dir_size > 0xFFFF) {
+		inode->base.type = SQFS_INODE_EXT_DIR;
+	} else {
+		inode->base.type = SQFS_INODE_DIR;
+	}
+
+	if (inode->base.type == SQFS_INODE_DIR) {
+		inode->data.dir.start_block = start_block;
+		inode->data.dir.nlink = writer->ent_count + hlinks + 2;
+		inode->data.dir.size = writer->dir_size;
+		inode->data.dir.offset = block_offset;
+		inode->data.dir.parent_inode = parent_ino;
+	} else {
+		inode->data.dir_ext.nlink = writer->ent_count + hlinks + 2;
+		inode->data.dir_ext.size = writer->dir_size;
+		inode->data.dir_ext.start_block = start_block;
+		inode->data.dir_ext.parent_inode = parent_ino;
+		inode->data.dir_ext.offset = block_offset;
+		inode->data.dir_ext.xattr_idx = xattr;
+		inode->data.dir_ext.inodex_count = writer->idx_size;
+	}
+
+	return inode;
 }
 
 int sqfs_dir_writer_write_index(const sqfs_dir_writer_t *writer,

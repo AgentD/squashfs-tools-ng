@@ -176,7 +176,7 @@ extern "C" {
 /**
  * @brief Create a directory writer.
  *
- * @memberof sqfs_dir_writer_create
+ * @memberof sqfs_dir_writer_t
  *
  * @param dm A pointer to a meta data writer that the generated directory
  *           entries should be written to.
@@ -189,7 +189,7 @@ SQFS_API sqfs_dir_writer_t *sqfs_dir_writer_create(sqfs_meta_writer_t *dm);
 /**
  * @brief Destroy a directory writer and free all its memory.
  *
- * @memberof sqfs_dir_writer_create
+ * @memberof sqfs_dir_writer_t
  *
  * @param writer A pointer to a directory writer object.
  */
@@ -199,7 +199,7 @@ SQFS_API void sqfs_dir_writer_destroy(sqfs_dir_writer_t *writer);
  * @brief Begin writing a directory, i.e. reset and initialize all internal
  *        state neccessary.
  *
- * @memberof sqfs_dir_writer_create
+ * @memberof sqfs_dir_writer_t
  *
  * @param writer A pointer to a directory writer object.
  *
@@ -210,7 +210,7 @@ SQFS_API int sqfs_dir_writer_begin(sqfs_dir_writer_t *writer);
 /**
  * @brief Add add a directory entry.
  *
- * @memberof sqfs_dir_writer_create
+ * @memberof sqfs_dir_writer_t
  *
  * @param writer A pointer to a directory writer object.
  * @param name The name of the directory entry.
@@ -232,7 +232,7 @@ SQFS_API int sqfs_dir_writer_add_entry(sqfs_dir_writer_t *writer,
  * @brief Finish writing a directory listing and write everything out to the
  *        meta data writer.
  *
- * @memberof sqfs_dir_writer_create
+ * @memberof sqfs_dir_writer_t
  *
  * @param writer A pointer to a directory writer object.
  *
@@ -244,7 +244,7 @@ SQFS_API int sqfs_dir_writer_end(sqfs_dir_writer_t *writer);
  * @brief Get the total, uncompressed size of the last written
  *        directory in bytes.
  *
- * @memberof sqfs_dir_writer_create
+ * @memberof sqfs_dir_writer_t
  *
  * Call this function after @ref sqfs_dir_writer_end to get the uncompressed
  * size of the directory listing that is required for the directory inodes.
@@ -257,9 +257,24 @@ SQFS_API int sqfs_dir_writer_end(sqfs_dir_writer_t *writer);
 SQFS_API size_t sqfs_dir_writer_get_size(const sqfs_dir_writer_t *writer);
 
 /**
+ * @brief Get the numer of entries written to the last directory.
+ *
+ * @memberof sqfs_dir_writer_t
+ *
+ * Call this function after @ref sqfs_dir_writer_end to get the total
+ * number of entries written to the directory.
+ *
+ * @param writer A pointer to a directory writer object.
+ *
+ * @return The number of entries in the directory.
+ */
+SQFS_API
+size_t sqfs_dir_writer_get_entry_count(const sqfs_dir_writer_t *writer);
+
+/**
  * @brief Get the location of the last written directory.
  *
- * @memberof sqfs_dir_writer_create
+ * @memberof sqfs_dir_writer_t
  *
  * Call this function after @ref sqfs_dir_writer_end to get the location of
  * the directory listing that is required for the directory inodes.
@@ -275,7 +290,7 @@ sqfs_dir_writer_get_dir_reference(const sqfs_dir_writer_t *writer);
 /**
  * @brief Get the size of the index of the last written directory.
  *
- * @memberof sqfs_dir_writer_create
+ * @memberof sqfs_dir_writer_t
  *
  * Call this function after @ref sqfs_dir_writer_end to get the size of
  * the directory index that is required for extended directory inodes.
@@ -290,7 +305,7 @@ SQFS_API size_t sqfs_dir_writer_get_index_size(const sqfs_dir_writer_t *writer);
  * @brief Write the index of the index of the last written directory to
  *        a meta data writer after the extended directory inode.
  *
- * @memberof sqfs_dir_writer_create
+ * @memberof sqfs_dir_writer_t
  *
  * @param writer A pointer to a directory writer object.
  * @param im A pointer to a meta data writer to write the index to.
@@ -299,6 +314,32 @@ SQFS_API size_t sqfs_dir_writer_get_index_size(const sqfs_dir_writer_t *writer);
  */
 SQFS_API int sqfs_dir_writer_write_index(const sqfs_dir_writer_t *writer,
 					 sqfs_meta_writer_t *im);
+
+/**
+ * @brief Helper function for creating an inode from the last directory.
+ *
+ * @memberof sqfs_dir_writer_t
+ *
+ * Call this function after @ref sqfs_dir_writer_end to create a bare bones
+ * inode structure for the directory. The directory information is filled in
+ * completely and the type is set, the rest of the basic information such as
+ * permission bits, owner and timestamp is left untouched.
+ *
+ * If the generated inode is an extended directory inode, you can use another
+ * convenience function called @ref sqfs_dir_writer_write_index to write the
+ * index meta data after writing the inode itself.
+ *
+ * @param writer A pointer to a directory writer object.
+ * @param hlinks The number of hard links pointing to the directory.
+ * @param xattr If set to something other than 0xFFFFFFFF, an extended
+ *              directory inode is created with xattr index set.
+ * @param parent_ino The inode number of the parent directory.
+ *
+ * @return A generic inode or NULL on allocation failure.
+ */
+SQFS_API sqfs_inode_generic_t
+*sqfs_dir_writer_create_inode(const sqfs_dir_writer_t *writer, size_t hlinks,
+			      uint32_t xattr, uint32_t parent_ino);
 
 #ifdef __cplusplus
 }

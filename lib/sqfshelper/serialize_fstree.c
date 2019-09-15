@@ -14,31 +14,51 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-static int write_dir_entries(sqfs_dir_writer_t *dirw, tree_node_t *node)
+static sqfs_inode_generic_t *write_dir_entries(sqfs_dir_writer_t *dirw,
+					       tree_node_t *node,
+					       sqfs_id_table_t *idtbl)
 {
+	uint32_t xattr, parent_inode;
+	sqfs_inode_generic_t *inode;
 	tree_node_t *it;
-	uint64_t ref;
 	int ret;
 
 	if (sqfs_dir_writer_begin(dirw))
-		return -1;
+		return NULL;
 
 	for (it = node->data.dir->children; it != NULL; it = it->next) {
 		ret = sqfs_dir_writer_add_entry(dirw, it->name, it->inode_num,
 						it->inode_ref, it->mode);
 		if (ret)
-			return -1;
+			return NULL;
 	}
 
 	if (sqfs_dir_writer_end(dirw))
-		return -1;
+		return NULL;
 
-	ref = sqfs_dir_writer_get_dir_reference(dirw);
+	xattr = (node->xattr == NULL) ? 0xFFFFFFFF : node->xattr->index;
+	parent_inode = (node->parent == NULL) ? 1 : node->parent->inode_num;
 
-	node->data.dir->size = sqfs_dir_writer_get_size(dirw);
-	node->data.dir->start_block = ref >> 16;
-	node->data.dir->block_offset = ref & 0xFFFF;
-	return 0;
+	inode = sqfs_dir_writer_create_inode(dirw, 0, xattr, parent_inode);
+	if (inode == NULL) {
+		perror("creating inode");
+		return NULL;
+	}
+
+	if (sqfs_id_table_id_to_index(idtbl, node->uid, &inode->base.uid_idx))
+		goto fail_id;
+
+	if (sqfs_id_table_id_to_index(idtbl, node->gid, &inode->base.gid_idx))
+		goto fail_id;
+
+	inode->base.mode = node->mode;
+	inode->base.mod_time = node->mod_time;
+	inode->base.inode_number = node->inode_num;
+	return inode;
+fail_id:
+	fputs("failed to allocate IDs\n", stderr);
+	free(inode);
+	return NULL;
 }
 
 int sqfs_serialize_fstree(sqfs_file_t *file, sqfs_super_t *super, fstree_t *fs,
@@ -69,18 +89,15 @@ int sqfs_serialize_fstree(sqfs_file_t *file, sqfs_super_t *super, fstree_t *fs,
 
 	for (i = 2; i < fs->inode_tbl_size; ++i) {
 		if (S_ISDIR(fs->inode_table[i]->mode)) {
-			if (write_dir_entries(dirwr, fs->inode_table[i]))
-				goto out;
+			inode = write_dir_entries(dirwr, fs->inode_table[i],
+						  idtbl);
+		} else {
+			inode = tree_node_to_inode(fs, idtbl,
+						   fs->inode_table[i]);
 		}
 
-		inode = tree_node_to_inode(fs, idtbl, fs->inode_table[i]);
 		if (inode == NULL)
 			goto out;
-
-		if (inode->base.type == SQFS_INODE_EXT_DIR) {
-			inode->data.dir_ext.inodex_count =
-				sqfs_dir_writer_get_index_size(dirwr);
-		}
 
 		sqfs_meta_writer_get_position(im, &block, &offset);
 		fs->inode_table[i]->inode_ref = (block << 16) | offset;
