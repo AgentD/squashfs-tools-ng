@@ -10,6 +10,7 @@
 #include "sqfs/io.h"
 #include "sqfs/error.h"
 
+#include <sys/stat.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
@@ -111,6 +112,7 @@ sqfs_file_t *sqfs_open_file(const char *filename, int flags)
 	sqfs_file_stdio_t *file;
 	int open_mode, temp;
 	sqfs_file_t *base;
+	struct stat sb;
 
 	if (flags & ~SQFS_FILE_OPEN_ALL_FLAGS) {
 		errno = EINVAL;
@@ -141,6 +143,16 @@ sqfs_file_t *sqfs_open_file(const char *filename, int flags)
 		errno = temp;
 		return NULL;
 	}
+
+	if (fstat(file->fd, &sb)) {
+		temp = errno;
+		close(file->fd);
+		free(file);
+		errno = temp;
+		return NULL;
+	}
+
+	file->size = sb.st_size;
 
 	base->destroy = stdio_destroy;
 	base->read_at = stdio_read_at;
