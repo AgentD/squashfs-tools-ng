@@ -150,8 +150,30 @@ SQFS_API sqfs_file_t *sqfs_open_file(const char *filename, int flags);
  * reading sequentially.
  *
  * @param size The alleged "size" of the file.
+ *
+ * @return A pointer to a file object on success, NULL on allocation failure.
  */
 SQFS_API sqfs_file_t *sqfs_get_stdin_file(uint64_t size);
+
+
+/**
+ * @brief Read a chunk from a file and turn it into a block that can be
+ *        fed to a block processor.
+ *
+ * @member sqfs_file_t
+ *
+ * @param file A pointer to a file implementation.
+ * @param offset A byte offset into the file.
+ * @param size The number of bytes to read, starting at the given offset.
+ * @param user A user pointer to set for the block.
+ * @param flags The flags to store in the newly created block.
+ * @param out Returns a pointer to a block on success.
+ *
+ * @return Zero on success, an @ref E_SQFS_ERROR identifier on failure.
+ */
+SQFS_API int sqfs_file_create_block(sqfs_file_t *file, uint64_t offset,
+				    size_t size, void *user, uint32_t flags,
+				    sqfs_block_t **out);
 
 #ifdef __cplusplus
 }

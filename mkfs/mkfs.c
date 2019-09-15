@@ -30,8 +30,9 @@ static int restore_working_dir(options_t *opt)
 
 static int pack_files(data_writer_t *data, fstree_t *fs, options_t *opt)
 {
+	sqfs_file_t *file;
 	file_info_t *fi;
-	int ret, infd;
+	int ret;
 
 	if (set_working_dir(opt))
 		return -1;
@@ -40,14 +41,16 @@ static int pack_files(data_writer_t *data, fstree_t *fs, options_t *opt)
 		if (!opt->quiet)
 			printf("packing %s\n", fi->input_file);
 
-		infd = open(fi->input_file, O_RDONLY);
-		if (infd < 0) {
+		file = sqfs_open_file(fi->input_file,
+				      SQFS_FILE_OPEN_READ_ONLY);
+		if (file == NULL) {
 			perror(fi->input_file);
 			return -1;
 		}
 
-		ret = write_data_from_fd(data, fi, infd, 0);
-		close(infd);
+		ret = write_data_from_file(data, fi, file, 0);
+		file->destroy(file);
+
 		if (ret)
 			return -1;
 	}

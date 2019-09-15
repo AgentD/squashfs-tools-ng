@@ -319,34 +319,11 @@ static int add_sentinel_block(data_writer_t *data, file_info_t *fi,
 	return sqfs_block_processor_enqueue(data->proc, blk);
 }
 
-static sqfs_block_t *create_block(file_info_t *fi, int fd, size_t size,
-				  uint32_t flags)
-{
-	sqfs_block_t *blk = alloc_flex(sizeof(*blk), 1, size);
-
-	if (blk == NULL) {
-		perror(fi->input_file);
-		return NULL;
-	}
-
-	if (fd >= 0) {
-		if (read_data(fi->input_file, fd, blk->data, size)) {
-			free(blk);
-			return NULL;
-		}
-	}
-
-	blk->size = size;
-	blk->user = fi;
-	blk->flags = flags;
-	return blk;
-}
-
-int write_data_from_fd(data_writer_t *data, file_info_t *fi,
-		       int infd, int flags)
+int write_data_from_file(data_writer_t *data, file_info_t *fi,
+			 sqfs_file_t *file, int flags)
 {
 	uint32_t blk_flags = BLK_FIRST_BLOCK;
-	uint64_t file_size = fi->size;
+	uint64_t offset, file_size;
 	size_t diff, i = 0;
 	sqfs_block_t *blk;
 
@@ -356,16 +333,19 @@ int write_data_from_fd(data_writer_t *data, file_info_t *fi,
 	if (flags & DW_ALLIGN_DEVBLK)
 		blk_flags |= BLK_ALLIGN;
 
-	for (; file_size > 0; file_size -= diff) {
-		if (file_size > data->super->block_size) {
+	file_size = file->get_size(file);
+
+	for (offset = 0; offset < file_size; offset += diff) {
+		if (file_size - offset > data->super->block_size) {
 			diff = data->super->block_size;
 		} else {
-			diff = file_size;
+			diff = file_size - offset;
 		}
 
-		blk = create_block(fi, infd, diff, blk_flags);
-		if (blk == NULL)
+		if (sqfs_file_create_block(file, offset, diff, fi,
+					   blk_flags, &blk)) {
 			return -1;
+		}
 
 		blk->index = i++;
 
@@ -405,7 +385,7 @@ int write_data_from_fd(data_writer_t *data, file_info_t *fi,
 			return -1;
 	}
 
-	data->stats.bytes_read += fi->size;
+	data->stats.bytes_read += file_size;
 	data->stats.file_count += 1;
 	return 0;
 }

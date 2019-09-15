@@ -84,8 +84,8 @@ int data_writer_sync(data_writer_t *data);
 
   Returns 0 on success, prints errors to stderr.
 */
-int write_data_from_fd(data_writer_t *data, file_info_t *fi, int infd,
-		       int flags);
+int write_data_from_file(data_writer_t *data, file_info_t *fi,
+			 sqfs_file_t *file, int flags);
 
 /*
   Does the same as write_data_from_fd but the input file is the condensed
