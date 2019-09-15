@@ -8,9 +8,9 @@
 
 #include "internal.h"
 
-void free_sparse_list(sparse_map_t *sparse)
+void free_sparse_list(sqfs_sparse_map_t *sparse)
 {
-	sparse_map_t *old;
+	sqfs_sparse_map_t *old;
 
 	while (sparse != NULL) {
 		old = sparse;

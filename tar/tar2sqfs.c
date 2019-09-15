@@ -311,7 +311,7 @@ static int process_tar_ball(fstree_t *fs, data_writer_t *data)
 {
 	tar_header_decoded_t hdr;
 	uint64_t offset, count;
-	sparse_map_t *m;
+	sqfs_sparse_map_t *m;
 	bool skip;
 	int ret;
 

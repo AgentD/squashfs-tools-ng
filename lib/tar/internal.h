@@ -55,11 +55,11 @@ void update_checksum(tar_header_t *hdr);
 
 bool is_checksum_valid(const tar_header_t *hdr);
 
-sparse_map_t *read_sparse_map(const char *line);
+sqfs_sparse_map_t *read_sparse_map(const char *line);
 
-sparse_map_t *read_gnu_old_sparse(int fd, tar_header_t *hdr);
+sqfs_sparse_map_t *read_gnu_old_sparse(int fd, tar_header_t *hdr);
 
-void free_sparse_list(sparse_map_t *sparse);
+void free_sparse_list(sqfs_sparse_map_t *sparse);
 
 void free_xattr_list(tar_xattr_t *list);
 

@@ -120,6 +120,20 @@ struct sqfs_file_t {
 	int (*truncate)(sqfs_file_t *file, uint64_t size);
 };
 
+/**
+ * @struct sqfs_sparse_map_t
+ *
+ * @brief Describes the layout of a sparse file.
+ *
+ * This structure is part of a linked list that indicates where the actual
+ * data is located in a sparse file.
+ */
+struct sqfs_sparse_map_t {
+	sqfs_sparse_map_t *next;
+	uint64_t offset;
+	uint64_t count;
+};
+
 #ifdef __cplusplus
 extern "C" {
 #endif

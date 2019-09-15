@@ -8,9 +8,9 @@
 
 #include "internal.h"
 
-sparse_map_t *read_sparse_map(const char *line)
+sqfs_sparse_map_t *read_sparse_map(const char *line)
 {
-	sparse_map_t *last = NULL, *list = NULL, *ent = NULL;
+	sqfs_sparse_map_t *last = NULL, *list = NULL, *ent = NULL;
 
 	do {
 		ent = calloc(1, sizeof(*ent));

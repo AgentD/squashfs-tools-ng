@@ -39,14 +39,6 @@
 #error Cannot determine maximum value of size_t
 #endif
 
-
-/* layout structure for sparse files, indicating where the actual data is */
-typedef struct sparse_map_t {
-	struct sparse_map_t *next;
-	uint64_t offset;
-	uint64_t count;
-} sparse_map_t;
-
 /*
   A wrapper around the write() system call. It retries the write if it is
   interrupted by a signal or only part of the data was written. Returns 0

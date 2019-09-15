@@ -77,7 +77,7 @@ static tar_xattr_t *mkxattr(const char *key, size_t keylen,
 static int read_pax_header(int fd, uint64_t entsize, unsigned int *set_by_pax,
 			   tar_header_decoded_t *out)
 {
-	sparse_map_t *sparse_last = NULL, *sparse;
+	sqfs_sparse_map_t *sparse_last = NULL, *sparse;
 	uint64_t field, offset = 0, num_bytes = 0;
 	char *buffer, *line, *key, *ptr, *value;
 	tar_xattr_t *xattr;

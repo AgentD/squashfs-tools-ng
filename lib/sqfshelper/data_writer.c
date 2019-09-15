@@ -390,9 +390,9 @@ int write_data_from_file(data_writer_t *data, file_info_t *fi,
 	return 0;
 }
 
-static int check_map_valid(const sparse_map_t *map, file_info_t *fi)
+static int check_map_valid(const sqfs_sparse_map_t *map, file_info_t *fi)
 {
-	const sparse_map_t *m;
+	const sqfs_sparse_map_t *m;
 	uint64_t offset;
 
 	if (map != NULL) {
@@ -421,10 +421,10 @@ fail_map:
 }
 
 static int get_sparse_block(sqfs_block_t *blk, file_info_t *fi, int infd,
-			    sparse_map_t **sparse_map, uint64_t offset,
+			    sqfs_sparse_map_t **sparse_map, uint64_t offset,
 			    size_t diff)
 {
-	sparse_map_t *map = *sparse_map;
+	sqfs_sparse_map_t *map = *sparse_map;
 	size_t start, count;
 
 	while (map != NULL && map->offset < offset + diff) {
@@ -451,7 +451,7 @@ static int get_sparse_block(sqfs_block_t *blk, file_info_t *fi, int infd,
 }
 
 int write_data_from_fd_condensed(data_writer_t *data, file_info_t *fi,
-				 int infd, sparse_map_t *map, int flags)
+				 int infd, sqfs_sparse_map_t *map, int flags)
 {
 	uint32_t blk_flags = BLK_FIRST_BLOCK;
 	size_t diff, i = 0;

@@ -13,6 +13,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "sqfs/io.h"
 #include "util.h"
 
 typedef struct {
@@ -74,7 +75,7 @@ typedef struct {
 	struct stat sb;
 	char *name;
 	char *link_target;
-	sparse_map_t *sparse;
+	sqfs_sparse_map_t *sparse;
 	uint64_t actual_size;
 	uint64_t record_size;
 	bool unknown_record;
