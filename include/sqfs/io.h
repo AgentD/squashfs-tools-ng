@@ -142,6 +142,17 @@ extern "C" {
  */
 SQFS_API sqfs_file_t *sqfs_open_file(const char *filename, int flags);
 
+/**
+ * @brief Get a read-only file implementation that represents standard input
+ *
+ * This function creates a read-only file that represents STDIN. The file
+ * supports reading up to a specified number of bytes and only allows
+ * reading sequentially.
+ *
+ * @param size The alleged "size" of the file.
+ */
+SQFS_API sqfs_file_t *sqfs_get_stdin_file(uint64_t size);
+
 #ifdef __cplusplus
 }
 #endif
