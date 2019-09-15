@@ -153,12 +153,11 @@ static int block_callback(void *user, sqfs_block_t *blk)
 		} else {
 			fi->block_size[blk->index] = htole32(out);
 
-			if (store_block_location(data, offset, out,
-						 blk->checksum))
-				return -1;
-
 			data->stats.blocks_written += 1;
 		}
+
+		if (store_block_location(data, offset, out, blk->checksum))
+			return -1;
 
 		if (data->file->write_at(data->file, offset,
 					 blk->data, blk->size)) {
@@ -175,10 +174,17 @@ static int block_callback(void *user, sqfs_block_t *blk)
 
 		fi->startblock = data->blocks[start].offset;
 
-		if (start + count < data->file_start) {
-			data->num_blocks = data->file_start;
+		if (start < data->file_start) {
+			offset = start + count;
 
-			data->stats.duplicate_blocks += count;
+			if (offset >= data->file_start) {
+				data->num_blocks = offset;
+				data->stats.duplicate_blocks +=
+					offset - data->num_blocks;
+			} else {
+				data->num_blocks = data->file_start;
+				data->stats.duplicate_blocks += count;
+			}
 
 			if (data->file->truncate(data->file, data->start)) {
 				perror("truncating squashfs image after "
