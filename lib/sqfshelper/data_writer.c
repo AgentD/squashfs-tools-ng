@@ -319,77 +319,6 @@ static int add_sentinel_block(data_writer_t *data, file_info_t *fi,
 	return sqfs_block_processor_enqueue(data->proc, blk);
 }
 
-int write_data_from_file(data_writer_t *data, file_info_t *fi,
-			 sqfs_file_t *file, int flags)
-{
-	uint32_t blk_flags = BLK_FIRST_BLOCK;
-	uint64_t offset, file_size;
-	size_t diff, i = 0;
-	sqfs_block_t *blk;
-
-	if (flags & DW_DONT_COMPRESS)
-		blk_flags |= SQFS_BLK_DONT_COMPRESS;
-
-	if (flags & DW_ALLIGN_DEVBLK)
-		blk_flags |= BLK_ALLIGN;
-
-	file_size = file->get_size(file);
-
-	for (offset = 0; offset < file_size; offset += diff) {
-		if (file_size - offset > data->super->block_size) {
-			diff = data->super->block_size;
-		} else {
-			diff = file_size - offset;
-		}
-
-		if (sqfs_file_create_block(file, offset, diff, fi,
-					   blk_flags, &blk)) {
-			return -1;
-		}
-
-		blk->index = i++;
-
-		if (is_zero_block(blk->data, blk->size)) {
-			data->stats.sparse_blocks += 1;
-
-			fi->block_size[blk->index] = 0;
-			free(blk);
-			continue;
-		}
-
-		if (diff < data->super->block_size &&
-		    !(flags & DW_DONT_FRAGMENT)) {
-			if (!(blk_flags & (BLK_FIRST_BLOCK | BLK_LAST_BLOCK))) {
-				blk_flags |= BLK_LAST_BLOCK;
-
-				if (add_sentinel_block(data, fi, blk_flags)) {
-					free(blk);
-					return -1;
-				}
-			}
-
-			if (handle_fragment(data, blk))
-				return -1;
-		} else {
-			if (sqfs_block_processor_enqueue(data->proc, blk))
-				return -1;
-
-			blk_flags &= ~BLK_FIRST_BLOCK;
-		}
-	}
-
-	if (!(blk_flags & (BLK_FIRST_BLOCK | BLK_LAST_BLOCK))) {
-		blk_flags |= BLK_LAST_BLOCK;
-
-		if (add_sentinel_block(data, fi, blk_flags))
-			return -1;
-	}
-
-	data->stats.bytes_read += file_size;
-	data->stats.file_count += 1;
-	return 0;
-}
-
 int write_data_from_file_condensed(data_writer_t *data, sqfs_file_t *file,
 				   file_info_t *fi,
 				   const sqfs_sparse_map_t *map, int flags)
@@ -398,6 +327,7 @@ int write_data_from_file_condensed(data_writer_t *data, sqfs_file_t *file,
 	size_t diff, i = 0;
 	sqfs_block_t *blk;
 	uint64_t offset;
+	int ret;
 
 	if (flags & DW_DONT_COMPRESS)
 		blk_flags |= SQFS_BLK_DONT_COMPRESS;
@@ -412,10 +342,17 @@ int write_data_from_file_condensed(data_writer_t *data, sqfs_file_t *file,
 			diff = fi->size - offset;
 		}
 
-		if (sqfs_file_create_block_dense(file, offset, diff, fi,
-						 blk_flags, map, &blk)) {
-			return -1;
+		if (map == NULL) {
+			ret = sqfs_file_create_block(file, offset, diff, fi,
+						     blk_flags, &blk);
+		} else {
+			ret = sqfs_file_create_block_dense(file, offset, diff,
+							   fi, blk_flags,
+							   map, &blk);
 		}
+
+		if (ret)
+			return -1;
 
 		blk->index = i++;
 
@@ -458,6 +395,12 @@ int write_data_from_file_condensed(data_writer_t *data, sqfs_file_t *file,
 	data->stats.bytes_read += fi->size;
 	data->stats.file_count += 1;
 	return 0;
+}
+
+int write_data_from_file(data_writer_t *data, file_info_t *fi,
+			 sqfs_file_t *file, int flags)
+{
+	return write_data_from_file_condensed(data, file, fi, NULL, flags);
 }
 
 data_writer_t *data_writer_create(sqfs_super_t *super, sqfs_compressor_t *cmp,
