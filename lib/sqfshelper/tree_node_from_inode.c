@@ -82,16 +82,12 @@ tree_node_t *tree_node_from_inode(sqfs_inode_generic_t *inode,
 		out->name += sizeof(dir_info_t);
 
 		out->data.dir->size = inode->data.dir.size;
-		out->data.dir->start_block = inode->data.dir.start_block;
-		out->data.dir->block_offset = inode->data.dir.offset;
 		break;
 	case SQFS_INODE_EXT_DIR:
 		out->data.dir = (dir_info_t *)out->payload;
 		out->name += sizeof(dir_info_t);
 
 		out->data.dir->size = inode->data.dir_ext.size;
-		out->data.dir->start_block = inode->data.dir_ext.start_block;
-		out->data.dir->block_offset = inode->data.dir_ext.offset;
 		break;
 	case SQFS_INODE_FILE:
 		out->data.file = (file_info_t *)out->payload;

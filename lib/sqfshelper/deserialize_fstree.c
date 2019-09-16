@@ -93,102 +93,70 @@ fail:
 	return false;
 }
 
-static int fill_dir(sqfs_meta_reader_t *ir, sqfs_meta_reader_t *dr,
-		    tree_node_t *root, sqfs_super_t *super,
-		    sqfs_id_table_t *idtbl,
+static int fill_dir(sqfs_dir_reader_t *dr,
+		    tree_node_t *root, sqfs_id_table_t *idtbl,
 		    fstree_t *fs, sqfs_xattr_reader_t *xr, int flags)
 {
 	sqfs_inode_generic_t *inode;
-	sqfs_dir_header_t hdr;
 	sqfs_dir_entry_t *ent;
 	tree_node_t *n, *prev;
-	uint64_t block_start;
-	size_t size, diff;
-	uint32_t i;
 	int err;
 
-	size = root->data.dir->size;
-	if (size <= sizeof(hdr))
-		return 0;
-
-	block_start = root->data.dir->start_block;
-	block_start += super->directory_table_start;
-
-	if (sqfs_meta_reader_seek(dr, block_start,
-				  root->data.dir->block_offset)) {
-		return -1;
-	}
-
-	while (size > sizeof(hdr)) {
-		if (sqfs_meta_reader_read_dir_header(dr, &hdr))
+	for (;;) {
+		err = sqfs_dir_reader_read(dr, &ent);
+		if (err > 0)
+			break;
+		if (err < 0)
 			return -1;
 
-		size -= sizeof(hdr);
+		if (should_skip(ent->type, flags)) {
+			free(ent);
+			continue;
+		}
 
-		for (i = 0; i <= hdr.count && size > sizeof(*ent); ++i) {
-			if (sqfs_meta_reader_read_dir_ent(dr, &ent))
-				return -1;
+		if (!is_name_sane((const char *)ent->name)) {
+			free(ent);
+			continue;
+		}
 
-			diff = sizeof(*ent) + strlen((char *)ent->name);
-			if (diff > size) {
-				free(ent);
-				break;
-			}
-			size -= diff;
+		err = sqfs_dir_reader_get_inode(dr, &inode);
+		if (err) {
+			free(ent);
+			return err;
+		}
 
-			if (should_skip(ent->type, flags)) {
-				free(ent);
-				continue;
-			}
+		n = tree_node_from_inode(inode, idtbl, (char *)ent->name);
+		if (n == NULL) {
+			free(ent);
+			free(inode);
+			return -1;
+		}
 
-			if (!is_name_sane((const char *)ent->name)) {
-				free(ent);
-				continue;
-			}
+		if (node_would_be_own_parent(root, n)) {
+			fputs("WARNING: Found a directory that "
+			      "contains itself, skipping loop back "
+			      "reference!\n", stderr);
+			free(n);
+			free(ent);
+			free(inode);
+			continue;
+		}
 
-			err = sqfs_meta_reader_read_inode(ir, super,
-							  hdr.start_block,
-							  ent->offset, &inode);
-			if (err) {
-				free(ent);
-				return err;
-			}
-
-			n = tree_node_from_inode(inode, idtbl,
-						 (char *)ent->name);
-
-			if (n == NULL) {
-				free(ent);
-				free(inode);
-				return -1;
-			}
-
-			if (node_would_be_own_parent(root, n)) {
-				fputs("WARNING: Found a directory that "
-				      "contains itself, skipping loop back "
-				      "reference!\n", stderr);
+		if (flags & RDTREE_READ_XATTR) {
+			if (restore_xattr(xr, fs, n, inode)) {
 				free(n);
 				free(ent);
 				free(inode);
-				continue;
+				return -1;
 			}
-
-			if (flags & RDTREE_READ_XATTR) {
-				if (restore_xattr(xr, fs, n, inode)) {
-					free(n);
-					free(ent);
-					free(inode);
-					return -1;
-				}
-			}
-
-			free(ent);
-			free(inode);
-
-			n->parent = root;
-			n->next = root->data.dir->children;
-			root->data.dir->children = n;
 		}
+
+		free(ent);
+
+		n->inode = inode;
+		n->parent = root;
+		n->next = root->data.dir->children;
+		root->data.dir->children = n;
 	}
 
 	n = root->data.dir->children;
@@ -196,11 +164,16 @@ static int fill_dir(sqfs_meta_reader_t *ir, sqfs_meta_reader_t *dr,
 
 	while (n != NULL) {
 		if (S_ISDIR(n->mode)) {
-			if (fill_dir(ir, dr, n, super, idtbl, fs, xr, flags))
+			err = sqfs_dir_reader_open_dir(dr, n->inode);
+			if (err)
+				return -1;
+
+			if (fill_dir(dr, n, idtbl, fs, xr, flags))
 				return -1;
 
 			if (n->data.dir->children == NULL &&
 			    (flags & RDTREE_NO_EMPTY)) {
+				free(n->inode);
 				if (prev == NULL) {
 					root->data.dir->children = n->next;
 					free(n);
@@ -214,6 +187,9 @@ static int fill_dir(sqfs_meta_reader_t *ir, sqfs_meta_reader_t *dr,
 			}
 		}
 
+		free(n->inode);
+		n->inode = NULL;
+
 		prev = n;
 		n = n->next;
 	}
@@ -224,29 +200,15 @@ static int fill_dir(sqfs_meta_reader_t *ir, sqfs_meta_reader_t *dr,
 int deserialize_fstree(fstree_t *out, sqfs_super_t *super,
 		       sqfs_compressor_t *cmp, sqfs_file_t *file, int flags)
 {
-	uint64_t block_start, limit;
-	sqfs_meta_reader_t *ir, *dr;
 	sqfs_inode_generic_t *root;
 	sqfs_xattr_reader_t *xr;
 	sqfs_id_table_t *idtbl;
+	sqfs_dir_reader_t *dr;
 	int status = -1;
-	size_t offset;
 
-	ir = sqfs_meta_reader_create(file, cmp, super->inode_table_start,
-				     super->directory_table_start);
-	if (ir == NULL)
-		return -1;
-
-	limit = super->id_table_start;
-	if (super->export_table_start < limit)
-		limit = super->export_table_start;
-	if (super->fragment_table_start < limit)
-		limit = super->fragment_table_start;
-
-	dr = sqfs_meta_reader_create(file, cmp, super->directory_table_start,
-				     limit);
+	dr = sqfs_dir_reader_create(super, cmp, file);
 	if (dr == NULL)
-		goto out_ir;
+		return -1;
 
 	idtbl = sqfs_id_table_create();
 	if (idtbl == NULL)
@@ -262,9 +224,7 @@ int deserialize_fstree(fstree_t *out, sqfs_super_t *super,
 	if (sqfs_xattr_reader_load_locations(xr))
 		goto out_xr;
 
-	block_start = super->root_inode_ref >> 16;
-	offset = super->root_inode_ref & 0xFFFF;
-	if (sqfs_meta_reader_read_inode(ir, super, block_start, offset, &root))
+	if (sqfs_dir_reader_get_root_inode(dr, &root))
 		goto out_xr;
 
 	if (root->base.type != SQFS_INODE_DIR &&
@@ -308,9 +268,14 @@ int deserialize_fstree(fstree_t *out, sqfs_super_t *super,
 		}
 	}
 
+	if (sqfs_dir_reader_open_dir(dr, root)) {
+		free(root);
+		goto fail_fs;
+	}
+
 	free(root);
 
-	if (fill_dir(ir, dr, out->root, super, idtbl, out, xr, flags))
+	if (fill_dir(dr, out->root, idtbl, out, xr, flags))
 		goto fail_fs;
 
 	tree_node_sort_recursive(out->root);
@@ -321,9 +286,7 @@ out_xr:
 out_id:
 	sqfs_id_table_destroy(idtbl);
 out_dr:
-	sqfs_meta_reader_destroy(dr);
-out_ir:
-	sqfs_meta_reader_destroy(ir);
+	sqfs_dir_reader_destroy(dr);
 	return status;
 fail_fs:
 	fstree_cleanup(out);
