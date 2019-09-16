@@ -303,8 +303,13 @@ skip_hdr:
 int main(int argc, char **argv)
 {
 	int rdtree_flags = 0, status = EXIT_FAILURE;
-	sqfs_reader_t sqfs;
+	sqfs_compressor_config_t cfg;
+	sqfs_compressor_t *cmp;
+	data_reader_t *data;
+	sqfs_file_t *file;
+	sqfs_super_t super;
 	tree_node_t *root;
+	fstree_t fs;
 	size_t i;
 
 	process_args(argc, argv);
@@ -312,11 +317,46 @@ int main(int argc, char **argv)
 	if (!no_xattr)
 		rdtree_flags |= RDTREE_READ_XATTR;
 
-	if (sqfs_reader_open(&sqfs, filename, rdtree_flags))
+	file = sqfs_open_file(filename, SQFS_FILE_OPEN_READ_ONLY);
+	if (file == NULL) {
+		perror(filename);
 		goto out_dirs;
+	}
+
+	if (sqfs_super_read(&super, file)) {
+		fprintf(stderr, "%s: error reading super block.\n", filename);
+		goto out_fd;
+	}
+
+	if (!sqfs_compressor_exists(super.compression_id)) {
+		fprintf(stderr, "%s: unknown compressor used.\n", filename);
+		goto out_fd;
+	}
+
+	sqfs_compressor_config_init(&cfg, super.compression_id,
+				    super.block_size,
+				    SQFS_COMP_FLAG_UNCOMPRESS);
+
+	cmp = sqfs_compressor_create(&cfg);
+	if (cmp == NULL)
+		goto out_fd;
+
+	if (super.flags & SQFS_FLAG_COMPRESSOR_OPTIONS) {
+		if (cmp->read_options(cmp, file))
+			goto out_cmp;
+	}
+
+	if (deserialize_fstree(&fs, &super, cmp, file, rdtree_flags))
+		goto out_cmp;
+
+	fstree_gen_file_list(&fs);
+
+	data = data_reader_create(file, &super, cmp);
+	if (data == NULL)
+		goto out;
 
 	for (i = 0; i < num_subdirs; ++i) {
-		root = fstree_node_from_path(&sqfs.fs, subdirs[i]);
+		root = fstree_node_from_path(&fs, subdirs[i]);
 		if (root == NULL) {
 			perror(subdirs[i]);
 			goto out;
@@ -329,14 +369,14 @@ int main(int argc, char **argv)
 
 		current_subdir = subdirs[i];
 
-		if (write_tree_dfs(&sqfs.fs, root, sqfs.data))
+		if (write_tree_dfs(&fs, root, data))
 			goto out;
 	}
 
 	current_subdir = NULL;
 
 	if (num_subdirs == 0) {
-		if (write_tree_dfs(&sqfs.fs, sqfs.fs.root, sqfs.data))
+		if (write_tree_dfs(&fs, fs.root, data))
 			goto out;
 	}
 
@@ -345,7 +385,11 @@ int main(int argc, char **argv)
 
 	status = EXIT_SUCCESS;
 out:
-	sqfs_reader_close(&sqfs);
+	fstree_cleanup(&fs);
+out_cmp:
+	cmp->destroy(cmp);
+out_fd:
+	file->destroy(file);
 out_dirs:
 	for (i = 0; i < num_subdirs; ++i)
 		free(subdirs[i]);
