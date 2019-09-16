@@ -16,22 +16,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-static size_t hard_link_count(tree_node_t *n)
-{
-	size_t count;
-
-	if (S_ISDIR(n->mode)) {
-		count = 2;
-
-		for (n = n->data.dir->children; n != NULL; n = n->next)
-			++count;
-
-		return count;
-	}
-
-	return 1;
-}
-
 static int get_type(tree_node_t *node)
 {
 	switch (node->mode & S_IFMT) {
@@ -65,17 +49,6 @@ static int get_type(tree_node_t *node)
 			return SQFS_INODE_EXT_FILE;
 
 		return SQFS_INODE_FILE;
-	}
-	case S_IFDIR: {
-		dir_info_t *di = node->data.dir;
-
-		if (node->xattr != NULL)
-			return SQFS_INODE_EXT_DIR;
-
-		if (di->start_block > 0xFFFFFFFFUL || di->size > 0xFFFF)
-			return SQFS_INODE_EXT_DIR;
-
-		return SQFS_INODE_DIR;
 	}
 	}
 	assert(0);
@@ -150,30 +123,30 @@ sqfs_inode_generic_t *tree_node_to_inode(fstree_t *fs, sqfs_id_table_t *idtbl,
 	switch (inode->base.type) {
 	case SQFS_INODE_FIFO:
 	case SQFS_INODE_SOCKET:
-		inode->data.ipc.nlink = hard_link_count(node);
+		inode->data.ipc.nlink = 1;
 		break;
 	case SQFS_INODE_EXT_FIFO:
 	case SQFS_INODE_EXT_SOCKET:
-		inode->data.ipc_ext.nlink = hard_link_count(node);
+		inode->data.ipc_ext.nlink = 1;
 		inode->data.ipc_ext.xattr_idx = xattr;
 		break;
 	case SQFS_INODE_SLINK:
-		inode->data.slink.nlink = hard_link_count(node);
+		inode->data.slink.nlink = 1;
 		inode->data.slink.target_size = extra;
 		break;
 	case SQFS_INODE_EXT_SLINK:
-		inode->data.slink_ext.nlink = hard_link_count(node);
+		inode->data.slink_ext.nlink = 1;
 		inode->data.slink_ext.target_size = extra;
 		inode->data.slink_ext.xattr_idx = xattr;
 		break;
 	case SQFS_INODE_BDEV:
 	case SQFS_INODE_CDEV:
-		inode->data.dev.nlink = hard_link_count(node);
+		inode->data.dev.nlink = 1;
 		inode->data.dev.devno = node->data.devno;
 		break;
 	case SQFS_INODE_EXT_BDEV:
 	case SQFS_INODE_EXT_CDEV:
-		inode->data.dev_ext.nlink = hard_link_count(node);
+		inode->data.dev_ext.nlink = 1;
 		inode->data.dev_ext.devno = node->data.devno;
 		inode->data.dev_ext.xattr_idx = xattr;
 		break;
@@ -192,7 +165,7 @@ sqfs_inode_generic_t *tree_node_to_inode(fstree_t *fs, sqfs_id_table_t *idtbl,
 		inode->data.file_ext.blocks_start = fi->startblock;
 		inode->data.file_ext.file_size = fi->size;
 		inode->data.file_ext.sparse = fi->sparse;
-		inode->data.file_ext.nlink = hard_link_count(node);
+		inode->data.file_ext.nlink = 1;
 		inode->data.file_ext.fragment_idx = 0xFFFFFFFF;
 		inode->data.file_ext.fragment_offset = 0xFFFFFFFF;
 		inode->data.file_ext.xattr_idx = xattr;
@@ -202,23 +175,6 @@ sqfs_inode_generic_t *tree_node_to_inode(fstree_t *fs, sqfs_id_table_t *idtbl,
 			inode->data.file_ext.fragment_offset =
 				fi->fragment_offset;
 		}
-		break;
-	case SQFS_INODE_DIR:
-		inode->data.dir.start_block = node->data.dir->start_block;
-		inode->data.dir.nlink = hard_link_count(node);
-		inode->data.dir.size = node->data.dir->size;
-		inode->data.dir.offset = node->data.dir->block_offset;
-		inode->data.dir.parent_inode = node->parent ?
-			node->parent->inode_num : 1;
-		break;
-	case SQFS_INODE_EXT_DIR:
-		inode->data.dir_ext.nlink = hard_link_count(node);
-		inode->data.dir_ext.size = node->data.dir->size;
-		inode->data.dir_ext.start_block = node->data.dir->start_block;
-		inode->data.dir_ext.parent_inode = node->parent ?
-			node->parent->inode_num : 1;
-		inode->data.dir_ext.offset = node->data.dir->block_offset;
-		inode->data.dir_ext.xattr_idx = xattr;
 		break;
 	default:
 		goto fail;
