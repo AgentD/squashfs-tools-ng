@@ -106,65 +106,14 @@ static file_info_t *list_sort(const fstree_t *fs, file_info_t *head)
 	return merge(fs, list_sort(fs, head), list_sort(fs, half));
 }
 
-static file_info_t *split_list(file_info_t *list, uint64_t threashold)
-{
-	file_info_t *it, *new = NULL;
-	uint64_t size = 0;
-
-	for (it = list; it != NULL; it = it->next) {
-		size += it->size - it->sparse;
-
-		if (size >= threashold) {
-			new = it->next;
-			it->next = NULL;
-			break;
-		}
-	}
-
-	return new;
-}
-
-static uint64_t total_size(file_info_t *list)
-{
-	uint64_t size = 0;
-	file_info_t *it;
-
-	for (it = list; it != NULL; it = it->next)
-		size += it->size - it->sparse;
-
-	return size;
-}
-
-void optimize_unpack_order(fstree_t *fs, size_t num_jobs,
-			   file_info_t *out[num_jobs])
+file_info_t *optimize_unpack_order(fstree_t *fs)
 {
 	file_info_t *file_list;
-	uint64_t threshold;
-	size_t i;
-
-	if (num_jobs < 1)
-		return;
-
-	for (i = 0; i < num_jobs; ++i)
-		out[i] = NULL;
 
 	file_list = list_sort(fs, fs->files);
 	while (file_list != NULL && file_list->input_file == NULL)
 		file_list = file_list->next;
 
 	fs->files = NULL;
-
-	if (num_jobs < 2) {
-		out[0] = file_list;
-		return;
-	}
-
-	threshold = total_size(file_list) / num_jobs;
-
-	for (i = 0; i < (num_jobs - 1); ++i) {
-		out[i] = file_list;
-		file_list = split_list(file_list, threshold);
-	}
-
-	out[i] = file_list;
+	return file_list;
 }

@@ -22,7 +22,6 @@ static struct option long_opts[] = {
 	{ "set-xattr", no_argument, NULL, 'X' },
 #endif
 	{ "set-times", no_argument, NULL, 'T' },
-	{ "jobs", required_argument, NULL, 'j' },
 	{ "describe", no_argument, NULL, 'd' },
 	{ "chmod", no_argument, NULL, 'C' },
 	{ "chown", no_argument, NULL, 'O' },
@@ -74,7 +73,6 @@ static const char *help_string =
 #endif
 "  --set-times, -T           When unpacking files to disk, set the create\n"
 "                            and modify timestamps from the squashfs image.\n"
-"  --jobs, -j <count>        Number of parallel unpacking jobs to start.\n"
 "  --chmod, -C               Change permission flags of unpacked files to\n"
 "                            those store in the squashfs image.\n"
 "  --chown, -O               Change ownership of unpacked files to the\n"
@@ -110,7 +108,7 @@ static char *get_path(char *old, const char *arg)
 
 void process_command_line(options_t *opt, int argc, char **argv)
 {
-	int i, j;
+	int i;
 
 	opt->op = OP_NONE;
 	opt->rdtree_flags = 0;
@@ -118,7 +116,6 @@ void process_command_line(options_t *opt, int argc, char **argv)
 	opt->cmdpath = NULL;
 	opt->unpack_root = NULL;
 	opt->image_name = NULL;
-	opt->num_jobs = 1;
 
 	for (;;) {
 		i = getopt_long(argc, argv, short_opts, long_opts, NULL);
@@ -158,17 +155,6 @@ void process_command_line(options_t *opt, int argc, char **argv)
 #endif
 		case 'T':
 			opt->flags |= UNPACK_SET_TIMES;
-			break;
-		case 'j':
-			for (j = 0; optarg[j] != '\0'; ++j) {
-				if (j > 6 || !isdigit(optarg[j]))
-					goto fail_num_jobs;
-			}
-
-			opt->num_jobs = atoi(optarg);
-
-			if (opt->num_jobs < 1)
-				goto fail_num_jobs;
 			break;
 		case 'c':
 			opt->op = OP_CAT;
@@ -227,7 +213,4 @@ fail_arg:
 	fprintf(stderr, "Try `%s --help' for more information.\n", __progname);
 	free(opt->cmdpath);
 	exit(EXIT_FAILURE);
-fail_num_jobs:
-	fputs("Expected a positive integer for --jobs.\n", stderr);
-	goto fail_arg;
 }

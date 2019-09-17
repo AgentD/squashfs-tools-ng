@@ -57,13 +57,6 @@ Skip directories that would end up empty after applying the above rules.
 The following options are specific to unpacking files from a SquashFS image
 to disk:
 .TP
-\fB\-\-jobs\fR, \fB\-j\fR <count>
-Specify a number of parallel jobs to spawn for unpacking file data.
-The file hierarchy is created sequentially but the data unpacking is
-distributed over the given number of jobs so that each job has to unpack
-roughly the same amount of data. This can be used to speed up unpacking
-of large SquashFS archives.
-.TP
 \fB\-\-no\-sparse\fR, \fB\-Z\fR
 Do not create sparse files. Always unpack sparse files by
 writing blocks of zeros to disk.

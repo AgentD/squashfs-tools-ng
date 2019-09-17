@@ -115,7 +115,7 @@ int main(int argc, char **argv)
 		if (restore_fstree(n, opt.flags))
 			goto out;
 
-		if (fill_unpacked_files(&fs, data, opt.flags, opt.num_jobs))
+		if (fill_unpacked_files(&fs, data, opt.flags))
 			goto out;
 
 		if (update_tree_attribs(&fs, n, opt.flags))

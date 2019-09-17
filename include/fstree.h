@@ -295,12 +295,9 @@ tree_node_t *fstree_node_from_path(fstree_t *fs, const char *path);
 /*
   Optimize the order of the fstree file list for unpacking as to avoid
   unpacking fragment blocks more than once and to improve locality when
-  fetching data from disk. The resulting list is returned in 'out'.
-  If num_jobs is > 1, the list is split up for parallel processing.
+  fetching data from disk.
  */
-void optimize_unpack_order(fstree_t *fs, size_t num_jobs,
-			   file_info_t *out[num_jobs]);
-
+file_info_t *optimize_unpack_order(fstree_t *fs);
 
 /*
   Convert back to forward slashed, remove all preceeding and trailing slashes,
