@@ -107,6 +107,8 @@ typedef enum {
 	SQFS_ERROR_NOT_DIR = -12,
 
 	SQFS_ERROR_NO_ENTRY = -13,
+
+	SQFS_ERROR_LINK_LOOP = -14,
 } E_SQFS_ERROR;
 
 #endif /* SQFS_ERROR_H */

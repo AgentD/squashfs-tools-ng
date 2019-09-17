@@ -192,6 +192,95 @@ struct sqfs_dir_index_t {
 	uint8_t name[];
 };
 
+typedef enum {
+	/**
+	 * @brief Omit device special files from the final tree.
+	 */
+	SQFS_TREE_NO_DEVICES = 0x01,
+
+	/**
+	 * @brief Omit socket files from the final tree.
+	 */
+	SQFS_TREE_NO_SOCKETS = 0x02,
+
+	/**
+	 * @brief Omit named pipes from the final tree.
+	 */
+	SQFS_TREE_NO_FIFO = 0x04,
+
+	/**
+	 * @brief Omit symbolic links from the final tree.
+	 */
+	SQFS_TREE_NO_SLINKS = 0x08,
+
+	/**
+	 * @brief Omit empty directories from the final tree.
+	 *
+	 * If a directory is not empty on-disk, but ends up empty after
+	 * applying all the other filter rules, it is also omitted.
+	 */
+	SQFS_TREE_NO_EMPTY = 0x10,
+
+	/**
+	 * @brief Do not recurse into sub directories.
+	 *
+	 * If the start node is a directory, the tree deserializer will still
+	 * recurse into it, but it will not go beyond that.
+	 */
+	SQFS_TREE_NO_RECURSE = 0x20,
+
+	/**
+	 * @brief Store the list of parent nodes all the way to the target node
+	 *
+	 * When traversing towards the selected node, also collect the chain
+	 * of parent nodes with the subtree stored at the end.
+	 */
+	SQFS_TREE_STORE_PARENTS = 0x40,
+} E_SQFS_TREE_FILTER_FLAGS;
+
+/**
+ * @struct sqfs_tree_node_t
+ *
+ * @brief Encapsulates a node in the filesystem tree read by
+ *        @ref sqfs_dir_reader_get_full_hierarchy.
+ */
+struct sqfs_tree_node_t {
+	/**
+	 * @brief Pointer to parent, NULL for the root node
+	 */
+	sqfs_tree_node_t *parent;
+
+	/**
+	 * @brief For directories, a linked list of children.
+	 */
+	sqfs_tree_node_t *children;
+
+	/**
+	 * @brief Linked list next pointer for children list.
+	 */
+	sqfs_tree_node_t *next;
+
+	/**
+	 * @brief Inode representing this element in the tree.
+	 */
+	sqfs_inode_generic_t *inode;
+
+	/**
+	 * @brief Resolved 32 bit user ID from the inode
+	 */
+	uint32_t uid;
+
+	/**
+	 * @brief Resolved 32 bit group ID from the inode
+	 */
+	uint32_t gid;
+
+	/**
+	 * @brief null-terminated entry name.
+	 */
+	uint8_t name[];
+};
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -499,6 +588,41 @@ SQFS_API int sqfs_dir_reader_get_root_inode(sqfs_dir_reader_t *rd,
 SQFS_API int sqfs_dir_reader_find_by_path(sqfs_dir_reader_t *rd,
 					  const char *path,
 					  sqfs_inode_generic_t **out);
+
+/**
+ * @brief High level helper function for deserializing the entire file system
+ *        hierarchy into an in-memory tree structure.
+ *
+ * @memberof sqfs_dir_reader_t
+ *
+ * This function internally navigates to a specified inode using
+ * @ref sqfs_dir_reader_find_by_path and starting from that recursively
+ * deserializes the entire hierarchy into a tree structure holding all inodes.
+ *
+ * @param rd A pointer to a directory reader.
+ * @param path A path to resolve into an inode. Forward or backward slashes can
+ *             be used to seperate path components. Resolving '.' or '..' is
+ *             not supported. Can be set to NULL to get the root inode.
+ * @param flags A combination of @ref E_SQFS_TREE_FILTER_FLAGS flags.
+ * @param out Returns the top most tree node.
+ *
+ * @return Zero on success, an @ref E_SQFS_ERROR value on failure.
+ */
+SQFS_API int sqfs_dir_reader_get_full_hierarchy(sqfs_dir_reader_t *rd,
+						const sqfs_id_table_t *idtbl,
+						const char *path,
+						unsigned int flags,
+						sqfs_tree_node_t **out);
+
+/**
+ * @brief Recursively destroy a tree of @ref sqfs_tree_node_t nodes
+ *
+ * This function can be used to clean up after
+ * @ref sqfs_dir_reader_get_full_hierarchy.
+ *
+ * @param root A pointer to the root node.
+ */
+SQFS_API void sqfs_dir_tree_destroy(sqfs_tree_node_t *root);
 
 #ifdef __cplusplus
 }
