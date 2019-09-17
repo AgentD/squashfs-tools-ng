@@ -22,6 +22,7 @@
 #include "data_writer.h"
 #include "fstree.h"
 
+#include <sys/stat.h>
 #include <stdint.h>
 #include <stddef.h>
 
@@ -119,5 +120,7 @@ int xattr_reader_restore_node(sqfs_xattr_reader_t *xr, fstree_t *fs,
 
 sqfs_inode_generic_t *tree_node_to_inode(fstree_t *fs, sqfs_id_table_t *idtbl,
 					 tree_node_t *node);
+
+int inode_stat(const sqfs_tree_node_t *node, struct stat *sb);
 
 #endif /* HIGHLEVEL_H */
