@@ -81,23 +81,40 @@ static void print_size(uint64_t size, char *buffer)
 	}
 }
 
-static void print_node_size(tree_node_t *n, char *buffer)
+static void print_node_size(const sqfs_tree_node_t *n, char *buffer)
 {
-	switch (n->mode & S_IFMT) {
+	switch (n->inode->base.mode & S_IFMT) {
 	case S_IFLNK:
-		print_size(strlen(n->data.slink_target), buffer);
+		print_size(strlen(n->inode->slink_target), buffer);
 		break;
 	case S_IFREG:
-		print_size(n->data.file->size, buffer);
+		if (n->inode->base.type == SQFS_INODE_EXT_FILE) {
+			print_size(n->inode->data.file_ext.file_size, buffer);
+		} else {
+			print_size(n->inode->data.file.file_size, buffer);
+		}
 		break;
 	case S_IFDIR:
-		print_size(n->data.dir->size, buffer);
+		if (n->inode->base.type == SQFS_INODE_EXT_DIR) {
+			print_size(n->inode->data.dir_ext.size, buffer);
+		} else {
+			print_size(n->inode->data.dir.size, buffer);
+		}
 		break;
 	case S_IFBLK:
-	case S_IFCHR:
-		sprintf(buffer, "%u:%u", major(n->data.devno),
-			minor(n->data.devno));
+	case S_IFCHR: {
+		uint32_t devno;
+
+		if (n->inode->base.type == SQFS_INODE_EXT_BDEV ||
+		    n->inode->base.type == SQFS_INODE_EXT_CDEV) {
+			devno = n->inode->data.dev_ext.devno;
+		} else {
+			devno = n->inode->data.dev.devno;
+		}
+
+		sprintf(buffer, "%u:%u", major(devno), minor(devno));
 		break;
+	}
 	default:
 		buffer[0] = '0';
 		buffer[1] = '\0';
@@ -105,14 +122,14 @@ static void print_node_size(tree_node_t *n, char *buffer)
 	}
 }
 
-void list_files(tree_node_t *node)
+void list_files(const sqfs_tree_node_t *node)
 {
 	int i, max_uid_chars = 0, max_gid_chars = 0, max_sz_chars = 0;
 	char modestr[12], sizestr[32];
-	tree_node_t *n;
+	const sqfs_tree_node_t *n;
 
-	if (S_ISDIR(node->mode)) {
-		for (n = node->data.dir->children; n != NULL; n = n->next) {
+	if (S_ISDIR(node->inode->base.mode)) {
+		for (n = node->children; n != NULL; n = n->next) {
 			i = count_int_chars(n->uid);
 			max_uid_chars = i > max_uid_chars ? i : max_uid_chars;
 
@@ -124,8 +141,8 @@ void list_files(tree_node_t *node)
 			max_sz_chars = i > max_sz_chars ? i : max_sz_chars;
 		}
 
-		for (n = node->data.dir->children; n != NULL; n = n->next) {
-			mode_to_str(n->mode, modestr);
+		for (n = node->children; n != NULL; n = n->next) {
+			mode_to_str(n->inode->base.mode, modestr);
 			print_node_size(n, sizestr);
 
 			printf("%s %*u/%-*u %*s %s", modestr,
@@ -134,21 +151,21 @@ void list_files(tree_node_t *node)
 			       max_sz_chars, sizestr,
 			       n->name);
 
-			if (S_ISLNK(n->mode)) {
-				printf(" -> %s\n", n->data.slink_target);
+			if (S_ISLNK(n->inode->base.mode)) {
+				printf(" -> %s\n", n->inode->slink_target);
 			} else {
 				fputc('\n', stdout);
 			}
 		}
 	} else {
-		mode_to_str(node->mode, modestr);
+		mode_to_str(node->inode->base.mode, modestr);
 		print_node_size(node, sizestr);
 
 		printf("%s %u/%u %s %s", modestr,
 		       node->uid, node->gid, sizestr, node->name);
 
-		if (S_ISLNK(node->mode)) {
-			printf(" -> %s\n", node->data.slink_target);
+		if (S_ISLNK(node->inode->base.mode)) {
+			printf(" -> %s\n", node->inode->slink_target);
 		} else {
 			fputc('\n', stdout);
 		}

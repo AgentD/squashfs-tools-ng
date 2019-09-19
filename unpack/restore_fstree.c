@@ -6,30 +6,30 @@
  */
 #include "rdsquashfs.h"
 
-static int create_node(tree_node_t *n, int flags)
+static int create_node(const sqfs_tree_node_t *n, int flags)
 {
-	tree_node_t *c;
-	int fd, ret;
+	const sqfs_tree_node_t *c;
 	char *name;
+	int fd;
 
 	if (!(flags & UNPACK_QUIET)) {
-		name = fstree_get_path(n);
+		name = sqfs_tree_node_get_path(n);
 		printf("creating %s\n", name);
 		free(name);
 	}
 
-	switch (n->mode & S_IFMT) {
+	switch (n->inode->base.mode & S_IFMT) {
 	case S_IFDIR:
-		if (mkdir(n->name, 0755) && errno != EEXIST) {
+		if (mkdir((const char *)n->name, 0755) && errno != EEXIST) {
 			fprintf(stderr, "mkdir %s: %s\n",
 				n->name, strerror(errno));
 			return -1;
 		}
 
-		if (pushd(n->name))
+		if (pushd((const char *)n->name))
 			return -1;
 
-		for (c = n->data.dir->children; c != NULL; c = c->next) {
+		for (c = n->children; c != NULL; c = c->next) {
 			if (create_node(c, flags))
 				return -1;
 		}
@@ -38,31 +38,44 @@ static int create_node(tree_node_t *n, int flags)
 			return -1;
 		break;
 	case S_IFLNK:
-		if (symlink(n->data.slink_target, n->name)) {
+		if (symlink(n->inode->slink_target, (const char *)n->name)) {
 			fprintf(stderr, "ln -s %s %s: %s\n",
-				n->data.slink_target, n->name,
+				n->inode->slink_target, n->name,
 				strerror(errno));
 			return -1;
 		}
 		break;
 	case S_IFSOCK:
 	case S_IFIFO:
-		if (mknod(n->name, (n->mode & S_IFMT) | 0700, 0)) {
+		if (mknod((const char *)n->name,
+			  (n->inode->base.mode & S_IFMT) | 0700, 0)) {
 			fprintf(stderr, "creating %s: %s\n",
 				n->name, strerror(errno));
 			return -1;
 		}
 		break;
 	case S_IFBLK:
-	case S_IFCHR:
-		if (mknod(n->name, n->mode & S_IFMT, n->data.devno)) {
+	case S_IFCHR: {
+		uint32_t devno;
+
+		if (n->inode->base.type == SQFS_INODE_EXT_BDEV ||
+		    n->inode->base.type == SQFS_INODE_EXT_CDEV) {
+			devno = n->inode->data.dev_ext.devno;
+		} else {
+			devno = n->inode->data.dev.devno;
+		}
+
+		if (mknod((const char *)n->name, n->inode->base.mode & S_IFMT,
+			  devno)) {
 			fprintf(stderr, "creating device %s: %s\n",
 				n->name, strerror(errno));
 			return -1;
 		}
 		break;
+	}
 	case S_IFREG:
-		fd = open(n->name, O_WRONLY | O_CREAT | O_EXCL, 0600);
+		fd = open((const char *)n->name, O_WRONLY | O_CREAT | O_EXCL,
+			  0600);
 		if (fd < 0) {
 			fprintf(stderr, "creating %s: %s\n",
 				n->name, strerror(errno));
@@ -70,20 +83,6 @@ static int create_node(tree_node_t *n, int flags)
 		}
 
 		close(fd);
-
-		if (n->parent != NULL) {
-			n->data.file->input_file = fstree_get_path(n);
-		} else {
-			n->data.file->input_file = strdup(n->name);
-		}
-
-		if (n->data.file->input_file == NULL) {
-			perror("restoring file path");
-			return -1;
-		}
-
-		ret = canonicalize_name(n->data.file->input_file);
-		assert(ret == 0);
 		break;
 	default:
 		break;
@@ -92,16 +91,91 @@ static int create_node(tree_node_t *n, int flags)
 	return 0;
 }
 
-static int set_attribs(fstree_t *fs, tree_node_t *n, int flags)
+#ifdef HAVE_SYS_XATTR_H
+static int set_xattr(sqfs_xattr_reader_t *xattr, const sqfs_tree_node_t *n)
 {
-	tree_node_t *c;
+	sqfs_xattr_value_t *value;
+	sqfs_xattr_entry_t *key;
+	sqfs_xattr_id_t desc;
+	uint32_t index;
+	size_t i;
+	int ret;
 
-	if (S_ISDIR(n->mode)) {
-		if (pushd(n->name))
+	switch (n->inode->base.type) {
+	case SQFS_INODE_EXT_DIR:
+		index = n->inode->data.dir_ext.xattr_idx;
+		break;
+	case SQFS_INODE_EXT_FILE:
+		index = n->inode->data.file_ext.xattr_idx;
+		break;
+	case SQFS_INODE_EXT_SLINK:
+		index = n->inode->data.slink_ext.xattr_idx;
+		break;
+	case SQFS_INODE_EXT_BDEV:
+	case SQFS_INODE_EXT_CDEV:
+		index = n->inode->data.dev_ext.xattr_idx;
+		break;
+	case SQFS_INODE_EXT_FIFO:
+	case SQFS_INODE_EXT_SOCKET:
+		index = n->inode->data.ipc_ext.xattr_idx;
+		break;
+	default:
+		return 0;
+	}
+
+	if (index == 0xFFFFFFFF)
+		return 0;
+
+	if (sqfs_xattr_reader_get_desc(xattr, index, &desc)) {
+		fputs("Error resolving xattr index\n", stderr);
+		return -1;
+	}
+
+	if (sqfs_xattr_reader_seek_kv(xattr, &desc)) {
+		fputs("Error locating xattr key-value pairs\n", stderr);
+		return -1;
+	}
+
+	for (i = 0; i < desc.count; ++i) {
+		if (sqfs_xattr_reader_read_key(xattr, &key)) {
+			fputs("Error reading xattr key\n", stderr);
+			return -1;
+		}
+
+		if (sqfs_xattr_reader_read_value(xattr, key, &value)) {
+			fputs("Error reading xattr value\n", stderr);
+			free(key);
+			return -1;
+		}
+
+		ret = lsetxattr((const char *)n->name, (const char *)key->key,
+				value->value, value->size, 0);
+		if (ret) {
+			fprintf(stderr, "setting xattr '%s' on %s: %s\n",
+				key->key, n->name, strerror(errno));
+		}
+
+		free(key);
+		free(value);
+		if (ret)
+			return -1;
+	}
+
+	return 0;
+}
+#endif
+
+static int set_attribs(sqfs_xattr_reader_t *xattr,
+		       const sqfs_tree_node_t *n, int flags)
+{
+	const sqfs_tree_node_t *c;
+
+	if (S_ISDIR(n->inode->base.mode)) {
+		if (pushd((const char *)n->name))
 			return -1;
 
-		for (c = n->data.dir->children; c != NULL; c = c->next) {
-			if (set_attribs(fs, c, flags))
+		for (c = n->children; c != NULL; c = c->next) {
+			if (set_attribs(xattr, c, flags))
 				return -1;
 		}
 
@@ -110,38 +184,21 @@ static int set_attribs(fstree_t *fs, tree_node_t *n, int flags)
 	}
 
 #ifdef HAVE_SYS_XATTR_H
-	if ((flags & UNPACK_SET_XATTR) && n->xattr != NULL) {
-		size_t i, len, kidx, vidx;
-		const char *key, *value;
-
-		for (i = 0; i < n->xattr->num_attr; ++i) {
-			kidx = n->xattr->attr[i].key_index;
-			vidx = n->xattr->attr[i].value_index;
-
-			key = str_table_get_string(&fs->xattr_keys, kidx);
-			value = str_table_get_string(&fs->xattr_values, vidx);
-			len = strlen(value);
-
-			if (lsetxattr(n->name, key, value, len, 0)) {
-				fprintf(stderr,
-					"setting xattr '%s' on %s: %s\n",
-					key, n->name, strerror(errno));
-				return -1;
-			}
-		}
+	if ((flags & UNPACK_SET_XATTR) && xattr != NULL) {
+		if (set_xattr(xattr, n))
+			return -1;
 	}
-#else
-	(void)fs;
 #endif
 
 	if (flags & UNPACK_SET_TIMES) {
 		struct timespec times[2];
 
 		memset(times, 0, sizeof(times));
-		times[0].tv_sec = n->mod_time;
-		times[1].tv_sec = n->mod_time;
+		times[0].tv_sec = n->inode->base.mod_time;
+		times[1].tv_sec = n->inode->base.mod_time;
 
-		if (utimensat(AT_FDCWD, n->name, times, AT_SYMLINK_NOFOLLOW)) {
+		if (utimensat(AT_FDCWD, (const char *)n->name, times,
+			      AT_SYMLINK_NOFOLLOW)) {
 			fprintf(stderr, "setting timestamp on %s: %s\n",
 				n->name, strerror(errno));
 			return -1;
@@ -149,7 +206,7 @@ static int set_attribs(fstree_t *fs, tree_node_t *n, int flags)
 	}
 
 	if (flags & UNPACK_CHOWN) {
-		if (fchownat(AT_FDCWD, n->name, n->uid, n->gid,
+		if (fchownat(AT_FDCWD, (const char *)n->name, n->uid, n->gid,
 			     AT_SYMLINK_NOFOLLOW)) {
 			fprintf(stderr, "chown %s: %s\n",
 				n->name, strerror(errno));
@@ -157,8 +214,9 @@ static int set_attribs(fstree_t *fs, tree_node_t *n, int flags)
 		}
 	}
 
-	if (flags & UNPACK_CHMOD && !S_ISLNK(n->mode)) {
-		if (fchmodat(AT_FDCWD, n->name, n->mode, 0)) {
+	if (flags & UNPACK_CHMOD && !S_ISLNK(n->inode->base.mode)) {
+		if (fchmodat(AT_FDCWD, (const char *)n->name,
+			     n->inode->base.mode & ~S_IFMT, 0)) {
 			fprintf(stderr, "chmod %s: %s\n",
 				n->name, strerror(errno));
 			return -1;
@@ -167,16 +225,16 @@ static int set_attribs(fstree_t *fs, tree_node_t *n, int flags)
 	return 0;
 }
 
-int restore_fstree(tree_node_t *root, int flags)
+int restore_fstree(sqfs_tree_node_t *root, int flags)
 {
-	tree_node_t *n, *old_parent;
+	sqfs_tree_node_t *n, *old_parent;
 
 	/* make sure fstree_get_path() stops at this node */
 	old_parent = root->parent;
 	root->parent = NULL;
 
-	if (S_ISDIR(root->mode)) {
-		for (n = root->data.dir->children; n != NULL; n = n->next) {
+	if (S_ISDIR(root->inode->base.mode)) {
+		for (n = root->children; n != NULL; n = n->next) {
 			if (create_node(n, flags))
 				return -1;
 		}
@@ -189,20 +247,23 @@ int restore_fstree(tree_node_t *root, int flags)
 	return 0;
 }
 
-int update_tree_attribs(fstree_t *fs, tree_node_t *root, int flags)
+int update_tree_attribs(sqfs_xattr_reader_t *xattr,
+			const sqfs_tree_node_t *root, int flags)
 {
-	tree_node_t *n;
+	const sqfs_tree_node_t *n;
 
-	if ((flags & (UNPACK_CHOWN | UNPACK_CHMOD | UNPACK_SET_TIMES)) == 0)
+	if ((flags & (UNPACK_CHOWN | UNPACK_CHMOD |
+		      UNPACK_SET_TIMES | UNPACK_SET_XATTR)) == 0) {
 		return 0;
+	}
 
-	if (S_ISDIR(root->mode)) {
-		for (n = root->data.dir->children; n != NULL; n = n->next) {
-			if (set_attribs(fs, n, flags))
+	if (S_ISDIR(root->inode->base.mode)) {
+		for (n = root->children; n != NULL; n = n->next) {
+			if (set_attribs(xattr, n, flags))
 				return -1;
 		}
 	} else {
-		if (set_attribs(fs, root, flags))
+		if (set_attribs(xattr, root, flags))
 			return -1;
 	}
 

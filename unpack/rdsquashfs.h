@@ -12,7 +12,9 @@
 #include "sqfs/meta_reader.h"
 #include "sqfs/compress.h"
 #include "sqfs/id_table.h"
+#include "sqfs/xattr.h"
 #include "sqfs/data.h"
+
 #include "data_reader.h"
 #include "highlevel.h"
 #include "fstree.h"
@@ -62,18 +64,20 @@ typedef struct {
 	const char *image_name;
 } options_t;
 
-void list_files(tree_node_t *node);
+void list_files(const sqfs_tree_node_t *node);
 
-int restore_fstree(tree_node_t *root, int flags);
+int restore_fstree(sqfs_tree_node_t *root, int flags);
 
-int update_tree_attribs(fstree_t *fs, tree_node_t *root, int flags);
+int update_tree_attribs(sqfs_xattr_reader_t *xattr,
+			const sqfs_tree_node_t *root, int flags);
 
-int fill_unpacked_files(fstree_t *fs, data_reader_t *data, int flags);
+int fill_unpacked_files(size_t blk_sz, const sqfs_tree_node_t *root,
+			data_reader_t *data, int flags);
 
-int describe_tree(tree_node_t *root, const char *unpack_root);
+int describe_tree(const sqfs_tree_node_t *root, const char *unpack_root);
+
+int dump_xattrs(sqfs_xattr_reader_t *xattr, const sqfs_inode_generic_t *inode);
 
 void process_command_line(options_t *opt, int argc, char **argv);
-
-file_info_t *optimize_unpack_order(fstree_t *fs);
 
 #endif /* RDSQUASHFS_H */

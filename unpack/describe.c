@@ -6,9 +6,9 @@
  */
 #include "rdsquashfs.h"
 
-static int print_name(tree_node_t *n)
+static int print_name(const sqfs_tree_node_t *n)
 {
-	char *start, *ptr, *name = fstree_get_path(n);
+	char *start, *ptr, *name = sqfs_tree_node_get_path(n);
 	int ret;
 
 	if (name == NULL) {
@@ -48,12 +48,13 @@ static int print_name(tree_node_t *n)
 	return 0;
 }
 
-static void print_perm(tree_node_t *n)
+static void print_perm(const sqfs_tree_node_t *n)
 {
-	printf(" 0%o %d %d", n->mode & (~S_IFMT), n->uid, n->gid);
+	printf(" 0%o %d %d", n->inode->base.mode & (~S_IFMT), n->uid, n->gid);
 }
 
-static int print_simple(const char *type, tree_node_t *n, const char *extra)
+static int print_simple(const char *type, const sqfs_tree_node_t *n,
+			const char *extra)
 {
 	printf("%s ", type);
 	if (print_name(n))
@@ -65,15 +66,15 @@ static int print_simple(const char *type, tree_node_t *n, const char *extra)
 	return 0;
 }
 
-int describe_tree(tree_node_t *root, const char *unpack_root)
+int describe_tree(const sqfs_tree_node_t *root, const char *unpack_root)
 {
-	tree_node_t *n;
+	const sqfs_tree_node_t *n;
 
-	switch (root->mode & S_IFMT) {
+	switch (root->inode->base.mode & S_IFMT) {
 	case S_IFSOCK:
 		return print_simple("sock", root, NULL);
 	case S_IFLNK:
-		return print_simple("slink", root, root->data.slink_target);
+		return print_simple("slink", root, root->inode->slink_target);
 	case S_IFIFO:
 		return print_simple("pipe", root, NULL);
 	case S_IFREG:
@@ -92,8 +93,18 @@ int describe_tree(tree_node_t *root, const char *unpack_root)
 	case S_IFCHR:
 	case S_IFBLK: {
 		char buffer[32];
-		sprintf(buffer, "%c %d %d", S_ISCHR(root->mode) ? 'c' : 'b',
-		       major(root->data.devno), minor(root->data.devno));
+		uint32_t devno;
+
+		if (root->inode->base.type == SQFS_INODE_EXT_BDEV ||
+		    root->inode->base.type == SQFS_INODE_EXT_CDEV) {
+			devno = root->inode->data.dev_ext.devno;
+		} else {
+			devno = root->inode->data.dev.devno;
+		}
+
+		sprintf(buffer, "%c %d %d",
+			S_ISCHR(root->inode->base.mode) ? 'c' : 'b',
+			major(devno), minor(devno));
 		return print_simple("nod", root, buffer);
 	}
 	case S_IFDIR:
@@ -102,7 +113,7 @@ int describe_tree(tree_node_t *root, const char *unpack_root)
 				return -1;
 		}
 
-		for (n = root->data.dir->children; n != NULL; n = n->next) {
+		for (n = root->children; n != NULL; n = n->next) {
 			if (describe_tree(n, unpack_root))
 				return -1;
 		}

@@ -124,19 +124,19 @@ void process_command_line(options_t *opt, int argc, char **argv)
 
 		switch (i) {
 		case 'D':
-			opt->rdtree_flags |= RDTREE_NO_DEVICES;
+			opt->rdtree_flags |= SQFS_TREE_NO_DEVICES;
 			break;
 		case 'S':
-			opt->rdtree_flags |= RDTREE_NO_SOCKETS;
+			opt->rdtree_flags |= SQFS_TREE_NO_SOCKETS;
 			break;
 		case 'F':
-			opt->rdtree_flags |= RDTREE_NO_FIFO;
+			opt->rdtree_flags |= SQFS_TREE_NO_FIFO;
 			break;
 		case 'L':
-			opt->rdtree_flags |= RDTREE_NO_SLINKS;
+			opt->rdtree_flags |= SQFS_TREE_NO_SLINKS;
 			break;
 		case 'E':
-			opt->rdtree_flags |= RDTREE_NO_EMPTY;
+			opt->rdtree_flags |= SQFS_TREE_NO_EMPTY;
 			break;
 		case 'C':
 			opt->flags |= UNPACK_CHMOD;
@@ -150,7 +150,6 @@ void process_command_line(options_t *opt, int argc, char **argv)
 #ifdef HAVE_SYS_XATTR_H
 		case 'X':
 			opt->flags |= UNPACK_SET_XATTR;
-			opt->rdtree_flags |= RDTREE_READ_XATTR;
 			break;
 #endif
 		case 'T':
@@ -167,7 +166,6 @@ void process_command_line(options_t *opt, int argc, char **argv)
 			break;
 		case 'x':
 			opt->op = OP_RDATTR;
-			opt->rdtree_flags |= RDTREE_READ_XATTR;
 			opt->cmdpath = get_path(opt->cmdpath, optarg);
 			break;
 		case 'l':
@@ -200,6 +198,10 @@ void process_command_line(options_t *opt, int argc, char **argv)
 	if (opt->op == OP_NONE) {
 		fputs("No opteration specified\n", stderr);
 		goto fail_arg;
+	}
+
+	if (opt->op == OP_LS || opt->op == OP_CAT || opt->op == OP_RDATTR) {
+		opt->rdtree_flags |= SQFS_TREE_NO_RECURSE;
 	}
 
 	if (optind >= argc) {

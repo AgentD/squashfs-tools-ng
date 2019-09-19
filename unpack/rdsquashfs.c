@@ -6,32 +6,20 @@
  */
 #include "rdsquashfs.h"
 
-static void dump_xattrs(fstree_t *fs, tree_xattr_t *xattr)
-{
-	const char *key, *value;
-	size_t i;
-
-	for (i = 0; i < xattr->num_attr; ++i) {
-		key = str_table_get_string(&fs->xattr_keys,
-					   xattr->attr[i].key_index);
-		value = str_table_get_string(&fs->xattr_values,
-					     xattr->attr[i].value_index);
-
-		printf("%s=%s\n", key, value);
-	}
-}
-
 int main(int argc, char **argv)
 {
+	sqfs_xattr_reader_t *xattr = NULL;
 	sqfs_compressor_config_t cfg;
 	int status = EXIT_FAILURE;
+	sqfs_dir_reader_t *dirrd;
 	sqfs_compressor_t *cmp;
+	sqfs_id_table_t *idtbl;
+	sqfs_tree_node_t *n;
 	data_reader_t *data;
 	sqfs_super_t super;
 	sqfs_file_t *file;
-	tree_node_t *n;
 	options_t opt;
-	fstree_t fs;
+	int ret;
 
 	process_command_line(&opt, argc, argv);
 
@@ -66,26 +54,41 @@ int main(int argc, char **argv)
 			goto out_cmp;
 	}
 
-	if (super.flags & SQFS_FLAG_NO_XATTRS)
-		opt.rdtree_flags &= ~RDTREE_READ_XATTR;
+	if (!(super.flags & SQFS_FLAG_NO_XATTRS)) {
+		xattr = sqfs_xattr_reader_create(file, &super, cmp);
 
-	if (deserialize_fstree(&fs, &super, cmp, file, opt.rdtree_flags))
-		goto out_cmp;
+		if (sqfs_xattr_reader_load_locations(xattr)) {
+			fputs("Error loading xattr table\n", stderr);
+			goto out_xr;
+		}
+	}
 
-	fstree_gen_file_list(&fs);
+	idtbl = sqfs_id_table_create();
+	if (idtbl == NULL) {
+		perror("creating ID table");
+		goto out_xr;
+	}
+
+	if (sqfs_id_table_read(idtbl, file, &super, cmp)) {
+		fputs("error loading ID table\n", stderr);
+		goto out_id;
+	}
+
+	dirrd = sqfs_dir_reader_create(&super, cmp, file);
+	if (dirrd == NULL) {
+		perror("creating dir reader");
+		goto out_id;
+	}
 
 	data = data_reader_create(file, &super, cmp);
 	if (data == NULL)
-		goto out_fs;
+		goto out_dr;
 
-	if (opt.cmdpath != NULL) {
-		n = fstree_node_from_path(&fs, opt.cmdpath);
-		if (n == NULL) {
-			perror(opt.cmdpath);
-			goto out;
-		}
-	} else {
-		n = fs.root;
+	ret = sqfs_dir_reader_get_full_hierarchy(dirrd, idtbl, opt.cmdpath,
+						 opt.rdtree_flags, &n);
+	if (ret) {
+		fprintf(stderr, "error reading hierarchy: %d\n", ret);
+		goto out_data;
 	}
 
 	switch (opt.op) {
@@ -93,14 +96,13 @@ int main(int argc, char **argv)
 		list_files(n);
 		break;
 	case OP_CAT:
-		if (!S_ISREG(n->mode)) {
+		if (!S_ISREG(n->inode->base.mode)) {
 			fprintf(stderr, "/%s: not a regular file\n",
 				opt.cmdpath);
 			goto out;
 		}
 
-		if (data_reader_dump_file(data, n->data.file,
-					  STDOUT_FILENO, false))
+		if (data_reader_dump(data, n->inode, STDOUT_FILENO, false))
 			goto out;
 		break;
 	case OP_UNPACK:
@@ -115,30 +117,37 @@ int main(int argc, char **argv)
 		if (restore_fstree(n, opt.flags))
 			goto out;
 
-		if (fill_unpacked_files(&fs, data, opt.flags))
+		if (fill_unpacked_files(super.block_size, n, data, opt.flags))
 			goto out;
 
-		if (update_tree_attribs(&fs, n, opt.flags))
+		if (update_tree_attribs(xattr, n, opt.flags))
 			goto out;
 
 		if (opt.unpack_root != NULL && popd() != 0)
 			goto out;
 		break;
 	case OP_DESCRIBE:
-		if (describe_tree(fs.root, opt.unpack_root))
+		if (describe_tree(n, opt.unpack_root))
 			goto out;
 		break;
 	case OP_RDATTR:
-		if (n->xattr != NULL)
-			dump_xattrs(&fs, n->xattr);
+		if (dump_xattrs(xattr, n->inode))
+			goto out;
 		break;
 	}
 
 	status = EXIT_SUCCESS;
 out:
+	sqfs_dir_tree_destroy(n);
+out_data:
 	data_reader_destroy(data);
-out_fs:
-	fstree_cleanup(&fs);
+out_dr:
+	sqfs_dir_reader_destroy(dirrd);
+out_id:
+	sqfs_id_table_destroy(idtbl);
+out_xr:
+	if (xattr != NULL)
+		sqfs_xattr_reader_destroy(xattr);
 out_cmp:
 	cmp->destroy(cmp);
 out_file:
