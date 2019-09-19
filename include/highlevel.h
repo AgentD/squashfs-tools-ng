@@ -123,4 +123,6 @@ sqfs_inode_generic_t *tree_node_to_inode(fstree_t *fs, sqfs_id_table_t *idtbl,
 
 int inode_stat(const sqfs_tree_node_t *node, struct stat *sb);
 
+char *sqfs_tree_node_get_path(const sqfs_tree_node_t *node);
+
 #endif /* HIGHLEVEL_H */
