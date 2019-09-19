@@ -293,13 +293,6 @@ void tree_node_sort_recursive(tree_node_t *root);
 tree_node_t *fstree_node_from_path(fstree_t *fs, const char *path);
 
 /*
-  Optimize the order of the fstree file list for unpacking as to avoid
-  unpacking fragment blocks more than once and to improve locality when
-  fetching data from disk.
- */
-file_info_t *optimize_unpack_order(fstree_t *fs);
-
-/*
   Convert back to forward slashed, remove all preceeding and trailing slashes,
   collapse all sequences of slashes, remove all path components that are '.'
   and returns failure state if one of the path components is '..'.

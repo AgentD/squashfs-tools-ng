@@ -5,7 +5,7 @@
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
 #include "config.h"
-#include "fstree.h"
+#include "rdsquashfs.h"
 
 static bool has_fragment(const fstree_t *fs, const file_info_t *file)
 {

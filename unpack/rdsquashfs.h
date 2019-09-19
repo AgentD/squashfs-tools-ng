@@ -74,4 +74,6 @@ int describe_tree(tree_node_t *root, const char *unpack_root);
 
 void process_command_line(options_t *opt, int argc, char **argv);
 
+file_info_t *optimize_unpack_order(fstree_t *fs);
+
 #endif /* RDSQUASHFS_H */

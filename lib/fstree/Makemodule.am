@@ -5,7 +5,6 @@ libfstree_a_SOURCES += lib/fstree/node_stat.c lib/fstree/mknode.c
 libfstree_a_SOURCES += lib/fstree/add_by_path.c lib/fstree/xattr.c
 libfstree_a_SOURCES += lib/fstree/node_from_path.c include/fstree.h
 libfstree_a_SOURCES += lib/fstree/gen_file_list.c
-libfstree_a_SOURCES += lib/fstree/optimize_unpack_order.c
 libfstree_a_SOURCES += lib/fstree/canonicalize_name.c
 libfstree_a_SOURCES += lib/fstree/source_date_epoch.c
 libfstree_a_CFLAGS = $(AM_CFLAGS) $(LIBSELINUX_CFLAGS)
