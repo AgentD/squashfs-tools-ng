@@ -293,15 +293,6 @@ void tree_node_sort_recursive(tree_node_t *root);
 tree_node_t *fstree_node_from_path(fstree_t *fs, const char *path);
 
 /*
-  Convert back to forward slashed, remove all preceeding and trailing slashes,
-  collapse all sequences of slashes, remove all path components that are '.'
-  and returns failure state if one of the path components is '..'.
-
-  Returns 0 on success.
-*/
-int canonicalize_name(char *filename);
-
-/*
   If the environment variable SOURCE_DATE_EPOCH is set to a parsable number
   that fits into an unsigned 32 bit value, return its value. Otherwise,
   default to 0.

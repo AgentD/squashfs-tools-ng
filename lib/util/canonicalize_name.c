@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* SPDX-License-Identifier: LGPL-3.0-or-later */
 /*
  * canonicalize_name.c
  *
@@ -6,7 +6,7 @@
  */
 #include "config.h"
 
-#include "fstree.h"
+#include "util.h"
 
 static void normalize_slashes(char *filename)
 {

@@ -4,6 +4,7 @@ libutil_la_SOURCES += lib/util/mkdir_p.c
 libutil_la_SOURCES += lib/util/str_table.c include/str_table.h
 libutil_la_SOURCES += lib/util/dirstack.c lib/util/padd_file.c
 libutil_la_SOURCES += lib/util/read_data_at.c lib/util/alloc.c
+libutil_la_SOURCES += lib/util/canonicalize_name.c
 libutil_la_CFLAGS = $(AM_CFLAGS)
 libutil_la_CPPFLAGS = $(AM_CPPFLAGS)
 
