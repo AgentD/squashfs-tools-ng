@@ -35,11 +35,6 @@ typedef struct {
 } sqfs_reader_t;
 
 enum RDTREE_FLAGS {
-	RDTREE_NO_DEVICES = 0x01,
-	RDTREE_NO_SOCKETS = 0x02,
-	RDTREE_NO_FIFO = 0x04,
-	RDTREE_NO_SLINKS = 0x08,
-	RDTREE_NO_EMPTY = 0x10,
 	RDTREE_READ_XATTR = 0x20,
 };
 

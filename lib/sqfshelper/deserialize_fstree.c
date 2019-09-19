@@ -15,27 +15,6 @@
 #include <string.h>
 #include <stdio.h>
 
-static int should_skip(int type, int flags)
-{
-	switch (type) {
-	case SQFS_INODE_BDEV:
-	case SQFS_INODE_CDEV:
-	case SQFS_INODE_EXT_CDEV:
-	case SQFS_INODE_EXT_BDEV:
-		return (flags & RDTREE_NO_DEVICES);
-	case SQFS_INODE_SLINK:
-	case SQFS_INODE_EXT_SLINK:
-		return (flags & RDTREE_NO_SLINKS);
-	case SQFS_INODE_SOCKET:
-	case SQFS_INODE_EXT_SOCKET:
-		return(flags & RDTREE_NO_SOCKETS);
-	case SQFS_INODE_FIFO:
-	case SQFS_INODE_EXT_FIFO:
-		return (flags & RDTREE_NO_FIFO);
-	}
-	return 0;
-}
-
 static int restore_xattr(sqfs_xattr_reader_t *xr, fstree_t *fs,
 			 tree_node_t *node, sqfs_inode_generic_t *inode)
 {
@@ -99,7 +78,7 @@ static int fill_dir(sqfs_dir_reader_t *dr,
 {
 	sqfs_inode_generic_t *inode;
 	sqfs_dir_entry_t *ent;
-	tree_node_t *n, *prev;
+	tree_node_t *n;
 	int err;
 
 	for (;;) {
@@ -108,11 +87,6 @@ static int fill_dir(sqfs_dir_reader_t *dr,
 			break;
 		if (err < 0)
 			return -1;
-
-		if (should_skip(ent->type, flags)) {
-			free(ent);
-			continue;
-		}
 
 		if (!is_name_sane((const char *)ent->name)) {
 			free(ent);
@@ -159,10 +133,7 @@ static int fill_dir(sqfs_dir_reader_t *dr,
 		root->data.dir->children = n;
 	}
 
-	n = root->data.dir->children;
-	prev = NULL;
-
-	while (n != NULL) {
+	for (n = root->data.dir->children; n != NULL; n = n->next) {
 		if (S_ISDIR(n->mode)) {
 			err = sqfs_dir_reader_open_dir(dr, n->inode);
 			if (err)
@@ -170,28 +141,10 @@ static int fill_dir(sqfs_dir_reader_t *dr,
 
 			if (fill_dir(dr, n, idtbl, fs, xr, flags))
 				return -1;
-
-			if (n->data.dir->children == NULL &&
-			    (flags & RDTREE_NO_EMPTY)) {
-				free(n->inode);
-				if (prev == NULL) {
-					root->data.dir->children = n->next;
-					free(n);
-					n = root->data.dir->children;
-				} else {
-					prev->next = n->next;
-					free(n);
-					n = prev->next;
-				}
-				continue;
-			}
 		}
 
 		free(n->inode);
 		n->inode = NULL;
-
-		prev = n;
-		n = n->next;
 	}
 
 	return 0;
