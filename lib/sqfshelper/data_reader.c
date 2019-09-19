@@ -172,6 +172,81 @@ void data_reader_destroy(data_reader_t *data)
 	free(data);
 }
 
+int data_reader_dump(data_reader_t *data, const sqfs_inode_generic_t *inode,
+		     int outfd, bool allow_sparse)
+{
+	uint32_t frag_idx, frag_off;
+	uint64_t filesz;
+	size_t i, diff;
+	off_t off;
+
+	if (inode->base.type == SQFS_INODE_FILE) {
+		filesz = inode->data.file.file_size;
+		off = inode->data.file.blocks_start;
+		frag_idx = inode->data.file.fragment_index;
+		frag_off = inode->data.file.fragment_offset;
+	} else if (inode->base.type == SQFS_INODE_EXT_FILE) {
+		filesz = inode->data.file_ext.file_size;
+		off = inode->data.file_ext.blocks_start;
+		frag_idx = inode->data.file_ext.fragment_idx;
+		frag_off = inode->data.file_ext.fragment_offset;
+	} else {
+		return -1;
+	}
+
+	if (allow_sparse && ftruncate(outfd, filesz))
+		goto fail_sparse;
+
+	for (i = 0; i < inode->num_file_blocks; ++i) {
+		diff = filesz > data->block_size ? data->block_size : filesz;
+		filesz -= diff;
+
+		if (SQFS_IS_SPARSE_BLOCK(inode->block_sizes[i])) {
+			if (allow_sparse) {
+				if (lseek(outfd, diff, SEEK_CUR) == (off_t)-1)
+					goto fail_sparse;
+				continue;
+			}
+			memset(data->block, 0, diff);
+		} else {
+			if (precache_data_block(data, off,
+						inode->block_sizes[i]))
+				return -1;
+			off += SQFS_ON_DISK_BLOCK_SIZE(inode->block_sizes[i]);
+		}
+
+		if (write_data("writing uncompressed block",
+			       outfd, data->block, diff)) {
+			return -1;
+		}
+	}
+
+	if (filesz > 0 && frag_off != 0xFFFFFFFF) {
+		if (precache_fragment_block(data, frag_idx))
+			return -1;
+
+		if (frag_off >= data->frag_used)
+			goto fail_range;
+
+		if ((frag_off + filesz - 1) >= data->frag_used)
+			goto fail_range;
+
+		if (write_data("writing uncompressed fragment", outfd,
+			       (char *)data->frag_block + frag_off,
+			       filesz)) {
+			return -1;
+		}
+	}
+
+	return 0;
+fail_range:
+	fputs("attempted to read past fragment block limits\n", stderr);
+	return -1;
+fail_sparse:
+	perror("creating sparse output file");
+	return -1;
+}
+
 int data_reader_dump_file(data_reader_t *data, file_info_t *fi, int outfd,
 			  bool allow_sparse)
 {

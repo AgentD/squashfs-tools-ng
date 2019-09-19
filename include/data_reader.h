@@ -28,6 +28,9 @@ data_reader_t *data_reader_create(sqfs_file_t *file, sqfs_super_t *super,
 
 void data_reader_destroy(data_reader_t *data);
 
+int data_reader_dump(data_reader_t *data, const sqfs_inode_generic_t *inode,
+		     int outfd, bool allow_sparse);
+
 /*
   Use a file_info_t to locate and extract all blocks of the coresponding
   file and its fragment, if it has one. The entire data is dumped to the
