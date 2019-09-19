@@ -81,6 +81,11 @@ static char **subdirs = NULL;
 static size_t num_subdirs = 0;
 static size_t max_subdirs = 0;
 
+static fstree_t fs;
+static data_reader_t *data;
+static sqfs_file_t *file;
+static sqfs_super_t super;
+
 static void process_args(int argc, char **argv)
 {
 	size_t idx, new_count;
@@ -181,7 +186,7 @@ static int terminate_archive(void)
 			  buffer, sizeof(buffer));
 }
 
-static tar_xattr_t *gen_xattr_list(fstree_t *fs, tree_xattr_t *xattr)
+static tar_xattr_t *gen_xattr_list(tree_xattr_t *xattr)
 {
 	const char *key, *value;
 	tar_xattr_t *list;
@@ -194,9 +199,9 @@ static tar_xattr_t *gen_xattr_list(fstree_t *fs, tree_xattr_t *xattr)
 	}
 
 	for (i = 0; i < xattr->num_attr; ++i) {
-		key = str_table_get_string(&fs->xattr_keys,
+		key = str_table_get_string(&fs.xattr_keys,
 					   xattr->attr[i].key_index);
-		value = str_table_get_string(&fs->xattr_values,
+		value = str_table_get_string(&fs.xattr_values,
 					     xattr->attr[i].value_index);
 
 		list[i].key = (char *)key;
@@ -212,7 +217,7 @@ static tar_xattr_t *gen_xattr_list(fstree_t *fs, tree_xattr_t *xattr)
 	return list;
 }
 
-static int write_tree_dfs(fstree_t *fs, tree_node_t *n, data_reader_t *data)
+static int write_tree_dfs(tree_node_t *n)
 {
 	tar_xattr_t *xattr = NULL;
 	size_t len, name_len;
@@ -247,10 +252,10 @@ static int write_tree_dfs(fstree_t *fs, tree_node_t *n, data_reader_t *data)
 		memmove(name, name + len + 1, name_len - len);
 	}
 
-	fstree_node_stat(fs, n, &sb);
+	fstree_node_stat(&fs, n, &sb);
 
 	if (!no_xattr && n->xattr != NULL) {
-		xattr = gen_xattr_list(fs, n->xattr);
+		xattr = gen_xattr_list(n->xattr);
 		if (xattr == NULL) {
 			free(name);
 			return -1;
@@ -292,7 +297,7 @@ static int write_tree_dfs(fstree_t *fs, tree_node_t *n, data_reader_t *data)
 skip_hdr:
 	if (S_ISDIR(n->mode)) {
 		for (n = n->data.dir->children; n != NULL; n = n->next) {
-			if (write_tree_dfs(fs, n, data))
+			if (write_tree_dfs(n))
 				return -1;
 		}
 	}
@@ -305,11 +310,7 @@ int main(int argc, char **argv)
 	int rdtree_flags = 0, status = EXIT_FAILURE;
 	sqfs_compressor_config_t cfg;
 	sqfs_compressor_t *cmp;
-	data_reader_t *data;
-	sqfs_file_t *file;
-	sqfs_super_t super;
 	tree_node_t *root;
-	fstree_t fs;
 	size_t i;
 
 	process_args(argc, argv);
@@ -369,14 +370,14 @@ int main(int argc, char **argv)
 
 		current_subdir = subdirs[i];
 
-		if (write_tree_dfs(&fs, root, data))
+		if (write_tree_dfs(root))
 			goto out;
 	}
 
 	current_subdir = NULL;
 
 	if (num_subdirs == 0) {
-		if (write_tree_dfs(&fs, fs.root, data))
+		if (write_tree_dfs(fs.root))
 			goto out;
 	}
 
