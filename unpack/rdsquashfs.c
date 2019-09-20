@@ -102,7 +102,8 @@ int main(int argc, char **argv)
 			goto out;
 		}
 
-		if (data_reader_dump(data, n->inode, STDOUT_FILENO, false))
+		if (data_reader_dump(data, n->inode, STDOUT_FILENO,
+				     super.block_size, false))
 			goto out;
 		break;
 	case OP_UNPACK:

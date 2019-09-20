@@ -317,7 +317,8 @@ static int write_tree_dfs(const sqfs_tree_node_t *n)
 		return -1;
 
 	if (S_ISREG(sb.st_mode)) {
-		if (data_reader_dump(data, n->inode, STDOUT_FILENO, false))
+		if (data_reader_dump(data, n->inode, STDOUT_FILENO,
+				     super.block_size, false))
 			return -1;
 
 		if (padd_file(STDOUT_FILENO, sb.st_size, 512))

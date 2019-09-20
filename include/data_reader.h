@@ -28,8 +28,16 @@ data_reader_t *data_reader_create(sqfs_file_t *file, sqfs_super_t *super,
 
 void data_reader_destroy(data_reader_t *data);
 
+int data_reader_get_fragment(data_reader_t *data,
+			     const sqfs_inode_generic_t *inode,
+			     sqfs_block_t **out);
+
+int data_reader_get_block(data_reader_t *data,
+			  const sqfs_inode_generic_t *inode,
+			  size_t index, sqfs_block_t **out);
+
 int data_reader_dump(data_reader_t *data, const sqfs_inode_generic_t *inode,
-		     int outfd, bool allow_sparse);
+		     int outfd, size_t block_size, bool allow_sparse);
 
 /*
   Read a chunk of data from a file. Starting from 'offset' into the

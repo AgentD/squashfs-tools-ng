@@ -6,6 +6,9 @@
  */
 #include "config.h"
 
+#include "sqfs/block_processor.h"
+#include "sqfs/error.h"
+
 #include "data_reader.h"
 #include "highlevel.h"
 #include "util.h"
@@ -31,6 +34,55 @@ struct data_reader_t {
 	void *scratch;
 	void *frag_block;
 };
+
+static int get_block(data_reader_t *data, uint64_t off, uint32_t size,
+		     size_t unpacked_size, sqfs_block_t **out)
+{
+	sqfs_block_t *blk = alloc_flex(sizeof(*blk), 1, unpacked_size);
+	size_t on_disk_size;
+	ssize_t ret;
+	int err;
+
+	if (blk == NULL)
+		return SQFS_ERROR_ALLOC;
+
+	blk->size = unpacked_size;
+
+	if (SQFS_IS_SPARSE_BLOCK(size)) {
+		*out = blk;
+		return 0;
+	}
+
+	on_disk_size = SQFS_ON_DISK_BLOCK_SIZE(size);
+
+	if (on_disk_size > unpacked_size)
+		return SQFS_ERROR_OVERFLOW;
+
+	if (SQFS_IS_BLOCK_COMPRESSED(size)) {
+		err = data->file->read_at(data->file, off,
+					  data->scratch, on_disk_size);
+		if (err) {
+			free(blk);
+			return err;
+		}
+
+		ret = data->cmp->do_block(data->cmp, data->scratch,
+					  on_disk_size, blk->data, blk->size);
+		if (ret <= 0)
+			err = ret < 0 ? ret : SQFS_ERROR_OVERFLOW;
+	} else {
+		err = data->file->read_at(data->file, off,
+					  blk->data, on_disk_size);
+	}
+
+	if (err) {
+		free(blk);
+		return err;
+	}
+
+	*out = blk;
+	return 0;
+}
 
 static ssize_t read_block(data_reader_t *data, off_t offset, uint32_t size,
 			  void *dst)
@@ -172,79 +224,79 @@ void data_reader_destroy(data_reader_t *data)
 	free(data);
 }
 
-int data_reader_dump(data_reader_t *data, const sqfs_inode_generic_t *inode,
-		     int outfd, bool allow_sparse)
+int data_reader_get_block(data_reader_t *data,
+			  const sqfs_inode_generic_t *inode,
+			  size_t index, sqfs_block_t **out)
 {
-	uint32_t frag_idx, frag_off;
-	uint64_t filesz;
-	size_t i, diff;
-	off_t off;
+	size_t i, unpacked_size;
+	uint64_t off, filesz;
 
 	if (inode->base.type == SQFS_INODE_FILE) {
-		filesz = inode->data.file.file_size;
 		off = inode->data.file.blocks_start;
-		frag_idx = inode->data.file.fragment_index;
-		frag_off = inode->data.file.fragment_offset;
+		filesz = inode->data.file.file_size;
 	} else if (inode->base.type == SQFS_INODE_EXT_FILE) {
-		filesz = inode->data.file_ext.file_size;
 		off = inode->data.file_ext.blocks_start;
+		filesz = inode->data.file_ext.file_size;
+	} else {
+		return SQFS_ERROR_NOT_FILE;
+	}
+
+	if (index >= inode->num_file_blocks)
+		return SQFS_ERROR_OUT_OF_BOUNDS;
+
+	for (i = 0; i < index; ++i) {
+		off += SQFS_ON_DISK_BLOCK_SIZE(inode->block_sizes[i]);
+		filesz -= data->block_size;
+	}
+
+	unpacked_size = filesz < data->block_size ? filesz : data->block_size;
+
+	return get_block(data, off, inode->block_sizes[index],
+			 unpacked_size, out);
+}
+
+int data_reader_get_fragment(data_reader_t *data,
+			     const sqfs_inode_generic_t *inode,
+			     sqfs_block_t **out)
+{
+	uint32_t frag_idx, frag_off, frag_sz;
+	sqfs_block_t *blk;
+	uint64_t filesz;
+
+	if (inode->base.type == SQFS_INODE_EXT_FILE) {
+		filesz = inode->data.file_ext.file_size;
 		frag_idx = inode->data.file_ext.fragment_idx;
 		frag_off = inode->data.file_ext.fragment_offset;
+	} else if (inode->base.type == SQFS_INODE_FILE) {
+		filesz = inode->data.file.file_size;
+		frag_idx = inode->data.file.fragment_index;
+		frag_off = inode->data.file.fragment_offset;
 	} else {
 		return -1;
 	}
 
-	if (allow_sparse && ftruncate(outfd, filesz))
-		goto fail_sparse;
-
-	for (i = 0; i < inode->num_file_blocks; ++i) {
-		diff = filesz > data->block_size ? data->block_size : filesz;
-		filesz -= diff;
-
-		if (SQFS_IS_SPARSE_BLOCK(inode->block_sizes[i])) {
-			if (allow_sparse) {
-				if (lseek(outfd, diff, SEEK_CUR) == (off_t)-1)
-					goto fail_sparse;
-				continue;
-			}
-			memset(data->block, 0, diff);
-		} else {
-			if (precache_data_block(data, off,
-						inode->block_sizes[i]))
-				return -1;
-			off += SQFS_ON_DISK_BLOCK_SIZE(inode->block_sizes[i]);
-		}
-
-		if (write_data("writing uncompressed block",
-			       outfd, data->block, diff)) {
-			return -1;
-		}
+	if (inode->num_file_blocks * data->block_size >= filesz) {
+		*out = NULL;
+		return 0;
 	}
 
-	if (filesz > 0 && frag_off != 0xFFFFFFFF) {
-		if (precache_fragment_block(data, frag_idx))
-			return -1;
+	frag_sz = filesz % data->block_size;
 
-		if (frag_off >= data->frag_used)
-			goto fail_range;
+	if (precache_fragment_block(data, frag_idx))
+		return -1;
 
-		if ((frag_off + filesz - 1) >= data->frag_used)
-			goto fail_range;
+	if (frag_off + frag_sz > data->frag_used)
+		return -1;
 
-		if (write_data("writing uncompressed fragment", outfd,
-			       (char *)data->frag_block + frag_off,
-			       filesz)) {
-			return -1;
-		}
-	}
+	blk = alloc_flex(sizeof(*blk), 1, frag_sz);
+	if (blk == NULL)
+		return -1;
 
+	blk->size = frag_sz;
+	memcpy(blk->data, (char *)data->frag_block + frag_off, frag_sz);
+
+	*out = blk;
 	return 0;
-fail_range:
-	fputs("attempted to read past fragment block limits\n", stderr);
-	return -1;
-fail_sparse:
-	perror("creating sparse output file");
-	return -1;
 }
 
 ssize_t data_reader_read(data_reader_t *data,
