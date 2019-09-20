@@ -28,7 +28,7 @@ int main(int argc, char **argv)
 		if (errno == ENOTDIR) {
 			sd.old_is_dir = false;
 
-			if (sqfs_reader_open(&sd.sqfs_old, sd.old_path, 0))
+			if (sqfs_reader_open(&sd.sqfs_old, sd.old_path))
 				return 2;
 		} else {
 			perror(sd.old_path);
@@ -54,7 +54,7 @@ int main(int argc, char **argv)
 		if (errno == ENOTDIR) {
 			sd.new_is_dir = false;
 
-			if (sqfs_reader_open(&sd.sqfs_new, sd.new_path, 0)) {
+			if (sqfs_reader_open(&sd.sqfs_new, sd.new_path)) {
 				status = 2;
 				goto out_sqfs_old;
 			}

@@ -34,10 +34,6 @@ typedef struct {
 	fstree_t fs;
 } sqfs_reader_t;
 
-enum RDTREE_FLAGS {
-	RDTREE_READ_XATTR = 0x20,
-};
-
 /*
   High level helper function to serialize an entire file system tree to
   a squashfs inode table and directory table.
@@ -63,13 +59,12 @@ tree_node_t *tree_node_from_inode(sqfs_inode_generic_t *inode,
 				  const char *name);
 
 /*
-  Restore a file system tree from a squashfs image. The given flags are a
-  combination of RDTREE_FLAGS.
+  Restore a file system tree from a squashfs image.
 
   Returns 0 on success. Prints error messages to stderr on failure.
  */
 int deserialize_fstree(fstree_t *out, sqfs_super_t *super,
-		       sqfs_compressor_t *cmp, sqfs_file_t *file, int flags);
+		       sqfs_compressor_t *cmp, sqfs_file_t *file);
 
 /*
   Generate a squahfs xattr table from a file system tree.
@@ -94,8 +89,7 @@ void sqfs_print_statistics(sqfs_super_t *super, data_writer_stats_t *stats);
    construct datastructures we need to access its contents.
    Returns 0 on success. Prints error messages to stderr on failure.
 */
-int sqfs_reader_open(sqfs_reader_t *rd, const char *filename,
-		     int rdtree_flags);
+int sqfs_reader_open(sqfs_reader_t *rd, const char *filename);
 
 /* Cleanup after a successfull sqfs_reader_open */
 void sqfs_reader_close(sqfs_reader_t *rd);

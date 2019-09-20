@@ -12,7 +12,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-int sqfs_reader_open(sqfs_reader_t *rd, const char *filename, int rdtree_flags)
+int sqfs_reader_open(sqfs_reader_t *rd, const char *filename)
 {
 	sqfs_compressor_config_t cfg;
 
@@ -43,13 +43,8 @@ int sqfs_reader_open(sqfs_reader_t *rd, const char *filename, int rdtree_flags)
 			goto fail_cmp;
 	}
 
-	if (rd->super.flags & SQFS_FLAG_NO_XATTRS)
-		rdtree_flags &= ~RDTREE_READ_XATTR;
-
-	if (deserialize_fstree(&rd->fs, &rd->super, rd->cmp, rd->file,
-			       rdtree_flags)) {
+	if (deserialize_fstree(&rd->fs, &rd->super, rd->cmp, rd->file))
 		goto fail_cmp;
-	}
 
 	fstree_gen_file_list(&rd->fs);
 

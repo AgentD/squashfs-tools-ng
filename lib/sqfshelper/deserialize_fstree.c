@@ -15,36 +15,6 @@
 #include <string.h>
 #include <stdio.h>
 
-static int restore_xattr(sqfs_xattr_reader_t *xr, fstree_t *fs,
-			 tree_node_t *node, sqfs_inode_generic_t *inode)
-{
-	uint32_t idx;
-
-	switch (inode->base.type) {
-	case SQFS_INODE_EXT_DIR:
-		idx = inode->data.dir_ext.xattr_idx;
-		break;
-	case SQFS_INODE_EXT_FILE:
-		idx = inode->data.file_ext.xattr_idx;
-		break;
-	case SQFS_INODE_EXT_SLINK:
-		idx = inode->data.slink_ext.xattr_idx;
-		break;
-	case SQFS_INODE_EXT_BDEV:
-	case SQFS_INODE_EXT_CDEV:
-		idx = inode->data.dev_ext.xattr_idx;
-		break;
-	case SQFS_INODE_EXT_FIFO:
-	case SQFS_INODE_EXT_SOCKET:
-		idx = inode->data.ipc_ext.xattr_idx;
-		break;
-	default:
-		return 0;
-	}
-
-	return xattr_reader_restore_node(xr, fs, node, idx);
-}
-
 static bool node_would_be_own_parent(tree_node_t *root, tree_node_t *n)
 {
 	while (root != NULL) {
@@ -74,7 +44,7 @@ fail:
 
 static int fill_dir(sqfs_dir_reader_t *dr,
 		    tree_node_t *root, sqfs_id_table_t *idtbl,
-		    fstree_t *fs, sqfs_xattr_reader_t *xr, int flags)
+		    fstree_t *fs)
 {
 	sqfs_inode_generic_t *inode;
 	sqfs_dir_entry_t *ent;
@@ -116,15 +86,6 @@ static int fill_dir(sqfs_dir_reader_t *dr,
 			continue;
 		}
 
-		if (flags & RDTREE_READ_XATTR) {
-			if (restore_xattr(xr, fs, n, inode)) {
-				free(n);
-				free(ent);
-				free(inode);
-				return -1;
-			}
-		}
-
 		free(ent);
 
 		n->inode = inode;
@@ -139,7 +100,7 @@ static int fill_dir(sqfs_dir_reader_t *dr,
 			if (err)
 				return -1;
 
-			if (fill_dir(dr, n, idtbl, fs, xr, flags))
+			if (fill_dir(dr, n, idtbl, fs))
 				return -1;
 		}
 
@@ -151,10 +112,9 @@ static int fill_dir(sqfs_dir_reader_t *dr,
 }
 
 int deserialize_fstree(fstree_t *out, sqfs_super_t *super,
-		       sqfs_compressor_t *cmp, sqfs_file_t *file, int flags)
+		       sqfs_compressor_t *cmp, sqfs_file_t *file)
 {
 	sqfs_inode_generic_t *root;
-	sqfs_xattr_reader_t *xr;
 	sqfs_id_table_t *idtbl;
 	sqfs_dir_reader_t *dr;
 	int status = -1;
@@ -170,22 +130,15 @@ int deserialize_fstree(fstree_t *out, sqfs_super_t *super,
 	if (sqfs_id_table_read(idtbl, file, super, cmp))
 		goto out_id;
 
-	xr = sqfs_xattr_reader_create(file, super, cmp);
-	if (xr == NULL)
-		goto out_id;
-
-	if (sqfs_xattr_reader_load_locations(xr))
-		goto out_xr;
-
 	if (sqfs_dir_reader_get_root_inode(dr, &root))
-		goto out_xr;
+		goto out_id;
 
 	if (root->base.type != SQFS_INODE_DIR &&
 	    root->base.type != SQFS_INODE_EXT_DIR) {
 		free(root);
 		fputs("File system root inode is not a directory inode!\n",
 		      stderr);
-		goto out_xr;
+		goto out_id;
 	}
 
 	memset(out, 0, sizeof(*out));
@@ -199,26 +152,7 @@ int deserialize_fstree(fstree_t *out, sqfs_super_t *super,
 
 	if (out->root == NULL) {
 		free(root);
-		goto out_xr;
-	}
-
-	if (flags & RDTREE_READ_XATTR) {
-		if (str_table_init(&out->xattr_keys,
-				   FSTREE_XATTR_KEY_BUCKETS)) {
-			free(root);
-			goto fail_fs;
-		}
-
-		if (str_table_init(&out->xattr_values,
-				   FSTREE_XATTR_VALUE_BUCKETS)) {
-			free(root);
-			goto fail_fs;
-		}
-
-		if (restore_xattr(xr, out, out->root, root)) {
-			free(root);
-			goto fail_fs;
-		}
+		goto out_id;
 	}
 
 	if (sqfs_dir_reader_open_dir(dr, root)) {
@@ -228,14 +162,12 @@ int deserialize_fstree(fstree_t *out, sqfs_super_t *super,
 
 	free(root);
 
-	if (fill_dir(dr, out->root, idtbl, out, xr, flags))
+	if (fill_dir(dr, out->root, idtbl, out))
 		goto fail_fs;
 
 	tree_node_sort_recursive(out->root);
 
 	status = 0;
-out_xr:
-	sqfs_xattr_reader_destroy(xr);
 out_id:
 	sqfs_id_table_destroy(idtbl);
 out_dr:
@@ -243,5 +175,5 @@ out_dr:
 	return status;
 fail_fs:
 	fstree_cleanup(out);
-	goto out_xr;
+	goto out_id;
 }
