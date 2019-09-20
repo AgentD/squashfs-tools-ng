@@ -13,7 +13,6 @@
 #include "fstree.h"
 #include "util.h"
 
-#include <sys/mman.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <getopt.h>
@@ -29,14 +28,8 @@ typedef struct {
 	int compare_flags;
 	sqfs_reader_t sqfs_old;
 	sqfs_reader_t sqfs_new;
-	bool old_is_dir;
-	bool new_is_dir;
 	bool compare_super;
 	const char *extract_dir;
-
-	/* holds the coresponding dirfds if old or new is a directory */
-	int old_fd;
-	int new_fd;
 } sqfsdiff_t;
 
 enum {

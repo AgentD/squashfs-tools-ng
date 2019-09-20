@@ -9,12 +9,8 @@ Compare two squashfs images. In contrast to doing a direct diff of the
 images, this actually parses the filesystems and generates a more
 meaningful difference report.
 .PP
-The tool can also compare the contents of a squashfs image to a directory.
-This case is detected transparently if \fB\-\-new\fR or \fB\-\-old\fR referes
-to a directory instead of a squashfs image.
-.PP
 If only contents are compared, any differences in packed file layout,
-ordering, compression, inode allocation and so on is ignored and the two
+ordering, compression, inode meta data and so on is ignored and the two
 images are considered equal if each directory contains the same entries,
 symlink with the same paths have the same targets, device nodes the same
 device number and files the same size and contents.
@@ -48,7 +44,7 @@ Compare file timestamps.
 Compare inode numbers of all files.
 .TP
 \fB\-\-super\fR, \fB\-S\fR
-Also compare metadata in super blocks.
+Also compare meta data in super blocks.
 .TP
 \fB\-\-extract\fR, \fB\-e\fR <path>
 Extract files that exist in both images but have different contents to the
