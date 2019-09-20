@@ -10,7 +10,6 @@
 #include "sqfs/compress.h"
 #include "data_reader.h"
 #include "highlevel.h"
-#include "fstree.h"
 #include "util.h"
 #include "tar.h"
 
@@ -75,13 +74,11 @@ static bool dont_skip = false;
 static bool keep_as_dir = false;
 static bool no_xattr = false;
 
-static const char *current_subdir = NULL;
-
 static char **subdirs = NULL;
 static size_t num_subdirs = 0;
 static size_t max_subdirs = 0;
 
-static fstree_t fs;
+static sqfs_xattr_reader_t *xr;
 static data_reader_t *data;
 static sqfs_file_t *file;
 static sqfs_super_t super;
@@ -186,137 +183,214 @@ static int terminate_archive(void)
 			  buffer, sizeof(buffer));
 }
 
-static tar_xattr_t *gen_xattr_list(tree_xattr_t *xattr)
+static int get_xattrs(const sqfs_inode_generic_t *inode, tar_xattr_t **out)
 {
-	const char *key, *value;
-	tar_xattr_t *list;
+	tar_xattr_t *list = NULL, *ent;
+	sqfs_xattr_value_t *value;
+	sqfs_xattr_entry_t *key;
+	sqfs_xattr_id_t desc;
+	uint32_t index;
 	size_t i;
 
-	list = alloc_array(sizeof(list[0]), xattr->num_attr);
-	if (list == NULL) {
-		perror("creating xattr list");
-		return NULL;
+	if (xr == NULL)
+		return 0;
+
+	switch (inode->base.type) {
+	case SQFS_INODE_EXT_DIR:
+		index = inode->data.dir_ext.xattr_idx;
+		break;
+	case SQFS_INODE_EXT_FILE:
+		index = inode->data.file_ext.xattr_idx;
+		break;
+	case SQFS_INODE_EXT_SLINK:
+		index = inode->data.slink_ext.xattr_idx;
+		break;
+	case SQFS_INODE_EXT_BDEV:
+	case SQFS_INODE_EXT_CDEV:
+		index = inode->data.dev_ext.xattr_idx;
+		break;
+	case SQFS_INODE_EXT_FIFO:
+	case SQFS_INODE_EXT_SOCKET:
+		index = inode->data.ipc_ext.xattr_idx;
+		break;
+	default:
+		return 0;
 	}
 
-	for (i = 0; i < xattr->num_attr; ++i) {
-		key = str_table_get_string(&fs.xattr_keys,
-					   xattr->attr[i].key_index);
-		value = str_table_get_string(&fs.xattr_values,
-					     xattr->attr[i].value_index);
+	if (index == 0xFFFFFFFF)
+		return 0;
 
-		list[i].key = (char *)key;
-		list[i].value = (char *)value;
+	if (sqfs_xattr_reader_get_desc(xr, index, &desc)) {
+		fputs("Error resolving xattr index\n", stderr);
+		return -1;
+	}
 
-		if (i + 1 < xattr->num_attr) {
-			list[i].next = list + i + 1;
-		} else {
-			list[i].next = NULL;
+	if (sqfs_xattr_reader_seek_kv(xr, &desc)) {
+		fputs("Error locating xattr key-value pairs\n", stderr);
+		return -1;
+	}
+
+	for (i = 0; i < desc.count; ++i) {
+		if (sqfs_xattr_reader_read_key(xr, &key)) {
+			fputs("Error reading xattr key\n", stderr);
+			return -1;
 		}
+
+		if (sqfs_xattr_reader_read_value(xr, key, &value)) {
+			fputs("Error reading xattr value\n", stderr);
+			free(key);
+			return -1;
+		}
+
+		ent = calloc(1, sizeof(*ent) + strlen((const char *)key->key) +
+			     value->size + 2);
+		if (ent == NULL) {
+			perror("creating xattr entry");
+			goto fail;
+		}
+
+		ent->key = ent->data;
+		strcpy(ent->key, (const char *)key->key);
+
+		ent->value = ent->key + strlen(ent->key) + 1;
+		memcpy(ent->value, value->value, value->size + 1);
+
+		ent->next = list;
+		list = ent;
+
+		free(key);
+		free(value);
 	}
 
-	return list;
+	*out = list;
+	return 0;
+fail:
+	while (list != NULL) {
+		ent = list;
+		list = list->next;
+		free(ent);
+	}
+	return -1;
 }
 
-static int write_tree_dfs(tree_node_t *n)
+static int write_tree_dfs(const sqfs_tree_node_t *n)
 {
-	tar_xattr_t *xattr = NULL;
-	size_t len, name_len;
+	tar_xattr_t *xattr = NULL, *xit;
 	char *name, *target;
 	struct stat sb;
 	int ret;
 
-	if (n->parent == NULL && S_ISDIR(n->mode))
+	if (n->parent == NULL && S_ISDIR(n->inode->base.mode))
 		goto skip_hdr;
 
-	name = fstree_get_path(n);
+	name = sqfs_tree_node_get_path(n);
 	if (name == NULL) {
 		perror("resolving tree node path");
 		return -1;
 	}
 
-	ret = canonicalize_name(name);
-	assert(ret == 0);
+	if (canonicalize_name(name))
+		goto out_skip;
 
-	if (current_subdir != NULL && !keep_as_dir) {
-		if (strcmp(name, current_subdir) == 0) {
-			free(name);
-			goto skip_hdr;
-		}
+	inode_stat(n, &sb);
 
-		len = strlen(current_subdir);
-		name_len = strlen(name);
-
-		assert(name_len > len);
-		assert(name[len] == '/');
-
-		memmove(name, name + len + 1, name_len - len);
-	}
-
-	fstree_node_stat(&fs, n, &sb);
-
-	if (!no_xattr && n->xattr != NULL) {
-		xattr = gen_xattr_list(n->xattr);
-		if (xattr == NULL) {
-			free(name);
+	if (!no_xattr) {
+		if (get_xattrs(n->inode, &xattr))
 			return -1;
-		}
 	}
 
-	target = S_ISLNK(sb.st_mode) ? n->data.slink_target : NULL;
+	target = S_ISLNK(sb.st_mode) ? n->inode->slink_target : NULL;
 	ret = write_tar_header(STDOUT_FILENO, &sb, name, target, xattr,
 			       record_counter++);
-	free(xattr);
 
-	if (ret > 0) {
-		if (dont_skip) {
-			fputs("Not allowed to skip files, aborting!\n",
-			      stderr);
-			ret = -1;
-		} else {
-			fprintf(stderr, "Skipping %s\n", name);
-			ret = 0;
-		}
-		free(name);
-		return ret;
+	while (xattr != NULL) {
+		xit = xattr;
+		xattr = xattr->next;
+		free(xit);
 	}
 
-	free(name);
+	if (ret > 0)
+		goto out_skip;
 
+	free(name);
 	if (ret < 0)
 		return -1;
 
-	if (S_ISREG(n->mode)) {
-		if (data_reader_dump_file(data, n->data.file,
-					  STDOUT_FILENO, false)) {
+	if (S_ISREG(sb.st_mode)) {
+		if (data_reader_dump(data, n->inode, STDOUT_FILENO, false))
 			return -1;
-		}
 
-		if (padd_file(STDOUT_FILENO, n->data.file->size, 512))
+		if (padd_file(STDOUT_FILENO, sb.st_size, 512))
 			return -1;
 	}
 skip_hdr:
-	if (S_ISDIR(n->mode)) {
-		for (n = n->data.dir->children; n != NULL; n = n->next) {
-			if (write_tree_dfs(n))
-				return -1;
+	for (n = n->children; n != NULL; n = n->next) {
+		if (write_tree_dfs(n))
+			return -1;
+	}
+	return 0;
+out_skip:
+	if (dont_skip) {
+		fputs("Not allowed to skip files, aborting!\n", stderr);
+		ret = -1;
+	} else {
+		fprintf(stderr, "Skipping %s\n", name);
+		ret = 0;
+	}
+	free(name);
+	return ret;
+}
+
+static sqfs_tree_node_t *tree_merge(sqfs_tree_node_t *lhs,
+				    sqfs_tree_node_t *rhs)
+{
+	sqfs_tree_node_t *head = NULL, **next_ptr = &head;
+	sqfs_tree_node_t *it, *l, *r;
+	int diff;
+
+	while (lhs->children != NULL && rhs->children != NULL) {
+		diff = strcmp((const char *)lhs->children->name,
+			      (const char *)rhs->children->name);
+
+		if (diff < 0) {
+			it = lhs->children;
+			lhs->children = lhs->children->next;
+		} else if (diff > 0) {
+			it = rhs->children;
+			rhs->children = rhs->children->next;
+		} else {
+			l = lhs->children;
+			lhs->children = lhs->children->next;
+
+			r = rhs->children;
+			rhs->children = rhs->children->next;
+
+			it = tree_merge(l, r);
 		}
+
+		*next_ptr = it;
+		next_ptr = &it->next;
 	}
 
-	return 0;
+	it = (lhs->children != NULL ? lhs->children : rhs->children);
+	*next_ptr = it;
+
+	sqfs_dir_tree_destroy(rhs);
+	lhs->children = head;
+	return lhs;
 }
 
 int main(int argc, char **argv)
 {
-	int rdtree_flags = 0, status = EXIT_FAILURE;
+	sqfs_tree_node_t *root = NULL, *subtree;
+	int flags, ret, status = EXIT_FAILURE;
 	sqfs_compressor_config_t cfg;
 	sqfs_compressor_t *cmp;
-	tree_node_t *root;
+	sqfs_id_table_t *idtbl;
+	sqfs_dir_reader_t *dr;
 	size_t i;
 
 	process_args(argc, argv);
-
-	if (!no_xattr)
-		rdtree_flags |= RDTREE_READ_XATTR;
 
 	file = sqfs_open_file(filename, SQFS_FILE_OPEN_READ_ONLY);
 	if (file == NULL) {
@@ -347,46 +421,91 @@ int main(int argc, char **argv)
 			goto out_cmp;
 	}
 
-	if (deserialize_fstree(&fs, &super, cmp, file, rdtree_flags))
-		goto out_cmp;
+	idtbl = sqfs_id_table_create();
 
-	fstree_gen_file_list(&fs);
+	if (idtbl == NULL) {
+		perror("creating ID table");
+		goto out_cmp;
+	}
+
+	if (sqfs_id_table_read(idtbl, file, &super, cmp)) {
+		fputs("error loading ID table\n", stderr);
+		goto out_id;
+	}
 
 	data = data_reader_create(file, &super, cmp);
 	if (data == NULL)
-		goto out;
+		goto out_data;
 
-	for (i = 0; i < num_subdirs; ++i) {
-		root = fstree_node_from_path(&fs, subdirs[i]);
-		if (root == NULL) {
-			perror(subdirs[i]);
-			goto out;
-		}
-
-		if (!S_ISDIR(root->mode)) {
-			fprintf(stderr, "%s is not a directory\n", subdirs[i]);
-			goto out;
-		}
-
-		current_subdir = subdirs[i];
-
-		if (write_tree_dfs(root))
-			goto out;
+	dr = sqfs_dir_reader_create(&super, cmp, file);
+	if (dr == NULL) {
+		perror("creating dir reader");
+		goto out_data;
 	}
 
-	current_subdir = NULL;
+	if (!no_xattr && (super.flags & SQFS_FLAG_NO_XATTRS)) {
+		xr = sqfs_xattr_reader_create(file, &super, cmp);
+		if (xr == NULL) {
+			goto out_dr;
+		}
+
+		if (sqfs_xattr_reader_load_locations(xr)) {
+			fputs("error loading xattr table\n", stderr);
+			goto out_xr;
+		}
+	}
 
 	if (num_subdirs == 0) {
-		if (write_tree_dfs(fs.root))
+		ret = sqfs_dir_reader_get_full_hierarchy(dr, idtbl, NULL,
+							 0, &root);
+		if (ret) {
+			fputs("error loading file system tree", stderr);
 			goto out;
+		}
+	} else {
+		flags = 0;
+
+		if (keep_as_dir || num_subdirs > 1)
+			flags = SQFS_TREE_STORE_PARENTS;
+
+		for (i = 0; i < num_subdirs; ++i) {
+			ret = sqfs_dir_reader_get_full_hierarchy(dr, idtbl,
+								 subdirs[i],
+								 flags,
+								 &subtree);
+			if (ret) {
+				fprintf(stderr, "error loading '%s'\n",
+					subdirs[i]);
+				goto out;
+			}
+
+			if (root == NULL) {
+				root = subtree;
+			} else {
+				root = tree_merge(root, subtree);
+			}
+		}
 	}
+
+	if (write_tree_dfs(root))
+		goto out;
 
 	if (terminate_archive())
 		goto out;
 
 	status = EXIT_SUCCESS;
 out:
-	fstree_cleanup(&fs);
+	if (root != NULL)
+		sqfs_dir_tree_destroy(root);
+out_xr:
+	if (xr != NULL)
+		sqfs_xattr_reader_destroy(xr);
+out_dr:
+	sqfs_dir_reader_destroy(dr);
+out_data:
+	data_reader_destroy(data);
+out_id:
+	sqfs_id_table_destroy(idtbl);
 out_cmp:
 	cmp->destroy(cmp);
 out_fd:
