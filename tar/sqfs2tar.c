@@ -434,8 +434,11 @@ int main(int argc, char **argv)
 		goto out_id;
 	}
 
-	data = data_reader_create(file, &super, cmp);
+	data = data_reader_create(file, super.block_size, cmp);
 	if (data == NULL)
+		goto out_id;
+
+	if (data_reader_load_fragment_table(data, &super))
 		goto out_data;
 
 	dr = sqfs_dir_reader_create(&super, cmp, file);

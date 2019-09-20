@@ -130,51 +130,58 @@ static int precache_fragment_block(data_reader_t *data, size_t idx)
 	return 0;
 }
 
-data_reader_t *data_reader_create(sqfs_file_t *file, sqfs_super_t *super,
+data_reader_t *data_reader_create(sqfs_file_t *file, size_t block_size,
 				  sqfs_compressor_t *cmp)
 {
-	data_reader_t *data = alloc_flex(sizeof(*data), 1, super->block_size);
-	size_t i, size;
-	void *raw_frag;
-	int ret;
+	data_reader_t *data = alloc_flex(sizeof(*data), 1, block_size);
 
-	if (data == NULL) {
-		perror("creating data reader");
-		return data;
+	if (data != NULL) {
+		data->file = file;
+		data->block_size = block_size;
+		data->cmp = cmp;
 	}
 
-	data->num_fragments = super->fragment_entry_count;
-	data->current_frag_index = super->fragment_entry_count;
-	data->file = file;
-	data->block_size = super->block_size;
-	data->cmp = cmp;
+	return data;
+}
+
+int data_reader_load_fragment_table(data_reader_t *data,
+				    const sqfs_super_t *super)
+{
+	void *raw_frag;
+	size_t size;
+	uint32_t i;
+	int ret;
+
+	free(data->frag_block);
+	free(data->frag);
+
+	data->frag = NULL;
+	data->frag_block = NULL;
+	data->num_fragments = 0;
+	data->current_frag_index = 0;
 
 	if (super->fragment_entry_count == 0 ||
 	    (super->flags & SQFS_FLAG_NO_FRAGMENTS) != 0) {
-		return data;
+		return 0;
 	}
 
-	if (super->fragment_table_start >= super->bytes_used) {
-		fputs("Fragment table start is past end of file\n", stderr);
-		free(data);
-		return NULL;
+	if (super->fragment_table_start >= super->bytes_used)
+		return SQFS_ERROR_OUT_OF_BOUNDS;
+
+	if (SZ_MUL_OV(sizeof(data->frag[0]), super->fragment_entry_count,
+		      &size)) {
+		return SQFS_ERROR_OVERFLOW;
 	}
 
-	if (SZ_MUL_OV(sizeof(data->frag[0]), data->num_fragments, &size)) {
-		fputs("Too many fragments: overflow\n", stderr);
-		free(data);
-		return NULL;
-	}
-
-	ret = sqfs_read_table(file, cmp, size, super->fragment_table_start,
+	ret = sqfs_read_table(data->file, data->cmp, size,
+			      super->fragment_table_start,
 			      super->directory_table_start,
 			      super->fragment_table_start, &raw_frag);
+	if (ret)
+		return ret;
 
-	if (ret) {
-		free(data);
-		return NULL;
-	}
-
+	data->num_fragments = super->fragment_entry_count;
+	data->current_frag_index = super->fragment_entry_count;
 	data->frag = raw_frag;
 
 	for (i = 0; i < data->num_fragments; ++i) {
@@ -183,7 +190,7 @@ data_reader_t *data_reader_create(sqfs_file_t *file, sqfs_super_t *super,
 			le64toh(data->frag[i].start_offset);
 	}
 
-	return data;
+	return 0;
 }
 
 void data_reader_destroy(data_reader_t *data)

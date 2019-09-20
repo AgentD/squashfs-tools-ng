@@ -15,16 +15,12 @@
 
 typedef struct data_reader_t data_reader_t;
 
-/*
-  Create a data reader for accessing data blocks in a squashfs image.
 
-  Internally creates a fragment_reader_t (if applicable) to resolve
-  fragment indices.
-
-  Prints error messsages to stderr on failure.
- */
-data_reader_t *data_reader_create(sqfs_file_t *file, sqfs_super_t *super,
+data_reader_t *data_reader_create(sqfs_file_t *file, size_t block_size,
 				  sqfs_compressor_t *cmp);
+
+int data_reader_load_fragment_table(data_reader_t *data,
+				    const sqfs_super_t *super);
 
 void data_reader_destroy(data_reader_t *data);
 
