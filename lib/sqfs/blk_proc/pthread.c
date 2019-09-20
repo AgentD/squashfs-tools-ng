@@ -7,46 +7,6 @@
 #define SQFS_BUILDING_DLL
 #include "internal.h"
 
-#include <pthread.h>
-#include <string.h>
-#include <stdlib.h>
-
-typedef struct {
-	sqfs_block_processor_t *shared;
-	sqfs_compressor_t *cmp;
-	pthread_t thread;
-	uint8_t scratch[];
-} compress_worker_t;
-
-struct sqfs_block_processor_t {
-	pthread_mutex_t mtx;
-	pthread_cond_t queue_cond;
-	pthread_cond_t done_cond;
-
-	/* needs rw access by worker and main thread */
-	sqfs_block_t *queue;
-	sqfs_block_t *queue_last;
-
-	sqfs_block_t *done;
-	bool terminate;
-	size_t backlog;
-
-	/* used by main thread only */
-	uint32_t enqueue_id;
-	uint32_t dequeue_id;
-
-	unsigned int num_workers;
-	sqfs_block_cb cb;
-	void *user;
-	int status;
-	size_t max_backlog;
-
-	/* used only by workers */
-	size_t max_block_size;
-
-	compress_worker_t *workers[];
-};
-
 static void store_completed_block(sqfs_block_processor_t *shared,
 				  sqfs_block_t *blk)
 {
@@ -220,30 +180,6 @@ void sqfs_block_processor_destroy(sqfs_block_processor_t *proc)
 	}
 
 	free(proc);
-}
-
-static int process_completed_blocks(sqfs_block_processor_t *proc,
-				    sqfs_block_t *queue)
-{
-	sqfs_block_t *it;
-	int ret;
-
-	while (queue != NULL) {
-		it = queue;
-		queue = queue->next;
-
-		if (it->flags & SQFS_BLK_COMPRESS_ERROR) {
-			proc->status = SQFS_ERROR_COMRPESSOR;
-		} else {
-			ret = proc->cb(proc->user, it);
-			if (ret)
-				proc->status = ret;
-		}
-
-		free(it);
-	}
-
-	return proc->status;
 }
 
 int sqfs_block_processor_enqueue(sqfs_block_processor_t *proc,

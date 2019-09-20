@@ -28,6 +28,7 @@ libsquashfs_la_LIBADD += $(ZSTD_LIBS) $(PTHREAD_LIBS) libutil.la
 
 if HAVE_PTHREAD
 libsquashfs_la_SOURCES += lib/sqfs/blk_proc/pthread.c
+libsquashfs_la_CPPFLAGS += -DWITH_PTHREAD
 else
 libsquashfs_la_SOURCES += lib/sqfs/blk_proc/serial.c
 endif

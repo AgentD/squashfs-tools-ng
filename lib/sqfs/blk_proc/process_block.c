@@ -36,3 +36,23 @@ int sqfs_block_process(sqfs_block_t *block, sqfs_compressor_t *cmp,
 
 	return 0;
 }
+
+int process_completed_blocks(sqfs_block_processor_t *proc, sqfs_block_t *queue)
+{
+	sqfs_block_t *it;
+
+	while (queue != NULL) {
+		it = queue;
+		queue = queue->next;
+
+		if (it->flags & SQFS_BLK_COMPRESS_ERROR) {
+			proc->status = SQFS_ERROR_COMRPESSOR;
+		} else if (proc->status == 0) {
+			proc->status = proc->cb(proc->user, it);
+		}
+
+		free(it);
+	}
+
+	return proc->status;
+}
