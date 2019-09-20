@@ -1,22 +1,24 @@
-/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* SPDX-License-Identifier: LGPL-3.0-or-later */
 /*
  * data_reader.c
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
+#define SQFS_BUILDING_DLL
 #include "config.h"
 
 #include "sqfs/block_processor.h"
+#include "sqfs/data_reader.h"
+#include "sqfs/compress.h"
 #include "sqfs/error.h"
-
-#include "data_reader.h"
-#include "highlevel.h"
+#include "sqfs/table.h"
+#include "sqfs/inode.h"
+#include "sqfs/data.h"
+#include "sqfs/io.h"
 #include "util.h"
 
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
-#include <stdio.h>
 
 struct sqfs_data_reader_t {
 	sqfs_fragment_t *frag;
@@ -113,10 +115,8 @@ static int precache_fragment_block(sqfs_data_reader_t *data, size_t idx)
 	if (data->frag_block != NULL && idx == data->current_frag_index)
 		return 0;
 
-	if (idx >= data->num_fragments) {
-		fputs("fragment index out of bounds\n", stderr);
-		return -1;
-	}
+	if (idx >= data->num_fragments)
+		return SQFS_ERROR_OUT_OF_BOUNDS;
 
 	free(data->frag_block);
 
@@ -351,7 +351,7 @@ ssize_t sqfs_data_reader_read(sqfs_data_reader_t *data,
 			return -1;
 
 		if (frag_off + filesz > data->block_size)
-			goto fail_range;
+			return SQFS_ERROR_OUT_OF_BOUNDS;
 
 		if (offset >= filesz)
 			return total;
@@ -368,7 +368,4 @@ ssize_t sqfs_data_reader_read(sqfs_data_reader_t *data,
 	}
 
 	return total;
-fail_range:
-	fputs("attempted to read past fragment block limits\n", stderr);
-	return -1;
 }

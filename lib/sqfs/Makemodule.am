@@ -5,7 +5,8 @@ LIBSQFS_HEARDS = include/sqfs/data.h include/sqfs/meta_writer.h \
 		include/sqfs/dir.h include/sqfs/xattr.h \
 		include/sqfs/table.h include/sqfs/predef.h \
 		include/sqfs/error.h include/sqfs/dir_reader.h \
-		include/sqfs/dir_writer.h include/sqfs/io.h
+		include/sqfs/dir_writer.h include/sqfs/io.h \
+		include/sqfs/data_reader.h
 
 libsquashfs_la_SOURCES = $(LIBSQFS_HEARDS) lib/sqfs/id_table.c lib/sqfs/super.c
 libsquashfs_la_SOURCES += lib/sqfs/readdir.c lib/sqfs/io_file.c lib/sqfs/xattr.c
@@ -17,7 +18,7 @@ libsquashfs_la_SOURCES += lib/sqfs/read_table.c lib/sqfs/comp/compressor.c
 libsquashfs_la_SOURCES += lib/sqfs/io_stdin.c lib/sqfs/comp/internal.h
 libsquashfs_la_SOURCES += lib/sqfs/dir_reader.c lib/sqfs/read_tree.c
 libsquashfs_la_SOURCES += lib/sqfs/blk_proc/process_block.c lib/sqfs/io.c
-libsquashfs_la_SOURCES += lib/sqfs/blk_proc/internal.h
+libsquashfs_la_SOURCES += lib/sqfs/blk_proc/internal.h lib/sqfs/data_reader.c
 libsquashfs_la_CPPFLAGS = $(AM_CPPFLAGS)
 libsquashfs_la_CFLAGS = $(AM_CFLAGS) $(PTHREAD_CFLAGS) $(ZLIB_CFLAGS)
 libsquashfs_la_CFLAGS += $(XZ_CFLAGS) $(LZO_CFLAGS) $(LZ4_CFLAGS)

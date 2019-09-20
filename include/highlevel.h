@@ -20,7 +20,7 @@
 #include "sqfs/xattr.h"
 #include "sqfs/dir.h"
 #include "sqfs/io.h"
-#include "data_reader.h"
+#include "sqfs/data_reader.h"
 #include "data_writer.h"
 #include "fstree.h"
 
@@ -78,5 +78,9 @@ sqfs_inode_generic_t *tree_node_to_inode(fstree_t *fs, sqfs_id_table_t *idtbl,
 int inode_stat(const sqfs_tree_node_t *node, struct stat *sb);
 
 char *sqfs_tree_node_get_path(const sqfs_tree_node_t *node);
+
+int sqfs_data_reader_dump(sqfs_data_reader_t *data,
+			  const sqfs_inode_generic_t *inode,
+			  int outfd, size_t block_size, bool allow_sparse);
 
 #endif /* HIGHLEVEL_H */

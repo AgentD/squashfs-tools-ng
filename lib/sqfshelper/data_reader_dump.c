@@ -7,7 +7,7 @@
 #include "config.h"
 
 #include "sqfs/block_processor.h"
-#include "data_reader.h"
+#include "sqfs/data_reader.h"
 #include "highlevel.h"
 #include "util.h"
 
