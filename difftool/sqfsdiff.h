@@ -23,11 +23,22 @@
 #define MAX_WINDOW_SIZE (1024 * 1024 * 4)
 
 typedef struct {
+	sqfs_compressor_config_t cfg;
+	sqfs_compressor_t *cmp;
+	sqfs_super_t super;
+	sqfs_file_t *file;
+	sqfs_id_table_t *idtbl;
+	sqfs_dir_reader_t *dr;
+	sqfs_tree_node_t *root;
+	data_reader_t *data;
+} sqfs_state_t;
+
+typedef struct {
 	const char *old_path;
 	const char *new_path;
 	int compare_flags;
-	sqfs_reader_t sqfs_old;
-	sqfs_reader_t sqfs_new;
+	sqfs_state_t sqfs_old;
+	sqfs_state_t sqfs_new;
 	bool compare_super;
 	const char *extract_dir;
 } sqfsdiff_t;
@@ -41,18 +52,20 @@ enum {
 	COMPARE_EXTRACT_FILES = 0x20,
 };
 
-int compare_dir_entries(sqfsdiff_t *sd, tree_node_t *a, tree_node_t *b);
+int compare_dir_entries(sqfsdiff_t *sd, sqfs_tree_node_t *old,
+			sqfs_tree_node_t *new);
 
-char *node_path(tree_node_t *n);
+char *node_path(const sqfs_tree_node_t *n);
 
-int compare_files(sqfsdiff_t *sd, file_info_t *a, file_info_t *b,
-		  const char *path);
+int compare_files(sqfsdiff_t *sd, const sqfs_inode_generic_t *old,
+		  const sqfs_inode_generic_t *new, const char *path);
 
-int node_compare(sqfsdiff_t *sd, tree_node_t *a, tree_node_t *b);
+int node_compare(sqfsdiff_t *sd, sqfs_tree_node_t *a, sqfs_tree_node_t *b);
 
 int compare_super_blocks(const sqfs_super_t *a, const sqfs_super_t *b);
 
-int extract_files(sqfsdiff_t *sd, file_info_t *old, file_info_t *new,
+int extract_files(sqfsdiff_t *sd, const sqfs_inode_generic_t *old,
+		  const sqfs_inode_generic_t *new,
 		  const char *path);
 
 void process_options(sqfsdiff_t *sd, int argc, char **argv);

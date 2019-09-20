@@ -6,23 +6,24 @@
  */
 #include "sqfsdiff.h"
 
-int node_compare(sqfsdiff_t *sd, tree_node_t *a, tree_node_t *b)
+int node_compare(sqfsdiff_t *sd, sqfs_tree_node_t *a, sqfs_tree_node_t *b)
 {
-	char *path = node_path(a);
-	tree_node_t *ait, *bit;
+	char *path = sqfs_tree_node_get_path(a);
+	sqfs_tree_node_t *ait, *bit;
 	int ret, status = 0;
 
 	if (path == NULL)
 		return -1;
 
-	if ((a->mode & S_IFMT) != (b->mode & S_IFMT)) {
+	if (a->inode->base.type != b->inode->base.type) {
 		fprintf(stdout, "%s has a different type\n", path);
 		free(path);
 		return 1;
 	}
 
 	if (!(sd->compare_flags & COMPARE_NO_PERM)) {
-		if ((a->mode & ~S_IFMT) != (b->mode & ~S_IFMT)) {
+		if ((a->inode->base.mode & ~S_IFMT) !=
+		    (b->inode->base.mode & ~S_IFMT)) {
 			fprintf(stdout, "%s has different permissions\n",
 				path);
 			status = 1;
@@ -37,39 +38,53 @@ int node_compare(sqfsdiff_t *sd, tree_node_t *a, tree_node_t *b)
 	}
 
 	if (sd->compare_flags & COMPARE_TIMESTAMP) {
-		if (a->mod_time != b->mod_time) {
+		if (a->inode->base.mod_time != b->inode->base.mod_time) {
 			fprintf(stdout, "%s has a different timestamp\n", path);
 			status = 1;
 		}
 	}
 
 	if (sd->compare_flags & COMPARE_INODE_NUM) {
-		if (a->inode_num != b->inode_num) {
+		if (a->inode->base.inode_number !=
+		    b->inode->base.inode_number) {
 			fprintf(stdout, "%s has a different inode number\n",
 				path);
 			status = 1;
 		}
 	}
 
-	switch (a->mode & S_IFMT) {
-	case S_IFSOCK:
-	case S_IFIFO:
+	switch (a->inode->base.type) {
+	case SQFS_INODE_SOCKET:
+	case SQFS_INODE_EXT_SOCKET:
+	case SQFS_INODE_FIFO:
+	case SQFS_INODE_EXT_FIFO:
 		break;
-	case S_IFBLK:
-	case S_IFCHR:
-		if (a->data.devno != b->data.devno) {
+	case SQFS_INODE_BDEV:
+	case SQFS_INODE_CDEV:
+		if (a->inode->data.dev.devno != b->inode->data.dev.devno) {
 			fprintf(stdout, "%s has different device number\n",
 				path);
 			status = 1;
 		}
 		break;
-	case S_IFLNK:
-		if (strcmp(a->data.slink_target, b->data.slink_target) != 0) {
+	case SQFS_INODE_EXT_BDEV:
+	case SQFS_INODE_EXT_CDEV:
+		if (a->inode->data.dev_ext.devno !=
+		    b->inode->data.dev_ext.devno) {
+			fprintf(stdout, "%s has different device number\n",
+				path);
+			status = 1;
+		}
+		break;
+	case SQFS_INODE_SLINK:
+	case SQFS_INODE_EXT_SLINK:
+		if (strcmp(a->inode->slink_target, b->inode->slink_target)) {
 			fprintf(stdout, "%s has a different link target\n",
 				path);
 		}
 		break;
-	case S_IFDIR:
+	case SQFS_INODE_DIR:
+	case SQFS_INODE_EXT_DIR:
 		ret = compare_dir_entries(sd, a, b);
 		if (ret < 0) {
 			status = -1;
@@ -81,8 +96,8 @@ int node_compare(sqfsdiff_t *sd, tree_node_t *a, tree_node_t *b)
 		free(path);
 		path = NULL;
 
-		ait = a->data.dir->children;
-		bit = b->data.dir->children;
+		ait = a->children;
+		bit = b->children;
 
 		while (ait != NULL && bit != NULL) {
 			ret = node_compare(sd, ait, bit);
@@ -95,8 +110,9 @@ int node_compare(sqfsdiff_t *sd, tree_node_t *a, tree_node_t *b)
 			bit = bit->next;
 		}
 		break;
-	case S_IFREG:
-		ret = compare_files(sd, a->data.file, b->data.file, path);
+	case SQFS_INODE_FILE:
+	case SQFS_INODE_EXT_FILE:
+		ret = compare_files(sd, a->inode, b->inode, path);
 		if (ret < 0) {
 			status = -1;
 		} else if (ret > 0) {

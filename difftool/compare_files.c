@@ -10,12 +10,12 @@ static unsigned char old_buf[MAX_WINDOW_SIZE];
 static unsigned char new_buf[MAX_WINDOW_SIZE];
 
 static int read_blob(const char *prefix, const char *path,
-		     data_reader_t *rd, file_info_t *fi, void *buffer,
-		     off_t offset, size_t size)
+		     data_reader_t *rd, const sqfs_inode_generic_t *inode,
+		     void *buffer, uint64_t offset, size_t size)
 {
 	ssize_t ret;
 
-	ret = data_reader_read(rd, fi, offset, buffer, size);
+	ret = data_reader_read(rd, inode, offset, buffer, size);
 	ret = (ret < 0 || (size_t)ret < size) ? -1 : 0;
 
 	if (ret) {
@@ -27,20 +27,32 @@ static int read_blob(const char *prefix, const char *path,
 	return 0;
 }
 
-int compare_files(sqfsdiff_t *sd, file_info_t *old, file_info_t *new,
-		  const char *path)
+int compare_files(sqfsdiff_t *sd, const sqfs_inode_generic_t *old,
+		  const sqfs_inode_generic_t *new, const char *path)
 {
-	uint64_t offset, diff;
+	uint64_t offset, diff, oldsz, newsz;
 	int status = 0, ret;
 
-	if (old->size != new->size)
+	if (old->base.type == SQFS_INODE_EXT_FILE) {
+		oldsz = old->data.file_ext.file_size;
+	} else {
+		oldsz = old->data.file.file_size;
+	}
+
+	if (new->base.type == SQFS_INODE_EXT_FILE) {
+		newsz = new->data.file_ext.file_size;
+	} else {
+		newsz = new->data.file.file_size;
+	}
+
+	if (oldsz != newsz)
 		goto out_different;
 
 	if (sd->compare_flags & COMPARE_NO_CONTENTS)
 		return 0;
 
-	for (offset = 0; offset < old->size; offset += diff) {
-		diff = old->size - offset;
+	for (offset = 0; offset < oldsz; offset += diff) {
+		diff = oldsz - offset;
 
 		if (diff > MAX_WINDOW_SIZE)
 			diff = MAX_WINDOW_SIZE;

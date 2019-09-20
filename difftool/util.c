@@ -6,9 +6,9 @@
  */
 #include "sqfsdiff.h"
 
-char *node_path(tree_node_t *n)
+char *node_path(const sqfs_tree_node_t *n)
 {
-	char *path = fstree_get_path(n);
+	char *path = sqfs_tree_node_get_path(n);
 
 	if (path == NULL) {
 		perror("get path");
@@ -16,8 +16,7 @@ char *node_path(tree_node_t *n)
 	}
 
 	if (canonicalize_name(path)) {
-		fputs("[BUG] canonicalization of fstree_get_path failed!!\n",
-		      stderr);
+		fprintf(stderr, "failed to canonicalization '%s'\n", path);
 		free(path);
 		return NULL;
 	}

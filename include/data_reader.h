@@ -32,26 +32,14 @@ int data_reader_dump(data_reader_t *data, const sqfs_inode_generic_t *inode,
 		     int outfd, bool allow_sparse);
 
 /*
-  Use a file_info_t to locate and extract all blocks of the coresponding
-  file and its fragment, if it has one. The entire data is dumped to the
-  given file descriptor.
-
-  If allow_sparse is true, try to truncate and seek forward on outfd if a
-  zero block is found. If false, always write blocks of zeros to outfd.
-
-  Returns 0 on success, prints error messages to stderr on failure.
- */
-int data_reader_dump_file(data_reader_t *data, file_info_t *fi, int outfd,
-			  bool allow_sparse);
-
-/*
   Read a chunk of data from a file. Starting from 'offset' into the
   uncompressed file, read 'size' bytes into 'buffer'.
 
   Returns the number of bytes read, 0 if EOF, -1 on failure. Prints an
   error message to stderr on failure.
  */
-ssize_t data_reader_read(data_reader_t *data, file_info_t *fi,
+ssize_t data_reader_read(data_reader_t *data,
+			 const sqfs_inode_generic_t *inode,
 			 uint64_t offset, void *buffer, size_t size);
 
 #endif /* DATA_READER_H */
