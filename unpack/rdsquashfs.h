@@ -72,7 +72,7 @@ int update_tree_attribs(sqfs_xattr_reader_t *xattr,
 			const sqfs_tree_node_t *root, int flags);
 
 int fill_unpacked_files(size_t blk_sz, const sqfs_tree_node_t *root,
-			data_reader_t *data, int flags);
+			sqfs_data_reader_t *data, int flags);
 
 int describe_tree(const sqfs_tree_node_t *root, const char *unpack_root);
 

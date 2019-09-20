@@ -11,11 +11,11 @@ int main(int argc, char **argv)
 	sqfs_xattr_reader_t *xattr = NULL;
 	sqfs_compressor_config_t cfg;
 	int status = EXIT_FAILURE;
+	sqfs_data_reader_t *data;
 	sqfs_dir_reader_t *dirrd;
 	sqfs_compressor_t *cmp;
 	sqfs_id_table_t *idtbl;
 	sqfs_tree_node_t *n;
-	data_reader_t *data;
 	sqfs_super_t super;
 	sqfs_file_t *file;
 	options_t opt;
@@ -80,11 +80,11 @@ int main(int argc, char **argv)
 		goto out_id;
 	}
 
-	data = data_reader_create(file, super.block_size, cmp);
+	data = sqfs_data_reader_create(file, super.block_size, cmp);
 	if (data == NULL)
 		goto out_dr;
 
-	if (data_reader_load_fragment_table(data, &super))
+	if (sqfs_data_reader_load_fragment_table(data, &super))
 		goto out_data;
 
 	ret = sqfs_dir_reader_get_full_hierarchy(dirrd, idtbl, opt.cmdpath,
@@ -105,8 +105,8 @@ int main(int argc, char **argv)
 			goto out;
 		}
 
-		if (data_reader_dump(data, n->inode, STDOUT_FILENO,
-				     super.block_size, false))
+		if (sqfs_data_reader_dump(data, n->inode, STDOUT_FILENO,
+					  super.block_size, false))
 			goto out;
 		break;
 	case OP_UNPACK:
@@ -144,7 +144,7 @@ int main(int argc, char **argv)
 out:
 	sqfs_dir_tree_destroy(n);
 out_data:
-	data_reader_destroy(data);
+	sqfs_data_reader_destroy(data);
 out_dr:
 	sqfs_dir_reader_destroy(dirrd);
 out_id:

@@ -69,19 +69,20 @@ static int open_sfqs(sqfs_state_t *state, const char *path)
 		goto fail_dr;
 	}
 
-	state->data = data_reader_create(state->file, state->super.block_size,
-					 state->cmp);
+	state->data = sqfs_data_reader_create(state->file,
+					      state->super.block_size,
+					      state->cmp);
 	if (state->data == NULL) {
 		fprintf(stderr, "%s: error loading file system tree\n", path);
 		goto fail_tree;
 	}
 
-	if (data_reader_load_fragment_table(state->data, &state->super))
+	if (sqfs_data_reader_load_fragment_table(state->data, &state->super))
 		goto fail_data;
 
 	return 0;
 fail_data:
-	data_reader_destroy(state->data);
+	sqfs_data_reader_destroy(state->data);
 fail_tree:
 	sqfs_dir_tree_destroy(state->root);
 fail_dr:
@@ -97,7 +98,7 @@ fail_file:
 
 static void close_sfqs(sqfs_state_t *state)
 {
-	data_reader_destroy(state->data);
+	sqfs_data_reader_destroy(state->data);
 	sqfs_dir_tree_destroy(state->root);
 	sqfs_dir_reader_destroy(state->dr);
 	sqfs_id_table_destroy(state->idtbl);

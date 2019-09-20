@@ -156,7 +156,7 @@ static int gen_file_list_dfs(const sqfs_tree_node_t *n)
 	return 0;
 }
 
-static int fill_files(data_reader_t *data, int flags)
+static int fill_files(sqfs_data_reader_t *data, int flags)
 {
 	size_t i;
 	int fd;
@@ -172,8 +172,8 @@ static int fill_files(data_reader_t *data, int flags)
 		if (!(flags & UNPACK_QUIET))
 			printf("unpacking %s\n", files[i].path);
 
-		if (data_reader_dump(data, files[i].inode, fd, block_size,
-				     (flags & UNPACK_NO_SPARSE) == 0)) {
+		if (sqfs_data_reader_dump(data, files[i].inode, fd, block_size,
+					  (flags & UNPACK_NO_SPARSE) == 0)) {
 			close(fd);
 			return -1;
 		}
@@ -185,7 +185,7 @@ static int fill_files(data_reader_t *data, int flags)
 }
 
 int fill_unpacked_files(size_t blk_sz, const sqfs_tree_node_t *root,
-			data_reader_t *data, int flags)
+			sqfs_data_reader_t *data, int flags)
 {
 	int status;
 

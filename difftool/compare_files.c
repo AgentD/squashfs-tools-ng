@@ -10,12 +10,12 @@ static unsigned char old_buf[MAX_WINDOW_SIZE];
 static unsigned char new_buf[MAX_WINDOW_SIZE];
 
 static int read_blob(const char *prefix, const char *path,
-		     data_reader_t *rd, const sqfs_inode_generic_t *inode,
+		     sqfs_data_reader_t *rd, const sqfs_inode_generic_t *inode,
 		     void *buffer, uint64_t offset, size_t size)
 {
 	ssize_t ret;
 
-	ret = data_reader_read(rd, inode, offset, buffer, size);
+	ret = sqfs_data_reader_read(rd, inode, offset, buffer, size);
 	ret = (ret < 0 || (size_t)ret < size) ? -1 : 0;
 
 	if (ret) {

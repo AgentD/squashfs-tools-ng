@@ -18,7 +18,7 @@
 #include <string.h>
 #include <stdio.h>
 
-struct data_reader_t {
+struct sqfs_data_reader_t {
 	sqfs_fragment_t *frag;
 	sqfs_compressor_t *cmp;
 	sqfs_block_t *data_block;
@@ -35,7 +35,7 @@ struct data_reader_t {
 	uint8_t scratch[];
 };
 
-static int get_block(data_reader_t *data, uint64_t off, uint32_t size,
+static int get_block(sqfs_data_reader_t *data, uint64_t off, uint32_t size,
 		     size_t unpacked_size, sqfs_block_t **out)
 {
 	sqfs_block_t *blk = alloc_flex(sizeof(*blk), 1, unpacked_size);
@@ -84,7 +84,7 @@ static int get_block(data_reader_t *data, uint64_t off, uint32_t size,
 	return 0;
 }
 
-static int precache_data_block(data_reader_t *data, uint64_t location,
+static int precache_data_block(sqfs_data_reader_t *data, uint64_t location,
 			       uint32_t size)
 {
 	int ret;
@@ -106,7 +106,7 @@ static int precache_data_block(data_reader_t *data, uint64_t location,
 	return 0;
 }
 
-static int precache_fragment_block(data_reader_t *data, size_t idx)
+static int precache_fragment_block(sqfs_data_reader_t *data, size_t idx)
 {
 	int ret;
 
@@ -130,10 +130,11 @@ static int precache_fragment_block(data_reader_t *data, size_t idx)
 	return 0;
 }
 
-data_reader_t *data_reader_create(sqfs_file_t *file, size_t block_size,
-				  sqfs_compressor_t *cmp)
+sqfs_data_reader_t *sqfs_data_reader_create(sqfs_file_t *file,
+					    size_t block_size,
+					    sqfs_compressor_t *cmp)
 {
-	data_reader_t *data = alloc_flex(sizeof(*data), 1, block_size);
+	sqfs_data_reader_t *data = alloc_flex(sizeof(*data), 1, block_size);
 
 	if (data != NULL) {
 		data->file = file;
@@ -144,8 +145,8 @@ data_reader_t *data_reader_create(sqfs_file_t *file, size_t block_size,
 	return data;
 }
 
-int data_reader_load_fragment_table(data_reader_t *data,
-				    const sqfs_super_t *super)
+int sqfs_data_reader_load_fragment_table(sqfs_data_reader_t *data,
+					 const sqfs_super_t *super)
 {
 	void *raw_frag;
 	size_t size;
@@ -193,7 +194,7 @@ int data_reader_load_fragment_table(data_reader_t *data,
 	return 0;
 }
 
-void data_reader_destroy(data_reader_t *data)
+void sqfs_data_reader_destroy(sqfs_data_reader_t *data)
 {
 	free(data->data_block);
 	free(data->frag_block);
@@ -201,9 +202,9 @@ void data_reader_destroy(data_reader_t *data)
 	free(data);
 }
 
-int data_reader_get_block(data_reader_t *data,
-			  const sqfs_inode_generic_t *inode,
-			  size_t index, sqfs_block_t **out)
+int sqfs_data_reader_get_block(sqfs_data_reader_t *data,
+			       const sqfs_inode_generic_t *inode,
+			       size_t index, sqfs_block_t **out)
 {
 	size_t i, unpacked_size;
 	uint64_t off, filesz;
@@ -232,9 +233,9 @@ int data_reader_get_block(data_reader_t *data,
 			 unpacked_size, out);
 }
 
-int data_reader_get_fragment(data_reader_t *data,
-			     const sqfs_inode_generic_t *inode,
-			     sqfs_block_t **out)
+int sqfs_data_reader_get_fragment(sqfs_data_reader_t *data,
+				  const sqfs_inode_generic_t *inode,
+				  sqfs_block_t **out)
 {
 	uint32_t frag_idx, frag_off, frag_sz;
 	sqfs_block_t *blk;
@@ -276,9 +277,9 @@ int data_reader_get_fragment(data_reader_t *data,
 	return 0;
 }
 
-ssize_t data_reader_read(data_reader_t *data,
-			 const sqfs_inode_generic_t *inode,
-			 uint64_t offset, void *buffer, size_t size)
+ssize_t sqfs_data_reader_read(sqfs_data_reader_t *data,
+			      const sqfs_inode_generic_t *inode,
+			      uint64_t offset, void *buffer, size_t size)
 {
 	uint32_t frag_idx, frag_off;
 	size_t i, diff, total = 0;

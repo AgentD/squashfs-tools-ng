@@ -6,7 +6,7 @@
  */
 #include "sqfsdiff.h"
 
-static int extract(data_reader_t *data, const sqfs_inode_generic_t *inode,
+static int extract(sqfs_data_reader_t *data, const sqfs_inode_generic_t *inode,
 		   const char *prefix, const char *path, size_t block_size)
 {
 	char *ptr, *temp;
@@ -27,7 +27,7 @@ static int extract(data_reader_t *data, const sqfs_inode_generic_t *inode,
 		return -1;
 	}
 
-	if (data_reader_dump(data, inode, fd, block_size, true)) {
+	if (sqfs_data_reader_dump(data, inode, fd, block_size, true)) {
 		close(fd);
 		return -1;
 	}

@@ -79,7 +79,7 @@ static size_t num_subdirs = 0;
 static size_t max_subdirs = 0;
 
 static sqfs_xattr_reader_t *xr;
-static data_reader_t *data;
+static sqfs_data_reader_t *data;
 static sqfs_file_t *file;
 static sqfs_super_t super;
 
@@ -317,8 +317,8 @@ static int write_tree_dfs(const sqfs_tree_node_t *n)
 		return -1;
 
 	if (S_ISREG(sb.st_mode)) {
-		if (data_reader_dump(data, n->inode, STDOUT_FILENO,
-				     super.block_size, false))
+		if (sqfs_data_reader_dump(data, n->inode, STDOUT_FILENO,
+					  super.block_size, false))
 			return -1;
 
 		if (padd_file(STDOUT_FILENO, sb.st_size, 512))
@@ -434,11 +434,11 @@ int main(int argc, char **argv)
 		goto out_id;
 	}
 
-	data = data_reader_create(file, super.block_size, cmp);
+	data = sqfs_data_reader_create(file, super.block_size, cmp);
 	if (data == NULL)
 		goto out_id;
 
-	if (data_reader_load_fragment_table(data, &super))
+	if (sqfs_data_reader_load_fragment_table(data, &super))
 		goto out_data;
 
 	dr = sqfs_dir_reader_create(&super, cmp, file);
@@ -507,7 +507,7 @@ out_xr:
 out_dr:
 	sqfs_dir_reader_destroy(dr);
 out_data:
-	data_reader_destroy(data);
+	sqfs_data_reader_destroy(data);
 out_id:
 	sqfs_id_table_destroy(idtbl);
 out_cmp:

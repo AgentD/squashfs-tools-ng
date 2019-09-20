@@ -30,7 +30,7 @@ typedef struct {
 	sqfs_id_table_t *idtbl;
 	sqfs_dir_reader_t *dr;
 	sqfs_tree_node_t *root;
-	data_reader_t *data;
+	sqfs_data_reader_t *data;
 } sqfs_state_t;
 
 typedef struct {
