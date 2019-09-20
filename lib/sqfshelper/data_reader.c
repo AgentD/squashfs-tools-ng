@@ -20,19 +20,19 @@
 
 struct data_reader_t {
 	sqfs_fragment_t *frag;
-	size_t num_fragments;
-	size_t current_frag_index;
-	size_t frag_used;
-
-	off_t current_block;
-
 	sqfs_compressor_t *cmp;
-	size_t block_size;
+	sqfs_block_t *data_block;
+	sqfs_block_t *frag_block;
+
+	uint64_t current_block;
+
 	sqfs_file_t *file;
 
-	void *block;
-	void *scratch;
-	void *frag_block;
+	uint32_t num_fragments;
+	uint32_t current_frag_index;
+	uint32_t block_size;
+
+	uint8_t scratch[];
 };
 
 static int get_block(data_reader_t *data, uint64_t off, uint32_t size,
@@ -84,53 +84,23 @@ static int get_block(data_reader_t *data, uint64_t off, uint32_t size,
 	return 0;
 }
 
-static ssize_t read_block(data_reader_t *data, off_t offset, uint32_t size,
-			  void *dst)
-{
-	bool compressed = SQFS_IS_BLOCK_COMPRESSED(size);
-	void *ptr = compressed ? data->scratch : dst;
-	ssize_t ret;
-
-	size = SQFS_ON_DISK_BLOCK_SIZE(size);
-
-	if (size > data->block_size)
-		goto fail_bs;
-
-	if (data->file->read_at(data->file, offset, ptr, size)) {
-		fputs("error reading data block from input file\n", stderr);
-		return -1;
-	}
-
-	if (compressed) {
-		ret = data->cmp->do_block(data->cmp, data->scratch, size,
-					  dst, data->block_size);
-		if (ret <= 0) {
-			fputs("extracting block failed\n", stderr);
-			return -1;
-		}
-		size = ret;
-	}
-
-	return size;
-fail_bs:
-	fputs("found compressed block larger than block size\n", stderr);
-	return -1;
-}
-
-static int precache_data_block(data_reader_t *data, off_t location,
+static int precache_data_block(data_reader_t *data, uint64_t location,
 			       uint32_t size)
 {
-	ssize_t ret;
+	int ret;
 
-	if (data->current_block == location)
+	if (data->data_block != NULL && data->current_block == location)
 		return 0;
 
-	ret = read_block(data, location, size, data->block);
-	if (ret < 0)
-		return -1;
+	free(data->data_block);
 
-	if ((size_t)ret < data->block_size)
-		memset((char *)data->block + ret, 0, data->block_size - ret);
+	ret = get_block(data, location, size, data->block_size,
+			&data->data_block);
+
+	if (ret < 0) {
+		data->data_block = NULL;
+		return -1;
+	}
 
 	data->current_block = location;
 	return 0;
@@ -138,9 +108,9 @@ static int precache_data_block(data_reader_t *data, off_t location,
 
 static int precache_fragment_block(data_reader_t *data, size_t idx)
 {
-	ssize_t ret;
+	int ret;
 
-	if (idx == data->current_frag_index)
+	if (data->frag_block != NULL && idx == data->current_frag_index)
 		return 0;
 
 	if (idx >= data->num_fragments) {
@@ -148,20 +118,22 @@ static int precache_fragment_block(data_reader_t *data, size_t idx)
 		return -1;
 	}
 
-	ret = read_block(data, data->frag[idx].start_offset,
-			 data->frag[idx].size, data->frag_block);
+	free(data->frag_block);
+
+	ret = get_block(data, data->frag[idx].start_offset,
+			data->frag[idx].size, data->block_size,
+			&data->frag_block);
 	if (ret < 0)
 		return -1;
 
 	data->current_frag_index = idx;
-	data->frag_used = ret;
 	return 0;
 }
 
 data_reader_t *data_reader_create(sqfs_file_t *file, sqfs_super_t *super,
 				  sqfs_compressor_t *cmp)
 {
-	data_reader_t *data = alloc_flex(sizeof(*data), super->block_size, 3);
+	data_reader_t *data = alloc_flex(sizeof(*data), 1, super->block_size);
 	size_t i, size;
 	void *raw_frag;
 	int ret;
@@ -173,10 +145,6 @@ data_reader_t *data_reader_create(sqfs_file_t *file, sqfs_super_t *super,
 
 	data->num_fragments = super->fragment_entry_count;
 	data->current_frag_index = super->fragment_entry_count;
-	data->block = (char *)data + sizeof(*data);
-	data->scratch = (char *)data->block + super->block_size;
-	data->frag_block = (char *)data->scratch + super->block_size;
-	data->current_block = -1;
 	data->file = file;
 	data->block_size = super->block_size;
 	data->cmp = cmp;
@@ -220,6 +188,8 @@ data_reader_t *data_reader_create(sqfs_file_t *file, sqfs_super_t *super,
 
 void data_reader_destroy(data_reader_t *data)
 {
+	free(data->data_block);
+	free(data->frag_block);
 	free(data->frag);
 	free(data);
 }
@@ -285,7 +255,7 @@ int data_reader_get_fragment(data_reader_t *data,
 	if (precache_fragment_block(data, frag_idx))
 		return -1;
 
-	if (frag_off + frag_sz > data->frag_used)
+	if (frag_off + frag_sz > data->block_size)
 		return -1;
 
 	blk = alloc_flex(sizeof(*blk), 1, frag_sz);
@@ -293,7 +263,7 @@ int data_reader_get_fragment(data_reader_t *data,
 		return -1;
 
 	blk->size = frag_sz;
-	memcpy(blk->data, (char *)data->frag_block + frag_off, frag_sz);
+	memcpy(blk->data, (char *)data->frag_block->data + frag_off, frag_sz);
 
 	*out = blk;
 	return 0;
@@ -349,7 +319,8 @@ ssize_t data_reader_read(data_reader_t *data,
 				return -1;
 			}
 
-			memcpy(buffer, (char *)data->block + offset, diff);
+			memcpy(buffer, (char *)data->data_block->data + offset,
+			       diff);
 			off += SQFS_ON_DISK_BLOCK_SIZE(inode->block_sizes[i]);
 		}
 
@@ -371,10 +342,7 @@ ssize_t data_reader_read(data_reader_t *data,
 		if (precache_fragment_block(data, frag_idx))
 			return -1;
 
-		if (frag_off >= data->frag_used)
-			goto fail_range;
-
-		if (frag_off + filesz > data->frag_used)
+		if (frag_off + filesz > data->block_size)
 			goto fail_range;
 
 		if (offset >= filesz)
@@ -386,7 +354,7 @@ ssize_t data_reader_read(data_reader_t *data,
 		if (size == 0)
 			return total;
 
-		ptr = (char *)data->frag_block + frag_off + offset;
+		ptr = (char *)data->frag_block->data + frag_off + offset;
 		memcpy(buffer, ptr, size);
 		total += size;
 	}
