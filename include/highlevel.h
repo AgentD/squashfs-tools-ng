@@ -15,6 +15,8 @@
 #include "sqfs/data.h"
 #include "sqfs/table.h"
 #include "sqfs/meta_writer.h"
+#include "sqfs/dir_writer.h"
+#include "sqfs/dir_reader.h"
 #include "sqfs/xattr.h"
 #include "sqfs/dir.h"
 #include "sqfs/io.h"

@@ -8,6 +8,7 @@
 #include "config.h"
 
 #include "sqfs/meta_writer.h"
+#include "sqfs/dir_writer.h"
 #include "sqfs/inode.h"
 #include "sqfs/error.h"
 #include "sqfs/data.h"

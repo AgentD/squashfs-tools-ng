@@ -8,6 +8,7 @@
 #include "config.h"
 
 #include "sqfs/meta_reader.h"
+#include "sqfs/dir_reader.h"
 #include "sqfs/compress.h"
 #include "sqfs/super.h"
 #include "sqfs/inode.h"
