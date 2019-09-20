@@ -280,17 +280,11 @@ void fstree_gen_file_list(fstree_t *fs);
 */
 char *fstree_get_path(tree_node_t *node);
 
-/* get a struct stat from a tree node */
-void fstree_node_stat(fstree_t *fs, tree_node_t *node, struct stat *sb);
-
 /* ASCIIbetically sort a linked list of tree nodes */
 tree_node_t *tree_node_list_sort(tree_node_t *head);
 
 /* ASCIIbetically sort all sub directories recursively */
 void tree_node_sort_recursive(tree_node_t *root);
-
-/* resolve a path to a tree node. Returns NULL on failure and sets errno */
-tree_node_t *fstree_node_from_path(fstree_t *fs, const char *path);
 
 /*
   If the environment variable SOURCE_DATE_EPOCH is set to a parsable number
