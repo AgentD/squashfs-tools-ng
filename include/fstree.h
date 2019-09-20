@@ -16,8 +16,6 @@
 #include <stddef.h>
 #include <stdio.h>
 
-#include "sqfs/inode.h"
-
 #include "str_table.h"
 
 #define FSTREE_XATTR_KEY_BUCKETS 31
@@ -121,8 +119,6 @@ struct tree_node_t {
 
 	/* For the root node, this points to an empty string. */
 	char *name;
-
-	sqfs_inode_generic_t *inode;
 
 	/*
 	  A pointer to an extended attribute array or NULL if unused.

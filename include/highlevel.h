@@ -26,14 +26,6 @@
 #include <stdint.h>
 #include <stddef.h>
 
-typedef struct {
-	sqfs_compressor_t *cmp;
-	data_reader_t *data;
-	sqfs_file_t *file;
-	sqfs_super_t super;
-	fstree_t fs;
-} sqfs_reader_t;
-
 /*
   High level helper function to serialize an entire file system tree to
   a squashfs inode table and directory table.
@@ -48,23 +40,6 @@ typedef struct {
  */
 int sqfs_serialize_fstree(sqfs_file_t *file, sqfs_super_t *super, fstree_t *fs,
 			  sqfs_compressor_t *cmp, sqfs_id_table_t *idtbl);
-
-/*
-  Convert a generic squashfs tree node to an fstree_t node.
-
-  Prints error messages to stderr on failure.
- */
-tree_node_t *tree_node_from_inode(sqfs_inode_generic_t *inode,
-				  const sqfs_id_table_t *idtbl,
-				  const char *name);
-
-/*
-  Restore a file system tree from a squashfs image.
-
-  Returns 0 on success. Prints error messages to stderr on failure.
- */
-int deserialize_fstree(fstree_t *out, sqfs_super_t *super,
-		       sqfs_compressor_t *cmp, sqfs_file_t *file);
 
 /*
   Generate a squahfs xattr table from a file system tree.
@@ -84,15 +59,6 @@ int write_export_table(sqfs_file_t *file, fstree_t *fs, sqfs_super_t *super,
 
 /* Print out fancy statistics for squashfs packing tools */
 void sqfs_print_statistics(sqfs_super_t *super, data_writer_stats_t *stats);
-
-/* Open a squashfs file, extract all the information we may need and
-   construct datastructures we need to access its contents.
-   Returns 0 on success. Prints error messages to stderr on failure.
-*/
-int sqfs_reader_open(sqfs_reader_t *rd, const char *filename);
-
-/* Cleanup after a successfull sqfs_reader_open */
-void sqfs_reader_close(sqfs_reader_t *rd);
 
 void compressor_print_available(void);
 
