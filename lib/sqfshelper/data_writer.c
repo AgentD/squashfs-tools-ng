@@ -62,13 +62,6 @@ struct data_writer_t {
 	data_writer_stats_t stats;
 };
 
-enum {
-	BLK_FIRST_BLOCK = SQFS_BLK_USER,
-	BLK_LAST_BLOCK = SQFS_BLK_USER << 1,
-	BLK_ALLIGN = SQFS_BLK_USER << 2,
-	BLK_FRAGMENT_BLOCK = SQFS_BLK_USER << 3,
-};
-
 static int allign_file(data_writer_t *data)
 {
 	return padd_sqfs(data->file, data->file->get_size(data->file),
@@ -126,11 +119,11 @@ static int block_callback(void *user, sqfs_block_t *blk)
 	uint64_t offset;
 	uint32_t out;
 
-	if (blk->flags & BLK_FIRST_BLOCK) {
+	if (blk->flags & SQFS_BLK_FIRST_BLOCK) {
 		data->start = data->file->get_size(data->file);
 		data->file_start = data->num_blocks;
 
-		if ((blk->flags & BLK_ALLIGN) && allign_file(data) != 0)
+		if ((blk->flags & SQFS_BLK_ALLIGN) && allign_file(data) != 0)
 			return -1;
 	}
 
@@ -141,7 +134,7 @@ static int block_callback(void *user, sqfs_block_t *blk)
 
 		offset = data->file->get_size(data->file);
 
-		if (blk->flags & BLK_FRAGMENT_BLOCK) {
+		if (blk->flags & SQFS_BLK_FRAGMENT_BLOCK) {
 			data->fragments[blk->index].start_offset = htole64(offset);
 			data->fragments[blk->index].pad0 = 0;
 			data->fragments[blk->index].size = htole32(out);
@@ -165,8 +158,8 @@ static int block_callback(void *user, sqfs_block_t *blk)
 		}
 	}
 
-	if (blk->flags & BLK_LAST_BLOCK) {
-		if ((blk->flags & BLK_ALLIGN) && allign_file(data) != 0)
+	if (blk->flags & SQFS_BLK_LAST_BLOCK) {
+		if ((blk->flags & SQFS_BLK_ALLIGN) && allign_file(data) != 0)
 			return -1;
 
 		count = data->num_blocks - data->file_start;
@@ -265,7 +258,7 @@ static int handle_fragment(data_writer_t *data, sqfs_block_t *frag)
 			goto fail;
 		}
 
-		data->frag_block->flags = BLK_FRAGMENT_BLOCK;
+		data->frag_block->flags = SQFS_BLK_FRAGMENT_BLOCK;
 	}
 
 	if (data->frag_list_num == data->frag_list_max) {
@@ -329,7 +322,7 @@ int write_data_from_file_condensed(data_writer_t *data, sqfs_file_t *file,
 				   file_info_t *fi,
 				   const sqfs_sparse_map_t *map, int flags)
 {
-	uint32_t blk_flags = BLK_FIRST_BLOCK;
+	uint32_t blk_flags = SQFS_BLK_FIRST_BLOCK;
 	size_t diff, i = 0;
 	sqfs_block_t *blk;
 	uint64_t offset;
@@ -339,7 +332,7 @@ int write_data_from_file_condensed(data_writer_t *data, sqfs_file_t *file,
 		blk_flags |= SQFS_BLK_DONT_COMPRESS;
 
 	if (flags & DW_ALLIGN_DEVBLK)
-		blk_flags |= BLK_ALLIGN;
+		blk_flags |= SQFS_BLK_ALLIGN;
 
 	for (offset = 0; offset < fi->size; offset += diff) {
 		if (fi->size - offset > (uint64_t)data->super->block_size) {
@@ -372,8 +365,9 @@ int write_data_from_file_condensed(data_writer_t *data, sqfs_file_t *file,
 
 		if (diff < data->super->block_size &&
 		    !(flags & DW_DONT_FRAGMENT)) {
-			if (!(blk_flags & (BLK_FIRST_BLOCK | BLK_LAST_BLOCK))) {
-				blk_flags |= BLK_LAST_BLOCK;
+			if (!(blk_flags & (SQFS_BLK_FIRST_BLOCK |
+					   SQFS_BLK_LAST_BLOCK))) {
+				blk_flags |= SQFS_BLK_LAST_BLOCK;
 
 				if (add_sentinel_block(data, fi, blk_flags)) {
 					free(blk);
@@ -387,12 +381,12 @@ int write_data_from_file_condensed(data_writer_t *data, sqfs_file_t *file,
 			if (sqfs_block_processor_enqueue(data->proc, blk))
 				return -1;
 
-			blk_flags &= ~BLK_FIRST_BLOCK;
+			blk_flags &= ~SQFS_BLK_FIRST_BLOCK;
 		}
 	}
 
-	if (!(blk_flags & (BLK_FIRST_BLOCK | BLK_LAST_BLOCK))) {
-		blk_flags |= BLK_LAST_BLOCK;
+	if (!(blk_flags & (SQFS_BLK_FIRST_BLOCK | SQFS_BLK_LAST_BLOCK))) {
+		blk_flags |= SQFS_BLK_LAST_BLOCK;
 
 		if (add_sentinel_block(data, fi, blk_flags))
 			return -1;

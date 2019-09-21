@@ -70,9 +70,33 @@ typedef enum {
 	SQFS_BLK_COMPRESS_ERROR = 0x0008,
 
 	/**
-	 * @brief First user setable block flag.
+	 * @brief Indicates that an equeued block is the first block of a file.
 	 */
-	SQFS_BLK_USER = 0x0080
+	SQFS_BLK_FIRST_BLOCK = 0x0010,
+
+	/**
+	 * @brief Indicates that an equeued block is the last block of a file.
+	 */
+	SQFS_BLK_LAST_BLOCK = 0x0020,
+
+	/**
+	 * @brief Allign the block on disk to device block size.
+	 *
+	 * If set in combination with @ref SQFS_BLK_FIRST_BLOCK, the output
+	 * file is padded to a multiple of the device block size before writing
+	 * the block.
+	 *
+	 * If used with @ref SQFS_BLK_LAST_BLOCK, the output file is padded
+	 * after writing the block.
+	 */
+	SQFS_BLK_ALLIGN = 0x0040,
+
+	/**
+	 * @brief Indicates that a block is not part of a file but contains
+	 *        file tail ends and an entry in the fragment table has to be
+	 *        added.
+	 */
+	SQFS_BLK_FRAGMENT_BLOCK = 0x0080,
 } E_SQFS_BLK_FLAGS;
 
 /**
