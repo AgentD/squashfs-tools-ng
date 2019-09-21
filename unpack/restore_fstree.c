@@ -101,27 +101,7 @@ static int set_xattr(sqfs_xattr_reader_t *xattr, const sqfs_tree_node_t *n)
 	size_t i;
 	int ret;
 
-	switch (n->inode->base.type) {
-	case SQFS_INODE_EXT_DIR:
-		index = n->inode->data.dir_ext.xattr_idx;
-		break;
-	case SQFS_INODE_EXT_FILE:
-		index = n->inode->data.file_ext.xattr_idx;
-		break;
-	case SQFS_INODE_EXT_SLINK:
-		index = n->inode->data.slink_ext.xattr_idx;
-		break;
-	case SQFS_INODE_EXT_BDEV:
-	case SQFS_INODE_EXT_CDEV:
-		index = n->inode->data.dev_ext.xattr_idx;
-		break;
-	case SQFS_INODE_EXT_FIFO:
-	case SQFS_INODE_EXT_SOCKET:
-		index = n->inode->data.ipc_ext.xattr_idx;
-		break;
-	default:
-		return 0;
-	}
+	sqfs_inode_get_xattr_index(n->inode, &index);
 
 	if (index == 0xFFFFFFFF)
 		return 0;

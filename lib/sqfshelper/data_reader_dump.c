@@ -25,11 +25,7 @@ int sqfs_data_reader_dump(sqfs_data_reader_t *data,
 	size_t i, diff;
 	int err;
 
-	if (inode->base.type == SQFS_INODE_EXT_FILE) {
-		filesz = inode->data.file_ext.file_size;
-	} else {
-		filesz = inode->data.file.file_size;
-	}
+	sqfs_inode_get_file_size(inode, &filesz);
 
 	if (allow_sparse && ftruncate(outfd, filesz))
 		goto fail_sparse;

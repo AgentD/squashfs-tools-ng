@@ -209,15 +209,8 @@ int sqfs_data_reader_get_block(sqfs_data_reader_t *data,
 	size_t i, unpacked_size;
 	uint64_t off, filesz;
 
-	if (inode->base.type == SQFS_INODE_FILE) {
-		off = inode->data.file.blocks_start;
-		filesz = inode->data.file.file_size;
-	} else if (inode->base.type == SQFS_INODE_EXT_FILE) {
-		off = inode->data.file_ext.blocks_start;
-		filesz = inode->data.file_ext.file_size;
-	} else {
-		return SQFS_ERROR_NOT_FILE;
-	}
+	sqfs_inode_get_file_block_start(inode, &off);
+	sqfs_inode_get_file_size(inode, &filesz);
 
 	if (index >= inode->num_file_blocks)
 		return SQFS_ERROR_OUT_OF_BOUNDS;
@@ -241,17 +234,8 @@ int sqfs_data_reader_get_fragment(sqfs_data_reader_t *data,
 	sqfs_block_t *blk;
 	uint64_t filesz;
 
-	if (inode->base.type == SQFS_INODE_EXT_FILE) {
-		filesz = inode->data.file_ext.file_size;
-		frag_idx = inode->data.file_ext.fragment_idx;
-		frag_off = inode->data.file_ext.fragment_offset;
-	} else if (inode->base.type == SQFS_INODE_FILE) {
-		filesz = inode->data.file.file_size;
-		frag_idx = inode->data.file.fragment_index;
-		frag_off = inode->data.file.fragment_offset;
-	} else {
-		return -1;
-	}
+	sqfs_inode_get_file_size(inode, &filesz);
+	sqfs_inode_get_frag_location(inode, &frag_idx, &frag_off);
 
 	if (inode->num_file_blocks * data->block_size >= filesz) {
 		*out = NULL;
@@ -287,17 +271,9 @@ ssize_t sqfs_data_reader_read(sqfs_data_reader_t *data,
 	char *ptr;
 
 	/* work out file location and size */
-	if (inode->base.type == SQFS_INODE_EXT_FILE) {
-		off = inode->data.file_ext.blocks_start;
-		filesz = inode->data.file_ext.file_size;
-		frag_idx = inode->data.file_ext.fragment_idx;
-		frag_off = inode->data.file_ext.fragment_offset;
-	} else {
-		off = inode->data.file.blocks_start;
-		filesz = inode->data.file.file_size;
-		frag_idx = inode->data.file.fragment_index;
-		frag_off = inode->data.file.fragment_offset;
-	}
+	sqfs_inode_get_file_size(inode, &filesz);
+	sqfs_inode_get_frag_location(inode, &frag_idx, &frag_off);
+	sqfs_inode_get_file_block_start(inode, &off);
 
 	/* find location of the first block */
 	i = 0;

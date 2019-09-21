@@ -15,80 +15,51 @@ static struct file_ent {
 static size_t num_files = 0, max_files = 0;
 static size_t block_size = 0;
 
-static uint32_t get_frag_idx(const sqfs_inode_generic_t *inode)
-{
-	if (inode->base.type == SQFS_INODE_EXT_FILE)
-		return inode->data.file_ext.fragment_idx;
-
-	return inode->data.file.fragment_index;
-}
-
-static uint32_t get_frag_off(const sqfs_inode_generic_t *inode)
-{
-	if (inode->base.type == SQFS_INODE_EXT_FILE)
-		return inode->data.file_ext.fragment_offset;
-
-	return inode->data.file.fragment_offset;
-}
-
-static uint64_t get_size(const sqfs_inode_generic_t *inode)
-{
-	if (inode->base.type == SQFS_INODE_EXT_FILE)
-		return inode->data.file_ext.file_size;
-
-	return inode->data.file.file_size;
-}
-
-static uint64_t get_start(const sqfs_inode_generic_t *inode)
-{
-	if (inode->base.type == SQFS_INODE_EXT_FILE)
-		return inode->data.file_ext.blocks_start;
-
-	return inode->data.file.blocks_start;
-}
-
-static bool has_fragment(const struct file_ent *ent)
-{
-	if (get_size(ent->inode) % block_size == 0)
-		return false;
-
-	return get_frag_off(ent->inode) < block_size &&
-		(get_frag_idx(ent->inode) != 0xFFFFFFFF);
-}
-
 static int compare_files(const void *l, const void *r)
 {
+	uint32_t lhs_frag_idx, lhs_frag_off, rhs_frag_idx, rhs_frag_off;
+	uint64_t lhs_size, rhs_size, lhs_start, rhs_start;
 	const struct file_ent *lhs = l, *rhs = r;
+
+	sqfs_inode_get_frag_location(lhs->inode, &lhs_frag_idx, &lhs_frag_off);
+	sqfs_inode_get_file_block_start(lhs->inode, &lhs_start);
+	sqfs_inode_get_file_size(lhs->inode, &lhs_size);
+
+	sqfs_inode_get_frag_location(rhs->inode, &rhs_frag_idx, &rhs_frag_off);
+	sqfs_inode_get_file_block_start(rhs->inode, &rhs_start);
+	sqfs_inode_get_file_size(rhs->inode, &rhs_size);
 
 	/* Files with fragments come first, ordered by ID.
 	   In case of tie, files without data blocks come first,
 	   and the others are ordered by start block. */
-	if (has_fragment(lhs)) {
-		if (!(has_fragment(rhs)))
+	if ((lhs_size % block_size) && (lhs_frag_off < block_size) &&
+	    (lhs_frag_idx != 0xFFFFFFFF)) {
+		if ((rhs_size % block_size) && (rhs_frag_off < block_size) &&
+		    (rhs_frag_idx != 0xFFFFFFFF))
 			return -1;
 
-		if (get_frag_idx(lhs->inode) < get_frag_idx(rhs->inode))
+		if (lhs_frag_idx < rhs_frag_idx)
 			return -1;
 
-		if (get_frag_idx(lhs->inode) > get_frag_idx(rhs->inode))
+		if (lhs_frag_idx > rhs_frag_idx)
 			return 1;
 
-		if (get_size(lhs->inode) < block_size)
-			return (get_size(rhs->inode) < block_size) ? 0 : -1;
+		if (lhs_size < block_size)
+			return (rhs_size < block_size) ? 0 : -1;
 
-		if (get_size(rhs->inode) < block_size)
+		if (rhs_size < block_size)
 			return 1;
 
 		goto order_by_start;
 	}
 
-	if (has_fragment(rhs))
+	if ((rhs_size % block_size) && (rhs_frag_off < block_size) &&
+	    (rhs_frag_idx != 0xFFFFFFFF))
 		return 1;
 
 	/* order the rest by start block */
 order_by_start:
-	return get_start(lhs->inode) < get_start(rhs->inode) ? -1 :
-		get_start(lhs->inode) > get_start(rhs->inode) ? 1 : 0;
+	return lhs_start < rhs_start ? -1 : lhs_start > rhs_start ? 1 : 0;
 }
 
 static int add_file(const sqfs_tree_node_t *node)

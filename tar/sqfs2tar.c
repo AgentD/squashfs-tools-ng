@@ -195,27 +195,7 @@ static int get_xattrs(const sqfs_inode_generic_t *inode, tar_xattr_t **out)
 	if (xr == NULL)
 		return 0;
 
-	switch (inode->base.type) {
-	case SQFS_INODE_EXT_DIR:
-		index = inode->data.dir_ext.xattr_idx;
-		break;
-	case SQFS_INODE_EXT_FILE:
-		index = inode->data.file_ext.xattr_idx;
-		break;
-	case SQFS_INODE_EXT_SLINK:
-		index = inode->data.slink_ext.xattr_idx;
-		break;
-	case SQFS_INODE_EXT_BDEV:
-	case SQFS_INODE_EXT_CDEV:
-		index = inode->data.dev_ext.xattr_idx;
-		break;
-	case SQFS_INODE_EXT_FIFO:
-	case SQFS_INODE_EXT_SOCKET:
-		index = inode->data.ipc_ext.xattr_idx;
-		break;
-	default:
-		return 0;
-	}
+	sqfs_inode_get_xattr_index(inode, &index);
 
 	if (index == 0xFFFFFFFF)
 		return 0;

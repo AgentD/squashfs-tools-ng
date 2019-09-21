@@ -33,17 +33,8 @@ int compare_files(sqfsdiff_t *sd, const sqfs_inode_generic_t *old,
 	uint64_t offset, diff, oldsz, newsz;
 	int status = 0, ret;
 
-	if (old->base.type == SQFS_INODE_EXT_FILE) {
-		oldsz = old->data.file_ext.file_size;
-	} else {
-		oldsz = old->data.file.file_size;
-	}
-
-	if (new->base.type == SQFS_INODE_EXT_FILE) {
-		newsz = new->data.file_ext.file_size;
-	} else {
-		newsz = new->data.file.file_size;
-	}
+	sqfs_inode_get_file_size(old, &oldsz);
+	sqfs_inode_get_file_size(new, &newsz);
 
 	if (oldsz != newsz)
 		goto out_different;

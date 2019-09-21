@@ -87,13 +87,12 @@ static void print_node_size(const sqfs_tree_node_t *n, char *buffer)
 	case S_IFLNK:
 		print_size(strlen(n->inode->slink_target), buffer);
 		break;
-	case S_IFREG:
-		if (n->inode->base.type == SQFS_INODE_EXT_FILE) {
-			print_size(n->inode->data.file_ext.file_size, buffer);
-		} else {
-			print_size(n->inode->data.file.file_size, buffer);
-		}
+	case S_IFREG: {
+		uint64_t size;
+		sqfs_inode_get_file_size(n->inode, &size);
+		print_size(size, buffer);
 		break;
+	}
 	case S_IFDIR:
 		if (n->inode->base.type == SQFS_INODE_EXT_DIR) {
 			print_size(n->inode->data.dir_ext.size, buffer);

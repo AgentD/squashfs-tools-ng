@@ -452,4 +452,138 @@ struct sqfs_inode_generic_t {
 	uint8_t extra[];
 };
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @brief Get the extended attribute index of an inode
+ *
+ * For basic inodes, this returns the inode index 0xFFFFFFFF, i.e. the
+ * sentinel value indicating that there are no xattrs.
+ *
+ * @param inode A pointer to an inode.
+ * @param out Returns the extended attribute index on success.
+ *
+ * @return Zero on success, an @ref SQFS_ERROR_CORRUPTED if the node has
+ *         an unknown type set.
+ */
+SQFS_API int sqfs_inode_get_xattr_index(const sqfs_inode_generic_t *inode,
+					uint32_t *out);
+
+/**
+ * @brief Convert a basic inode to an extended inode.
+ *
+ * For inodes that already have an extended type, this is a no-op.
+ *
+ * @param inode A pointer to an inode.
+ *
+ * @return Zero on success, an @ref SQFS_ERROR_CORRUPTED if the node has
+ *         an unknown type set.
+ */
+SQFS_API int sqfs_inode_make_extended(sqfs_inode_generic_t *inode);
+
+/**
+ * @brief Convert an extended inode to a basic inode if possible.
+ *
+ * For inodes that already have a basic type, this is a no-op. If the inode
+ * has values set that the coresponding basic type doesn't support (e.g. it
+ * has an xattr index set or a regular file which requires 64 bit size
+ * counter), it is left as an extended type and success state is returned.
+ *
+ * @param inode A pointer to an inode.
+ *
+ * @return Zero on success, an @ref SQFS_ERROR_CORRUPTED if the node has
+ *         an unknown type set.
+ */
+SQFS_API int sqfs_inode_make_basic(sqfs_inode_generic_t *inode);
+
+/**
+ * @brief Update the file size of a regular file inode.
+ *
+ * If the new size is wider than 32 bit, a basic file inode is transparently
+ * promoted to an extended file inode. For extended inodes, if the new size
+ * is small enough and was the only requirement for the extended type, the
+ * node is transparently demoted to a basic file inode.
+ *
+ * @param inode A pointer to an inode.
+ * @param size The new size to set.
+ *
+ * @return Zero on success, @ref SQFS_ERROR_NOT_FILE if the node is
+ *         not a regular file.
+ */
+SQFS_API int sqfs_inode_set_file_size(sqfs_inode_generic_t *inode,
+				      uint64_t size);
+
+/**
+ * @brief Update the location of the first data block of a regular file inode.
+ *
+ * If the new location is wider than 32 bit, a basic file inode is
+ * transparently promoted to an extended file inode. For extended inodes,
+ * if the new size is small enough and was the only requirement for the
+ * extended type, the node is transparently demoted to a basic file inode.
+ *
+ * @param inode A pointer to an inode.
+ * @param location The new location to set.
+ *
+ * @return Zero on success, @ref SQFS_ERROR_NOT_FILE if the node is
+ *         not a regular file.
+ */
+SQFS_API int sqfs_inode_set_file_block_start(sqfs_inode_generic_t *inode,
+					     uint64_t location);
+
+/**
+ * @brief Update the file fragment location of a regular file inode.
+ *
+ * @param inode A pointer to an inode.
+ * @param index The new fragment index to set.
+ * @param offset The new fragment offset to set.
+ *
+ * @return Zero on success, @ref SQFS_ERROR_NOT_FILE if the node is
+ *         not a regular file.
+ */
+SQFS_API int sqfs_inode_set_frag_location(sqfs_inode_generic_t *inode,
+					  uint32_t index, uint32_t offset);
+
+/**
+ * @brief Get the file size of a regular file inode.
+ *
+ * @param inode A pointer to an inode.
+ * @param size Returns the file size.
+ *
+ * @return Zero on success, @ref SQFS_ERROR_NOT_FILE if the node is
+ *         not a regular file.
+ */
+SQFS_API int sqfs_inode_get_file_size(const sqfs_inode_generic_t *inode,
+				      uint64_t *size);
+
+/**
+ * @brief Get the file fragment location of a regular file inode.
+ *
+ * @param inode A pointer to an inode.
+ * @param index Returns the fragment index.
+ * @param offset Returns the fragment offset.
+ *
+ * @return Zero on success, @ref SQFS_ERROR_NOT_FILE if the node is
+ *         not a regular file.
+ */
+SQFS_API int sqfs_inode_get_frag_location(const sqfs_inode_generic_t *inode,
+					  uint32_t *index, uint32_t *offset);
+
+/**
+ * @brief Get the location of the first data block of a regular file inode.
+ *
+ * @param inode A pointer to an inode.
+ * @param location Returns the location.
+ *
+ * @return Zero on success, @ref SQFS_ERROR_NOT_FILE if the node is
+ *         not a regular file.
+ */
+SQFS_API int sqfs_inode_get_file_block_start(const sqfs_inode_generic_t *inode,
+					     uint64_t *location);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* SQFS_INODE_H */
