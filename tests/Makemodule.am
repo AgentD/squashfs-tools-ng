@@ -73,14 +73,6 @@ test_str_table_SOURCES = tests/str_table.c
 test_str_table_LDADD = libutil.la
 test_str_table_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(top_srcdir)/tests
 
-test_blk_proc_order_SOURCES = tests/blk_proc_order.c
-test_blk_proc_order_CPPFLAGS = $(AM_CPPFLAGS)
-test_blk_proc_order_LDADD = libsquashfs.la libutil.la
-
-if HAVE_PTHREAD
-test_blk_proc_order_CPPFLAGS += -DHAVE_PTHREAD
-endif
-
 fstree_fuzz_SOURCES = tests/fstree_fuzz.c
 fstree_fuzz_LDADD = libfstree.a libutil.la
 
@@ -94,7 +86,6 @@ check_PROGRAMS += test_fstree_from_file test_fstree_init test_fstree_xattr
 check_PROGRAMS += test_tar_ustar test_tar_pax test_tar_gnu test_tar_sparse_gnu
 check_PROGRAMS += test_tar_sparse_gnu1 test_tar_sparse_gnu2
 check_PROGRAMS += test_tar_xattr_bsd test_tar_xattr_schily test_str_table
-check_PROGRAMS += test_blk_proc_order
 
 noinst_PROGRAMS += fstree_fuzz tar_fuzz
 
@@ -104,6 +95,6 @@ TESTS += test_add_by_path test_get_path test_fstree_sort test_fstree_from_file
 TESTS += test_fstree_init test_fstree_xattr test_tar_ustar test_tar_pax
 TESTS += test_tar_gnu test_tar_sparse_gnu test_tar_sparse_gnu1
 TESTS += test_tar_sparse_gnu2 test_tar_xattr_bsd test_tar_xattr_schily
-TESTS += test_str_table test_blk_proc_order
+TESTS += test_str_table
 
 EXTRA_DIST += $(top_srcdir)/tests/tar $(top_srcdir)/tests/words.txt
