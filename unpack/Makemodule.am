@@ -2,6 +2,6 @@ rdsquashfs_SOURCES = unpack/rdsquashfs.c unpack/rdsquashfs.h
 rdsquashfs_SOURCES += unpack/list_files.c unpack/options.c
 rdsquashfs_SOURCES += unpack/restore_fstree.c unpack/describe.c
 rdsquashfs_SOURCES += unpack/fill_files.c unpack/dump_xattrs.c
-rdsquashfs_LDADD = libsqfshelper.a libsquashfs.la libfstree.a libutil.la
+rdsquashfs_LDADD = libsqfshelper.a libsquashfs.la libutil.la
 
 bin_PROGRAMS += rdsquashfs

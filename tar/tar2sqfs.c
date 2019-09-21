@@ -486,10 +486,8 @@ int main(int argc, char **argv)
 	if (padd_sqfs(outfile, super.bytes_used, devblksize))
 		goto out;
 
-	if (!quiet) {
-		fstree_gen_file_list(&fs);
+	if (!quiet)
 		sqfs_print_statistics(&super, data_writer_get_stats(data));
-	}
 
 	status = EXIT_SUCCESS;
 out:

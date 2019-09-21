@@ -101,10 +101,6 @@ struct dir_info_t {
 	/* Linked list head for children in the directory */
 	tree_node_t *children;
 
-	/* Size on disk. Computed and updated on the fly while writing
-	   directory meta data to disk. */
-	uint64_t size;
-
 	/* Set to true for implicitly generated directories.  */
 	bool created_implicitly;
 };
