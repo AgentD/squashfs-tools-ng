@@ -30,6 +30,8 @@ static int restore_working_dir(options_t *opt)
 
 static int pack_files(data_writer_t *data, fstree_t *fs, options_t *opt)
 {
+	sqfs_inode_generic_t *inode;
+	size_t max_blk_count;
 	sqfs_file_t *file;
 	file_info_t *fi;
 	int ret;
@@ -41,6 +43,24 @@ static int pack_files(data_writer_t *data, fstree_t *fs, options_t *opt)
 		if (!opt->quiet)
 			printf("packing %s\n", fi->input_file);
 
+		max_blk_count = fi->size / fs->block_size;
+		if (fi->size % fs->block_size)
+			++max_blk_count;
+
+		inode = alloc_flex(sizeof(*inode), sizeof(uint32_t),
+				   max_blk_count);
+		if (inode == NULL) {
+			perror("creating file inode");
+			return -1;
+		}
+
+		inode->block_sizes = (uint32_t *)inode->extra;
+		inode->base.type = SQFS_INODE_FILE;
+		sqfs_inode_set_file_size(inode, fi->size);
+		sqfs_inode_set_frag_location(inode, 0xFFFFFFFF, 0xFFFFFFFF);
+
+		fi->user_ptr = inode;
+
 		file = sqfs_open_file(fi->input_file,
 				      SQFS_FILE_OPEN_READ_ONLY);
 		if (file == NULL) {
@@ -48,7 +68,7 @@ static int pack_files(data_writer_t *data, fstree_t *fs, options_t *opt)
 			return -1;
 		}
 
-		ret = write_data_from_file(data, fi, file, 0);
+		ret = write_data_from_file(data, inode, file, 0);
 		file->destroy(file);
 
 		if (ret)

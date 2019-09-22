@@ -113,7 +113,7 @@ static size_t deduplicate_blocks(data_writer_t *data, size_t count)
 
 static int block_callback(void *user, sqfs_block_t *blk)
 {
-	file_info_t *fi = blk->user;
+	sqfs_inode_generic_t *inode = blk->user;
 	data_writer_t *data = user;
 	size_t start, count;
 	uint64_t offset;
@@ -144,7 +144,7 @@ static int block_callback(void *user, sqfs_block_t *blk)
 
 			data->stats.frag_blocks_written += 1;
 		} else {
-			fi->block_size[blk->index] = htole32(out);
+			inode->block_sizes[blk->index] = htole32(out);
 
 			data->stats.blocks_written += 1;
 		}
@@ -164,8 +164,9 @@ static int block_callback(void *user, sqfs_block_t *blk)
 
 		count = data->num_blocks - data->file_start;
 		start = deduplicate_blocks(data, count);
+		offset = data->blocks[start].offset;
 
-		fi->startblock = data->blocks[start].offset;
+		sqfs_inode_set_file_block_start(inode, offset);
 
 		if (start < data->file_start) {
 			offset = start + count;
@@ -221,7 +222,7 @@ static int flush_fragment_block(data_writer_t *data)
 
 static int handle_fragment(data_writer_t *data, sqfs_block_t *frag)
 {
-	file_info_t *fi = frag->user;
+	sqfs_inode_generic_t *inode = frag->user;
 	size_t i, size, new_sz;
 	uint64_t signature;
 	void *new;
@@ -231,8 +232,9 @@ static int handle_fragment(data_writer_t *data, sqfs_block_t *frag)
 
 	for (i = 0; i < data->frag_list_num; ++i) {
 		if (data->frag_list[i].signature == signature) {
-			fi->fragment_offset = data->frag_list[i].offset;
-			fi->fragment = data->frag_list[i].index;
+			sqfs_inode_set_frag_location(inode,
+						     data->frag_list[i].index,
+						     data->frag_list[i].offset);
 			free(frag);
 
 			data->stats.frag_dup += 1;
@@ -280,8 +282,8 @@ static int handle_fragment(data_writer_t *data, sqfs_block_t *frag)
 	data->frag_list[data->frag_list_num].signature = signature;
 	data->frag_list_num += 1;
 
-	fi->fragment_offset = data->frag_block->size;
-	fi->fragment = data->num_fragments;
+	sqfs_inode_set_frag_location(inode, data->num_fragments,
+				     data->frag_block->size);
 
 	data->frag_block->flags |= (frag->flags & SQFS_BLK_DONT_COMPRESS);
 	memcpy(data->frag_block->data + data->frag_block->size,
@@ -302,7 +304,7 @@ static bool is_zero_block(unsigned char *ptr, size_t size)
 	return ptr[0] == 0 && memcmp(ptr, ptr + 1, size - 1) == 0;
 }
 
-static int add_sentinel_block(data_writer_t *data, file_info_t *fi,
+static int add_sentinel_block(data_writer_t *data, sqfs_inode_generic_t *inode,
 			      uint32_t flags)
 {
 	sqfs_block_t *blk = calloc(1, sizeof(*blk));
@@ -312,20 +314,20 @@ static int add_sentinel_block(data_writer_t *data, file_info_t *fi,
 		return -1;
 	}
 
-	blk->user = fi;
+	blk->user = inode;
 	blk->flags = SQFS_BLK_DONT_COMPRESS | SQFS_BLK_DONT_CHECKSUM | flags;
 
 	return sqfs_block_processor_enqueue(data->proc, blk);
 }
 
 int write_data_from_file_condensed(data_writer_t *data, sqfs_file_t *file,
-				   file_info_t *fi,
+				   sqfs_inode_generic_t *inode,
 				   const sqfs_sparse_map_t *map, int flags)
 {
 	uint32_t blk_flags = SQFS_BLK_FIRST_BLOCK;
+	uint64_t filesz, offset;
 	size_t diff, i = 0;
 	sqfs_block_t *blk;
-	uint64_t offset;
 	int ret;
 
 	if (flags & DW_DONT_COMPRESS)
@@ -334,19 +336,21 @@ int write_data_from_file_condensed(data_writer_t *data, sqfs_file_t *file,
 	if (flags & DW_ALLIGN_DEVBLK)
 		blk_flags |= SQFS_BLK_ALLIGN;
 
-	for (offset = 0; offset < fi->size; offset += diff) {
-		if (fi->size - offset > (uint64_t)data->super->block_size) {
+	sqfs_inode_get_file_size(inode, &filesz);
+
+	for (offset = 0; offset < filesz; offset += diff) {
+		if (filesz - offset > (uint64_t)data->super->block_size) {
 			diff = data->super->block_size;
 		} else {
-			diff = fi->size - offset;
+			diff = filesz - offset;
 		}
 
 		if (map == NULL) {
-			ret = sqfs_file_create_block(file, offset, diff, fi,
+			ret = sqfs_file_create_block(file, offset, diff, inode,
 						     blk_flags, &blk);
 		} else {
 			ret = sqfs_file_create_block_dense(file, offset, diff,
-							   fi, blk_flags,
+							   inode, blk_flags,
 							   map, &blk);
 		}
 
@@ -358,7 +362,11 @@ int write_data_from_file_condensed(data_writer_t *data, sqfs_file_t *file,
 		if (is_zero_block(blk->data, blk->size)) {
 			data->stats.sparse_blocks += 1;
 
-			fi->block_size[blk->index] = 0;
+			sqfs_inode_make_extended(inode);
+			inode->data.file_ext.sparse += blk->size;
+			inode->num_file_blocks += 1;
+
+			inode->block_sizes[blk->index] = 0;
 			free(blk);
 			continue;
 		}
@@ -369,7 +377,8 @@ int write_data_from_file_condensed(data_writer_t *data, sqfs_file_t *file,
 					   SQFS_BLK_LAST_BLOCK))) {
 				blk_flags |= SQFS_BLK_LAST_BLOCK;
 
-				if (add_sentinel_block(data, fi, blk_flags)) {
+				if (add_sentinel_block(data, inode,
+						       blk_flags)) {
 					free(blk);
 					return -1;
 				}
@@ -382,25 +391,28 @@ int write_data_from_file_condensed(data_writer_t *data, sqfs_file_t *file,
 				return -1;
 
 			blk_flags &= ~SQFS_BLK_FIRST_BLOCK;
+			inode->num_file_blocks += 1;
 		}
 	}
 
 	if (!(blk_flags & (SQFS_BLK_FIRST_BLOCK | SQFS_BLK_LAST_BLOCK))) {
 		blk_flags |= SQFS_BLK_LAST_BLOCK;
 
-		if (add_sentinel_block(data, fi, blk_flags))
+		if (add_sentinel_block(data, inode, blk_flags))
 			return -1;
 	}
 
-	data->stats.bytes_read += fi->size;
+	sqfs_inode_make_basic(inode);
+
+	data->stats.bytes_read += filesz;
 	data->stats.file_count += 1;
 	return 0;
 }
 
-int write_data_from_file(data_writer_t *data, file_info_t *fi,
+int write_data_from_file(data_writer_t *data, sqfs_inode_generic_t *inode,
 			 sqfs_file_t *file, int flags)
 {
-	return write_data_from_file_condensed(data, file, fi, NULL, flags);
+	return write_data_from_file_condensed(data, file, inode, NULL, flags);
 }
 
 data_writer_t *data_writer_create(sqfs_super_t *super, sqfs_compressor_t *cmp,

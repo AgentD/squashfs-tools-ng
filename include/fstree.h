@@ -78,6 +78,8 @@ struct file_info_t {
 
 	uint64_t size;
 
+	void *user_ptr;
+
 	/* Number of bytes not written to disk because they are 0 */
 	uint64_t sparse;
 

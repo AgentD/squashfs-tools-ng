@@ -92,8 +92,7 @@ int sqfs_serialize_fstree(sqfs_file_t *file, sqfs_super_t *super, fstree_t *fs,
 			inode = write_dir_entries(dirwr, fs->inode_table[i],
 						  idtbl);
 		} else {
-			inode = tree_node_to_inode(fs, idtbl,
-						   fs->inode_table[i]);
+			inode = tree_node_to_inode(idtbl, fs->inode_table[i]);
 		}
 
 		if (inode == NULL)

@@ -226,9 +226,28 @@ static int write_file(tar_header_decoded_t *hdr, file_info_t *fi,
 		      data_writer_t *data)
 {
 	const sqfs_sparse_map_t *it;
+	sqfs_inode_generic_t *inode;
+	size_t max_blk_count;
 	sqfs_file_t *file;
 	uint64_t sum;
 	int ret;
+
+	max_blk_count = fi->size / block_size;
+	if (fi->size % block_size)
+		++max_blk_count;
+
+	inode = alloc_flex(sizeof(*inode), sizeof(uint32_t), max_blk_count);
+	if (inode == NULL) {
+		perror("creating file inode");
+		return -1;
+	}
+
+	inode->block_sizes = (uint32_t *)inode->extra;
+	inode->base.type = SQFS_INODE_FILE;
+	sqfs_inode_set_file_size(inode, fi->size);
+	sqfs_inode_set_frag_location(inode, 0xFFFFFFFF, 0xFFFFFFFF);
+
+	fi->user_ptr = inode;
 
 	if (hdr->sparse != NULL) {
 		for (sum = 0, it = hdr->sparse; it != NULL; it = it->next)
@@ -240,7 +259,7 @@ static int write_file(tar_header_decoded_t *hdr, file_info_t *fi,
 			return -1;
 		}
 
-		ret = write_data_from_file_condensed(data, file, fi,
+		ret = write_data_from_file_condensed(data, file, inode,
 						     hdr->sparse, 0);
 		file->destroy(file);
 		if (ret)
@@ -255,7 +274,7 @@ static int write_file(tar_header_decoded_t *hdr, file_info_t *fi,
 		return -1;
 	}
 
-	ret = write_data_from_file(data, fi, file, 0);
+	ret = write_data_from_file(data, inode, file, 0);
 	file->destroy(file);
 
 	if (ret)

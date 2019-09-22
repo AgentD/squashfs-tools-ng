@@ -84,7 +84,7 @@ int data_writer_sync(data_writer_t *data);
 
   Returns 0 on success, prints errors to stderr.
 */
-int write_data_from_file(data_writer_t *data, file_info_t *fi,
+int write_data_from_file(data_writer_t *data, sqfs_inode_generic_t *inode,
 			 sqfs_file_t *file, int flags);
 
 /*
@@ -98,7 +98,7 @@ int write_data_from_file(data_writer_t *data, file_info_t *fi,
   Returns 0 on success, prints errors to stderr.
  */
 int write_data_from_file_condensed(data_writer_t *data, sqfs_file_t *file,
-				   file_info_t *fi,
+				   sqfs_inode_generic_t *inode,
 				   const sqfs_sparse_map_t *map, int flags);
 
 data_writer_stats_t *data_writer_get_stats(data_writer_t *data);
