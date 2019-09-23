@@ -15,8 +15,8 @@
 #include <stdlib.h>
 
 int sqfs_file_create_block(sqfs_file_t *file, uint64_t offset,
-			   size_t size, void *user, uint32_t flags,
-			   sqfs_block_t **out)
+			   size_t size, sqfs_inode_generic_t *inode,
+			   uint32_t flags, sqfs_block_t **out)
 {
 	sqfs_block_t *blk = alloc_flex(sizeof(*blk), 1, size);
 	int err;
@@ -30,7 +30,7 @@ int sqfs_file_create_block(sqfs_file_t *file, uint64_t offset,
 		return err;
 	}
 
-	blk->user = user;
+	blk->inode = inode;
 	blk->size = size;
 	blk->flags = flags;
 
@@ -39,8 +39,8 @@ int sqfs_file_create_block(sqfs_file_t *file, uint64_t offset,
 }
 
 int sqfs_file_create_block_dense(sqfs_file_t *file, uint64_t offset,
-				 size_t size, void *user, uint32_t flags,
-				 const sqfs_sparse_map_t *map,
+				 size_t size, sqfs_inode_generic_t *inode,
+				 uint32_t flags, const sqfs_sparse_map_t *map,
 				 sqfs_block_t **out)
 {
 	sqfs_block_t *blk = alloc_flex(sizeof(*blk), 1, size);
@@ -96,7 +96,7 @@ int sqfs_file_create_block_dense(sqfs_file_t *file, uint64_t offset,
 		poffset += it->count;
 	}
 
-	blk->user = user;
+	blk->inode = inode;
 	blk->size = size;
 	blk->flags = flags;
 

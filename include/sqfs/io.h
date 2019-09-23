@@ -179,15 +179,15 @@ SQFS_API sqfs_file_t *sqfs_get_stdin_file(uint64_t size);
  * @param file A pointer to a file implementation.
  * @param offset A byte offset into the file.
  * @param size The number of bytes to read, starting at the given offset.
- * @param user A user pointer to set for the block.
+ * @param inode The inode pointer to set for the block.
  * @param flags The flags to store in the newly created block.
  * @param out Returns a pointer to a block on success.
  *
  * @return Zero on success, an @ref E_SQFS_ERROR identifier on failure.
  */
 SQFS_API int sqfs_file_create_block(sqfs_file_t *file, uint64_t offset,
-				    size_t size, void *user, uint32_t flags,
-				    sqfs_block_t **out);
+				    size_t size, sqfs_inode_generic_t *inode,
+				    uint32_t flags, sqfs_block_t **out);
 
 /**
  * @brief Read a chunk from a condensed version of a sparse file and turn it
@@ -205,7 +205,7 @@ SQFS_API int sqfs_file_create_block(sqfs_file_t *file, uint64_t offset,
  * @param file A pointer to a file implementation.
  * @param offset A byte offset into the file.
  * @param size The number of bytes to read, starting at the given offset.
- * @param user A user pointer to set for the block.
+ * @param inode The inode pointer to set for the block.
  * @param flags The flags to store in the newly created block.
  * @param map Describes the data regions of the original sparse file.
  * @param out Returns a pointer to a block on success.
@@ -213,7 +213,8 @@ SQFS_API int sqfs_file_create_block(sqfs_file_t *file, uint64_t offset,
  * @return Zero on success, an @ref E_SQFS_ERROR identifier on failure.
  */
 SQFS_API int sqfs_file_create_block_dense(sqfs_file_t *file, uint64_t offset,
-					  size_t size, void *user,
+					  size_t size,
+					  sqfs_inode_generic_t *inode,
 					  uint32_t flags,
 					  const sqfs_sparse_map_t *map,
 					  sqfs_block_t **out);

@@ -128,16 +128,14 @@ struct sqfs_block_t {
 	uint32_t checksum;
 
 	/**
-	 * @brief User settable file block index.
-	 *
-	 * Can be used for purposes like indexing the block size table.
+	 * @brief Data block index within the inode.
 	 */
 	uint32_t index;
 
 	/**
-	 * @brief Arbitary user pointer associated with the block.
+	 * @brief The squashfs inode related to this block.
 	 */
-	void *user;
+	sqfs_inode_generic_t *inode;
 
 	/**
 	 * @brief User settable flag field.

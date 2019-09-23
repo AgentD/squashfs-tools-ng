@@ -113,7 +113,6 @@ static size_t deduplicate_blocks(data_writer_t *data, size_t count)
 
 static int block_callback(void *user, sqfs_block_t *blk)
 {
-	sqfs_inode_generic_t *inode = blk->user;
 	data_writer_t *data = user;
 	size_t start, count;
 	uint64_t offset;
@@ -144,7 +143,7 @@ static int block_callback(void *user, sqfs_block_t *blk)
 
 			data->stats.frag_blocks_written += 1;
 		} else {
-			inode->block_sizes[blk->index] = htole32(out);
+			blk->inode->block_sizes[blk->index] = htole32(out);
 
 			data->stats.blocks_written += 1;
 		}
@@ -166,7 +165,7 @@ static int block_callback(void *user, sqfs_block_t *blk)
 		start = deduplicate_blocks(data, count);
 		offset = data->blocks[start].offset;
 
-		sqfs_inode_set_file_block_start(inode, offset);
+		sqfs_inode_set_file_block_start(blk->inode, offset);
 
 		if (start < data->file_start) {
 			offset = start + count;
@@ -222,7 +221,6 @@ static int flush_fragment_block(data_writer_t *data)
 
 static int handle_fragment(data_writer_t *data, sqfs_block_t *frag)
 {
-	sqfs_inode_generic_t *inode = frag->user;
 	size_t i, size, new_sz;
 	uint64_t signature;
 	void *new;
@@ -232,7 +230,7 @@ static int handle_fragment(data_writer_t *data, sqfs_block_t *frag)
 
 	for (i = 0; i < data->frag_list_num; ++i) {
 		if (data->frag_list[i].signature == signature) {
-			sqfs_inode_set_frag_location(inode,
+			sqfs_inode_set_frag_location(frag->inode,
 						     data->frag_list[i].index,
 						     data->frag_list[i].offset);
 			free(frag);
@@ -282,7 +280,7 @@ static int handle_fragment(data_writer_t *data, sqfs_block_t *frag)
 	data->frag_list[data->frag_list_num].signature = signature;
 	data->frag_list_num += 1;
 
-	sqfs_inode_set_frag_location(inode, data->num_fragments,
+	sqfs_inode_set_frag_location(frag->inode, data->num_fragments,
 				     data->frag_block->size);
 
 	data->frag_block->flags |= (frag->flags & SQFS_BLK_DONT_COMPRESS);
@@ -314,7 +312,7 @@ static int add_sentinel_block(data_writer_t *data, sqfs_inode_generic_t *inode,
 		return -1;
 	}
 
-	blk->user = inode;
+	blk->inode = inode;
 	blk->flags = SQFS_BLK_DONT_COMPRESS | SQFS_BLK_DONT_CHECKSUM | flags;
 
 	return sqfs_block_processor_enqueue(data->proc, blk);
