@@ -151,7 +151,7 @@ static int add_sentinel_block(data_writer_t *data, sqfs_inode_generic_t *inode,
 	}
 
 	blk->inode = inode;
-	blk->flags = SQFS_BLK_DONT_COMPRESS | SQFS_BLK_DONT_CHECKSUM | flags;
+	blk->flags = flags;
 
 	return sqfs_block_processor_enqueue(data->proc, blk);
 }

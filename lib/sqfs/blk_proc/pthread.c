@@ -193,12 +193,15 @@ int sqfs_block_processor_enqueue(sqfs_block_processor_t *proc,
 {
 	sqfs_block_t *queue = NULL, *it, *prev;
 
+	if (block->flags & ~SQFS_BLK_USER_SETTABLE_FLAGS)
+		return SQFS_ERROR_UNSUPPORTED;
+
 	block->sequence_number = proc->enqueue_id++;
 	block->next = NULL;
 
 	pthread_mutex_lock(&proc->mtx);
-	if ((block->flags & SQFS_BLK_DONT_COMPRESS) &&
-	    (block->flags & SQFS_BLK_DONT_CHECKSUM)) {
+	if (block->size == 0) {
+		block->checksum = 0;
 		store_completed_block(proc, block);
 	} else {
 		while (proc->backlog > proc->max_backlog)

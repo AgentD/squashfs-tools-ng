@@ -55,29 +55,14 @@ typedef enum {
 	SQFS_BLK_DONT_COMPRESS = 0x0001,
 
 	/**
-	 * @brief Set by compressor worker if the block was actually compressed.
-	 */
-	SQFS_BLK_IS_COMPRESSED = 0x0002,
-
-	/**
-	 * @brief Do not calculate block checksum.
-	 */
-	SQFS_BLK_DONT_CHECKSUM = 0x0004,
-
-	/**
-	 * @brief Set by compressor worker if compression failed.
-	 */
-	SQFS_BLK_COMPRESS_ERROR = 0x0008,
-
-	/**
 	 * @brief Indicates that an equeued block is the first block of a file.
 	 */
-	SQFS_BLK_FIRST_BLOCK = 0x0010,
+	SQFS_BLK_FIRST_BLOCK = 0x0002,
 
 	/**
 	 * @brief Indicates that an equeued block is the last block of a file.
 	 */
-	SQFS_BLK_LAST_BLOCK = 0x0020,
+	SQFS_BLK_LAST_BLOCK = 0x0004,
 
 	/**
 	 * @brief Allign the block on disk to device block size.
@@ -89,14 +74,29 @@ typedef enum {
 	 * If used with @ref SQFS_BLK_LAST_BLOCK, the output file is padded
 	 * after writing the block.
 	 */
-	SQFS_BLK_ALLIGN = 0x0040,
+	SQFS_BLK_ALLIGN = 0x0008,
 
 	/**
 	 * @brief Indicates that a block is not part of a file but contains
 	 *        file tail ends and an entry in the fragment table has to be
 	 *        added.
 	 */
-	SQFS_BLK_FRAGMENT_BLOCK = 0x0080,
+	SQFS_BLK_FRAGMENT_BLOCK = 0x0010,
+
+	/**
+	 * @brief Set by compressor worker if the block was actually compressed.
+	 */
+	SQFS_BLK_IS_COMPRESSED = 0x4000,
+
+	/**
+	 * @brief Set by compressor worker if compression failed.
+	 */
+	SQFS_BLK_COMPRESS_ERROR = 0x8000,
+
+	/**
+	 * @brief The combination of all flags that are user settable.
+	 */
+	SQFS_BLK_USER_SETTABLE_FLAGS = 0x001F,
 } E_SQFS_BLK_FLAGS;
 
 /**

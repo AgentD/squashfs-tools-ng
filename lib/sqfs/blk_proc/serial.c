@@ -51,8 +51,18 @@ int sqfs_block_processor_enqueue(sqfs_block_processor_t *proc,
 		return proc->status;
 	}
 
-	proc->status = sqfs_block_process(block, proc->cmp,
-					  proc->scratch, proc->max_block_size);
+	if (block->flags & ~SQFS_BLK_USER_SETTABLE_FLAGS) {
+		proc->status = SQFS_ERROR_UNSUPPORTED;
+		return proc->status;
+	}
+
+	if (block->size == 0) {
+		block->checksum = 0;
+	} else {
+		proc->status = sqfs_block_process(block, proc->cmp,
+						  proc->scratch,
+						  proc->max_block_size);
+	}
 
 	block->next = NULL;
 	return process_completed_blocks(proc, block);
