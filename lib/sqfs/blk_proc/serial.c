@@ -40,6 +40,8 @@ sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
 
 void sqfs_block_processor_destroy(sqfs_block_processor_t *proc)
 {
+	free(proc->fragments);
+	free(proc->blocks);
 	free(proc);
 }
 
@@ -53,6 +55,7 @@ int sqfs_block_processor_enqueue(sqfs_block_processor_t *proc,
 
 	if (block->flags & ~SQFS_BLK_USER_SETTABLE_FLAGS) {
 		proc->status = SQFS_ERROR_UNSUPPORTED;
+		free(block);
 		return proc->status;
 	}
 

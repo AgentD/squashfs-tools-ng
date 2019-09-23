@@ -20,11 +20,8 @@ int sqfs_block_process(sqfs_block_t *block, sqfs_compressor_t *cmp,
 	if (!(block->flags & SQFS_BLK_DONT_COMPRESS)) {
 		ret = cmp->do_block(cmp, block->data, block->size,
 				    scratch, scratch_size);
-
-		if (ret < 0) {
-			block->flags |= SQFS_BLK_COMPRESS_ERROR;
+		if (ret < 0)
 			return ret;
-		}
 
 		if (ret > 0) {
 			memcpy(block->data, scratch, ret);
@@ -188,19 +185,24 @@ static int handle_block(sqfs_block_processor_t *proc, sqfs_block_t *blk)
 int process_completed_blocks(sqfs_block_processor_t *proc, sqfs_block_t *queue)
 {
 	sqfs_block_t *it;
+	int err;
 
 	while (queue != NULL) {
 		it = queue;
 		queue = queue->next;
 
-		if (it->flags & SQFS_BLK_COMPRESS_ERROR) {
-			proc->status = SQFS_ERROR_COMRPESSOR;
-		} else if (proc->status == 0) {
-			proc->status = handle_block(proc, it);
-		}
-
+		err = handle_block(proc, it);
 		free(it);
+
+		if (err) {
+			while (queue != NULL) {
+				it = queue;
+				queue = it->next;
+				free(it);
+			}
+			return err;
+		}
 	}
 
-	return proc->status;
+	return 0;
 }

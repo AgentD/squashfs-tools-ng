@@ -86,12 +86,7 @@ typedef enum {
 	/**
 	 * @brief Set by compressor worker if the block was actually compressed.
 	 */
-	SQFS_BLK_IS_COMPRESSED = 0x4000,
-
-	/**
-	 * @brief Set by compressor worker if compression failed.
-	 */
-	SQFS_BLK_COMPRESS_ERROR = 0x8000,
+	SQFS_BLK_IS_COMPRESSED = 0x8000,
 
 	/**
 	 * @brief The combination of all flags that are user settable.

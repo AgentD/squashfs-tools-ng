@@ -59,13 +59,13 @@ struct sqfs_block_processor_t {
 	sqfs_block_t *done;
 	bool terminate;
 	size_t backlog;
+	int status;
 
 	/* used by main thread only */
 	uint32_t enqueue_id;
 	uint32_t dequeue_id;
 
 	unsigned int num_workers;
-	int status;
 	size_t max_backlog;
 
 	size_t devblksz;

@@ -33,21 +33,26 @@ static void *worker_proc(void *arg)
 	compress_worker_t *worker = arg;
 	sqfs_block_processor_t *shared = worker->shared;
 	sqfs_block_t *blk = NULL;
+	int status = 0;
 
 	for (;;) {
 		pthread_mutex_lock(&shared->mtx);
 		if (blk != NULL) {
 			store_completed_block(shared, blk);
 			shared->backlog -= 1;
+
+			if (status != 0 && shared->status == 0)
+				shared->status = status;
 			pthread_cond_broadcast(&shared->done_cond);
 		}
 
-		while (shared->queue == NULL && !shared->terminate) {
+		while (shared->queue == NULL && !shared->terminate &&
+		       shared->status == 0) {
 			pthread_cond_wait(&shared->queue_cond,
 					  &shared->mtx);
 		}
 
-		if (shared->terminate) {
+		if (shared->terminate || shared->status != 0) {
 			pthread_mutex_unlock(&shared->mtx);
 			break;
 		}
@@ -60,8 +65,8 @@ static void *worker_proc(void *arg)
 			shared->queue_last = NULL;
 		pthread_mutex_unlock(&shared->mtx);
 
-		sqfs_block_process(blk, worker->cmp, worker->scratch,
-				   shared->max_block_size);
+		status = sqfs_block_process(blk, worker->cmp, worker->scratch,
+					    shared->max_block_size);
 	}
 	return NULL;
 }
@@ -148,6 +153,8 @@ fail_init:
 	pthread_cond_destroy(&proc->done_cond);
 	pthread_cond_destroy(&proc->queue_cond);
 	pthread_mutex_destroy(&proc->mtx);
+	free(proc->fragments);
+	free(proc->blocks);
 	free(proc);
 	return NULL;
 }
@@ -185,6 +192,8 @@ void sqfs_block_processor_destroy(sqfs_block_processor_t *proc)
 		free(blk);
 	}
 
+	free(proc->fragments);
+	free(proc->blocks);
 	free(proc);
 }
 
@@ -192,14 +201,24 @@ int sqfs_block_processor_enqueue(sqfs_block_processor_t *proc,
 				 sqfs_block_t *block)
 {
 	sqfs_block_t *queue = NULL, *it, *prev;
+	int status;
 
-	if (block->flags & ~SQFS_BLK_USER_SETTABLE_FLAGS)
-		return SQFS_ERROR_UNSUPPORTED;
+	pthread_mutex_lock(&proc->mtx);
+	if (proc->status != 0) {
+		status = proc->status;
+		goto fail;
+	}
+
+	if (block->flags & ~SQFS_BLK_USER_SETTABLE_FLAGS) {
+		status = SQFS_ERROR_UNSUPPORTED;
+		proc->status = status;
+		pthread_cond_broadcast(&proc->queue_cond);
+		goto fail;
+	}
 
 	block->sequence_number = proc->enqueue_id++;
 	block->next = NULL;
 
-	pthread_mutex_lock(&proc->mtx);
 	if (block->size == 0) {
 		block->checksum = 0;
 		store_completed_block(proc, block);
@@ -236,22 +255,31 @@ int sqfs_block_processor_enqueue(sqfs_block_processor_t *proc,
 	pthread_mutex_unlock(&proc->mtx);
 
 	return process_completed_blocks(proc, queue);
+fail:
+	pthread_mutex_unlock(&proc->mtx);
+	free(block);
+	return status;
 }
 
 int sqfs_block_processor_finish(sqfs_block_processor_t *proc)
 {
 	sqfs_block_t *queue, *it;
+	int status;
 
 	pthread_mutex_lock(&proc->mtx);
-	while (proc->backlog > 0)
+	while (proc->backlog > 0 && proc->status == 0)
 		pthread_cond_wait(&proc->done_cond, &proc->mtx);
+
+	if (proc->status != 0) {
+		status = proc->status;
+		goto fail;
+	}
 
 	for (it = proc->done; it != NULL; it = it->next) {
 		if (it->sequence_number != proc->dequeue_id++) {
-			pthread_mutex_unlock(&proc->mtx);
-
-			/* XXX: this would actually be a BUG */
-			return SQFS_ERROR_INTERNAL;
+			status = SQFS_ERROR_INTERNAL;
+			proc->status = status;
+			goto fail;
 		}
 	}
 
@@ -259,5 +287,28 @@ int sqfs_block_processor_finish(sqfs_block_processor_t *proc)
 	proc->done = NULL;
 	pthread_mutex_unlock(&proc->mtx);
 
-	return process_completed_blocks(proc, queue);
+	status = process_completed_blocks(proc, queue);
+	if (status != 0) {
+		pthread_mutex_lock(&proc->mtx);
+		proc->status = status;
+		pthread_cond_broadcast(&proc->queue_cond);
+		goto fail;
+	}
+
+	return 0;
+fail:
+	while (proc->queue != NULL) {
+		it = proc->queue;
+		proc->queue = it->next;
+		free(it);
+	}
+
+	while (proc->done != NULL) {
+		it = proc->done;
+		proc->done = it->next;
+		free(it);
+	}
+
+	pthread_mutex_unlock(&proc->mtx);
+	return status;
 }
