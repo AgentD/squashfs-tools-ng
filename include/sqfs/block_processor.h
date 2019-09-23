@@ -151,23 +151,6 @@ struct sqfs_block_t {
 	uint8_t data[];
 };
 
-/**
- * @brief Signature of a callback function that can is called for each block.
- *
- * Gets called for each processed block. May be called from a different thread
- * than the one that calls enqueue or from the same thread, but only from one
- * thread at a time.
- *
- * Guaranteed to be called on blocks in the order that they are submitted
- * to enqueue.
- *
- * @param user The user pointer passed to @ref sqfs_block_processor_create.
- * @param blk The finished block.
- *
- * @return A non-zero return value is interpreted as fatal error.
- */
-typedef int (*sqfs_block_cb)(void *user, sqfs_block_t *blk);
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -186,8 +169,9 @@ extern "C" {
  * @param max_backlog The maximum number of blocks currently in flight. When
  *                    trying to add more, enqueueing blocks until the in-flight
  *                    block count drops below the threshold.
- * @param user An arbitrary user pointer to pass to the block callback.
- * @param callback A function to call for each finished data block.
+ * @param devblksz The device block size to allign files to if they have the
+ *                 apropriate flag set.
+ * @param file The output file to write the finished blocks to.
  *
  * @return A pointer to a block processor object on success, NULL on allocation
  *         failure or on failure to create the worker threads and
@@ -198,8 +182,8 @@ sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
 						    sqfs_compressor_t *cmp,
 						    unsigned int num_workers,
 						    size_t max_backlog,
-						    void *user,
-						    sqfs_block_cb callback);
+						    size_t devblksz,
+						    sqfs_file_t *file);
 
 /**
  * @brief Destroy a block processor and free all memory used by it.
@@ -243,6 +227,26 @@ SQFS_API int sqfs_block_processor_enqueue(sqfs_block_processor_t *proc,
  *         processing or a failure return status from the block callback.
  */
 SQFS_API int sqfs_block_processor_finish(sqfs_block_processor_t *proc);
+
+/**
+ * @brief Write the completed fragment table to disk.
+ *
+ * @memberof sqfs_block_processor_t
+ *
+ * Call this after producing the inode and directory table to generate
+ * the fragment table for the squashfs image.
+ *
+ * @param proc A pointer to a block processor object.
+ * @param super A pointer to a super block to write information about the
+ *              fragment table to.
+ *
+ * @return Zero on success, an @ref E_SQFS_ERROR value on failure. The failure
+ *         return value can either be an error encountered during enqueueing,
+ *         processing or a failure return status from the block callback.
+ */
+SQFS_API
+int sqfs_block_processor_write_fragment_table(sqfs_block_processor_t *proc,
+					      sqfs_super_t *super);
 
 #ifdef __cplusplus
 }

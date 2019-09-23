@@ -6,7 +6,11 @@
 
 #include "sqfs/block_processor.h"
 #include "sqfs/compress.h"
+#include "sqfs/inode.h"
+#include "sqfs/table.h"
 #include "sqfs/error.h"
+#include "sqfs/data.h"
+#include "sqfs/io.h"
 #include "util.h"
 
 #include <string.h>
@@ -15,6 +19,21 @@
 #ifdef WITH_PTHREAD
 #include <pthread.h>
 #endif
+
+
+#define MK_BLK_SIG(chksum, size) \
+	(((uint64_t)(size) << 32) | (uint64_t)(chksum))
+
+#define BLK_SIZE(sig) ((sig) >> 32)
+
+#define INIT_BLOCK_COUNT (128)
+
+
+typedef struct {
+	uint64_t offset;
+	uint64_t signature;
+} blk_info_t;
+
 
 #ifdef WITH_PTHREAD
 typedef struct {
@@ -46,10 +65,23 @@ struct sqfs_block_processor_t {
 	uint32_t dequeue_id;
 
 	unsigned int num_workers;
-	sqfs_block_cb cb;
-	void *user;
 	int status;
 	size_t max_backlog;
+
+	size_t devblksz;
+	sqfs_file_t *file;
+
+	sqfs_fragment_t *fragments;
+	size_t num_fragments;
+	size_t max_fragments;
+
+	uint64_t start;
+
+	size_t file_start;
+	size_t num_blocks;
+	size_t max_blocks;
+	blk_info_t *blocks;
+	sqfs_compressor_t *cmp;
 
 	/* used only by workers */
 	size_t max_block_size;
@@ -57,7 +89,6 @@ struct sqfs_block_processor_t {
 #ifdef WITH_PTHREAD
 	compress_worker_t *workers[];
 #else
-	sqfs_compressor_t *cmp;
 	uint8_t scratch[];
 #endif
 };

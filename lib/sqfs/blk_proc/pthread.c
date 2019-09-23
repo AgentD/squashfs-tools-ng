@@ -70,8 +70,8 @@ sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
 						    sqfs_compressor_t *cmp,
 						    unsigned int num_workers,
 						    size_t max_backlog,
-						    void *user,
-						    sqfs_block_cb callback)
+						    size_t devblksz,
+						    sqfs_file_t *file)
 {
 	sqfs_block_processor_t *proc;
 	unsigned int i;
@@ -86,13 +86,19 @@ sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
 		return NULL;
 
 	proc->max_block_size = max_block_size;
-	proc->cb = callback;
-	proc->user = user;
 	proc->num_workers = num_workers;
 	proc->max_backlog = max_backlog;
 	proc->mtx = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
 	proc->queue_cond = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
 	proc->done_cond = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
+	proc->devblksz = devblksz;
+	proc->cmp = cmp;
+	proc->file = file;
+	proc->max_blocks = INIT_BLOCK_COUNT;
+
+	proc->blocks = alloc_array(sizeof(proc->blocks[0]), proc->max_blocks);
+	if (proc->blocks == NULL)
+		goto fail_init;
 
 	for (i = 0; i < num_workers; ++i) {
 		proc->workers[i] = alloc_flex(sizeof(compress_worker_t),
