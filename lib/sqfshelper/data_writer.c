@@ -111,6 +111,30 @@ static size_t deduplicate_blocks(data_writer_t *data, size_t count)
 	return i;
 }
 
+static size_t grow_fragment_table(data_writer_t *data, size_t index)
+{
+	size_t newsz;
+	void *new;
+
+	if (index < data->max_fragments)
+		return 0;
+
+	do {
+		newsz = data->max_fragments ? data->max_fragments * 2 : 16;
+	} while (index >= newsz);
+
+	new = realloc(data->fragments, sizeof(data->fragments[0]) * newsz);
+
+	if (new == NULL) {
+		perror("appending to fragment table");
+		return -1;
+	}
+
+	data->max_fragments = newsz;
+	data->fragments = new;
+	return 0;
+}
+
 static int block_callback(void *user, sqfs_block_t *blk)
 {
 	data_writer_t *data = user;
@@ -134,6 +158,9 @@ static int block_callback(void *user, sqfs_block_t *blk)
 		offset = data->file->get_size(data->file);
 
 		if (blk->flags & SQFS_BLK_FRAGMENT_BLOCK) {
+			if (grow_fragment_table(data, blk->index))
+				return 0;
+
 			data->fragments[blk->index].start_offset = htole64(offset);
 			data->fragments[blk->index].pad0 = 0;
 			data->fragments[blk->index].size = htole32(out);
@@ -194,23 +221,7 @@ static int block_callback(void *user, sqfs_block_t *blk)
 
 static int flush_fragment_block(data_writer_t *data)
 {
-	size_t newsz;
-	void *new;
 	int ret;
-
-	if (data->num_fragments == data->max_fragments) {
-		newsz = data->max_fragments ? data->max_fragments * 2 : 16;
-		new = realloc(data->fragments,
-			      sizeof(data->fragments[0]) * newsz);
-
-		if (new == NULL) {
-			perror("appending to fragment table");
-			return -1;
-		}
-
-		data->max_fragments = newsz;
-		data->fragments = new;
-	}
 
 	data->frag_block->index = data->num_fragments++;
 
