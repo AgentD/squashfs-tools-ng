@@ -50,20 +50,52 @@ static int flush_fragment_block(data_writer_t *data)
 {
 	int ret;
 
-	data->frag_block->index = data->num_fragments++;
-
 	ret = sqfs_block_processor_enqueue(data->proc, data->frag_block);
 	data->frag_block = NULL;
 	return ret;
 }
 
-static int handle_fragment(data_writer_t *data, sqfs_block_t *frag)
+static int store_fragment(data_writer_t *data, sqfs_block_t *frag,
+			  uint64_t signature)
 {
-	size_t i, size, new_sz;
-	uint64_t signature;
+	size_t new_sz;
 	void *new;
 
-	frag->checksum = crc32(0, frag->data, frag->size);
+	if (data->frag_list_num == data->frag_list_max) {
+		new_sz = data->frag_list_max * 2;
+		new = realloc(data->frag_list,
+			      sizeof(data->frag_list[0]) * new_sz);
+
+		if (new == NULL) {
+			perror("growing fragment checksum table");
+			return -1;
+		}
+
+		data->frag_list = new;
+		data->frag_list_max = new_sz;
+	}
+
+	data->frag_list[data->frag_list_num].index = data->frag_block->index;
+	data->frag_list[data->frag_list_num].offset = data->frag_block->size;
+	data->frag_list[data->frag_list_num].signature = signature;
+	data->frag_list_num += 1;
+
+	sqfs_inode_set_frag_location(frag->inode, data->frag_block->index,
+				     data->frag_block->size);
+
+	memcpy(data->frag_block->data + data->frag_block->size,
+	       frag->data, frag->size);
+
+	data->frag_block->flags |= (frag->flags & SQFS_BLK_DONT_COMPRESS);
+	data->frag_block->size += frag->size;
+	return 0;
+}
+
+static int handle_fragment(data_writer_t *data, sqfs_block_t *frag)
+{
+	uint64_t signature;
+	size_t i, size;
+
 	signature = MK_BLK_SIG(frag->checksum, frag->size);
 
 	for (i = 0; i < data->frag_list_num; ++i) {
@@ -72,8 +104,6 @@ static int handle_fragment(data_writer_t *data, sqfs_block_t *frag)
 						     data->frag_list[i].index,
 						     data->frag_list[i].offset);
 			free(frag);
-
-			data->stats.frag_dup += 1;
 			return 0;
 		}
 	}
@@ -96,39 +126,14 @@ static int handle_fragment(data_writer_t *data, sqfs_block_t *frag)
 			goto fail;
 		}
 
+		data->frag_block->index = data->num_fragments++;
 		data->frag_block->flags = SQFS_BLK_FRAGMENT_BLOCK;
 	}
 
-	if (data->frag_list_num == data->frag_list_max) {
-		new_sz = data->frag_list_max * 2;
-		new = realloc(data->frag_list,
-			      sizeof(data->frag_list[0]) * new_sz);
+	if (store_fragment(data, frag, signature))
+		goto fail;
 
-		if (new == NULL) {
-			perror("growing fragment checksum table");
-			return -1;
-		}
-
-		data->frag_list = new;
-		data->frag_list_max = new_sz;
-	}
-
-	data->frag_list[data->frag_list_num].index = data->num_fragments;
-	data->frag_list[data->frag_list_num].offset = data->frag_block->size;
-	data->frag_list[data->frag_list_num].signature = signature;
-	data->frag_list_num += 1;
-
-	sqfs_inode_set_frag_location(frag->inode, data->num_fragments,
-				     data->frag_block->size);
-
-	data->frag_block->flags |= (frag->flags & SQFS_BLK_DONT_COMPRESS);
-	memcpy(data->frag_block->data + data->frag_block->size,
-	       frag->data, frag->size);
-
-	data->frag_block->size += frag->size;
 	free(frag);
-
-	data->stats.frag_count += 1;
 	return 0;
 fail:
 	free(frag);
@@ -219,6 +224,8 @@ int write_data_from_file_condensed(data_writer_t *data, sqfs_file_t *file,
 					return -1;
 				}
 			}
+
+			blk->checksum = crc32(0, blk->data, blk->size);
 
 			if (handle_fragment(data, blk))
 				return -1;
