@@ -68,7 +68,9 @@ int sqfs_block_processor_enqueue(sqfs_block_processor_t *proc,
 	}
 
 	block->next = NULL;
-	return process_completed_blocks(proc, block);
+	proc->status = process_completed_block(proc, block);
+	free(block);
+	return proc->status;
 }
 
 int sqfs_block_processor_finish(sqfs_block_processor_t *proc)

@@ -97,7 +97,7 @@ SQFS_INTERNAL
 int sqfs_block_process(sqfs_block_t *block, sqfs_compressor_t *cmp,
 		       uint8_t *scratch, size_t scratch_size);
 
-SQFS_INTERNAL int process_completed_blocks(sqfs_block_processor_t *proc,
-					   sqfs_block_t *queue);
+SQFS_INTERNAL int process_completed_block(sqfs_block_processor_t *proc,
+					  sqfs_block_t *block);
 
 #endif /* INTERNAL_H */

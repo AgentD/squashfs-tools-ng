@@ -105,7 +105,7 @@ static size_t grow_fragment_table(sqfs_block_processor_t *proc, size_t index)
 	return 0;
 }
 
-static int handle_block(sqfs_block_processor_t *proc, sqfs_block_t *blk)
+int process_completed_block(sqfs_block_processor_t *proc, sqfs_block_t *blk)
 {
 	size_t start, count;
 	uint64_t offset;
@@ -176,31 +176,6 @@ static int handle_block(sqfs_block_processor_t *proc, sqfs_block_t *blk)
 			err = proc->file->truncate(proc->file, proc->start);
 			if (err)
 				return err;
-		}
-	}
-
-	return 0;
-}
-
-int process_completed_blocks(sqfs_block_processor_t *proc, sqfs_block_t *queue)
-{
-	sqfs_block_t *it;
-	int err;
-
-	while (queue != NULL) {
-		it = queue;
-		queue = queue->next;
-
-		err = handle_block(proc, it);
-		free(it);
-
-		if (err) {
-			while (queue != NULL) {
-				it = queue;
-				queue = it->next;
-				free(it);
-			}
-			return err;
 		}
 	}
 

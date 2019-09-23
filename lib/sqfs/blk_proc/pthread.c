@@ -200,7 +200,6 @@ void sqfs_block_processor_destroy(sqfs_block_processor_t *proc)
 int sqfs_block_processor_enqueue(sqfs_block_processor_t *proc,
 				 sqfs_block_t *block)
 {
-	sqfs_block_t *queue = NULL, *it, *prev;
 	int status;
 
 	pthread_mutex_lock(&proc->mtx);
@@ -236,25 +235,30 @@ int sqfs_block_processor_enqueue(sqfs_block_processor_t *proc,
 		proc->backlog += 1;
 	}
 
-	it = proc->done;
-	prev = NULL;
-
-	while (it != NULL && it->sequence_number == proc->dequeue_id) {
-		prev = it;
-		it = it->next;
+	if (proc->done != NULL &&
+	    proc->done->sequence_number == proc->dequeue_id) {
+		block = proc->done;
+		proc->done = proc->done->next;
 		proc->dequeue_id += 1;
-	}
-
-	if (prev != NULL) {
-		queue = proc->done;
-		prev->next = NULL;
-		proc->done = it;
+	} else {
+		block = NULL;
 	}
 
 	pthread_cond_broadcast(&proc->queue_cond);
 	pthread_mutex_unlock(&proc->mtx);
 
-	return process_completed_blocks(proc, queue);
+	if (block == NULL)
+		return 0;
+
+	status = process_completed_block(proc, block);
+	if (status != 0) {
+		pthread_mutex_lock(&proc->mtx);
+		proc->status = status;
+		goto fail;
+	}
+
+	free(block);
+	return 0;
 fail:
 	pthread_mutex_unlock(&proc->mtx);
 	free(block);
@@ -287,12 +291,19 @@ int sqfs_block_processor_finish(sqfs_block_processor_t *proc)
 	proc->done = NULL;
 	pthread_mutex_unlock(&proc->mtx);
 
-	status = process_completed_blocks(proc, queue);
-	if (status != 0) {
-		pthread_mutex_lock(&proc->mtx);
-		proc->status = status;
-		pthread_cond_broadcast(&proc->queue_cond);
-		goto fail;
+	while (queue != NULL) {
+		it = queue;
+		queue = queue->next;
+		it->next = NULL;
+
+		status = process_completed_block(proc, it);
+		free(it);
+		if (status != 0) {
+			pthread_mutex_lock(&proc->mtx);
+			proc->status = status;
+			pthread_cond_broadcast(&proc->queue_cond);
+			goto fail;
+		}
 	}
 
 	return 0;
