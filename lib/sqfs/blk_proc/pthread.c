@@ -268,6 +268,7 @@ static int queue_pump(sqfs_block_processor_t *proc, sqfs_block_t *block)
 	if (proc->status != 0) {
 		status = proc->status;
 		pthread_mutex_unlock(&proc->mtx);
+		free(block);
 		return status;
 	}
 
@@ -277,15 +278,16 @@ static int queue_pump(sqfs_block_processor_t *proc, sqfs_block_t *block)
 	block = NULL;
 	pthread_mutex_unlock(&proc->mtx);
 
-	if (completed != NULL && (completed->flags & SQFS_BLK_IS_FRAGMENT)) {
+	if (completed == NULL)
+		return 0;
+
+	if (completed->flags & SQFS_BLK_IS_FRAGMENT) {
 		status = handle_fragment(proc, completed, &block);
 
 		if (status != 0) {
 			free(block);
-			return test_and_set_status(proc, status);
-		}
-
-		if (block != NULL) {
+			status = test_and_set_status(proc, status);
+		} else if (block != NULL) {
 			pthread_mutex_lock(&proc->mtx);
 			proc->dequeue_id = completed->sequence_number;
 			block->sequence_number = proc->dequeue_id;
@@ -302,7 +304,7 @@ static int queue_pump(sqfs_block_processor_t *proc, sqfs_block_t *block)
 			pthread_cond_broadcast(&proc->queue_cond);
 			pthread_mutex_unlock(&proc->mtx);
 		}
-	} else if (completed != NULL) {
+	} else {
 		status = process_completed_block(proc, completed);
 
 		if (status != 0)
@@ -316,8 +318,10 @@ static int queue_pump(sqfs_block_processor_t *proc, sqfs_block_t *block)
 int sqfs_block_processor_enqueue(sqfs_block_processor_t *proc,
 				 sqfs_block_t *block)
 {
-	if (block->flags & ~SQFS_BLK_USER_SETTABLE_FLAGS)
+	if (block->flags & ~SQFS_BLK_USER_SETTABLE_FLAGS) {
+		free(block);
 		return test_and_set_status(proc, SQFS_ERROR_UNSUPPORTED);
+	}
 
 	return queue_pump(proc, block);
 }
@@ -350,6 +354,7 @@ restart:
 			if (status != 0) {
 				proc->status = status;
 				pthread_mutex_unlock(&proc->mtx);
+				free(block);
 				free(it);
 				return status;
 			}
@@ -371,6 +376,8 @@ restart:
 				pthread_cond_broadcast(&proc->queue_cond);
 				goto restart;
 			}
+
+			free(it);
 		} else {
 			status = process_completed_block(proc, it);
 			free(it);
