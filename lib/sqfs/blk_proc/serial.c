@@ -59,16 +59,12 @@ int sqfs_block_processor_enqueue(sqfs_block_processor_t *proc,
 		return proc->status;
 	}
 
-	if (block->size == 0) {
-		block->checksum = 0;
-	} else {
-		proc->status = sqfs_block_process(block, proc->cmp,
-						  proc->scratch,
-						  proc->max_block_size);
-	}
+	proc->status = sqfs_block_process(block, proc->cmp, proc->scratch,
+					  proc->max_block_size);
 
-	block->next = NULL;
-	proc->status = process_completed_block(proc, block);
+	if (proc->status == 0)
+		proc->status = process_completed_block(proc, block);
+
 	free(block);
 	return proc->status;
 }

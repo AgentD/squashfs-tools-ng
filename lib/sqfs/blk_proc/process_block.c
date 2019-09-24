@@ -15,6 +15,11 @@ int sqfs_block_process(sqfs_block_t *block, sqfs_compressor_t *cmp,
 {
 	ssize_t ret;
 
+	if (block->size == 0) {
+		block->checksum = 0;
+		return 0;
+	}
+
 	block->checksum = crc32(0, block->data, block->size);
 
 	if (!(block->flags & SQFS_BLK_DONT_COMPRESS)) {
