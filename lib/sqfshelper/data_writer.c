@@ -18,127 +18,13 @@
 #include <errno.h>
 #include <zlib.h>
 
-#define MK_BLK_SIG(chksum, size) \
-	(((uint64_t)(size) << 32) | (uint64_t)(chksum))
-
-#define BLK_SIZE(sig) ((sig) >> 32)
-
-#define INIT_BLOCK_COUNT (128)
-
-typedef struct {
-	uint32_t index;
-	uint32_t offset;
-	uint64_t signature;
-} frag_info_t;
-
 struct data_writer_t {
-	sqfs_block_t *frag_block;
-	size_t num_fragments;
-
 	sqfs_block_processor_t *proc;
 	sqfs_compressor_t *cmp;
 	sqfs_super_t *super;
 
-	size_t frag_list_num;
-	size_t frag_list_max;
-	frag_info_t *frag_list;
-
 	data_writer_stats_t stats;
 };
-
-static int flush_fragment_block(data_writer_t *data)
-{
-	int ret;
-
-	ret = sqfs_block_processor_enqueue(data->proc, data->frag_block);
-	data->frag_block = NULL;
-	return ret;
-}
-
-static int store_fragment(data_writer_t *data, sqfs_block_t *frag,
-			  uint64_t signature)
-{
-	size_t new_sz;
-	void *new;
-
-	if (data->frag_list_num == data->frag_list_max) {
-		new_sz = data->frag_list_max * 2;
-		new = realloc(data->frag_list,
-			      sizeof(data->frag_list[0]) * new_sz);
-
-		if (new == NULL) {
-			perror("growing fragment checksum table");
-			return -1;
-		}
-
-		data->frag_list = new;
-		data->frag_list_max = new_sz;
-	}
-
-	data->frag_list[data->frag_list_num].index = data->frag_block->index;
-	data->frag_list[data->frag_list_num].offset = data->frag_block->size;
-	data->frag_list[data->frag_list_num].signature = signature;
-	data->frag_list_num += 1;
-
-	sqfs_inode_set_frag_location(frag->inode, data->frag_block->index,
-				     data->frag_block->size);
-
-	memcpy(data->frag_block->data + data->frag_block->size,
-	       frag->data, frag->size);
-
-	data->frag_block->flags |= (frag->flags & SQFS_BLK_DONT_COMPRESS);
-	data->frag_block->size += frag->size;
-	return 0;
-}
-
-static int handle_fragment(data_writer_t *data, sqfs_block_t *frag)
-{
-	uint64_t signature;
-	size_t i, size;
-
-	signature = MK_BLK_SIG(frag->checksum, frag->size);
-
-	for (i = 0; i < data->frag_list_num; ++i) {
-		if (data->frag_list[i].signature == signature) {
-			sqfs_inode_set_frag_location(frag->inode,
-						     data->frag_list[i].index,
-						     data->frag_list[i].offset);
-			free(frag);
-			return 0;
-		}
-	}
-
-	if (data->frag_block != NULL) {
-		size = data->frag_block->size + frag->size;
-
-		if (size > data->super->block_size) {
-			if (flush_fragment_block(data))
-				goto fail;
-		}
-	}
-
-	if (data->frag_block == NULL) {
-		size = sizeof(sqfs_block_t) + data->super->block_size;
-
-		data->frag_block = calloc(1, size);
-		if (data->frag_block == NULL) {
-			perror("creating fragment block");
-			goto fail;
-		}
-
-		data->frag_block->index = data->num_fragments++;
-		data->frag_block->flags = SQFS_BLK_FRAGMENT_BLOCK;
-	}
-
-	if (store_fragment(data, frag, signature))
-		goto fail;
-
-	free(frag);
-	return 0;
-fail:
-	free(frag);
-	return -1;
-}
 
 static bool is_zero_block(unsigned char *ptr, size_t size)
 {
@@ -225,9 +111,9 @@ int write_data_from_file_condensed(data_writer_t *data, sqfs_file_t *file,
 				}
 			}
 
-			blk->checksum = crc32(0, blk->data, blk->size);
+			blk->flags |= SQFS_BLK_IS_FRAGMENT;
 
-			if (handle_fragment(data, blk))
+			if (sqfs_block_processor_enqueue(data->proc, blk))
 				return -1;
 		} else {
 			if (sqfs_block_processor_enqueue(data->proc, blk))
@@ -269,21 +155,11 @@ data_writer_t *data_writer_create(sqfs_super_t *super, sqfs_compressor_t *cmp,
 		return NULL;
 	}
 
-	data->frag_list_max = INIT_BLOCK_COUNT;
-	data->frag_list = alloc_array(sizeof(data->frag_list[0]),
-				      data->frag_list_max);
-	if (data->frag_list == NULL) {
-		perror("creating data writer");
-		free(data);
-		return NULL;
-	}
-
 	data->proc = sqfs_block_processor_create(super->block_size, cmp,
 						 num_jobs, max_backlog,
 						 devblksize, file);
 	if (data->proc == NULL) {
 		perror("creating data block processor");
-		free(data->frag_list);
 		free(data);
 		return NULL;
 	}
@@ -296,7 +172,6 @@ data_writer_t *data_writer_create(sqfs_super_t *super, sqfs_compressor_t *cmp,
 void data_writer_destroy(data_writer_t *data)
 {
 	sqfs_block_processor_destroy(data->proc);
-	free(data->frag_list);
 	free(data);
 }
 
@@ -312,11 +187,6 @@ int data_writer_write_fragment_table(data_writer_t *data)
 
 int data_writer_sync(data_writer_t *data)
 {
-	if (data->frag_block != NULL) {
-		if (flush_fragment_block(data))
-			return -1;
-	}
-
 	return sqfs_block_processor_finish(data->proc);
 }
 

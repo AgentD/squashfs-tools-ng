@@ -15,6 +15,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <zlib.h>
 
 #ifdef WITH_PTHREAD
 #include <pthread.h>
@@ -33,6 +34,12 @@ typedef struct {
 	uint64_t offset;
 	uint64_t signature;
 } blk_info_t;
+
+typedef struct {
+	uint32_t index;
+	uint32_t offset;
+	uint64_t signature;
+} frag_info_t;
 
 
 #ifdef WITH_PTHREAD
@@ -83,6 +90,11 @@ struct sqfs_block_processor_t {
 	blk_info_t *blocks;
 	sqfs_compressor_t *cmp;
 
+	sqfs_block_t *frag_block;
+	frag_info_t *frag_list;
+	size_t frag_list_num;
+	size_t frag_list_max;
+
 	/* used only by workers */
 	size_t max_block_size;
 
@@ -100,8 +112,9 @@ int sqfs_block_process(sqfs_block_t *block, sqfs_compressor_t *cmp,
 SQFS_INTERNAL int process_completed_block(sqfs_block_processor_t *proc,
 					  sqfs_block_t *block);
 
-SQFS_INTERNAL int grow_fragment_table(sqfs_block_processor_t *proc,
-				      size_t index);
+SQFS_INTERNAL
+int handle_fragment(sqfs_block_processor_t *proc, sqfs_block_t *frag,
+		    sqfs_block_t **blk_out);
 
 SQFS_INTERNAL size_t deduplicate_blocks(sqfs_block_processor_t *proc,
 					size_t count);

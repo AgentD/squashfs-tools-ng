@@ -77,11 +77,16 @@ typedef enum {
 	SQFS_BLK_ALLIGN = 0x0008,
 
 	/**
-	 * @brief Indicates that a block is not part of a file but contains
-	 *        file tail ends and an entry in the fragment table has to be
-	 *        added.
+	 * @brief Indicates that a block is a tail end of a file and the block
+	 *        processor should take care of fragment packing and accounting.
 	 */
-	SQFS_BLK_FRAGMENT_BLOCK = 0x0010,
+	SQFS_BLK_IS_FRAGMENT = 0x0010,
+
+	/**
+	 * @brief Set by the block processor on fragment blocks that
+	 *        it generates.
+	 */
+	SQFS_BLK_FRAGMENT_BLOCK = 0x4000,
 
 	/**
 	 * @brief Set by compressor worker if the block was actually compressed.

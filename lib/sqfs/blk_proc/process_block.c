@@ -8,7 +8,6 @@
 #include "internal.h"
 
 #include <string.h>
-#include <zlib.h>
 
 int sqfs_block_process(sqfs_block_t *block, sqfs_compressor_t *cmp,
 		       uint8_t *scratch, size_t scratch_size)
@@ -71,16 +70,10 @@ int process_completed_block(sqfs_block_processor_t *proc, sqfs_block_t *blk)
 		offset = proc->file->get_size(proc->file);
 
 		if (blk->flags & SQFS_BLK_FRAGMENT_BLOCK) {
-			if (grow_fragment_table(proc, blk->index))
-				return 0;
-
 			offset = htole64(offset);
 			proc->fragments[blk->index].start_offset = offset;
 			proc->fragments[blk->index].pad0 = 0;
 			proc->fragments[blk->index].size = htole32(out);
-
-			if (blk->index >= proc->num_fragments)
-				proc->num_fragments = blk->index + 1;
 		} else {
 			blk->inode->block_sizes[blk->index] = out;
 		}

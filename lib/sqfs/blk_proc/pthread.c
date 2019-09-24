@@ -119,9 +119,15 @@ sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
 	proc->cmp = cmp;
 	proc->file = file;
 	proc->max_blocks = INIT_BLOCK_COUNT;
+	proc->frag_list_max = INIT_BLOCK_COUNT;
 
 	proc->blocks = alloc_array(sizeof(proc->blocks[0]), proc->max_blocks);
 	if (proc->blocks == NULL)
+		goto fail_init;
+
+	proc->frag_list = alloc_array(sizeof(proc->frag_list[0]),
+				      proc->frag_list_max);
+	if (proc->frag_list == NULL)
 		goto fail_init;
 
 	for (i = 0; i < num_workers; ++i) {
@@ -172,6 +178,7 @@ fail_init:
 	pthread_cond_destroy(&proc->done_cond);
 	pthread_cond_destroy(&proc->queue_cond);
 	pthread_mutex_destroy(&proc->mtx);
+	free(proc->frag_list);
 	free(proc->fragments);
 	free(proc->blocks);
 	free(proc);
@@ -200,6 +207,8 @@ void sqfs_block_processor_destroy(sqfs_block_processor_t *proc)
 
 	free_blk_list(proc->queue);
 	free_blk_list(proc->done);
+	free(proc->frag_block);
+	free(proc->frag_list);
 	free(proc->fragments);
 	free(proc->blocks);
 	free(proc);
@@ -241,16 +250,40 @@ int sqfs_block_processor_enqueue(sqfs_block_processor_t *proc,
 	sqfs_block_t *completed = NULL;
 	int status;
 
-	pthread_mutex_lock(&proc->mtx);
-	if (proc->status != 0) {
-		status = proc->status;
+	if (block->flags & ~SQFS_BLK_USER_SETTABLE_FLAGS) {
+		status = SQFS_ERROR_UNSUPPORTED;
+
+		pthread_mutex_lock(&proc->mtx);
+		if (proc->status == 0) {
+			proc->status = status;
+			pthread_cond_broadcast(&proc->queue_cond);
+		}
 		goto fail;
 	}
 
-	if (block->flags & ~SQFS_BLK_USER_SETTABLE_FLAGS) {
-		status = SQFS_ERROR_UNSUPPORTED;
-		proc->status = status;
-		pthread_cond_broadcast(&proc->queue_cond);
+	if (block->flags & SQFS_BLK_IS_FRAGMENT) {
+		block->checksum = crc32(0, block->data, block->size);
+
+		completed = NULL;
+		status = handle_fragment(proc, block, &completed);
+
+		if (status != 0) {
+			pthread_mutex_lock(&proc->mtx);
+			proc->status = status;
+			goto fail;
+		}
+
+		free(block);
+		if (completed == NULL)
+			return 0;
+
+		block = completed;
+		completed = NULL;
+	}
+
+	pthread_mutex_lock(&proc->mtx);
+	if (proc->status != 0) {
+		status = proc->status;
 		goto fail;
 	}
 
@@ -288,6 +321,11 @@ int sqfs_block_processor_finish(sqfs_block_processor_t *proc)
 	int status = 0;
 
 	pthread_mutex_lock(&proc->mtx);
+	if (proc->frag_block != NULL) {
+		append_to_work_queue(proc, proc->frag_block);
+		proc->frag_block = NULL;
+	}
+
 	while (proc->backlog > 0 && proc->status == 0)
 		pthread_cond_wait(&proc->done_cond, &proc->mtx);
 
