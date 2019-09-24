@@ -63,7 +63,7 @@ int sqfs_meta_writer_write_inode(sqfs_meta_writer_t *ir,
 		ret = sqfs_meta_writer_append(ir, &file, sizeof(file));
 		if (ret)
 			return ret;
-		return write_block_sizes(ir, n);
+		return n->num_file_blocks ? write_block_sizes(ir, n) : 0;
 	}
 	case SQFS_INODE_SLINK: {
 		sqfs_inode_slink_t slink = {
@@ -117,7 +117,7 @@ int sqfs_meta_writer_write_inode(sqfs_meta_writer_t *ir,
 		ret = sqfs_meta_writer_append(ir, &file, sizeof(file));
 		if (ret)
 			return ret;
-		return write_block_sizes(ir, n);
+		return n->num_file_blocks ? write_block_sizes(ir, n) : 0;
 	}
 	case SQFS_INODE_EXT_SLINK: {
 		sqfs_inode_slink_t slink = {
