@@ -21,6 +21,9 @@ int sqfs_block_process(sqfs_block_t *block, sqfs_compressor_t *cmp,
 
 	block->checksum = crc32(0, block->data, block->size);
 
+	if (block->flags & SQFS_BLK_IS_FRAGMENT)
+		return 0;
+
 	if (!(block->flags & SQFS_BLK_DONT_COMPRESS)) {
 		ret = cmp->do_block(cmp, block->data, block->size,
 				    scratch, scratch_size);
