@@ -34,3 +34,25 @@ int sqfs_block_processor_write_fragment_table(sqfs_block_processor_t *proc,
 	super->fragment_table_start = start;
 	return 0;
 }
+
+int grow_fragment_table(sqfs_block_processor_t *proc, size_t index)
+{
+	size_t newsz;
+	void *new;
+
+	if (index < proc->max_fragments)
+		return 0;
+
+	do {
+		newsz = proc->max_fragments ? proc->max_fragments * 2 : 16;
+	} while (index >= newsz);
+
+	new = realloc(proc->fragments, sizeof(proc->fragments[0]) * newsz);
+
+	if (new == NULL)
+		return SQFS_ERROR_ALLOC;
+
+	proc->max_fragments = newsz;
+	proc->fragments = new;
+	return 0;
+}

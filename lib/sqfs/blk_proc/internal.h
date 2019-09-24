@@ -100,4 +100,14 @@ int sqfs_block_process(sqfs_block_t *block, sqfs_compressor_t *cmp,
 SQFS_INTERNAL int process_completed_block(sqfs_block_processor_t *proc,
 					  sqfs_block_t *block);
 
+SQFS_INTERNAL int grow_fragment_table(sqfs_block_processor_t *proc,
+				      size_t index);
+
+SQFS_INTERNAL size_t deduplicate_blocks(sqfs_block_processor_t *proc,
+					size_t count);
+
+SQFS_INTERNAL int store_block_location(sqfs_block_processor_t *proc,
+				       uint64_t offset, uint32_t size,
+				       uint32_t chksum);
+
 #endif /* INTERNAL_H */
