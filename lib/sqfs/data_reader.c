@@ -57,8 +57,10 @@ static int get_block(sqfs_data_reader_t *data, uint64_t off, uint32_t size,
 
 	on_disk_size = SQFS_ON_DISK_BLOCK_SIZE(size);
 
-	if (on_disk_size > unpacked_size)
+	if (on_disk_size > unpacked_size) {
+		free(blk);
 		return SQFS_ERROR_OVERFLOW;
+	}
 
 	if (SQFS_IS_BLOCK_COMPRESSED(size)) {
 		err = data->file->read_at(data->file, off,
@@ -95,6 +97,7 @@ static int precache_data_block(sqfs_data_reader_t *data, uint64_t location,
 		return 0;
 
 	free(data->data_block);
+	data->data_block = NULL;
 
 	ret = get_block(data, location, size, data->block_size,
 			&data->data_block);
@@ -119,6 +122,7 @@ static int precache_fragment_block(sqfs_data_reader_t *data, size_t idx)
 		return SQFS_ERROR_OUT_OF_BOUNDS;
 
 	free(data->frag_block);
+	data->frag_block = NULL;
 
 	ret = get_block(data, data->frag[idx].start_offset,
 			data->frag[idx].size, data->block_size,
