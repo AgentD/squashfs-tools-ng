@@ -57,8 +57,8 @@ int sqfs_data_reader_dump(sqfs_data_reader_t *data,
 				return -1;
 			}
 
-			free(blk);
 			filesz -= blk->size;
+			free(blk);
 		}
 	}
 
