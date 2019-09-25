@@ -28,8 +28,7 @@ static int grow_fragment_table(sqfs_block_processor_t *proc)
 	return 0;
 }
 
-static int store_fragment(sqfs_block_processor_t *proc, sqfs_block_t *frag,
-			  uint64_t signature)
+static int grow_deduplication_list(sqfs_block_processor_t *proc)
 {
 	size_t new_sz;
 	void *new;
@@ -45,6 +44,17 @@ static int store_fragment(sqfs_block_processor_t *proc, sqfs_block_t *frag,
 		proc->frag_list = new;
 		proc->frag_list_max = new_sz;
 	}
+
+	return 0;
+}
+
+static int store_fragment(sqfs_block_processor_t *proc, sqfs_block_t *frag,
+			  uint64_t signature)
+{
+	int err = grow_deduplication_list(proc);
+
+	if (err)
+		return err;
 
 	proc->frag_list[proc->frag_list_num].index = proc->frag_block->index;
 	proc->frag_list[proc->frag_list_num].offset = proc->frag_block->size;
