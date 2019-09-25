@@ -61,10 +61,14 @@ static int allign_file(sqfs_data_writer_t *proc, sqfs_block_t *blk)
 
 int process_completed_block(sqfs_data_writer_t *proc, sqfs_block_t *blk)
 {
+	uint64_t offset, bytes;
 	size_t start, count;
-	uint64_t offset;
 	uint32_t out;
 	int err;
+
+	if (proc->hooks != NULL && proc->hooks->pre_block_write != NULL) {
+		proc->hooks->pre_block_write(proc->user_ptr, blk, proc->file);
+	}
 
 	if (blk->flags & SQFS_BLK_FIRST_BLOCK) {
 		proc->start = proc->file->get_size(proc->file);
@@ -101,6 +105,10 @@ int process_completed_block(sqfs_data_writer_t *proc, sqfs_block_t *blk)
 			return err;
 	}
 
+	if (proc->hooks != NULL && proc->hooks->post_block_write != NULL) {
+		proc->hooks->post_block_write(proc->user_ptr, blk, proc->file);
+	}
+
 	if (blk->flags & SQFS_BLK_LAST_BLOCK) {
 		err = allign_file(proc, blk);
 		if (err)
@@ -112,19 +120,28 @@ int process_completed_block(sqfs_data_writer_t *proc, sqfs_block_t *blk)
 
 		sqfs_inode_set_file_block_start(blk->inode, offset);
 
-		if (start < proc->file_start) {
-			offset = start + count;
+		if (start >= proc->file_start)
+			return 0;
 
-			if (offset >= proc->file_start) {
-				proc->num_blocks = offset;
-			} else {
-				proc->num_blocks = proc->file_start;
-			}
-
-			err = proc->file->truncate(proc->file, proc->start);
-			if (err)
-				return err;
+		offset = start + count;
+		if (offset >= proc->file_start) {
+			count = proc->num_blocks - offset;
+			proc->num_blocks = offset;
+		} else {
+			proc->num_blocks = proc->file_start;
 		}
+
+		if (proc->hooks != NULL &&
+		    proc->hooks->notify_blocks_erased != NULL) {
+			bytes = proc->file->get_size(proc->file) - proc->start;
+
+			proc->hooks->notify_blocks_erased(proc->user_ptr,
+							  count, bytes);
+		}
+
+		err = proc->file->truncate(proc->file, proc->start);
+		if (err)
+			return err;
 	}
 
 	return 0;

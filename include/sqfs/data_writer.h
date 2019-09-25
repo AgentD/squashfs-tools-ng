@@ -42,6 +42,91 @@
  * is called for each one.
  */
 
+/**
+ * @struct sqfs_block_hooks_t
+ *
+ * @brief A set of hooks for tapping into the data writer.
+ *
+ * This structure can be registered with an @ref sqfs_data_writer_t and
+ * contains function pointers that will be called during various stages
+ * when writing data to disk.
+ *
+ * The callbacks can not only be used for accounting but may also write extra
+ * data to the output file or make modifications to the blocks before they are
+ * writtien.
+ *
+ * The callbacks can be individually set to NULL to disable them.
+ */
+struct sqfs_block_hooks_t {
+	/**
+	 * @brief Gets called before writing a block to disk.
+	 *
+	 * If this is not NULL, it gets called before a block is written to
+	 * disk. If the block has the @ref SQFS_BLK_ALLIGN flag set, the
+	 * function is called before padding the file.
+	 *
+	 * The function may modify the block itself or write data to the file.
+	 * which is taken into account when padding the file.
+	 *
+	 * @param user A user pointer.
+	 * @param block The block that is about to be written.
+	 * @param file The file that the block will be written to.
+	 */
+	void (*pre_block_write)(void *user, sqfs_block_t *block,
+				sqfs_file_t *file);
+
+	/**
+	 * @brief Gets called after writing a block to disk.
+	 *
+	 * If this is not NULL, it gets called after a block is written to
+	 * disk. If the block has the @ref SQFS_BLK_ALLIGN flag set, the
+	 * function is called before padding the file.
+	 *
+	 * Modifying the block is rather pointless, but the function may
+	 * write data to the file which is taken into account when padding
+	 * the file.
+	 *
+	 * @param user A user pointer.
+	 * @param block The block that is about to be written.
+	 * @param file The file that the block was written to.
+	 */
+	void (*post_block_write)(void *user, const sqfs_block_t *block,
+				 sqfs_file_t *file);
+
+	/**
+	 * @brief Gets called before storing a fragment in a fragment block.
+	 *
+	 * The function can modify the block before it is stored.
+	 *
+	 * @param user A user pointer.
+	 * @param block The data chunk that is about to be merged into the
+	 *              fragment block.
+	 */
+	void (*pre_fragment_store)(void *user, sqfs_block_t *block);
+
+	/**
+	 * @brief Gets called if block deduplication managed to get
+	 *        rid of the data blocks of a file.
+	 *
+	 * @param user A user pointer.
+	 * @param count The number of blocks that have been erased.
+	 * @param bytes The number of bytes that have been erased. Includes
+	 *              potential padding before and after the end.
+	 */
+	void (*notify_blocks_erased)(void *user, size_t count,
+				     uint64_t bytes);
+
+	/**
+	 * @brief Gets called before throwing away a fragment that turned out
+	 *        to be a duplicate.
+	 *
+	 * @param user A user pointer.
+	 * @param block The data chunk that is about to be merged into the
+	 *              fragment block.
+	 */
+	void (*notify_fragment_discard)(void *user, const sqfs_block_t *block);
+};
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -133,6 +218,19 @@ SQFS_API int sqfs_data_writer_finish(sqfs_data_writer_t *proc);
 SQFS_API
 int sqfs_data_writer_write_fragment_table(sqfs_data_writer_t *proc,
 					  sqfs_super_t *super);
+
+/**
+ * @brief Register a set of hooks to be invoked when writing blocks to disk.
+ *
+ * @memberof sqfs_data_writer_t
+ *
+ * @param proc A pointer to a data writer object.
+ * @param user_ptr A user pointer to pass to the callbacks.
+ * @param hooks A structure containing the hooks.
+ */
+SQFS_API
+void sqfs_data_writer_set_hooks(sqfs_data_writer_t *proc, void *user_ptr,
+				const sqfs_block_hooks_t *hooks);
 
 #ifdef __cplusplus
 }

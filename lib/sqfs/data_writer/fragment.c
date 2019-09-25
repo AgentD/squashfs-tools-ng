@@ -64,6 +64,10 @@ static int store_fragment(sqfs_data_writer_t *proc, sqfs_block_t *frag,
 	sqfs_inode_set_frag_location(frag->inode, proc->frag_block->index,
 				     proc->frag_block->size);
 
+	if (proc->hooks != NULL && proc->hooks->pre_fragment_store != NULL) {
+		proc->hooks->pre_fragment_store(proc->user_ptr, frag);
+	}
+
 	memcpy(proc->frag_block->data + proc->frag_block->size,
 	       frag->data, frag->size);
 
@@ -82,12 +86,8 @@ int process_completed_fragment(sqfs_data_writer_t *proc, sqfs_block_t *frag,
 	hash = MK_BLK_HASH(frag->checksum, frag->size);
 
 	for (i = 0; i < proc->frag_list_num; ++i) {
-		if (proc->frag_list[i].hash == hash) {
-			sqfs_inode_set_frag_location(frag->inode,
-						     proc->frag_list[i].index,
-						     proc->frag_list[i].offset);
-			return 0;
-		}
+		if (proc->frag_list[i].hash == hash)
+			goto out_duplicate;
 	}
 
 	if (proc->frag_block != NULL) {
@@ -125,4 +125,13 @@ fail:
 	free(*blk_out);
 	*blk_out = NULL;
 	return err;
+out_duplicate:
+	sqfs_inode_set_frag_location(frag->inode, proc->frag_list[i].index,
+				     proc->frag_list[i].offset);
+
+	if (proc->hooks != NULL &&
+	    proc->hooks->notify_fragment_discard != NULL) {
+		proc->hooks->notify_fragment_discard(proc->user_ptr, frag);
+	}
+	return 0;
 }

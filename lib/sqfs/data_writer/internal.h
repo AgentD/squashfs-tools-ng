@@ -98,6 +98,9 @@ struct sqfs_data_writer_t {
 	size_t frag_list_num;
 	size_t frag_list_max;
 
+	const sqfs_block_hooks_t *hooks;
+	void *user_ptr;
+
 	/* used only by workers */
 	size_t max_block_size;
 
