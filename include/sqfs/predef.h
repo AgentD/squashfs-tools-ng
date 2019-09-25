@@ -69,7 +69,6 @@ typedef struct sqfs_meta_reader_t sqfs_meta_reader_t;
 typedef struct sqfs_meta_writer_t sqfs_meta_writer_t;
 typedef struct sqfs_xattr_reader_t sqfs_xattr_reader_t;
 typedef struct sqfs_file_t sqfs_file_t;
-typedef struct sqfs_sparse_map_t sqfs_sparse_map_t;
 typedef struct sqfs_tree_node_t sqfs_tree_node_t;
 typedef struct sqfs_data_reader_t sqfs_data_reader_t;
 typedef struct sqfs_block_hooks_t sqfs_block_hooks_t;

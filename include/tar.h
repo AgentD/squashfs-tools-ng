@@ -8,13 +8,17 @@
 #define TAR_H
 
 #include "config.h"
+#include "util.h"
 
 #include <sys/stat.h>
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "sqfs/io.h"
-#include "util.h"
+typedef struct sparse_map_t {
+	struct sparse_map_t *next;
+	uint64_t offset;
+	uint64_t count;
+} sparse_map_t;
 
 typedef struct {
 	char name[100];
@@ -75,7 +79,7 @@ typedef struct {
 	struct stat sb;
 	char *name;
 	char *link_target;
-	sqfs_sparse_map_t *sparse;
+	sparse_map_t *sparse;
 	uint64_t actual_size;
 	uint64_t record_size;
 	bool unknown_record;

@@ -225,7 +225,7 @@ fail_arg:
 static int write_file(tar_header_decoded_t *hdr, file_info_t *fi,
 		      data_writer_t *data, uint64_t filesize)
 {
-	const sqfs_sparse_map_t *it;
+	const sparse_map_t *it;
 	sqfs_inode_generic_t *inode;
 	size_t max_blk_count;
 	sqfs_file_t *file;
@@ -253,25 +253,17 @@ static int write_file(tar_header_decoded_t *hdr, file_info_t *fi,
 		for (sum = 0, it = hdr->sparse; it != NULL; it = it->next)
 			sum += it->count;
 
-		file = sqfs_get_stdin_file(sum);
+		file = sqfs_get_stdin_file(hdr->sparse, sum);
 		if (file == NULL) {
 			perror("packing files");
 			return -1;
 		}
-
-		ret = write_data_from_file_condensed(data, file, inode,
-						     hdr->sparse, 0);
-		file->destroy(file);
-		if (ret)
+	} else {
+		file = sqfs_get_stdin_file(NULL, filesize);
+		if (file == NULL) {
+			perror("packing files");
 			return -1;
-
-		return skip_padding(STDIN_FILENO, hdr->record_size);
-	}
-
-	file = sqfs_get_stdin_file(filesize);
-	if (file == NULL) {
-		perror("packing files");
-		return -1;
+		}
 	}
 
 	ret = write_data_from_file(data, inode, file, 0);
@@ -280,7 +272,8 @@ static int write_file(tar_header_decoded_t *hdr, file_info_t *fi,
 	if (ret)
 		return -1;
 
-	return skip_padding(STDIN_FILENO, filesize);
+	return skip_padding(STDIN_FILENO, hdr->sparse == NULL ?
+			    filesize : hdr->record_size);
 }
 
 static int copy_xattr(fstree_t *fs, tree_node_t *node,
@@ -344,7 +337,7 @@ static int process_tar_ball(fstree_t *fs, data_writer_t *data)
 {
 	tar_header_decoded_t hdr;
 	uint64_t offset, count;
-	sqfs_sparse_map_t *m;
+	sparse_map_t *m;
 	bool skip;
 	int ret;
 

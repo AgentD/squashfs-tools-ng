@@ -88,20 +88,6 @@ int data_writer_sync(data_writer_t *data);
 int write_data_from_file(data_writer_t *data, sqfs_inode_generic_t *inode,
 			 sqfs_file_t *file, int flags);
 
-/*
-  Does the same as write_data_from_fd but the input file is the condensed
-  representation of a sparse file. The layout must be in order and
-  non-overlapping.
-
-  The flags argument is a combination of DW_* flags. After completion the
-  data writer collects the 'fi' in an internal list it uses for deduplication.
-
-  Returns 0 on success, prints errors to stderr.
- */
-int write_data_from_file_condensed(data_writer_t *data, sqfs_file_t *file,
-				   sqfs_inode_generic_t *inode,
-				   const sqfs_sparse_map_t *map, int flags);
-
 data_writer_stats_t *data_writer_get_stats(data_writer_t *data);
 
 #endif /* DATA_WRITER_H */

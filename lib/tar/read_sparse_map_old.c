@@ -8,9 +8,9 @@
 
 #include "internal.h"
 
-sqfs_sparse_map_t *read_gnu_old_sparse(int fd, tar_header_t *hdr)
+sparse_map_t *read_gnu_old_sparse(int fd, tar_header_t *hdr)
 {
-	sqfs_sparse_map_t *list = NULL, *end = NULL, *node;
+	sparse_map_t *list = NULL, *end = NULL, *node;
 	gnu_sparse_t sph;
 	uint64_t off, sz;
 	int i;

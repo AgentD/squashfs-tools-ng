@@ -98,9 +98,8 @@ static int add_sentinel_block(data_writer_t *data, sqfs_inode_generic_t *inode,
 	return sqfs_data_writer_enqueue(data->proc, blk);
 }
 
-int write_data_from_file_condensed(data_writer_t *data, sqfs_file_t *file,
-				   sqfs_inode_generic_t *inode,
-				   const sqfs_sparse_map_t *map, int flags)
+int write_data_from_file(data_writer_t *data, sqfs_inode_generic_t *inode,
+			 sqfs_file_t *file, int flags)
 {
 	uint32_t blk_flags = SQFS_BLK_FIRST_BLOCK;
 	uint64_t filesz, offset;
@@ -123,14 +122,8 @@ int write_data_from_file_condensed(data_writer_t *data, sqfs_file_t *file,
 			diff = filesz - offset;
 		}
 
-		if (map == NULL) {
-			ret = sqfs_file_create_block(file, offset, diff, inode,
-						     blk_flags, &blk);
-		} else {
-			ret = sqfs_file_create_block_dense(file, offset, diff,
-							   inode, blk_flags,
-							   map, &blk);
-		}
+		ret = sqfs_file_create_block(file, offset, diff, inode,
+					     blk_flags, &blk);
 
 		if (ret)
 			return -1;
@@ -187,12 +180,6 @@ int write_data_from_file_condensed(data_writer_t *data, sqfs_file_t *file,
 	data->stats.bytes_read += filesz;
 	data->stats.file_count += 1;
 	return 0;
-}
-
-int write_data_from_file(data_writer_t *data, sqfs_inode_generic_t *inode,
-			 sqfs_file_t *file, int flags)
-{
-	return write_data_from_file_condensed(data, file, inode, NULL, flags);
 }
 
 data_writer_t *data_writer_create(sqfs_super_t *super, sqfs_compressor_t *cmp,

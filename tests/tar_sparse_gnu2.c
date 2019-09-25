@@ -36,7 +36,7 @@ static int open_read(const char *path)
 int main(void)
 {
 	tar_header_decoded_t hdr;
-	sqfs_sparse_map_t *sparse;
+	sparse_map_t *sparse;
 	int fd;
 
 	assert(chdir(TEST_PATH) == 0);

@@ -23,6 +23,7 @@
 #include "sqfs/data_reader.h"
 #include "data_writer.h"
 #include "fstree.h"
+#include "tar.h"
 
 #include <sys/stat.h>
 #include <stdint.h>
@@ -83,6 +84,6 @@ int sqfs_data_reader_dump(sqfs_data_reader_t *data,
 			  const sqfs_inode_generic_t *inode,
 			  int outfd, size_t block_size, bool allow_sparse);
 
-sqfs_file_t *sqfs_get_stdin_file(uint64_t size);
+sqfs_file_t *sqfs_get_stdin_file(const sparse_map_t *map, uint64_t size);
 
 #endif /* HIGHLEVEL_H */
