@@ -27,7 +27,7 @@
 #endif
 
 
-#define MK_BLK_SIG(chksum, size) \
+#define MK_BLK_HASH(chksum, size) \
 	(((uint64_t)(size) << 32) | (uint64_t)(chksum))
 
 #define INIT_BLOCK_COUNT (128)
@@ -35,13 +35,13 @@
 
 typedef struct {
 	uint64_t offset;
-	uint64_t signature;
+	uint64_t hash;
 } blk_info_t;
 
 typedef struct {
 	uint32_t index;
 	uint32_t offset;
-	uint64_t signature;
+	uint64_t hash;
 } frag_info_t;
 
 

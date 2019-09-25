@@ -49,7 +49,7 @@ static int grow_deduplication_list(sqfs_block_processor_t *proc)
 }
 
 static int store_fragment(sqfs_block_processor_t *proc, sqfs_block_t *frag,
-			  uint64_t signature)
+			  uint64_t hash)
 {
 	int err = grow_deduplication_list(proc);
 
@@ -58,7 +58,7 @@ static int store_fragment(sqfs_block_processor_t *proc, sqfs_block_t *frag,
 
 	proc->frag_list[proc->frag_list_num].index = proc->frag_block->index;
 	proc->frag_list[proc->frag_list_num].offset = proc->frag_block->size;
-	proc->frag_list[proc->frag_list_num].signature = signature;
+	proc->frag_list[proc->frag_list_num].hash = hash;
 	proc->frag_list_num += 1;
 
 	sqfs_inode_set_frag_location(frag->inode, proc->frag_block->index,
@@ -75,14 +75,14 @@ static int store_fragment(sqfs_block_processor_t *proc, sqfs_block_t *frag,
 int handle_fragment(sqfs_block_processor_t *proc, sqfs_block_t *frag,
 		    sqfs_block_t **blk_out)
 {
-	uint64_t signature;
+	uint64_t hash;
 	size_t i, size;
 	int err;
 
-	signature = MK_BLK_SIG(frag->checksum, frag->size);
+	hash = MK_BLK_HASH(frag->checksum, frag->size);
 
 	for (i = 0; i < proc->frag_list_num; ++i) {
-		if (proc->frag_list[i].signature == signature) {
+		if (proc->frag_list[i].hash == hash) {
 			sqfs_inode_set_frag_location(frag->inode,
 						     proc->frag_list[i].index,
 						     proc->frag_list[i].offset);
@@ -116,7 +116,7 @@ int handle_fragment(sqfs_block_processor_t *proc, sqfs_block_t *frag,
 		proc->frag_block->flags = SQFS_BLK_FRAGMENT_BLOCK;
 	}
 
-	err = store_fragment(proc, frag, signature);
+	err = store_fragment(proc, frag, hash);
 	if (err)
 		goto fail;
 

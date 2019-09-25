@@ -25,7 +25,7 @@ int store_block_location(sqfs_block_processor_t *proc, uint64_t offset,
 	}
 
 	proc->blocks[proc->num_blocks].offset = offset;
-	proc->blocks[proc->num_blocks].signature = MK_BLK_SIG(chksum, size);
+	proc->blocks[proc->num_blocks].hash = MK_BLK_HASH(chksum, size);
 	proc->num_blocks += 1;
 	return 0;
 }
@@ -36,8 +36,8 @@ size_t deduplicate_blocks(sqfs_block_processor_t *proc, size_t count)
 
 	for (i = 0; i < proc->file_start; ++i) {
 		for (j = 0; j < count; ++j) {
-			if (proc->blocks[i + j].signature !=
-			    proc->blocks[proc->file_start + j].signature)
+			if (proc->blocks[i + j].hash !=
+			    proc->blocks[proc->file_start + j].hash)
 				break;
 		}
 
