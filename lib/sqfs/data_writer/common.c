@@ -18,10 +18,9 @@ void free_blk_list(sqfs_block_t *list)
 	}
 }
 
-int block_processor_init(sqfs_block_processor_t *proc, size_t max_block_size,
-			 sqfs_compressor_t *cmp, unsigned int num_workers,
-			 size_t max_backlog, size_t devblksz,
-			 sqfs_file_t *file)
+int data_writer_init(sqfs_data_writer_t *proc, size_t max_block_size,
+		     sqfs_compressor_t *cmp, unsigned int num_workers,
+		     size_t max_backlog, size_t devblksz, sqfs_file_t *file)
 {
 	proc->max_block_size = max_block_size;
 	proc->num_workers = num_workers;
@@ -44,7 +43,7 @@ int block_processor_init(sqfs_block_processor_t *proc, size_t max_block_size,
 	return 0;
 }
 
-void block_processor_cleanup(sqfs_block_processor_t *proc)
+void data_writer_cleanup(sqfs_data_writer_t *proc)
 {
 	free_blk_list(proc->queue);
 	free_blk_list(proc->done);
@@ -55,8 +54,8 @@ void block_processor_cleanup(sqfs_block_processor_t *proc)
 	free(proc);
 }
 
-void block_processor_store_done(sqfs_block_processor_t *proc,
-				sqfs_block_t *blk, int status)
+void data_writer_store_done(sqfs_data_writer_t *proc, sqfs_block_t *blk,
+			    int status)
 {
 	sqfs_block_t *it = proc->done, *prev = NULL;
 
@@ -81,7 +80,7 @@ void block_processor_store_done(sqfs_block_processor_t *proc,
 	proc->backlog -= 1;
 }
 
-sqfs_block_t *block_processor_next_work_item(sqfs_block_processor_t *proc)
+sqfs_block_t *data_writer_next_work_item(sqfs_data_writer_t *proc)
 {
 	sqfs_block_t *blk;
 
@@ -98,8 +97,8 @@ sqfs_block_t *block_processor_next_work_item(sqfs_block_processor_t *proc)
 	return blk;
 }
 
-int block_processor_do_block(sqfs_block_t *block, sqfs_compressor_t *cmp,
-			     uint8_t *scratch, size_t scratch_size)
+int data_writer_do_block(sqfs_block_t *block, sqfs_compressor_t *cmp,
+			 uint8_t *scratch, size_t scratch_size)
 {
 	ssize_t ret;
 
@@ -129,8 +128,8 @@ int block_processor_do_block(sqfs_block_t *block, sqfs_compressor_t *cmp,
 	return 0;
 }
 
-int sqfs_block_processor_write_fragment_table(sqfs_block_processor_t *proc,
-					      sqfs_super_t *super)
+int sqfs_data_writer_write_fragment_table(sqfs_data_writer_t *proc,
+					  sqfs_super_t *super)
 {
 	uint64_t start;
 	size_t size;

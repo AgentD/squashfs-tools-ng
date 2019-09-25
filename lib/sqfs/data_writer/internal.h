@@ -9,7 +9,7 @@
 
 #include "config.h"
 
-#include "sqfs/block_processor.h"
+#include "sqfs/data_writer.h"
 #include "sqfs/compress.h"
 #include "sqfs/inode.h"
 #include "sqfs/table.h"
@@ -47,14 +47,14 @@ typedef struct {
 
 #ifdef WITH_PTHREAD
 typedef struct {
-	sqfs_block_processor_t *shared;
+	sqfs_data_writer_t *shared;
 	sqfs_compressor_t *cmp;
 	pthread_t thread;
 	uint8_t scratch[];
 } compress_worker_t;
 #endif
 
-struct sqfs_block_processor_t {
+struct sqfs_data_writer_t {
 	/* synchronization primitives */
 #ifdef WITH_PTHREAD
 	pthread_mutex_t mtx;
@@ -107,32 +107,31 @@ struct sqfs_block_processor_t {
 #endif
 };
 
-SQFS_INTERNAL int process_completed_block(sqfs_block_processor_t *proc,
+SQFS_INTERNAL int process_completed_block(sqfs_data_writer_t *proc,
 					  sqfs_block_t *block);
 
 SQFS_INTERNAL
-int process_completed_fragment(sqfs_block_processor_t *proc, sqfs_block_t *frag,
+int process_completed_fragment(sqfs_data_writer_t *proc, sqfs_block_t *frag,
 			       sqfs_block_t **blk_out);
 
 SQFS_INTERNAL void free_blk_list(sqfs_block_t *list);
 
 SQFS_INTERNAL
-int block_processor_init(sqfs_block_processor_t *proc, size_t max_block_size,
-			 sqfs_compressor_t *cmp, unsigned int num_workers,
-			 size_t max_backlog, size_t devblksz,
-			 sqfs_file_t *file);
+int data_writer_init(sqfs_data_writer_t *proc, size_t max_block_size,
+		     sqfs_compressor_t *cmp, unsigned int num_workers,
+		     size_t max_backlog, size_t devblksz, sqfs_file_t *file);
 
-SQFS_INTERNAL void block_processor_cleanup(sqfs_block_processor_t *proc);
-
-SQFS_INTERNAL
-void block_processor_store_done(sqfs_block_processor_t *proc,
-				sqfs_block_t *blk, int status);
+SQFS_INTERNAL void data_writer_cleanup(sqfs_data_writer_t *proc);
 
 SQFS_INTERNAL
-sqfs_block_t *block_processor_next_work_item(sqfs_block_processor_t *proc);
+void data_writer_store_done(sqfs_data_writer_t *proc, sqfs_block_t *blk,
+			    int status);
 
 SQFS_INTERNAL
-int block_processor_do_block(sqfs_block_t *block, sqfs_compressor_t *cmp,
-			     uint8_t *scratch, size_t scratch_size);
+sqfs_block_t *data_writer_next_work_item(sqfs_data_writer_t *proc);
+
+SQFS_INTERNAL
+int data_writer_do_block(sqfs_block_t *block, sqfs_compressor_t *cmp,
+			 uint8_t *scratch, size_t scratch_size);
 
 #endif /* INTERNAL_H */

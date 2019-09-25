@@ -9,7 +9,7 @@
 
 #include <string.h>
 
-static int store_block_location(sqfs_block_processor_t *proc, uint64_t offset,
+static int store_block_location(sqfs_data_writer_t *proc, uint64_t offset,
 				uint32_t size, uint32_t chksum)
 {
 	size_t new_sz;
@@ -32,7 +32,7 @@ static int store_block_location(sqfs_block_processor_t *proc, uint64_t offset,
 	return 0;
 }
 
-static size_t deduplicate_blocks(sqfs_block_processor_t *proc, size_t count)
+static size_t deduplicate_blocks(sqfs_data_writer_t *proc, size_t count)
 {
 	size_t i, j;
 
@@ -50,7 +50,7 @@ static size_t deduplicate_blocks(sqfs_block_processor_t *proc, size_t count)
 	return i;
 }
 
-static int allign_file(sqfs_block_processor_t *proc, sqfs_block_t *blk)
+static int allign_file(sqfs_data_writer_t *proc, sqfs_block_t *blk)
 {
 	if (!(blk->flags & SQFS_BLK_ALLIGN))
 		return 0;
@@ -59,7 +59,7 @@ static int allign_file(sqfs_block_processor_t *proc, sqfs_block_t *blk)
 			 proc->devblksz);
 }
 
-int process_completed_block(sqfs_block_processor_t *proc, sqfs_block_t *blk)
+int process_completed_block(sqfs_data_writer_t *proc, sqfs_block_t *blk)
 {
 	size_t start, count;
 	uint64_t offset;

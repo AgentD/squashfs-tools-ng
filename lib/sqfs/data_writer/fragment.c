@@ -7,7 +7,7 @@
 #define SQFS_BUILDING_DLL
 #include "internal.h"
 
-static int grow_fragment_table(sqfs_block_processor_t *proc)
+static int grow_fragment_table(sqfs_data_writer_t *proc)
 {
 	size_t newsz;
 	void *new;
@@ -28,7 +28,7 @@ static int grow_fragment_table(sqfs_block_processor_t *proc)
 	return 0;
 }
 
-static int grow_deduplication_list(sqfs_block_processor_t *proc)
+static int grow_deduplication_list(sqfs_data_writer_t *proc)
 {
 	size_t new_sz;
 	void *new;
@@ -48,7 +48,7 @@ static int grow_deduplication_list(sqfs_block_processor_t *proc)
 	return 0;
 }
 
-static int store_fragment(sqfs_block_processor_t *proc, sqfs_block_t *frag,
+static int store_fragment(sqfs_data_writer_t *proc, sqfs_block_t *frag,
 			  uint64_t hash)
 {
 	int err = grow_deduplication_list(proc);
@@ -72,7 +72,7 @@ static int store_fragment(sqfs_block_processor_t *proc, sqfs_block_t *frag,
 	return 0;
 }
 
-int process_completed_fragment(sqfs_block_processor_t *proc, sqfs_block_t *frag,
+int process_completed_fragment(sqfs_data_writer_t *proc, sqfs_block_t *frag,
 			       sqfs_block_t **blk_out)
 {
 	uint64_t hash;

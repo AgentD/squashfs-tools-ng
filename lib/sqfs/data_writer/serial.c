@@ -1,42 +1,41 @@
 /* SPDX-License-Identifier: LGPL-3.0-or-later */
 /*
- * block_processor.c
+ * serial.c
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
 #define SQFS_BUILDING_DLL
 #include "internal.h"
 
-sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
-						    sqfs_compressor_t *cmp,
-						    unsigned int num_workers,
-						    size_t max_backlog,
-						    size_t devblksz,
-						    sqfs_file_t *file)
+sqfs_data_writer_t *sqfs_data_writer_create(size_t max_block_size,
+					    sqfs_compressor_t *cmp,
+					    unsigned int num_workers,
+					    size_t max_backlog,
+					    size_t devblksz,
+					    sqfs_file_t *file)
 {
-	sqfs_block_processor_t *proc;
+	sqfs_data_writer_t *proc;
 
 	proc = alloc_flex(sizeof(*proc), 1, max_block_size);
 
 	if (proc == NULL)
 		return NULL;
 
-	if (block_processor_init(proc, max_block_size, cmp, num_workers,
-				 max_backlog, devblksz, file)) {
-		block_processor_cleanup(proc);
+	if (data_writer_init(proc, max_block_size, cmp, num_workers,
+			     max_backlog, devblksz, file)) {
+		data_writer_cleanup(proc);
 		return NULL;
 	}
 
 	return proc;
 }
 
-void sqfs_block_processor_destroy(sqfs_block_processor_t *proc)
+void sqfs_data_writer_destroy(sqfs_data_writer_t *proc)
 {
-	block_processor_cleanup(proc);
+	data_writer_cleanup(proc);
 }
 
-int sqfs_block_processor_enqueue(sqfs_block_processor_t *proc,
-				 sqfs_block_t *block)
+int sqfs_data_writer_enqueue(sqfs_data_writer_t *proc, sqfs_block_t *block)
 {
 	sqfs_block_t *fragblk = NULL;
 
@@ -69,9 +68,8 @@ int sqfs_block_processor_enqueue(sqfs_block_processor_t *proc,
 		block = fragblk;
 	}
 
-	proc->status = block_processor_do_block(block, proc->cmp,
-						proc->scratch,
-						proc->max_block_size);
+	proc->status = data_writer_do_block(block, proc->cmp, proc->scratch,
+					    proc->max_block_size);
 
 	if (proc->status == 0)
 		proc->status = process_completed_block(proc, block);
@@ -80,14 +78,14 @@ int sqfs_block_processor_enqueue(sqfs_block_processor_t *proc,
 	return proc->status;
 }
 
-int sqfs_block_processor_finish(sqfs_block_processor_t *proc)
+int sqfs_data_writer_finish(sqfs_data_writer_t *proc)
 {
 	if (proc->status != 0 || proc->frag_block == NULL)
 		return proc->status;
 
-	proc->status = block_processor_do_block(proc->frag_block, proc->cmp,
-						proc->scratch,
-						proc->max_block_size);
+	proc->status = data_writer_do_block(proc->frag_block, proc->cmp,
+					    proc->scratch,
+					    proc->max_block_size);
 
 	if (proc->status == 0)
 		proc->status = process_completed_block(proc, proc->frag_block);

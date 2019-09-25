@@ -6,7 +6,7 @@
  */
 #include "config.h"
 
-#include "sqfs/block_processor.h"
+#include "sqfs/data_writer.h"
 #include "data_writer.h"
 #include "highlevel.h"
 #include "util.h"
@@ -19,7 +19,7 @@
 #include <zlib.h>
 
 struct data_writer_t {
-	sqfs_block_processor_t *proc;
+	sqfs_data_writer_t *proc;
 	sqfs_compressor_t *cmp;
 	sqfs_super_t *super;
 
@@ -44,7 +44,7 @@ static int add_sentinel_block(data_writer_t *data, sqfs_inode_generic_t *inode,
 	blk->inode = inode;
 	blk->flags = flags;
 
-	return sqfs_block_processor_enqueue(data->proc, blk);
+	return sqfs_data_writer_enqueue(data->proc, blk);
 }
 
 int write_data_from_file_condensed(data_writer_t *data, sqfs_file_t *file,
@@ -113,10 +113,10 @@ int write_data_from_file_condensed(data_writer_t *data, sqfs_file_t *file,
 
 			blk->flags |= SQFS_BLK_IS_FRAGMENT;
 
-			if (sqfs_block_processor_enqueue(data->proc, blk))
+			if (sqfs_data_writer_enqueue(data->proc, blk))
 				return -1;
 		} else {
-			if (sqfs_block_processor_enqueue(data->proc, blk))
+			if (sqfs_data_writer_enqueue(data->proc, blk))
 				return -1;
 
 			blk_flags &= ~SQFS_BLK_FIRST_BLOCK;
@@ -155,9 +155,9 @@ data_writer_t *data_writer_create(sqfs_super_t *super, sqfs_compressor_t *cmp,
 		return NULL;
 	}
 
-	data->proc = sqfs_block_processor_create(super->block_size, cmp,
-						 num_jobs, max_backlog,
-						 devblksize, file);
+	data->proc = sqfs_data_writer_create(super->block_size, cmp,
+					     num_jobs, max_backlog,
+					     devblksize, file);
 	if (data->proc == NULL) {
 		perror("creating data block processor");
 		free(data);
@@ -171,14 +171,13 @@ data_writer_t *data_writer_create(sqfs_super_t *super, sqfs_compressor_t *cmp,
 
 void data_writer_destroy(data_writer_t *data)
 {
-	sqfs_block_processor_destroy(data->proc);
+	sqfs_data_writer_destroy(data->proc);
 	free(data);
 }
 
 int data_writer_write_fragment_table(data_writer_t *data)
 {
-	if (sqfs_block_processor_write_fragment_table(data->proc,
-						      data->super)) {
+	if (sqfs_data_writer_write_fragment_table(data->proc, data->super)) {
 		fputs("error storing fragment table\n", stderr);
 		return -1;
 	}
@@ -187,7 +186,7 @@ int data_writer_write_fragment_table(data_writer_t *data)
 
 int data_writer_sync(data_writer_t *data)
 {
-	return sqfs_block_processor_finish(data->proc);
+	return sqfs_data_writer_finish(data->proc);
 }
 
 data_writer_stats_t *data_writer_get_stats(data_writer_t *data)

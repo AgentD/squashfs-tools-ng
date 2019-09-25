@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: LGPL-3.0-or-later */
 /*
- * block_processor.h - This file is part of libsquashfs
+ * data_writer.h - This file is part of libsquashfs
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  *
@@ -17,19 +17,19 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef SFQS_BLOCK_PROCESSOR_H
-#define SFQS_BLOCK_PROCESSOR_H
+#ifndef SFQS_DATA_WRITER_H
+#define SFQS_DATA_WRITER_H
 
 #include "sqfs/predef.h"
 
 /**
- * @file block_processor.h
+ * @file data_writer.h
  *
  * @brief Contains declarations for the data block processor.
  */
 
 /**
- * @struct sqfs_block_processor_t
+ * @struct sqfs_data_writer_t
  *
  * @brief Encapsulates a thread pool based block processor.
  *
@@ -37,7 +37,7 @@
  * operating system and compile configuration.
  *
  * Either way, the instantiated object processes data blocks that can be
- * enqueued through @ref sqfs_block_processor_enqueue. The completed blocks
+ * enqueued through @ref sqfs_data_writer_enqueue. The completed blocks
  * (compressed and checksumed) are dequeued in the same order and a callback
  * is called for each one.
  */
@@ -156,9 +156,9 @@ extern "C" {
 #endif
 
 /**
- * @brief Create a block processor.
+ * @brief Create a data block writer.
  *
- * @memberof sqfs_block_processor_t
+ * @memberof sqfs_data_writer_t
  *
  * @param max_block_size The maximum size of a data block. Required for the
  *                       internal scratch buffer used for compressing data.
@@ -169,87 +169,82 @@ extern "C" {
  * @param max_backlog The maximum number of blocks currently in flight. When
  *                    trying to add more, enqueueing blocks until the in-flight
  *                    block count drops below the threshold.
- * @param devblksz The device block size to allign files to if they have the
- *                 apropriate flag set.
+ * @param devblksz File can optionally be allgined to device block size. This
+ *                 specifies the desired allignment.
  * @param file The output file to write the finished blocks to.
  *
- * @return A pointer to a block processor object on success, NULL on allocation
- *         failure or on failure to create the worker threads and
- *         synchronisation primitives.
+ * @return A pointer to a data writer object on success, NULL on allocation
+ *         failure or on failure to create and initialize the worker threads.
  */
 SQFS_API
-sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
-						    sqfs_compressor_t *cmp,
-						    unsigned int num_workers,
-						    size_t max_backlog,
-						    size_t devblksz,
-						    sqfs_file_t *file);
+sqfs_data_writer_t *sqfs_data_writer_create(size_t max_block_size,
+					    sqfs_compressor_t *cmp,
+					    unsigned int num_workers,
+					    size_t max_backlog,
+					    size_t devblksz,
+					    sqfs_file_t *file);
 
 /**
- * @brief Destroy a block processor and free all memory used by it.
+ * @brief Destroy a data writer and free all memory used by it.
  *
- * @memberof sqfs_block_processor_t
+ * @memberof sqfs_data_writer_t
  *
- * @param proc A pointer to a block processor object.
+ * @param proc A pointer to a data writer object.
  */
-SQFS_API void sqfs_block_processor_destroy(sqfs_block_processor_t *proc);
+SQFS_API void sqfs_data_writer_destroy(sqfs_data_writer_t *proc);
 
 /**
  * @brief Add a block to be processed.
  *
- * @memberof sqfs_block_processor_t
+ * @memberof sqfs_data_writer_t
  *
  * The function takes over ownership of the submitted block. It is freed after
- * processing and calling the block callback.
+ * processing is done and it is written to disk.
  *
- * @note Even on failure, the workers may still be running and you should still
- *       call @ref sqfs_block_processor_finish before cleaning up.
- *
- * @param proc A pointer to a block processor object.
- * @param block A poitner to a block to enqueue.
+ * @param proc A pointer to a data writer object.
+ * @param block A pointer to a block to enqueue.
  *
  * @return Zero on success, an @ref E_SQFS_ERROR value on failure. Depending on
- *         the implementation used, the failure return value can actually come
- *         directly from the block callback.
+ *         the implementation used, the failure could have been caused by
+ *         processing of a block that was submitted earlier.
  */
-SQFS_API int sqfs_block_processor_enqueue(sqfs_block_processor_t *proc,
-					  sqfs_block_t *block);
+SQFS_API int sqfs_data_writer_enqueue(sqfs_data_writer_t *proc,
+				      sqfs_block_t *block);
 
 /**
- * @brief Wait for the workers to finish all in-flight data blocks.
+ * @brief Wait for the works to finish and finally flush the current
+ *        fragment block.
  *
- * @memberof sqfs_block_processor_t
+ * @memberof sqfs_data_writer_t
  *
  * @param proc A pointer to a block processor object.
  *
  * @return Zero on success, an @ref E_SQFS_ERROR value on failure. The failure
  *         return value can either be an error encountered during enqueueing,
- *         processing or a failure return status from the block callback.
+ *         processing or writing to disk.
  */
-SQFS_API int sqfs_block_processor_finish(sqfs_block_processor_t *proc);
+SQFS_API int sqfs_data_writer_finish(sqfs_data_writer_t *proc);
 
 /**
  * @brief Write the completed fragment table to disk.
  *
- * @memberof sqfs_block_processor_t
+ * @memberof sqfs_data_writer_t
  *
  * Call this after producing the inode and directory table to generate
  * the fragment table for the squashfs image.
  *
- * @param proc A pointer to a block processor object.
+ * @param proc A pointer to a data writer object.
  * @param super A pointer to a super block to write information about the
  *              fragment table to.
  *
- * @return Zero on success, an @ref E_SQFS_ERROR value on failure. The failure
- *         return value can either be an error encountered during enqueueing,
- *         processing or a failure return status from the block callback.
+ * @return Zero on success, an @ref E_SQFS_ERROR value on failure.
  */
 SQFS_API
-int sqfs_block_processor_write_fragment_table(sqfs_block_processor_t *proc,
-					      sqfs_super_t *super);
+int sqfs_data_writer_write_fragment_table(sqfs_data_writer_t *proc,
+					  sqfs_super_t *super);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* SFQS_BLOCK_PROCESSOR_H */
+#endif /* SFQS_DATA_WRITER_H */

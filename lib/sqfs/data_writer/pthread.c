@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: LGPL-3.0-or-later */
 /*
- * block_processor.c
+ * pthread.c
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
@@ -10,41 +10,41 @@
 static void *worker_proc(void *arg)
 {
 	compress_worker_t *worker = arg;
-	sqfs_block_processor_t *shared = worker->shared;
+	sqfs_data_writer_t *shared = worker->shared;
 	sqfs_block_t *blk = NULL;
 	int status = 0;
 
 	for (;;) {
 		pthread_mutex_lock(&shared->mtx);
 		if (blk != NULL) {
-			block_processor_store_done(shared, blk, status);
+			data_writer_store_done(shared, blk, status);
 			pthread_cond_broadcast(&shared->done_cond);
 		}
 
 		while (shared->queue == NULL && shared->status == 0)
 			pthread_cond_wait(&shared->queue_cond, &shared->mtx);
 
-		blk = block_processor_next_work_item(shared);
+		blk = data_writer_next_work_item(shared);
 		pthread_mutex_unlock(&shared->mtx);
 
 		if (blk == NULL)
 			break;
 
-		status = block_processor_do_block(blk, worker->cmp,
-						  worker->scratch,
-						  shared->max_block_size);
+		status = data_writer_do_block(blk, worker->cmp,
+					      worker->scratch,
+					      shared->max_block_size);
 	}
 	return NULL;
 }
 
-sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
-						    sqfs_compressor_t *cmp,
-						    unsigned int num_workers,
-						    size_t max_backlog,
-						    size_t devblksz,
-						    sqfs_file_t *file)
+sqfs_data_writer_t *sqfs_data_writer_create(size_t max_block_size,
+					    sqfs_compressor_t *cmp,
+					    unsigned int num_workers,
+					    size_t max_backlog,
+					    size_t devblksz,
+					    sqfs_file_t *file)
 {
-	sqfs_block_processor_t *proc;
+	sqfs_data_writer_t *proc;
 	unsigned int i;
 	int ret;
 
@@ -60,8 +60,8 @@ sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
 	proc->queue_cond = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
 	proc->done_cond = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
 
-	if (block_processor_init(proc, max_block_size, cmp, num_workers,
-				 max_backlog, devblksz, file)) {
+	if (data_writer_init(proc, max_block_size, cmp, num_workers,
+			     max_backlog, devblksz, file)) {
 		goto fail_init;
 	}
 
@@ -113,11 +113,11 @@ fail_init:
 	pthread_cond_destroy(&proc->done_cond);
 	pthread_cond_destroy(&proc->queue_cond);
 	pthread_mutex_destroy(&proc->mtx);
-	block_processor_cleanup(proc);
+	data_writer_cleanup(proc);
 	return NULL;
 }
 
-void sqfs_block_processor_destroy(sqfs_block_processor_t *proc)
+void sqfs_data_writer_destroy(sqfs_data_writer_t *proc)
 {
 	unsigned int i;
 
@@ -137,10 +137,10 @@ void sqfs_block_processor_destroy(sqfs_block_processor_t *proc)
 	pthread_cond_destroy(&proc->queue_cond);
 	pthread_mutex_destroy(&proc->mtx);
 
-	block_processor_cleanup(proc);
+	data_writer_cleanup(proc);
 }
 
-static void append_to_work_queue(sqfs_block_processor_t *proc,
+static void append_to_work_queue(sqfs_data_writer_t *proc,
 				 sqfs_block_t *block)
 {
 	if (proc->queue_last == NULL) {
@@ -156,7 +156,7 @@ static void append_to_work_queue(sqfs_block_processor_t *proc,
 	pthread_cond_broadcast(&proc->queue_cond);
 }
 
-static int test_and_set_status(sqfs_block_processor_t *proc, int status)
+static int test_and_set_status(sqfs_data_writer_t *proc, int status)
 {
 	pthread_mutex_lock(&proc->mtx);
 	if (proc->status == 0) {
@@ -168,7 +168,7 @@ static int test_and_set_status(sqfs_block_processor_t *proc, int status)
 	return status;
 }
 
-static sqfs_block_t *try_dequeue(sqfs_block_processor_t *proc)
+static sqfs_block_t *try_dequeue(sqfs_data_writer_t *proc)
 {
 	sqfs_block_t *queue, *it, *prev;
 
@@ -214,8 +214,7 @@ static sqfs_block_t *queue_merge(sqfs_block_t *lhs, sqfs_block_t *rhs)
 	return head;
 }
 
-static int process_done_queue(sqfs_block_processor_t *proc,
-			      sqfs_block_t *queue)
+static int process_done_queue(sqfs_data_writer_t *proc, sqfs_block_t *queue)
 {
 	sqfs_block_t *it, *block = NULL;
 	int status = 0;
@@ -261,8 +260,7 @@ static int process_done_queue(sqfs_block_processor_t *proc,
 	return status;
 }
 
-int sqfs_block_processor_enqueue(sqfs_block_processor_t *proc,
-				 sqfs_block_t *block)
+int sqfs_data_writer_enqueue(sqfs_data_writer_t *proc, sqfs_block_t *block)
 {
 	sqfs_block_t *queue;
 	int status;
@@ -296,7 +294,7 @@ int sqfs_block_processor_enqueue(sqfs_block_processor_t *proc,
 	return 0;
 }
 
-int sqfs_block_processor_finish(sqfs_block_processor_t *proc)
+int sqfs_data_writer_finish(sqfs_data_writer_t *proc)
 {
 	sqfs_block_t *queue;
 	int status = 0;
