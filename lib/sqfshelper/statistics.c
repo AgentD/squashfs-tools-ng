@@ -11,11 +11,10 @@
 
 void sqfs_print_statistics(sqfs_super_t *super, data_writer_stats_t *stats)
 {
-	uint64_t bytes_written = super->inode_table_start - sizeof(*super);
 	size_t ratio;
 
-	if (bytes_written > 0) {
-		ratio = (100 * bytes_written) / stats->bytes_read;
+	if (stats->bytes_written > 0) {
+		ratio = (100 * stats->bytes_written) / stats->bytes_read;
 	} else {
 		ratio = 100;
 	}

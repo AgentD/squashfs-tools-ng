@@ -28,6 +28,55 @@ struct data_writer_t {
 	data_writer_stats_t stats;
 };
 
+
+static void post_block_write(void *user, const sqfs_block_t *block,
+			     sqfs_file_t *file)
+{
+	data_writer_t *data = user;
+	(void)file;
+
+	if (block->flags & SQFS_BLK_FRAGMENT_BLOCK) {
+		data->stats.frag_blocks_written += 1;
+	} else {
+		data->stats.blocks_written += 1;
+	}
+
+	data->stats.bytes_written += block->size;
+}
+
+static void pre_fragment_store(void *user, sqfs_block_t *block)
+{
+	data_writer_t *data = user;
+	(void)block;
+
+	data->stats.frag_count += 1;
+}
+
+static void notify_blocks_erased(void *user, size_t count, uint64_t bytes)
+{
+	data_writer_t *data = user;
+	(void)bytes;
+
+	data->stats.bytes_written -= bytes;
+	data->stats.blocks_written -= count;
+	data->stats.duplicate_blocks += count;
+}
+
+static void notify_fragment_discard(void *user, const sqfs_block_t *block)
+{
+	data_writer_t *data = user;
+	(void)block;
+
+	data->stats.frag_dup += 1;
+}
+
+static const sqfs_block_hooks_t hooks = {
+	.post_block_write = post_block_write,
+	.pre_fragment_store = pre_fragment_store,
+	.notify_blocks_erased = notify_blocks_erased,
+	.notify_fragment_discard = notify_fragment_discard,
+};
+
 static bool is_zero_block(unsigned char *ptr, size_t size)
 {
 	return ptr[0] == 0 && memcmp(ptr, ptr + 1, size - 1) == 0;
@@ -165,6 +214,8 @@ data_writer_t *data_writer_create(sqfs_super_t *super, sqfs_compressor_t *cmp,
 		free(data);
 		return NULL;
 	}
+
+	sqfs_data_writer_set_hooks(data->proc, data, &hooks);
 
 	data->cmp = cmp;
 	data->super = super;

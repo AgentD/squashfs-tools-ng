@@ -24,6 +24,7 @@ typedef struct {
 	size_t sparse_blocks;
 	size_t frag_count;
 	size_t frag_dup;
+	uint64_t bytes_written;
 	uint64_t bytes_read;
 } data_writer_stats_t;
 
