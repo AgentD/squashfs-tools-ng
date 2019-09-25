@@ -9,37 +9,6 @@
 
 #include <string.h>
 
-int sqfs_block_process(sqfs_block_t *block, sqfs_compressor_t *cmp,
-		       uint8_t *scratch, size_t scratch_size)
-{
-	ssize_t ret;
-
-	if (block->size == 0) {
-		block->checksum = 0;
-		return 0;
-	}
-
-	block->checksum = crc32(0, block->data, block->size);
-
-	if (block->flags & SQFS_BLK_IS_FRAGMENT)
-		return 0;
-
-	if (!(block->flags & SQFS_BLK_DONT_COMPRESS)) {
-		ret = cmp->do_block(cmp, block->data, block->size,
-				    scratch, scratch_size);
-		if (ret < 0)
-			return ret;
-
-		if (ret > 0) {
-			memcpy(block->data, scratch, ret);
-			block->size = ret;
-			block->flags |= SQFS_BLK_IS_COMPRESSED;
-		}
-	}
-
-	return 0;
-}
-
 static int allign_file(sqfs_block_processor_t *proc, sqfs_block_t *blk)
 {
 	if (!(blk->flags & SQFS_BLK_ALLIGN))

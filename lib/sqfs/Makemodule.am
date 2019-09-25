@@ -21,6 +21,7 @@ libsquashfs_la_SOURCES += lib/sqfs/inode.c lib/sqfs/blk_proc/fragtbl.c
 libsquashfs_la_SOURCES += lib/sqfs/blk_proc/process_block.c lib/sqfs/io.c
 libsquashfs_la_SOURCES += lib/sqfs/blk_proc/internal.h lib/sqfs/data_reader.c
 libsquashfs_la_SOURCES += lib/sqfs/blk_proc/deduplicate.c
+libsquashfs_la_SOURCES += lib/sqfs/blk_proc/common.c
 libsquashfs_la_CPPFLAGS = $(AM_CPPFLAGS)
 libsquashfs_la_CFLAGS = $(AM_CFLAGS) $(PTHREAD_CFLAGS) $(ZLIB_CFLAGS)
 libsquashfs_la_CFLAGS += $(XZ_CFLAGS) $(LZO_CFLAGS) $(LZ4_CFLAGS)
