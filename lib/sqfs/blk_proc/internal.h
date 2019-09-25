@@ -1,8 +1,13 @@
+/* SPDX-License-Identifier: LGPL-3.0-or-later */
+/*
+ * internal.h
+ *
+ * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
+ */
 #ifndef INTERNAL_H
 #define INTERNAL_H
 
 #include "config.h"
-#include "sqfs/predef.h"
 
 #include "sqfs/block_processor.h"
 #include "sqfs/compress.h"
@@ -24,8 +29,6 @@
 
 #define MK_BLK_SIG(chksum, size) \
 	(((uint64_t)(size) << 32) | (uint64_t)(chksum))
-
-#define BLK_SIZE(sig) ((sig) >> 32)
 
 #define INIT_BLOCK_COUNT (128)
 
