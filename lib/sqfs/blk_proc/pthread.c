@@ -230,20 +230,6 @@ static void append_to_work_queue(sqfs_block_processor_t *proc,
 	pthread_cond_broadcast(&proc->queue_cond);
 }
 
-static sqfs_block_t *get_completed_if_avail(sqfs_block_processor_t *proc)
-{
-	sqfs_block_t *block = NULL;
-
-	if (proc->done != NULL &&
-	    proc->done->sequence_number == proc->dequeue_id) {
-		block = proc->done;
-		proc->done = proc->done->next;
-		proc->dequeue_id += 1;
-	}
-
-	return block;
-}
-
 static int test_and_set_status(sqfs_block_processor_t *proc, int status)
 {
 	pthread_mutex_lock(&proc->mtx);
@@ -308,26 +294,18 @@ static int process_done_queue(sqfs_block_processor_t *proc,
 	sqfs_block_t *it, *block = NULL;
 	int status = 0;
 
-	while (queue != NULL) {
+	while (queue != NULL && status == 0) {
 		it = queue;
 		queue = it->next;
-		it->next = NULL;
 
 		if (it->flags & SQFS_BLK_IS_FRAGMENT) {
+			block = NULL;
 			status = handle_fragment(proc, it, &block);
 
-			if (status != 0) {
-				free(it);
-				free(block);
-				free_blk_list(queue);
-				status = test_and_set_status(proc, status);
-				break;
-			}
-
-			if (block != NULL) {
+			if (block != NULL && status == 0) {
 				pthread_mutex_lock(&proc->mtx);
 				proc->dequeue_id = it->sequence_number;
-				block->sequence_number = proc->dequeue_id;
+				block->sequence_number = it->sequence_number;
 
 				if (proc->queue == NULL) {
 					proc->queue = block;
@@ -343,21 +321,17 @@ static int process_done_queue(sqfs_block_processor_t *proc,
 				pthread_mutex_unlock(&proc->mtx);
 
 				queue = NULL;
+			} else {
+				free(block);
 			}
 		} else {
 			status = process_completed_block(proc, it);
-
-			if (status != 0) {
-				status = test_and_set_status(proc, status);
-				free_blk_list(queue);
-				free(it);
-				break;
-			}
 		}
 
 		free(it);
 	}
 
+	free_blk_list(queue);
 	return status;
 }
 
@@ -389,79 +363,46 @@ int sqfs_block_processor_enqueue(sqfs_block_processor_t *proc,
 	queue = try_dequeue(proc);
 	pthread_mutex_unlock(&proc->mtx);
 
-	return process_done_queue(proc, queue);
+	status = process_done_queue(proc, queue);
+	if (status != 0)
+		return test_and_set_status(proc, status);
+
+	return 0;
 }
 
 int sqfs_block_processor_finish(sqfs_block_processor_t *proc)
 {
-	sqfs_block_t *it, *block;
+	sqfs_block_t *queue;
 	int status = 0;
 
-	pthread_mutex_lock(&proc->mtx);
-restart:
-	while (proc->backlog > 0 && proc->status == 0)
-		pthread_cond_wait(&proc->done_cond, &proc->mtx);
+	for (;;) {
+		pthread_mutex_lock(&proc->mtx);
+		while (proc->backlog > 0 && proc->status == 0)
+			pthread_cond_wait(&proc->done_cond, &proc->mtx);
 
-	if (proc->status != 0) {
-		status = proc->status;
-		pthread_mutex_unlock(&proc->mtx);
-		return status;
-	}
-
-	while (proc->done != NULL) {
-		it = get_completed_if_avail(proc);
-
-		if (it == NULL) {
-			status = SQFS_ERROR_INTERNAL;
-		} else if (it->flags & SQFS_BLK_IS_FRAGMENT) {
-			block = NULL;
-			status = handle_fragment(proc, it, &block);
-
-			if (status != 0) {
-				proc->status = status;
-				pthread_mutex_unlock(&proc->mtx);
-				free(block);
-				free(it);
-				return status;
-			}
-
-			if (block != NULL) {
-				proc->dequeue_id = it->sequence_number;
-				block->sequence_number = proc->dequeue_id;
-				free(it);
-
-				if (proc->queue == NULL) {
-					proc->queue = block;
-					proc->queue_last = block;
-				} else {
-					block->next = proc->queue;
-					proc->queue = block;
-				}
-
-				proc->backlog += 1;
-				pthread_cond_broadcast(&proc->queue_cond);
-				goto restart;
-			}
-
-			free(it);
-		} else {
-			status = process_completed_block(proc, it);
-			free(it);
-
-			if (status != 0) {
-				proc->status = status;
-				pthread_mutex_unlock(&proc->mtx);
-				return status;
-			}
+		if (proc->status != 0) {
+			status = proc->status;
+			pthread_mutex_unlock(&proc->mtx);
+			return status;
 		}
+
+		queue = proc->done;
+		proc->done = NULL;
+		pthread_mutex_unlock(&proc->mtx);
+
+		if (queue == NULL) {
+			if (proc->frag_block != NULL) {
+				append_to_work_queue(proc, proc->frag_block);
+				proc->frag_block = NULL;
+				continue;
+			}
+			break;
+		}
+
+		status = process_done_queue(proc, queue);
+		if (status != 0)
+			return status;
 	}
 
-	if (proc->frag_block != NULL) {
-		append_to_work_queue(proc, proc->frag_block);
-		proc->frag_block = NULL;
-		goto restart;
-	}
-
-	pthread_mutex_unlock(&proc->mtx);
 	return 0;
 }
