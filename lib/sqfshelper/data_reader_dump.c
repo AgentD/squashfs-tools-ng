@@ -6,8 +6,8 @@
  */
 #include "config.h"
 
-#include "sqfs/data_writer.h"
 #include "sqfs/data_reader.h"
+#include "sqfs/block.h"
 #include "highlevel.h"
 #include "util.h"
 

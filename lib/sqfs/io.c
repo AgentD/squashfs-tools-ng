@@ -9,7 +9,7 @@
 
 #include "sqfs/io.h"
 #include "sqfs/error.h"
-#include "sqfs/data_writer.h"
+#include "sqfs/block.h"
 #include "util.h"
 
 #include <stdlib.h>

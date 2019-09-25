@@ -6,7 +6,7 @@ LIBSQFS_HEARDS = include/sqfs/data.h include/sqfs/meta_writer.h \
 		include/sqfs/table.h include/sqfs/predef.h \
 		include/sqfs/error.h include/sqfs/dir_reader.h \
 		include/sqfs/dir_writer.h include/sqfs/io.h \
-		include/sqfs/data_reader.h
+		include/sqfs/data_reader.h include/sqfs/block.h
 
 libsquashfs_la_SOURCES = $(LIBSQFS_HEARDS) lib/sqfs/id_table.c lib/sqfs/super.c
 libsquashfs_la_SOURCES += lib/sqfs/readdir.c lib/sqfs/io_file.c lib/sqfs/xattr.c

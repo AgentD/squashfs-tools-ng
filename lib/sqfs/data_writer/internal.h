@@ -14,6 +14,7 @@
 #include "sqfs/inode.h"
 #include "sqfs/table.h"
 #include "sqfs/error.h"
+#include "sqfs/block.h"
 #include "sqfs/data.h"
 #include "sqfs/io.h"
 #include "util.h"
