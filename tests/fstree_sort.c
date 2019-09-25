@@ -23,10 +23,10 @@ int main(void)
 	sb.st_mode = S_IFBLK | 0600;
 	sb.st_rdev = 1337;
 
-	a = fstree_mknode(&fs, NULL, "a", 1, NULL, &sb);
-	b = fstree_mknode(&fs, NULL, "b", 1, NULL, &sb);
-	c = fstree_mknode(&fs, NULL, "c", 1, NULL, &sb);
-	d = fstree_mknode(&fs, NULL, "d", 1, NULL, &sb);
+	a = fstree_mknode(NULL, "a", 1, NULL, &sb);
+	b = fstree_mknode(NULL, "b", 1, NULL, &sb);
+	c = fstree_mknode(NULL, "c", 1, NULL, &sb);
+	d = fstree_mknode(NULL, "d", 1, NULL, &sb);
 	assert(a != NULL && b != NULL && c != NULL && d != NULL);
 
 	/* empty list */

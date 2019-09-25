@@ -26,7 +26,7 @@ int main(void)
 	sb.st_rdev = 789;
 	sb.st_size = 4096;
 
-	root = fstree_mknode(&fs, NULL, "rootdir", 7, (void *)0x100, &sb);
+	root = fstree_mknode(NULL, "rootdir", 7, (void *)0x100, &sb);
 	assert(root->uid == sb.st_uid);
 	assert(root->gid == sb.st_gid);
 	assert(root->mode == sb.st_mode);
@@ -38,14 +38,14 @@ int main(void)
 	assert(root->parent == NULL);
 	assert(root->next == NULL);
 
-	a = fstree_mknode(&fs, root, "adir", 4, (void *)0x100, &sb);
+	a = fstree_mknode(root, "adir", 4, (void *)0x100, &sb);
 	assert(a->parent == root);
 	assert(a->next == NULL);
 	assert(root->data.dir->children == a);
 	assert(root->parent == NULL);
 	assert(root->next == NULL);
 
-	b = fstree_mknode(&fs, root, "bdir", 4, (void *)0x100, &sb);
+	b = fstree_mknode(root, "bdir", 4, (void *)0x100, &sb);
 	assert(a->parent == root);
 	assert(b->parent == root);
 	assert(root->data.dir->children == b);

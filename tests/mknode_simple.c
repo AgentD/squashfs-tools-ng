@@ -26,7 +26,7 @@ int main(void)
 	sb.st_rdev = 789;
 	sb.st_size = 1337;
 
-	node = fstree_mknode(&fs, NULL, "sockfile", 8, (void *)0x1000, &sb);
+	node = fstree_mknode(NULL, "sockfile", 8, (void *)0x1000, &sb);
 	assert((char *)node->name >= (char *)node->payload);
 	assert(strcmp(node->name, "sockfile") == 0);
 	assert(node->uid == sb.st_uid);
@@ -47,7 +47,7 @@ int main(void)
 	sb.st_rdev = 789;
 	sb.st_size = 1337;
 
-	node = fstree_mknode(&fs, NULL, "fifo", 4, (void *)0x1000, &sb);
+	node = fstree_mknode(NULL, "fifo", 4, (void *)0x1000, &sb);
 	assert((char *)node->name >= (char *)node->payload);
 	assert(strcmp(node->name, "fifo") == 0);
 	assert(node->uid == sb.st_uid);
@@ -68,7 +68,7 @@ int main(void)
 	sb.st_rdev = 789;
 	sb.st_size = 1337;
 
-	node = fstree_mknode(&fs, NULL, "blkdev", 6, (void *)0x1000, &sb);
+	node = fstree_mknode(NULL, "blkdev", 6, (void *)0x1000, &sb);
 	assert((char *)node->name >= (char *)node->payload);
 	assert(strcmp(node->name, "blkdev") == 0);
 	assert(node->uid == sb.st_uid);
@@ -86,7 +86,7 @@ int main(void)
 	sb.st_rdev = 789;
 	sb.st_size = 1337;
 
-	node = fstree_mknode(&fs, NULL, "chardev", 7, (void *)0x1000, &sb);
+	node = fstree_mknode(NULL, "chardev", 7, (void *)0x1000, &sb);
 	assert((char *)node->name >= (char *)node->payload);
 	assert(strcmp(node->name, "chardev") == 0);
 	assert(node->uid == sb.st_uid);

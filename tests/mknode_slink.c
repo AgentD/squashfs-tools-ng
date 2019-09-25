@@ -26,7 +26,7 @@ int main(void)
 	sb.st_rdev = 789;
 	sb.st_size = 1337;
 
-	node = fstree_mknode(&fs, NULL, "symlink", 7, "target", &sb);
+	node = fstree_mknode(NULL, "symlink", 7, "target", &sb);
 	assert(node->uid == sb.st_uid);
 	assert(node->gid == sb.st_gid);
 	assert(node->mode == (S_IFLNK | 0777));
@@ -38,7 +38,7 @@ int main(void)
 	assert(strcmp(node->data.slink_target, "target") == 0);
 	free(node);
 
-	node = fstree_mknode(&fs, NULL, "symlink", 7, "", &sb);
+	node = fstree_mknode(NULL, "symlink", 7, "", &sb);
 	assert(node->uid == sb.st_uid);
 	assert(node->gid == sb.st_gid);
 	assert(node->mode == (S_IFLNK | 0777));

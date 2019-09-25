@@ -28,15 +28,14 @@ int main(void)
 	sb.st_rdev = 789;
 	sb.st_size = 4096;
 
-	node = fstree_mknode(&fs, NULL, "filename", 8, "input", &sb);
+	node = fstree_mknode(NULL, "filename", 8, "input", &sb);
 	assert(node->uid == sb.st_uid);
 	assert(node->gid == sb.st_gid);
 	assert(node->mode == sb.st_mode);
 	assert(node->parent == NULL);
 	assert((char *)node->name >= (char *)node->payload);
 	assert((char *)node->data.file >= (char *)node->payload);
-	assert(node->data.file->input_file > (char *)(node->data.file + 1) +
-	       sizeof(node->data.file->block_size[0]) * 4);
+	assert(node->data.file->input_file >= (char *)(node->data.file + 1));
 	assert(node->name >= node->data.file->input_file + 6);
 	assert(strcmp(node->name, "filename") == 0);
 	assert(strcmp(node->data.file->input_file, "input") == 0);
