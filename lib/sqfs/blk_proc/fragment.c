@@ -72,8 +72,8 @@ static int store_fragment(sqfs_block_processor_t *proc, sqfs_block_t *frag,
 	return 0;
 }
 
-int handle_fragment(sqfs_block_processor_t *proc, sqfs_block_t *frag,
-		    sqfs_block_t **blk_out)
+int process_completed_fragment(sqfs_block_processor_t *proc, sqfs_block_t *frag,
+			       sqfs_block_t **blk_out)
 {
 	uint64_t hash;
 	size_t i, size;

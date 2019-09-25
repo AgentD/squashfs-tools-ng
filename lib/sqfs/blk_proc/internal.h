@@ -111,15 +111,8 @@ SQFS_INTERNAL int process_completed_block(sqfs_block_processor_t *proc,
 					  sqfs_block_t *block);
 
 SQFS_INTERNAL
-int handle_fragment(sqfs_block_processor_t *proc, sqfs_block_t *frag,
-		    sqfs_block_t **blk_out);
-
-SQFS_INTERNAL size_t deduplicate_blocks(sqfs_block_processor_t *proc,
-					size_t count);
-
-SQFS_INTERNAL int store_block_location(sqfs_block_processor_t *proc,
-				       uint64_t offset, uint32_t size,
-				       uint32_t chksum);
+int process_completed_fragment(sqfs_block_processor_t *proc, sqfs_block_t *frag,
+			       sqfs_block_t **blk_out);
 
 SQFS_INTERNAL void free_blk_list(sqfs_block_t *list);
 

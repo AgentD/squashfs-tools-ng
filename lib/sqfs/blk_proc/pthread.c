@@ -226,7 +226,7 @@ static int process_done_queue(sqfs_block_processor_t *proc,
 
 		if (it->flags & SQFS_BLK_IS_FRAGMENT) {
 			block = NULL;
-			status = handle_fragment(proc, it, &block);
+			status = process_completed_fragment(proc, it, &block);
 
 			if (block != NULL && status == 0) {
 				pthread_mutex_lock(&proc->mtx);

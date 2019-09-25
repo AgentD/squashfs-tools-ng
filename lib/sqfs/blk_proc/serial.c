@@ -54,7 +54,8 @@ int sqfs_block_processor_enqueue(sqfs_block_processor_t *proc,
 	if (block->flags & SQFS_BLK_IS_FRAGMENT) {
 		block->checksum = crc32(0, block->data, block->size);
 
-		proc->status = handle_fragment(proc, block, &fragblk);
+		proc->status = process_completed_fragment(proc, block,
+							  &fragblk);
 		free(block);
 
 		if (proc->status != 0) {

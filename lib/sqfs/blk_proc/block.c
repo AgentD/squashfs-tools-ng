@@ -9,6 +9,47 @@
 
 #include <string.h>
 
+static int store_block_location(sqfs_block_processor_t *proc, uint64_t offset,
+				uint32_t size, uint32_t chksum)
+{
+	size_t new_sz;
+	void *new;
+
+	if (proc->num_blocks == proc->max_blocks) {
+		new_sz = proc->max_blocks * 2;
+		new = realloc(proc->blocks, sizeof(proc->blocks[0]) * new_sz);
+
+		if (new == NULL)
+			return SQFS_ERROR_ALLOC;
+
+		proc->blocks = new;
+		proc->max_blocks = new_sz;
+	}
+
+	proc->blocks[proc->num_blocks].offset = offset;
+	proc->blocks[proc->num_blocks].hash = MK_BLK_HASH(chksum, size);
+	proc->num_blocks += 1;
+	return 0;
+}
+
+static size_t deduplicate_blocks(sqfs_block_processor_t *proc, size_t count)
+{
+	size_t i, j;
+
+	for (i = 0; i < proc->file_start; ++i) {
+		for (j = 0; j < count; ++j) {
+			if (proc->blocks[i + j].hash !=
+			    proc->blocks[proc->file_start + j].hash)
+				break;
+		}
+
+		if (j == count)
+			break;
+	}
+
+	return i;
+}
+
 static int allign_file(sqfs_block_processor_t *proc, sqfs_block_t *blk)
 {
 	if (!(blk->flags & SQFS_BLK_ALLIGN))
