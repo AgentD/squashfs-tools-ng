@@ -125,7 +125,7 @@ int fstree_init(fstree_t *fs, size_t block_size, char *defaults)
 		return -1;
 	}
 
-	fs->root = fstree_mknode(fs, NULL, "", 0, NULL, &fs->defaults);
+	fs->root = fstree_mknode(NULL, "", 0, NULL, &fs->defaults);
 
 	if (fs->root == NULL) {
 		perror("initializing file system tree");

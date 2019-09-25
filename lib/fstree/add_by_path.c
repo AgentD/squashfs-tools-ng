@@ -45,7 +45,7 @@ static tree_node_t *get_parent_node(fstree_t *fs, tree_node_t *root,
 		n = child_by_name(root, path, end - path);
 
 		if (n == NULL) {
-			n = fstree_mknode(fs, root, path, end - path, NULL,
+			n = fstree_mknode(root, path, end - path, NULL,
 					  &fs->defaults);
 			if (n == NULL)
 				return NULL;
@@ -89,5 +89,5 @@ tree_node_t *fstree_add_generic(fstree_t *fs, const char *path,
 		return child;
 	}
 
-	return fstree_mknode(fs, parent, name, strlen(name), extra, sb);
+	return fstree_mknode(parent, name, strlen(name), extra, sb);
 }

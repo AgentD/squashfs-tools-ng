@@ -223,7 +223,7 @@ fail_arg:
 }
 
 static int write_file(tar_header_decoded_t *hdr, file_info_t *fi,
-		      data_writer_t *data)
+		      data_writer_t *data, uint64_t filesize)
 {
 	const sqfs_sparse_map_t *it;
 	sqfs_inode_generic_t *inode;
@@ -232,8 +232,8 @@ static int write_file(tar_header_decoded_t *hdr, file_info_t *fi,
 	uint64_t sum;
 	int ret;
 
-	max_blk_count = fi->size / block_size;
-	if (fi->size % block_size)
+	max_blk_count = filesize / block_size;
+	if (filesize % block_size)
 		++max_blk_count;
 
 	inode = alloc_flex(sizeof(*inode), sizeof(uint32_t), max_blk_count);
@@ -244,7 +244,7 @@ static int write_file(tar_header_decoded_t *hdr, file_info_t *fi,
 
 	inode->block_sizes = (uint32_t *)inode->extra;
 	inode->base.type = SQFS_INODE_FILE;
-	sqfs_inode_set_file_size(inode, fi->size);
+	sqfs_inode_set_file_size(inode, filesize);
 	sqfs_inode_set_frag_location(inode, 0xFFFFFFFF, 0xFFFFFFFF);
 
 	fi->user_ptr = inode;
@@ -268,7 +268,7 @@ static int write_file(tar_header_decoded_t *hdr, file_info_t *fi,
 		return skip_padding(STDIN_FILENO, hdr->record_size);
 	}
 
-	file = sqfs_get_stdin_file(fi->size);
+	file = sqfs_get_stdin_file(filesize);
 	if (file == NULL) {
 		perror("packing files");
 		return -1;
@@ -280,7 +280,7 @@ static int write_file(tar_header_decoded_t *hdr, file_info_t *fi,
 	if (ret)
 		return -1;
 
-	return skip_padding(STDIN_FILENO, fi->size);
+	return skip_padding(STDIN_FILENO, filesize);
 }
 
 static int copy_xattr(fstree_t *fs, tree_node_t *node,
@@ -330,7 +330,7 @@ static int create_node_and_repack_data(tar_header_decoded_t *hdr, fstree_t *fs,
 	}
 
 	if (S_ISREG(hdr->sb.st_mode)) {
-		if (write_file(hdr, node->data.file, data))
+		if (write_file(hdr, node->data.file, data, hdr->sb.st_size))
 			return -1;
 	}
 

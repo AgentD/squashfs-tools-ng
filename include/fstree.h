@@ -76,26 +76,7 @@ struct file_info_t {
 	/* Path to the input file. */
 	char *input_file;
 
-	uint64_t size;
-
 	void *user_ptr;
-
-	/* Number of bytes not written to disk because they are 0 */
-	uint64_t sparse;
-
-	/* Absolute position of the first data block. */
-	uint64_t startblock;
-
-	/* If the size is not a multiple of the block size, this holds an
-	   index into the fragment table. */
-	uint32_t fragment;
-
-	/* Byte offset into the fragment block. */
-	uint32_t fragment_offset;
-
-	/* Stores data about each full data block. */
-	/* Bit (1 << 24) is set if the block is stored uncompressed. */
-	uint32_t block_size[];
 };
 
 /* Additional meta data stored in a tree_node_t for directories */
@@ -199,7 +180,7 @@ void fstree_cleanup(fstree_t *fs);
 
   The resulting node can be freed with a single free() call.
 */
-tree_node_t *fstree_mknode(fstree_t *fs, tree_node_t *parent, const char *name,
+tree_node_t *fstree_mknode(tree_node_t *parent, const char *name,
 			   size_t name_len, const char *extra,
 			   const struct stat *sb);
 

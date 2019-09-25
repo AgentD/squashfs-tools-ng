@@ -180,7 +180,7 @@ static int populate_dir(fstree_t *fs, tree_node_t *root, dev_t devstart,
 		if (!(flags & DIR_SCAN_KEEP_TIME))
 			sb.st_mtim = fs->defaults.st_mtim;
 
-		n = fstree_mknode(fs, root, ent->d_name, strlen(ent->d_name),
+		n = fstree_mknode(root, ent->d_name, strlen(ent->d_name),
 				  extra, &sb);
 		if (n == NULL) {
 			perror("creating tree node");
