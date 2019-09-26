@@ -35,16 +35,14 @@ int sqfs_data_writer_begin_file(sqfs_data_writer_t *proc,
 		return test_and_set_status(proc, SQFS_ERROR_UNSUPPORTED);
 
 	proc->inode = inode;
-	proc->blk_flags = flags;
+	proc->blk_flags = flags | SQFS_BLK_FIRST_BLOCK;
 	proc->blk_index = 0;
-	proc->had_fragment = false;
+	proc->blk_current = NULL;
 	return 0;
 }
 
-int sqfs_data_writer_enqueue(sqfs_data_writer_t *proc, sqfs_block_t *block)
+static int flush_block(sqfs_data_writer_t *proc, sqfs_block_t *block)
 {
-	int err;
-
 	block->index = proc->blk_index++;
 	block->flags = proc->blk_flags;
 	block->inode = proc->inode;
@@ -59,25 +57,63 @@ int sqfs_data_writer_enqueue(sqfs_data_writer_t *proc, sqfs_block_t *block)
 	}
 
 	if (block->size < proc->max_block_size) {
-		if (block->index > 0) {
-			err = add_sentinel_block(proc);
-
-			if (err) {
-				free(block);
-				return err;
-			}
-		}
-
-		proc->had_fragment = true;
 		block->flags |= SQFS_BLK_IS_FRAGMENT;
 	} else {
-		if (block->index == 0)
-			block->flags |= SQFS_BLK_FIRST_BLOCK;
-
 		proc->inode->num_file_blocks += 1;
+		proc->blk_flags &= ~SQFS_BLK_FIRST_BLOCK;
 	}
 
 	return data_writer_enqueue(proc, block);
+}
+
+int sqfs_data_writer_append(sqfs_data_writer_t *proc, const void *data,
+			    size_t size)
+{
+	size_t diff;
+	void *new;
+	int err;
+
+	while (size > 0) {
+		if (proc->blk_current == NULL) {
+			new = alloc_flex(sizeof(*proc->blk_current), 1,
+					 proc->max_block_size);
+
+			if (new == NULL)
+				return test_and_set_status(proc,
+							   SQFS_ERROR_ALLOC);
+
+			proc->blk_current = new;
+		}
+
+		diff = proc->max_block_size - proc->blk_current->size;
+
+		if (diff == 0) {
+			err = flush_block(proc, proc->blk_current);
+			proc->blk_current = NULL;
+			if (err)
+				return err;
+			continue;
+		}
+
+		if (diff > size)
+			diff = size;
+
+		memcpy(proc->blk_current->data + proc->blk_current->size,
+		       data, diff);
+
+		size -= diff;
+		proc->blk_current->size += diff;
+		data = (const char *)data + diff;
+	}
+
+	if (proc->blk_current != NULL &&
+	    proc->blk_current->size == proc->max_block_size) {
+		err = flush_block(proc, proc->blk_current);
+		proc->blk_current = NULL;
+		return err;
+	}
+
+	return 0;
 }
 
 int sqfs_data_writer_end_file(sqfs_data_writer_t *proc)
@@ -87,15 +123,19 @@ int sqfs_data_writer_end_file(sqfs_data_writer_t *proc)
 	if (proc->inode == NULL)
 		return test_and_set_status(proc, SQFS_ERROR_INTERNAL);
 
-	if (!proc->had_fragment && proc->inode->num_file_blocks > 0) {
+	if (!(proc->blk_flags & SQFS_BLK_FIRST_BLOCK)) {
 		err = add_sentinel_block(proc);
 		if (err)
 			return err;
 	}
 
+	if (proc->blk_current != NULL) {
+		err = flush_block(proc, proc->blk_current);
+		proc->blk_current = NULL;
+	}
+
 	proc->inode = NULL;
 	proc->blk_flags = 0;
 	proc->blk_index = 0;
-	proc->had_fragment = false;
 	return 0;
 }

@@ -103,9 +103,9 @@ struct sqfs_data_writer_t {
 
 	/* file API */
 	sqfs_inode_generic_t *inode;
+	sqfs_block_t *blk_current;
 	uint32_t blk_flags;
 	size_t blk_index;
-	bool had_fragment;
 
 	/* used only by workers */
 	size_t max_block_size;

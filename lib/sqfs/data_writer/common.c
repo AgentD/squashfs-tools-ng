@@ -47,6 +47,7 @@ void data_writer_cleanup(sqfs_data_writer_t *proc)
 {
 	free_blk_list(proc->queue);
 	free_blk_list(proc->done);
+	free(proc->blk_current);
 	free(proc->frag_block);
 	free(proc->frag_list);
 	free(proc->fragments);

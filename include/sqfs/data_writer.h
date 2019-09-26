@@ -173,23 +173,8 @@ SQFS_API int sqfs_data_writer_begin_file(sqfs_data_writer_t *proc,
 					 sqfs_inode_generic_t *inode,
 					 uint32_t flags);
 
-/**
- * @brief Add a block to be processed.
- *
- * @memberof sqfs_data_writer_t
- *
- * The function takes over ownership of the submitted block. It is freed after
- * processing is done and it is written to disk.
- *
- * @param proc A pointer to a data writer object.
- * @param block A pointer to a block to enqueue.
- *
- * @return Zero on success, an @ref E_SQFS_ERROR value on failure. Depending on
- *         the implementation used, the failure could have been caused by
- *         processing of a block that was submitted earlier.
- */
-SQFS_API int sqfs_data_writer_enqueue(sqfs_data_writer_t *proc,
-				      sqfs_block_t *block);
+SQFS_API int sqfs_data_writer_append(sqfs_data_writer_t *proc,
+				     const void *data, size_t size);
 
 SQFS_API int sqfs_data_writer_end_file(sqfs_data_writer_t *proc);
 
