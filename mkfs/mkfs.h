@@ -15,7 +15,6 @@
 #include "sqfs/data.h"
 #include "sqfs/io.h"
 
-#include "data_writer.h"
 #include "highlevel.h"
 #include "fstree.h"
 #include "util.h"

@@ -15,19 +15,46 @@
 #include "sqfs/data.h"
 #include "sqfs/table.h"
 #include "sqfs/meta_writer.h"
+#include "sqfs/data_reader.h"
+#include "sqfs/data_writer.h"
 #include "sqfs/dir_writer.h"
 #include "sqfs/dir_reader.h"
+#include "sqfs/block.h"
 #include "sqfs/xattr.h"
 #include "sqfs/dir.h"
 #include "sqfs/io.h"
-#include "sqfs/data_reader.h"
-#include "data_writer.h"
 #include "fstree.h"
+#include "util.h"
 #include "tar.h"
 
 #include <sys/stat.h>
 #include <stdint.h>
 #include <stddef.h>
+
+typedef struct {
+	size_t file_count;
+	size_t blocks_written;
+	size_t frag_blocks_written;
+	size_t duplicate_blocks;
+	size_t sparse_blocks;
+	size_t frag_count;
+	size_t frag_dup;
+	uint64_t bytes_written;
+	uint64_t bytes_read;
+} data_writer_stats_t;
+
+enum {
+	/* Don't generate fragments, always write the last block to disk as a
+	   block, even if it is incomplete. */
+	DW_DONT_FRAGMENT = 0x01,
+
+	/* Intentionally write all blocks uncompressed. */
+	DW_DONT_COMPRESS = 0x02,
+
+	/* Make sure the first block of a file is alligned to
+	   device block size */
+	DW_ALLIGN_DEVBLK = 0x04,
+};
 
 /*
   High level helper function to serialize an entire file system tree to
@@ -85,5 +112,10 @@ int sqfs_data_reader_dump(sqfs_data_reader_t *data,
 			  int outfd, size_t block_size, bool allow_sparse);
 
 sqfs_file_t *sqfs_get_stdin_file(const sparse_map_t *map, uint64_t size);
+
+void register_stat_hooks(sqfs_data_writer_t *data, data_writer_stats_t *stats);
+
+int write_data_from_file(sqfs_data_writer_t *data, sqfs_inode_generic_t *inode,
+			 sqfs_file_t *file, size_t block_size, int flags);
 
 #endif /* HIGHLEVEL_H */

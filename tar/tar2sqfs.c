@@ -12,7 +12,6 @@
 #include "sqfs/data.h"
 #include "sqfs/io.h"
 
-#include "data_writer.h"
 #include "highlevel.h"
 #include "fstree.h"
 #include "util.h"
@@ -111,6 +110,8 @@ static bool dont_skip = false;
 static bool no_xattr = false;
 static bool exportable = false;
 static bool keep_time = false;
+static data_writer_stats_t stats;
+static sqfs_super_t super;
 
 static void process_args(int argc, char **argv)
 {
@@ -223,7 +224,7 @@ fail_arg:
 }
 
 static int write_file(tar_header_decoded_t *hdr, file_info_t *fi,
-		      data_writer_t *data, uint64_t filesize)
+		      sqfs_data_writer_t *data, uint64_t filesize)
 {
 	const sparse_map_t *it;
 	sqfs_inode_generic_t *inode;
@@ -266,8 +267,11 @@ static int write_file(tar_header_decoded_t *hdr, file_info_t *fi,
 		}
 	}
 
-	ret = write_data_from_file(data, inode, file, 0);
+	ret = write_data_from_file(data, inode, file, super.block_size, 0);
 	file->destroy(file);
+
+	stats.bytes_read += filesize;
+	stats.file_count += 1;
 
 	if (ret)
 		return -1;
@@ -302,7 +306,7 @@ static int copy_xattr(fstree_t *fs, tree_node_t *node,
 }
 
 static int create_node_and_repack_data(tar_header_decoded_t *hdr, fstree_t *fs,
-				       data_writer_t *data)
+				       sqfs_data_writer_t *data)
 {
 	tree_node_t *node;
 
@@ -333,7 +337,7 @@ fail_errno:
 	return -1;
 }
 
-static int process_tar_ball(fstree_t *fs, data_writer_t *data)
+static int process_tar_ball(fstree_t *fs, sqfs_data_writer_t *data)
 {
 	tar_header_decoded_t hdr;
 	uint64_t offset, count;
@@ -407,11 +411,10 @@ int main(int argc, char **argv)
 {
 	sqfs_compressor_config_t cfg;
 	int status = EXIT_SUCCESS;
+	sqfs_data_writer_t *data;
 	sqfs_compressor_t *cmp;
 	sqfs_id_table_t *idtbl;
 	sqfs_file_t *outfile;
-	data_writer_t *data;
-	sqfs_super_t super;
 	fstree_t fs;
 	int ret;
 
@@ -450,10 +453,14 @@ int main(int argc, char **argv)
 	if (ret > 0)
 		super.flags |= SQFS_FLAG_COMPRESSOR_OPTIONS;
 
-	data = data_writer_create(&super, cmp, outfile, devblksize,
-				  num_jobs, max_backlog);
-	if (data == NULL)
+	data = sqfs_data_writer_create(super.block_size, cmp, num_jobs,
+				       max_backlog, devblksize, outfile);
+	if (data == NULL) {
+		perror("creating data block processor");
 		goto out_cmp;
+	}
+
+	register_stat_hooks(data, &stats);
 
 	idtbl = sqfs_id_table_create();
 	if (idtbl == NULL)
@@ -462,7 +469,7 @@ int main(int argc, char **argv)
 	if (process_tar_ball(&fs, data))
 		goto out;
 
-	if (data_writer_sync(data))
+	if (sqfs_data_writer_finish(data))
 		goto out;
 
 	tree_node_sort_recursive(fs.root);
@@ -476,7 +483,7 @@ int main(int argc, char **argv)
 	if (sqfs_serialize_fstree(outfile, &super, &fs, cmp, idtbl))
 		goto out;
 
-	if (data_writer_write_fragment_table(data))
+	if (sqfs_data_writer_write_fragment_table(data, &super))
 		goto out;
 
 	if (exportable) {
@@ -499,13 +506,13 @@ int main(int argc, char **argv)
 		goto out;
 
 	if (!quiet)
-		sqfs_print_statistics(&super, data_writer_get_stats(data));
+		sqfs_print_statistics(&super, &stats);
 
 	status = EXIT_SUCCESS;
 out:
 	sqfs_id_table_destroy(idtbl);
 out_data:
-	data_writer_destroy(data);
+	sqfs_data_writer_destroy(data);
 out_cmp:
 	cmp->destroy(cmp);
 out_fs:

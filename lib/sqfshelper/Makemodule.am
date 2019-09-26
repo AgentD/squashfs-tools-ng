@@ -6,7 +6,7 @@ libsqfshelper_a_SOURCES += lib/sqfshelper/print_version.c
 libsqfshelper_a_SOURCES += lib/sqfshelper/inode_stat.c
 libsqfshelper_a_SOURCES += lib/sqfshelper/data_reader_dump.c
 libsqfshelper_a_SOURCES += lib/sqfshelper/compress.c lib/sqfshelper/comp_opt.c
-libsqfshelper_a_SOURCES += include/data_writer.h lib/sqfshelper/data_writer.c
+libsqfshelper_a_SOURCES += lib/sqfshelper/data_writer.c
 libsqfshelper_a_SOURCES += lib/sqfshelper/write_xattr.c include/highlevel.h
 libsqfshelper_a_SOURCES += lib/sqfshelper/get_path.c lib/sqfshelper/io_stdin.c
 

@@ -28,7 +28,8 @@ static int restore_working_dir(options_t *opt)
 	return 0;
 }
 
-static int pack_files(data_writer_t *data, fstree_t *fs, options_t *opt)
+static int pack_files(sqfs_data_writer_t *data, fstree_t *fs,
+		      data_writer_stats_t *stats, options_t *opt)
 {
 	sqfs_inode_generic_t *inode;
 	size_t max_blk_count;
@@ -72,14 +73,18 @@ static int pack_files(data_writer_t *data, fstree_t *fs, options_t *opt)
 
 		fi->user_ptr = inode;
 
-		ret = write_data_from_file(data, inode, file, 0);
+		ret = write_data_from_file(data, inode, file,
+					   fs->block_size, 0);
 		file->destroy(file);
 
 		if (ret)
 			return -1;
+
+		stats->file_count += 1;
+		stats->bytes_read += filesize;
 	}
 
-	if (data_writer_sync(data))
+	if (sqfs_data_writer_finish(data))
 		return -1;
 
 	return restore_working_dir(opt);
@@ -118,10 +123,11 @@ int main(int argc, char **argv)
 {
 	int status = EXIT_FAILURE, ret;
 	sqfs_compressor_config_t cfg;
+	data_writer_stats_t stats;
+	sqfs_data_writer_t *data;
 	sqfs_compressor_t *cmp;
 	sqfs_id_table_t *idtbl;
 	sqfs_file_t *outfile;
-	data_writer_t *data;
 	sqfs_super_t super;
 	options_t opt;
 	fstree_t fs;
@@ -188,18 +194,21 @@ int main(int argc, char **argv)
 	if (ret > 0)
 		super.flags |= SQFS_FLAG_COMPRESSOR_OPTIONS;
 
-	data = data_writer_create(&super, cmp, outfile,
-				  opt.devblksz, opt.num_jobs, opt.max_backlog);
+	data = sqfs_data_writer_create(super.block_size, cmp, opt.num_jobs,
+				       opt.max_backlog, opt.devblksz, outfile);
 	if (data == NULL)
 		goto out_cmp;
 
-	if (pack_files(data, &fs, &opt))
+	memset(&stats, 0, sizeof(stats));
+	register_stat_hooks(data, &stats);
+
+	if (pack_files(data, &fs, &stats, &opt))
 		goto out_data;
 
 	if (sqfs_serialize_fstree(outfile, &super, &fs, cmp, idtbl))
 		goto out_data;
 
-	if (data_writer_write_fragment_table(data))
+	if (sqfs_data_writer_write_fragment_table(data, &super))
 		goto out_data;
 
 	if (opt.exportable) {
@@ -222,11 +231,11 @@ int main(int argc, char **argv)
 		goto out_data;
 
 	if (!opt.quiet)
-		sqfs_print_statistics(&super, data_writer_get_stats(data));
+		sqfs_print_statistics(&super, &stats);
 
 	status = EXIT_SUCCESS;
 out_data:
-	data_writer_destroy(data);
+	sqfs_data_writer_destroy(data);
 out_cmp:
 	cmp->destroy(cmp);
 out_outfile:
