@@ -35,17 +35,19 @@ void sqfs_data_writer_destroy(sqfs_data_writer_t *proc)
 	data_writer_cleanup(proc);
 }
 
-int sqfs_data_writer_enqueue(sqfs_data_writer_t *proc, sqfs_block_t *block)
+int test_and_set_status(sqfs_data_writer_t *proc, int status)
+{
+	if (proc->status == 0)
+		proc->status = status;
+
+	return proc->status;
+}
+
+int data_writer_enqueue(sqfs_data_writer_t *proc, sqfs_block_t *block)
 {
 	sqfs_block_t *fragblk = NULL;
 
 	if (proc->status != 0) {
-		free(block);
-		return proc->status;
-	}
-
-	if (block->flags & ~SQFS_BLK_USER_SETTABLE_FLAGS) {
-		proc->status = SQFS_ERROR_UNSUPPORTED;
 		free(block);
 		return proc->status;
 	}

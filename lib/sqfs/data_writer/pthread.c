@@ -156,18 +156,6 @@ static void append_to_work_queue(sqfs_data_writer_t *proc,
 	pthread_cond_broadcast(&proc->queue_cond);
 }
 
-static int test_and_set_status(sqfs_data_writer_t *proc, int status)
-{
-	pthread_mutex_lock(&proc->mtx);
-	if (proc->status == 0) {
-		proc->status = status;
-	} else {
-		status = proc->status;
-	}
-	pthread_cond_broadcast(&proc->queue_cond);
-	return status;
-}
-
 static sqfs_block_t *try_dequeue(sqfs_data_writer_t *proc)
 {
 	sqfs_block_t *queue, *it, *prev;
@@ -260,15 +248,22 @@ static int process_done_queue(sqfs_data_writer_t *proc, sqfs_block_t *queue)
 	return status;
 }
 
-int sqfs_data_writer_enqueue(sqfs_data_writer_t *proc, sqfs_block_t *block)
+int test_and_set_status(sqfs_data_writer_t *proc, int status)
+{
+	pthread_mutex_lock(&proc->mtx);
+	if (proc->status == 0) {
+		proc->status = status;
+	} else {
+		status = proc->status;
+	}
+	pthread_cond_broadcast(&proc->queue_cond);
+	return status;
+}
+
+int data_writer_enqueue(sqfs_data_writer_t *proc, sqfs_block_t *block)
 {
 	sqfs_block_t *queue;
 	int status;
-
-	if (block->flags & ~SQFS_BLK_USER_SETTABLE_FLAGS) {
-		free(block);
-		return test_and_set_status(proc, SQFS_ERROR_UNSUPPORTED);
-	}
 
 	pthread_mutex_lock(&proc->mtx);
 	while (proc->backlog > proc->max_backlog && proc->status == 0)

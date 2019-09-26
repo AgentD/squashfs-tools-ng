@@ -169,6 +169,10 @@ sqfs_data_writer_t *sqfs_data_writer_create(size_t max_block_size,
  */
 SQFS_API void sqfs_data_writer_destroy(sqfs_data_writer_t *proc);
 
+SQFS_API int sqfs_data_writer_begin_file(sqfs_data_writer_t *proc,
+					 sqfs_inode_generic_t *inode,
+					 uint32_t flags);
+
 /**
  * @brief Add a block to be processed.
  *
@@ -186,6 +190,8 @@ SQFS_API void sqfs_data_writer_destroy(sqfs_data_writer_t *proc);
  */
 SQFS_API int sqfs_data_writer_enqueue(sqfs_data_writer_t *proc,
 				      sqfs_block_t *block);
+
+SQFS_API int sqfs_data_writer_end_file(sqfs_data_writer_t *proc);
 
 /**
  * @brief Wait for the works to finish and finally flush the current

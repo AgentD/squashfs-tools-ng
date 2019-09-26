@@ -21,6 +21,7 @@ libsquashfs_la_SOURCES += lib/sqfs/inode.c lib/sqfs/data_writer/fragment.c
 libsquashfs_la_SOURCES += lib/sqfs/data_writer/block.c lib/sqfs/io.c
 libsquashfs_la_SOURCES += lib/sqfs/data_writer/internal.h lib/sqfs/data_reader.c
 libsquashfs_la_SOURCES += lib/sqfs/data_writer/common.c
+libsquashfs_la_SOURCES += lib/sqfs/data_writer/fileapi.c
 libsquashfs_la_CPPFLAGS = $(AM_CPPFLAGS)
 libsquashfs_la_CFLAGS = $(AM_CFLAGS) $(PTHREAD_CFLAGS) $(ZLIB_CFLAGS)
 libsquashfs_la_CFLAGS += $(XZ_CFLAGS) $(LZO_CFLAGS) $(LZ4_CFLAGS)

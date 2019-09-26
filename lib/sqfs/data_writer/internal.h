@@ -101,6 +101,12 @@ struct sqfs_data_writer_t {
 	const sqfs_block_hooks_t *hooks;
 	void *user_ptr;
 
+	/* file API */
+	sqfs_inode_generic_t *inode;
+	uint32_t blk_flags;
+	size_t blk_index;
+	bool had_fragment;
+
 	/* used only by workers */
 	size_t max_block_size;
 
@@ -137,5 +143,11 @@ sqfs_block_t *data_writer_next_work_item(sqfs_data_writer_t *proc);
 SQFS_INTERNAL
 int data_writer_do_block(sqfs_block_t *block, sqfs_compressor_t *cmp,
 			 uint8_t *scratch, size_t scratch_size);
+
+SQFS_INTERNAL
+int test_and_set_status(sqfs_data_writer_t *proc, int status);
+
+SQFS_INTERNAL
+int data_writer_enqueue(sqfs_data_writer_t *proc, sqfs_block_t *block);
 
 #endif /* INTERNAL_H */
