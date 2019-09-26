@@ -12,15 +12,13 @@
 static uint8_t buffer[4096];
 
 int write_data_from_file(sqfs_data_writer_t *data, sqfs_inode_generic_t *inode,
-			 sqfs_file_t *file, size_t block_size, int flags)
+			 sqfs_file_t *file, int flags)
 {
 	uint64_t filesz, offset;
 	size_t diff;
 	int ret;
-	(void)block_size;
-	(void)flags;
 
-	if (sqfs_data_writer_begin_file(data, inode, 0))
+	if (sqfs_data_writer_begin_file(data, inode, flags))
 		return -1;
 
 	sqfs_inode_get_file_size(inode, &filesz);

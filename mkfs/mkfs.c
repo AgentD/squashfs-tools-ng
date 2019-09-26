@@ -73,8 +73,7 @@ static int pack_files(sqfs_data_writer_t *data, fstree_t *fs,
 
 		fi->user_ptr = inode;
 
-		ret = write_data_from_file(data, inode, file,
-					   fs->block_size, 0);
+		ret = write_data_from_file(data, inode, file, 0);
 		file->destroy(file);
 
 		if (ret)

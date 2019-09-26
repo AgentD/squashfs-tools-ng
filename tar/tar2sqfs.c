@@ -111,7 +111,6 @@ static bool no_xattr = false;
 static bool exportable = false;
 static bool keep_time = false;
 static data_writer_stats_t stats;
-static sqfs_super_t super;
 
 static void process_args(int argc, char **argv)
 {
@@ -267,7 +266,7 @@ static int write_file(tar_header_decoded_t *hdr, file_info_t *fi,
 		}
 	}
 
-	ret = write_data_from_file(data, inode, file, super.block_size, 0);
+	ret = write_data_from_file(data, inode, file, 0);
 	file->destroy(file);
 
 	stats.bytes_read += filesize;
@@ -415,6 +414,7 @@ int main(int argc, char **argv)
 	sqfs_compressor_t *cmp;
 	sqfs_id_table_t *idtbl;
 	sqfs_file_t *outfile;
+	sqfs_super_t super;
 	fstree_t fs;
 	int ret;
 

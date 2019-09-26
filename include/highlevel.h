@@ -43,19 +43,6 @@ typedef struct {
 	uint64_t bytes_read;
 } data_writer_stats_t;
 
-enum {
-	/* Don't generate fragments, always write the last block to disk as a
-	   block, even if it is incomplete. */
-	DW_DONT_FRAGMENT = 0x01,
-
-	/* Intentionally write all blocks uncompressed. */
-	DW_DONT_COMPRESS = 0x02,
-
-	/* Make sure the first block of a file is alligned to
-	   device block size */
-	DW_ALLIGN_DEVBLK = 0x04,
-};
-
 /*
   High level helper function to serialize an entire file system tree to
   a squashfs inode table and directory table.
@@ -116,6 +103,6 @@ sqfs_file_t *sqfs_get_stdin_file(const sparse_map_t *map, uint64_t size);
 void register_stat_hooks(sqfs_data_writer_t *data, data_writer_stats_t *stats);
 
 int write_data_from_file(sqfs_data_writer_t *data, sqfs_inode_generic_t *inode,
-			 sqfs_file_t *file, size_t block_size, int flags);
+			 sqfs_file_t *file, int flags);
 
 #endif /* HIGHLEVEL_H */
