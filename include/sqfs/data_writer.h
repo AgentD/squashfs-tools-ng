@@ -31,15 +31,15 @@
 /**
  * @struct sqfs_data_writer_t
  *
- * @brief Encapsulates a thread pool based block processor.
+ * @brief Abstracts generating of file data and fragment blocks.
  *
- * The actual implementation may even be non-threaded, depending on the
- * operating system and compile configuration.
+ * This data structure provides a simple begin/append/end interface
+ * to generate file data blocks (see @ref sqfs_data_writer_begin_file,
+ * @ref sqfs_data_writer_append and @ref sqfs_data_writer_end respectively).
  *
- * Either way, the instantiated object processes data blocks that can be
- * enqueued through @ref sqfs_data_writer_enqueue. The completed blocks
- * (compressed and checksumed) are dequeued in the same order and a callback
- * is called for each one.
+ * Internally it takes care of partitioning data in the correct block sizes,
+ * adding tail-ens to fragment blocks, compressing the data, deduplicating data
+ * and finally writing it to disk.
  */
 
 /**
@@ -169,18 +169,74 @@ sqfs_data_writer_t *sqfs_data_writer_create(size_t max_block_size,
  */
 SQFS_API void sqfs_data_writer_destroy(sqfs_data_writer_t *proc);
 
+/**
+ * @brief Start writing a file.
+ *
+ * @memberof sqfs_data_writer_t
+ *
+ * After calling this function, call @ref sqfs_data_writer_append repeatedly to
+ * add data to the file. Finally call @ref sqfs_data_writer_end_file when you
+ * are done. After writing all files, use @ref sqfs_data_writer_finish to wait
+ * until all blocks that are still in flight are done and written to disk.
+ *
+ * The specified inode pointer is kept internally and updated with the
+ * compressed block sizes and final destinations of the file and possible
+ * fragment. You need to make sure it has enough backing-store for all blocks
+ * to come. Furthermore, since there can still be blocks in-flight even after
+ * calling @ref sqfs_data_writer_end_file, the data in the inode may still
+ * change. The only point at which the data writer is guarnteed to not touch
+ * them anymore is after @ref sqfs_data_writer_finish has returned.
+ *
+ * @param proc A pointer to a data writer object.
+ * @param inode The regular file inode representing the file. The data writer
+ *              internally updates it while writing blocks to disk.
+ * @param flags A combination of @ref E_SQFS_BLK_FLAGS that can be used to
+ *              micro manage how the data is processed.
+ *
+ * @return Zero on success, an @ref E_SQFS_ERROR value on failure.
+ */
 SQFS_API int sqfs_data_writer_begin_file(sqfs_data_writer_t *proc,
 					 sqfs_inode_generic_t *inode,
 					 uint32_t flags);
 
+/**
+ * @brief Append data to the current file.
+ *
+ * @memberof sqfs_data_writer_t
+ *
+ * Call this after @ref sqfs_data_writer_begin_file to add data to a file.
+ *
+ * @param proc A pointer to a data writer object.
+ * @param data A pointer to a buffer to read data from.
+ * @param size How many bytes should be copied out of the given
+ *             buffer and written to disk.
+ *
+ * @return Zero on success, an @ref E_SQFS_ERROR value on failure.
+ */
 SQFS_API int sqfs_data_writer_append(sqfs_data_writer_t *proc,
 				     const void *data, size_t size);
 
+/**
+ * @brief Stop writing the current file and flush everything that is
+ *        buffered internally.
+ *
+ * @memberof sqfs_data_writer_t
+ *
+ * The counter part to @ref sqfs_data_writer_begin_file.
+ *
+ * Even after calling this, there might still be data blocks in-flight.
+ * Use @ref sqfs_data_writer_finish when you are done writing files to force
+ * the remaining blocks to be processed and written to disk.
+ *
+ * @param proc A pointer to a data writer object.
+ *
+ * @return Zero on success, an @ref E_SQFS_ERROR value on failure.
+ */
 SQFS_API int sqfs_data_writer_end_file(sqfs_data_writer_t *proc);
 
 /**
- * @brief Wait for the works to finish and finally flush the current
- *        fragment block.
+ * @brief Wait for the in-flight data blocks to finish and finally flush the
+ *        current fragment block.
  *
  * @memberof sqfs_data_writer_t
  *

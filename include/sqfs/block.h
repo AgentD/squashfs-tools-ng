@@ -37,45 +37,47 @@
 typedef enum {
 	/**
 	 * @brief Only calculate checksum, do NOT compress the data.
+	 *
+	 * If set, the blocks of a file will not be compressed by the
+	 * @ref sqfs_data_writer_t.
 	 */
 	SQFS_BLK_DONT_COMPRESS = 0x0001,
 
 	/**
 	 * @brief Allign the block on disk to device block size.
 	 *
-	 * If set in combination with @ref SQFS_BLK_FIRST_BLOCK, the output
-	 * file is padded to a multiple of the device block size before writing
-	 * the block.
-	 *
-	 * If used with @ref SQFS_BLK_LAST_BLOCK, the output file is padded
-	 * after writing the block.
+	 * If set, the @ref sqfs_data_writer_t will add padding before the
+	 * first block of the affected file and after the last block.
 	 */
 	SQFS_BLK_ALLIGN = 0x0002,
 
 	/**
-	 * @brief Indicates that an equeued block is the first block of a file.
+	 * @brief Set by the @ref sqfs_data_writer_t on the first
+	 *        block of a file.
 	 */
 	SQFS_BLK_FIRST_BLOCK = 0x0800,
 
 	/**
-	 * @brief Indicates that an equeued block is the last block of a file.
+	 * @brief Set by the @ref sqfs_data_writer_t on the last
+	 *        block of a file.
 	 */
 	SQFS_BLK_LAST_BLOCK = 0x1000,
 
 	/**
-	 * @brief Indicates that a block is a tail end of a file and the block
-	 *        processor should take care of fragment packing and accounting.
+	 * @brief Set by the @ref sqfs_data_writer_t to indicate that a block
+	 *        is a tail end of a file and the block.
 	 */
 	SQFS_BLK_IS_FRAGMENT = 0x2000,
 
 	/**
-	 * @brief Set by the block processor on fragment blocks that
+	 * @brief Set by the @ref sqfs_data_writer_t on fragment blocks that
 	 *        it generates.
 	 */
 	SQFS_BLK_FRAGMENT_BLOCK = 0x4000,
 
 	/**
-	 * @brief Set by compressor worker if the block was actually compressed.
+	 * @brief Set by @ref sqfs_data_writer_t if the block was
+	 *        actually compressed.
 	 */
 	SQFS_BLK_IS_COMPRESSED = 0x8000,
 
