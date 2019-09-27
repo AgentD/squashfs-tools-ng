@@ -338,7 +338,8 @@ int sqfs_meta_reader_read_inode(sqfs_meta_reader_t *ir,
 		SWAB32(out->data.ipc_ext.xattr_idx);
 		break;
 	default:
-		return SQFS_ERROR_UNSUPPORTED;
+		err = SQFS_ERROR_UNSUPPORTED;
+		goto fail_free;
 	}
 
 	*result = out;
