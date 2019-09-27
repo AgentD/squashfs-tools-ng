@@ -47,7 +47,7 @@ typedef enum {
 	 *        (some kind of internal error) or extracting failed (typically
 	 *        means the data is corrupted).
 	 */
-	SQFS_ERROR_COMRPESSOR = -3,
+	SQFS_ERROR_COMPRESSOR = -3,
 
 	/**
 	 * @brief An internal error of the "this wasn't supposed to happen"

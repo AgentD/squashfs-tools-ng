@@ -61,7 +61,7 @@ static ssize_t zstd_comp_block(sqfs_compressor_t *base, const uint8_t *in,
 				zstd->level);
 
 	if (ZSTD_isError(ret))
-		return SQFS_ERROR_COMRPESSOR;
+		return SQFS_ERROR_COMPRESSOR;
 
 	return ret < size ? ret : 0;
 }
@@ -75,7 +75,7 @@ static ssize_t zstd_uncomp_block(sqfs_compressor_t *base, const uint8_t *in,
 	ret = ZSTD_decompress(out, outsize, in, size);
 
 	if (ZSTD_isError(ret))
-		return SQFS_ERROR_COMRPESSOR;
+		return SQFS_ERROR_COMPRESSOR;
 
 	return ret;
 }

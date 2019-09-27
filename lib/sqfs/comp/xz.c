@@ -85,7 +85,7 @@ static ssize_t compress(xz_compressor_t *xz, lzma_vli filter,
 	int i = 0;
 
 	if (lzma_lzma_preset(&opt, LZMA_PRESET_DEFAULT))
-		return SQFS_ERROR_COMRPESSOR;
+		return SQFS_ERROR_COMPRESSOR;
 
 	opt.dict_size = xz->dict_size;
 
@@ -110,7 +110,7 @@ static ssize_t compress(xz_compressor_t *xz, lzma_vli filter,
 		return (written >= size) ? 0 : written;
 
 	if (ret != LZMA_BUF_ERROR)
-		return SQFS_ERROR_COMRPESSOR;
+		return SQFS_ERROR_COMPRESSOR;
 
 	return 0;
 }
@@ -187,7 +187,7 @@ static ssize_t xz_uncomp_block(sqfs_compressor_t *base, const uint8_t *in,
 	if (ret == LZMA_OK && size == src_pos)
 		return (ssize_t)dest_pos;
 
-	return SQFS_ERROR_COMRPESSOR;
+	return SQFS_ERROR_COMPRESSOR;
 }
 
 static sqfs_compressor_t *xz_create_copy(sqfs_compressor_t *cmp)

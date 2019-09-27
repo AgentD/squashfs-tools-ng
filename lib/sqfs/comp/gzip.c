@@ -118,7 +118,7 @@ static int find_strategy(gzip_compressor_t *gzip, const uint8_t *in,
 
 		ret = deflateReset(&gzip->strm);
 		if (ret != Z_OK)
-			return SQFS_ERROR_COMRPESSOR;
+			return SQFS_ERROR_COMPRESSOR;
 
 		strategy = flag_to_zlib_strategy(i);
 
@@ -129,7 +129,7 @@ static int find_strategy(gzip_compressor_t *gzip, const uint8_t *in,
 
 		ret = deflateParams(&gzip->strm, gzip->opt.level, strategy);
 		if (ret != Z_OK)
-			return SQFS_ERROR_COMRPESSOR;
+			return SQFS_ERROR_COMPRESSOR;
 
 		ret = deflate(&gzip->strm, Z_FINISH);
 
@@ -141,7 +141,7 @@ static int find_strategy(gzip_compressor_t *gzip, const uint8_t *in,
 				selected = strategy;
 			}
 		} else if (ret != Z_OK && ret != Z_BUF_ERROR) {
-			return SQFS_ERROR_COMRPESSOR;
+			return SQFS_ERROR_COMPRESSOR;
 		}
 	}
 
@@ -168,7 +168,7 @@ static ssize_t gzip_do_block(sqfs_compressor_t *base, const uint8_t *in,
 	}
 
 	if (ret != Z_OK)
-		return SQFS_ERROR_COMRPESSOR;
+		return SQFS_ERROR_COMPRESSOR;
 
 	gzip->strm.next_in = (void *)in;
 	gzip->strm.avail_in = size;
@@ -178,7 +178,7 @@ static ssize_t gzip_do_block(sqfs_compressor_t *base, const uint8_t *in,
 	if (gzip->compress && gzip->opt.strategies != 0) {
 		ret = deflateParams(&gzip->strm, gzip->opt.level, strategy);
 		if (ret != Z_OK)
-			return SQFS_ERROR_COMRPESSOR;
+			return SQFS_ERROR_COMPRESSOR;
 	}
 
 	if (gzip->compress) {
@@ -197,7 +197,7 @@ static ssize_t gzip_do_block(sqfs_compressor_t *base, const uint8_t *in,
 	}
 
 	if (ret != Z_OK && ret != Z_BUF_ERROR)
-		return SQFS_ERROR_COMRPESSOR;
+		return SQFS_ERROR_COMPRESSOR;
 
 	return 0;
 }

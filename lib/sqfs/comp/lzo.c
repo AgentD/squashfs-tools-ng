@@ -130,7 +130,7 @@ static ssize_t lzo_comp_block(sqfs_compressor_t *base, const uint8_t *in,
 	}
 
 	if (ret != LZO_E_OK)
-		return SQFS_ERROR_COMRPESSOR;
+		return SQFS_ERROR_COMPRESSOR;
 
 	if (len < size)
 		return len;
@@ -148,7 +148,7 @@ static ssize_t lzo_uncomp_block(sqfs_compressor_t *base, const uint8_t *in,
 	ret = lzo1x_decompress_safe(in, size, out, &len, lzo->buffer);
 
 	if (ret != LZO_E_OK)
-		return SQFS_ERROR_COMRPESSOR;
+		return SQFS_ERROR_COMPRESSOR;
 
 	return len;
 }

@@ -55,7 +55,7 @@ static ssize_t lzma_comp_block(sqfs_compressor_t *base, const uint8_t *in,
 
 	if (lzma_alone_encoder(&strm, &opt) != LZMA_OK) {
 		lzma_end(&strm);
-		return SQFS_ERROR_COMRPESSOR;
+		return SQFS_ERROR_COMPRESSOR;
 	}
 
 	strm.next_out = out;
@@ -67,7 +67,7 @@ static ssize_t lzma_comp_block(sqfs_compressor_t *base, const uint8_t *in,
 	lzma_end(&strm);
 
 	if (ret != LZMA_STREAM_END)
-		return ret == LZMA_OK ? 0 : SQFS_ERROR_COMRPESSOR;
+		return ret == LZMA_OK ? 0 : SQFS_ERROR_COMPRESSOR;
 
 	if (strm.total_out > size)
 		return 0;
@@ -105,7 +105,7 @@ static ssize_t lzma_uncomp_block(sqfs_compressor_t *base, const uint8_t *in,
 
 	if (lzma_alone_decoder(&strm, MEMLIMIT) != LZMA_OK) {
 		lzma_end(&strm);
-		return SQFS_ERROR_COMRPESSOR;
+		return SQFS_ERROR_COMPRESSOR;
 	}
 
 	memcpy(lzma_header, in, sizeof(lzma_header));
@@ -120,7 +120,7 @@ static ssize_t lzma_uncomp_block(sqfs_compressor_t *base, const uint8_t *in,
 
 	if (ret != LZMA_OK || strm.avail_in != 0) {
 		lzma_end(&strm);
-		return SQFS_ERROR_COMRPESSOR;
+		return SQFS_ERROR_COMPRESSOR;
 	}
 
 	strm.next_in = in + sizeof(lzma_header);
@@ -130,7 +130,7 @@ static ssize_t lzma_uncomp_block(sqfs_compressor_t *base, const uint8_t *in,
 	lzma_end(&strm);
 
 	if (ret != LZMA_STREAM_END && ret != LZMA_OK)
-		return SQFS_ERROR_COMRPESSOR;
+		return SQFS_ERROR_COMPRESSOR;
 
 	if (ret == LZMA_OK) {
 		if (strm.total_out < hdrsize || strm.avail_in != 0)

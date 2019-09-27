@@ -74,7 +74,7 @@ static ssize_t lz4_comp_block(sqfs_compressor_t *base, const uint8_t *in,
 	}
 
 	if (ret < 0)
-		return SQFS_ERROR_COMRPESSOR;
+		return SQFS_ERROR_COMPRESSOR;
 
 	return ret;
 }
@@ -88,7 +88,7 @@ static ssize_t lz4_uncomp_block(sqfs_compressor_t *base, const uint8_t *in,
 	ret = LZ4_decompress_safe((void *)in, (void *)out, size, outsize);
 
 	if (ret < 0)
-		return SQFS_ERROR_COMRPESSOR;
+		return SQFS_ERROR_COMPRESSOR;
 
 	return ret;
 }
