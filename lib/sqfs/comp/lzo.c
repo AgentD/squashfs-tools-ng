@@ -185,7 +185,7 @@ sqfs_compressor_t *lzo_compressor_create(const sqfs_compressor_config_t *cfg)
 	if (cfg->flags & ~SQFS_COMP_FLAG_GENERIC_ALL)
 		return NULL;
 
-	if (cfg->opt.lzo.algorithm > LZO_NUM_ALGS ||
+	if (cfg->opt.lzo.algorithm >= LZO_NUM_ALGS ||
 	    lzo_algs[cfg->opt.lzo.algorithm].compress == NULL) {
 		return NULL;
 	}
