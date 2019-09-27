@@ -98,10 +98,10 @@ static sqfs_s32 lzma_uncomp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
 	if (size < sizeof(lzma_header))
 		return SQFS_ERROR_CORRUPTED;
 
-	hdrsize = in[LZMA_SIZE_OFFSET] |
-		(in[LZMA_SIZE_OFFSET + 1] << 8) |
-		(in[LZMA_SIZE_OFFSET + 2] << 16) |
-		(in[LZMA_SIZE_OFFSET + 3] << 24);
+	hdrsize = (size_t)in[LZMA_SIZE_OFFSET] |
+		((size_t)in[LZMA_SIZE_OFFSET + 1] << 8) |
+		((size_t)in[LZMA_SIZE_OFFSET + 2] << 16) |
+		((size_t)in[LZMA_SIZE_OFFSET + 3] << 24);
 
 	if (hdrsize > outsize)
 		return 0;
