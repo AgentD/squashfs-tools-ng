@@ -40,8 +40,8 @@ static int get_block(sqfs_data_reader_t *data, sqfs_u64 off, sqfs_u32 size,
 		     size_t unpacked_size, sqfs_block_t **out)
 {
 	sqfs_block_t *blk = alloc_flex(sizeof(*blk), 1, unpacked_size);
-	size_t on_disk_size;
-	ssize_t ret;
+	sqfs_u32 on_disk_size;
+	sqfs_s32 ret;
 	int err;
 
 	if (blk == NULL)
@@ -264,14 +264,17 @@ int sqfs_data_reader_get_fragment(sqfs_data_reader_t *data,
 	return 0;
 }
 
-ssize_t sqfs_data_reader_read(sqfs_data_reader_t *data,
-			      const sqfs_inode_generic_t *inode,
-			      sqfs_u64 offset, void *buffer, size_t size)
+sqfs_s32 sqfs_data_reader_read(sqfs_data_reader_t *data,
+			       const sqfs_inode_generic_t *inode,
+			       sqfs_u64 offset, void *buffer, sqfs_u32 size)
 {
-	sqfs_u32 frag_idx, frag_off;
-	size_t i, diff, total = 0;
+	sqfs_u32 frag_idx, frag_off, diff, total = 0;
 	sqfs_u64 off, filesz;
 	char *ptr;
+	size_t i;
+
+	if (size >= 0x7FFFFFFF)
+		size = 0x7FFFFFFE;
 
 	/* work out file location and size */
 	sqfs_inode_get_file_size(inode, &filesz);

@@ -71,8 +71,8 @@ int sqfs_meta_reader_seek(sqfs_meta_reader_t *m, sqfs_u64 block_start,
 {
 	bool compressed;
 	sqfs_u16 header;
-	ssize_t ret;
-	size_t size;
+	sqfs_u32 size;
+	sqfs_s32 ret;
 	int err;
 
 	if (block_start < m->start || block_start >= m->limit)

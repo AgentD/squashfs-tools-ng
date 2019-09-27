@@ -112,12 +112,15 @@ static int lzo_read_options(sqfs_compressor_t *base, sqfs_file_t *file)
 	return 0;
 }
 
-static ssize_t lzo_comp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
-			      size_t size, sqfs_u8 *out, size_t outsize)
+static sqfs_s32 lzo_comp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
+			       sqfs_u32 size, sqfs_u8 *out, sqfs_u32 outsize)
 {
 	lzo_compressor_t *lzo = (lzo_compressor_t *)base;
 	lzo_uint len = outsize;
 	int ret;
+
+	if (size >= 0x7FFFFFFF)
+		return 0;
 
 	if (lzo->algorithm == SQFS_LZO1X_999 &&
 	    lzo->level != SQFS_LZO_DEFAULT_LEVEL) {
@@ -138,12 +141,15 @@ static ssize_t lzo_comp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
 	return 0;
 }
 
-static ssize_t lzo_uncomp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
-				size_t size, sqfs_u8 *out, size_t outsize)
+static sqfs_s32 lzo_uncomp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
+				 sqfs_u32 size, sqfs_u8 *out, sqfs_u32 outsize)
 {
 	lzo_compressor_t *lzo = (lzo_compressor_t *)base;
 	lzo_uint len = outsize;
 	int ret;
+
+	if (outsize >= 0x7FFFFFFF)
+		return 0;
 
 	ret = lzo1x_decompress_safe(in, size, out, &len, lzo->buffer);
 

@@ -107,7 +107,7 @@ static int flag_to_zlib_strategy(int flag)
 }
 
 static int find_strategy(gzip_compressor_t *gzip, const sqfs_u8 *in,
-			 size_t size, sqfs_u8 *out, size_t outsize)
+			 sqfs_u32 size, sqfs_u8 *out, sqfs_u32 outsize)
 {
 	int ret, strategy, selected = Z_DEFAULT_STRATEGY;
 	size_t i, length, minlength = 0;
@@ -148,12 +148,15 @@ static int find_strategy(gzip_compressor_t *gzip, const sqfs_u8 *in,
 	return selected;
 }
 
-static ssize_t gzip_do_block(sqfs_compressor_t *base, const sqfs_u8 *in,
-			     size_t size, sqfs_u8 *out, size_t outsize)
+static sqfs_s32 gzip_do_block(sqfs_compressor_t *base, const sqfs_u8 *in,
+			      sqfs_u32 size, sqfs_u8 *out, sqfs_u32 outsize)
 {
 	gzip_compressor_t *gzip = (gzip_compressor_t *)base;
 	int ret, strategy = 0;
 	size_t written;
+
+	if (size >= 0x7FFFFFFF)
+		return 0;
 
 	if (gzip->compress && gzip->opt.strategies != 0) {
 		strategy = find_strategy(gzip, in, size, out, outsize);
@@ -193,7 +196,7 @@ static ssize_t gzip_do_block(sqfs_compressor_t *base, const sqfs_u8 *in,
 		if (gzip->compress && written >= size)
 			return 0;
 
-		return (ssize_t)written;
+		return written;
 	}
 
 	if (ret != Z_OK && ret != Z_BUF_ERROR)

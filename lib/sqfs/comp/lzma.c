@@ -39,15 +39,15 @@ static int lzma_read_options(sqfs_compressor_t *base, sqfs_file_t *file)
 	return SQFS_ERROR_UNSUPPORTED;
 }
 
-static ssize_t lzma_comp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
-			       size_t size, sqfs_u8 *out, size_t outsize)
+static sqfs_s32 lzma_comp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
+				sqfs_u32 size, sqfs_u8 *out, sqfs_u32 outsize)
 {
 	lzma_compressor_t *lzma = (lzma_compressor_t *)base;
 	lzma_stream strm = LZMA_STREAM_INIT;
 	lzma_options_lzma opt;
 	int ret;
 
-	if (outsize < LZMA_HEADER_SIZE)
+	if (outsize < LZMA_HEADER_SIZE || size >= 0x7FFFFFFF)
 		return 0;
 
 	lzma_lzma_preset(&opt, LZMA_DEFAULT_LEVEL);
@@ -83,14 +83,17 @@ static ssize_t lzma_comp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
 	return strm.total_out;
 }
 
-static ssize_t lzma_uncomp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
-				 size_t size, sqfs_u8 *out, size_t outsize)
+static sqfs_s32 lzma_uncomp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
+				  sqfs_u32 size, sqfs_u8 *out, sqfs_u32 outsize)
 {
 	sqfs_u8 lzma_header[LZMA_HEADER_SIZE];
 	lzma_stream strm = LZMA_STREAM_INIT;
 	size_t hdrsize;
 	int ret;
 	(void)base;
+
+	if (size >= 0x7FFFFFFF)
+		return 0;
 
 	if (size < sizeof(lzma_header))
 		return SQFS_ERROR_CORRUPTED;

@@ -89,8 +89,8 @@ void sqfs_meta_writer_destroy(sqfs_meta_writer_t *m)
 int sqfs_meta_writer_flush(sqfs_meta_writer_t *m)
 {
 	meta_block_t *outblk;
-	size_t count;
-	ssize_t ret;
+	sqfs_u32 count;
+	sqfs_s32 ret;
 
 	if (m->offset == 0)
 		return 0;

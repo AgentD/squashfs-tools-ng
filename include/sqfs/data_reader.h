@@ -140,10 +140,10 @@ SQFS_API int sqfs_data_reader_get_block(sqfs_data_reader_t *data,
  *         past the end of the file and a negative @ref E_SQFS_ERROR value
  *         on failure.
  */
-SQFS_API ssize_t sqfs_data_reader_read(sqfs_data_reader_t *data,
-				       const sqfs_inode_generic_t *inode,
-				       sqfs_u64 offset, void *buffer,
-				       size_t size);
+SQFS_API sqfs_s32 sqfs_data_reader_read(sqfs_data_reader_t *data,
+					const sqfs_inode_generic_t *inode,
+					sqfs_u64 offset, void *buffer,
+					sqfs_u32 size);
 
 #ifdef __cplusplus
 }

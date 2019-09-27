@@ -59,11 +59,14 @@ static int lz4_read_options(sqfs_compressor_t *base, sqfs_file_t *file)
 	return 0;
 }
 
-static ssize_t lz4_comp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
-			      size_t size, sqfs_u8 *out, size_t outsize)
+static sqfs_s32 lz4_comp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
+			       sqfs_u32 size, sqfs_u8 *out, sqfs_u32 outsize)
 {
 	lz4_compressor_t *lz4 = (lz4_compressor_t *)base;
 	int ret;
+
+	if (size >= 0x7FFFFFFF)
+		return 0;
 
 	if (lz4->high_compression) {
 		ret = LZ4_compress_HC((void *)in, (void *)out,
@@ -79,11 +82,14 @@ static ssize_t lz4_comp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
 	return ret;
 }
 
-static ssize_t lz4_uncomp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
-				size_t size, sqfs_u8 *out, size_t outsize)
+static sqfs_s32 lz4_uncomp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
+				 sqfs_u32 size, sqfs_u8 *out, sqfs_u32 outsize)
 {
 	int ret;
 	(void)base;
+
+	if (outsize >= 0x7FFFFFFF)
+		return 0;
 
 	ret = LZ4_decompress_safe((void *)in, (void *)out, size, outsize);
 

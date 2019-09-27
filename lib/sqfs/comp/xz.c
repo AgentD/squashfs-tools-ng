@@ -74,9 +74,9 @@ static int xz_read_options(sqfs_compressor_t *base, sqfs_file_t *file)
 	return 0;
 }
 
-static ssize_t compress(xz_compressor_t *xz, lzma_vli filter,
-			const sqfs_u8 *in, size_t size,
-			sqfs_u8 *out, size_t outsize)
+static sqfs_s32 compress(xz_compressor_t *xz, lzma_vli filter,
+			 const sqfs_u8 *in, sqfs_u32 size,
+			 sqfs_u8 *out, sqfs_u32 outsize)
 {
 	lzma_filter filters[5];
 	lzma_options_lzma opt;
@@ -135,13 +135,16 @@ static lzma_vli flag_to_vli(int flag)
 	return LZMA_VLI_UNKNOWN;
 }
 
-static ssize_t xz_comp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
-			     size_t size, sqfs_u8 *out, size_t outsize)
+static sqfs_s32 xz_comp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
+			      sqfs_u32 size, sqfs_u8 *out, sqfs_u32 outsize)
 {
 	xz_compressor_t *xz = (xz_compressor_t *)base;
 	lzma_vli filter, selected = LZMA_VLI_UNKNOWN;
-	size_t i, smallest;
-	ssize_t ret;
+	sqfs_s32 ret, smallest;
+	size_t i;
+
+	if (size >= 0x7FFFFFFF)
+		return 0;
 
 	ret = compress(xz, LZMA_VLI_UNKNOWN, in, size, out, outsize);
 	if (ret < 0 || xz->flags == 0)
@@ -159,7 +162,7 @@ static ssize_t xz_comp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
 		if (ret < 0)
 			return ret;
 
-		if (ret > 0 && (smallest == 0 || (size_t)ret < smallest)) {
+		if (ret > 0 && (smallest == 0 || ret < smallest)) {
 			smallest = ret;
 			selected = filter;
 		}
@@ -171,8 +174,8 @@ static ssize_t xz_comp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
 	return compress(xz, selected, in, size, out, outsize);
 }
 
-static ssize_t xz_uncomp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
-			       size_t size, sqfs_u8 *out, size_t outsize)
+static sqfs_s32 xz_uncomp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
+				sqfs_u32 size, sqfs_u8 *out, sqfs_u32 outsize)
 {
 	sqfs_u64 memlimit = 32 * 1024 * 1024;
 	size_t dest_pos = 0;
@@ -180,12 +183,15 @@ static ssize_t xz_uncomp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
 	lzma_ret ret;
 	(void)base;
 
+	if (outsize >= 0x7FFFFFFF)
+		return 0;
+
 	ret = lzma_stream_buffer_decode(&memlimit, 0, NULL,
 					in, &src_pos, size,
 					out, &dest_pos, outsize);
 
 	if (ret == LZMA_OK && size == src_pos)
-		return (ssize_t)dest_pos;
+		return dest_pos;
 
 	return SQFS_ERROR_COMPRESSOR;
 }

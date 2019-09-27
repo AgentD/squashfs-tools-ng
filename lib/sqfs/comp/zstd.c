@@ -51,11 +51,14 @@ static int zstd_read_options(sqfs_compressor_t *base, sqfs_file_t *file)
 	return 0;
 }
 
-static ssize_t zstd_comp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
-			       size_t size, sqfs_u8 *out, size_t outsize)
+static sqfs_s32 zstd_comp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
+				sqfs_u32 size, sqfs_u8 *out, sqfs_u32 outsize)
 {
 	zstd_compressor_t *zstd = (zstd_compressor_t *)base;
 	size_t ret;
+
+	if (size >= 0x7FFFFFFF)
+		return 0;
 
 	ret = ZSTD_compressCCtx(zstd->zctx, out, outsize, in, size,
 				zstd->level);
@@ -66,11 +69,14 @@ static ssize_t zstd_comp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
 	return ret < size ? ret : 0;
 }
 
-static ssize_t zstd_uncomp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
-				 size_t size, sqfs_u8 *out, size_t outsize)
+static sqfs_s32 zstd_uncomp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
+				  sqfs_u32 size, sqfs_u8 *out, sqfs_u32 outsize)
 {
 	size_t ret;
 	(void)base;
+
+	if (outsize >= 0x7FFFFFFF)
+		return 0;
 
 	ret = ZSTD_decompress(out, outsize, in, size);
 

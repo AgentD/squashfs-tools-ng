@@ -83,8 +83,8 @@ struct sqfs_compressor_t {
 	 *         the output buffer was too small when extracting or that
 	 *         the result is larger than the input when compressing.
 	 */
-	ssize_t (*do_block)(sqfs_compressor_t *cmp, const sqfs_u8 *in,
-			    size_t size, sqfs_u8 *out, size_t outsize);
+	sqfs_s32 (*do_block)(sqfs_compressor_t *cmp, const sqfs_u8 *in,
+			     sqfs_u32 size, sqfs_u8 *out, sqfs_u32 outsize);
 
 	/**
 	 * @brief Create an exact copt of agiven compressor
