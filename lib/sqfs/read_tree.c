@@ -137,7 +137,7 @@ static int fill_dir(sqfs_dir_reader_t *dr, sqfs_tree_node_t *root,
 			    (flags & SQFS_TREE_NO_EMPTY)) {
 				free(n->inode);
 				if (prev == NULL) {
-					root->children = n->next;
+					root->children = root->children->next;
 					free(n);
 					n = root->children;
 				} else {
