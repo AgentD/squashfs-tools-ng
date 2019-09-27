@@ -104,12 +104,29 @@ typedef enum {
 	 */
 	SQFS_ERROR_SUPER_BLOCK_SIZE = -11,
 
+	/**
+	 * @brief Expected a directory (inode), found something else instead.
+	 *
+	 * Generated when trying to resolve a path but a part of the the path
+	 * turned out to not be a directory. Also generated when trying to
+	 * read directory entries from something that isn't a directory.
+	 */
 	SQFS_ERROR_NOT_DIR = -12,
 
+	/**
+	 * @brief A specified path, or a part of it, does not exist.
+	 */
 	SQFS_ERROR_NO_ENTRY = -13,
 
+	/**
+	 * @brief Detected a hard link loop while walking a filesystem tree.
+	 */
 	SQFS_ERROR_LINK_LOOP = -14,
 
+	/**
+	 * @brief Tried to perform an file operation on something that isn't
+	 *        a regular file or a regular file inode.
+	 */
 	SQFS_ERROR_NOT_FILE = -15,
 } E_SQFS_ERROR;
 
