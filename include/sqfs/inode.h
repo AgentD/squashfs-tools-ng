@@ -51,6 +51,78 @@ typedef enum {
 } E_SQFS_INODE_TYPE;
 
 /**
+ * @enum E_SQFS_INODE_MODE
+ *
+ * @brief Mode bits for the @ref sqfs_inode_t mode field.
+ *
+ * This is basically the same that mode bits in struct stat store on Unix-like
+ * systems. It is duplicated here for portability with non-POSIX platforms. In
+ * case you are not familiar with Unix file permissions, a brief description
+ * follows.
+ *
+ * There are 3 fields with permissions:
+ * - of the user that owns the file
+ * - of the group that the file belongs to
+ * - everybody else
+ *
+ * Each field holds 3 bits: X, W and R meaning execute, write and read access
+ * respectively. There are 2 special cases: On a directory, execute means
+ * entering the directory and accessing its contents. Read and write refere
+ * to reading or changing the list of entries. For symlinks, the permissions
+ * are meaningless and have all bits set.
+ *
+ * Besides the permissions, there are 3 more bits:
+ * - sticky
+ * - set group id
+ * - set user id
+ *
+ * Nowadays, the later two mean executing a program makes it run as the group
+ * or user (respectively) that owns it instead of the user that actually ran
+ * the program. On directories, the sticky bit means that its contents can only
+ * be deleted by the actual owner, even if others have write permissions. All
+ * other uses of those bits are obscure, historic and differ between flavours
+ * of Unix.
+ *
+ * The remaining 4 bits (adding up to a total of 16) specify the type of file:
+ * - named pipe, aka fifo
+ * - character device
+ * - directory
+ * - block device
+ * - regular file
+ * - symlink
+ * - socket
+ */
+typedef enum {
+	SQFS_INODE_OTHERS_X = 00001,
+	SQFS_INODE_OTHERS_W = 00002,
+	SQFS_INODE_OTHERS_R = 00004,
+	SQFS_INODE_OTHERS_MASK = 00007,
+
+	SQFS_INODE_GROUP_X = 00010,
+	SQFS_INODE_GROUP_W = 00020,
+	SQFS_INODE_GROUP_R = 00040,
+	SQFS_INODE_GROUP_MASK = 00070,
+
+	SQFS_INODE_OWNER_X = 00100,
+	SQFS_INODE_OWNER_W = 00200,
+	SQFS_INODE_OWNER_R = 00400,
+	SQFS_INODE_OWNER_MASK = 00700,
+
+	SQFS_INODE_STICKY = 01000,
+	SQFS_INODE_SET_GID = 02000,
+	SQFS_INODE_SET_UID = 04000,
+
+	SQFS_INODE_MODE_FIFO = 0010000,
+	SQFS_INODE_MODE_CHR = 0020000,
+	SQFS_INODE_MODE_DIR = 0040000,
+	SQFS_INODE_MODE_BLK = 0060000,
+	SQFS_INODE_MODE_REG = 0100000,
+	SQFS_INODE_MODE_LNK = 0120000,
+	SQFS_INODE_MODE_SOCK = 0140000,
+	SQFS_INODE_MODE_MASK = 0170000,
+} E_SQFS_INODE_MODE;
+
+/**
  * @struct sqfs_inode_t
  *
  * @brief Common inode structure
@@ -67,6 +139,8 @@ struct sqfs_inode_t {
 	/**
 	 * @brief Mode filed holding permission bits only. The type is derived
 	 *        from the type field.
+	 *
+	 * This field holds a combination of @ref E_SQFS_INODE_MODE flags.
 	 */
 	sqfs_u16 mode;
 
