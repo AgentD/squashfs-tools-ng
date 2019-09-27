@@ -14,6 +14,7 @@ static int create_node(const sqfs_tree_node_t *n, int flags)
 
 	if (!(flags & UNPACK_QUIET)) {
 		name = sqfs_tree_node_get_path(n);
+		canonicalize_name(name);
 		printf("creating %s\n", name);
 		free(name);
 	}
