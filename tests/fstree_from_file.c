@@ -42,7 +42,7 @@ int main(void)
 	assert(fstree_from_file(&fs, "testfile", fp) == 0);
 
 	tree_node_sort_recursive(fs.root);
-	n = fs.root->data.dir->children;
+	n = fs.root->data.dir.children;
 
 	assert(n->mode == (S_IFBLK | 0600));
 	assert(n->uid == 8);
@@ -62,21 +62,21 @@ int main(void)
 	assert(n->uid == 4);
 	assert(n->gid == 5);
 	assert(strcmp(n->name, "dir") == 0);
-	assert(n->data.dir->children == NULL);
+	assert(n->data.dir.children == NULL);
 
 	n = n->next;
 	assert(n->mode == (S_IFDIR | 0755));
 	assert(n->uid == 0);
 	assert(n->gid == 0);
 	assert(strcmp(n->name, "foo bar") == 0);
-	assert(n->data.dir->children != NULL);
+	assert(n->data.dir.children != NULL);
 
-	assert(n->data.dir->children->next == NULL);
-	assert(n->data.dir->children->mode == (S_IFDIR | 0755));
-	assert(n->data.dir->children->uid == 0);
-	assert(n->data.dir->children->gid == 0);
-	assert(strcmp(n->data.dir->children->name, " test \"") == 0);
-	assert(n->data.dir->children->data.dir->children == NULL);
+	assert(n->data.dir.children->next == NULL);
+	assert(n->data.dir.children->mode == (S_IFDIR | 0755));
+	assert(n->data.dir.children->uid == 0);
+	assert(n->data.dir.children->gid == 0);
+	assert(strcmp(n->data.dir.children->name, " test \"") == 0);
+	assert(n->data.dir.children->data.dir.children == NULL);
 
 	n = n->next;
 	assert(n->mode == (S_IFIFO | 0644));

@@ -14,7 +14,7 @@
 
 static size_t count_nodes(tree_node_t *root)
 {
-	tree_node_t *n = root->data.dir->children;
+	tree_node_t *n = root->data.dir.children;
 	size_t count = 1;
 
 	while (n != NULL) {
@@ -34,7 +34,7 @@ static void map_child_nodes(fstree_t *fs, tree_node_t *root, size_t *counter)
 	bool has_subdirs = false;
 	tree_node_t *it;
 
-	for (it = root->data.dir->children; it != NULL; it = it->next) {
+	for (it = root->data.dir.children; it != NULL; it = it->next) {
 		if (S_ISDIR(it->mode)) {
 			has_subdirs = true;
 			break;
@@ -42,13 +42,13 @@ static void map_child_nodes(fstree_t *fs, tree_node_t *root, size_t *counter)
 	}
 
 	if (has_subdirs) {
-		for (it = root->data.dir->children; it != NULL; it = it->next) {
+		for (it = root->data.dir.children; it != NULL; it = it->next) {
 			if (S_ISDIR(it->mode))
 				map_child_nodes(fs, it, counter);
 		}
 	}
 
-	for (it = root->data.dir->children; it != NULL; it = it->next) {
+	for (it = root->data.dir.children; it != NULL; it = it->next) {
 		it->inode_num = *counter;
 		*counter += 1;
 

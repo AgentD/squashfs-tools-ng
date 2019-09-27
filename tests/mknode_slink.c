@@ -33,7 +33,7 @@ int main(void)
 	assert(node->parent == NULL);
 	assert((char *)node->name >= (char *)node->payload);
 	assert(node->data.slink_target >= (char *)node->payload);
-	assert(node->name >= node->data.slink_target + 7);
+	assert(node->data.slink_target >= node->name + 8);
 	assert(strcmp(node->name, "symlink") == 0);
 	assert(strcmp(node->data.slink_target, "target") == 0);
 	free(node);
@@ -45,7 +45,7 @@ int main(void)
 	assert(node->parent == NULL);
 	assert((char *)node->name >= (char *)node->payload);
 	assert(node->data.slink_target >= (char *)node->payload);
-	assert(node->name >= node->data.slink_target + 1);
+	assert(node->data.slink_target >= node->name + 8);
 	assert(strcmp(node->name, "symlink") == 0);
 	assert(node->data.slink_target[0] == '\0');
 	free(node);

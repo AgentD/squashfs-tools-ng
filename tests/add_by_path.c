@@ -37,8 +37,8 @@ int main(void)
 	assert(a->gid == sb.st_gid);
 	assert(a->parent == fs.root);
 	assert(a->next == NULL);
-	assert(fs.root->data.dir->children == a);
-	assert(!a->data.dir->created_implicitly);
+	assert(fs.root->data.dir.children == a);
+	assert(!a->data.dir.created_implicitly);
 
 	memset(&sb, 0, sizeof(sb));
 	sb.st_mode = S_IFBLK | 0640;
@@ -54,7 +54,7 @@ int main(void)
 	assert(b->parent == fs.root);
 	assert(b->data.devno == sb.st_rdev);
 	assert(b->next == a);
-	assert(fs.root->data.dir->children == b);
+	assert(fs.root->data.dir.children == b);
 
 	assert(fstree_add_generic(&fs, "blkdev/foo", &sb, NULL) == NULL);
 	assert(errno == ENOTDIR);
@@ -77,7 +77,7 @@ int main(void)
 	assert(b->parent == a);
 	assert(b->data.devno == sb.st_rdev);
 	assert(b->next == NULL);
-	assert(a->data.dir->children == b);
+	assert(a->data.dir.children == b);
 
 	b = fstree_add_generic(&fs, "dir/foo/chrdev", &sb, NULL);
 	assert(b != NULL);
@@ -89,10 +89,10 @@ int main(void)
 	assert(b->parent->parent == a);
 	assert(b->data.devno == sb.st_rdev);
 	assert(b->next == NULL);
-	assert(a->data.dir->children != b);
+	assert(a->data.dir.children != b);
 
 	b = b->parent;
-	assert(b->data.dir->created_implicitly);
+	assert(b->data.dir.created_implicitly);
 	assert(b->mode == (S_IFDIR | 0755));
 	assert(b->uid == 21);
 	assert(b->gid == 42);
@@ -105,7 +105,7 @@ int main(void)
 	a = fstree_add_generic(&fs, "dir/foo", &sb, NULL);
 	assert(a != NULL);
 	assert(a == b);
-	assert(!a->data.dir->created_implicitly);
+	assert(!a->data.dir.created_implicitly);
 	assert(a->mode == sb.st_mode);
 	assert(a->uid == sb.st_uid);
 	assert(a->gid == sb.st_gid);

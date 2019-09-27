@@ -52,8 +52,8 @@ sqfs_inode_generic_t *tree_node_to_inode(sqfs_id_table_t *idtbl,
 	size_t extra = 0;
 
 	if (S_ISREG(node->mode)) {
-		inode = node->data.file->user_ptr;
-		node->data.file->user_ptr = NULL;
+		inode = node->data.file.user_ptr;
+		node->data.file.user_ptr = NULL;
 	} else {
 		if (S_ISLNK(node->mode))
 			extra = strlen(node->data.slink_target);

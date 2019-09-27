@@ -26,10 +26,10 @@ static void check_children_before_root(tree_node_t *root)
 {
 	tree_node_t *n;
 
-	for (n = root->data.dir->children; n != NULL; n = n->next)
+	for (n = root->data.dir.children; n != NULL; n = n->next)
 		assert(n->inode_num < root->inode_num);
 
-	for (n = root->data.dir->children; n != NULL; n = n->next)
+	for (n = root->data.dir.children; n != NULL; n = n->next)
 		check_children_before_root(n);
 }
 
@@ -37,13 +37,13 @@ static void check_children_continuous(tree_node_t *root)
 {
 	tree_node_t *n;
 
-	for (n = root->data.dir->children; n != NULL; n = n->next) {
+	for (n = root->data.dir.children; n != NULL; n = n->next) {
 		if (n->next != NULL) {
 			assert(n->next->inode_num == (n->inode_num + 1));
 		}
 	}
 
-	for (n = root->data.dir->children; n != NULL; n = n->next)
+	for (n = root->data.dir.children; n != NULL; n = n->next)
 		check_children_continuous(n);
 }
 

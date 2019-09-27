@@ -14,7 +14,7 @@
 static tree_node_t *child_by_name(tree_node_t *root, const char *name,
 				  size_t len)
 {
-	tree_node_t *n = root->data.dir->children;
+	tree_node_t *n = root->data.dir.children;
 
 	while (n != NULL) {
 		if (strncmp(n->name, name, len) == 0 && n->name[len] == '\0')
@@ -50,7 +50,7 @@ static tree_node_t *get_parent_node(fstree_t *fs, tree_node_t *root,
 			if (n == NULL)
 				return NULL;
 
-			n->data.dir->created_implicitly = true;
+			n->data.dir.created_implicitly = true;
 		}
 
 		root = n;
@@ -76,7 +76,7 @@ tree_node_t *fstree_add_generic(fstree_t *fs, const char *path,
 	child = child_by_name(parent, name, strlen(name));
 	if (child != NULL) {
 		if (!S_ISDIR(child->mode) || !S_ISDIR(sb->st_mode) ||
-		    !child->data.dir->created_implicitly) {
+		    !child->data.dir.created_implicitly) {
 			errno = EEXIST;
 			return NULL;
 		}
@@ -85,7 +85,7 @@ tree_node_t *fstree_add_generic(fstree_t *fs, const char *path,
 		child->gid = sb->st_gid;
 		child->mode = sb->st_mode;
 		child->mod_time = sb->st_mtime;
-		child->data.dir->created_implicitly = false;
+		child->data.dir.created_implicitly = false;
 		return child;
 	}
 

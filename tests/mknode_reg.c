@@ -34,11 +34,10 @@ int main(void)
 	assert(node->mode == sb.st_mode);
 	assert(node->parent == NULL);
 	assert((char *)node->name >= (char *)node->payload);
-	assert((char *)node->data.file >= (char *)node->payload);
-	assert(node->data.file->input_file >= (char *)(node->data.file + 1));
-	assert(node->name >= node->data.file->input_file + 6);
+	assert(node->data.file.input_file >= (char *)node->payload);
+	assert(node->data.file.input_file >= node->name + 8);
 	assert(strcmp(node->name, "filename") == 0);
-	assert(strcmp(node->data.file->input_file, "input") == 0);
+	assert(strcmp(node->data.file.input_file, "input") == 0);
 	free(node);
 
 	return EXIT_SUCCESS;

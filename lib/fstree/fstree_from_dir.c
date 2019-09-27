@@ -200,7 +200,7 @@ static int populate_dir(fstree_t *fs, tree_node_t *root, dev_t devstart,
 
 	closedir(dir);
 
-	for (n = root->data.dir->children; n != NULL; n = n->next) {
+	for (n = root->data.dir.children; n != NULL; n = n->next) {
 		if (S_ISDIR(n->mode)) {
 			if (pushd(n->name))
 				return -1;

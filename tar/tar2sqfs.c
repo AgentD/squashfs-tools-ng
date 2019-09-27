@@ -326,7 +326,7 @@ static int create_node_and_repack_data(tar_header_decoded_t *hdr, fstree_t *fs,
 	}
 
 	if (S_ISREG(hdr->sb.st_mode)) {
-		if (write_file(hdr, node->data.file, data, hdr->sb.st_size))
+		if (write_file(hdr, &node->data.file, data, hdr->sb.st_size))
 			return -1;
 	}
 

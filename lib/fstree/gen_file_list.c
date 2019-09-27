@@ -10,14 +10,14 @@
 static file_info_t *file_list_dfs(tree_node_t *n)
 {
 	if (S_ISREG(n->mode)) {
-		n->data.file->next = NULL;
-		return n->data.file;
+		n->data.file.next = NULL;
+		return &n->data.file;
 	}
 
 	if (S_ISDIR(n->mode)) {
 		file_info_t *list = NULL, *last = NULL;
 
-		for (n = n->data.dir->children; n != NULL; n = n->next) {
+		for (n = n->data.dir.children; n != NULL; n = n->next) {
 			if (list == NULL) {
 				list = file_list_dfs(n);
 				if (list == NULL)

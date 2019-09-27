@@ -124,8 +124,8 @@ struct tree_node_t {
 
 	/* Type specific data. Pointers are into payload area blow. */
 	union {
-		dir_info_t *dir;
-		file_info_t *file;
+		dir_info_t dir;
+		file_info_t file;
 		char *slink_target;
 		uint64_t devno;
 	} data;

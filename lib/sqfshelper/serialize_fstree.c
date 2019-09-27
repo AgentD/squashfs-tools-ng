@@ -26,7 +26,7 @@ static sqfs_inode_generic_t *write_dir_entries(sqfs_dir_writer_t *dirw,
 	if (sqfs_dir_writer_begin(dirw))
 		return NULL;
 
-	for (it = node->data.dir->children; it != NULL; it = it->next) {
+	for (it = node->data.dir.children; it != NULL; it = it->next) {
 		ret = sqfs_dir_writer_add_entry(dirw, it->name, it->inode_num,
 						it->inode_ref, it->mode);
 		if (ret)

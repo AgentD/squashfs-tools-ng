@@ -95,9 +95,9 @@ static void free_recursive(tree_node_t *n)
 	tree_node_t *it;
 
 	if (S_ISDIR(n->mode)) {
-		while (n->data.dir->children != NULL) {
-			it = n->data.dir->children;
-			n->data.dir->children = it->next;
+		while (n->data.dir.children != NULL) {
+			it = n->data.dir.children;
+			n->data.dir.children = it->next;
 
 			free_recursive(it);
 		}
