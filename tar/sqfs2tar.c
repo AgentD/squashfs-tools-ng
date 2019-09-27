@@ -213,19 +213,21 @@ static int get_xattrs(const sqfs_inode_generic_t *inode, tar_xattr_t **out)
 	for (i = 0; i < desc.count; ++i) {
 		if (sqfs_xattr_reader_read_key(xr, &key)) {
 			fputs("Error reading xattr key\n", stderr);
-			return -1;
+			goto fail;
 		}
 
 		if (sqfs_xattr_reader_read_value(xr, key, &value)) {
 			fputs("Error reading xattr value\n", stderr);
 			free(key);
-			return -1;
+			goto fail;
 		}
 
 		ent = calloc(1, sizeof(*ent) + strlen((const char *)key->key) +
 			     value->size + 2);
 		if (ent == NULL) {
 			perror("creating xattr entry");
+			free(key);
+			free(value);
 			goto fail;
 		}
 
@@ -275,8 +277,10 @@ static int write_tree_dfs(const sqfs_tree_node_t *n)
 	inode_stat(n, &sb);
 
 	if (!no_xattr) {
-		if (get_xattrs(n->inode, &xattr))
+		if (get_xattrs(n->inode, &xattr)) {
+			free(name);
 			return -1;
+		}
 	}
 
 	target = S_ISLNK(sb.st_mode) ? n->inode->slink_target : NULL;
