@@ -21,6 +21,7 @@ config.*
 *.la
 *.a
 *~
+*.pc
 gensquashfs
 rdsquashfs
 sqfs2tar

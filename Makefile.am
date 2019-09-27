@@ -10,6 +10,7 @@ bin_PROGRAMS =
 lib_LTLIBRARIES =
 dist_man1_MANS =
 check_PROGRAMS =
+pkgconfig_DATA =
 
 EXTRA_DIST = autogen.sh LICENSE-gpl.txt LICENSE-lgpl.txt README.md CHANGELOG.md
 TESTS =

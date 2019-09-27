@@ -1,0 +1,14 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: @PACKAGE_NAME@
+Version: @PACKAGE_VERSION@
+Description: A library for working with SquashFS file systems.
+
+Cflags: -I${includedir}
+Libs: -L${libdir} -lsquashfs
+
+Requires.private: @LIBSQFS_DEP_MOD@
+Libs.private: @LZO_LIBS@ @PTHREAD_LIBS@

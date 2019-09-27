@@ -16,6 +16,7 @@ m4_ifndef([PKG_PROG_PKG_CONFIG],
     environment variable AL_OPTS="-I/other/macro/dir" before running
     ./autogen.sh or autoreconf again. Make sure pkg-config is installed.])])
 PKG_PROG_PKG_CONFIG
+PKG_INSTALLDIR
 
 UL_WARN_ADD([-Wall])
 UL_WARN_ADD([-Wextra])
@@ -108,6 +109,13 @@ PKG_CHECK_MODULES(ZSTD, [libzstd],
 			[AM_CONDITIONAL([WITH_ZSTD], [true])],
 			[AM_CONDITIONAL([WITH_ZSTD], [false])])
 
+libsqfs_dep_mod=""
+AM_COND_IF([WITH_GZIP], [libsqfs_dep_mod="$libsqfs_dep_mod zlib"], [])
+AM_COND_IF([WITH_XZ], [libsqfs_dep_mod="$libsqfs_dep_mod liblzma >= 5.0.0"], [])
+AM_COND_IF([WITH_LZ4], [libsqfs_dep_mod="$libsqfs_dep_mod liblz4"], [])
+AM_COND_IF([WITH_ZSTD], [libsqfs_dep_mod="$libsqfs_dep_mod libzstd"], [])
+AC_SUBST([LIBSQFS_DEP_MOD], ["$libsqfs_dep_mod"])
+
 AM_CONDITIONAL([WITH_LZO], [false])
 
 if test "x$want_lzo" != "xno"; then
@@ -180,5 +188,6 @@ AC_CHECK_HEADERS([sys/xattr.h], [], [])
 ##### generate output #####
 
 AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_FILES([lib/sqfs/libsquashfs.pc])
 
 AC_OUTPUT([Makefile])
