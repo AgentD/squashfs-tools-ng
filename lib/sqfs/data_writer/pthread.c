@@ -257,6 +257,7 @@ int test_and_set_status(sqfs_data_writer_t *proc, int status)
 		status = proc->status;
 	}
 	pthread_cond_broadcast(&proc->queue_cond);
+	pthread_mutex_unlock(&proc->mtx);
 	return status;
 }
 
