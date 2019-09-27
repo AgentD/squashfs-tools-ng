@@ -60,7 +60,7 @@ static int open_sfqs(sqfs_state_t *state, const char *path)
 					   state->file);
 	if (state->dr == NULL) {
 		perror("creating directory reader");
-		goto fail_dr;
+		goto fail_id;
 	}
 
 	if (sqfs_dir_reader_get_full_hierarchy(state->dr, state->idtbl,
