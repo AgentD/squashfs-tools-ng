@@ -12,6 +12,7 @@
 #include "sqfs/predef.h"
 #include "sqfs/compress.h"
 #include "sqfs/error.h"
+#include "sqfs/data.h"
 #include "sqfs/io.h"
 #include "util.h"
 
@@ -36,5 +37,8 @@ sqfs_compressor_t *lz4_compressor_create(const sqfs_compressor_config_t *cfg);
 
 SQFS_INTERNAL
 sqfs_compressor_t *zstd_compressor_create(const sqfs_compressor_config_t *cfg);
+
+SQFS_INTERNAL
+sqfs_compressor_t *lzma_compressor_create(const sqfs_compressor_config_t *cfg);
 
 #endif /* INTERNAL_H */
