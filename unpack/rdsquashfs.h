@@ -14,7 +14,7 @@
 #include "sqfs/compress.h"
 #include "sqfs/id_table.h"
 #include "sqfs/xattr.h"
-#include "sqfs/data.h"
+#include "sqfs/block.h"
 
 #include "highlevel.h"
 #include "fstree.h"

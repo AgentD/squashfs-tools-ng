@@ -1,4 +1,4 @@
-LIBSQFS_HEARDS = include/sqfs/data.h include/sqfs/meta_writer.h \
+LIBSQFS_HEARDS = include/sqfs/meta_writer.h \
 		include/sqfs/meta_reader.h include/sqfs/id_table.h \
 		include/sqfs/compress.h include/sqfs/data_writer.h \
 		include/sqfs/super.h include/sqfs/inode.h \

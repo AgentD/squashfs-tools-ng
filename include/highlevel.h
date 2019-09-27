@@ -12,7 +12,6 @@
 #include "sqfs/compress.h"
 #include "sqfs/id_table.h"
 #include "sqfs/inode.h"
-#include "sqfs/data.h"
 #include "sqfs/table.h"
 #include "sqfs/meta_writer.h"
 #include "sqfs/data_reader.h"

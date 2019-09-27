@@ -11,7 +11,7 @@
 #include "sqfs/dir_writer.h"
 #include "sqfs/inode.h"
 #include "sqfs/error.h"
-#include "sqfs/data.h"
+#include "sqfs/block.h"
 #include "sqfs/dir.h"
 #include "util.h"
 

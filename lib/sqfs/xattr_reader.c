@@ -11,7 +11,7 @@
 #include "sqfs/super.h"
 #include "sqfs/xattr.h"
 #include "sqfs/error.h"
-#include "sqfs/data.h"
+#include "sqfs/block.h"
 #include "sqfs/io.h"
 #include "util.h"
 

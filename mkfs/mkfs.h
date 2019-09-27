@@ -12,7 +12,7 @@
 #include "sqfs/meta_writer.h"
 #include "sqfs/compress.h"
 #include "sqfs/id_table.h"
-#include "sqfs/data.h"
+#include "sqfs/block.h"
 #include "sqfs/io.h"
 
 #include "highlevel.h"
