@@ -69,6 +69,9 @@ static ssize_t lzma_comp_block(sqfs_compressor_t *base, const uint8_t *in,
 	if (ret != LZMA_STREAM_END)
 		return ret == LZMA_OK ? 0 : SQFS_ERROR_COMRPESSOR;
 
+	if (strm.total_out > size)
+		return 0;
+
 	out[LZMA_SIZE_OFFSET    ] = size & 0xFF;
 	out[LZMA_SIZE_OFFSET + 1] = (size >> 8) & 0xFF;
 	out[LZMA_SIZE_OFFSET + 2] = (size >> 16) & 0xFF;
