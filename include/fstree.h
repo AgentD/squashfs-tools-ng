@@ -9,14 +9,13 @@
 
 #include "config.h"
 
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
 #include <stdio.h>
 
 #include "str_table.h"
+#include "compat.h"
 
 #define FSTREE_XATTR_KEY_BUCKETS 31
 #define FSTREE_XATTR_VALUE_BUCKETS 511

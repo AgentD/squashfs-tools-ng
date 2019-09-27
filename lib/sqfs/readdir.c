@@ -10,6 +10,7 @@
 #include "sqfs/meta_reader.h"
 #include "sqfs/error.h"
 #include "sqfs/dir.h"
+#include "compat.h"
 
 #include <stdlib.h>
 #include <string.h>

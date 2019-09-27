@@ -10,9 +10,10 @@
 #include "config.h"
 #include "sqfs/predef.h"
 
-#include <sys/types.h>
 #include <stdint.h>
 #include <stddef.h>
+
+#include "compat.h"
 
 #if defined(__GNUC__) || defined(__clang__)
 #define UI_ADD_OV __builtin_uadd_overflow

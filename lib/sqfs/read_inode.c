@@ -13,7 +13,6 @@
 #include "sqfs/inode.h"
 #include "util.h"
 
-#include <sys/stat.h>
 #include <stdlib.h>
 #include <errno.h>
 

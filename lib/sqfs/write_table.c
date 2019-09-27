@@ -15,7 +15,6 @@
 #include "sqfs/io.h"
 #include "util.h"
 
-#include <endian.h>
 #include <stdlib.h>
 
 int sqfs_write_table(sqfs_file_t *file, sqfs_compressor_t *cmp,

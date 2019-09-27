@@ -20,13 +20,9 @@
 #include "fstree.h"
 #include "util.h"
 
-#include <sys/sysmacros.h>
-#include <sys/types.h>
 #ifdef HAVE_SYS_XATTR_H
 #include <sys/xattr.h>
 #endif
-#include <sys/prctl.h>
-#include <sys/wait.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>

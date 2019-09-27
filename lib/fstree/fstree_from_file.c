@@ -9,8 +9,6 @@
 #include "fstree.h"
 #include "util.h"
 
-#include <sys/sysmacros.h>
-#include <sys/types.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdint.h>

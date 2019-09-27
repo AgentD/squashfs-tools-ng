@@ -12,7 +12,6 @@
 #include "sqfs/io.h"
 #include "util.h"
 
-#include <endian.h>
 #include <string.h>
 
 int sqfs_super_read(sqfs_super_t *super, sqfs_file_t *file)

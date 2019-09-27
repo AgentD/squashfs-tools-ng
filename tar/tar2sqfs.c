@@ -17,7 +17,6 @@
 #include "util.h"
 #include "tar.h"
 
-#include <sys/sysmacros.h>
 #include <stdlib.h>
 #include <getopt.h>
 #include <unistd.h>

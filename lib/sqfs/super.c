@@ -12,7 +12,6 @@
 #include "sqfs/io.h"
 #include "util.h"
 
-#include <endian.h>
 #include <string.h>
 #include <unistd.h>
 

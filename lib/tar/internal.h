@@ -12,7 +12,6 @@
 #include "util.h"
 #include "tar.h"
 
-#include <sys/sysmacros.h>
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>

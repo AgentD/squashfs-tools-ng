@@ -8,7 +8,6 @@
 
 #include "fstree.h"
 
-#include <sys/sysmacros.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>

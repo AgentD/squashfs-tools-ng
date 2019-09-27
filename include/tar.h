@@ -10,7 +10,6 @@
 #include "config.h"
 #include "util.h"
 
-#include <sys/stat.h>
 #include <stdbool.h>
 #include <stdint.h>
 

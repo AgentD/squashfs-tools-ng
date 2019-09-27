@@ -15,8 +15,6 @@
 #include "sqfs/dir.h"
 #include "util.h"
 
-#include <sys/stat.h>
-#include <endian.h>
 #include <stdlib.h>
 #include <string.h>
 

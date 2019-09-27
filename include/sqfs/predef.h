@@ -27,7 +27,6 @@
  *        macros and integer types.
  */
 
-#include <sys/types.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>

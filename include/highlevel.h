@@ -22,12 +22,11 @@
 #include "sqfs/xattr.h"
 #include "sqfs/dir.h"
 #include "sqfs/io.h"
+#include "compat.h"
 #include "fstree.h"
 #include "util.h"
 #include "tar.h"
 
-#include <sys/stat.h>
-#include <stdint.h>
 #include <stddef.h>
 
 typedef struct {
