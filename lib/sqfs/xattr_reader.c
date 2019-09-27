@@ -20,12 +20,12 @@
 #include <errno.h>
 
 struct sqfs_xattr_reader_t {
-	uint64_t xattr_start;
+	sqfs_u64 xattr_start;
 
 	size_t num_id_blocks;
 	size_t num_ids;
 
-	uint64_t *id_block_starts;
+	sqfs_u64 *id_block_starts;
 
 	sqfs_meta_reader_t *idrd;
 	sqfs_meta_reader_t *kvrd;
@@ -61,7 +61,7 @@ int sqfs_xattr_reader_load_locations(sqfs_xattr_reader_t *xr)
 	if ((xr->num_ids * sizeof(sqfs_xattr_id_t)) % SQFS_META_BLOCK_SIZE)
 		xr->num_id_blocks += 1;
 
-	xr->id_block_starts = alloc_array(sizeof(uint64_t), xr->num_id_blocks);
+	xr->id_block_starts = alloc_array(sizeof(sqfs_u64), xr->num_id_blocks);
 	if (xr->id_block_starts == NULL) {
 		if (errno == EOVERFLOW)
 			return SQFS_ERROR_OVERFLOW;
@@ -71,7 +71,7 @@ int sqfs_xattr_reader_load_locations(sqfs_xattr_reader_t *xr)
 	err = xr->file->read_at(xr->file,
 				xr->super->xattr_id_table_start + sizeof(idtbl),
 				xr->id_block_starts,
-				sizeof(uint64_t) * xr->num_id_blocks);
+				sizeof(sqfs_u64) * xr->num_id_blocks);
 	if (err)
 		goto fail;
 
@@ -140,7 +140,7 @@ int sqfs_xattr_reader_read_value(sqfs_xattr_reader_t *xr,
 {
 	size_t offset, new_offset, size;
 	sqfs_xattr_value_t value, *out;
-	uint64_t ref, start, new_start;
+	sqfs_u64 ref, start, new_start;
 	int ret;
 
 	ret = sqfs_meta_reader_read(xr->kvrd, &value, sizeof(value));
@@ -200,13 +200,13 @@ fail:
 int sqfs_xattr_reader_seek_kv(sqfs_xattr_reader_t *xr,
 			      const sqfs_xattr_id_t *desc)
 {
-	uint32_t offset = desc->xattr & 0xFFFF;
-	uint64_t block = xr->xattr_start + (desc->xattr >> 16);
+	sqfs_u32 offset = desc->xattr & 0xFFFF;
+	sqfs_u64 block = xr->xattr_start + (desc->xattr >> 16);
 
 	return sqfs_meta_reader_seek(xr->kvrd, block, offset);
 }
 
-int sqfs_xattr_reader_get_desc(sqfs_xattr_reader_t *xr, uint32_t idx,
+int sqfs_xattr_reader_get_desc(sqfs_xattr_reader_t *xr, sqfs_u32 idx,
 			       sqfs_xattr_id_t *desc)
 {
 	size_t block, offset;

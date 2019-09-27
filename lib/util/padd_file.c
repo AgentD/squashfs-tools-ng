@@ -12,11 +12,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-int padd_file(int outfd, uint64_t size, size_t blocksize)
+int padd_file(int outfd, sqfs_u64 size, size_t blocksize)
 {
 	size_t padd_sz = size % blocksize;
 	int status = -1;
-	uint8_t *buffer;
+	sqfs_u8 *buffer;
 
 	if (padd_sz == 0)
 		return 0;
@@ -41,11 +41,11 @@ fail_errno:
 	goto out;
 }
 
-int padd_sqfs(sqfs_file_t *file, uint64_t size, size_t blocksize)
+int padd_sqfs(sqfs_file_t *file, sqfs_u64 size, size_t blocksize)
 {
 	size_t padd_sz = size % blocksize;
 	int status = -1;
-	uint8_t *buffer;
+	sqfs_u8 *buffer;
 
 	if (padd_sz == 0)
 		return 0;

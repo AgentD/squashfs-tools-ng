@@ -12,7 +12,7 @@ sparse_map_t *read_gnu_old_sparse(int fd, tar_header_t *hdr)
 {
 	sparse_map_t *list = NULL, *end = NULL, *node;
 	gnu_sparse_t sph;
-	uint64_t off, sz;
+	sqfs_u64 off, sz;
 	int i;
 
 	for (i = 0; i < 4; ++i) {

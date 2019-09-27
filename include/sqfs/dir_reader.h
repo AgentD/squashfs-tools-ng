@@ -131,17 +131,17 @@ struct sqfs_tree_node_t {
 	/**
 	 * @brief Resolved 32 bit user ID from the inode
 	 */
-	uint32_t uid;
+	sqfs_u32 uid;
 
 	/**
 	 * @brief Resolved 32 bit group ID from the inode
 	 */
-	uint32_t gid;
+	sqfs_u32 gid;
 
 	/**
 	 * @brief null-terminated entry name.
 	 */
-	uint8_t name[];
+	sqfs_u8 name[];
 };
 
 #ifdef __cplusplus

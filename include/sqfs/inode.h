@@ -62,23 +62,23 @@ struct sqfs_inode_t {
 	/**
 	 * @brief An @ref E_SQFS_INODE_TYPE value.
 	 */
-	uint16_t type;
+	sqfs_u16 type;
 
 	/**
 	 * @brief Mode filed holding permission bits only. The type is derived
 	 *        from the type field.
 	 */
-	uint16_t mode;
+	sqfs_u16 mode;
 
 	/**
 	 * @brief An index into the ID table where the owner UID is located.
 	 */
-	uint16_t uid_idx;
+	sqfs_u16 uid_idx;
 
 	/**
 	 * @brief An index into the ID table where the owner GID is located.
 	 */
-	uint16_t gid_idx;
+	sqfs_u16 gid_idx;
 
 	/**
 	 * @brief Last modifcation time.
@@ -87,12 +87,12 @@ struct sqfs_inode_t {
 	 * Jan 1 1970 UTC. This field is unsigned, so it expires in the year
 	 * 2106 (as opposed to 2038).
 	 */
-	uint32_t mod_time;
+	sqfs_u32 mod_time;
 
 	/**
 	 * @brief Unique inode number
 	 */
-	uint32_t inode_number;
+	sqfs_u32 inode_number;
 };
 
 /**
@@ -105,12 +105,12 @@ struct sqfs_inode_dev_t {
 	/**
 	 * @brief Number of hard links to this node.
 	 */
-	uint32_t nlink;
+	sqfs_u32 nlink;
 
 	/**
 	 * @brief Device number.
 	 */
-	uint32_t devno;
+	sqfs_u32 devno;
 };
 
 /**
@@ -123,17 +123,17 @@ struct sqfs_inode_dev_ext_t {
 	/**
 	 * @brief Number of hard links to this node.
 	 */
-	uint32_t nlink;
+	sqfs_u32 nlink;
 
 	/**
 	 * @brief Device number.
 	 */
-	uint32_t devno;
+	sqfs_u32 devno;
 
 	/**
 	 * @brief Extended attribute index.
 	 */
-	uint32_t xattr_idx;
+	sqfs_u32 xattr_idx;
 };
 
 /**
@@ -146,7 +146,7 @@ struct sqfs_inode_ipc_t {
 	/**
 	 * @brief Number of hard links to this node.
 	 */
-	uint32_t nlink;
+	sqfs_u32 nlink;
 };
 
 /**
@@ -159,12 +159,12 @@ struct sqfs_inode_ipc_ext_t {
 	/**
 	 * @brief Number of hard links to this node.
 	 */
-	uint32_t nlink;
+	sqfs_u32 nlink;
 
 	/**
 	 * @brief Extended attribute index.
 	 */
-	uint32_t xattr_idx;
+	sqfs_u32 xattr_idx;
 };
 
 /**
@@ -180,14 +180,14 @@ struct sqfs_inode_slink_t {
 	/**
 	 * @brief Number of hard links to this node.
 	 */
-	uint32_t nlink;
+	sqfs_u32 nlink;
 
 	/**
 	 * @brief Size of the symlink target in bytes
 	 */
-	uint32_t target_size;
+	sqfs_u32 target_size;
 
-	/*uint8_t target[];*/
+	/*sqfs_u8 target[];*/
 };
 
 /**
@@ -203,19 +203,19 @@ struct sqfs_inode_slink_ext_t {
 	/**
 	 * @brief Number of hard links to this node.
 	 */
-	uint32_t nlink;
+	sqfs_u32 nlink;
 
 	/**
 	 * @brief Size of the symlink target in bytes
 	 */
-	uint32_t target_size;
+	sqfs_u32 target_size;
 
-	/*uint8_t target[];*/
+	/*sqfs_u8 target[];*/
 
 	/**
 	 * @brief Extended attribute index.
 	 */
-	uint32_t xattr_idx;
+	sqfs_u32 xattr_idx;
 };
 
 /**
@@ -238,25 +238,25 @@ struct sqfs_inode_file_t {
 	/**
 	 * @brief Absolute position of the first data block.
 	 */
-	uint32_t blocks_start;
+	sqfs_u32 blocks_start;
 
 	/**
 	 * @brief Index into the fragment table or 0xFFFFFFFF if unused.
 	 */
-	uint32_t fragment_index;
+	sqfs_u32 fragment_index;
 
 	/**
 	 * @brief Offset into the uncompressed fragment block or 0xFFFFFFFF
 	 *        if unused.
 	 */
-	uint32_t fragment_offset;
+	sqfs_u32 fragment_offset;
 
 	/**
 	 * @brief Total, uncompressed size of the file in bytes.
 	 */
-	uint32_t file_size;
+	sqfs_u32 file_size;
 
-	/*uint32_t block_sizes[];*/
+	/*sqfs_u32 block_sizes[];*/
 };
 
 /**
@@ -270,41 +270,41 @@ struct sqfs_inode_file_ext_t {
 	/**
 	 * @brief Absolute position of the first data block.
 	 */
-	uint64_t blocks_start;
+	sqfs_u64 blocks_start;
 
 	/**
 	 * @brief Total, uncompressed size of the file in bytes.
 	 */
-	uint64_t file_size;
+	sqfs_u64 file_size;
 
 	/**
 	 * @brief If the file is sparse, holds the number of bytes not written
 	 *        to disk because of the omitted sparse blocks.
 	 */
-	uint64_t sparse;
+	sqfs_u64 sparse;
 
 	/**
 	 * @brief Number of hard links to this node.
 	 */
-	uint32_t nlink;
+	sqfs_u32 nlink;
 
 	/**
 	 * @brief Index into the fragment table or 0xFFFFFFFF if unused.
 	 */
-	uint32_t fragment_idx;
+	sqfs_u32 fragment_idx;
 
 	/**
 	 * @brief Offset into the uncompressed fragment block or 0xFFFFFFFF
 	 *        if unused.
 	 */
-	uint32_t fragment_offset;
+	sqfs_u32 fragment_offset;
 
 	/**
 	 * @brief Extended attribute index.
 	 */
-	uint32_t xattr_idx;
+	sqfs_u32 xattr_idx;
 
-	/*uint32_t block_sizes[];*/
+	/*sqfs_u32 block_sizes[];*/
 };
 
 /**
@@ -317,29 +317,29 @@ struct sqfs_inode_dir_t {
 	 * @brief Offset from the directory table start to the location of the
 	 *        meta data block containing the first directory header.
 	 */
-	uint32_t start_block;
+	sqfs_u32 start_block;
 
 	/**
 	 * @brief Number of hard links to this node.
 	 */
-	uint32_t nlink;
+	sqfs_u32 nlink;
 
 	/**
 	 * @brief Combined size of all directory entries and headers in bytes.
 	 */
-	uint16_t size;
+	sqfs_u16 size;
 
 	/**
 	 * @brief Offset into the uncompressed start block where the header can
 	 *        be found.
 	 */
-	uint16_t offset;
+	sqfs_u16 offset;
 
 	/**
 	 * @brief Inode number of the parent directory containing
 	 *        this directory inode.
 	 */
-	uint32_t parent_inode;
+	sqfs_u32 parent_inode;
 };
 
 /**
@@ -351,24 +351,24 @@ struct sqfs_inode_dir_ext_t {
 	/**
 	 * @brief Number of hard links to this node.
 	 */
-	uint32_t nlink;
+	sqfs_u32 nlink;
 
 	/**
 	 * @brief Combined size of all directory entries and headers in bytes.
 	 */
-	uint32_t size;
+	sqfs_u32 size;
 
 	/**
 	 * @brief Offset from the directory table start to the location of the
 	 *        meta data block containing the first directory header.
 	 */
-	uint32_t start_block;
+	sqfs_u32 start_block;
 
 	/**
 	 * @brief Inode number of the parent directory containing
 	 *        this directory inode.
 	 */
-	uint32_t parent_inode;
+	sqfs_u32 parent_inode;
 
 	/**
 	 * @brief Number of directory index entries following the inode
@@ -376,18 +376,18 @@ struct sqfs_inode_dir_ext_t {
 	 * This number is stored off-by one and counts the number of
 	 * @ref sqfs_dir_index_t entries following the inode.
 	 */
-	uint16_t inodex_count;
+	sqfs_u16 inodex_count;
 
 	/**
 	 * @brief Offset into the uncompressed start block where the header can
 	 *        be found.
 	 */
-	uint16_t offset;
+	sqfs_u16 offset;
 
 	/**
 	 * @brief Extended attribute index.
 	 */
-	uint32_t xattr_idx;
+	sqfs_u32 xattr_idx;
 };
 
 /**
@@ -423,7 +423,7 @@ struct sqfs_inode_generic_t {
 	 * set if the block is stored uncompressed. If it the size is zero,
 	 * the block is sparse.
 	 */
-	uint32_t *block_sizes;
+	sqfs_u32 *block_sizes;
 
 	/**
 	 * @brief For file inodes, stores the number of blocks used.
@@ -449,7 +449,7 @@ struct sqfs_inode_generic_t {
 	/**
 	 * @brief Holds type specific extra data, such as symlink target.
 	 */
-	uint8_t extra[];
+	sqfs_u8 extra[];
 };
 
 #ifdef __cplusplus
@@ -469,7 +469,7 @@ extern "C" {
  *         an unknown type set.
  */
 SQFS_API int sqfs_inode_get_xattr_index(const sqfs_inode_generic_t *inode,
-					uint32_t *out);
+					sqfs_u32 *out);
 
 /**
  * @brief Convert a basic inode to an extended inode.
@@ -513,7 +513,7 @@ SQFS_API int sqfs_inode_make_basic(sqfs_inode_generic_t *inode);
  *         not a regular file.
  */
 SQFS_API int sqfs_inode_set_file_size(sqfs_inode_generic_t *inode,
-				      uint64_t size);
+				      sqfs_u64 size);
 
 /**
  * @brief Update the location of the first data block of a regular file inode.
@@ -530,7 +530,7 @@ SQFS_API int sqfs_inode_set_file_size(sqfs_inode_generic_t *inode,
  *         not a regular file.
  */
 SQFS_API int sqfs_inode_set_file_block_start(sqfs_inode_generic_t *inode,
-					     uint64_t location);
+					     sqfs_u64 location);
 
 /**
  * @brief Update the file fragment location of a regular file inode.
@@ -543,7 +543,7 @@ SQFS_API int sqfs_inode_set_file_block_start(sqfs_inode_generic_t *inode,
  *         not a regular file.
  */
 SQFS_API int sqfs_inode_set_frag_location(sqfs_inode_generic_t *inode,
-					  uint32_t index, uint32_t offset);
+					  sqfs_u32 index, sqfs_u32 offset);
 
 /**
  * @brief Get the file size of a regular file inode.
@@ -555,7 +555,7 @@ SQFS_API int sqfs_inode_set_frag_location(sqfs_inode_generic_t *inode,
  *         not a regular file.
  */
 SQFS_API int sqfs_inode_get_file_size(const sqfs_inode_generic_t *inode,
-				      uint64_t *size);
+				      sqfs_u64 *size);
 
 /**
  * @brief Get the file fragment location of a regular file inode.
@@ -568,7 +568,7 @@ SQFS_API int sqfs_inode_get_file_size(const sqfs_inode_generic_t *inode,
  *         not a regular file.
  */
 SQFS_API int sqfs_inode_get_frag_location(const sqfs_inode_generic_t *inode,
-					  uint32_t *index, uint32_t *offset);
+					  sqfs_u32 *index, sqfs_u32 *offset);
 
 /**
  * @brief Get the location of the first data block of a regular file inode.
@@ -580,7 +580,7 @@ SQFS_API int sqfs_inode_get_frag_location(const sqfs_inode_generic_t *inode,
  *         not a regular file.
  */
 SQFS_API int sqfs_inode_get_file_block_start(const sqfs_inode_generic_t *inode,
-					     uint64_t *location);
+					     sqfs_u64 *location);
 
 #ifdef __cplusplus
 }

@@ -47,19 +47,19 @@ struct sqfs_dir_header_t {
 	 * This value is stored off by one and the total count must not
 	 * exceed 256.
 	 */
-	uint32_t count;
+	sqfs_u32 count;
 
 	/**
 	 * @brief The location of the meta data block containing the inodes for
 	 *        the entries that follow, relative to the start of the inode
 	 *        table.
 	 */
-	uint32_t start_block;
+	sqfs_u32 start_block;
 
 	/**
 	 * @brief The inode number of the first entry.
 	 */
-	uint32_t inode_number;
+	sqfs_u32 inode_number;
 };
 
 /**
@@ -76,31 +76,31 @@ struct sqfs_dir_entry_t {
 	 * @brief An offset into the uncompressed meta data block containing
 	 *        the coresponding inode.
 	 */
-	uint16_t offset;
+	sqfs_u16 offset;
 
 	/**
 	 * @brief Signed difference of the inode number from the one
 	 *        in the @ref sqfs_dir_header_t.
 	 */
-	int16_t inode_diff;
+	sqfs_s16 inode_diff;
 
 	/**
 	 * @brief The @ref E_SQFS_INODE_TYPE value for the inode that this
 	 *        entry represents.
 	 */
-	uint16_t type;
+	sqfs_u16 type;
 
 	/**
 	 * @brief The size of the entry name
 	 *
 	 * This value is stored off-by-one.
 	 */
-	uint16_t size;
+	sqfs_u16 size;
 
 	/**
 	 * @brief The name of the directory entry (no trailing null-byte).
 	 */
-	uint8_t name[];
+	sqfs_u8 name[];
 };
 
 /**
@@ -116,27 +116,27 @@ struct sqfs_dir_index_t {
 	/**
 	 * @brief Linear byte offset into the decompressed directory listing.
 	 */
-	uint32_t index;
+	sqfs_u32 index;
 
 	/**
 	 * @brief Location of the meta data block, relative to the directory
 	 *        table start.
 	 */
-	uint32_t start_block;
+	sqfs_u32 start_block;
 
 	/**
 	 * @brief Size of the name of the first entry after the header.
 	 *
 	 * This value is stored off-by-one.
 	 */
-	uint32_t size;
+	sqfs_u32 size;
 
 	/**
 	 * @brief Name of the name of the first entry after the header.
 	 *
 	 * No trailing null-byte.
 	 */
-	uint8_t name[];
+	sqfs_u8 name[];
 };
 
 #endif /* SQFS_DIR_H */

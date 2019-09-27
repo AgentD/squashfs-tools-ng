@@ -16,7 +16,7 @@
 #include <string.h>
 
 struct sqfs_id_table_t {
-	uint32_t *ids;
+	sqfs_u32 *ids;
 	size_t num_ids;
 	size_t max_ids;
 };
@@ -32,7 +32,7 @@ void sqfs_id_table_destroy(sqfs_id_table_t *tbl)
 	free(tbl);
 }
 
-int sqfs_id_table_id_to_index(sqfs_id_table_t *tbl, uint32_t id, uint16_t *out)
+int sqfs_id_table_id_to_index(sqfs_id_table_t *tbl, sqfs_u32 id, sqfs_u16 *out)
 {
 	size_t i, sz;
 	void *ptr;
@@ -63,8 +63,8 @@ int sqfs_id_table_id_to_index(sqfs_id_table_t *tbl, uint32_t id, uint16_t *out)
 	return 0;
 }
 
-int sqfs_id_table_index_to_id(const sqfs_id_table_t *tbl, uint16_t index,
-			      uint32_t *out)
+int sqfs_id_table_index_to_id(const sqfs_id_table_t *tbl, sqfs_u16 index,
+			      sqfs_u32 *out)
 {
 	if (index >= tbl->num_ids)
 		return SQFS_ERROR_OUT_OF_BOUNDS;
@@ -76,7 +76,7 @@ int sqfs_id_table_index_to_id(const sqfs_id_table_t *tbl, uint16_t index,
 int sqfs_id_table_read(sqfs_id_table_t *tbl, sqfs_file_t *file,
 		       const sqfs_super_t *super, sqfs_compressor_t *cmp)
 {
-	uint64_t upper_limit, lower_limit;
+	sqfs_u64 upper_limit, lower_limit;
 	void *raw_ids;
 	size_t i;
 	int ret;
@@ -106,7 +106,7 @@ int sqfs_id_table_read(sqfs_id_table_t *tbl, sqfs_file_t *file,
 
 	tbl->num_ids = super->id_count;
 	tbl->max_ids = super->id_count;
-	ret = sqfs_read_table(file, cmp, tbl->num_ids * sizeof(uint32_t),
+	ret = sqfs_read_table(file, cmp, tbl->num_ids * sizeof(sqfs_u32),
 			      super->id_table_start, lower_limit,
 			      upper_limit, &raw_ids);
 	if (ret)
@@ -123,7 +123,7 @@ int sqfs_id_table_read(sqfs_id_table_t *tbl, sqfs_file_t *file,
 int sqfs_id_table_write(sqfs_id_table_t *tbl, sqfs_file_t *file,
 			sqfs_super_t *super, sqfs_compressor_t *cmp)
 {
-	uint64_t start;
+	sqfs_u64 start;
 	size_t i;
 	int ret;
 

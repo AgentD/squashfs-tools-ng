@@ -189,7 +189,7 @@ static int get_xattrs(const sqfs_inode_generic_t *inode, tar_xattr_t **out)
 	sqfs_xattr_value_t *value;
 	sqfs_xattr_entry_t *key;
 	sqfs_xattr_id_t desc;
-	uint32_t index;
+	sqfs_u32 index;
 	size_t i;
 
 	if (xr == NULL)

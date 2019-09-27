@@ -92,10 +92,10 @@ int popd(void);
   Returns 0 on success. On failure, prints error message to stderr.
 */
 SQFS_INTERNAL
-int padd_file(int outfd, uint64_t size, size_t blocksize);
+int padd_file(int outfd, sqfs_u64 size, size_t blocksize);
 
 SQFS_INTERNAL
-int padd_sqfs(sqfs_file_t *file, uint64_t size, size_t blocksize);
+int padd_sqfs(sqfs_file_t *file, sqfs_u64 size, size_t blocksize);
 
 /*
   Helper for allocating data structures with flexible array members.

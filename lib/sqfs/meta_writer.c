@@ -22,7 +22,7 @@ typedef struct meta_block_t {
 	struct meta_block_t *next;
 
 	/* possibly compressed data with 2 byte header */
-	uint8_t data[SQFS_META_BLOCK_SIZE + 2];
+	sqfs_u8 data[SQFS_META_BLOCK_SIZE + 2];
 } meta_block_t;
 
 struct sqfs_meta_writer_t {
@@ -39,7 +39,7 @@ struct sqfs_meta_writer_t {
 	sqfs_compressor_t *cmp;
 
 	/* The raw data chunk that data is appended to */
-	uint8_t data[SQFS_META_BLOCK_SIZE];
+	sqfs_u8 data[SQFS_META_BLOCK_SIZE];
 
 	int flags;
 	meta_block_t *list;
@@ -48,8 +48,8 @@ struct sqfs_meta_writer_t {
 
 static int write_block(sqfs_file_t *file, meta_block_t *outblk)
 {
-	size_t count = le16toh(((uint16_t *)outblk->data)[0]) & 0x7FFF;
-	uint64_t off = file->get_size(file);
+	size_t count = le16toh(((sqfs_u16 *)outblk->data)[0]) & 0x7FFF;
+	sqfs_u64 off = file->get_size(file);
 
 	return file->write_at(file, off, outblk->data, count + 2);
 }
@@ -107,10 +107,10 @@ int sqfs_meta_writer_flush(sqfs_meta_writer_t *m)
 	}
 
 	if (ret > 0) {
-		((uint16_t *)outblk->data)[0] = htole16(ret);
+		((sqfs_u16 *)outblk->data)[0] = htole16(ret);
 		count = ret + 2;
 	} else {
-		((uint16_t *)outblk->data)[0] = htole16(m->offset | 0x8000);
+		((sqfs_u16 *)outblk->data)[0] = htole16(m->offset | 0x8000);
 		memcpy(outblk->data + 2, m->data, m->offset);
 		count = m->offset + 2;
 	}
@@ -167,8 +167,8 @@ int sqfs_meta_writer_append(sqfs_meta_writer_t *m, const void *data,
 }
 
 void sqfs_meta_writer_get_position(const sqfs_meta_writer_t *m,
-				   uint64_t *block_start,
-				   uint32_t *offset)
+				   sqfs_u64 *block_start,
+				   sqfs_u32 *offset)
 {
 	*block_start = m->block_offset;
 	*offset = m->offset;

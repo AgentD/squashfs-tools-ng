@@ -147,8 +147,8 @@ SQFS_API int sqfs_meta_writer_append(sqfs_meta_writer_t *m, const void *data,
  *               starts.
  */
 SQFS_API void sqfs_meta_writer_get_position(const sqfs_meta_writer_t *m,
-					    uint64_t *block_start,
-					    uint32_t *offset);
+					    sqfs_u64 *block_start,
+					    sqfs_u32 *offset);
 
 /**
  * @brief Reset all internal state, including the current block start position.

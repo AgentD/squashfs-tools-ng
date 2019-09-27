@@ -6,7 +6,7 @@
  */
 #include "rdsquashfs.h"
 
-static void mode_to_str(uint16_t mode, char *p)
+static void mode_to_str(sqfs_u16 mode, char *p)
 {
 	switch (mode & S_IFMT) {
 	case S_IFDIR:  *(p++) = 'd'; break;
@@ -64,7 +64,7 @@ static int count_int_chars(unsigned int i)
 	return count;
 }
 
-static void print_size(uint64_t size, char *buffer)
+static void print_size(sqfs_u64 size, char *buffer)
 {
 	static const char *suffices = "kMGTPEZY";
 	int suffix = -1;
@@ -88,7 +88,7 @@ static void print_node_size(const sqfs_tree_node_t *n, char *buffer)
 		print_size(strlen(n->inode->slink_target), buffer);
 		break;
 	case S_IFREG: {
-		uint64_t size;
+		sqfs_u64 size;
 		sqfs_inode_get_file_size(n->inode, &size);
 		print_size(size, buffer);
 		break;
@@ -102,7 +102,7 @@ static void print_node_size(const sqfs_tree_node_t *n, char *buffer)
 		break;
 	case S_IFBLK:
 	case S_IFCHR: {
-		uint32_t devno;
+		sqfs_u32 devno;
 
 		if (n->inode->base.type == SQFS_INODE_EXT_BDEV ||
 		    n->inode->base.type == SQFS_INODE_EXT_CDEV) {

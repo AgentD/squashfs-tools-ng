@@ -50,7 +50,7 @@ extern "C" {
  */
 SQFS_API int sqfs_write_table(sqfs_file_t *file, sqfs_compressor_t *cmp,
 			      const void *data, size_t table_size,
-			      uint64_t *start);
+			      sqfs_u64 *start);
 
 /**
  * @brief Read a table from a SquashFS filesystem.
@@ -78,8 +78,8 @@ SQFS_API int sqfs_write_table(sqfs_file_t *file, sqfs_compressor_t *cmp,
  * @return Zero on success, an @ref E_SQFS_ERROR value on failure.
  */
 SQFS_API int sqfs_read_table(sqfs_file_t *file, sqfs_compressor_t *cmp,
-			     size_t table_size, uint64_t location,
-			     uint64_t lower_limit, uint64_t upper_limit,
+			     size_t table_size, sqfs_u64 location,
+			     sqfs_u64 lower_limit, sqfs_u64 upper_limit,
 			     void **out);
 
 #ifdef __cplusplus

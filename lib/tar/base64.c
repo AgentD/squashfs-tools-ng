@@ -8,7 +8,7 @@
 
 #include "internal.h"
 
-static uint8_t convert(char in)
+static sqfs_u8 convert(char in)
 {
 	if (isupper(in))
 		return in - 'A';
@@ -23,7 +23,7 @@ static uint8_t convert(char in)
 	return 0;
 }
 
-void base64_decode(uint8_t *out, const char *in)
+void base64_decode(sqfs_u8 *out, const char *in)
 {
 	char temp[4];
 

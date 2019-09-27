@@ -82,7 +82,7 @@ struct sqfs_file_t {
 	 *         that the data structures in libsquashfs that use this return
 	 *         directly to the caller.
 	 */
-	int (*read_at)(sqfs_file_t *file, uint64_t offset,
+	int (*read_at)(sqfs_file_t *file, sqfs_u64 offset,
 		       void *buffer, size_t size);
 
 	/**
@@ -97,7 +97,7 @@ struct sqfs_file_t {
 	 *         that the data structures in libsquashfs that use this return
 	 *         directly to the caller.
 	 */
-	int (*write_at)(sqfs_file_t *file, uint64_t offset,
+	int (*write_at)(sqfs_file_t *file, sqfs_u64 offset,
 			const void *buffer, size_t size);
 
 	/**
@@ -105,7 +105,7 @@ struct sqfs_file_t {
 	 *
 	 * @param file A pointer to the file object.
 	 */
-	uint64_t (*get_size)(const sqfs_file_t *file);
+	sqfs_u64 (*get_size)(const sqfs_file_t *file);
 
 	/**
 	 * @brief Extend or shrink a file to a specified size.
@@ -117,7 +117,7 @@ struct sqfs_file_t {
 	 *         that the data structures in libsquashfs that use this return
 	 *         directly to the caller.
 	 */
-	int (*truncate)(sqfs_file_t *file, uint64_t size);
+	int (*truncate)(sqfs_file_t *file, sqfs_u64 size);
 };
 
 #ifdef __cplusplus

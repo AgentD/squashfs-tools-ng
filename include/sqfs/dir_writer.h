@@ -114,7 +114,7 @@ SQFS_API int sqfs_dir_writer_begin(sqfs_dir_writer_t *writer);
  */
 SQFS_API int sqfs_dir_writer_add_entry(sqfs_dir_writer_t *writer,
 				       const char *name,
-				       uint32_t inode_num, uint64_t inode_ref,
+				       sqfs_u32 inode_num, sqfs_u64 inode_ref,
 				       mode_t mode);
 
 /**
@@ -173,7 +173,7 @@ size_t sqfs_dir_writer_get_entry_count(const sqfs_dir_writer_t *writer);
  * @return A meta data reference, i.e. bits 16 to 48 contain the block start
  *         and the lower 16 bit an offset into the uncompressed block.
  */
-SQFS_API uint64_t
+SQFS_API sqfs_u64
 sqfs_dir_writer_get_dir_reference(const sqfs_dir_writer_t *writer);
 
 /**
@@ -228,7 +228,7 @@ SQFS_API int sqfs_dir_writer_write_index(const sqfs_dir_writer_t *writer,
  */
 SQFS_API sqfs_inode_generic_t
 *sqfs_dir_writer_create_inode(const sqfs_dir_writer_t *writer, size_t hlinks,
-			      uint32_t xattr, uint32_t parent_ino);
+			      sqfs_u32 xattr, sqfs_u32 parent_ino);
 
 #ifdef __cplusplus
 }

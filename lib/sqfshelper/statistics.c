@@ -37,7 +37,7 @@ static void pre_fragment_store(void *user, sqfs_block_t *block)
 	stats->frag_count += 1;
 }
 
-static void notify_blocks_erased(void *user, size_t count, uint64_t bytes)
+static void notify_blocks_erased(void *user, size_t count, sqfs_u64 bytes)
 {
 	data_writer_stats_t *stats = user;
 

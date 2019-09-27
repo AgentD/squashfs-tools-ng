@@ -28,20 +28,20 @@
 
 
 #define MK_BLK_HASH(chksum, size) \
-	(((uint64_t)(size) << 32) | (uint64_t)(chksum))
+	(((sqfs_u64)(size) << 32) | (sqfs_u64)(chksum))
 
 #define INIT_BLOCK_COUNT (128)
 
 
 typedef struct {
-	uint64_t offset;
-	uint64_t hash;
+	sqfs_u64 offset;
+	sqfs_u64 hash;
 } blk_info_t;
 
 typedef struct {
-	uint32_t index;
-	uint32_t offset;
-	uint64_t hash;
+	sqfs_u32 index;
+	sqfs_u32 offset;
+	sqfs_u64 hash;
 } frag_info_t;
 
 
@@ -50,7 +50,7 @@ typedef struct {
 	sqfs_data_writer_t *shared;
 	sqfs_compressor_t *cmp;
 	pthread_t thread;
-	uint8_t scratch[];
+	sqfs_u8 scratch[];
 } compress_worker_t;
 #endif
 
@@ -71,8 +71,8 @@ struct sqfs_data_writer_t {
 	int status;
 
 	/* used by main thread only */
-	uint32_t enqueue_id;
-	uint32_t dequeue_id;
+	sqfs_u32 enqueue_id;
+	sqfs_u32 dequeue_id;
 
 	unsigned int num_workers;
 	size_t max_backlog;
@@ -84,7 +84,7 @@ struct sqfs_data_writer_t {
 	size_t num_fragments;
 	size_t max_fragments;
 
-	uint64_t start;
+	sqfs_u64 start;
 
 	size_t file_start;
 	size_t num_blocks;
@@ -103,7 +103,7 @@ struct sqfs_data_writer_t {
 	/* file API */
 	sqfs_inode_generic_t *inode;
 	sqfs_block_t *blk_current;
-	uint32_t blk_flags;
+	sqfs_u32 blk_flags;
 	size_t blk_index;
 
 	/* used only by workers */
@@ -112,7 +112,7 @@ struct sqfs_data_writer_t {
 #ifdef WITH_PTHREAD
 	compress_worker_t *workers[];
 #else
-	uint8_t scratch[];
+	sqfs_u8 scratch[];
 #endif
 };
 
@@ -141,7 +141,7 @@ sqfs_block_t *data_writer_next_work_item(sqfs_data_writer_t *proc);
 
 SQFS_INTERNAL
 int data_writer_do_block(sqfs_block_t *block, sqfs_compressor_t *cmp,
-			 uint8_t *scratch, size_t scratch_size);
+			 sqfs_u8 *scratch, size_t scratch_size);
 
 SQFS_INTERNAL
 int test_and_set_status(sqfs_data_writer_t *proc, int status);

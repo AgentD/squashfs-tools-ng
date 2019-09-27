@@ -22,8 +22,8 @@ typedef struct {
 } lz4_compressor_t;
 
 typedef struct {
-	uint32_t version;
-	uint32_t flags;
+	sqfs_u32 version;
+	sqfs_u32 flags;
 } lz4_options;
 
 #define LZ4LEGACY 1
@@ -59,8 +59,8 @@ static int lz4_read_options(sqfs_compressor_t *base, sqfs_file_t *file)
 	return 0;
 }
 
-static ssize_t lz4_comp_block(sqfs_compressor_t *base, const uint8_t *in,
-			      size_t size, uint8_t *out, size_t outsize)
+static ssize_t lz4_comp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
+			      size_t size, sqfs_u8 *out, size_t outsize)
 {
 	lz4_compressor_t *lz4 = (lz4_compressor_t *)base;
 	int ret;
@@ -79,8 +79,8 @@ static ssize_t lz4_comp_block(sqfs_compressor_t *base, const uint8_t *in,
 	return ret;
 }
 
-static ssize_t lz4_uncomp_block(sqfs_compressor_t *base, const uint8_t *in,
-				size_t size, uint8_t *out, size_t outsize)
+static ssize_t lz4_uncomp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
+				size_t size, sqfs_u8 *out, size_t outsize)
 {
 	int ret;
 	(void)base;

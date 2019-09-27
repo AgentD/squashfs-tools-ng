@@ -56,7 +56,7 @@ static int create_node(const sqfs_tree_node_t *n, int flags)
 		break;
 	case S_IFBLK:
 	case S_IFCHR: {
-		uint32_t devno;
+		sqfs_u32 devno;
 
 		if (n->inode->base.type == SQFS_INODE_EXT_BDEV ||
 		    n->inode->base.type == SQFS_INODE_EXT_CDEV) {
@@ -97,7 +97,7 @@ static int set_xattr(sqfs_xattr_reader_t *xattr, const sqfs_tree_node_t *n)
 	sqfs_xattr_value_t *value;
 	sqfs_xattr_entry_t *key;
 	sqfs_xattr_id_t desc;
-	uint32_t index;
+	sqfs_u32 index;
 	size_t i;
 	int ret;
 

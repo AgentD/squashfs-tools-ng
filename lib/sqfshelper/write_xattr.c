@@ -48,11 +48,11 @@ static int write_key(sqfs_meta_writer_t *mw, const char *key,
 }
 
 static int write_value(sqfs_meta_writer_t *mw, const char *value,
-		       tree_xattr_t *xattr, uint64_t *value_ref_out)
+		       tree_xattr_t *xattr, sqfs_u64 *value_ref_out)
 {
 	sqfs_xattr_value_t vent;
-	uint32_t offset;
-	uint64_t block;
+	sqfs_u32 offset;
+	sqfs_u64 block;
 
 	sqfs_meta_writer_get_position(mw, &block, &offset);
 	*value_ref_out = (block << 16) | (offset & 0xFFFF);
@@ -69,11 +69,11 @@ static int write_value(sqfs_meta_writer_t *mw, const char *value,
 	return 0;
 }
 
-static int write_value_ool(sqfs_meta_writer_t *mw, uint64_t location,
+static int write_value_ool(sqfs_meta_writer_t *mw, sqfs_u64 location,
 			   tree_xattr_t *xattr)
 {
 	sqfs_xattr_value_t vent;
-	uint64_t ref;
+	sqfs_u64 ref;
 
 	vent.size = htole32(sizeof(location));
 	if (sqfs_meta_writer_append(mw, &vent, sizeof(vent)))
@@ -109,15 +109,15 @@ static bool should_store_ool(fstree_t *fs, const char *value, size_t index)
 	   Note that this only holds iff refcount - 1 != 0, i.e. refcount > 1,
 	   otherwise we would be dividing by 0 in the 3rd step.
 	 */
-	return strlen(value) > sizeof(uint64_t);
+	return strlen(value) > sizeof(sqfs_u64);
 }
 
 static int write_kv_pairs(fstree_t *fs, sqfs_meta_writer_t *mw,
-			  tree_xattr_t *xattr, uint64_t *ool_locations)
+			  tree_xattr_t *xattr, sqfs_u64 *ool_locations)
 {
-	uint32_t key_idx, val_idx;
+	sqfs_u32 key_idx, val_idx;
 	const char *key, *value;
-	uint64_t ref;
+	sqfs_u64 ref;
 	size_t i;
 
 	for (i = 0; i < xattr->num_attr; ++i) {
@@ -148,12 +148,12 @@ static int write_kv_pairs(fstree_t *fs, sqfs_meta_writer_t *mw,
 	return 0;
 }
 
-static uint64_t *create_ool_locations_table(fstree_t *fs)
+static sqfs_u64 *create_ool_locations_table(fstree_t *fs)
 {
-	uint64_t *table;
+	sqfs_u64 *table;
 	size_t i;
 
-	table = alloc_array(sizeof(uint64_t), fs->xattr_values.num_strings);
+	table = alloc_array(sizeof(sqfs_u64), fs->xattr_values.num_strings);
 
 	if (table == NULL) {
 		perror("allocating Xattr OOL locations table");
@@ -170,13 +170,13 @@ static uint64_t *create_ool_locations_table(fstree_t *fs)
 int write_xattr(sqfs_file_t *file, fstree_t *fs, sqfs_super_t *super,
 		sqfs_compressor_t *cmp)
 {
-	uint64_t kv_start, id_start, block, off, *tbl, *ool_locations;
+	sqfs_u64 kv_start, id_start, block, off, *tbl, *ool_locations;
 	size_t i = 0, count = 0, blocks;
 	sqfs_xattr_id_table_t idtbl;
 	sqfs_xattr_id_t id_ent;
 	sqfs_meta_writer_t *mw;
 	tree_xattr_t *it;
-	uint32_t offset;
+	sqfs_u32 offset;
 
 	if (fs->xattr == NULL)
 		return 0;
@@ -213,7 +213,7 @@ int write_xattr(sqfs_file_t *file, fstree_t *fs, sqfs_super_t *super,
 	if ((count * sizeof(id_ent)) % SQFS_META_BLOCK_SIZE)
 		++blocks;
 
-	tbl = alloc_array(sizeof(uint64_t), blocks);
+	tbl = alloc_array(sizeof(sqfs_u64), blocks);
 
 	if (tbl == NULL) {
 		perror("generating xattr ID table");

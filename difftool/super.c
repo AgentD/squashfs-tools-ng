@@ -7,7 +7,7 @@
 #include "sqfsdiff.h"
 
 static const struct {
-	uint16_t mask;
+	sqfs_u16 mask;
 	const char *name;
 } sqfs_flags[] = {
 	{ SQFS_FLAG_UNCOMPRESSED_INODES, "uncompressed inodes" },
@@ -23,9 +23,9 @@ static const struct {
 	{ SQFS_FLAG_UNCOMPRESSED_IDS, "uncompressed ids" },
 };
 
-static void print_value_difference(const char *name, uint64_t a, uint64_t b)
+static void print_value_difference(const char *name, sqfs_u64 a, sqfs_u64 b)
 {
-	uint64_t diff;
+	sqfs_u64 diff;
 	char c;
 
 	if (a != b) {
@@ -41,15 +41,15 @@ static void print_value_difference(const char *name, uint64_t a, uint64_t b)
 	}
 }
 
-static void print_offset_diff(const char *name, uint64_t a, uint64_t b)
+static void print_offset_diff(const char *name, sqfs_u64 a, sqfs_u64 b)
 {
 	if (a != b)
 		fprintf(stdout, "Location of %s differs\n", name);
 }
 
-static void print_flag_diff(uint16_t a, uint16_t b)
+static void print_flag_diff(sqfs_u16 a, sqfs_u16 b)
 {
-	uint16_t diff = a ^ b, mask;
+	sqfs_u16 diff = a ^ b, mask;
 	size_t i;
 	char c;
 

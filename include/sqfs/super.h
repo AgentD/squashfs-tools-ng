@@ -45,12 +45,12 @@ struct sqfs_super_t {
 	/**
 	 * @brief Magic number. Must be set to SQFS_MAGIC.
 	 */
-	uint32_t magic;
+	sqfs_u32 magic;
 
 	/**
 	 * @brief Total number of inodes.
 	 */
-	uint32_t inode_count;
+	sqfs_u32 inode_count;
 
 	/**
 	 * @brief Last time the filesystem was modified.
@@ -59,55 +59,55 @@ struct sqfs_super_t {
 	 * Jan 1 1970 UTC. This field is unsigned, so it expires in the year
 	 * 2106 (as opposed to 2038).
 	 */
-	uint32_t modification_time;
+	sqfs_u32 modification_time;
 
 	/**
 	 * @brief The data block size in bytes.
 	 *
 	 * Must be a power of 2, no less than 4k and not larger than 1M.
 	 */
-	uint32_t block_size;
+	sqfs_u32 block_size;
 
 	/**
 	 * @brief The number of fragment blocks in the data area.
 	 */
-	uint32_t fragment_entry_count;
+	sqfs_u32 fragment_entry_count;
 
 	/**
 	 * @brief Identifies the compressor that has been used.
 	 *
 	 * Valid identifiers are in the @ref E_SQFS_COMPRESSOR enum.
 	 */
-	uint16_t compression_id;
+	sqfs_u16 compression_id;
 
 	/**
 	 * @brief The log2 of the block_size field for sanity checking
 	 *
 	 * Must be no less than 12 and not larger than 20.
 	 */
-	uint16_t block_log;
+	sqfs_u16 block_log;
 
 	/**
 	 * @brief A combination of @ref E_SQFS_SUPER_FLAGS flags
 	 *
 	 * Most of the flags that can be set here are informative only.
 	 */
-	uint16_t flags;
+	sqfs_u16 flags;
 
 	/**
 	 * @brief The total number of unique user or group IDs.
 	 */
-	uint16_t id_count;
+	sqfs_u16 id_count;
 
 	/**
 	 * @brief Must be @ref SQFS_VERSION_MAJOR
 	 */
-	uint16_t version_major;
+	sqfs_u16 version_major;
 
 	/**
 	 * @brief Must be @ref SQFS_VERSION_MINOR
 	 */
-	uint16_t version_minor;
+	sqfs_u16 version_minor;
 
 	/**
 	 * @brief A reference to the root inode
@@ -116,12 +116,12 @@ struct sqfs_super_t {
 	 * to get the location of the meta data block containing the inode.
 	 * The lower 16 bits hold a byte offset into the uncompressed block.
 	 */
-	uint64_t root_inode_ref;
+	sqfs_u64 root_inode_ref;
 
 	/**
 	 * @brief Total size of the file system in bytes, not counting padding
 	 */
-	uint64_t bytes_used;
+	sqfs_u64 bytes_used;
 
 	/**
 	 * @brief On-disk location of the ID table
@@ -130,7 +130,7 @@ struct sqfs_super_t {
 	 * (if present) after the export and fragment tables, but before the
 	 * xattr table.
 	 */
-	uint64_t id_table_start;
+	sqfs_u64 id_table_start;
 
 	/**
 	 * @brief On-disk location of the extended attribute table (if present)
@@ -141,7 +141,7 @@ struct sqfs_super_t {
 	 * This value must either point to a location after the ID table, or
 	 * it must be set to 0xFFFFFFFF to indicate the table is not present.
 	 */
-	uint64_t xattr_id_table_start;
+	sqfs_u64 xattr_id_table_start;
 
 	/**
 	 * @brief On-disk location of the first meta data block containing
@@ -149,7 +149,7 @@ struct sqfs_super_t {
 	 *
 	 * This value must point to a location before the directory table.
 	 */
-	uint64_t inode_table_start;
+	sqfs_u64 inode_table_start;
 
 	/**
 	 * @brief On-disk location of the first meta data block containing
@@ -158,7 +158,7 @@ struct sqfs_super_t {
 	 * This value must point to a location after the inode table but
 	 * before the fragment, export, ID and xattr tables.
 	 */
-	uint64_t directory_table_start;
+	sqfs_u64 directory_table_start;
 
 	/**
 	 * @brief On-disk location of the fragment table (if present)
@@ -167,7 +167,7 @@ struct sqfs_super_t {
 	 * table, but before the export, ID and xattr tables, or it must be
 	 * set to 0xFFFFFFFF to indicate that the table is not present.
 	 */
-	uint64_t fragment_table_start;
+	sqfs_u64 fragment_table_start;
 
 	/**
 	 * @brief On-disk location of the export table (if present)
@@ -177,7 +177,7 @@ struct sqfs_super_t {
 	 * or it must be set to 0xFFFFFFFF to indicate that the table is not
 	 * present.
 	 */
-	uint64_t export_table_start;
+	sqfs_u64 export_table_start;
 };
 
 /**
@@ -287,7 +287,7 @@ extern "C" {
  *         fields does not hold a valid value.
  */
 SQFS_API int sqfs_super_init(sqfs_super_t *super, size_t block_size,
-			     uint32_t mtime,
+			     sqfs_u32 mtime,
 			     E_SQFS_COMPRESSOR compressor);
 
 /**

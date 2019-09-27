@@ -83,8 +83,8 @@ struct sqfs_compressor_t {
 	 *         the output buffer was too small when extracting or that
 	 *         the result is larger than the input when compressing.
 	 */
-	ssize_t (*do_block)(sqfs_compressor_t *cmp, const uint8_t *in,
-			    size_t size, uint8_t *out, size_t outsize);
+	ssize_t (*do_block)(sqfs_compressor_t *cmp, const sqfs_u8 *in,
+			    size_t size, sqfs_u8 *out, size_t outsize);
 
 	/**
 	 * @brief Create an exact copt of agiven compressor
@@ -105,17 +105,17 @@ struct sqfs_compressor_config_t {
 	/**
 	 * @brief An @ref E_SQFS_COMPRESSOR identifier
 	 */
-	uint16_t id;
+	sqfs_u16 id;
 
 	/**
 	 * @brief A combination of @ref SQFS_COMP_FLAG flags.
 	 */
-	uint16_t flags;
+	sqfs_u16 flags;
 
 	/**
 	 * @brief The intended data block size.
 	 */
-	uint32_t block_size;
+	sqfs_u32 block_size;
 
 	/**
 	 * @brief Backend specific options for fine tuing.
@@ -130,14 +130,14 @@ struct sqfs_compressor_config_t {
 			 *
 			 * Default is 9, i.e. best compression.
 			 */
-			uint16_t level;
+			sqfs_u16 level;
 
 			/**
 			 * @brief Deflate window size. Value between 8 and 15.
 			 *
 			 * Default is 15, i.e. 32k window.
 			 */
-			uint16_t window_size;
+			sqfs_u16 window_size;
 		} gzip;
 
 		/**
@@ -149,7 +149,7 @@ struct sqfs_compressor_config_t {
 			 *
 			 * Default is 15.
 			 */
-			uint16_t level;
+			sqfs_u16 level;
 		} zstd;
 
 		/**
@@ -162,7 +162,7 @@ struct sqfs_compressor_config_t {
 			 * An @ref SQFS_LZO_ALGORITHM value. Default is
 			 * @ref SQFS_LZO1X_999, i.e. best compression.
 			 */
-			uint16_t algorithm;
+			sqfs_u16 algorithm;
 
 			/**
 			 * @brief Compression level for @ref SQFS_LZO1X_999.
@@ -173,7 +173,7 @@ struct sqfs_compressor_config_t {
 			 *
 			 * Defaults to 9, i.e. best compression.
 			 */
-			uint16_t level;
+			sqfs_u16 level;
 		} lzo;
 
 		/**
@@ -189,7 +189,7 @@ struct sqfs_compressor_config_t {
 			 * Default is setting this to the same as the
 			 * block size.
 			 */
-			uint32_t dict_size;
+			sqfs_u32 dict_size;
 		} xz;
 	} opt;
 };
@@ -324,7 +324,7 @@ extern "C" {
  */
 SQFS_API int sqfs_compressor_config_init(sqfs_compressor_config_t *cfg,
 					 E_SQFS_COMPRESSOR id,
-					 size_t block_size, uint16_t flags);
+					 size_t block_size, sqfs_u16 flags);
 
 /**
  * @brief Check if a specified compressor implementation is available.

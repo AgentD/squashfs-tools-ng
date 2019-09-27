@@ -22,9 +22,9 @@
 
 typedef struct dir_entry_t {
 	struct dir_entry_t *next;
-	uint64_t inode_ref;
-	uint32_t inode_num;
-	uint16_t type;
+	sqfs_u64 inode_ref;
+	sqfs_u32 inode_num;
+	sqfs_u16 type;
 	size_t name_len;
 	char name[];
 } dir_entry_t;
@@ -32,8 +32,8 @@ typedef struct dir_entry_t {
 typedef struct index_ent_t {
 	struct index_ent_t *next;
 	dir_entry_t *ent;
-	uint64_t block;
-	uint32_t index;
+	sqfs_u64 block;
+	sqfs_u32 index;
 } index_ent_t;
 
 struct sqfs_dir_writer_t {
@@ -43,7 +43,7 @@ struct sqfs_dir_writer_t {
 	index_ent_t *idx;
 	index_ent_t *idx_end;
 
-	uint64_t dir_ref;
+	sqfs_u64 dir_ref;
 	size_t dir_size;
 	size_t idx_size;
 	size_t ent_count;
@@ -109,8 +109,8 @@ void sqfs_dir_writer_destroy(sqfs_dir_writer_t *writer)
 
 int sqfs_dir_writer_begin(sqfs_dir_writer_t *writer)
 {
-	uint32_t offset;
-	uint64_t block;
+	sqfs_u32 offset;
+	sqfs_u64 block;
 
 	writer_reset(writer);
 
@@ -120,7 +120,7 @@ int sqfs_dir_writer_begin(sqfs_dir_writer_t *writer)
 }
 
 int sqfs_dir_writer_add_entry(sqfs_dir_writer_t *writer, const char *name,
-			      uint32_t inode_num, uint64_t inode_ref,
+			      sqfs_u32 inode_num, sqfs_u64 inode_ref,
 			      mode_t mode)
 {
 	dir_entry_t *ent;
@@ -152,11 +152,11 @@ int sqfs_dir_writer_add_entry(sqfs_dir_writer_t *writer, const char *name,
 	return 0;
 }
 
-static size_t get_conseq_entry_count(uint32_t offset, dir_entry_t *head)
+static size_t get_conseq_entry_count(sqfs_u32 offset, dir_entry_t *head)
 {
 	size_t size, count = 0;
 	dir_entry_t *it;
-	int32_t diff;
+	sqfs_s32 diff;
 
 	size = (offset + sizeof(sqfs_dir_header_t)) % SQFS_META_BLOCK_SIZE;
 
@@ -184,7 +184,7 @@ static size_t get_conseq_entry_count(uint32_t offset, dir_entry_t *head)
 }
 
 static int add_header(sqfs_dir_writer_t *writer, size_t count,
-		      dir_entry_t *ref, uint64_t block)
+		      dir_entry_t *ref, sqfs_u64 block)
 {
 	sqfs_dir_header_t hdr;
 	index_ent_t *idx;
@@ -222,10 +222,10 @@ int sqfs_dir_writer_end(sqfs_dir_writer_t *writer)
 {
 	dir_entry_t *it, *first;
 	sqfs_dir_entry_t ent;
-	uint16_t *diff_u16;
+	sqfs_u16 *diff_u16;
 	size_t i, count;
-	uint32_t offset;
-	uint64_t block;
+	sqfs_u32 offset;
+	sqfs_u64 block;
 	int err;
 
 	for (it = writer->list; it != NULL; ) {
@@ -244,7 +244,7 @@ int sqfs_dir_writer_end(sqfs_dir_writer_t *writer)
 			ent.type = htole16(it->type);
 			ent.size = htole16(it->name_len - 1);
 
-			diff_u16 = (uint16_t *)&ent.inode_diff;
+			diff_u16 = (sqfs_u16 *)&ent.inode_diff;
 			*diff_u16 = htole16(*diff_u16);
 
 			err = sqfs_meta_writer_append(writer->dm, &ent,
@@ -269,7 +269,7 @@ size_t sqfs_dir_writer_get_size(const sqfs_dir_writer_t *writer)
 	return writer->dir_size;
 }
 
-uint64_t sqfs_dir_writer_get_dir_reference(const sqfs_dir_writer_t *writer)
+sqfs_u64 sqfs_dir_writer_get_dir_reference(const sqfs_dir_writer_t *writer)
 {
 	return writer->dir_ref;
 }
@@ -286,12 +286,12 @@ size_t sqfs_dir_writer_get_entry_count(const sqfs_dir_writer_t *writer)
 
 sqfs_inode_generic_t
 *sqfs_dir_writer_create_inode(const sqfs_dir_writer_t *writer,
-			      size_t hlinks, uint32_t xattr,
-			      uint32_t parent_ino)
+			      size_t hlinks, sqfs_u32 xattr,
+			      sqfs_u32 parent_ino)
 {
 	sqfs_inode_generic_t *inode;
-	uint64_t start_block;
-	uint16_t block_offset;
+	sqfs_u64 start_block;
+	sqfs_u16 block_offset;
 
 	inode = calloc(1, sizeof(*inode));
 	if (inode == NULL)

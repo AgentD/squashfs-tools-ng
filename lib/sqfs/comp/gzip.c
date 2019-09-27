@@ -16,9 +16,9 @@
 #include "internal.h"
 
 typedef struct {
-	uint32_t level;
-	uint16_t window;
-	uint16_t strategies;
+	sqfs_u32 level;
+	sqfs_u16 window;
+	sqfs_u16 strategies;
 } gzip_options_t;
 
 typedef struct {
@@ -106,8 +106,8 @@ static int flag_to_zlib_strategy(int flag)
 	return 0;
 }
 
-static int find_strategy(gzip_compressor_t *gzip, const uint8_t *in,
-			 size_t size, uint8_t *out, size_t outsize)
+static int find_strategy(gzip_compressor_t *gzip, const sqfs_u8 *in,
+			 size_t size, sqfs_u8 *out, size_t outsize)
 {
 	int ret, strategy, selected = Z_DEFAULT_STRATEGY;
 	size_t i, length, minlength = 0;
@@ -148,8 +148,8 @@ static int find_strategy(gzip_compressor_t *gzip, const uint8_t *in,
 	return selected;
 }
 
-static ssize_t gzip_do_block(sqfs_compressor_t *base, const uint8_t *in,
-			     size_t size, uint8_t *out, size_t outsize)
+static ssize_t gzip_do_block(sqfs_compressor_t *base, const sqfs_u8 *in,
+			     size_t size, sqfs_u8 *out, size_t outsize)
 {
 	gzip_compressor_t *gzip = (gzip_compressor_t *)base;
 	int ret, strategy = 0;

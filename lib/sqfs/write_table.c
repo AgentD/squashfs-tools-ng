@@ -19,10 +19,10 @@
 #include <stdlib.h>
 
 int sqfs_write_table(sqfs_file_t *file, sqfs_compressor_t *cmp,
-		     const void *data, size_t table_size, uint64_t *start)
+		     const void *data, size_t table_size, sqfs_u64 *start)
 {
 	size_t block_count, list_size, diff, blkidx = 0;
-	uint64_t off, *locations;
+	sqfs_u64 off, *locations;
 	sqfs_meta_writer_t *m;
 	int ret;
 
@@ -30,7 +30,7 @@ int sqfs_write_table(sqfs_file_t *file, sqfs_compressor_t *cmp,
 	if ((table_size % SQFS_META_BLOCK_SIZE) != 0)
 		++block_count;
 
-	locations = alloc_array(sizeof(uint64_t), block_count);
+	locations = alloc_array(sizeof(sqfs_u64), block_count);
 
 	if (locations == NULL)
 		return SQFS_ERROR_ALLOC;
@@ -64,7 +64,7 @@ int sqfs_write_table(sqfs_file_t *file, sqfs_compressor_t *cmp,
 	/* write location list */
 	*start = file->get_size(file);
 
-	list_size = sizeof(uint64_t) * block_count;
+	list_size = sizeof(sqfs_u64) * block_count;
 
 	off = file->get_size(file);
 

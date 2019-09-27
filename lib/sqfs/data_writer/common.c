@@ -99,7 +99,7 @@ sqfs_block_t *data_writer_next_work_item(sqfs_data_writer_t *proc)
 }
 
 int data_writer_do_block(sqfs_block_t *block, sqfs_compressor_t *cmp,
-			 uint8_t *scratch, size_t scratch_size)
+			 sqfs_u8 *scratch, size_t scratch_size)
 {
 	ssize_t ret;
 
@@ -132,7 +132,7 @@ int data_writer_do_block(sqfs_block_t *block, sqfs_compressor_t *cmp,
 int sqfs_data_writer_write_fragment_table(sqfs_data_writer_t *proc,
 					  sqfs_super_t *super)
 {
-	uint64_t start;
+	sqfs_u64 start;
 	size_t size;
 	int ret;
 

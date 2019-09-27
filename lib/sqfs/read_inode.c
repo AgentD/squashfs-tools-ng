@@ -61,10 +61,10 @@ static int set_mode(sqfs_inode_t *inode)
 	return 0;
 }
 
-static uint64_t get_block_count(uint64_t size, uint64_t block_size,
-				uint32_t frag_index, uint32_t frag_offset)
+static sqfs_u64 get_block_count(sqfs_u64 size, sqfs_u64 block_size,
+				sqfs_u32 frag_index, sqfs_u32 frag_offset)
 {
-	uint64_t count = size / block_size;
+	sqfs_u64 count = size / block_size;
 
 	if ((size % block_size) != 0 &&
 	    (frag_index == 0xFFFFFFFF || frag_offset == 0xFFFFFFFF)) {
@@ -79,7 +79,7 @@ static int read_inode_file(sqfs_meta_reader_t *ir, sqfs_inode_t *base,
 {
 	sqfs_inode_generic_t *out;
 	sqfs_inode_file_t file;
-	uint64_t i, count;
+	sqfs_u64 i, count;
 	int err;
 
 	err = sqfs_meta_reader_read(ir, &file, sizeof(file));
@@ -94,17 +94,17 @@ static int read_inode_file(sqfs_meta_reader_t *ir, sqfs_inode_t *base,
 	count = get_block_count(file.file_size, block_size,
 				file.fragment_index, file.fragment_offset);
 
-	out = alloc_flex(sizeof(*out), sizeof(uint32_t), count);
+	out = alloc_flex(sizeof(*out), sizeof(sqfs_u32), count);
 	if (out == NULL)
 		return SQFS_ERROR_ALLOC;
 
 	out->base = *base;
 	out->data.file = file;
-	out->block_sizes = (uint32_t *)out->extra;
+	out->block_sizes = (sqfs_u32 *)out->extra;
 	out->num_file_blocks = count;
 
 	err = sqfs_meta_reader_read(ir, out->block_sizes,
-				    count * sizeof(uint32_t));
+				    count * sizeof(sqfs_u32));
 	if (err) {
 		free(out);
 		return err;
@@ -122,7 +122,7 @@ static int read_inode_file_ext(sqfs_meta_reader_t *ir, sqfs_inode_t *base,
 {
 	sqfs_inode_file_ext_t file;
 	sqfs_inode_generic_t *out;
-	uint64_t i, count;
+	sqfs_u64 i, count;
 	int err;
 
 	err = sqfs_meta_reader_read(ir, &file, sizeof(file));
@@ -140,7 +140,7 @@ static int read_inode_file_ext(sqfs_meta_reader_t *ir, sqfs_inode_t *base,
 	count = get_block_count(file.file_size, block_size,
 				file.fragment_idx, file.fragment_offset);
 
-	out = alloc_flex(sizeof(*out), sizeof(uint32_t), count);
+	out = alloc_flex(sizeof(*out), sizeof(sqfs_u32), count);
 	if (out == NULL) {
 		return errno == EOVERFLOW ? SQFS_ERROR_OVERFLOW :
 			SQFS_ERROR_ALLOC;
@@ -148,11 +148,11 @@ static int read_inode_file_ext(sqfs_meta_reader_t *ir, sqfs_inode_t *base,
 
 	out->base = *base;
 	out->data.file_ext = file;
-	out->block_sizes = (uint32_t *)out->extra;
+	out->block_sizes = (sqfs_u32 *)out->extra;
 	out->num_file_blocks = count;
 
 	err = sqfs_meta_reader_read(ir, out->block_sizes,
-				    count * sizeof(uint32_t));
+				    count * sizeof(sqfs_u32));
 	if (err) {
 		free(out);
 		return err;
@@ -206,7 +206,7 @@ static int read_inode_slink(sqfs_meta_reader_t *ir, sqfs_inode_t *base,
 static int read_inode_slink_ext(sqfs_meta_reader_t *ir, sqfs_inode_t *base,
 				sqfs_inode_generic_t **result)
 {
-	uint32_t xattr;
+	sqfs_u32 xattr;
 	int err;
 
 	err = read_inode_slink(ir, base, result);
@@ -225,7 +225,7 @@ static int read_inode_slink_ext(sqfs_meta_reader_t *ir, sqfs_inode_t *base,
 
 int sqfs_meta_reader_read_inode(sqfs_meta_reader_t *ir,
 				const sqfs_super_t *super,
-				uint64_t block_start, size_t offset,
+				sqfs_u64 block_start, size_t offset,
 				sqfs_inode_generic_t **result)
 {
 	sqfs_inode_generic_t *out;

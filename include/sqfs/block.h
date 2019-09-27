@@ -44,17 +44,17 @@ struct sqfs_fragment_t {
 	/**
 	 * @brief Location of the fragment block on-disk.
 	 */
-	uint64_t start_offset;
+	sqfs_u64 start_offset;
 
 	/**
 	 * @brief Size of the fragment block in bytes.
 	 */
-	uint32_t size;
+	sqfs_u32 size;
 
 	/**
 	 * @brief Unused. Always initialize this to 0.
 	 */
-	uint32_t pad0;
+	sqfs_u32 pad0;
 };
 
 /**
@@ -132,22 +132,22 @@ struct sqfs_block_t {
 	 * @brief Used internally, existing value is ignored and overwritten
 	 *        when enqueueing a block.
 	 */
-	uint32_t sequence_number;
+	sqfs_u32 sequence_number;
 
 	/**
 	 * @brief Size of the data area.
 	 */
-	uint32_t size;
+	sqfs_u32 size;
 
 	/**
 	 * @brief Checksum of the input data.
 	 */
-	uint32_t checksum;
+	sqfs_u32 checksum;
 
 	/**
 	 * @brief Data block index within the inode.
 	 */
-	uint32_t index;
+	sqfs_u32 index;
 
 	/**
 	 * @brief The squashfs inode related to this block.
@@ -160,12 +160,12 @@ struct sqfs_block_t {
 	 * A combination of @ref E_SQFS_BLK_FLAGS and custom, user
 	 * settable flags.
 	 */
-	uint32_t flags;
+	sqfs_u32 flags;
 
 	/**
 	 * @brief Raw data to be processed.
 	 */
-	uint8_t data[];
+	sqfs_u8 data[];
 };
 
 #endif /* SQFS_BLOCK_H */

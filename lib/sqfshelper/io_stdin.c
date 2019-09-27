@@ -19,8 +19,8 @@ typedef struct {
 	sqfs_file_t base;
 
 	const sparse_map_t *map;
-	uint64_t offset;
-	uint64_t size;
+	sqfs_u64 offset;
+	sqfs_u64 size;
 } sqfs_file_stdin_t;
 
 
@@ -29,13 +29,13 @@ static void stdin_destroy(sqfs_file_t *base)
 	free(base);
 }
 
-static int stdin_read_at(sqfs_file_t *base, uint64_t offset,
+static int stdin_read_at(sqfs_file_t *base, sqfs_u64 offset,
 			 void *buffer, size_t size)
 {
 	sqfs_file_stdin_t *file = (sqfs_file_stdin_t *)base;
 	size_t temp_size = 0;
-	uint8_t *temp = NULL;
-	uint64_t diff;
+	sqfs_u8 *temp = NULL;
+	sqfs_u64 diff;
 	ssize_t ret;
 
 	if (offset < file->offset)
@@ -52,7 +52,7 @@ static int stdin_read_at(sqfs_file_t *base, uint64_t offset,
 	while (size > 0) {
 		if (offset > file->offset) {
 			diff = file->offset - offset;
-			diff = diff > (uint64_t)temp_size ? temp_size : diff;
+			diff = diff > (sqfs_u64)temp_size ? temp_size : diff;
 
 			ret = read(STDIN_FILENO, temp, diff);
 		} else {
@@ -80,11 +80,11 @@ static int stdin_read_at(sqfs_file_t *base, uint64_t offset,
 	return 0;
 }
 
-static int stdin_read_condensed(sqfs_file_t *base, uint64_t offset,
+static int stdin_read_condensed(sqfs_file_t *base, sqfs_u64 offset,
 				void *buffer, size_t size)
 {
 	sqfs_file_stdin_t *file = (sqfs_file_stdin_t *)base;
-	uint64_t poffset = 0, src_start;
+	sqfs_u64 poffset = 0, src_start;
 	size_t dst_start, diff, count;
 	const sparse_map_t *it;
 	int err;
@@ -134,25 +134,25 @@ static int stdin_read_condensed(sqfs_file_t *base, uint64_t offset,
 	return 0;
 }
 
-static int stdin_write_at(sqfs_file_t *base, uint64_t offset,
+static int stdin_write_at(sqfs_file_t *base, sqfs_u64 offset,
 			  const void *buffer, size_t size)
 {
 	(void)base; (void)offset; (void)buffer; (void)size;
 	return SQFS_ERROR_IO;
 }
 
-static uint64_t stdin_get_size(const sqfs_file_t *base)
+static sqfs_u64 stdin_get_size(const sqfs_file_t *base)
 {
 	return ((const sqfs_file_stdin_t *)base)->size;
 }
 
-static int stdin_truncate(sqfs_file_t *base, uint64_t size)
+static int stdin_truncate(sqfs_file_t *base, sqfs_u64 size)
 {
 	(void)base; (void)size;
 	return SQFS_ERROR_IO;
 }
 
-sqfs_file_t *sqfs_get_stdin_file(const sparse_map_t *map, uint64_t size)
+sqfs_file_t *sqfs_get_stdin_file(const sparse_map_t *map, sqfs_u64 size)
 {
 	sqfs_file_stdin_t *file = calloc(1, sizeof(*file));
 	sqfs_file_t *base = (sqfs_file_t *)file;

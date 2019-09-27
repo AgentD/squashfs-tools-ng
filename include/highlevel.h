@@ -38,8 +38,8 @@ typedef struct {
 	size_t sparse_blocks;
 	size_t frag_count;
 	size_t frag_dup;
-	uint64_t bytes_written;
-	uint64_t bytes_read;
+	sqfs_u64 bytes_written;
+	sqfs_u64 bytes_read;
 } data_writer_stats_t;
 
 /*
@@ -97,7 +97,7 @@ int sqfs_data_reader_dump(sqfs_data_reader_t *data,
 			  const sqfs_inode_generic_t *inode,
 			  int outfd, size_t block_size, bool allow_sparse);
 
-sqfs_file_t *sqfs_get_stdin_file(const sparse_map_t *map, uint64_t size);
+sqfs_file_t *sqfs_get_stdin_file(const sparse_map_t *map, sqfs_u64 size);
 
 void register_stat_hooks(sqfs_data_writer_t *data, data_writer_stats_t *stats);
 

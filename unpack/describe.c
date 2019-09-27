@@ -93,7 +93,7 @@ int describe_tree(const sqfs_tree_node_t *root, const char *unpack_root)
 	case S_IFCHR:
 	case S_IFBLK: {
 		char buffer[32];
-		uint32_t devno;
+		sqfs_u32 devno;
 
 		if (root->inode->base.type == SQFS_INODE_EXT_BDEV ||
 		    root->inode->base.type == SQFS_INODE_EXT_CDEV) {

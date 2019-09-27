@@ -26,7 +26,7 @@ static int add_sentinel_block(sqfs_data_writer_t *proc)
 }
 
 int sqfs_data_writer_begin_file(sqfs_data_writer_t *proc,
-				sqfs_inode_generic_t *inode, uint32_t flags)
+				sqfs_inode_generic_t *inode, sqfs_u32 flags)
 {
 	if (proc->inode != NULL)
 		return test_and_set_status(proc, SQFS_ERROR_INTERNAL);

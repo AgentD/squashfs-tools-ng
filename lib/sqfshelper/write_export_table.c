@@ -15,14 +15,14 @@
 int write_export_table(sqfs_file_t *file, fstree_t *fs, sqfs_super_t *super,
 		       sqfs_compressor_t *cmp)
 {
-	uint64_t *table, start;
+	sqfs_u64 *table, start;
 	size_t i, size;
 	int ret;
 
 	if (fs->inode_tbl_size < 1)
 		return 0;
 
-	table = alloc_array(sizeof(uint64_t), (fs->inode_tbl_size - 1));
+	table = alloc_array(sizeof(sqfs_u64), (fs->inode_tbl_size - 1));
 
 	if (table == NULL) {
 		perror("Allocating NFS export table");
@@ -37,7 +37,7 @@ int write_export_table(sqfs_file_t *file, fstree_t *fs, sqfs_super_t *super,
 		}
 	}
 
-	size = sizeof(uint64_t) * (fs->inode_tbl_size - 1);
+	size = sizeof(sqfs_u64) * (fs->inode_tbl_size - 1);
 	ret = sqfs_write_table(file, cmp, table, size, &start);
 
 	super->export_table_start = start;

@@ -19,15 +19,15 @@
 #include <string.h>
 
 struct sqfs_meta_reader_t {
-	uint64_t start;
-	uint64_t limit;
+	sqfs_u64 start;
+	sqfs_u64 limit;
 	size_t data_used;
 
 	/* The location of the current block in the image */
-	uint64_t block_offset;
+	sqfs_u64 block_offset;
 
 	/* The location of the next block after the current one */
-	uint64_t next_block;
+	sqfs_u64 next_block;
 
 	/* A byte offset into the uncompressed data of the current block */
 	size_t offset;
@@ -39,15 +39,15 @@ struct sqfs_meta_reader_t {
 	sqfs_compressor_t *cmp;
 
 	/* The raw data read from the input file */
-	uint8_t data[SQFS_META_BLOCK_SIZE];
+	sqfs_u8 data[SQFS_META_BLOCK_SIZE];
 
 	/* The uncompressed data read from the input file */
-	uint8_t scratch[SQFS_META_BLOCK_SIZE];
+	sqfs_u8 scratch[SQFS_META_BLOCK_SIZE];
 };
 
 sqfs_meta_reader_t *sqfs_meta_reader_create(sqfs_file_t *file,
 					    sqfs_compressor_t *cmp,
-					    uint64_t start, uint64_t limit)
+					    sqfs_u64 start, sqfs_u64 limit)
 {
 	sqfs_meta_reader_t *m = calloc(1, sizeof(*m));
 
@@ -66,11 +66,11 @@ void sqfs_meta_reader_destroy(sqfs_meta_reader_t *m)
 	free(m);
 }
 
-int sqfs_meta_reader_seek(sqfs_meta_reader_t *m, uint64_t block_start,
+int sqfs_meta_reader_seek(sqfs_meta_reader_t *m, sqfs_u64 block_start,
 			  size_t offset)
 {
 	bool compressed;
-	uint16_t header;
+	sqfs_u16 header;
 	ssize_t ret;
 	size_t size;
 	int err;
@@ -127,7 +127,7 @@ int sqfs_meta_reader_seek(sqfs_meta_reader_t *m, uint64_t block_start,
 }
 
 void sqfs_meta_reader_get_position(const sqfs_meta_reader_t *m,
-				   uint64_t *block_start, size_t *offset)
+				   sqfs_u64 *block_start, size_t *offset)
 {
 	*block_start = m->block_offset;
 	*offset = m->offset;

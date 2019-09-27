@@ -8,7 +8,7 @@
 
 #include "internal.h"
 
-static void write_binary(char *dst, uint64_t value, int digits)
+static void write_binary(char *dst, sqfs_u64 value, int digits)
 {
 	memset(dst, 0, digits);
 
@@ -21,9 +21,9 @@ static void write_binary(char *dst, uint64_t value, int digits)
 	((unsigned char *)dst)[0] |= 0x80;
 }
 
-static void write_number(char *dst, uint64_t value, int digits)
+static void write_number(char *dst, sqfs_u64 value, int digits)
 {
-	uint64_t mask = 0;
+	sqfs_u64 mask = 0;
 	char buffer[64];
 	int i;
 
@@ -41,9 +41,9 @@ static void write_number(char *dst, uint64_t value, int digits)
 	}
 }
 
-static void write_number_signed(char *dst, int64_t value, int digits)
+static void write_number_signed(char *dst, sqfs_s64 value, int digits)
 {
-	uint64_t neg;
+	sqfs_u64 neg;
 
 	if (value < 0) {
 		neg = -value;
@@ -57,7 +57,7 @@ static int write_header(int fd, const struct stat *sb, const char *name,
 			const char *slink_target, int type)
 {
 	int maj = 0, min = 0;
-	uint64_t size = 0;
+	sqfs_u64 size = 0;
 	tar_header_t hdr;
 
 	if (S_ISCHR(sb->st_mode) || S_ISBLK(sb->st_mode)) {

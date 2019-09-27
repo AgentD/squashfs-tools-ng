@@ -16,8 +16,8 @@
 
 typedef struct sparse_map_t {
 	struct sparse_map_t *next;
-	uint64_t offset;
-	uint64_t count;
+	sqfs_u64 offset;
+	sqfs_u64 count;
 } sparse_map_t;
 
 typedef struct {
@@ -80,14 +80,14 @@ typedef struct {
 	char *name;
 	char *link_target;
 	sparse_map_t *sparse;
-	uint64_t actual_size;
-	uint64_t record_size;
+	sqfs_u64 actual_size;
+	sqfs_u64 record_size;
 	bool unknown_record;
 	tar_xattr_t *xattr;
 
 	/* broken out since struct stat could contain
 	   32 bit values on 32 bit systems. */
-	int64_t mtime;
+	sqfs_s64 mtime;
 } tar_header_decoded_t;
 
 #define TAR_TYPE_FILE '0'
@@ -122,10 +122,10 @@ int write_tar_header(int fd, const struct stat *sb, const char *name,
 		     unsigned int counter);
 
 /* calcuate and skip the zero padding */
-int skip_padding(int fd, uint64_t size);
+int skip_padding(int fd, sqfs_u64 size);
 
 /* round up to block size and skip the entire entry */
-int skip_entry(int fd, uint64_t size);
+int skip_entry(int fd, sqfs_u64 size);
 
 int read_header(int fd, tar_header_decoded_t *out);
 

@@ -8,9 +8,9 @@
 
 #include "internal.h"
 
-int read_octal(const char *str, int digits, uint64_t *out)
+int read_octal(const char *str, int digits, sqfs_u64 *out)
 {
-	uint64_t result = 0;
+	sqfs_u64 result = 0;
 
 	while (digits > 0 && isspace(*str)) {
 		++str;
@@ -31,9 +31,9 @@ int read_octal(const char *str, int digits, uint64_t *out)
 	return 0;
 }
 
-int read_binary(const char *str, int digits, uint64_t *out)
+int read_binary(const char *str, int digits, sqfs_u64 *out)
 {
-	uint64_t x, ov, result = 0;
+	sqfs_u64 x, ov, result = 0;
 	bool first = true;
 
 	while (digits > 0) {
@@ -67,7 +67,7 @@ fail_ov:
 	return -1;
 }
 
-int read_number(const char *str, int digits, uint64_t *out)
+int read_number(const char *str, int digits, sqfs_u64 *out)
 {
 	if (*((unsigned char *)str) & 0x80)
 		return read_binary(str, digits, out);
@@ -75,9 +75,9 @@ int read_number(const char *str, int digits, uint64_t *out)
 	return read_octal(str, digits, out);
 }
 
-int pax_read_decimal(const char *str, uint64_t *out)
+int pax_read_decimal(const char *str, sqfs_u64 *out)
 {
-	uint64_t result = 0;
+	sqfs_u64 result = 0;
 
 	while (*str >= '0' && *str <= '9') {
 		if (result > 0xFFFFFFFFFFFFFFFFUL / 10) {

@@ -11,7 +11,7 @@ static unsigned char new_buf[MAX_WINDOW_SIZE];
 
 static int read_blob(const char *prefix, const char *path,
 		     sqfs_data_reader_t *rd, const sqfs_inode_generic_t *inode,
-		     void *buffer, uint64_t offset, size_t size)
+		     void *buffer, sqfs_u64 offset, size_t size)
 {
 	ssize_t ret;
 
@@ -30,7 +30,7 @@ static int read_blob(const char *prefix, const char *path,
 int compare_files(sqfsdiff_t *sd, const sqfs_inode_generic_t *old,
 		  const sqfs_inode_generic_t *new, const char *path)
 {
-	uint64_t offset, diff, oldsz, newsz;
+	sqfs_u64 offset, diff, oldsz, newsz;
 	int status = 0, ret;
 
 	sqfs_inode_get_file_size(old, &oldsz);

@@ -22,8 +22,8 @@ typedef struct {
 } xz_compressor_t;
 
 typedef struct {
-	uint32_t dict_size;
-	uint32_t flags;
+	sqfs_u32 dict_size;
+	sqfs_u32 flags;
 } xz_options_t;
 
 static bool is_dict_size_valid(size_t size)
@@ -75,8 +75,8 @@ static int xz_read_options(sqfs_compressor_t *base, sqfs_file_t *file)
 }
 
 static ssize_t compress(xz_compressor_t *xz, lzma_vli filter,
-			const uint8_t *in, size_t size,
-			uint8_t *out, size_t outsize)
+			const sqfs_u8 *in, size_t size,
+			sqfs_u8 *out, size_t outsize)
 {
 	lzma_filter filters[5];
 	lzma_options_lzma opt;
@@ -135,8 +135,8 @@ static lzma_vli flag_to_vli(int flag)
 	return LZMA_VLI_UNKNOWN;
 }
 
-static ssize_t xz_comp_block(sqfs_compressor_t *base, const uint8_t *in,
-			     size_t size, uint8_t *out, size_t outsize)
+static ssize_t xz_comp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
+			     size_t size, sqfs_u8 *out, size_t outsize)
 {
 	xz_compressor_t *xz = (xz_compressor_t *)base;
 	lzma_vli filter, selected = LZMA_VLI_UNKNOWN;
@@ -171,10 +171,10 @@ static ssize_t xz_comp_block(sqfs_compressor_t *base, const uint8_t *in,
 	return compress(xz, selected, in, size, out, outsize);
 }
 
-static ssize_t xz_uncomp_block(sqfs_compressor_t *base, const uint8_t *in,
-			       size_t size, uint8_t *out, size_t outsize)
+static ssize_t xz_uncomp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
+			       size_t size, sqfs_u8 *out, size_t outsize)
 {
-	uint64_t memlimit = 32 * 1024 * 1024;
+	sqfs_u64 memlimit = 32 * 1024 * 1024;
 	size_t dest_pos = 0;
 	size_t src_pos = 0;
 	lzma_ret ret;

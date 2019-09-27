@@ -33,7 +33,7 @@ static int pack_files(sqfs_data_writer_t *data, fstree_t *fs,
 {
 	sqfs_inode_generic_t *inode;
 	size_t max_blk_count;
-	uint64_t filesize;
+	sqfs_u64 filesize;
 	sqfs_file_t *file;
 	file_info_t *fi;
 	int ret;
@@ -58,7 +58,7 @@ static int pack_files(sqfs_data_writer_t *data, fstree_t *fs,
 		if (filesize % fs->block_size)
 			++max_blk_count;
 
-		inode = alloc_flex(sizeof(*inode), sizeof(uint32_t),
+		inode = alloc_flex(sizeof(*inode), sizeof(sqfs_u32),
 				   max_blk_count);
 		if (inode == NULL) {
 			perror("creating file inode");
@@ -66,7 +66,7 @@ static int pack_files(sqfs_data_writer_t *data, fstree_t *fs,
 			return -1;
 		}
 
-		inode->block_sizes = (uint32_t *)inode->extra;
+		inode->block_sizes = (sqfs_u32 *)inode->extra;
 		inode->base.type = SQFS_INODE_FILE;
 		sqfs_inode_set_file_size(inode, filesize);
 		sqfs_inode_set_frag_location(inode, 0xFFFFFFFF, 0xFFFFFFFF);

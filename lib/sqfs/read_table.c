@@ -18,11 +18,11 @@
 #include <stdlib.h>
 
 int sqfs_read_table(sqfs_file_t *file, sqfs_compressor_t *cmp,
-		    size_t table_size, uint64_t location, uint64_t lower_limit,
-		    uint64_t upper_limit, void **out)
+		    size_t table_size, sqfs_u64 location, sqfs_u64 lower_limit,
+		    sqfs_u64 upper_limit, void **out)
 {
 	size_t diff, block_count, blk_idx = 0;
-	uint64_t start, *locations;
+	sqfs_u64 start, *locations;
 	sqfs_meta_reader_t *m;
 	void *data, *ptr;
 	int err;
@@ -37,7 +37,7 @@ int sqfs_read_table(sqfs_file_t *file, sqfs_compressor_t *cmp,
 	if ((table_size % SQFS_META_BLOCK_SIZE) != 0)
 		++block_count;
 
-	locations = alloc_array(sizeof(uint64_t), block_count);
+	locations = alloc_array(sizeof(sqfs_u64), block_count);
 
 	if (locations == NULL) {
 		err = SQFS_ERROR_ALLOC;
@@ -45,7 +45,7 @@ int sqfs_read_table(sqfs_file_t *file, sqfs_compressor_t *cmp,
 	}
 
 	err = file->read_at(file, location, locations,
-			    sizeof(uint64_t) * block_count);
+			    sizeof(sqfs_u64) * block_count);
 	if (err)
 		goto fail_idx;
 

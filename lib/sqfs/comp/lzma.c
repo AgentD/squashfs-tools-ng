@@ -39,8 +39,8 @@ static int lzma_read_options(sqfs_compressor_t *base, sqfs_file_t *file)
 	return SQFS_ERROR_UNSUPPORTED;
 }
 
-static ssize_t lzma_comp_block(sqfs_compressor_t *base, const uint8_t *in,
-			       size_t size, uint8_t *out, size_t outsize)
+static ssize_t lzma_comp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
+			       size_t size, sqfs_u8 *out, size_t outsize)
 {
 	lzma_compressor_t *lzma = (lzma_compressor_t *)base;
 	lzma_stream strm = LZMA_STREAM_INIT;
@@ -83,10 +83,10 @@ static ssize_t lzma_comp_block(sqfs_compressor_t *base, const uint8_t *in,
 	return strm.total_out;
 }
 
-static ssize_t lzma_uncomp_block(sqfs_compressor_t *base, const uint8_t *in,
-				 size_t size, uint8_t *out, size_t outsize)
+static ssize_t lzma_uncomp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
+				 size_t size, sqfs_u8 *out, size_t outsize)
 {
-	uint8_t lzma_header[LZMA_HEADER_SIZE];
+	sqfs_u8 lzma_header[LZMA_HEADER_SIZE];
 	lzma_stream strm = LZMA_STREAM_INIT;
 	size_t hdrsize;
 	int ret;

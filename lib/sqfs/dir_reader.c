@@ -25,13 +25,13 @@ struct sqfs_dir_reader_t {
 	const sqfs_super_t *super;
 
 	sqfs_dir_header_t hdr;
-	uint64_t dir_block_start;
+	sqfs_u64 dir_block_start;
 	size_t entries;
 	size_t size;
 
 	size_t start_size;
-	uint16_t dir_offset;
-	uint16_t inode_offset;
+	sqfs_u16 dir_offset;
+	sqfs_u16 inode_offset;
 };
 
 sqfs_dir_reader_t *sqfs_dir_reader_create(const sqfs_super_t *super,
@@ -39,7 +39,7 @@ sqfs_dir_reader_t *sqfs_dir_reader_create(const sqfs_super_t *super,
 					  sqfs_file_t *file)
 {
 	sqfs_dir_reader_t *rd = calloc(1, sizeof(*rd));
-	uint64_t start, limit;
+	sqfs_u64 start, limit;
 
 	if (rd == NULL)
 		return NULL;
@@ -85,7 +85,7 @@ void sqfs_dir_reader_destroy(sqfs_dir_reader_t *rd)
 int sqfs_dir_reader_open_dir(sqfs_dir_reader_t *rd,
 			     const sqfs_inode_generic_t *inode)
 {
-	uint64_t block_start;
+	sqfs_u64 block_start;
 	size_t size, offset;
 
 	if (inode->base.type == SQFS_INODE_DIR) {
@@ -191,7 +191,7 @@ int sqfs_dir_reader_find(sqfs_dir_reader_t *rd, const char *name)
 int sqfs_dir_reader_get_inode(sqfs_dir_reader_t *rd,
 			      sqfs_inode_generic_t **inode)
 {
-	uint64_t block_start;
+	sqfs_u64 block_start;
 
 	block_start = rd->hdr.start_block;
 
@@ -203,8 +203,8 @@ int sqfs_dir_reader_get_inode(sqfs_dir_reader_t *rd,
 int sqfs_dir_reader_get_root_inode(sqfs_dir_reader_t *rd,
 				   sqfs_inode_generic_t **inode)
 {
-	uint64_t block_start = rd->super->root_inode_ref >> 16;
-	uint16_t offset = rd->super->root_inode_ref & 0xFFFF;
+	sqfs_u64 block_start = rd->super->root_inode_ref >> 16;
+	sqfs_u16 offset = rd->super->root_inode_ref & 0xFFFF;
 
 	return sqfs_meta_reader_read_inode(rd->meta_inode, rd->super,
 					   block_start, offset, inode);

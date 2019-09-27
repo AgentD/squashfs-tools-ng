@@ -14,14 +14,14 @@
 static int write_block_sizes(sqfs_meta_writer_t *ir,
 			     const sqfs_inode_generic_t *n)
 {
-	uint32_t sizes[n->num_file_blocks];
+	sqfs_u32 sizes[n->num_file_blocks];
 	size_t i;
 
 	for (i = 0; i < n->num_file_blocks; ++i)
 		sizes[i] = htole32(n->block_sizes[i]);
 
 	return sqfs_meta_writer_append(ir, sizes,
-				       sizeof(uint32_t) * n->num_file_blocks);
+				       sizeof(sqfs_u32) * n->num_file_blocks);
 }
 
 int sqfs_meta_writer_write_inode(sqfs_meta_writer_t *ir,
@@ -124,7 +124,7 @@ int sqfs_meta_writer_write_inode(sqfs_meta_writer_t *ir,
 			.nlink = htole32(n->data.slink_ext.nlink),
 			.target_size = htole32(n->data.slink_ext.target_size),
 		};
-		uint32_t xattr = htole32(n->data.slink_ext.xattr_idx);
+		sqfs_u32 xattr = htole32(n->data.slink_ext.xattr_idx);
 
 		ret = sqfs_meta_writer_append(ir, &slink, sizeof(slink));
 		if (ret)

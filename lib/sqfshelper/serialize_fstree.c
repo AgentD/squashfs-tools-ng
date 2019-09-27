@@ -18,7 +18,7 @@ static sqfs_inode_generic_t *write_dir_entries(sqfs_dir_writer_t *dirw,
 					       tree_node_t *node,
 					       sqfs_id_table_t *idtbl)
 {
-	uint32_t xattr, parent_inode;
+	sqfs_u32 xattr, parent_inode;
 	sqfs_inode_generic_t *inode;
 	tree_node_t *it;
 	int ret;
@@ -67,8 +67,8 @@ int sqfs_serialize_fstree(sqfs_file_t *file, sqfs_super_t *super, fstree_t *fs,
 	sqfs_inode_generic_t *inode;
 	sqfs_meta_writer_t *im, *dm;
 	sqfs_dir_writer_t *dirwr;
-	uint32_t offset;
-	uint64_t block;
+	sqfs_u32 offset;
+	sqfs_u64 block;
 	int ret = -1;
 	size_t i;
 

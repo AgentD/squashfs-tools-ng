@@ -38,7 +38,7 @@ void update_checksum(tar_header_t *hdr)
 bool is_checksum_valid(const tar_header_t *hdr)
 {
 	unsigned int calculated_chksum = get_checksum(hdr);
-	uint64_t read_chksum;
+	sqfs_u64 read_chksum;
 
 	if (read_octal(hdr->chksum, sizeof(hdr->chksum), &read_chksum))
 		return 0;

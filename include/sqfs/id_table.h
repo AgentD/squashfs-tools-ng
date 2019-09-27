@@ -74,8 +74,8 @@ SQFS_API void sqfs_id_table_destroy(sqfs_id_table_t *tbl);
  *
  * @return Zero on success, an @ref E_SQFS_ERROR on failure.
  */
-SQFS_API int sqfs_id_table_id_to_index(sqfs_id_table_t *tbl, uint32_t id,
-				       uint16_t *out);
+SQFS_API int sqfs_id_table_id_to_index(sqfs_id_table_t *tbl, sqfs_u32 id,
+				       sqfs_u16 *out);
 
 /**
  * @brief Write an ID table to disk.
@@ -122,7 +122,7 @@ SQFS_API int sqfs_id_table_read(sqfs_id_table_t *tbl, sqfs_file_t *file,
  * @return Zero on success, an @ref E_SQFS_ERROR on failure.
  */
 SQFS_API int sqfs_id_table_index_to_id(const sqfs_id_table_t *tbl,
-				       uint16_t index, uint32_t *out);
+				       sqfs_u16 index, sqfs_u32 *out);
 
 #ifdef __cplusplus
 }

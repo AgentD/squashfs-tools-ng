@@ -21,7 +21,7 @@ int sqfs_data_reader_dump(sqfs_data_reader_t *data,
 			  int outfd, size_t block_size, bool allow_sparse)
 {
 	sqfs_block_t *blk;
-	uint64_t filesz;
+	sqfs_u64 filesz;
 	size_t i, diff;
 	int err;
 

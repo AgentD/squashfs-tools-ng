@@ -25,18 +25,18 @@ struct sqfs_data_reader_t {
 	sqfs_block_t *data_block;
 	sqfs_block_t *frag_block;
 
-	uint64_t current_block;
+	sqfs_u64 current_block;
 
 	sqfs_file_t *file;
 
-	uint32_t num_fragments;
-	uint32_t current_frag_index;
-	uint32_t block_size;
+	sqfs_u32 num_fragments;
+	sqfs_u32 current_frag_index;
+	sqfs_u32 block_size;
 
-	uint8_t scratch[];
+	sqfs_u8 scratch[];
 };
 
-static int get_block(sqfs_data_reader_t *data, uint64_t off, uint32_t size,
+static int get_block(sqfs_data_reader_t *data, sqfs_u64 off, sqfs_u32 size,
 		     size_t unpacked_size, sqfs_block_t **out)
 {
 	sqfs_block_t *blk = alloc_flex(sizeof(*blk), 1, unpacked_size);
@@ -87,8 +87,8 @@ static int get_block(sqfs_data_reader_t *data, uint64_t off, uint32_t size,
 	return 0;
 }
 
-static int precache_data_block(sqfs_data_reader_t *data, uint64_t location,
-			       uint32_t size)
+static int precache_data_block(sqfs_data_reader_t *data, sqfs_u64 location,
+			       sqfs_u32 size)
 {
 	int ret;
 
@@ -153,7 +153,7 @@ int sqfs_data_reader_load_fragment_table(sqfs_data_reader_t *data,
 {
 	void *raw_frag;
 	size_t size;
-	uint32_t i;
+	sqfs_u32 i;
 	int ret;
 
 	free(data->frag_block);
@@ -210,7 +210,7 @@ int sqfs_data_reader_get_block(sqfs_data_reader_t *data,
 			       size_t index, sqfs_block_t **out)
 {
 	size_t i, unpacked_size;
-	uint64_t off, filesz;
+	sqfs_u64 off, filesz;
 
 	sqfs_inode_get_file_block_start(inode, &off);
 	sqfs_inode_get_file_size(inode, &filesz);
@@ -233,9 +233,9 @@ int sqfs_data_reader_get_fragment(sqfs_data_reader_t *data,
 				  const sqfs_inode_generic_t *inode,
 				  sqfs_block_t **out)
 {
-	uint32_t frag_idx, frag_off, frag_sz;
+	sqfs_u32 frag_idx, frag_off, frag_sz;
 	sqfs_block_t *blk;
-	uint64_t filesz;
+	sqfs_u64 filesz;
 
 	sqfs_inode_get_file_size(inode, &filesz);
 	sqfs_inode_get_frag_location(inode, &frag_idx, &frag_off);
@@ -266,11 +266,11 @@ int sqfs_data_reader_get_fragment(sqfs_data_reader_t *data,
 
 ssize_t sqfs_data_reader_read(sqfs_data_reader_t *data,
 			      const sqfs_inode_generic_t *inode,
-			      uint64_t offset, void *buffer, size_t size)
+			      sqfs_u64 offset, void *buffer, size_t size)
 {
-	uint32_t frag_idx, frag_off;
+	sqfs_u32 frag_idx, frag_off;
 	size_t i, diff, total = 0;
-	uint64_t off, filesz;
+	sqfs_u64 off, filesz;
 	char *ptr;
 
 	/* work out file location and size */

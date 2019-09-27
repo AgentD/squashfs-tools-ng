@@ -47,8 +47,8 @@ sqfs_inode_generic_t *tree_node_to_inode(sqfs_id_table_t *idtbl,
 					 tree_node_t *node)
 {
 	sqfs_inode_generic_t *inode;
-	uint16_t uid_idx, gid_idx;
-	uint32_t xattr = 0xFFFFFFFF;
+	sqfs_u16 uid_idx, gid_idx;
+	sqfs_u32 xattr = 0xFFFFFFFF;
 	size_t extra = 0;
 
 	if (S_ISREG(node->mode)) {

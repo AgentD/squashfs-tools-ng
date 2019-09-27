@@ -46,10 +46,10 @@ static const char *names[] = {
 
 int sqfs_generic_write_options(sqfs_file_t *file, const void *data, size_t size)
 {
-	uint8_t buffer[size + 2];
+	sqfs_u8 buffer[size + 2];
 	int ret;
 
-	*((uint16_t *)buffer) = htole16(0x8000 | size);
+	*((sqfs_u16 *)buffer) = htole16(0x8000 | size);
 	memcpy(buffer + 2, data, size);
 
 	ret = file->write_at(file, sizeof(sqfs_super_t),
@@ -62,7 +62,7 @@ int sqfs_generic_write_options(sqfs_file_t *file, const void *data, size_t size)
 
 int sqfs_generic_read_options(sqfs_file_t *file, void *data, size_t size)
 {
-	uint8_t buffer[size + 2];
+	sqfs_u8 buffer[size + 2];
 	int ret;
 
 	ret = file->read_at(file, sizeof(sqfs_super_t),
@@ -70,7 +70,7 @@ int sqfs_generic_read_options(sqfs_file_t *file, void *data, size_t size)
 	if (ret)
 		return ret;
 
-	if (le16toh(*((uint16_t *)buffer)) != (0x8000 | size))
+	if (le16toh(*((sqfs_u16 *)buffer)) != (0x8000 | size))
 		return SQFS_ERROR_CORRUPTED;
 
 	memcpy(data, buffer + 2, size);
@@ -120,7 +120,7 @@ int sqfs_compressor_id_from_name(const char *name, E_SQFS_COMPRESSOR *out)
 
 int sqfs_compressor_config_init(sqfs_compressor_config_t *cfg,
 				E_SQFS_COMPRESSOR id,
-				size_t block_size, uint16_t flags)
+				size_t block_size, sqfs_u16 flags)
 {
 	memset(cfg, 0, sizeof(*cfg));
 

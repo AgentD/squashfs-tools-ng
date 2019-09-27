@@ -20,7 +20,7 @@
 typedef struct {
 	sqfs_file_t base;
 
-	uint64_t size;
+	sqfs_u64 size;
 	int fd;
 } sqfs_file_stdio_t;
 
@@ -33,7 +33,7 @@ static void stdio_destroy(sqfs_file_t *base)
 	free(file);
 }
 
-static int stdio_read_at(sqfs_file_t *base, uint64_t offset,
+static int stdio_read_at(sqfs_file_t *base, sqfs_u64 offset,
 			 void *buffer, size_t size)
 {
 	sqfs_file_stdio_t *file = (sqfs_file_stdio_t *)base;
@@ -59,7 +59,7 @@ static int stdio_read_at(sqfs_file_t *base, uint64_t offset,
 	return 0;
 }
 
-static int stdio_write_at(sqfs_file_t *base, uint64_t offset,
+static int stdio_write_at(sqfs_file_t *base, sqfs_u64 offset,
 			  const void *buffer, size_t size)
 {
 	sqfs_file_stdio_t *file = (sqfs_file_stdio_t *)base;
@@ -88,14 +88,14 @@ static int stdio_write_at(sqfs_file_t *base, uint64_t offset,
 	return 0;
 }
 
-static uint64_t stdio_get_size(const sqfs_file_t *base)
+static sqfs_u64 stdio_get_size(const sqfs_file_t *base)
 {
 	const sqfs_file_stdio_t *file = (const sqfs_file_stdio_t *)base;
 
 	return file->size;
 }
 
-static int stdio_truncate(sqfs_file_t *base, uint64_t size)
+static int stdio_truncate(sqfs_file_t *base, sqfs_u64 size)
 {
 	sqfs_file_stdio_t *file = (sqfs_file_stdio_t *)base;
 

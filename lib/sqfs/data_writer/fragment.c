@@ -49,7 +49,7 @@ static int grow_deduplication_list(sqfs_data_writer_t *proc)
 }
 
 static int store_fragment(sqfs_data_writer_t *proc, sqfs_block_t *frag,
-			  uint64_t hash)
+			  sqfs_u64 hash)
 {
 	int err = grow_deduplication_list(proc);
 
@@ -79,7 +79,7 @@ static int store_fragment(sqfs_data_writer_t *proc, sqfs_block_t *frag,
 int process_completed_fragment(sqfs_data_writer_t *proc, sqfs_block_t *frag,
 			       sqfs_block_t **blk_out)
 {
-	uint64_t hash;
+	sqfs_u64 hash;
 	size_t i, size;
 	int err;
 

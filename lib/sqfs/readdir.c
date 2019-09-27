@@ -35,14 +35,14 @@ int sqfs_meta_reader_read_dir_ent(sqfs_meta_reader_t *m,
 				  sqfs_dir_entry_t **result)
 {
 	sqfs_dir_entry_t ent, *out;
-	uint16_t *diff_u16;
+	sqfs_u16 *diff_u16;
 	int err;
 
 	err = sqfs_meta_reader_read(m, &ent, sizeof(ent));
 	if (err)
 		return err;
 
-	diff_u16 = (uint16_t *)&ent.inode_diff;
+	diff_u16 = (sqfs_u16 *)&ent.inode_diff;
 	*diff_u16 = le16toh(*diff_u16);
 
 	ent.offset = le16toh(ent.offset);

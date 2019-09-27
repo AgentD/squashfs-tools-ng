@@ -58,6 +58,16 @@
 	#endif
 #endif
 
+typedef uint8_t sqfs_u8;
+typedef uint16_t sqfs_u16;
+typedef uint32_t sqfs_u32;
+typedef uint64_t sqfs_u64;
+
+typedef int8_t sqfs_s8;
+typedef int16_t sqfs_s16;
+typedef int32_t sqfs_s32;
+typedef int64_t sqfs_s64;
+
 typedef struct sqfs_block_t sqfs_block_t;
 typedef struct sqfs_data_writer_t sqfs_data_writer_t;
 typedef struct sqfs_compressor_config_t sqfs_compressor_config_t;

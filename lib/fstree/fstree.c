@@ -66,7 +66,7 @@ static int process_defaults(struct stat *sb, char *subopts)
 				goto fail_uv;
 			if (lval > 07777)
 				goto fail_ov;
-			sb->st_mode = S_IFDIR | (uint16_t)lval;
+			sb->st_mode = S_IFDIR | (sqfs_u16)lval;
 			break;
 		case DEF_MTIME:
 			lval = strtol(value, NULL, 0);

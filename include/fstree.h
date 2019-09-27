@@ -44,13 +44,13 @@ struct tree_xattr_t {
 	size_t max_attr;
 
 	/* Offset of the meta data block where the pairs are stored */
-	uint64_t block;
+	sqfs_u64 block;
 
 	/* Offset into a meta data block where the pairs start */
-	uint32_t offset;
+	sqfs_u32 offset;
 
 	/* Number of bytes written to disk */
-	uint32_t size;
+	sqfs_u32 size;
 
 	/* Incremental index within all xattr blocks */
 	size_t index;
@@ -63,8 +63,8 @@ struct tree_xattr_t {
 
 	/* Array with pairs of key-value tupples */
 	struct {
-		uint32_t key_index;
-		uint32_t value_index;
+		sqfs_u32 key_index;
+		sqfs_u32 value_index;
 	} attr[];
 };
 
@@ -108,29 +108,29 @@ struct tree_node_t {
 	*/
 	tree_xattr_t *xattr;
 
-	uint32_t uid;
-	uint32_t gid;
-	uint32_t inode_num;
-	uint32_t mod_time;
-	uint16_t mode;
-	uint16_t pad0[3];
+	sqfs_u32 uid;
+	sqfs_u32 gid;
+	sqfs_u32 inode_num;
+	sqfs_u32 mod_time;
+	sqfs_u16 mode;
+	sqfs_u16 pad0[3];
 
 	/* SquashFS inode refernce number. 32 bit offset of the meta data
 	   block start (relative to inode table start), shifted left by 16
 	   and ored with a 13 bit offset into the uncompressed meta data block.
 
 	   Generated on the fly when writing inodes. */
-	uint64_t inode_ref;
+	sqfs_u64 inode_ref;
 
 	/* Type specific data. Pointers are into payload area blow. */
 	union {
 		dir_info_t dir;
 		file_info_t file;
 		char *slink_target;
-		uint64_t devno;
+		sqfs_u64 devno;
 	} data;
 
-	uint8_t payload[];
+	sqfs_u8 payload[];
 };
 
 /* Encapsulates a file system tree */
@@ -266,6 +266,6 @@ void tree_node_sort_recursive(tree_node_t *root);
   that fits into an unsigned 32 bit value, return its value. Otherwise,
   default to 0.
  */
-uint32_t get_source_date_epoch(void);
+sqfs_u32 get_source_date_epoch(void);
 
 #endif /* FSTREE_H */

@@ -51,12 +51,12 @@ typedef struct {
 	int algorithm;
 	int level;
 
-	uint8_t buffer[];
+	sqfs_u8 buffer[];
 } lzo_compressor_t;
 
 typedef struct {
-	uint32_t algorithm;
-	uint32_t level;
+	sqfs_u32 algorithm;
+	sqfs_u32 level;
 } lzo_options_t;
 
 static int lzo_write_options(sqfs_compressor_t *base, sqfs_file_t *file)
@@ -112,8 +112,8 @@ static int lzo_read_options(sqfs_compressor_t *base, sqfs_file_t *file)
 	return 0;
 }
 
-static ssize_t lzo_comp_block(sqfs_compressor_t *base, const uint8_t *in,
-			      size_t size, uint8_t *out, size_t outsize)
+static ssize_t lzo_comp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
+			      size_t size, sqfs_u8 *out, size_t outsize)
 {
 	lzo_compressor_t *lzo = (lzo_compressor_t *)base;
 	lzo_uint len = outsize;
@@ -138,8 +138,8 @@ static ssize_t lzo_comp_block(sqfs_compressor_t *base, const uint8_t *in,
 	return 0;
 }
 
-static ssize_t lzo_uncomp_block(sqfs_compressor_t *base, const uint8_t *in,
-				size_t size, uint8_t *out, size_t outsize)
+static ssize_t lzo_uncomp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
+				size_t size, sqfs_u8 *out, size_t outsize)
 {
 	lzo_compressor_t *lzo = (lzo_compressor_t *)base;
 	lzo_uint len = outsize;

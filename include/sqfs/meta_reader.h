@@ -66,8 +66,8 @@ extern "C" {
  */
 SQFS_API sqfs_meta_reader_t *sqfs_meta_reader_create(sqfs_file_t *file,
 						     sqfs_compressor_t *cmp,
-						     uint64_t start,
-						     uint64_t limit);
+						     sqfs_u64 start,
+						     sqfs_u64 limit);
 
 /**
  * @brief Destroy a meta data reader and free all memory used by it.
@@ -92,7 +92,7 @@ SQFS_API void sqfs_meta_reader_destroy(sqfs_meta_reader_t *m);
  *
  * @return Zero on success, an @ref E_SQFS_ERROR value on failure.
  */
-SQFS_API int sqfs_meta_reader_seek(sqfs_meta_reader_t *m, uint64_t block_start,
+SQFS_API int sqfs_meta_reader_seek(sqfs_meta_reader_t *m, sqfs_u64 block_start,
 				   size_t offset);
 
 /**
@@ -105,7 +105,7 @@ SQFS_API int sqfs_meta_reader_seek(sqfs_meta_reader_t *m, uint64_t block_start,
  * @param offset A byte offset into the uncompressed block.
  */
 SQFS_API void sqfs_meta_reader_get_position(const sqfs_meta_reader_t *m,
-					    uint64_t *block_start,
+					    sqfs_u64 *block_start,
 					    size_t *offset);
 
 /**
@@ -181,7 +181,7 @@ SQFS_API int sqfs_meta_reader_read_dir_ent(sqfs_meta_reader_t *m,
 SQFS_API
 int sqfs_meta_reader_read_inode(sqfs_meta_reader_t *ir,
 				const sqfs_super_t *super,
-				uint64_t block_start, size_t offset,
+				sqfs_u64 block_start, size_t offset,
 				sqfs_inode_generic_t **out);
 
 #ifdef __cplusplus

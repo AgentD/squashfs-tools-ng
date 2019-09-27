@@ -11,10 +11,10 @@
 #include <stdio.h>
 #include <ctype.h>
 
-uint32_t get_source_date_epoch(void)
+sqfs_u32 get_source_date_epoch(void)
 {
 	const char *str, *ptr;
-	uint32_t x, tval = 0;
+	sqfs_u32 x, tval = 0;
 
 	str = getenv("SOURCE_DATE_EPOCH");
 

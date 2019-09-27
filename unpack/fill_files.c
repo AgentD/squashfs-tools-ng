@@ -17,8 +17,8 @@ static size_t block_size = 0;
 
 static int compare_files(const void *l, const void *r)
 {
-	uint32_t lhs_frag_idx, lhs_frag_off, rhs_frag_idx, rhs_frag_off;
-	uint64_t lhs_size, rhs_size, lhs_start, rhs_start;
+	sqfs_u32 lhs_frag_idx, lhs_frag_off, rhs_frag_idx, rhs_frag_off;
+	sqfs_u64 lhs_size, rhs_size, lhs_start, rhs_start;
 	const struct file_ent *lhs = l, *rhs = r;
 
 	sqfs_inode_get_frag_location(lhs->inode, &lhs_frag_idx, &lhs_frag_off);

@@ -28,7 +28,7 @@ static int inverse_type[] = {
 };
 
 int sqfs_inode_get_xattr_index(const sqfs_inode_generic_t *inode,
-			       uint32_t *out)
+			       sqfs_u32 *out)
 {
 	switch (inode->base.type) {
 	case SQFS_INODE_DIR:
@@ -122,7 +122,7 @@ int sqfs_inode_make_extended(sqfs_inode_generic_t *inode)
 
 int sqfs_inode_make_basic(sqfs_inode_generic_t *inode)
 {
-	uint32_t xattr;
+	sqfs_u32 xattr;
 	int err;
 
 	err = sqfs_inode_get_xattr_index(inode, &xattr);
@@ -187,7 +187,7 @@ int sqfs_inode_make_basic(sqfs_inode_generic_t *inode)
 	return 0;
 }
 
-int sqfs_inode_set_file_size(sqfs_inode_generic_t *inode, uint64_t size)
+int sqfs_inode_set_file_size(sqfs_inode_generic_t *inode, sqfs_u64 size)
 {
 	if (inode->base.type == SQFS_INODE_EXT_FILE) {
 		inode->data.file_ext.file_size = size;
@@ -209,7 +209,7 @@ int sqfs_inode_set_file_size(sqfs_inode_generic_t *inode, uint64_t size)
 }
 
 int sqfs_inode_set_frag_location(sqfs_inode_generic_t *inode,
-				 uint32_t index, uint32_t offset)
+				 sqfs_u32 index, sqfs_u32 offset)
 {
 	if (inode->base.type == SQFS_INODE_EXT_FILE) {
 		inode->data.file_ext.fragment_idx = index;
@@ -225,7 +225,7 @@ int sqfs_inode_set_frag_location(sqfs_inode_generic_t *inode,
 }
 
 int sqfs_inode_set_file_block_start(sqfs_inode_generic_t *inode,
-				    uint64_t location)
+				    sqfs_u64 location)
 {
 	if (inode->base.type == SQFS_INODE_EXT_FILE) {
 		inode->data.file_ext.blocks_start = location;
@@ -246,7 +246,7 @@ int sqfs_inode_set_file_block_start(sqfs_inode_generic_t *inode,
 	return 0;
 }
 
-int sqfs_inode_get_file_size(const sqfs_inode_generic_t *inode, uint64_t *size)
+int sqfs_inode_get_file_size(const sqfs_inode_generic_t *inode, sqfs_u64 *size)
 {
 	if (inode->base.type == SQFS_INODE_EXT_FILE) {
 		*size = inode->data.file_ext.file_size;
@@ -260,7 +260,7 @@ int sqfs_inode_get_file_size(const sqfs_inode_generic_t *inode, uint64_t *size)
 }
 
 int sqfs_inode_get_frag_location(const sqfs_inode_generic_t *inode,
-				 uint32_t *index, uint32_t *offset)
+				 sqfs_u32 *index, sqfs_u32 *offset)
 {
 	if (inode->base.type == SQFS_INODE_EXT_FILE) {
 		*index = inode->data.file_ext.fragment_idx;
@@ -276,7 +276,7 @@ int sqfs_inode_get_frag_location(const sqfs_inode_generic_t *inode,
 }
 
 int sqfs_inode_get_file_block_start(const sqfs_inode_generic_t *inode,
-				    uint64_t *location)
+				    sqfs_u64 *location)
 {
 	if (inode->base.type == SQFS_INODE_EXT_FILE) {
 		*location = inode->data.file_ext.blocks_start;

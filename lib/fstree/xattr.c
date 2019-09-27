@@ -38,10 +38,10 @@ static tree_xattr_t *grow_xattr_block(tree_xattr_t *xattr)
 	if (xattr != NULL) {
 		if (SZ_MUL_OV(xattr->max_attr, 2, &new_count))
 			goto fail_ov;
-		old_size = sizeof(*xattr) + sizeof(uint64_t) * xattr->max_attr;
+		old_size = sizeof(*xattr) + sizeof(sqfs_u64) * xattr->max_attr;
 	}
 
-	if (SZ_MUL_OV(sizeof(uint64_t), new_count, &new_size) ||
+	if (SZ_MUL_OV(sizeof(sqfs_u64), new_count, &new_size) ||
 	    SZ_ADD_OV(sizeof(*xattr), new_size, &new_size)) {
 		goto fail_ov;
 	}
@@ -75,7 +75,7 @@ int fstree_add_xattr(fstree_t *fs, tree_node_t *node,
 	if (str_table_get_index(&fs->xattr_values, value, &value_idx))
 		return -1;
 
-	if (sizeof(size_t) > sizeof(uint32_t)) {
+	if (sizeof(size_t) > sizeof(sqfs_u32)) {
 		if (key_idx > 0xFFFFFFFFUL) {
 			fputs("Too many unique xattr keys\n", stderr);
 			return -1;
@@ -116,7 +116,7 @@ static int cmp_attr(const void *lhs, const void *rhs)
 
 void fstree_xattr_reindex(fstree_t *fs)
 {
-	uint32_t key_idx, value_idx;
+	sqfs_u32 key_idx, value_idx;
 	size_t i, index = 0;
 	tree_xattr_t *it;
 

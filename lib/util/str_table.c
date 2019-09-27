@@ -15,10 +15,10 @@
 #include "util.h"
 
 /* R5 hash function (borrowed from reiserfs) */
-static uint32_t strhash(const char *s)
+static sqfs_u32 strhash(const char *s)
 {
 	const signed char *str = (const signed char *)s;
-	uint32_t a = 0;
+	sqfs_u32 a = 0;
 
 	while (*str != '\0') {
 		a += *str << 4;
@@ -89,7 +89,7 @@ void str_table_cleanup(str_table_t *table)
 int str_table_get_index(str_table_t *table, const char *str, size_t *idx)
 {
 	str_bucket_t *bucket;
-	uint32_t hash;
+	sqfs_u32 hash;
 	size_t index;
 
 	hash = strhash(str);
@@ -140,7 +140,7 @@ const char *str_table_get_string(str_table_t *table, size_t index)
 static str_bucket_t *bucket_by_index(str_table_t *table, size_t index)
 {
 	str_bucket_t *bucket = NULL;
-	uint32_t hash;
+	sqfs_u32 hash;
 
 	if (index < table->num_strings) {
 		hash = strhash(table->strings[index]);

@@ -9,8 +9,8 @@
 
 #include <string.h>
 
-static int store_block_location(sqfs_data_writer_t *proc, uint64_t offset,
-				uint32_t size, uint32_t chksum)
+static int store_block_location(sqfs_data_writer_t *proc, sqfs_u64 offset,
+				sqfs_u32 size, sqfs_u32 chksum)
 {
 	size_t new_sz;
 	void *new;
@@ -61,9 +61,9 @@ static int allign_file(sqfs_data_writer_t *proc, sqfs_block_t *blk)
 
 int process_completed_block(sqfs_data_writer_t *proc, sqfs_block_t *blk)
 {
-	uint64_t offset, bytes;
+	sqfs_u64 offset, bytes;
 	size_t start, count;
-	uint32_t out;
+	sqfs_u32 out;
 	int err;
 
 	if (proc->hooks != NULL && proc->hooks->pre_block_write != NULL) {

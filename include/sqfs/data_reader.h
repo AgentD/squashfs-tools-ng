@@ -142,7 +142,7 @@ SQFS_API int sqfs_data_reader_get_block(sqfs_data_reader_t *data,
  */
 SQFS_API ssize_t sqfs_data_reader_read(sqfs_data_reader_t *data,
 				       const sqfs_inode_generic_t *inode,
-				       uint64_t offset, void *buffer,
+				       sqfs_u64 offset, void *buffer,
 				       size_t size);
 
 #ifdef __cplusplus

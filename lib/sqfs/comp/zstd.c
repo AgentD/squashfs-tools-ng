@@ -22,7 +22,7 @@ typedef struct {
 } zstd_compressor_t;
 
 typedef struct {
-	uint32_t level;
+	sqfs_u32 level;
 } zstd_options_t;
 
 static int zstd_write_options(sqfs_compressor_t *base, sqfs_file_t *file)
@@ -51,8 +51,8 @@ static int zstd_read_options(sqfs_compressor_t *base, sqfs_file_t *file)
 	return 0;
 }
 
-static ssize_t zstd_comp_block(sqfs_compressor_t *base, const uint8_t *in,
-			       size_t size, uint8_t *out, size_t outsize)
+static ssize_t zstd_comp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
+			       size_t size, sqfs_u8 *out, size_t outsize)
 {
 	zstd_compressor_t *zstd = (zstd_compressor_t *)base;
 	size_t ret;
@@ -66,8 +66,8 @@ static ssize_t zstd_comp_block(sqfs_compressor_t *base, const uint8_t *in,
 	return ret < size ? ret : 0;
 }
 
-static ssize_t zstd_uncomp_block(sqfs_compressor_t *base, const uint8_t *in,
-				 size_t size, uint8_t *out, size_t outsize)
+static ssize_t zstd_uncomp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
+				 size_t size, sqfs_u8 *out, size_t outsize)
 {
 	size_t ret;
 	(void)base;

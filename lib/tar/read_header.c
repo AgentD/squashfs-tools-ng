@@ -35,7 +35,7 @@ static int check_version(const tar_header_t *hdr)
 	return ETV_UNKNOWN;
 }
 
-static char *record_to_memory(int fd, uint64_t size)
+static char *record_to_memory(int fd, sqfs_u64 size)
 {
 	char *buffer = malloc(size + 1);
 
@@ -74,14 +74,14 @@ static tar_xattr_t *mkxattr(const char *key, size_t keylen,
 	return xattr;
 }
 
-static int read_pax_header(int fd, uint64_t entsize, unsigned int *set_by_pax,
+static int read_pax_header(int fd, sqfs_u64 entsize, unsigned int *set_by_pax,
 			   tar_header_decoded_t *out)
 {
 	sparse_map_t *sparse_last = NULL, *sparse;
-	uint64_t field, offset = 0, num_bytes = 0;
+	sqfs_u64 field, offset = 0, num_bytes = 0;
 	char *buffer, *line, *key, *ptr, *value;
 	tar_xattr_t *xattr;
-	uint64_t i;
+	sqfs_u64 i;
 
 	buffer = record_to_memory(fd, entsize);
 	if (buffer == NULL)
@@ -134,7 +134,7 @@ static int read_pax_header(int fd, uint64_t entsize, unsigned int *set_by_pax,
 			if (line[6] == '-') {
 				if (pax_read_decimal(line + 7, &field))
 					goto fail;
-				out->mtime = -((int64_t)field);
+				out->mtime = -((sqfs_s64)field);
 			} else {
 				if (pax_read_decimal(line + 6, &field))
 					goto fail;
@@ -205,7 +205,7 @@ static int read_pax_header(int fd, uint64_t entsize, unsigned int *set_by_pax,
 				goto fail_errno;
 
 			urldecode(xattr->key);
-			base64_decode((uint8_t *)xattr->value, value);
+			base64_decode((sqfs_u8 *)xattr->value, value);
 
 			xattr->next = out->xattr;
 			out->xattr = xattr;
@@ -226,7 +226,7 @@ static int decode_header(const tar_header_t *hdr, unsigned int set_by_pax,
 			 tar_header_decoded_t *out, int version)
 {
 	size_t len1, len2;
-	uint64_t field;
+	sqfs_u64 field;
 
 	if (!(set_by_pax & PAX_NAME)) {
 		if (hdr->tail.posix.prefix[0] != '\0' &&
@@ -289,7 +289,7 @@ static int decode_header(const tar_header_t *hdr, unsigned int set_by_pax,
 			return -1;
 		if (field & 0x8000000000000000UL) {
 			field = ~field + 1;
-			out->mtime = -((int64_t)field);
+			out->mtime = -((sqfs_s64)field);
 		} else {
 			out->mtime = field;
 		}
@@ -344,9 +344,9 @@ static int decode_header(const tar_header_t *hdr, unsigned int set_by_pax,
 	}
 
 #if SIZEOF_TIME_T < 8
-	if (out->mtime > (int64_t)INT32_MAX) {
+	if (out->mtime > (sqfs_s64)INT32_MAX) {
 		out->sb.st_mtime = INT32_MAX;
-	} else if (out->mtime < (int64_t)INT32_MIN) {
+	} else if (out->mtime < (sqfs_s64)INT32_MIN) {
 		out->sb.st_mtime = INT32_MIN;
 	} else {
 		out->sb.st_mtime = out->mtime;
@@ -361,7 +361,7 @@ int read_header(int fd, tar_header_decoded_t *out)
 {
 	unsigned int set_by_pax = 0;
 	bool prev_was_zero = false;
-	uint64_t pax_size;
+	sqfs_u64 pax_size;
 	tar_header_t hdr;
 	int version;
 

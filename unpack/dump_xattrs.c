@@ -11,7 +11,7 @@ int dump_xattrs(sqfs_xattr_reader_t *xattr, const sqfs_inode_generic_t *inode)
 	sqfs_xattr_value_t *value;
 	sqfs_xattr_entry_t *key;
 	sqfs_xattr_id_t desc;
-	uint32_t index;
+	sqfs_u32 index;
 	size_t i;
 
 	if (xattr == NULL)

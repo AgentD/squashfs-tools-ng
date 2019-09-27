@@ -59,13 +59,13 @@ struct sqfs_xattr_entry_t {
 	 * set, the value that follows is not actually a string but a 64 bit
 	 * reference to the location where the value is actually stored.
 	 */
-	uint16_t type;
+	sqfs_u16 type;
 
 	/**
 	 * @brief The size in bytes of the suffix string that follows
 	 */
-	uint16_t size;
-	uint8_t key[];
+	sqfs_u16 size;
+	sqfs_u8 key[];
 };
 
 /**
@@ -80,8 +80,8 @@ struct sqfs_xattr_value_t {
 	/**
 	 * @brief The exact size in bytes of the value that follows
 	 */
-	uint32_t size;
-	uint8_t value[];
+	sqfs_u32 size;
+	sqfs_u8 value[];
 };
 
 /**
@@ -102,18 +102,18 @@ struct sqfs_xattr_id_t {
 	 * pair. The lower 16 bits store an offset into the uncompressed meta
 	 * data block.
 	 */
-	uint64_t xattr;
+	sqfs_u64 xattr;
 
 	/**
 	 * @brief Number of consecutive key-value pairs
 	 */
-	uint32_t count;
+	sqfs_u32 count;
 
 	/**
 	 * @brief Total size of the uncompressed key-value pairs in bytes,
 	 *        including data structures used to encode them.
 	 */
-	uint32_t size;
+	sqfs_u32 size;
 };
 
 /**
@@ -130,23 +130,23 @@ struct sqfs_xattr_id_table_t {
 	 * @brief The location of the first meta data block holding the key
 	 *        value pairs.
 	 */
-	uint64_t xattr_table_start;
+	sqfs_u64 xattr_table_start;
 
 	/**
 	 * @brief The total number of descriptors (@ref sqfs_xattr_id_t)
 	 */
-	uint32_t xattr_ids;
+	sqfs_u32 xattr_ids;
 
 	/**
 	 * @brief Unused, alwayas set this to 0 when writing!
 	 */
-	uint32_t unused;
+	sqfs_u32 unused;
 
 	/**
 	 * @brief Holds the locations of the meta data blocks that contain the
 	 *        @ref sqfs_xattr_id_t descriptor array.
 	 */
-	uint64_t locations[];
+	sqfs_u64 locations[];
 };
 
 /**
@@ -298,7 +298,7 @@ SQFS_API sqfs_xattr_reader_t *sqfs_xattr_reader_create(sqfs_file_t *file,
  *
  * @return Zero on success, a negative @ref E_SQFS_ERROR value on failure.
  */
-SQFS_API int sqfs_xattr_reader_get_desc(sqfs_xattr_reader_t *xr, uint32_t idx,
+SQFS_API int sqfs_xattr_reader_get_desc(sqfs_xattr_reader_t *xr, sqfs_u32 idx,
 					sqfs_xattr_id_t *desc);
 
 /**

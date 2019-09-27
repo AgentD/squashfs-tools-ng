@@ -15,7 +15,7 @@
 
 typedef struct {
 	const char *name;
-	uint16_t flag;
+	sqfs_u16 flag;
 } flag_t;
 
 static const flag_t gzip_flags[] = {
@@ -76,7 +76,7 @@ static int find_lzo_alg(sqfs_compressor_config_t *cfg, const char *name)
 	return -1;
 }
 
-static int get_size_value(const char *value, uint32_t *out, uint32_t block_size)
+static int get_size_value(const char *value, sqfs_u32 *out, sqfs_u32 block_size)
 {
 	int i;
 

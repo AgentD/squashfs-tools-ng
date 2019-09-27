@@ -44,7 +44,7 @@ static int should_skip(int type, unsigned int flags)
 
 static bool would_be_own_parent(sqfs_tree_node_t *parent, sqfs_tree_node_t *n)
 {
-	uint32_t inum = n->inode->base.inode_number;
+	sqfs_u32 inum = n->inode->base.inode_number;
 
 	while (parent != NULL) {
 		if (parent->inode->base.inode_number == inum)

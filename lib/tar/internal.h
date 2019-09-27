@@ -43,13 +43,13 @@ enum {
 #define TAR_MAX_PAX_LEN (65536)
 
 
-int read_octal(const char *str, int digits, uint64_t *out);
+int read_octal(const char *str, int digits, sqfs_u64 *out);
 
-int read_binary(const char *str, int digits, uint64_t *out);
+int read_binary(const char *str, int digits, sqfs_u64 *out);
 
-int read_number(const char *str, int digits, uint64_t *out);
+int read_number(const char *str, int digits, sqfs_u64 *out);
 
-int pax_read_decimal(const char *str, uint64_t *out);
+int pax_read_decimal(const char *str, sqfs_u64 *out);
 
 void update_checksum(tar_header_t *hdr);
 
@@ -63,7 +63,7 @@ void free_sparse_list(sparse_map_t *sparse);
 
 void free_xattr_list(tar_xattr_t *list);
 
-void base64_decode(uint8_t *out, const char *in);
+void base64_decode(sqfs_u8 *out, const char *in);
 
 void urldecode(char *str);
 

@@ -114,7 +114,7 @@ struct sqfs_block_hooks_t {
 	 *              potential padding before and after the end.
 	 */
 	void (*notify_blocks_erased)(void *user, size_t count,
-				     uint64_t bytes);
+				     sqfs_u64 bytes);
 
 	/**
 	 * @brief Gets called before throwing away a fragment that turned out
@@ -197,7 +197,7 @@ SQFS_API void sqfs_data_writer_destroy(sqfs_data_writer_t *proc);
  */
 SQFS_API int sqfs_data_writer_begin_file(sqfs_data_writer_t *proc,
 					 sqfs_inode_generic_t *inode,
-					 uint32_t flags);
+					 sqfs_u32 flags);
 
 /**
  * @brief Append data to the current file.

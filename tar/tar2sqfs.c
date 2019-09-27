@@ -223,26 +223,26 @@ fail_arg:
 }
 
 static int write_file(tar_header_decoded_t *hdr, file_info_t *fi,
-		      sqfs_data_writer_t *data, uint64_t filesize)
+		      sqfs_data_writer_t *data, sqfs_u64 filesize)
 {
 	const sparse_map_t *it;
 	sqfs_inode_generic_t *inode;
 	size_t max_blk_count;
 	sqfs_file_t *file;
-	uint64_t sum;
+	sqfs_u64 sum;
 	int ret;
 
 	max_blk_count = filesize / block_size;
 	if (filesize % block_size)
 		++max_blk_count;
 
-	inode = alloc_flex(sizeof(*inode), sizeof(uint32_t), max_blk_count);
+	inode = alloc_flex(sizeof(*inode), sizeof(sqfs_u32), max_blk_count);
 	if (inode == NULL) {
 		perror("creating file inode");
 		return -1;
 	}
 
-	inode->block_sizes = (uint32_t *)inode->extra;
+	inode->block_sizes = (sqfs_u32 *)inode->extra;
 	inode->base.type = SQFS_INODE_FILE;
 	sqfs_inode_set_file_size(inode, filesize);
 	sqfs_inode_set_frag_location(inode, 0xFFFFFFFF, 0xFFFFFFFF);
@@ -339,7 +339,7 @@ fail_errno:
 static int process_tar_ball(fstree_t *fs, sqfs_data_writer_t *data)
 {
 	tar_header_decoded_t hdr;
-	uint64_t offset, count;
+	sqfs_u64 offset, count;
 	sparse_map_t *m;
 	bool skip;
 	int ret;

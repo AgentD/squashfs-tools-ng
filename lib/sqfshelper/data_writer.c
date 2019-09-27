@@ -9,12 +9,12 @@
 #include "highlevel.h"
 #include "util.h"
 
-static uint8_t buffer[4096];
+static sqfs_u8 buffer[4096];
 
 int write_data_from_file(sqfs_data_writer_t *data, sqfs_inode_generic_t *inode,
 			 sqfs_file_t *file, int flags)
 {
-	uint64_t filesz, offset;
+	sqfs_u64 filesz, offset;
 	size_t diff;
 	int ret;
 
