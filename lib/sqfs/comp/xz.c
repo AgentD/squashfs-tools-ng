@@ -152,7 +152,7 @@ static sqfs_s32 xz_comp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
 
 	smallest = ret;
 
-	for (i = 0; i & SQFS_COMP_FLAG_XZ_ALL; i <<= 1) {
+	for (i = 1; i & SQFS_COMP_FLAG_XZ_ALL; i <<= 1) {
 		if ((xz->flags & i) == 0)
 			continue;
 
