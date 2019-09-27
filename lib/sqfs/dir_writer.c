@@ -50,7 +50,7 @@ struct sqfs_dir_writer_t {
 	sqfs_meta_writer_t *dm;
 };
 
-static int get_type(mode_t mode)
+static int get_type(sqfs_u16 mode)
 {
 	switch (mode & S_IFMT) {
 	case S_IFSOCK: return SQFS_INODE_SOCKET;
@@ -121,7 +121,7 @@ int sqfs_dir_writer_begin(sqfs_dir_writer_t *writer)
 
 int sqfs_dir_writer_add_entry(sqfs_dir_writer_t *writer, const char *name,
 			      sqfs_u32 inode_num, sqfs_u64 inode_ref,
-			      mode_t mode)
+			      sqfs_u16 mode)
 {
 	dir_entry_t *ent;
 	int type;

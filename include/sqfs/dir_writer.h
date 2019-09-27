@@ -115,7 +115,7 @@ SQFS_API int sqfs_dir_writer_begin(sqfs_dir_writer_t *writer);
 SQFS_API int sqfs_dir_writer_add_entry(sqfs_dir_writer_t *writer,
 				       const char *name,
 				       sqfs_u32 inode_num, sqfs_u64 inode_ref,
-				       mode_t mode);
+				       sqfs_u16 mode);
 
 /**
  * @brief Finish writing a directory listing and write everything out to the
