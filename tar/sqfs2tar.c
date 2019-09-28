@@ -9,6 +9,7 @@
 #include "sqfs/meta_reader.h"
 #include "sqfs/compress.h"
 #include "sqfs/data_reader.h"
+#include "sqfs/xattr_reader.h"
 #include "highlevel.h"
 #include "util.h"
 #include "tar.h"
