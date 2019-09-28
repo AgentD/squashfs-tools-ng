@@ -145,7 +145,6 @@ int sqfs_dir_writer_add_entry(sqfs_dir_writer_t *writer, const char *name,
 		writer->list_end = ent;
 	}
 
-	writer->dir_size += sizeof(ent) + ent->name_len;
 	writer->ent_count += 1;
 	return 0;
 }
@@ -255,6 +254,7 @@ int sqfs_dir_writer_end(sqfs_dir_writer_t *writer)
 			if (err)
 				return err;
 
+			writer->dir_size += sizeof(ent) + it->name_len;
 			it = it->next;
 		}
 	}
