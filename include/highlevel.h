@@ -57,14 +57,6 @@ int sqfs_serialize_fstree(sqfs_file_t *file, sqfs_super_t *super, fstree_t *fs,
 			  sqfs_compressor_t *cmp, sqfs_id_table_t *idtbl);
 
 /*
-  Generate a squahfs xattr table from a file system tree.
-
-  Returns 0 on success. Prints error messages to stderr on failure.
- */
-int write_xattr(sqfs_file_t *file, fstree_t *fs, sqfs_super_t *super,
-		sqfs_compressor_t *cmp);
-
-/*
   Generate an NFS export table.
 
   Returns 0 on success. Prints error messages to stderr on failure.
