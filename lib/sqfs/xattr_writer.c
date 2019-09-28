@@ -235,6 +235,10 @@ int sqfs_xattr_writer_end(sqfs_xattr_writer_t *xwr, sqfs_u32 *out)
 	int ret;
 
 	count = xwr->num_pairs - xwr->kv_start;
+	if (count == 0) {
+		*out = 0xFFFFFFFF;
+		return 0;
+	}
 
 	qsort(xwr->kv_pairs + xwr->kv_start, count,
 	      sizeof(xwr->kv_pairs[0]), compare_u64);
