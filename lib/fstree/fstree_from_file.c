@@ -57,23 +57,10 @@ static int add_device(fstree_t *fs, const char *filename, size_t line_num,
 static int add_file(fstree_t *fs, const char *filename, size_t line_num,
 		    const char *path, struct stat *basic, const char *extra)
 {
-	struct stat sb;
-
 	if (extra == NULL || *extra == '\0')
 		extra = path;
 
-	if (stat(extra, &sb) != 0) {
-		fprintf(stderr, "%s: %zu: stat %s: %s\n", filename, line_num,
-			extra, strerror(errno));
-		return -1;
-	}
-
-	sb.st_uid = basic->st_uid;
-	sb.st_gid = basic->st_gid;
-	sb.st_mode = basic->st_mode;
-	sb.st_mtim = basic->st_mtim;
-
-	return add_generic(fs, filename, line_num, path, &sb, extra);
+	return add_generic(fs, filename, line_num, path, basic, extra);
 }
 
 static const struct {

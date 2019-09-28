@@ -143,17 +143,8 @@ static int read_fstree(fstree_t *fs, options_t *opt, sqfs_xattr_writer_t *xwr,
 		return -1;
 	}
 
-	if (set_working_dir(opt)) {
-		fclose(fp);
-		return -1;
-	}
-
 	ret = fstree_from_file(fs, opt->infile, fp);
-
 	fclose(fp);
-
-	if (restore_working_dir(opt))
-		return -1;
 
 	if (ret == 0 && selinux_handle != NULL)
 		ret = relabel_tree_dfs(xwr, fs->root, selinux_handle);
