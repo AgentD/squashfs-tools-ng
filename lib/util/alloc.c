@@ -36,15 +36,3 @@ void *alloc_array(size_t item_size, size_t nmemb)
 
 	return calloc(1, size);
 }
-
-void *alloc_string(size_t len)
-{
-	size_t size;
-
-	if (SZ_ADD_OV(len, 1, &size)) {
-		errno = EOVERFLOW;
-		return NULL;
-	}
-
-	return calloc(1, size);
-}

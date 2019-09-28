@@ -113,10 +113,6 @@ void *alloc_flex(size_t base_size, size_t item_size, size_t nmemb);
 SQFS_INTERNAL
 void *alloc_array(size_t item_size, size_t nmemb);
 
-/* allocates len + 1 (for the null-terminator) and does overflow checking */
-SQFS_INTERNAL
-void *alloc_string(size_t len);
-
 /*
   Convert back to forward slashed, remove all preceeding and trailing slashes,
   collapse all sequences of slashes, remove all path components that are '.'
