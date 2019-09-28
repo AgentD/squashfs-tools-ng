@@ -432,7 +432,7 @@ int main(int argc, char **argv)
 		goto out_data;
 	}
 
-	if (!no_xattr && (super.flags & SQFS_FLAG_NO_XATTRS)) {
+	if (!no_xattr && !(super.flags & SQFS_FLAG_NO_XATTRS)) {
 		xr = sqfs_xattr_reader_create(file, &super, cmp);
 		if (xr == NULL) {
 			goto out_dr;
