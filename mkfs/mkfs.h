@@ -23,6 +23,11 @@
 #include <sys/xattr.h>
 #endif
 
+#ifdef WITH_SELINUX
+#include <selinux/selinux.h>
+#include <selinux/label.h>
+#endif
+
 #include <getopt.h>
 #include <assert.h>
 #include <unistd.h>
@@ -64,5 +69,7 @@ enum {
 void process_command_line(options_t *opt, int argc, char **argv);
 
 int fstree_from_dir(fstree_t *fs, const char *path, unsigned int flags);
+
+int fstree_relabel_selinux(fstree_t *fs, const char *filename);
 
 #endif /* MKFS_H */

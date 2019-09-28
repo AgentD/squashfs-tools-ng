@@ -222,10 +222,6 @@ void fstree_xattr_deduplicate(fstree_t *fs);
  */
 int fstree_from_file(fstree_t *fs, const char *filename, FILE *fp);
 
-/* Add labels from an SELinux labeling file to all tree nodes.
-   Returns 0 on success. Internally prints errors to stderr. */
-int fstree_relabel_selinux(fstree_t *fs, const char *filename);
-
 /* Returns 0 on success. Prints to stderr on failure */
 int fstree_gen_inode_table(fstree_t *fs);
 

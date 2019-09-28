@@ -4,15 +4,7 @@
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
-#include "config.h"
-
-#include "fstree.h"
-
-#include <selinux/selinux.h>
-#include <selinux/label.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include "mkfs.h"
 
 #define XATTR_NAME_SELINUX "security.selinux"
 #define XATTR_VALUE_SELINUX "system_u:object_r:unlabeled_t:s0"

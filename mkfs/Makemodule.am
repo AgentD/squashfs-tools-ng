@@ -3,9 +3,11 @@ gensquashfs_SOURCES += mkfs/dirscan.c
 gensquashfs_LDADD = libsqfshelper.a libsquashfs.la libfstree.a libutil.la
 gensquashfs_LDADD += $(LIBSELINUX_LIBS)
 gensquashfs_CPPFLAGS = $(AM_CPPFLAGS)
-gensquashfs_CFLAGS = $(AM_CFLAGS)
+gensquashfs_CFLAGS = $(AM_CFLAGS) $(LIBSELINUX_CFLAGS)
+
 if WITH_SELINUX
 gensquashfs_CPPFLAGS += -DWITH_SELINUX
+gensquashfs_SOURCES += mkfs/selinux.c
 endif
 
 bin_PROGRAMS += gensquashfs
