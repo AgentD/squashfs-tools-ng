@@ -125,6 +125,15 @@ struct sqfs_block_hooks_t {
 	 *              fragment block.
 	 */
 	void (*notify_fragment_discard)(void *user, const sqfs_block_t *block);
+
+	/**
+	 * @brief Gets called before writing a block of padding bytes to disk.
+	 *
+	 * @param user A user pointer.
+	 * @param block The padding bytes that are about to be written.
+	 * @param count The number of padding bytes in the block.
+	 */
+	void (*prepare_padding)(void *user, sqfs_u8 *block, size_t count);
 };
 
 #ifdef __cplusplus

@@ -70,6 +70,9 @@ static int allign_file(sqfs_data_writer_t *proc, sqfs_block_t *blk)
 	if (padding == 0)
 		return SQFS_ERROR_ALLOC;
 
+	if (proc->hooks != NULL && proc->hooks->prepare_padding != NULL)
+		proc->hooks->prepare_padding(proc->user_ptr, padding, diff);
+
 	chksum = crc32(0, padding, diff);
 
 	ret = proc->file->write_at(proc->file, size, padding, diff);
