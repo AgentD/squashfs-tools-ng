@@ -81,6 +81,15 @@ typedef enum {
 	SQFS_BLK_ALLIGN = 0x0002,
 
 	/**
+	 * @brief Don't add the tail end of a file to a fragment block.
+	 *
+	 * If set, the @ref sqfs_data_writer_t will always generate a final
+	 * block for a file, even if it is truncated. It will not add the
+	 * tail end to a fragment block.
+	 */
+	SQFS_BLK_DONT_FRAGMENT = 0x0004,
+
+	/**
 	 * @brief Set by the @ref sqfs_data_writer_t on the first
 	 *        block of a file.
 	 */
@@ -113,7 +122,7 @@ typedef enum {
 	/**
 	 * @brief The combination of all flags that are user settable.
 	 */
-	SQFS_BLK_USER_SETTABLE_FLAGS = 0x0003,
+	SQFS_BLK_USER_SETTABLE_FLAGS = 0x0007,
 } E_SQFS_BLK_FLAGS;
 
 /**

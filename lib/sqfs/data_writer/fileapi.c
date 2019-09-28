@@ -56,7 +56,8 @@ static int flush_block(sqfs_data_writer_t *proc, sqfs_block_t *block)
 		return 0;
 	}
 
-	if (block->size < proc->max_block_size) {
+	if (block->size < proc->max_block_size &&
+	    !(block->flags & SQFS_BLK_DONT_FRAGMENT)) {
 		block->flags |= SQFS_BLK_IS_FRAGMENT;
 	} else {
 		proc->inode->num_file_blocks += 1;
@@ -124,9 +125,14 @@ int sqfs_data_writer_end_file(sqfs_data_writer_t *proc)
 		return test_and_set_status(proc, SQFS_ERROR_INTERNAL);
 
 	if (!(proc->blk_flags & SQFS_BLK_FIRST_BLOCK)) {
-		err = add_sentinel_block(proc);
-		if (err)
-			return err;
+		if (proc->blk_current != NULL &&
+		    (proc->blk_flags & SQFS_BLK_DONT_FRAGMENT)) {
+			proc->blk_flags |= SQFS_BLK_LAST_BLOCK;
+		} else {
+			err = add_sentinel_block(proc);
+			if (err)
+				return err;
+		}
 	}
 
 	if (proc->blk_current != NULL) {
