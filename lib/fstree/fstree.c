@@ -117,20 +117,10 @@ int fstree_init(fstree_t *fs, size_t block_size, char *defaults)
 	if (defaults != NULL && process_defaults(&fs->defaults, defaults) != 0)
 		return -1;
 
-	if (str_table_init(&fs->xattr_keys, FSTREE_XATTR_KEY_BUCKETS))
-		return -1;
-
-	if (str_table_init(&fs->xattr_values, FSTREE_XATTR_VALUE_BUCKETS)) {
-		str_table_cleanup(&fs->xattr_keys);
-		return -1;
-	}
-
 	fs->root = fstree_mknode(NULL, "", 0, NULL, &fs->defaults);
 
 	if (fs->root == NULL) {
 		perror("initializing file system tree");
-		str_table_cleanup(&fs->xattr_values);
-		str_table_cleanup(&fs->xattr_keys);
 		return -1;
 	}
 
@@ -139,16 +129,6 @@ int fstree_init(fstree_t *fs, size_t block_size, char *defaults)
 
 void fstree_cleanup(fstree_t *fs)
 {
-	tree_xattr_t *xattr;
-
-	while (fs->xattr != NULL) {
-		xattr = fs->xattr;
-		fs->xattr = xattr->next;
-		free(xattr);
-	}
-
-	str_table_cleanup(&fs->xattr_keys);
-	str_table_cleanup(&fs->xattr_values);
 	free_recursive(fs->root);
 	free(fs->inode_table);
 	memset(fs, 0, sizeof(*fs));

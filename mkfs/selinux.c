@@ -10,7 +10,7 @@
 #define XATTR_VALUE_SELINUX "system_u:object_r:unlabeled_t:s0"
 
 #ifdef WITH_SELINUX
-int selinux_relable_node(void *sehnd, fstree_t *fs,
+int selinux_relable_node(void *sehnd, sqfs_xattr_writer_t *xwr,
 			 tree_node_t *node, const char *path)
 {
 	char *context = NULL;
@@ -22,8 +22,13 @@ int selinux_relable_node(void *sehnd, fstree_t *fs,
 			goto fail;
 	}
 
-	ret = fstree_add_xattr(fs, node, XATTR_NAME_SELINUX, context);
+	ret = sqfs_xattr_writer_add(xwr, XATTR_NAME_SELINUX,
+				    context, strlen(context));
 	free(context);
+
+	if (ret)
+		fputs("Error relabeling tree node\n", stderr);
+
 	return ret;
 fail:
 	perror("relabeling files");

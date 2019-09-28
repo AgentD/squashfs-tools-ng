@@ -18,26 +18,11 @@
 static int get_type(tree_node_t *node)
 {
 	switch (node->mode & S_IFMT) {
-	case S_IFSOCK:
-		if (node->xattr != NULL)
-			return SQFS_INODE_EXT_SOCKET;
-		return SQFS_INODE_SOCKET;
-	case S_IFIFO:
-		if (node->xattr != NULL)
-			return SQFS_INODE_EXT_FIFO;
-		return SQFS_INODE_FIFO;
-	case S_IFLNK:
-		if (node->xattr != NULL)
-			return SQFS_INODE_EXT_SLINK;
-		return SQFS_INODE_SLINK;
-	case S_IFBLK:
-		if (node->xattr != NULL)
-			return SQFS_INODE_EXT_BDEV;
-		return SQFS_INODE_BDEV;
-	case S_IFCHR:
-		if (node->xattr != NULL)
-			return SQFS_INODE_EXT_CDEV;
-		return SQFS_INODE_CDEV;
+	case S_IFSOCK: return SQFS_INODE_SOCKET;
+	case S_IFIFO: return SQFS_INODE_FIFO;
+	case S_IFLNK: return SQFS_INODE_SLINK;
+	case S_IFBLK: return SQFS_INODE_BDEV;
+	case S_IFCHR: return SQFS_INODE_CDEV;
 	}
 	assert(0);
 }
@@ -47,7 +32,6 @@ sqfs_inode_generic_t *tree_node_to_inode(sqfs_id_table_t *idtbl,
 {
 	sqfs_inode_generic_t *inode;
 	sqfs_u16 uid_idx, gid_idx;
-	sqfs_u32 xattr = 0xFFFFFFFF;
 	size_t extra = 0;
 
 	if (S_ISREG(node->mode)) {
@@ -78,8 +62,8 @@ sqfs_inode_generic_t *tree_node_to_inode(sqfs_id_table_t *idtbl,
 	if (sqfs_id_table_id_to_index(idtbl, node->gid, &gid_idx))
 		goto fail;
 
-	if (node->xattr != NULL)
-		xattr = node->xattr->index;
+	if (node->xattr_idx != 0xFFFFFFFF)
+		sqfs_inode_make_extended(inode);
 
 	inode->base.mode = node->mode;
 	inode->base.uid_idx = uid_idx;
@@ -95,7 +79,7 @@ sqfs_inode_generic_t *tree_node_to_inode(sqfs_id_table_t *idtbl,
 	case SQFS_INODE_EXT_FIFO:
 	case SQFS_INODE_EXT_SOCKET:
 		inode->data.ipc_ext.nlink = 1;
-		inode->data.ipc_ext.xattr_idx = xattr;
+		inode->data.ipc_ext.xattr_idx = node->xattr_idx;
 		break;
 	case SQFS_INODE_SLINK:
 		inode->data.slink.nlink = 1;
@@ -104,7 +88,7 @@ sqfs_inode_generic_t *tree_node_to_inode(sqfs_id_table_t *idtbl,
 	case SQFS_INODE_EXT_SLINK:
 		inode->data.slink_ext.nlink = 1;
 		inode->data.slink_ext.target_size = extra;
-		inode->data.slink_ext.xattr_idx = xattr;
+		inode->data.slink_ext.xattr_idx = node->xattr_idx;
 		break;
 	case SQFS_INODE_BDEV:
 	case SQFS_INODE_CDEV:
@@ -115,15 +99,12 @@ sqfs_inode_generic_t *tree_node_to_inode(sqfs_id_table_t *idtbl,
 	case SQFS_INODE_EXT_CDEV:
 		inode->data.dev_ext.nlink = 1;
 		inode->data.dev_ext.devno = node->data.devno;
-		inode->data.dev_ext.xattr_idx = xattr;
+		inode->data.dev_ext.xattr_idx = node->xattr_idx;
 		break;
 	case SQFS_INODE_FILE:
-		if (xattr != 0xFFFFFFFF) {
-			sqfs_inode_make_extended(inode);
-			inode->data.file_ext.xattr_idx = xattr;
-		}
 		break;
 	case SQFS_INODE_EXT_FILE:
+		inode->data.file_ext.xattr_idx = node->xattr_idx;
 		break;
 	default:
 		goto fail;

@@ -6,6 +6,7 @@
  */
 #include "config.h"
 
+#include "sqfs/xattr_writer.h"
 #include "sqfs/compress.h"
 #include "sqfs/id_table.h"
 #include "sqfs/xattr.h"
@@ -109,6 +110,7 @@ static bool dont_skip = false;
 static bool no_xattr = false;
 static bool exportable = false;
 static bool keep_time = false;
+static sqfs_xattr_writer_t *xwr = NULL;
 static data_writer_stats_t stats;
 
 static void process_args(int argc, char **argv)
@@ -278,10 +280,15 @@ static int write_file(tar_header_decoded_t *hdr, file_info_t *fi,
 			    filesize : hdr->record_size);
 }
 
-static int copy_xattr(fstree_t *fs, tree_node_t *node,
+static int copy_xattr(sqfs_xattr_writer_t *xwr, tree_node_t *node,
 		      tar_header_decoded_t *hdr)
 {
 	tar_xattr_t *xattr;
+
+	if (sqfs_xattr_writer_begin(xwr)) {
+		fputs("Error beginning xattr block\n", stderr);
+		return -1;
+	}
 
 	for (xattr = hdr->xattr; xattr != NULL; xattr = xattr->next) {
 		if (!sqfs_has_xattr(xattr->key)) {
@@ -296,8 +303,17 @@ static int copy_xattr(fstree_t *fs, tree_node_t *node,
 			continue;
 		}
 
-		if (fstree_add_xattr(fs, node, xattr->key, xattr->value))
+		if (sqfs_xattr_writer_add(xwr, xattr->key, xattr->value,
+					  strlen(xattr->value))) {
+			fputs("Error converting xattr key-value pair\n",
+			      stderr);
 			return -1;
+		}
+	}
+
+	if (sqfs_xattr_writer_end(xwr, &node->xattr_idx)) {
+		fputs("Error completing xattr block\n", stderr);
+		return -1;
 	}
 
 	return 0;
@@ -320,7 +336,7 @@ static int create_node_and_repack_data(tar_header_decoded_t *hdr, fstree_t *fs,
 		printf("Packing %s\n", hdr->name);
 
 	if (!no_xattr) {
-		if (copy_xattr(fs, node, hdr))
+		if (copy_xattr(xwr, node, hdr))
 			return -1;
 	}
 
@@ -465,6 +481,14 @@ int main(int argc, char **argv)
 	if (idtbl == NULL)
 		goto out_data;
 
+	if (!no_xattr) {
+		xwr = sqfs_xattr_writer_create();
+		if (xwr == NULL) {
+			perror("creating xattr writer");
+			goto out;
+		}
+	}
+
 	if (process_tar_ball(&fs, data))
 		goto out;
 
@@ -476,8 +500,6 @@ int main(int argc, char **argv)
 		goto out;
 
 	super.inode_count = fs.inode_tbl_size - 2;
-
-	fstree_xattr_deduplicate(&fs);
 
 	if (sqfs_serialize_fstree(outfile, &super, &fs, cmp, idtbl))
 		goto out;
@@ -493,8 +515,10 @@ int main(int argc, char **argv)
 	if (sqfs_id_table_write(idtbl, outfile, &super, cmp))
 		goto out;
 
-	if (write_xattr(outfile, &fs, &super, cmp))
+	if (sqfs_xattr_writer_flush(xwr, outfile, &super, cmp)) {
+		fputs("Error writing xattr table\n", stderr);
 		goto out;
+	}
 
 	super.bytes_used = outfile->get_size(outfile);
 
@@ -509,6 +533,8 @@ int main(int argc, char **argv)
 
 	status = EXIT_SUCCESS;
 out:
+	if (xwr != NULL)
+		sqfs_xattr_writer_destroy(xwr);
 	sqfs_id_table_destroy(idtbl);
 out_data:
 	sqfs_data_writer_destroy(data);

@@ -9,6 +9,7 @@
 
 #include "config.h"
 
+#include "sqfs/xattr_writer.h"
 #include "sqfs/meta_writer.h"
 #include "sqfs/compress.h"
 #include "sqfs/id_table.h"
@@ -69,12 +70,12 @@ enum {
 void process_command_line(options_t *opt, int argc, char **argv);
 
 int fstree_from_dir(fstree_t *fs, const char *path, void *selinux_handle,
-		    unsigned int flags);
+		    sqfs_xattr_writer_t *xwr, unsigned int flags);
 
 
 void *selinux_open_context_file(const char *filename);
 
-int selinux_relable_node(void *sehnd, fstree_t *fs,
+int selinux_relable_node(void *sehnd, sqfs_xattr_writer_t *xwr,
 			 tree_node_t *node, const char *path);
 
 void selinux_close_context_file(void *sehnd);

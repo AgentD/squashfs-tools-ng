@@ -39,6 +39,7 @@ tree_node_t *fstree_mknode(tree_node_t *parent, const char *name,
 		n->parent = parent;
 	}
 
+	n->xattr_idx = 0xFFFFFFFF;
 	n->uid = sb->st_uid;
 	n->gid = sb->st_gid;
 	n->mode = sb->st_mode;

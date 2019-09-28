@@ -36,7 +36,7 @@ static sqfs_inode_generic_t *write_dir_entries(sqfs_dir_writer_t *dirw,
 	if (sqfs_dir_writer_end(dirw))
 		return NULL;
 
-	xattr = (node->xattr == NULL) ? 0xFFFFFFFF : node->xattr->index;
+	xattr = node->xattr_idx;
 	parent_inode = (node->parent == NULL) ? 1 : node->parent->inode_num;
 
 	inode = sqfs_dir_writer_create_inode(dirw, 0, xattr, parent_inode);

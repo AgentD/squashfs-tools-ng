@@ -40,7 +40,7 @@ fail:
 }
 
 #ifdef HAVE_SYS_XATTR_H
-static int populate_xattr(fstree_t *fs, tree_node_t *node)
+static int populate_xattr(sqfs_xattr_writer_t *xwr, tree_node_t *node)
 {
 	char *key, *value = NULL, *buffer = NULL;
 	ssize_t buflen, vallen, keylen;
@@ -74,7 +74,7 @@ static int populate_xattr(fstree_t *fs, tree_node_t *node)
 			goto fail;
 
 		if (vallen > 0) {
-			value = alloc_string(vallen);
+			value = calloc(1, vallen);
 			if (value == NULL) {
 				perror("xattr value buffer");
 				goto fail;
@@ -86,9 +86,11 @@ static int populate_xattr(fstree_t *fs, tree_node_t *node)
 				goto fail;
 			}
 
-			value[vallen] = 0;
-			if (fstree_add_xattr(fs, node, key, value))
+			if (sqfs_xattr_writer_add(xwr, key, value, vallen)) {
+				fputs("Error storing xattr key-value pair\n",
+				      stderr);
 				goto fail;
+			}
 
 			free(value);
 			value = NULL;
@@ -109,7 +111,8 @@ fail:
 #endif
 
 static int populate_dir(fstree_t *fs, tree_node_t *root, dev_t devstart,
-			void *selinux_handle, unsigned int flags)
+			void *selinux_handle, sqfs_xattr_writer_t *xwr,
+			unsigned int flags)
 {
 	char *extra = NULL, *path;
 	struct dirent *ent;
@@ -171,9 +174,14 @@ static int populate_dir(fstree_t *fs, tree_node_t *root, dev_t devstart,
 			goto fail;
 		}
 
+		if (sqfs_xattr_writer_begin(xwr)) {
+			fputs("error recoding xattr key-value pairs\n", stderr);
+			return -1;
+		}
+
 #ifdef HAVE_SYS_XATTR_H
 		if (flags & DIR_SCAN_READ_XATTR) {
-			if (populate_xattr(fs, n))
+			if (populate_xattr(xwr, n))
 				goto fail;
 		}
 #endif
@@ -185,12 +193,18 @@ static int populate_dir(fstree_t *fs, tree_node_t *root, dev_t devstart,
 				goto fail;
 			}
 
-			if (selinux_relable_node(selinux_handle, fs, n, path)) {
+			if (selinux_relable_node(selinux_handle, xwr,
+						 n, path)) {
 				free(path);
 				goto fail;
 			}
 
 			free(path);
+		}
+
+		if (sqfs_xattr_writer_end(xwr, &n->xattr_idx)) {
+			fputs("error generating xattr index\n", stderr);
+			return -1;
 		}
 
 		free(extra);
@@ -204,8 +218,10 @@ static int populate_dir(fstree_t *fs, tree_node_t *root, dev_t devstart,
 			if (pushd(n->name))
 				return -1;
 
-			if (populate_dir(fs, n, devstart, selinux_handle, flags))
+			if (populate_dir(fs, n, devstart, selinux_handle,
+					 xwr, flags)) {
 				return -1;
+			}
 
 			if (popd())
 				return -1;
@@ -222,7 +238,7 @@ fail:
 }
 
 int fstree_from_dir(fstree_t *fs, const char *path, void *selinux_handle,
-		    unsigned int flags)
+		    sqfs_xattr_writer_t *xwr, unsigned int flags)
 {
 	struct stat sb;
 	int ret;
@@ -235,7 +251,8 @@ int fstree_from_dir(fstree_t *fs, const char *path, void *selinux_handle,
 	if (pushd(path))
 		return -1;
 
-	ret = populate_dir(fs, fs->root, sb.st_dev, selinux_handle, flags);
+	ret = populate_dir(fs, fs->root, sb.st_dev, selinux_handle,
+			   xwr, flags);
 
 	if (popd())
 		ret = -1;

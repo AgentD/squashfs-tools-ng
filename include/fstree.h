@@ -14,50 +14,13 @@
 #include <stddef.h>
 #include <stdio.h>
 
-#include "str_table.h"
+#include "sqfs/predef.h"
 #include "compat.h"
-
-#define FSTREE_XATTR_KEY_BUCKETS 31
-#define FSTREE_XATTR_VALUE_BUCKETS 511
 
 typedef struct tree_node_t tree_node_t;
 typedef struct file_info_t file_info_t;
 typedef struct dir_info_t dir_info_t;
 typedef struct fstree_t fstree_t;
-typedef struct tree_xattr_t tree_xattr_t;
-
-/* Encapsulates a set of key-value pairs attached to a tree_node_t */
-struct tree_xattr_t {
-	/* Number of key-value pairs */
-	size_t num_attr;
-
-	/* Total size of the array, i.e. it's capacity */
-	size_t max_attr;
-
-	/* Offset of the meta data block where the pairs are stored */
-	sqfs_u64 block;
-
-	/* Offset into a meta data block where the pairs start */
-	sqfs_u32 offset;
-
-	/* Number of bytes written to disk */
-	sqfs_u32 size;
-
-	/* Incremental index within all xattr blocks */
-	size_t index;
-
-	/* Back reference to the tree node this was created for */
-	tree_node_t *owner;
-
-	/* linked list pointer of list of attributes in @ref fstree_t */
-	tree_xattr_t *next;
-
-	/* Array with pairs of key-value tupples */
-	struct {
-		sqfs_u32 key_index;
-		sqfs_u32 value_index;
-	} attr[];
-};
 
 /* Additional meta data stored in a tree_node_t for regular files. */
 struct file_info_t {
@@ -90,21 +53,13 @@ struct tree_node_t {
 	/* For the root node, this points to an empty string. */
 	char *name;
 
-	/*
-	  A pointer to an extended attribute array or NULL if unused.
-
-	  This field is not stored in-line and taken care of by the generic
-	  fstree cleanup code, since it is generatde after the tree already
-	  exists and shared across multiple nodes.
-	*/
-	tree_xattr_t *xattr;
-
+	sqfs_u32 xattr_idx;
 	sqfs_u32 uid;
 	sqfs_u32 gid;
 	sqfs_u32 inode_num;
 	sqfs_u32 mod_time;
 	sqfs_u16 mode;
-	sqfs_u16 pad0[3];
+	sqfs_u16 pad0;
 
 	/* SquashFS inode refernce number. 32 bit offset of the meta data
 	   block start (relative to inode table start), shifted left by 16
@@ -130,11 +85,7 @@ struct fstree_t {
 	size_t block_size;
 	size_t inode_tbl_size;
 
-	str_table_t xattr_keys;
-	str_table_t xattr_values;
-
 	tree_node_t *root;
-	tree_xattr_t *xattr;
 
 	/* linear array of tree nodes. inode number is array index */
 	tree_node_t **inode_table;
@@ -192,20 +143,6 @@ tree_node_t *fstree_mknode(tree_node_t *parent, const char *name,
 */
 tree_node_t *fstree_add_generic(fstree_t *fs, const char *path,
 				const struct stat *sb, const char *extra);
-
-/*
-  Add an extended attribute key value pair to a tree node.
-
-  Returns 0 on success, prints error to stderr on failure.
-*/
-int fstree_add_xattr(fstree_t *fs, tree_node_t *node,
-		     const char *key, const char *value);
-
-/* Recompute running index number of all xattr blocks. */
-void fstree_xattr_reindex(fstree_t *fs);
-
-/* Sort and dedupliciate xattr blocks, then recumpute the index numbers. */
-void fstree_xattr_deduplicate(fstree_t *fs);
 
 /*
   Parses the file format accepted by gensquashfs and produce a file system

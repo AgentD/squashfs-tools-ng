@@ -89,7 +89,8 @@ static int pack_files(sqfs_data_writer_t *data, fstree_t *fs,
 	return restore_working_dir(opt);
 }
 
-static int relabel_tree_dfs(fstree_t *fs, tree_node_t *n, void *selinux_handle)
+static int relabel_tree_dfs(sqfs_xattr_writer_t *xwr, tree_node_t *n,
+			    void *selinux_handle)
 {
 	char *path = fstree_get_path(n);
 
@@ -98,8 +99,18 @@ static int relabel_tree_dfs(fstree_t *fs, tree_node_t *n, void *selinux_handle)
 		return -1;
 	}
 
-	if (selinux_relable_node(selinux_handle, fs, n, path)) {
+	if (sqfs_xattr_writer_begin(xwr)) {
+		fputs("error recoding xattr key-value pairs\n", stderr);
+		return -1;
+	}
+
+	if (selinux_relable_node(selinux_handle, xwr, n, path)) {
 		free(path);
+		return -1;
+	}
+
+	if (sqfs_xattr_writer_end(xwr, &n->xattr_idx)) {
+		fputs("error generating xattr index\n", stderr);
 		return -1;
 	}
 
@@ -107,7 +118,7 @@ static int relabel_tree_dfs(fstree_t *fs, tree_node_t *n, void *selinux_handle)
 
 	if (S_ISDIR(n->mode)) {
 		for (n = n->data.dir.children; n != NULL; n = n->next) {
-			if (relabel_tree_dfs(fs, n, selinux_handle))
+			if (relabel_tree_dfs(xwr, n, selinux_handle))
 				return -1;
 		}
 	}
@@ -115,14 +126,15 @@ static int relabel_tree_dfs(fstree_t *fs, tree_node_t *n, void *selinux_handle)
 	return 0;
 }
 
-static int read_fstree(fstree_t *fs, options_t *opt, void *selinux_handle)
+static int read_fstree(fstree_t *fs, options_t *opt, sqfs_xattr_writer_t *xwr,
+		       void *selinux_handle)
 {
 	FILE *fp;
 	int ret;
 
 	if (opt->infile == NULL) {
 		return fstree_from_dir(fs, opt->packdir, selinux_handle,
-				       opt->dirscan_flags);
+				       xwr, opt->dirscan_flags);
 	}
 
 	fp = fopen(opt->infile, "rb");
@@ -144,7 +156,7 @@ static int read_fstree(fstree_t *fs, options_t *opt, void *selinux_handle)
 		return -1;
 
 	if (ret == 0 && selinux_handle != NULL)
-		ret = relabel_tree_dfs(fs, fs->root, selinux_handle);
+		ret = relabel_tree_dfs(xwr, fs->root, selinux_handle);
 
 	return ret;
 }
@@ -155,6 +167,7 @@ int main(int argc, char **argv)
 	sqfs_compressor_config_t cfg;
 	data_writer_stats_t stats;
 	sqfs_data_writer_t *data;
+	sqfs_xattr_writer_t *xwr;
 	sqfs_compressor_t *cmp;
 	sqfs_id_table_t *idtbl;
 	sqfs_file_t *outfile;
@@ -197,10 +210,16 @@ int main(int argc, char **argv)
 			goto out_outfile;
 	}
 
-	if (read_fstree(&fs, &opt, sehnd)) {
+	xwr = sqfs_xattr_writer_create();
+	if (xwr == NULL) {
+		perror("creating Xattr writer");
+		goto out_outfile;
+	}
+
+	if (read_fstree(&fs, &opt, xwr, sehnd)) {
 		if (sehnd != NULL)
 			selinux_close_context_file(sehnd);
-		goto out_outfile;
+		goto out_xwr;
 	}
 
 	if (sehnd != NULL) {
@@ -211,18 +230,16 @@ int main(int argc, char **argv)
 	tree_node_sort_recursive(fs.root);
 
 	if (fstree_gen_inode_table(&fs))
-		goto out_outfile;
+		goto out_xwr;
 
 	fstree_gen_file_list(&fs);
 
 	super.inode_count = fs.inode_tbl_size - 2;
 
-	fstree_xattr_deduplicate(&fs);
-
 	cmp = sqfs_compressor_create(&cfg);
 	if (cmp == NULL) {
 		fputs("Error creating compressor\n", stderr);
-		goto out_outfile;
+		goto out_xwr;
 	}
 
 	ret = cmp->write_options(cmp, outfile);
@@ -257,8 +274,10 @@ int main(int argc, char **argv)
 	if (sqfs_id_table_write(idtbl, outfile, &super, cmp))
 		goto out_data;
 
-	if (write_xattr(outfile, &fs, &super, cmp))
+	if (sqfs_xattr_writer_flush(xwr, outfile, &super, cmp)) {
+		fputs("Error writing xattr table\n", stderr);
 		goto out_data;
+	}
 
 	super.bytes_used = outfile->get_size(outfile);
 
@@ -276,6 +295,8 @@ out_data:
 	sqfs_data_writer_destroy(data);
 out_cmp:
 	cmp->destroy(cmp);
+out_xwr:
+	sqfs_xattr_writer_destroy(xwr);
 out_outfile:
 	outfile->destroy(outfile);
 out_idtbl:
