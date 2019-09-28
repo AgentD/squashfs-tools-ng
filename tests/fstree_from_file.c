@@ -37,7 +37,7 @@ int main(void)
 	fp = fmemopen(ptr, strlen(ptr), "r");
 	assert(fp != NULL);
 
-	assert(fstree_init(&fs, 512, NULL) == 0);
+	assert(fstree_init(&fs, NULL) == 0);
 	assert(fstree_from_file(&fs, "testfile", fp) == 0);
 
 	tree_node_sort_recursive(fs.root);

@@ -54,7 +54,7 @@ int main(void)
 	fstree_t fs;
 
 	// inode table for the empty tree
-	assert(fstree_init(&fs, 0, NULL) == 0);
+	assert(fstree_init(&fs, NULL) == 0);
 	assert(fstree_gen_inode_table(&fs) == 0);
 	assert(fs.inode_tbl_size == 3);
 	assert(fs.root->inode_num == 2);
@@ -64,7 +64,7 @@ int main(void)
 	fstree_cleanup(&fs);
 
 	// tree with 2 levels under root, fan out 3
-	assert(fstree_init(&fs, 0, NULL) == 0);
+	assert(fstree_init(&fs, NULL) == 0);
 
 	a = gen_node(fs.root, "a");
 	b = gen_node(fs.root, "b");

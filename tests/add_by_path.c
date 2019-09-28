@@ -21,7 +21,7 @@ int main(void)
 	char *opts;
 
 	opts = strdup("mode=0755,uid=21,gid=42");
-	assert(fstree_init(&fs, 512, opts) == 0);
+	assert(fstree_init(&fs, opts) == 0);
 	free(opts);
 
 	memset(&sb, 0, sizeof(sb));

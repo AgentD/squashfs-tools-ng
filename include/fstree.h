@@ -98,15 +98,13 @@ struct fstree_t {
   Initializing means copying over the default values and creating a root node.
   On error, an error message is written to stderr.
 
-  `block_size` is the the data block size for regular files.
-
   The string `defaults` can specify default attributes (mode, uid, gid, mtime)
   as a comma seperated list of key value paris (<key>=<value>[,...]). The string
   is passed to getsubopt and will be altered.
 
   Returns 0 on success.
 */
-int fstree_init(fstree_t *fs, size_t block_size, char *defaults);
+int fstree_init(fstree_t *fs, char *defaults);
 
 void fstree_cleanup(fstree_t *fs);
 

@@ -28,7 +28,7 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	if (fstree_init(&fs, 512, NULL))
+	if (fstree_init(&fs, NULL))
 		goto out_fp;
 
 	if (fstree_from_file(&fs, argv[1], fp))

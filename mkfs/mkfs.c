@@ -54,8 +54,8 @@ static int pack_files(sqfs_data_writer_t *data, fstree_t *fs,
 
 		filesize = file->get_size(file);
 
-		max_blk_count = filesize / fs->block_size;
-		if (filesize % fs->block_size)
+		max_blk_count = filesize / opt->blksz;
+		if (filesize % opt->blksz)
 			++max_blk_count;
 
 		inode = alloc_flex(sizeof(*inode), sizeof(sqfs_u32),
@@ -174,7 +174,7 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	if (fstree_init(&fs, opt.blksz, opt.fs_defaults))
+	if (fstree_init(&fs, opt.fs_defaults))
 		return EXIT_FAILURE;
 
 	if (sqfs_super_init(&super, opt.blksz, fs.defaults.st_mtime,

@@ -446,7 +446,7 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	if (fstree_init(&fs, block_size, fs_defaults))
+	if (fstree_init(&fs, fs_defaults))
 		goto out_fd;
 
 	cmp = sqfs_compressor_create(&cfg);

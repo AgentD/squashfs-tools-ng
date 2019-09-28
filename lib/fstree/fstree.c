@@ -106,13 +106,12 @@ static void free_recursive(tree_node_t *n)
 	free(n);
 }
 
-int fstree_init(fstree_t *fs, size_t block_size, char *defaults)
+int fstree_init(fstree_t *fs, char *defaults)
 {
 	memset(fs, 0, sizeof(*fs));
 	fs->defaults.st_mode = S_IFDIR | 0755;
-	fs->defaults.st_blksize = block_size;
+	fs->defaults.st_blksize = 512;
 	fs->defaults.st_mtime = get_source_date_epoch();
-	fs->block_size = block_size;
 
 	if (defaults != NULL && process_defaults(&fs->defaults, defaults) != 0)
 		return -1;
