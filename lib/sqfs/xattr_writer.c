@@ -566,6 +566,12 @@ int sqfs_xattr_writer_flush(sqfs_xattr_writer_t *xwr, sqfs_file_t *file,
 	size_t i, count;
 	int err;
 
+	if (xwr->num_pairs == 0 || xwr->num_blocks == 0) {
+		super->xattr_id_table_start = 0xFFFFFFFFFFFFFFFFUL;
+		super->flags |= SQFS_FLAG_NO_XATTRS;
+		return 0;
+	}
+
 	mw = sqfs_meta_writer_create(file, cmp, 0);
 	if (mw == NULL)
 		return SQFS_ERROR_ALLOC;
