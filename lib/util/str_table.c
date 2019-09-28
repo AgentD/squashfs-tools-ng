@@ -176,6 +176,14 @@ void str_table_add_ref(str_table_t *table, size_t index)
 		bucket->refcount += 1;
 }
 
+void str_table_del_ref(str_table_t *table, size_t index)
+{
+	str_bucket_t *bucket = bucket_by_index(table, index);
+
+	if (bucket != NULL && bucket->refcount > 0)
+		bucket->refcount -= 1;
+}
+
 size_t str_table_get_ref_count(str_table_t *table, size_t index)
 {
 	str_bucket_t *bucket = bucket_by_index(table, index);
