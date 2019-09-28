@@ -89,13 +89,41 @@ static int pack_files(sqfs_data_writer_t *data, fstree_t *fs,
 	return restore_working_dir(opt);
 }
 
-static int read_fstree(fstree_t *fs, options_t *opt)
+static int relabel_tree_dfs(fstree_t *fs, tree_node_t *n, void *selinux_handle)
+{
+	char *path = fstree_get_path(n);
+
+	if (path == NULL) {
+		perror("getting absolute node path for SELinux relabeling");
+		return -1;
+	}
+
+	if (selinux_relable_node(selinux_handle, fs, n, path)) {
+		free(path);
+		return -1;
+	}
+
+	free(path);
+
+	if (S_ISDIR(n->mode)) {
+		for (n = n->data.dir.children; n != NULL; n = n->next) {
+			if (relabel_tree_dfs(fs, n, selinux_handle))
+				return -1;
+		}
+	}
+
+	return 0;
+}
+
+static int read_fstree(fstree_t *fs, options_t *opt, void *selinux_handle)
 {
 	FILE *fp;
 	int ret;
 
-	if (opt->infile == NULL)
-		return fstree_from_dir(fs, opt->packdir, opt->dirscan_flags);
+	if (opt->infile == NULL) {
+		return fstree_from_dir(fs, opt->packdir, selinux_handle,
+				       opt->dirscan_flags);
+	}
 
 	fp = fopen(opt->infile, "rb");
 	if (fp == NULL) {
@@ -115,6 +143,9 @@ static int read_fstree(fstree_t *fs, options_t *opt)
 	if (restore_working_dir(opt))
 		return -1;
 
+	if (ret == 0 && selinux_handle != NULL)
+		ret = relabel_tree_dfs(fs, fs->root, selinux_handle);
+
 	return ret;
 }
 
@@ -127,6 +158,7 @@ int main(int argc, char **argv)
 	sqfs_compressor_t *cmp;
 	sqfs_id_table_t *idtbl;
 	sqfs_file_t *outfile;
+	void *sehnd = NULL;
 	sqfs_super_t super;
 	options_t opt;
 	fstree_t fs;
@@ -159,8 +191,22 @@ int main(int argc, char **argv)
 	if (sqfs_super_write(&super, outfile))
 		goto out_outfile;
 
-	if (read_fstree(&fs, &opt))
+	if (opt.selinux != NULL) {
+		sehnd = selinux_open_context_file(opt.selinux);
+		if (sehnd == NULL)
+			goto out_outfile;
+	}
+
+	if (read_fstree(&fs, &opt, sehnd)) {
+		if (sehnd != NULL)
+			selinux_close_context_file(sehnd);
 		goto out_outfile;
+	}
+
+	if (sehnd != NULL) {
+		selinux_close_context_file(sehnd);
+		sehnd = NULL;
+	}
 
 	tree_node_sort_recursive(fs.root);
 
@@ -170,13 +216,6 @@ int main(int argc, char **argv)
 	fstree_gen_file_list(&fs);
 
 	super.inode_count = fs.inode_tbl_size - 2;
-
-#ifdef WITH_SELINUX
-	if (opt.selinux != NULL) {
-		if (fstree_relabel_selinux(&fs, opt.selinux))
-			goto out_outfile;
-	}
-#endif
 
 	fstree_xattr_deduplicate(&fs);
 

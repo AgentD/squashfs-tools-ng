@@ -109,9 +109,9 @@ fail:
 #endif
 
 static int populate_dir(fstree_t *fs, tree_node_t *root, dev_t devstart,
-			unsigned int flags)
+			void *selinux_handle, unsigned int flags)
 {
-	char *extra = NULL;
+	char *extra = NULL, *path;
 	struct dirent *ent;
 	struct stat sb;
 	tree_node_t *n;
@@ -177,6 +177,21 @@ static int populate_dir(fstree_t *fs, tree_node_t *root, dev_t devstart,
 				goto fail;
 		}
 #endif
+		if (selinux_handle != NULL) {
+			path = fstree_get_path(n);
+			if (path == NULL) {
+				perror("getting full path for "
+				       "SELinux relabeling");
+				goto fail;
+			}
+
+			if (selinux_relable_node(selinux_handle, fs, n, path)) {
+				free(path);
+				goto fail;
+			}
+
+			free(path);
+		}
 
 		free(extra);
 		extra = NULL;
@@ -189,7 +204,7 @@ static int populate_dir(fstree_t *fs, tree_node_t *root, dev_t devstart,
 			if (pushd(n->name))
 				return -1;
 
-			if (populate_dir(fs, n, devstart, flags))
+			if (populate_dir(fs, n, devstart, selinux_handle, flags))
 				return -1;
 
 			if (popd())
@@ -206,7 +221,8 @@ fail:
 	return -1;
 }
 
-int fstree_from_dir(fstree_t *fs, const char *path, unsigned int flags)
+int fstree_from_dir(fstree_t *fs, const char *path, void *selinux_handle,
+		    unsigned int flags)
 {
 	struct stat sb;
 	int ret;
@@ -219,7 +235,7 @@ int fstree_from_dir(fstree_t *fs, const char *path, unsigned int flags)
 	if (pushd(path))
 		return -1;
 
-	ret = populate_dir(fs, fs->root, sb.st_dev, flags);
+	ret = populate_dir(fs, fs->root, sb.st_dev, selinux_handle, flags);
 
 	if (popd())
 		ret = -1;

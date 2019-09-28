@@ -9,15 +9,12 @@
 #define XATTR_NAME_SELINUX "security.selinux"
 #define XATTR_VALUE_SELINUX "system_u:object_r:unlabeled_t:s0"
 
-static int relable_node(fstree_t *fs, struct selabel_handle *sehnd,
-			tree_node_t *node)
+#ifdef WITH_SELINUX
+int selinux_relable_node(void *sehnd, fstree_t *fs,
+			 tree_node_t *node, const char *path)
 {
-	char *context = NULL, *path;
+	char *context = NULL;
 	int ret;
-
-	path = fstree_get_path(node);
-	if (path == NULL)
-		goto fail;
 
 	if (selabel_lookup(sehnd, &context, path, node->mode) < 0) {
 		context = strdup(XATTR_VALUE_SELINUX);
@@ -27,36 +24,50 @@ static int relable_node(fstree_t *fs, struct selabel_handle *sehnd,
 
 	ret = fstree_add_xattr(fs, node, XATTR_NAME_SELINUX, context);
 	free(context);
-	free(path);
 	return ret;
 fail:
 	perror("relabeling files");
-	free(path);
 	return -1;
 }
 
-int fstree_relabel_selinux(fstree_t *fs, const char *filename)
+void *selinux_open_context_file(const char *filename)
 {
 	struct selabel_handle *sehnd;
 	struct selinux_opt seopts[] = {
 		{ SELABEL_OPT_PATH, filename },
 	};
-	size_t i;
-	int ret = 0;
 
 	sehnd = selabel_open(SELABEL_CTX_FILE, seopts, 1);
-
-	if (sehnd == NULL) {
+	if (sehnd == NULL)
 		perror(filename);
-		return -1;
-	}
 
-	for (i = 2; i < fs->inode_tbl_size; ++i) {
-		ret = relable_node(fs, sehnd, fs->inode_table[i]);
-		if (ret)
-			break;
-	}
-
-	selabel_close(sehnd);
-	return ret;
+	return sehnd;
 }
+
+void selinux_close_context_file(void *sehnd)
+{
+	selabel_close(sehnd);
+}
+#else
+int selinux_relable_node(void *sehnd, fstree_t *fs,
+			 tree_node_t *node, const char *path)
+{
+	(void)sehnd; (void)fs; (void)node; (void)path;
+	fputs("Built without SELinux support, cannot add SELinux labels\n",
+	      stderr);
+	return -1;
+}
+
+void *selinux_open_context_file(const char *filename)
+{
+	(void)filename;
+	fputs("Built without SELinux support, cannot open contexts file\n",
+	      stderr);
+	return NULL;
+}
+
+void selinux_close_context_file(void *sehnd)
+{
+	(void)sehnd;
+}
+#endif
