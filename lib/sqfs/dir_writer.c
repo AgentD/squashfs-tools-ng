@@ -318,7 +318,8 @@ sqfs_inode_generic_t
 		inode->data.dir_ext.parent_inode = parent_ino;
 		inode->data.dir_ext.offset = block_offset;
 		inode->data.dir_ext.xattr_idx = xattr;
-		inode->data.dir_ext.inodex_count = writer->idx_size;
+		inode->data.dir_ext.inodex_count =
+			writer->idx_size ? (writer->idx_size - 1) : 0;
 	}
 
 	return inode;
