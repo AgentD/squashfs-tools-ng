@@ -1,4 +1,5 @@
 gensquashfs_SOURCES = mkfs/mkfs.c mkfs/mkfs.h mkfs/options.c
+gensquashfs_SOURCES += mkfs/dirscan.c
 gensquashfs_LDADD = libsqfshelper.a libsquashfs.la libfstree.a libutil.la
 gensquashfs_LDADD += $(LIBSELINUX_LIBS)
 gensquashfs_CPPFLAGS = $(AM_CPPFLAGS)

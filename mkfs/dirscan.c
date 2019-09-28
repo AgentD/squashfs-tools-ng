@@ -4,22 +4,7 @@
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
-#include "config.h"
-
-#include "fstree.h"
-#include "util.h"
-
-#ifdef HAVE_SYS_XATTR_H
-#include <sys/xattr.h>
-#endif
-#include <dirent.h>
-#include <unistd.h>
-#include <string.h>
-#include <stdlib.h>
-#include <assert.h>
-#include <stdio.h>
-#include <errno.h>
-#include <fcntl.h>
+#include "mkfs.h"
 
 static char *get_file_path(tree_node_t *n, const char *name)
 {

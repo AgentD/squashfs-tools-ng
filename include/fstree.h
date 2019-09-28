@@ -26,14 +26,6 @@ typedef struct dir_info_t dir_info_t;
 typedef struct fstree_t fstree_t;
 typedef struct tree_xattr_t tree_xattr_t;
 
-enum {
-	DIR_SCAN_KEEP_TIME = 0x01,
-
-	DIR_SCAN_ONE_FILESYSTEM = 0x02,
-
-	DIR_SCAN_READ_XATTR = 0x04,
-};
-
 /* Encapsulates a set of key-value pairs attached to a tree_node_t */
 struct tree_xattr_t {
 	/* Number of key-value pairs */
@@ -229,13 +221,6 @@ void fstree_xattr_deduplicate(fstree_t *fs);
   Returns 0 on success.
  */
 int fstree_from_file(fstree_t *fs, const char *filename, FILE *fp);
-
-/*
-  Recursively scan a directory and generate a file system tree from it.
-
-  Returns 0 on success, prints errors to stderr.
- */
-int fstree_from_dir(fstree_t *fs, const char *path, unsigned int flags);
 
 /* Add labels from an SELinux labeling file to all tree nodes.
    Returns 0 on success. Internally prints errors to stderr. */

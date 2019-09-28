@@ -19,12 +19,17 @@
 #include "fstree.h"
 #include "util.h"
 
+#ifdef HAVE_SYS_XATTR_H
+#include <sys/xattr.h>
+#endif
+
 #include <getopt.h>
 #include <assert.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#include <dirent.h>
 #include <stdio.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -48,6 +53,16 @@ typedef struct {
 	char *comp_extra;
 } options_t;
 
+enum {
+	DIR_SCAN_KEEP_TIME = 0x01,
+
+	DIR_SCAN_ONE_FILESYSTEM = 0x02,
+
+	DIR_SCAN_READ_XATTR = 0x04,
+};
+
 void process_command_line(options_t *opt, int argc, char **argv);
+
+int fstree_from_dir(fstree_t *fs, const char *path, unsigned int flags);
 
 #endif /* MKFS_H */
