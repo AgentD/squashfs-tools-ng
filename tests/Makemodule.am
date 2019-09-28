@@ -31,9 +31,6 @@ test_fstree_from_file_LDADD = libfstree.a libutil.la
 test_fstree_init_SOURCES = tests/fstree_init.c
 test_fstree_init_LDADD = libfstree.a libutil.la
 
-test_fstree_xattr_SOURCES = tests/fstree_xattr.c
-test_fstree_xattr_LDADD = libfstree.a libutil.la
-
 test_tar_gnu_SOURCES = tests/tar_gnu.c
 test_tar_gnu_LDADD = libtar.a libutil.la
 test_tar_gnu_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(top_srcdir)/tests/tar
@@ -82,7 +79,7 @@ tar_fuzz_LDADD = libtar.a libutil.la
 check_PROGRAMS += test_canonicalize_name test_mknode_simple test_mknode_slink
 check_PROGRAMS += test_mknode_reg test_mknode_dir test_gen_inode_table
 check_PROGRAMS += test_add_by_path test_get_path test_fstree_sort
-check_PROGRAMS += test_fstree_from_file test_fstree_init test_fstree_xattr
+check_PROGRAMS += test_fstree_from_file test_fstree_init
 check_PROGRAMS += test_tar_ustar test_tar_pax test_tar_gnu test_tar_sparse_gnu
 check_PROGRAMS += test_tar_sparse_gnu1 test_tar_sparse_gnu2
 check_PROGRAMS += test_tar_xattr_bsd test_tar_xattr_schily test_str_table
@@ -92,7 +89,7 @@ noinst_PROGRAMS += fstree_fuzz tar_fuzz
 TESTS += test_canonicalize_name test_mknode_simple test_mknode_slink
 TESTS += test_mknode_reg test_mknode_dir test_gen_inode_table
 TESTS += test_add_by_path test_get_path test_fstree_sort test_fstree_from_file
-TESTS += test_fstree_init test_fstree_xattr test_tar_ustar test_tar_pax
+TESTS += test_fstree_init test_tar_ustar test_tar_pax
 TESTS += test_tar_gnu test_tar_sparse_gnu test_tar_sparse_gnu1
 TESTS += test_tar_sparse_gnu2 test_tar_xattr_bsd test_tar_xattr_schily
 TESTS += test_str_table
