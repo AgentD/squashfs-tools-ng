@@ -52,11 +52,32 @@ static size_t deduplicate_blocks(sqfs_data_writer_t *proc, size_t count)
 
 static int allign_file(sqfs_data_writer_t *proc, sqfs_block_t *blk)
 {
+	sqfs_u32 chksum;
+	void *padding;
+	sqfs_u64 size;
+	size_t diff;
+	int ret;
+
 	if (!(blk->flags & SQFS_BLK_ALLIGN))
 		return 0;
 
-	return padd_sqfs(proc->file, proc->file->get_size(proc->file),
-			 proc->devblksz);
+	size = proc->file->get_size(proc->file);
+	diff = size % proc->devblksz;
+	if (diff == 0)
+		return 0;
+
+	padding = calloc(1, diff);
+	if (padding == 0)
+		return SQFS_ERROR_ALLOC;
+
+	chksum = crc32(0, padding, diff);
+
+	ret = proc->file->write_at(proc->file, size, padding, diff);
+	free(padding);
+	if (ret)
+		return ret;
+
+	return store_block_location(proc, size, diff | (1 << 24), chksum);
 }
 
 int process_completed_block(sqfs_data_writer_t *proc, sqfs_block_t *blk)
