@@ -32,7 +32,7 @@ int sqfs_meta_writer_write_inode(sqfs_meta_writer_t *ir,
 	int ret;
 
 	base.type = htole16(n->base.type);
-	base.mode = htole16(n->base.mode);
+	base.mode = htole16(n->base.mode & ~SQFS_INODE_MODE_MASK);
 	base.uid_idx = htole16(n->base.uid_idx);
 	base.gid_idx = htole16(n->base.gid_idx);
 	base.mod_time = htole32(n->base.mod_time);
