@@ -56,11 +56,9 @@ int main(void)
 	// inode table for the empty tree
 	assert(fstree_init(&fs, NULL) == 0);
 	assert(fstree_gen_inode_table(&fs) == 0);
-	assert(fs.inode_tbl_size == 3);
-	assert(fs.root->inode_num == 2);
-	assert(fs.inode_table[0] == NULL);
-	assert(fs.inode_table[1] == NULL);
-	assert(fs.inode_table[2] == fs.root);
+	assert(fs.inode_tbl_size == 1);
+	assert(fs.root->inode_num == 1);
+	assert(fs.inode_table[0] == fs.root);
 	fstree_cleanup(&fs);
 
 	// tree with 2 levels under root, fan out 3
@@ -86,14 +84,11 @@ int main(void)
 	assert(gen_node(c, "c_c") != NULL);
 
 	assert(fstree_gen_inode_table(&fs) == 0);
+	assert(fs.inode_tbl_size == 13);
 
-	assert(fs.inode_tbl_size == (13 + 2));
-	assert(fs.inode_table[0] == NULL);
-	assert(fs.inode_table[1] == NULL);
-
-	for (i = 2; i < (13 + 2); ++i) {
+	for (i = 0; i < 13; ++i) {
 		assert(fs.inode_table[i] != NULL);
-		assert(fs.inode_table[i]->inode_num == i);
+		assert(fs.inode_table[i]->inode_num == i + 1);
 	}
 
 	check_children_before_root(fs.root);
