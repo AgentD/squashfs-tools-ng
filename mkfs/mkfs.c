@@ -225,7 +225,7 @@ int main(int argc, char **argv)
 
 	fstree_gen_file_list(&fs);
 
-	super.inode_count = fs.inode_tbl_size - 2;
+	super.inode_count = fs.inode_tbl_size;
 
 	cmp = sqfs_compressor_create(&cfg);
 	if (cmp == NULL) {

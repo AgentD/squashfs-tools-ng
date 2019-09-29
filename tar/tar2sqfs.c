@@ -499,7 +499,7 @@ int main(int argc, char **argv)
 	if (fstree_gen_inode_table(&fs))
 		goto out;
 
-	super.inode_count = fs.inode_tbl_size - 2;
+	super.inode_count = fs.inode_tbl_size;
 
 	if (sqfs_serialize_fstree(outfile, &super, &fs, cmp, idtbl))
 		goto out;

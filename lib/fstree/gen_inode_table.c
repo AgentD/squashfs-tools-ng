@@ -52,15 +52,15 @@ static void map_child_nodes(fstree_t *fs, tree_node_t *root, size_t *counter)
 		it->inode_num = *counter;
 		*counter += 1;
 
-		fs->inode_table[it->inode_num] = it;
+		fs->inode_table[it->inode_num - 1] = it;
 	}
 }
 
 int fstree_gen_inode_table(fstree_t *fs)
 {
-	size_t inum = 2;
+	size_t inum = 1;
 
-	fs->inode_tbl_size = count_nodes(fs->root) + 2;
+	fs->inode_tbl_size = count_nodes(fs->root);
 	fs->inode_table = alloc_array(sizeof(tree_node_t *),
 				      fs->inode_tbl_size);
 
@@ -71,6 +71,6 @@ int fstree_gen_inode_table(fstree_t *fs)
 
 	map_child_nodes(fs, fs->root, &inum);
 	fs->root->inode_num = inum;
-	fs->inode_table[inum] = fs->root;
+	fs->inode_table[inum - 1] = fs->root;
 	return 0;
 }

@@ -37,7 +37,7 @@ static sqfs_inode_generic_t *write_dir_entries(sqfs_dir_writer_t *dirw,
 		return NULL;
 
 	xattr = node->xattr_idx;
-	parent_inode = (node->parent == NULL) ? 1 : node->parent->inode_num;
+	parent_inode = (node->parent == NULL) ? 0 : node->parent->inode_num;
 
 	inode = sqfs_dir_writer_create_inode(dirw, 0, xattr, parent_inode);
 	if (inode == NULL) {
@@ -87,7 +87,7 @@ int sqfs_serialize_fstree(sqfs_file_t *file, sqfs_super_t *super, fstree_t *fs,
 
 	super->inode_table_start = file->get_size(file);
 
-	for (i = 2; i < fs->inode_tbl_size; ++i) {
+	for (i = 0; i < fs->inode_tbl_size; ++i) {
 		if (S_ISDIR(fs->inode_table[i]->mode)) {
 			inode = write_dir_entries(dirwr, fs->inode_table[i],
 						  idtbl);

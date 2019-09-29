@@ -22,22 +22,18 @@ int write_export_table(sqfs_file_t *file, fstree_t *fs, sqfs_super_t *super,
 	if (fs->inode_tbl_size < 1)
 		return 0;
 
-	table = alloc_array(sizeof(sqfs_u64), (fs->inode_tbl_size - 1));
+	table = alloc_array(sizeof(sqfs_u64), fs->inode_tbl_size);
 
 	if (table == NULL) {
 		perror("Allocating NFS export table");
 		return -1;
 	}
 
-	for (i = 1; i < fs->inode_tbl_size; ++i) {
-		if (fs->inode_table[i] == NULL) {
-			table[i - 1] = htole64(0xFFFFFFFFFFFFFFFF);
-		} else {
-			table[i - 1] = htole64(fs->inode_table[i]->inode_ref);
-		}
+	for (i = 0; i < fs->inode_tbl_size; ++i) {
+		table[i] = htole64(fs->inode_table[i]->inode_ref);
 	}
 
-	size = sizeof(sqfs_u64) * (fs->inode_tbl_size - 1);
+	size = sizeof(sqfs_u64) * fs->inode_tbl_size;
 	ret = sqfs_write_table(file, cmp, table, size, &start);
 
 	super->export_table_start = start;
