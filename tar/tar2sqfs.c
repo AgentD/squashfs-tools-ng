@@ -7,7 +7,7 @@
 #include "config.h"
 
 #include "sqfs/xattr_writer.h"
-#include "sqfs/compress.h"
+#include "sqfs/compressor.h"
 #include "sqfs/id_table.h"
 #include "sqfs/xattr.h"
 #include "sqfs/block.h"

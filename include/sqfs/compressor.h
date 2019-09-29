@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: LGPL-3.0-or-later */
 /*
- * compress.h - This file is part of libsquashfs
+ * compressor.h - This file is part of libsquashfs
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  *
@@ -17,14 +17,14 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef SQFS_COMPRESS_H
-#define SQFS_COMPRESS_H
+#ifndef SQFS_COMPRESSOR_H
+#define SQFS_COMPRESSOR_H
 
 #include "sqfs/predef.h"
 #include "sqfs/super.h"
 
 /**
- * @file compress.h
+ * @file compressor.h
  *
  * @brief Contains declarations to everything related to data compression.
  */
@@ -380,4 +380,4 @@ int sqfs_compressor_id_from_name(const char *name, E_SQFS_COMPRESSOR *out);
 }
 #endif
 
-#endif /* SQFS_COMPRESS_H */
+#endif /* SQFS_COMPRESSOR_H */

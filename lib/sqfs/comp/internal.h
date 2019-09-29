@@ -10,7 +10,7 @@
 #include "config.h"
 
 #include "sqfs/predef.h"
-#include "sqfs/compress.h"
+#include "sqfs/compressor.h"
 #include "sqfs/error.h"
 #include "sqfs/block.h"
 #include "sqfs/io.h"

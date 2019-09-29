@@ -9,7 +9,7 @@
 
 #include "config.h"
 
-#include "sqfs/compress.h"
+#include "sqfs/compressor.h"
 #include "sqfs/id_table.h"
 #include "sqfs/inode.h"
 #include "sqfs/table.h"

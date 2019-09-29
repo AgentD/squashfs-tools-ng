@@ -12,7 +12,7 @@
 #include "sqfs/xattr_reader.h"
 #include "sqfs/meta_reader.h"
 #include "sqfs/data_reader.h"
-#include "sqfs/compress.h"
+#include "sqfs/compressor.h"
 #include "sqfs/id_table.h"
 #include "sqfs/xattr.h"
 #include "sqfs/block.h"
