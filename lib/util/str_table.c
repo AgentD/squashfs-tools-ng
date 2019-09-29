@@ -9,8 +9,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 
+#include "sqfs/error.h"
 #include "str_table.h"
 #include "util.h"
 
@@ -41,10 +41,8 @@ static int strings_grow(str_table_t *table)
 	newsz = table->max_strings ? (table->max_strings * 2) : 16;
 	new = realloc(table->strings, sizeof(table->strings[0]) * newsz);
 
-	if (new == NULL) {
-		perror("growing string table");
-		return -1;
-	}
+	if (new == NULL)
+		return SQFS_ERROR_ALLOC;
 
 	table->strings = new;
 	table->max_strings = newsz;
@@ -58,10 +56,8 @@ int str_table_init(str_table_t *table, size_t size)
 	table->buckets = alloc_array(size, sizeof(table->buckets[0]));
 	table->num_buckets = size;
 
-	if (table->buckets == NULL) {
-		perror("initializing string table");
-		return -1;
-	}
+	if (table->buckets == NULL)
+		return SQFS_ERROR_ALLOC;
 
 	return 0;
 }
@@ -91,6 +87,7 @@ int str_table_get_index(str_table_t *table, const char *str, size_t *idx)
 	str_bucket_t *bucket;
 	sqfs_u32 hash;
 	size_t index;
+	int err;
 
 	hash = strhash(str);
 	index = hash % table->num_buckets;
@@ -105,8 +102,9 @@ int str_table_get_index(str_table_t *table, const char *str, size_t *idx)
 		bucket = bucket->next;
 	}
 
-	if (strings_grow(table))
-		return -1;
+	err = strings_grow(table);
+	if (err)
+		return err;
 
 	bucket = calloc(1, sizeof(*bucket));
 	if (bucket == NULL)
@@ -125,8 +123,7 @@ int str_table_get_index(str_table_t *table, const char *str, size_t *idx)
 	return 0;
 fail_oom:
 	free(bucket);
-	perror("allocating hash table bucket");
-	return -1;
+	return SQFS_ERROR_ALLOC;
 }
 
 const char *str_table_get_string(str_table_t *table, size_t index)

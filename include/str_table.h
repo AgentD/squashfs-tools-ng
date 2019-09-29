@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* SPDX-License-Identifier: LGPL-3.0-or-later */
 /*
  * str_table.h
  *
@@ -28,14 +28,12 @@ typedef struct {
 	size_t max_strings;
 } str_table_t;
 
-/* `size` is the number of hash table buckets to use internally.
-   Returns 0 on success. Internally writes errors to stderr. */
+/* `size` is the number of hash table buckets to use internally. */
 SQFS_INTERNAL int str_table_init(str_table_t *table, size_t size);
 
 SQFS_INTERNAL void str_table_cleanup(str_table_t *table);
 
-/* Resolve a string to an incremental, unique ID
-   Returns 0 on success. Internally writes errors to stderr. */
+/* Resolve a string to an incremental, unique ID. */
 SQFS_INTERNAL
 int str_table_get_index(str_table_t *table, const char *str, size_t *idx);
 
