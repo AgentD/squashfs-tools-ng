@@ -105,10 +105,13 @@ void sqfs_dir_writer_destroy(sqfs_dir_writer_t *writer)
 	free(writer);
 }
 
-int sqfs_dir_writer_begin(sqfs_dir_writer_t *writer)
+int sqfs_dir_writer_begin(sqfs_dir_writer_t *writer, sqfs_u16 flags)
 {
 	sqfs_u32 offset;
 	sqfs_u64 block;
+
+	if (flags != 0)
+		return SQFS_ERROR_UNSUPPORTED;
 
 	writer_reset(writer);
 

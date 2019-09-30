@@ -91,10 +91,11 @@ SQFS_API void sqfs_dir_writer_destroy(sqfs_dir_writer_t *writer);
  * @memberof sqfs_dir_writer_t
  *
  * @param writer A pointer to a directory writer object.
+ * @param flags A currently unused flag field. Must be set to 0.
  *
  * @return Zero on success, a @ref E_SQFS_ERROR value on failure.
  */
-SQFS_API int sqfs_dir_writer_begin(sqfs_dir_writer_t *writer);
+SQFS_API int sqfs_dir_writer_begin(sqfs_dir_writer_t *writer, sqfs_u16 flags);
 
 /**
  * @brief Add add a directory entry.

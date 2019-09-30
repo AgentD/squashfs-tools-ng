@@ -23,7 +23,7 @@ static sqfs_inode_generic_t *write_dir_entries(sqfs_dir_writer_t *dirw,
 	tree_node_t *it;
 	int ret;
 
-	if (sqfs_dir_writer_begin(dirw))
+	if (sqfs_dir_writer_begin(dirw, 0))
 		return NULL;
 
 	for (it = node->data.dir.children; it != NULL; it = it->next) {
