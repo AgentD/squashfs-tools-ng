@@ -54,10 +54,10 @@ void selinux_close_context_file(void *sehnd)
 	selabel_close(sehnd);
 }
 #else
-int selinux_relable_node(void *sehnd, fstree_t *fs,
+int selinux_relable_node(void *sehnd, sqfs_xattr_writer_t *xwr,
 			 tree_node_t *node, const char *path)
 {
-	(void)sehnd; (void)fs; (void)node; (void)path;
+	(void)sehnd; (void)xwr; (void)node; (void)path;
 	fputs("Built without SELinux support, cannot add SELinux labels\n",
 	      stderr);
 	return -1;
