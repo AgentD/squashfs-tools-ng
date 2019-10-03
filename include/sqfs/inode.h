@@ -552,6 +552,22 @@ SQFS_API int sqfs_inode_get_xattr_index(const sqfs_inode_generic_t *inode,
 					sqfs_u32 *out);
 
 /**
+ * @brief Set the extended attribute index of an inode.
+ *
+ * For basic inodes, this function promes the inodes to extended inodes if the
+ * index is not 0xFFFFFFFF. If the index is 0xFFFFFFFF, the function tries to
+ * demote extended inode to a basic inode after setting the index.
+ *
+ * @param inode A pointer to an inode.
+ * @param index The extended attribute index.
+ *
+ * @return Zero on success, an @ref SQFS_ERROR_CORRUPTED if the node has
+ *         an unknown type set.
+ */
+SQFS_API int sqfs_inode_set_xattr_index(sqfs_inode_generic_t *inode,
+					sqfs_u32 index);
+
+/**
  * @brief Convert a basic inode to an extended inode.
  *
  * For inodes that already have an extended type, this is a no-op.

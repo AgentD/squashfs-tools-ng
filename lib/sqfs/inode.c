@@ -64,6 +64,55 @@ int sqfs_inode_get_xattr_index(const sqfs_inode_generic_t *inode,
 	return 0;
 }
 
+int sqfs_inode_set_xattr_index(sqfs_inode_generic_t *inode, sqfs_u32 index)
+{
+	int err;
+
+	if (index != 0xFFFFFFFF) {
+		err = sqfs_inode_make_extended(inode);
+		if (err)
+			return err;
+	}
+
+	switch (inode->base.type) {
+	case SQFS_INODE_DIR:
+	case SQFS_INODE_FILE:
+	case SQFS_INODE_SLINK:
+	case SQFS_INODE_BDEV:
+	case SQFS_INODE_CDEV:
+	case SQFS_INODE_FIFO:
+	case SQFS_INODE_SOCKET:
+		break;
+	case SQFS_INODE_EXT_DIR:
+		inode->data.dir_ext.xattr_idx = index;
+		break;
+	case SQFS_INODE_EXT_FILE:
+		inode->data.file_ext.xattr_idx = index;
+		break;
+	case SQFS_INODE_EXT_SLINK:
+		inode->data.slink_ext.xattr_idx = index;
+		break;
+	case SQFS_INODE_EXT_BDEV:
+	case SQFS_INODE_EXT_CDEV:
+		inode->data.dev_ext.xattr_idx = index;
+		break;
+	case SQFS_INODE_EXT_FIFO:
+	case SQFS_INODE_EXT_SOCKET:
+		inode->data.ipc_ext.xattr_idx = index;
+		break;
+	default:
+		return SQFS_ERROR_CORRUPTED;
+	}
+
+	if (index == 0xFFFFFFFF) {
+		err = sqfs_inode_make_basic(inode);
+		if (err)
+			return err;
+	}
+
+	return 0;
+}
+
 int sqfs_inode_make_extended(sqfs_inode_generic_t *inode)
 {
 	switch (inode->base.type) {

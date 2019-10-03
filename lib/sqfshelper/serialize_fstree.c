@@ -52,47 +52,23 @@ static sqfs_inode_generic_t *tree_node_to_inode(tree_node_t *node)
 
 	inode->base.type = get_type(node);
 
-	if (node->xattr_idx != 0xFFFFFFFF)
-		sqfs_inode_make_extended(inode);
-
 	switch (inode->base.type) {
 	case SQFS_INODE_FIFO:
 	case SQFS_INODE_SOCKET:
 		inode->data.ipc.nlink = 1;
 		break;
-	case SQFS_INODE_EXT_FIFO:
-	case SQFS_INODE_EXT_SOCKET:
-		inode->data.ipc_ext.nlink = 1;
-		inode->data.ipc_ext.xattr_idx = node->xattr_idx;
-		break;
 	case SQFS_INODE_SLINK:
 		inode->data.slink.nlink = 1;
 		inode->data.slink.target_size = extra;
-		break;
-	case SQFS_INODE_EXT_SLINK:
-		inode->data.slink_ext.nlink = 1;
-		inode->data.slink_ext.target_size = extra;
-		inode->data.slink_ext.xattr_idx = node->xattr_idx;
 		break;
 	case SQFS_INODE_BDEV:
 	case SQFS_INODE_CDEV:
 		inode->data.dev.nlink = 1;
 		inode->data.dev.devno = node->data.devno;
 		break;
-	case SQFS_INODE_EXT_BDEV:
-	case SQFS_INODE_EXT_CDEV:
-		inode->data.dev_ext.nlink = 1;
-		inode->data.dev_ext.devno = node->data.devno;
-		inode->data.dev_ext.xattr_idx = node->xattr_idx;
-		break;
-	default:
-		goto fail;
 	}
 
 	return inode;
-fail:
-	free(inode);
-	return NULL;
 }
 
 static sqfs_inode_generic_t *write_dir_entries(sqfs_dir_writer_t *dirw,
@@ -163,11 +139,6 @@ int sqfs_serialize_fstree(sqfs_file_t *file, sqfs_super_t *super, fstree_t *fs,
 		} else if (S_ISREG(n->mode)) {
 			inode = n->data.file.user_ptr;
 			n->data.file.user_ptr = NULL;
-
-			if (n->xattr_idx != 0xFFFFFFFF) {
-				sqfs_inode_make_extended(inode);
-				inode->data.file_ext.xattr_idx = n->xattr_idx;
-			}
 		} else {
 			inode = tree_node_to_inode(n);
 		}
@@ -178,6 +149,8 @@ int sqfs_serialize_fstree(sqfs_file_t *file, sqfs_super_t *super, fstree_t *fs,
 		inode->base.mode = n->mode;
 		inode->base.mod_time = n->mod_time;
 		inode->base.inode_number = n->inode_num;
+
+		sqfs_inode_set_xattr_index(inode, n->xattr_idx);
 
 		if (sqfs_id_table_id_to_index(idtbl, n->uid,
 					      &inode->base.uid_idx)) {
