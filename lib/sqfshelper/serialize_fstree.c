@@ -31,49 +31,29 @@ static int get_type(tree_node_t *node)
 	assert(0);
 }
 
-static sqfs_inode_generic_t *tree_node_to_inode(sqfs_id_table_t *idtbl,
-						tree_node_t *node)
+static sqfs_inode_generic_t *tree_node_to_inode(tree_node_t *node)
 {
 	sqfs_inode_generic_t *inode;
-	sqfs_u16 uid_idx, gid_idx;
 	size_t extra = 0;
 
-	if (S_ISREG(node->mode)) {
-		inode = node->data.file.user_ptr;
-		node->data.file.user_ptr = NULL;
-	} else {
-		if (S_ISLNK(node->mode))
-			extra = strlen(node->data.slink_target);
+	if (S_ISLNK(node->mode))
+		extra = strlen(node->data.slink_target);
 
-		inode = alloc_flex(sizeof(*inode), 1, extra);
-		if (inode == NULL) {
-			perror("creating inode from file system tree node");
-			return NULL;
-		}
-
-		if (S_ISLNK(node->mode)) {
-			inode->slink_target = (char *)inode->extra;
-
-			memcpy(inode->extra, node->data.slink_target, extra);
-		}
-
-		inode->base.type = get_type(node);
+	inode = alloc_flex(sizeof(*inode), 1, extra);
+	if (inode == NULL) {
+		perror("creating inode from file system tree node");
+		return NULL;
 	}
 
-	if (sqfs_id_table_id_to_index(idtbl, node->uid, &uid_idx))
-		goto fail;
+	if (S_ISLNK(node->mode)) {
+		inode->slink_target = (char *)inode->extra;
+		memcpy(inode->extra, node->data.slink_target, extra);
+	}
 
-	if (sqfs_id_table_id_to_index(idtbl, node->gid, &gid_idx))
-		goto fail;
+	inode->base.type = get_type(node);
 
 	if (node->xattr_idx != 0xFFFFFFFF)
 		sqfs_inode_make_extended(inode);
-
-	inode->base.mode = node->mode;
-	inode->base.uid_idx = uid_idx;
-	inode->base.gid_idx = gid_idx;
-	inode->base.mod_time = node->mod_time;
-	inode->base.inode_number = node->inode_num;
 
 	switch (inode->base.type) {
 	case SQFS_INODE_FIFO:
@@ -105,11 +85,6 @@ static sqfs_inode_generic_t *tree_node_to_inode(sqfs_id_table_t *idtbl,
 		inode->data.dev_ext.devno = node->data.devno;
 		inode->data.dev_ext.xattr_idx = node->xattr_idx;
 		break;
-	case SQFS_INODE_FILE:
-		break;
-	case SQFS_INODE_EXT_FILE:
-		inode->data.file_ext.xattr_idx = node->xattr_idx;
-		break;
 	default:
 		goto fail;
 	}
@@ -121,8 +96,7 @@ fail:
 }
 
 static sqfs_inode_generic_t *write_dir_entries(sqfs_dir_writer_t *dirw,
-					       tree_node_t *node,
-					       sqfs_id_table_t *idtbl)
+					       tree_node_t *node)
 {
 	sqfs_u32 xattr, parent_inode;
 	sqfs_inode_generic_t *inode;
@@ -151,20 +125,7 @@ static sqfs_inode_generic_t *write_dir_entries(sqfs_dir_writer_t *dirw,
 		return NULL;
 	}
 
-	if (sqfs_id_table_id_to_index(idtbl, node->uid, &inode->base.uid_idx))
-		goto fail_id;
-
-	if (sqfs_id_table_id_to_index(idtbl, node->gid, &inode->base.gid_idx))
-		goto fail_id;
-
-	inode->base.mode = node->mode;
-	inode->base.mod_time = node->mod_time;
-	inode->base.inode_number = node->inode_num;
 	return inode;
-fail_id:
-	fputs("failed to allocate IDs\n", stderr);
-	free(inode);
-	return NULL;
 }
 
 int sqfs_serialize_fstree(sqfs_file_t *file, sqfs_super_t *super, fstree_t *fs,
@@ -175,6 +136,7 @@ int sqfs_serialize_fstree(sqfs_file_t *file, sqfs_super_t *super, fstree_t *fs,
 	sqfs_dir_writer_t *dirwr;
 	sqfs_u32 offset;
 	sqfs_u64 block;
+	tree_node_t *n;
 	int ret = -1;
 	size_t i;
 
@@ -194,15 +156,38 @@ int sqfs_serialize_fstree(sqfs_file_t *file, sqfs_super_t *super, fstree_t *fs,
 	super->inode_table_start = file->get_size(file);
 
 	for (i = 0; i < fs->inode_tbl_size; ++i) {
-		if (S_ISDIR(fs->inode_table[i]->mode)) {
-			inode = write_dir_entries(dirwr, fs->inode_table[i],
-						  idtbl);
+		n = fs->inode_table[i];
+
+		if (S_ISDIR(n->mode)) {
+			inode = write_dir_entries(dirwr, n);
+		} else if (S_ISREG(n->mode)) {
+			inode = n->data.file.user_ptr;
+			n->data.file.user_ptr = NULL;
+
+			if (n->xattr_idx != 0xFFFFFFFF) {
+				sqfs_inode_make_extended(inode);
+				inode->data.file_ext.xattr_idx = n->xattr_idx;
+			}
 		} else {
-			inode = tree_node_to_inode(idtbl, fs->inode_table[i]);
+			inode = tree_node_to_inode(n);
 		}
 
 		if (inode == NULL)
 			goto out;
+
+		inode->base.mode = n->mode;
+		inode->base.mod_time = n->mod_time;
+		inode->base.inode_number = n->inode_num;
+
+		if (sqfs_id_table_id_to_index(idtbl, n->uid,
+					      &inode->base.uid_idx)) {
+			goto fail_id;
+		}
+
+		if (sqfs_id_table_id_to_index(idtbl, n->gid,
+					      &inode->base.gid_idx)) {
+			goto fail_id;
+		}
 
 		sqfs_meta_writer_get_position(im, &block, &offset);
 		fs->inode_table[i]->inode_ref = (block << 16) | offset;
@@ -235,4 +220,8 @@ out_dm:
 out_im:
 	sqfs_meta_writer_destroy(im);
 	return ret;
+fail_id:
+	fputs("failed to allocate IDs\n", stderr);
+	free(inode);
+	goto out;
 }
