@@ -106,13 +106,6 @@ int sqfs_serialize_fstree(sqfs_file_t *file, sqfs_super_t *super, fstree_t *fs,
 			goto out;
 		}
 
-		if (inode->base.type == SQFS_INODE_EXT_DIR) {
-			if (sqfs_dir_writer_write_index(dirwr, im)) {
-				free(inode);
-				goto out;
-			}
-		}
-
 		free(inode);
 	}
 

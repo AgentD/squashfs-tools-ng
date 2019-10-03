@@ -10,6 +10,7 @@
 #include "sqfs/meta_writer.h"
 #include "sqfs/error.h"
 #include "sqfs/inode.h"
+#include "sqfs/dir.h"
 #include "compat.h"
 
 static int write_block_sizes(sqfs_meta_writer_t *ir,
@@ -23,6 +24,41 @@ static int write_block_sizes(sqfs_meta_writer_t *ir,
 
 	return sqfs_meta_writer_append(ir, sizes,
 				       sizeof(sqfs_u32) * n->num_file_blocks);
+}
+
+static int write_dir_index(sqfs_meta_writer_t *ir, const sqfs_u8 *data,
+			   size_t count)
+{
+	sqfs_dir_index_t *ent, copy;
+	size_t len;
+	int err;
+
+	while (count > sizeof(*ent)) {
+		ent = (sqfs_dir_index_t *)data;
+		data += sizeof(*ent);
+		count -= sizeof(*ent);
+		len = ent->size + 1;
+
+		if (len > count)
+			return SQFS_ERROR_CORRUPTED;
+
+		copy.start_block = htole32(ent->start_block);
+		copy.index = htole32(ent->index);
+		copy.size = htole32(ent->size);
+
+		err = sqfs_meta_writer_append(ir, &copy, sizeof(copy));
+		if (err)
+			return err;
+
+		err = sqfs_meta_writer_append(ir, data, len);
+		if (err)
+			return err;
+
+		data += len;
+		count -= len;
+	}
+
+	return 0;
 }
 
 int sqfs_meta_writer_write_inode(sqfs_meta_writer_t *ir,
@@ -102,7 +138,10 @@ int sqfs_meta_writer_write_inode(sqfs_meta_writer_t *ir,
 			.offset = htole16(n->data.dir_ext.offset),
 			.xattr_idx = htole32(n->data.dir_ext.xattr_idx),
 		};
-		return sqfs_meta_writer_append(ir, &dir, sizeof(dir));
+		ret = sqfs_meta_writer_append(ir, &dir, sizeof(dir));
+		if (ret)
+			return ret;
+		return write_dir_index(ir, n->extra, n->num_dir_idx_bytes);
 	}
 	case SQFS_INODE_EXT_FILE: {
 		sqfs_inode_file_ext_t file = {

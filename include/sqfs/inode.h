@@ -505,6 +505,12 @@ struct sqfs_inode_generic_t {
 	size_t num_file_blocks;
 
 	/**
+	 * @brief For extended directory inodes, stores the number of payload
+	 *        bytes following for the directory index.
+	 */
+	size_t num_dir_idx_bytes;
+
+	/**
 	 * @brief Type specific inode data.
 	 */
 	union {

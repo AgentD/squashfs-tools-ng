@@ -291,10 +291,13 @@ sqfs_inode_generic_t
 			      sqfs_u32 parent_ino)
 {
 	sqfs_inode_generic_t *inode;
+	sqfs_dir_index_t *ent;
 	sqfs_u64 start_block;
 	sqfs_u16 block_offset;
+	index_ent_t *idx;
+	sqfs_u8 *ptr;
 
-	inode = calloc(1, sizeof(*inode));
+	inode = alloc_flex(sizeof(*inode), 1, writer->idx_size);
 	if (inode == NULL)
 		return NULL;
 
@@ -323,32 +326,21 @@ sqfs_inode_generic_t
 		inode->data.dir_ext.xattr_idx = xattr;
 		inode->data.dir_ext.inodex_count =
 			writer->idx_size ? (writer->idx_size - 1) : 0;
+
+		inode->num_dir_idx_bytes = writer->idx_size;
+		ptr = inode->extra;
+
+		for (idx = writer->idx; idx != NULL; idx = idx->next) {
+			ent = (sqfs_dir_index_t *)ptr;
+			ent->start_block = idx->block;
+			ent->index = idx->index;
+			ent->size = idx->ent->name_len - 1;
+
+			ptr += sizeof(*ent);
+			memcpy(ptr, idx->ent->name, idx->ent->name_len);
+			ptr += idx->ent->name_len;
+		}
 	}
 
 	return inode;
-}
-
-int sqfs_dir_writer_write_index(const sqfs_dir_writer_t *writer,
-				sqfs_meta_writer_t *im)
-{
-	sqfs_dir_index_t ent;
-	index_ent_t *idx;
-	int err;
-
-	for (idx = writer->idx; idx != NULL; idx = idx->next) {
-		ent.start_block = htole32(idx->block);
-		ent.index = htole32(idx->index);
-		ent.size = htole32(idx->ent->name_len - 1);
-
-		err = sqfs_meta_writer_append(im, &ent, sizeof(ent));
-		if (err)
-			return err;
-
-		err = sqfs_meta_writer_append(im, idx->ent->name,
-					      idx->ent->name_len);
-		if (err)
-			return err;
-	}
-
-	return 0;
 }

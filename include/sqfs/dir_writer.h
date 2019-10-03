@@ -192,20 +192,6 @@ sqfs_dir_writer_get_dir_reference(const sqfs_dir_writer_t *writer);
 SQFS_API size_t sqfs_dir_writer_get_index_size(const sqfs_dir_writer_t *writer);
 
 /**
- * @brief Write the index of the index of the last written directory to
- *        a meta data writer after the extended directory inode.
- *
- * @memberof sqfs_dir_writer_t
- *
- * @param writer A pointer to a directory writer object.
- * @param im A pointer to a meta data writer to write the index to.
- *
- * @return Zero on success, a @ref E_SQFS_ERROR value on failure.
- */
-SQFS_API int sqfs_dir_writer_write_index(const sqfs_dir_writer_t *writer,
-					 sqfs_meta_writer_t *im);
-
-/**
  * @brief Helper function for creating an inode from the last directory.
  *
  * @memberof sqfs_dir_writer_t

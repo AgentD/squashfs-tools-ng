@@ -11,9 +11,11 @@
 #include "sqfs/error.h"
 #include "sqfs/super.h"
 #include "sqfs/inode.h"
+#include "sqfs/dir.h"
 #include "util.h"
 
 #include <stdlib.h>
+#include <string.h>
 #include <errno.h>
 
 #define SWAB16(x) x = le16toh(x)
@@ -222,6 +224,80 @@ static int read_inode_slink_ext(sqfs_meta_reader_t *ir, sqfs_inode_t *base,
 	return 0;
 }
 
+static int read_inode_dir_ext(sqfs_meta_reader_t *ir, sqfs_inode_t *base,
+			      sqfs_inode_generic_t **result)
+{
+	size_t i, new_sz, index_max, index_used;
+	sqfs_inode_generic_t *out;
+	sqfs_inode_dir_ext_t dir;
+	sqfs_dir_index_t ent;
+	void *new;
+	int err;
+
+	err = sqfs_meta_reader_read(ir, &dir, sizeof(dir));
+	if (err)
+		return err;
+
+	SWAB32(dir.nlink);
+	SWAB32(dir.size);
+	SWAB32(dir.start_block);
+	SWAB32(dir.parent_inode);
+	SWAB16(dir.inodex_count);
+	SWAB16(dir.offset);
+	SWAB32(dir.xattr_idx);
+
+	index_max = dir.size ? 128 : 0;
+	index_used = 0;
+
+	out = alloc_flex(sizeof(*out), 1, index_max);
+	if (out == NULL)
+		return SQFS_ERROR_ALLOC;
+
+	out->base = *base;
+	out->data.dir_ext = dir;
+
+	if (dir.size == 0) {
+		*result = out;
+		return 0;
+	}
+
+	for (i = 0; i <= dir.inodex_count; ++i) {
+		err = sqfs_meta_reader_read(ir, &ent, sizeof(ent));
+		if (err)
+			return err;
+
+		SWAB32(ent.start_block);
+		SWAB32(ent.index);
+		SWAB32(ent.size);
+
+		new_sz = index_max;
+		while (sizeof(ent) + ent.size + 1 > new_sz - index_used)
+			new_sz *= 2;
+
+		if (new_sz > index_max) {
+			new = realloc(out, sizeof(*out) + new_sz);
+			if (new == NULL) {
+				free(out);
+				return SQFS_ERROR_ALLOC;
+			}
+			out = new;
+			index_max = new_sz;
+		}
+
+		memcpy(out->extra + index_used, &ent, sizeof(ent));
+		index_used += sizeof(ent);
+
+		err = sqfs_meta_reader_read(ir, out->extra + index_used,
+					    ent.size + 1);
+		if (err)
+			return err;
+	}
+
+	out->num_dir_idx_bytes = index_used;
+	*result = out;
+	return 0;
+}
+
 int sqfs_meta_reader_read_inode(sqfs_meta_reader_t *ir,
 				const sqfs_super_t *super,
 				sqfs_u64 block_start, size_t offset,
@@ -264,6 +340,8 @@ int sqfs_meta_reader_read_inode(sqfs_meta_reader_t *ir,
 					   result);
 	case SQFS_INODE_EXT_SLINK:
 		return read_inode_slink_ext(ir, &inode, result);
+	case SQFS_INODE_EXT_DIR:
+		return read_inode_dir_ext(ir, &inode, result);
 	default:
 		break;
 	}
@@ -304,19 +382,6 @@ int sqfs_meta_reader_read_inode(sqfs_meta_reader_t *ir,
 		if (err)
 			goto fail_free;
 		SWAB32(out->data.ipc.nlink);
-		break;
-	case SQFS_INODE_EXT_DIR:
-		err = sqfs_meta_reader_read(ir, &out->data.dir_ext,
-					    sizeof(out->data.dir_ext));
-		if (err)
-			goto fail_free;
-		SWAB32(out->data.dir_ext.nlink);
-		SWAB32(out->data.dir_ext.size);
-		SWAB32(out->data.dir_ext.start_block);
-		SWAB32(out->data.dir_ext.parent_inode);
-		SWAB16(out->data.dir_ext.inodex_count);
-		SWAB16(out->data.dir_ext.offset);
-		SWAB32(out->data.dir_ext.xattr_idx);
 		break;
 	case SQFS_INODE_EXT_BDEV:
 	case SQFS_INODE_EXT_CDEV:
