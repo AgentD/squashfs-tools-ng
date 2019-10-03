@@ -36,7 +36,7 @@ static const char *hexmap = "0123456789ABCDEF";
 
 static char *to_base32(const void *input, size_t size)
 {
-	const uint8_t *in = input;
+	const sqfs_u8 *in = input;
 	char *out, *ptr;
 	size_t i;
 
@@ -57,7 +57,7 @@ static char *to_base32(const void *input, size_t size)
 
 static void *from_base32(const char *input, size_t *size_out)
 {
-	uint8_t lo, hi, *out, *ptr;
+	sqfs_u8 lo, hi, *out, *ptr;
 	size_t len;
 
 	len = strlen(input);
@@ -94,7 +94,7 @@ typedef struct kv_block_desc_t {
 	size_t start;
 	size_t count;
 
-	uint64_t start_ref;
+	sqfs_u64 start_ref;
 	size_t size_bytes;
 } kv_block_desc_t;
 
@@ -516,7 +516,7 @@ static int write_id_table(sqfs_xattr_writer_t *xwr, sqfs_meta_writer_t *mw,
 	return sqfs_meta_writer_flush(mw);
 }
 
-static int write_location_table(sqfs_xattr_writer_t *xwr, uint64_t kv_start,
+static int write_location_table(sqfs_xattr_writer_t *xwr, sqfs_u64 kv_start,
 				sqfs_file_t *file, const sqfs_super_t *super,
 				sqfs_u64 *locations, size_t loc_count)
 {
