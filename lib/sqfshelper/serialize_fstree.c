@@ -19,18 +19,6 @@
 #include <string.h>
 #include <stdio.h>
 
-static int get_type(tree_node_t *node)
-{
-	switch (node->mode & S_IFMT) {
-	case S_IFSOCK: return SQFS_INODE_SOCKET;
-	case S_IFIFO: return SQFS_INODE_FIFO;
-	case S_IFLNK: return SQFS_INODE_SLINK;
-	case S_IFBLK: return SQFS_INODE_BDEV;
-	case S_IFCHR: return SQFS_INODE_CDEV;
-	}
-	assert(0);
-}
-
 static sqfs_inode_generic_t *tree_node_to_inode(tree_node_t *node)
 {
 	sqfs_inode_generic_t *inode;
@@ -45,27 +33,34 @@ static sqfs_inode_generic_t *tree_node_to_inode(tree_node_t *node)
 		return NULL;
 	}
 
-	if (S_ISLNK(node->mode)) {
-		inode->slink_target = (char *)inode->extra;
-		memcpy(inode->extra, node->data.slink_target, extra);
-	}
-
-	inode->base.type = get_type(node);
-
-	switch (inode->base.type) {
-	case SQFS_INODE_FIFO:
-	case SQFS_INODE_SOCKET:
+	switch (node->mode & S_IFMT) {
+	case S_IFSOCK:
+		inode->base.type = SQFS_INODE_SOCKET;
 		inode->data.ipc.nlink = 1;
 		break;
-	case SQFS_INODE_SLINK:
+	case S_IFIFO:
+		inode->base.type = SQFS_INODE_FIFO;
+		inode->data.ipc.nlink = 1;
+		break;
+	case S_IFLNK:
+		inode->base.type = SQFS_INODE_SLINK;
 		inode->data.slink.nlink = 1;
 		inode->data.slink.target_size = extra;
+		inode->slink_target = (char *)inode->extra;
+		memcpy(inode->extra, node->data.slink_target, extra);
 		break;
-	case SQFS_INODE_BDEV:
-	case SQFS_INODE_CDEV:
+	case S_IFBLK:
+		inode->base.type = SQFS_INODE_BDEV;
 		inode->data.dev.nlink = 1;
 		inode->data.dev.devno = node->data.devno;
 		break;
+	case S_IFCHR:
+		inode->base.type = SQFS_INODE_CDEV;
+		inode->data.dev.nlink = 1;
+		inode->data.dev.devno = node->data.devno;
+		break;
+	default:
+		assert(0);
 	}
 
 	return inode;
