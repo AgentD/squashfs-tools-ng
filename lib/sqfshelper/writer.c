@@ -13,14 +13,57 @@
 
 #include <string.h>
 
+#ifdef HAVE_SYS_SYSINFO_H
+#include <sys/sysinfo.h>
+
+static size_t os_get_num_jobs(void)
+{
+	int nprocs;
+
+	nprocs = get_nprocs_conf();
+	return nprocs < 1 ? 1 : nprocs;
+}
+
+static size_t os_get_max_ram(void)
+{
+	struct sysinfo info;
+
+	if (sysinfo(&info)) {
+		perror("sysinfo");
+		return 0;
+	}
+
+	return info.totalram;
+}
+#else
+static size_t os_get_num_jobs(void)
+{
+	return 1;
+}
+
+static size_t os_get_max_ram(void)
+{
+	(void)cfg;
+	return 0;
+}
+#endif
+
 void sqfs_writer_cfg_init(sqfs_writer_cfg_t *cfg)
 {
+	size_t max_ram;
+
 	memset(cfg, 0, sizeof(*cfg));
 
-	cfg->num_jobs = 1;
+	cfg->num_jobs = os_get_num_jobs();
 	cfg->block_size = SQFS_DEFAULT_BLOCK_SIZE;
 	cfg->devblksize = SQFS_DEVBLK_SIZE;
 	cfg->comp_id = compressor_get_default();
+
+	max_ram = os_get_max_ram();
+	cfg->max_backlog = (max_ram / 2) / cfg->block_size;
+
+	if (cfg->max_backlog < 1)
+		cfg->max_backlog = 10 * cfg->num_jobs;
 }
 
 int sqfs_writer_init(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *wrcfg)

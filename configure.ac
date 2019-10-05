@@ -184,6 +184,7 @@ AX_COMPILE_CHECK_SIZEOF(long)
 AX_COMPILE_CHECK_SIZEOF(long long)
 
 AC_CHECK_HEADERS([sys/xattr.h], [], [])
+AC_CHECK_HEADERS([sys/sysinfo.h], [], [])
 
 ##### generate output #####
 
