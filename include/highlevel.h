@@ -129,4 +129,6 @@ int sqfs_writer_finish(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *cfg);
 
 void sqfs_writer_cleanup(sqfs_writer_t *sqfs);
 
+void sqfs_perror(const char *file, const char *action, int error_code);
+
 #endif /* HIGHLEVEL_H */
