@@ -6,6 +6,8 @@
  */
 #include "config.h"
 
+#include "sqfs/error.h"
+
 #include "highlevel.h"
 #include "util.h"
 
@@ -47,17 +49,24 @@ int sqfs_writer_init(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *wrcfg)
 		goto fail_fs;
 	}
 
-	if (sqfs_super_init(&sqfs->super, wrcfg->block_size,
-			    sqfs->fs.defaults.st_mtime, wrcfg->comp_id)) {
+	ret = sqfs_super_init(&sqfs->super, wrcfg->block_size,
+			      sqfs->fs.defaults.st_mtime, wrcfg->comp_id);
+	if (ret) {
+		sqfs_perror(wrcfg->filename, "initializing super block", ret);
 		goto fail_cmp;
 	}
 
-	if (sqfs_super_write(&sqfs->super, sqfs->outfile))
+	ret = sqfs_super_write(&sqfs->super, sqfs->outfile);
+	if (ret) {
+		sqfs_perror(wrcfg->filename, "writing super block", ret);
 		goto fail_cmp;
+	}
 
 	ret = sqfs->cmp->write_options(sqfs->cmp, sqfs->outfile);
-	if (ret < 0)
+	if (ret < 0) {
+		sqfs_perror(wrcfg->filename, "writing compressor options", ret);
 		goto fail_cmp;
+	}
 
 	if (ret > 0)
 		sqfs->super.flags |= SQFS_FLAG_COMPRESSOR_OPTIONS;
@@ -75,14 +84,18 @@ int sqfs_writer_init(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *wrcfg)
 	register_stat_hooks(sqfs->data, &sqfs->stats);
 
 	sqfs->idtbl = sqfs_id_table_create();
-	if (sqfs->idtbl == NULL)
+	if (sqfs->idtbl == NULL) {
+		sqfs_perror(wrcfg->filename, "creating ID table",
+			    SQFS_ERROR_ALLOC);
 		goto fail_data;
+	}
 
 	if (!wrcfg->no_xattr) {
 		sqfs->xwr = sqfs_xattr_writer_create();
 
 		if (sqfs->xwr == NULL) {
-			perror("creating xattr writer");
+			sqfs_perror(wrcfg->filename, "creating xattr writer",
+				    SQFS_ERROR_ALLOC);
 			goto fail;
 		}
 	}
@@ -105,8 +118,13 @@ fail_file:
 
 int sqfs_writer_finish(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *cfg)
 {
-	if (sqfs_data_writer_finish(sqfs->data))
+	int ret;
+
+	ret = sqfs_data_writer_finish(sqfs->data);
+	if (ret) {
+		sqfs_perror(cfg->filename, "finishing data blocks", ret);
 		return -1;
+	}
 
 	tree_node_sort_recursive(sqfs->fs.root);
 	if (fstree_gen_inode_table(&sqfs->fs))
@@ -114,36 +132,45 @@ int sqfs_writer_finish(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *cfg)
 
 	sqfs->super.inode_count = sqfs->fs.inode_tbl_size;
 
-	if (sqfs_serialize_fstree(sqfs->outfile, &sqfs->super,
+	if (sqfs_serialize_fstree(cfg->filename, sqfs->outfile, &sqfs->super,
 				  &sqfs->fs, sqfs->cmp, sqfs->idtbl)) {
 		return -1;
 	}
 
-	if (sqfs_data_writer_write_fragment_table(sqfs->data, &sqfs->super))
+	ret = sqfs_data_writer_write_fragment_table(sqfs->data, &sqfs->super);
+	if (ret) {
+		sqfs_perror(cfg->filename, "writing fragment table", ret);
 		return -1;
+	}
 
 	if (cfg->exportable) {
-		if (write_export_table(sqfs->outfile, &sqfs->fs,
+		if (write_export_table(cfg->filename, sqfs->outfile, &sqfs->fs,
 				       &sqfs->super, sqfs->cmp)) {
 			return -1;
 		}
 	}
 
-	if (sqfs_id_table_write(sqfs->idtbl, sqfs->outfile,
-				&sqfs->super, sqfs->cmp)) {
+	ret = sqfs_id_table_write(sqfs->idtbl, sqfs->outfile,
+				  &sqfs->super, sqfs->cmp);
+	if (ret) {
+		sqfs_perror(cfg->filename, "writing ID table", ret);
 		return -1;
 	}
 
-	if (sqfs_xattr_writer_flush(sqfs->xwr, sqfs->outfile,
-				    &sqfs->super, sqfs->cmp)) {
-		fputs("Error writing xattr table\n", stderr);
+	ret = sqfs_xattr_writer_flush(sqfs->xwr, sqfs->outfile,
+				      &sqfs->super, sqfs->cmp);
+	if (ret) {
+		sqfs_perror(cfg->filename, "writing extended attributes", ret);
 		return -1;
 	}
 
 	sqfs->super.bytes_used = sqfs->outfile->get_size(sqfs->outfile);
 
-	if (sqfs_super_write(&sqfs->super, sqfs->outfile))
-		return 0;
+	ret = sqfs_super_write(&sqfs->super, sqfs->outfile);
+	if (ret) {
+		sqfs_perror(cfg->filename, "updating super block", ret);
+		return -1;
+	}
 
 	if (padd_sqfs(sqfs->outfile, sqfs->super.bytes_used,
 		      cfg->devblksize)) {

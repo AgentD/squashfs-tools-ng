@@ -44,6 +44,7 @@ static int populate_xattr(sqfs_xattr_writer_t *xwr, tree_node_t *node)
 {
 	char *key, *value = NULL, *buffer = NULL;
 	ssize_t buflen, vallen, keylen;
+	int ret;
 
 	buflen = listxattr(node->name, NULL, 0);
 
@@ -76,19 +77,22 @@ static int populate_xattr(sqfs_xattr_writer_t *xwr, tree_node_t *node)
 		if (vallen > 0) {
 			value = calloc(1, vallen);
 			if (value == NULL) {
-				perror("xattr value buffer");
+				perror("allocating xattr value buffer");
 				goto fail;
 			}
 
 			vallen = getxattr(node->name, key, value, vallen);
 			if (vallen == -1) {
-				perror("getxattr");
+				fprintf(stderr, "%s: getxattr: %s\n",
+					node->name, strerror(errno));
 				goto fail;
 			}
 
-			if (sqfs_xattr_writer_add(xwr, key, value, vallen)) {
-				fputs("Error storing xattr key-value pair\n",
-				      stderr);
+			ret = sqfs_xattr_writer_add(xwr, key, value, vallen);
+			if (ret) {
+				sqfs_perror(node->name,
+					    "storing xattr key-value pairs",
+					    ret);
 				goto fail;
 			}
 
@@ -119,6 +123,7 @@ static int populate_dir(fstree_t *fs, tree_node_t *root, dev_t devstart,
 	struct stat sb;
 	tree_node_t *n;
 	DIR *dir;
+	int ret;
 
 	dir = opendir(".");
 	if (dir == NULL) {
@@ -202,8 +207,10 @@ static int populate_dir(fstree_t *fs, tree_node_t *root, dev_t devstart,
 			free(path);
 		}
 
-		if (sqfs_xattr_writer_end(xwr, &n->xattr_idx)) {
-			fputs("error generating xattr index\n", stderr);
+		ret = sqfs_xattr_writer_end(xwr, &n->xattr_idx);
+		if (ret) {
+			sqfs_perror(n->name,
+				    "completing xattr key-value pairs", ret);
 			return -1;
 		}
 

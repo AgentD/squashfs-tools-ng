@@ -243,7 +243,7 @@ static int write_file(tar_header_decoded_t *hdr, file_info_t *fi,
 		}
 	}
 
-	ret = write_data_from_file(sqfs.data, inode, file, 0);
+	ret = write_data_from_file(hdr->name, sqfs.data, inode, file, 0);
 	file->destroy(file);
 
 	sqfs.stats.bytes_read += filesize;
@@ -259,35 +259,38 @@ static int write_file(tar_header_decoded_t *hdr, file_info_t *fi,
 static int copy_xattr(tree_node_t *node, tar_header_decoded_t *hdr)
 {
 	tar_xattr_t *xattr;
+	int ret;
 
-	if (sqfs_xattr_writer_begin(sqfs.xwr)) {
-		fputs("Error beginning xattr block\n", stderr);
+	ret = sqfs_xattr_writer_begin(sqfs.xwr);
+	if (ret) {
+		sqfs_perror(hdr->name, "beginning xattr block", ret);
 		return -1;
 	}
 
 	for (xattr = hdr->xattr; xattr != NULL; xattr = xattr->next) {
 		if (!sqfs_has_xattr(xattr->key)) {
-			if (dont_skip) {
-				fprintf(stderr, "Cannot encode xattr key '%s' "
-					"in squashfs\n", xattr->key);
-				return -1;
-			}
+			fprintf(stderr, "%s: squashfs does not "
+				"support xattr prefix of %s\n",
+				dont_skip ? "ERROR" : "WARNING",
+				xattr->key);
 
-			fprintf(stderr, "WARNING: squashfs does not "
-				"support xattr prefix of %s\n", xattr->key);
+			if (dont_skip)
+				return -1;
 			continue;
 		}
 
-		if (sqfs_xattr_writer_add(sqfs.xwr, xattr->key, xattr->value,
-					  strlen(xattr->value))) {
-			fputs("Error converting xattr key-value pair\n",
-			      stderr);
+		ret = sqfs_xattr_writer_add(sqfs.xwr, xattr->key, xattr->value,
+					    strlen(xattr->value));
+		if (ret) {
+			sqfs_perror(hdr->name, "storing xattr key-value pair",
+				    ret);
 			return -1;
 		}
 	}
 
-	if (sqfs_xattr_writer_end(sqfs.xwr, &node->xattr_idx)) {
-		fputs("Error completing xattr block\n", stderr);
+	ret = sqfs_xattr_writer_end(sqfs.xwr, &node->xattr_idx);
+	if (ret) {
+		sqfs_perror(hdr->name, "completing xattr block", ret);
 		return -1;
 	}
 
@@ -372,7 +375,7 @@ static int process_tar_ball(void)
 
 			if (skip) {
 				fprintf(stderr, "%s: broken sparse "
-					"file layout)\n", hdr.name);
+					"file layout\n", hdr.name);
 			}
 		}
 

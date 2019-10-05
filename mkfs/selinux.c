@@ -27,7 +27,7 @@ int selinux_relable_node(void *sehnd, sqfs_xattr_writer_t *xwr,
 	free(context);
 
 	if (ret)
-		fputs("Error relabeling tree node\n", stderr);
+		sqfs_perror(node->name, "storing SELinux xattr", ret);
 
 	return ret;
 fail:

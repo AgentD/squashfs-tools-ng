@@ -73,7 +73,8 @@ static int pack_files(sqfs_data_writer_t *data, fstree_t *fs,
 
 		fi->user_ptr = inode;
 
-		ret = write_data_from_file(data, inode, file, 0);
+		ret = write_data_from_file(fi->input_file, data,
+					   inode, file, 0);
 		file->destroy(file);
 
 		if (ret)
@@ -86,18 +87,20 @@ static int pack_files(sqfs_data_writer_t *data, fstree_t *fs,
 	return restore_working_dir(opt);
 }
 
-static int relabel_tree_dfs(sqfs_xattr_writer_t *xwr, tree_node_t *n,
-			    void *selinux_handle)
+static int relabel_tree_dfs(const char *filename, sqfs_xattr_writer_t *xwr,
+			    tree_node_t *n, void *selinux_handle)
 {
 	char *path = fstree_get_path(n);
+	int ret;
 
 	if (path == NULL) {
 		perror("getting absolute node path for SELinux relabeling");
 		return -1;
 	}
 
-	if (sqfs_xattr_writer_begin(xwr)) {
-		fputs("error recoding xattr key-value pairs\n", stderr);
+	ret = sqfs_xattr_writer_begin(xwr);
+	if (ret) {
+		sqfs_perror(filename, "recording xattr key-value pairs", ret);
 		return -1;
 	}
 
@@ -106,8 +109,10 @@ static int relabel_tree_dfs(sqfs_xattr_writer_t *xwr, tree_node_t *n,
 		return -1;
 	}
 
-	if (sqfs_xattr_writer_end(xwr, &n->xattr_idx)) {
-		fputs("error generating xattr index\n", stderr);
+	ret = sqfs_xattr_writer_end(xwr, &n->xattr_idx);
+	if (ret) {
+		sqfs_perror(filename, "flushing completed key-value pairs",
+			    ret);
 		return -1;
 	}
 
@@ -115,7 +120,7 @@ static int relabel_tree_dfs(sqfs_xattr_writer_t *xwr, tree_node_t *n,
 
 	if (S_ISDIR(n->mode)) {
 		for (n = n->data.dir.children; n != NULL; n = n->next) {
-			if (relabel_tree_dfs(xwr, n, selinux_handle))
+			if (relabel_tree_dfs(filename, xwr, n, selinux_handle))
 				return -1;
 		}
 	}
@@ -144,7 +149,8 @@ static int read_fstree(fstree_t *fs, options_t *opt, sqfs_xattr_writer_t *xwr,
 	fclose(fp);
 
 	if (ret == 0 && selinux_handle != NULL)
-		ret = relabel_tree_dfs(xwr, fs->root, selinux_handle);
+		ret = relabel_tree_dfs(opt->cfg.filename, xwr,
+				       fs->root, selinux_handle);
 
 	return ret;
 }

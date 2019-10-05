@@ -82,7 +82,8 @@ typedef struct {
 
   Returns 0 on success. Prints error messages to stderr on failure.
  */
-int sqfs_serialize_fstree(sqfs_file_t *file, sqfs_super_t *super, fstree_t *fs,
+int sqfs_serialize_fstree(const char *filename, sqfs_file_t *file,
+			  sqfs_super_t *super, fstree_t *fs,
 			  sqfs_compressor_t *cmp, sqfs_id_table_t *idtbl);
 
 /*
@@ -90,7 +91,8 @@ int sqfs_serialize_fstree(sqfs_file_t *file, sqfs_super_t *super, fstree_t *fs,
 
   Returns 0 on success. Prints error messages to stderr on failure.
  */
-int write_export_table(sqfs_file_t *file, fstree_t *fs, sqfs_super_t *super,
+int write_export_table(const char *filename, sqfs_file_t *file,
+		       fstree_t *fs, sqfs_super_t *super,
 		       sqfs_compressor_t *cmp);
 
 /* Print out fancy statistics for squashfs packing tools */
@@ -118,7 +120,8 @@ sqfs_file_t *sqfs_get_stdin_file(const sparse_map_t *map, sqfs_u64 size);
 
 void register_stat_hooks(sqfs_data_writer_t *data, data_writer_stats_t *stats);
 
-int write_data_from_file(sqfs_data_writer_t *data, sqfs_inode_generic_t *inode,
+int write_data_from_file(const char *filename, sqfs_data_writer_t *data,
+			 sqfs_inode_generic_t *inode,
 			 sqfs_file_t *file, int flags);
 
 void sqfs_writer_cfg_init(sqfs_writer_cfg_t *cfg);
