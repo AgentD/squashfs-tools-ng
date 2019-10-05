@@ -120,11 +120,17 @@ int sqfs_writer_finish(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *cfg)
 {
 	int ret;
 
+	if (!cfg->quiet)
+		fputs("Waiting for remaining data blocks...\n", stdout);
+
 	ret = sqfs_data_writer_finish(sqfs->data);
 	if (ret) {
 		sqfs_perror(cfg->filename, "finishing data blocks", ret);
 		return -1;
 	}
+
+	if (!cfg->quiet)
+		fputs("Writing inodes and directories...\n", stdout);
 
 	tree_node_sort_recursive(sqfs->fs.root);
 	if (fstree_gen_inode_table(&sqfs->fs))
@@ -137,6 +143,9 @@ int sqfs_writer_finish(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *cfg)
 		return -1;
 	}
 
+	if (!cfg->quiet)
+		fputs("Writing fragment table...\n", stdout);
+
 	ret = sqfs_data_writer_write_fragment_table(sqfs->data, &sqfs->super);
 	if (ret) {
 		sqfs_perror(cfg->filename, "writing fragment table", ret);
@@ -144,11 +153,17 @@ int sqfs_writer_finish(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *cfg)
 	}
 
 	if (cfg->exportable) {
+		if (!cfg->quiet)
+			fputs("Writing export table...\n", stdout);
+
 		if (write_export_table(cfg->filename, sqfs->outfile, &sqfs->fs,
 				       &sqfs->super, sqfs->cmp)) {
 			return -1;
 		}
 	}
+
+	if (!cfg->quiet)
+		fputs("Writing ID table...\n", stdout);
 
 	ret = sqfs_id_table_write(sqfs->idtbl, sqfs->outfile,
 				  &sqfs->super, sqfs->cmp);
@@ -156,6 +171,9 @@ int sqfs_writer_finish(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *cfg)
 		sqfs_perror(cfg->filename, "writing ID table", ret);
 		return -1;
 	}
+
+	if (!cfg->quiet)
+		fputs("Writing extended attributes...\n", stdout);
 
 	ret = sqfs_xattr_writer_flush(sqfs->xwr, sqfs->outfile,
 				      &sqfs->super, sqfs->cmp);
