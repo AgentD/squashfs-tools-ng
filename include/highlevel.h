@@ -9,6 +9,7 @@
 
 #include "config.h"
 
+#include "sqfs/xattr_writer.h"
 #include "sqfs/compressor.h"
 #include "sqfs/id_table.h"
 #include "sqfs/inode.h"
@@ -40,6 +41,34 @@ typedef struct {
 	sqfs_u64 bytes_written;
 	sqfs_u64 bytes_read;
 } data_writer_stats_t;
+
+typedef struct {
+	sqfs_data_writer_t *data;
+	sqfs_compressor_t *cmp;
+	sqfs_id_table_t *idtbl;
+	sqfs_file_t *outfile;
+	sqfs_super_t super;
+	fstree_t fs;
+	data_writer_stats_t stats;
+	sqfs_xattr_writer_t *xwr;
+} sqfs_writer_t;
+
+typedef struct {
+	const char *filename;
+	char *fs_defaults;
+	char *comp_extra;
+	size_t block_size;
+	size_t devblksize;
+	size_t max_backlog;
+	size_t num_jobs;
+
+	int outmode;
+	E_SQFS_COMPRESSOR comp_id;
+
+	bool exportable;
+	bool no_xattr;
+	bool quiet;
+} sqfs_writer_cfg_t;
 
 /*
   High level helper function to serialize an entire file system tree to
@@ -91,5 +120,13 @@ void register_stat_hooks(sqfs_data_writer_t *data, data_writer_stats_t *stats);
 
 int write_data_from_file(sqfs_data_writer_t *data, sqfs_inode_generic_t *inode,
 			 sqfs_file_t *file, int flags);
+
+void sqfs_writer_cfg_init(sqfs_writer_cfg_t *cfg);
+
+int sqfs_writer_init(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *wrcfg);
+
+int sqfs_writer_finish(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *cfg);
+
+void sqfs_writer_cleanup(sqfs_writer_t *sqfs);
 
 #endif /* HIGHLEVEL_H */

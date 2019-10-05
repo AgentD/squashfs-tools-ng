@@ -7,5 +7,6 @@ libsqfshelper_a_SOURCES += lib/sqfshelper/data_reader_dump.c
 libsqfshelper_a_SOURCES += lib/sqfshelper/compress.c lib/sqfshelper/comp_opt.c
 libsqfshelper_a_SOURCES += lib/sqfshelper/data_writer.c include/highlevel.h
 libsqfshelper_a_SOURCES += lib/sqfshelper/get_path.c lib/sqfshelper/io_stdin.c
+libsqfshelper_a_SOURCES += lib/sqfshelper/writer.c
 
 noinst_LIBRARIES += libsqfshelper.a

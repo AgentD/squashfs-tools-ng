@@ -9,13 +9,6 @@
 
 #include "config.h"
 
-#include "sqfs/xattr_writer.h"
-#include "sqfs/meta_writer.h"
-#include "sqfs/compressor.h"
-#include "sqfs/id_table.h"
-#include "sqfs/block.h"
-#include "sqfs/io.h"
-
 #include "highlevel.h"
 #include "fstree.h"
 #include "util.h"
@@ -42,21 +35,11 @@
 #include <ctype.h>
 
 typedef struct {
-	E_SQFS_COMPRESSOR compressor;
-	char *fs_defaults;
-	int outmode;
-	int blksz;
-	int devblksz;
+	sqfs_writer_cfg_t cfg;
 	unsigned int dirscan_flags;
-	unsigned int num_jobs;
-	size_t max_backlog;
-	bool exportable;
-	bool quiet;
 	const char *infile;
 	const char *packdir;
-	const char *outfile;
 	const char *selinux;
-	char *comp_extra;
 } options_t;
 
 enum {

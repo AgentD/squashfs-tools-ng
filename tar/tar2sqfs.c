@@ -6,26 +6,14 @@
  */
 #include "config.h"
 
-#include "sqfs/xattr_writer.h"
-#include "sqfs/compressor.h"
-#include "sqfs/id_table.h"
-#include "sqfs/xattr.h"
-#include "sqfs/block.h"
-#include "sqfs/io.h"
-
 #include "highlevel.h"
-#include "fstree.h"
-#include "util.h"
 #include "tar.h"
 
 #include <stdlib.h>
 #include <getopt.h>
 #include <unistd.h>
 #include <string.h>
-#include <ctype.h>
 #include <stdio.h>
-#include <errno.h>
-#include <fcntl.h>
 
 static struct option long_opts[] = {
 	{ "compressor", required_argument, NULL, 'c' },
@@ -96,29 +84,17 @@ static const char *usagestr =
 "\txzcat rootfs.tar.xz | tar2sqfs rootfs.sqfs\n"
 "\n";
 
-static const char *filename;
-static int block_size = SQFS_DEFAULT_BLOCK_SIZE;
-static size_t devblksize = SQFS_DEVBLK_SIZE;
-static bool quiet = false;
-static int outmode = 0;
-static unsigned int num_jobs = 1;
-static size_t max_backlog = 0;
-static E_SQFS_COMPRESSOR comp_id;
-static char *comp_extra = NULL;
-static char *fs_defaults = NULL;
 static bool dont_skip = false;
-static bool no_xattr = false;
-static bool exportable = false;
 static bool keep_time = false;
-static sqfs_xattr_writer_t *xwr = NULL;
-static data_writer_stats_t stats;
+static sqfs_writer_cfg_t cfg;
+static sqfs_writer_t sqfs;
 
 static void process_args(int argc, char **argv)
 {
 	bool have_compressor;
 	int i;
 
-	comp_id = compressor_get_default();
+	sqfs_writer_cfg_init(&cfg);
 
 	for (;;) {
 		i = getopt_long(argc, argv, short_opts, long_opts, NULL);
@@ -127,11 +103,11 @@ static void process_args(int argc, char **argv)
 
 		switch (i) {
 		case 'b':
-			block_size = strtol(optarg, NULL, 0);
+			cfg.block_size = strtol(optarg, NULL, 0);
 			break;
 		case 'B':
-			devblksize = strtol(optarg, NULL, 0);
-			if (devblksize < 1024) {
+			cfg.devblksize = strtol(optarg, NULL, 0);
+			if (cfg.devblksize < 1024) {
 				fputs("Device block size must be at "
 				      "least 1024\n", stderr);
 				exit(EXIT_FAILURE);
@@ -140,10 +116,10 @@ static void process_args(int argc, char **argv)
 		case 'c':
 			have_compressor = true;
 
-			if (sqfs_compressor_id_from_name(optarg, &comp_id))
+			if (sqfs_compressor_id_from_name(optarg, &cfg.comp_id))
 				have_compressor = false;
 
-			if (!sqfs_compressor_exists(comp_id))
+			if (!sqfs_compressor_exists(cfg.comp_id))
 				have_compressor = false;
 
 			if (!have_compressor) {
@@ -153,19 +129,19 @@ static void process_args(int argc, char **argv)
 			}
 			break;
 		case 'j':
-			num_jobs = strtol(optarg, NULL, 0);
+			cfg.num_jobs = strtol(optarg, NULL, 0);
 			break;
 		case 'Q':
-			max_backlog = strtol(optarg, NULL, 0);
+			cfg.max_backlog = strtol(optarg, NULL, 0);
 			break;
 		case 'X':
-			comp_extra = optarg;
+			cfg.comp_extra = optarg;
 			break;
 		case 'd':
-			fs_defaults = optarg;
+			cfg.fs_defaults = optarg;
 			break;
 		case 'x':
-			no_xattr = true;
+			cfg.no_xattr = true;
 			break;
 		case 'k':
 			keep_time = true;
@@ -174,13 +150,13 @@ static void process_args(int argc, char **argv)
 			dont_skip = true;
 			break;
 		case 'e':
-			exportable = true;
+			cfg.exportable = true;
 			break;
 		case 'f':
-			outmode |= SQFS_FILE_OPEN_OVERWRITE;
+			cfg.outmode |= SQFS_FILE_OPEN_OVERWRITE;
 			break;
 		case 'q':
-			quiet = true;
+			cfg.quiet = true;
 			break;
 		case 'h':
 			printf(usagestr, SQFS_DEFAULT_BLOCK_SIZE,
@@ -195,14 +171,14 @@ static void process_args(int argc, char **argv)
 		}
 	}
 
-	if (num_jobs < 1)
-		num_jobs = 1;
+	if (cfg.num_jobs < 1)
+		cfg.num_jobs = 1;
 
-	if (max_backlog < 1)
-		max_backlog = 10 * num_jobs;
+	if (cfg.max_backlog < 1)
+		cfg.max_backlog = 10 * cfg.num_jobs;
 
-	if (comp_extra != NULL && strcmp(comp_extra, "help") == 0) {
-		compressor_print_help(comp_id);
+	if (cfg.comp_extra != NULL && strcmp(cfg.comp_extra, "help") == 0) {
+		compressor_print_help(cfg.comp_id);
 		exit(EXIT_SUCCESS);
 	}
 
@@ -211,7 +187,7 @@ static void process_args(int argc, char **argv)
 		goto fail_arg;
 	}
 
-	filename = argv[optind++];
+	cfg.filename = argv[optind++];
 
 	if (optind < argc) {
 		fputs("Unknown extra arguments\n", stderr);
@@ -224,7 +200,7 @@ fail_arg:
 }
 
 static int write_file(tar_header_decoded_t *hdr, file_info_t *fi,
-		      sqfs_data_writer_t *data, sqfs_u64 filesize)
+		      sqfs_u64 filesize)
 {
 	const sparse_map_t *it;
 	sqfs_inode_generic_t *inode;
@@ -233,8 +209,8 @@ static int write_file(tar_header_decoded_t *hdr, file_info_t *fi,
 	sqfs_u64 sum;
 	int ret;
 
-	max_blk_count = filesize / block_size;
-	if (filesize % block_size)
+	max_blk_count = filesize / cfg.block_size;
+	if (filesize % cfg.block_size)
 		++max_blk_count;
 
 	inode = alloc_flex(sizeof(*inode), sizeof(sqfs_u32), max_blk_count);
@@ -267,11 +243,11 @@ static int write_file(tar_header_decoded_t *hdr, file_info_t *fi,
 		}
 	}
 
-	ret = write_data_from_file(data, inode, file, 0);
+	ret = write_data_from_file(sqfs.data, inode, file, 0);
 	file->destroy(file);
 
-	stats.bytes_read += filesize;
-	stats.file_count += 1;
+	sqfs.stats.bytes_read += filesize;
+	sqfs.stats.file_count += 1;
 
 	if (ret)
 		return -1;
@@ -280,12 +256,11 @@ static int write_file(tar_header_decoded_t *hdr, file_info_t *fi,
 			    filesize : hdr->record_size);
 }
 
-static int copy_xattr(sqfs_xattr_writer_t *xwr, tree_node_t *node,
-		      tar_header_decoded_t *hdr)
+static int copy_xattr(tree_node_t *node, tar_header_decoded_t *hdr)
 {
 	tar_xattr_t *xattr;
 
-	if (sqfs_xattr_writer_begin(xwr)) {
+	if (sqfs_xattr_writer_begin(sqfs.xwr)) {
 		fputs("Error beginning xattr block\n", stderr);
 		return -1;
 	}
@@ -303,7 +278,7 @@ static int copy_xattr(sqfs_xattr_writer_t *xwr, tree_node_t *node,
 			continue;
 		}
 
-		if (sqfs_xattr_writer_add(xwr, xattr->key, xattr->value,
+		if (sqfs_xattr_writer_add(sqfs.xwr, xattr->key, xattr->value,
 					  strlen(xattr->value))) {
 			fputs("Error converting xattr key-value pair\n",
 			      stderr);
@@ -311,7 +286,7 @@ static int copy_xattr(sqfs_xattr_writer_t *xwr, tree_node_t *node,
 		}
 	}
 
-	if (sqfs_xattr_writer_end(xwr, &node->xattr_idx)) {
+	if (sqfs_xattr_writer_end(sqfs.xwr, &node->xattr_idx)) {
 		fputs("Error completing xattr block\n", stderr);
 		return -1;
 	}
@@ -319,29 +294,29 @@ static int copy_xattr(sqfs_xattr_writer_t *xwr, tree_node_t *node,
 	return 0;
 }
 
-static int create_node_and_repack_data(tar_header_decoded_t *hdr, fstree_t *fs,
-				       sqfs_data_writer_t *data)
+static int create_node_and_repack_data(tar_header_decoded_t *hdr)
 {
 	tree_node_t *node;
 
 	if (!keep_time) {
-		hdr->sb.st_mtime = fs->defaults.st_mtime;
+		hdr->sb.st_mtime = sqfs.fs.defaults.st_mtime;
 	}
 
-	node = fstree_add_generic(fs, hdr->name, &hdr->sb, hdr->link_target);
+	node = fstree_add_generic(&sqfs.fs, hdr->name,
+				  &hdr->sb, hdr->link_target);
 	if (node == NULL)
 		goto fail_errno;
 
-	if (!quiet)
+	if (!cfg.quiet)
 		printf("Packing %s\n", hdr->name);
 
-	if (!no_xattr) {
-		if (copy_xattr(xwr, node, hdr))
+	if (!cfg.no_xattr) {
+		if (copy_xattr(node, hdr))
 			return -1;
 	}
 
 	if (S_ISREG(hdr->sb.st_mode)) {
-		if (write_file(hdr, &node->data.file, data, hdr->sb.st_size))
+		if (write_file(hdr, &node->data.file, hdr->sb.st_size))
 			return -1;
 	}
 
@@ -351,7 +326,7 @@ fail_errno:
 	return -1;
 }
 
-static int process_tar_ball(fstree_t *fs, sqfs_data_writer_t *data)
+static int process_tar_ball(void)
 {
 	tar_header_decoded_t hdr;
 	sqfs_u64 offset, count;
@@ -409,7 +384,7 @@ static int process_tar_ball(fstree_t *fs, sqfs_data_writer_t *data)
 			continue;
 		}
 
-		if (create_node_and_repack_data(&hdr, fs, data))
+		if (create_node_and_repack_data(&hdr))
 			goto fail;
 
 		clear_header(&hdr);
@@ -423,126 +398,21 @@ fail:
 
 int main(int argc, char **argv)
 {
-	sqfs_compressor_config_t cfg;
-	int status = EXIT_SUCCESS;
-	sqfs_data_writer_t *data;
-	sqfs_compressor_t *cmp;
-	sqfs_id_table_t *idtbl;
-	sqfs_file_t *outfile;
-	sqfs_super_t super;
-	fstree_t fs;
-	int ret;
+	int status = EXIT_FAILURE;
 
 	process_args(argc, argv);
 
-	if (compressor_cfg_init_options(&cfg, comp_id,
-					block_size, comp_extra)) {
+	if (sqfs_writer_init(&sqfs, &cfg))
 		return EXIT_FAILURE;
-	}
 
-	outfile = sqfs_open_file(filename, outmode);
-	if (outfile == NULL) {
-		perror(filename);
-		return EXIT_FAILURE;
-	}
-
-	if (fstree_init(&fs, fs_defaults))
-		goto out_fd;
-
-	cmp = sqfs_compressor_create(&cfg);
-	if (cmp == NULL) {
-		fputs("Error creating compressor\n", stderr);
-		goto out_fs;
-	}
-
-	if (sqfs_super_init(&super, block_size, fs.defaults.st_mtime, comp_id))
-		goto out_cmp;
-
-	if (sqfs_super_write(&super, outfile))
-		goto out_cmp;
-
-	ret = cmp->write_options(cmp, outfile);
-	if (ret < 0)
-		goto out_cmp;
-
-	if (ret > 0)
-		super.flags |= SQFS_FLAG_COMPRESSOR_OPTIONS;
-
-	data = sqfs_data_writer_create(super.block_size, cmp, num_jobs,
-				       max_backlog, devblksize, outfile);
-	if (data == NULL) {
-		perror("creating data block processor");
-		goto out_cmp;
-	}
-
-	register_stat_hooks(data, &stats);
-
-	idtbl = sqfs_id_table_create();
-	if (idtbl == NULL)
-		goto out_data;
-
-	if (!no_xattr) {
-		xwr = sqfs_xattr_writer_create();
-		if (xwr == NULL) {
-			perror("creating xattr writer");
-			goto out;
-		}
-	}
-
-	if (process_tar_ball(&fs, data))
+	if (process_tar_ball())
 		goto out;
 
-	if (sqfs_data_writer_finish(data))
+	if (sqfs_writer_finish(&sqfs, &cfg))
 		goto out;
-
-	tree_node_sort_recursive(fs.root);
-	if (fstree_gen_inode_table(&fs))
-		goto out;
-
-	super.inode_count = fs.inode_tbl_size;
-
-	if (sqfs_serialize_fstree(outfile, &super, &fs, cmp, idtbl))
-		goto out;
-
-	if (sqfs_data_writer_write_fragment_table(data, &super))
-		goto out;
-
-	if (exportable) {
-		if (write_export_table(outfile, &fs, &super, cmp))
-			goto out;
-	}
-
-	if (sqfs_id_table_write(idtbl, outfile, &super, cmp))
-		goto out;
-
-	if (sqfs_xattr_writer_flush(xwr, outfile, &super, cmp)) {
-		fputs("Error writing xattr table\n", stderr);
-		goto out;
-	}
-
-	super.bytes_used = outfile->get_size(outfile);
-
-	if (sqfs_super_write(&super, outfile))
-		goto out;
-
-	if (padd_sqfs(outfile, super.bytes_used, devblksize))
-		goto out;
-
-	if (!quiet)
-		sqfs_print_statistics(&super, &stats);
 
 	status = EXIT_SUCCESS;
 out:
-	if (xwr != NULL)
-		sqfs_xattr_writer_destroy(xwr);
-	sqfs_id_table_destroy(idtbl);
-out_data:
-	sqfs_data_writer_destroy(data);
-out_cmp:
-	cmp->destroy(cmp);
-out_fs:
-	fstree_cleanup(&fs);
-out_fd:
-	outfile->destroy(outfile);
+	sqfs_writer_cleanup(&sqfs);
 	return status;
 }

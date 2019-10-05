@@ -151,12 +151,7 @@ void process_command_line(options_t *opt, int argc, char **argv)
 	int i;
 
 	memset(opt, 0, sizeof(*opt));
-	opt->outmode = 0;
-	opt->compressor = compressor_get_default();
-	opt->blksz = SQFS_DEFAULT_BLOCK_SIZE;
-	opt->devblksz = SQFS_DEVBLK_SIZE;
-	opt->num_jobs = 1;
-	opt->max_backlog = 0;
+	sqfs_writer_cfg_init(&opt->cfg);
 
 	for (;;) {
 		i = getopt_long(argc, argv, short_opts, long_opts, NULL);
@@ -168,11 +163,11 @@ void process_command_line(options_t *opt, int argc, char **argv)
 			have_compressor = true;
 
 			if (sqfs_compressor_id_from_name(optarg,
-							 &opt->compressor)) {
+							 &opt->cfg.comp_id)) {
 				have_compressor = false;
 			}
 
-			if (!sqfs_compressor_exists(opt->compressor))
+			if (!sqfs_compressor_exists(opt->cfg.comp_id))
 				have_compressor = false;
 
 			if (!have_compressor) {
@@ -182,24 +177,24 @@ void process_command_line(options_t *opt, int argc, char **argv)
 			}
 			break;
 		case 'b':
-			opt->blksz = strtol(optarg, NULL, 0);
+			opt->cfg.block_size = strtol(optarg, NULL, 0);
 			break;
 		case 'j':
-			opt->num_jobs = strtol(optarg, NULL, 0);
+			opt->cfg.num_jobs = strtol(optarg, NULL, 0);
 			break;
 		case 'Q':
-			opt->max_backlog = strtol(optarg, NULL, 0);
+			opt->cfg.max_backlog = strtol(optarg, NULL, 0);
 			break;
 		case 'B':
-			opt->devblksz = strtol(optarg, NULL, 0);
-			if (opt->devblksz < 1024) {
+			opt->cfg.devblksize = strtol(optarg, NULL, 0);
+			if (opt->cfg.devblksize < 1024) {
 				fputs("Device block size must be at "
 				      "least 1024\n", stderr);
 				exit(EXIT_FAILURE);
 			}
 			break;
 		case 'd':
-			opt->fs_defaults = optarg;
+			opt->cfg.fs_defaults = optarg;
 			break;
 		case 'k':
 			opt->dirscan_flags |= DIR_SCAN_KEEP_TIME;
@@ -213,16 +208,16 @@ void process_command_line(options_t *opt, int argc, char **argv)
 			opt->dirscan_flags |= DIR_SCAN_ONE_FILESYSTEM;
 			break;
 		case 'e':
-			opt->exportable = true;
+			opt->cfg.exportable = true;
 			break;
 		case 'f':
-			opt->outmode |= SQFS_FILE_OPEN_OVERWRITE;
+			opt->cfg.outmode |= SQFS_FILE_OPEN_OVERWRITE;
 			break;
 		case 'q':
-			opt->quiet = true;
+			opt->cfg.quiet = true;
 			break;
 		case 'X':
-			opt->comp_extra = optarg;
+			opt->cfg.comp_extra = optarg;
 			break;
 		case 'F':
 			opt->infile = optarg;
@@ -249,14 +244,15 @@ void process_command_line(options_t *opt, int argc, char **argv)
 		}
 	}
 
-	if (opt->num_jobs < 1)
-		opt->num_jobs = 1;
+	if (opt->cfg.num_jobs < 1)
+		opt->cfg.num_jobs = 1;
 
-	if (opt->max_backlog < 1)
-		opt->max_backlog = 10 * opt->num_jobs;
+	if (opt->cfg.max_backlog < 1)
+		opt->cfg.max_backlog = 10 * opt->cfg.num_jobs;
 
-	if (opt->comp_extra != NULL && strcmp(opt->comp_extra, "help") == 0) {
-		compressor_print_help(opt->compressor);
+	if (opt->cfg.comp_extra != NULL &&
+	    strcmp(opt->cfg.comp_extra, "help") == 0) {
+		compressor_print_help(opt->cfg.comp_id);
 		exit(EXIT_SUCCESS);
 	}
 
@@ -270,7 +266,7 @@ void process_command_line(options_t *opt, int argc, char **argv)
 		goto fail_arg;
 	}
 
-	opt->outfile = argv[optind++];
+	opt->cfg.filename = argv[optind++];
 	return;
 fail_arg:
 	fprintf(stderr, "Try `%s --help' for more information.\n", __progname);
