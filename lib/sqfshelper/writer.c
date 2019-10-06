@@ -48,6 +48,35 @@ static size_t os_get_max_ram(void)
 }
 #endif
 
+static int padd_sqfs(sqfs_file_t *file, sqfs_u64 size, size_t blocksize)
+{
+	size_t padd_sz = size % blocksize;
+	int status = -1;
+	sqfs_u8 *buffer;
+
+	if (padd_sz == 0)
+		return 0;
+
+	padd_sz = blocksize - padd_sz;
+
+	buffer = calloc(1, padd_sz);
+	if (buffer == NULL)
+		goto fail_errno;
+
+	if (file->write_at(file, file->get_size(file),
+			   buffer, padd_sz)) {
+		goto fail_errno;
+	}
+
+	status = 0;
+out:
+	free(buffer);
+	return status;
+fail_errno:
+	perror("padding output file to block size");
+	goto out;
+}
+
 void sqfs_writer_cfg_init(sqfs_writer_cfg_t *cfg)
 {
 	size_t max_ram;
