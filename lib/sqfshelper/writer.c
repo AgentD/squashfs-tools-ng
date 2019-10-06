@@ -12,6 +12,7 @@
 #include "util.h"
 
 #include <string.h>
+#include <stdlib.h>
 
 #ifdef HAVE_SYS_SYSINFO_H
 #include <sys/sysinfo.h>
