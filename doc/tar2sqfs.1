@@ -1,16 +1,16 @@
 .TH TAR2SQFS "1" "June 2019" "tar2sqfs" "User Commands"
 .SH NAME
-tar2sqfs \- create a squashfs image from a tar archive
+tar2sqfs \- create a SquashFS image from a tar archive
 .SH SYNOPSIS
 .B tar2sqfs
 [\fI\,OPTIONS\/\fR...] \fI\,<sqfsfile>\/\fR
 .SH DESCRIPTION
-Read an uncompressed tar archive from stdin and turn it into a squashfs
+Read an uncompressed tar archive from stdin and turn it into a SquashFS
 filesystem image.
 
-The idea is to quickly and painlessly turn a tar ball into a squashfs
+The idea is to quickly and painlessly turn a tar ball into a SquashFS
 filesystem image, so existing tools that work with tar can be used for
-squashfs.
+SquashFS.
 .PP
 Possible options:
 .TP
@@ -34,17 +34,12 @@ starts waiting for the block processors to catch up. Higher values result
 in higher memory consumption. Defaults to 10 times the number of workers.
 .TP
 \fB\-\-block\-size\fR, \fB\-b\fR <size>
-Block size to use for Squashfs image.
+Block size to use for SquashFS image.
 Defaults to 131072.
 .TP
 \fB\-\-dev\-block\-size\fR, \fB\-B\fR <size>
 Device block size to padd the image to.
 Defaults to 4096.
-.TP
-\fB\-\-keep\-time\fR, \fB\-k\fR
-Keep the same time stamps stored in the tar archive for the SquashFS instead of
-setting defaults on all files. The root inode and the modification time on the
-SquashFS image itself will still be set to defaults.
 .TP
 \fB\-\-defaults\fR, \fB\-d\fR <options>
 A comma seperated list of default values for
@@ -65,6 +60,16 @@ mode=<value>;0755
 mtime=<value>;\fB$SOURCE\_DATE\_EPOCH\fR if set, 0 otherwise
 .TE
 .TP
+.TP
+\fB\-\-no\-keep\-time\fR, \fB\-k\fR
+Replace the time stamps from the tar archive with default time stamps for all
+entries.
+
+The default behavior if not specified, is to preserve the time stamps from the
+archive to the extent possible (SquashFS has second resolution and 32 bit time
+stamps; tar can use extensions to specify much larger timestamps with arbitrary
+precision). The root inode and the modification time on the SquashFS image
+itself will always still be set to defaults.
 .TP
 \fB\-\-no\-xattr\fR, \fB\-x\fR
 Do not copy extended attributes from archive. Default behaviour is to copy all
@@ -88,15 +93,14 @@ Print help text and exit.
 \fB\-\-version\fR, \fB\-V\fR
 Print version information and exit.
 .SH COMPATIBILITY
-The tool is designed to support a broad variety of commonly used tar archives.
-Currently the tool can process v7 format, pre-POSIX ustar, POSIX tar and GNU
-tar archives. PAX extension headers are supported.
+Currently the program can process v7 format, pre-POSIX ustar, POSIX tar and GNU
+tar archives. PAX extension headers are also supported.
 
-The support for GNU tar is limited to commonly used header formats (i.e. some
-older, legacy headers are not supported) and extensions like sparse files.
+The support for GNU tar is limited to commonly used subset (i.e. some legacy
+extensions that GNU tar itself no longer generates are not supported; neither
+are mutli volume archives).
 
 Hard links are currently not supported and silently converted to symlinks.
-Furthermore, none of the various xattr extensions are currently implemented.
 
 Extended attributes are supported through the SCHILY.xattr PAX extension
 (favoured by GNU tar and star) or through the LIBARCHIVE.xattr PAX extension.
@@ -118,15 +122,15 @@ are set. Explicit command line switches are always preferred over the
 environment variables.
 .SH EXAMPLES
 .TP
-Turn an uncompressed tar archive into a squashfs image:
+Turn an uncompressed tar archive into a SquashFS image:
 .IP
 tar2sqfs rootfs.sqfs < rootfs.tar
 .TP
-Turn a gzip'ed tar archive into a squashfs image:
+Turn a gzip'ed tar archive into a SquashFS image:
 .IP
 zcat rootfs.tar.gz | tar2sqfs rootfs.sqfs
 .TP
-Turn an LZMA2 compressed tar archive into a squashfs image:
+Turn an LZMA2 compressed tar archive into a SquashFS image:
 .IP
 xzcat rootfs.tar.xz | tar2sqfs rootfs.sqfs
 .SH SEE ALSO
