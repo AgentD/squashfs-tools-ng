@@ -25,7 +25,7 @@ static struct option long_opts[] = {
 	{ "comp-extra", required_argument, NULL, 'X' },
 	{ "no-skip", no_argument, NULL, 's' },
 	{ "no-xattr", no_argument, NULL, 'x' },
-	{ "keep-time", no_argument, NULL, 'k' },
+	{ "no-keep-time", no_argument, NULL, 'k' },
 	{ "exportable", no_argument, NULL, 'e' },
 	{ "force", no_argument, NULL, 'f' },
 	{ "quiet", no_argument, NULL, 'q' },
@@ -69,8 +69,8 @@ static const char *usagestr =
 "  --no-skip, -s               Abort if a tar record cannot be read instead\n"
 "                              of skipping it.\n"
 "  --no-xattr, -x              Do not copy extended attributes from archive.\n"
-"  --keep-time, -k             Keep the time stamps stored in the archive\n"
-"                              instead of setting defaults on all files.\n"
+"  --no-keep-time, -k          Do not keep the time stamps stored in the\n"
+"                              archive. Instead, set defaults on all files.\n"
 "  --exportable, -e            Generate an export table for NFS support.\n"
 "  --force, -f                 Overwrite the output file if it exists.\n"
 "  --quiet, -q                 Do not print out progress reports.\n"
@@ -85,7 +85,7 @@ static const char *usagestr =
 "\n";
 
 static bool dont_skip = false;
-static bool keep_time = false;
+static bool keep_time = true;
 static sqfs_writer_cfg_t cfg;
 static sqfs_writer_t sqfs;
 
@@ -144,7 +144,7 @@ static void process_args(int argc, char **argv)
 			cfg.no_xattr = true;
 			break;
 		case 'k':
-			keep_time = true;
+			keep_time = false;
 			break;
 		case 's':
 			dont_skip = true;
