@@ -16,7 +16,7 @@
 #include <string.h>
 #include <stdio.h>
 
-int sqfs_data_reader_dump(sqfs_data_reader_t *data,
+int sqfs_data_reader_dump(const char *name, sqfs_data_reader_t *data,
 			  const sqfs_inode_generic_t *inode,
 			  int outfd, size_t block_size, bool allow_sparse)
 {
@@ -46,8 +46,7 @@ int sqfs_data_reader_dump(sqfs_data_reader_t *data,
 		} else {
 			err = sqfs_data_reader_get_block(data, inode, i, &blk);
 			if (err) {
-				fprintf(stderr, "error reading "
-					"data block: %d\n", err);
+				sqfs_perror(name, "reading data block", err);
 				return -1;
 			}
 
@@ -63,8 +62,9 @@ int sqfs_data_reader_dump(sqfs_data_reader_t *data,
 	}
 
 	if (filesz > 0) {
-		if (sqfs_data_reader_get_fragment(data, inode, &blk)) {
-			fputs("error reading fragment block", stderr);
+		err = sqfs_data_reader_get_fragment(data, inode, &blk);
+		if (err) {
+			sqfs_perror(name, "reading fragment block", err);
 			return -1;
 		}
 

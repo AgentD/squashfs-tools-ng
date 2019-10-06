@@ -112,7 +112,7 @@ int inode_stat(const sqfs_tree_node_t *node, struct stat *sb);
 
 char *sqfs_tree_node_get_path(const sqfs_tree_node_t *node);
 
-int sqfs_data_reader_dump(sqfs_data_reader_t *data,
+int sqfs_data_reader_dump(const char *name, sqfs_data_reader_t *data,
 			  const sqfs_inode_generic_t *inode,
 			  int outfd, size_t block_size, bool allow_sparse);
 

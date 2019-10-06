@@ -9,6 +9,7 @@
 
 #include "config.h"
 
+#include "sqfs/error.h"
 #include "highlevel.h"
 #include "fstree.h"
 #include "util.h"

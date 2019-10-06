@@ -12,8 +12,10 @@ int node_compare(sqfsdiff_t *sd, sqfs_tree_node_t *a, sqfs_tree_node_t *b)
 	sqfs_tree_node_t *ait, *bit;
 	int ret, status = 0;
 
-	if (path == NULL)
+	if (path == NULL) {
+		perror("constructing absolute file path");
 		return -1;
+	}
 
 	if (a->inode->base.type != b->inode->base.type) {
 		fprintf(stdout, "%s has a different type\n", path);

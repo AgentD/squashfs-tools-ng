@@ -16,6 +16,7 @@
 #include "sqfs/id_table.h"
 #include "sqfs/xattr.h"
 #include "sqfs/block.h"
+#include "sqfs/error.h"
 
 #include "highlevel.h"
 #include "fstree.h"

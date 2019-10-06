@@ -29,9 +29,9 @@ int main(int argc, char **argv)
 		goto out_cmd;
 	}
 
-	if (sqfs_super_read(&super, file)) {
-		fprintf(stderr, "%s: error reading super block.\n",
-			opt.image_name);
+	ret = sqfs_super_read(&super, file);
+	if (ret) {
+		sqfs_perror(opt.image_name, "reading super block", ret);
 		goto out_file;
 	}
 
@@ -46,51 +46,73 @@ int main(int argc, char **argv)
 				    SQFS_COMP_FLAG_UNCOMPRESS);
 
 	cmp = sqfs_compressor_create(&cfg);
-	if (cmp == NULL)
+	if (cmp == NULL) {
+		fputs("Error creating compressor.\n", stderr);
 		goto out_file;
+	}
 
 	if (super.flags & SQFS_FLAG_COMPRESSOR_OPTIONS) {
-		if (cmp->read_options(cmp, file))
+		ret = cmp->read_options(cmp, file);
+		if (ret) {
+			sqfs_perror(opt.image_name, "reading compressor "
+				    "options", ret);
 			goto out_cmp;
+		}
 	}
 
 	if (!(super.flags & SQFS_FLAG_NO_XATTRS)) {
 		xattr = sqfs_xattr_reader_create(file, &super, cmp);
+		if (xattr == NULL) {
+			sqfs_perror(opt.image_name, "creating xattr reader",
+				    SQFS_ERROR_ALLOC);
+			goto out_cmp;
+		}
 
-		if (sqfs_xattr_reader_load_locations(xattr)) {
-			fputs("Error loading xattr table\n", stderr);
+		ret = sqfs_xattr_reader_load_locations(xattr);
+		if (ret) {
+			sqfs_perror(opt.image_name, "loading xattr table",
+				    ret);
 			goto out_xr;
 		}
 	}
 
 	idtbl = sqfs_id_table_create();
 	if (idtbl == NULL) {
-		perror("creating ID table");
+		sqfs_perror(opt.image_name, "creating ID table",
+			    SQFS_ERROR_ALLOC);
 		goto out_xr;
 	}
 
-	if (sqfs_id_table_read(idtbl, file, &super, cmp)) {
-		fputs("error loading ID table\n", stderr);
+	ret = sqfs_id_table_read(idtbl, file, &super, cmp);
+	if (ret) {
+		sqfs_perror(opt.image_name, "loading ID table", ret);
 		goto out_id;
 	}
 
 	dirrd = sqfs_dir_reader_create(&super, cmp, file);
 	if (dirrd == NULL) {
-		perror("creating dir reader");
+		sqfs_perror(opt.image_name, "creating dir reader",
+			    SQFS_ERROR_ALLOC);
 		goto out_id;
 	}
 
 	data = sqfs_data_reader_create(file, super.block_size, cmp);
-	if (data == NULL)
+	if (data == NULL) {
+		sqfs_perror(opt.image_name, "creating data reader",
+			    SQFS_ERROR_ALLOC);
 		goto out_dr;
+	}
 
-	if (sqfs_data_reader_load_fragment_table(data, &super))
+	ret = sqfs_data_reader_load_fragment_table(data, &super);
+	if (ret) {
+		sqfs_perror(opt.image_name, "loading fragment table", ret);
 		goto out_data;
+	}
 
 	ret = sqfs_dir_reader_get_full_hierarchy(dirrd, idtbl, opt.cmdpath,
 						 opt.rdtree_flags, &n);
 	if (ret) {
-		fprintf(stderr, "error reading hierarchy: %d\n", ret);
+		sqfs_perror(opt.image_name, "reading filesystem tree", ret);
 		goto out_data;
 	}
 
@@ -105,9 +127,11 @@ int main(int argc, char **argv)
 			goto out;
 		}
 
-		if (sqfs_data_reader_dump(data, n->inode, STDOUT_FILENO,
-					  super.block_size, false))
+		if (sqfs_data_reader_dump(opt.cmdpath, data, n->inode,
+					  STDOUT_FILENO,
+					  super.block_size, false)) {
 			goto out;
+		}
 		break;
 	case OP_UNPACK:
 		if (opt.unpack_root != NULL) {

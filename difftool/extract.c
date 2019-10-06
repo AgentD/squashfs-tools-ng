@@ -27,7 +27,7 @@ static int extract(sqfs_data_reader_t *data, const sqfs_inode_generic_t *inode,
 		return -1;
 	}
 
-	if (sqfs_data_reader_dump(data, inode, fd, block_size, true)) {
+	if (sqfs_data_reader_dump(path, data, inode, fd, block_size, true)) {
 		close(fd);
 		return -1;
 	}

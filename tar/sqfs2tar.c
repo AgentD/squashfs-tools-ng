@@ -10,6 +10,7 @@
 #include "sqfs/compressor.h"
 #include "sqfs/data_reader.h"
 #include "sqfs/xattr_reader.h"
+#include "sqfs/error.h"
 #include "highlevel.h"
 #include "util.h"
 #include "tar.h"
@@ -184,7 +185,8 @@ static int terminate_archive(void)
 			  buffer, sizeof(buffer));
 }
 
-static int get_xattrs(const sqfs_inode_generic_t *inode, tar_xattr_t **out)
+static int get_xattrs(const char *name, const sqfs_inode_generic_t *inode,
+		      tar_xattr_t **out)
 {
 	tar_xattr_t *list = NULL, *ent;
 	sqfs_xattr_value_t *value;
@@ -192,6 +194,7 @@ static int get_xattrs(const sqfs_inode_generic_t *inode, tar_xattr_t **out)
 	sqfs_xattr_id_t desc;
 	sqfs_u32 index;
 	size_t i;
+	int ret;
 
 	if (xr == NULL)
 		return 0;
@@ -201,24 +204,28 @@ static int get_xattrs(const sqfs_inode_generic_t *inode, tar_xattr_t **out)
 	if (index == 0xFFFFFFFF)
 		return 0;
 
-	if (sqfs_xattr_reader_get_desc(xr, index, &desc)) {
-		fputs("Error resolving xattr index\n", stderr);
+	ret = sqfs_xattr_reader_get_desc(xr, index, &desc);
+	if (ret) {
+		sqfs_perror(name, "resolving xattr index", ret);
 		return -1;
 	}
 
-	if (sqfs_xattr_reader_seek_kv(xr, &desc)) {
-		fputs("Error locating xattr key-value pairs\n", stderr);
+	ret = sqfs_xattr_reader_seek_kv(xr, &desc);
+	if (ret) {
+		sqfs_perror(name, "locating xattr key-value pairs", ret);
 		return -1;
 	}
 
 	for (i = 0; i < desc.count; ++i) {
-		if (sqfs_xattr_reader_read_key(xr, &key)) {
-			fputs("Error reading xattr key\n", stderr);
+		ret = sqfs_xattr_reader_read_key(xr, &key);
+		if (ret) {
+			sqfs_perror(name, "reading xattr key", ret);
 			goto fail;
 		}
 
-		if (sqfs_xattr_reader_read_value(xr, key, &value)) {
-			fputs("Error reading xattr value\n", stderr);
+		ret = sqfs_xattr_reader_read_value(xr, key, &value);
+		if (ret) {
+			sqfs_perror(name, "reading xattr value", ret);
 			free(key);
 			goto fail;
 		}
@@ -278,7 +285,7 @@ static int write_tree_dfs(const sqfs_tree_node_t *n)
 	inode_stat(n, &sb);
 
 	if (!no_xattr) {
-		if (get_xattrs(n->inode, &xattr)) {
+		if (get_xattrs(name, n->inode, &xattr)) {
 			free(name);
 			return -1;
 		}
@@ -297,18 +304,25 @@ static int write_tree_dfs(const sqfs_tree_node_t *n)
 	if (ret > 0)
 		goto out_skip;
 
-	free(name);
-	if (ret < 0)
+	if (ret < 0) {
+		free(name);
 		return -1;
+	}
 
 	if (S_ISREG(sb.st_mode)) {
-		if (sqfs_data_reader_dump(data, n->inode, STDOUT_FILENO,
-					  super.block_size, false))
+		if (sqfs_data_reader_dump(name, data, n->inode, STDOUT_FILENO,
+					  super.block_size, false)) {
+			free(name);
 			return -1;
+		}
 
-		if (padd_file(STDOUT_FILENO, sb.st_size, 512))
+		if (padd_file(STDOUT_FILENO, sb.st_size, 512)) {
+			free(name);
 			return -1;
+		}
 	}
+
+	free(name);
 skip_hdr:
 	for (n = n->children; n != NULL; n = n->next) {
 		if (write_tree_dfs(n))
@@ -384,8 +398,9 @@ int main(int argc, char **argv)
 		goto out_dirs;
 	}
 
-	if (sqfs_super_read(&super, file)) {
-		fprintf(stderr, "%s: error reading super block.\n", filename);
+	ret = sqfs_super_read(&super, file);
+	if (ret) {
+		sqfs_perror(filename, "reading super block", ret);
 		goto out_fd;
 	}
 
@@ -399,12 +414,18 @@ int main(int argc, char **argv)
 				    SQFS_COMP_FLAG_UNCOMPRESS);
 
 	cmp = sqfs_compressor_create(&cfg);
-	if (cmp == NULL)
+	if (cmp == NULL) {
+		fputs("Error creating compressor.\n", stderr);
 		goto out_fd;
+	}
 
 	if (super.flags & SQFS_FLAG_COMPRESSOR_OPTIONS) {
-		if (cmp->read_options(cmp, file))
+		ret = cmp->read_options(cmp, file);
+		if (ret) {
+			sqfs_perror(filename, "reading compressor options",
+				    ret);
 			goto out_cmp;
+		}
 	}
 
 	idtbl = sqfs_id_table_create();
@@ -414,32 +435,43 @@ int main(int argc, char **argv)
 		goto out_cmp;
 	}
 
-	if (sqfs_id_table_read(idtbl, file, &super, cmp)) {
-		fputs("error loading ID table\n", stderr);
+	ret = sqfs_id_table_read(idtbl, file, &super, cmp);
+	if (ret) {
+		sqfs_perror(filename, "loading ID table", ret);
 		goto out_id;
 	}
 
 	data = sqfs_data_reader_create(file, super.block_size, cmp);
-	if (data == NULL)
+	if (data == NULL) {
+		sqfs_perror(filename, "creating data reader",
+			    SQFS_ERROR_ALLOC);
 		goto out_id;
+	}
 
-	if (sqfs_data_reader_load_fragment_table(data, &super))
+	ret = sqfs_data_reader_load_fragment_table(data, &super);
+	if (ret) {
+		sqfs_perror(filename, "loading fragment table", ret);
 		goto out_data;
+	}
 
 	dr = sqfs_dir_reader_create(&super, cmp, file);
 	if (dr == NULL) {
-		perror("creating dir reader");
+		sqfs_perror(filename, "creating dir reader",
+			    SQFS_ERROR_ALLOC);
 		goto out_data;
 	}
 
 	if (!no_xattr && !(super.flags & SQFS_FLAG_NO_XATTRS)) {
 		xr = sqfs_xattr_reader_create(file, &super, cmp);
 		if (xr == NULL) {
+			sqfs_perror(filename, "creating xattr reader",
+				    SQFS_ERROR_ALLOC);
 			goto out_dr;
 		}
 
-		if (sqfs_xattr_reader_load_locations(xr)) {
-			fputs("error loading xattr table\n", stderr);
+		ret = sqfs_xattr_reader_load_locations(xr);
+		if (ret) {
+			sqfs_perror(filename, "loading xattr table", ret);
 			goto out_xr;
 		}
 	}
@@ -448,7 +480,7 @@ int main(int argc, char **argv)
 		ret = sqfs_dir_reader_get_full_hierarchy(dr, idtbl, NULL,
 							 0, &root);
 		if (ret) {
-			fputs("error loading file system tree", stderr);
+			sqfs_perror(filename, "loading filesystem tree", ret);
 			goto out;
 		}
 	} else {
@@ -463,8 +495,8 @@ int main(int argc, char **argv)
 								 flags,
 								 &subtree);
 			if (ret) {
-				fprintf(stderr, "error loading '%s'\n",
-					subdirs[i]);
+				sqfs_perror(subdirs[i], "loading filesystem "
+					    "tree", ret);
 				goto out;
 			}
 

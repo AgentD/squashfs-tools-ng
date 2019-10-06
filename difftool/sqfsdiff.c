@@ -8,15 +8,17 @@
 
 static int open_sfqs(sqfs_state_t *state, const char *path)
 {
+	int ret;
+
 	state->file = sqfs_open_file(path, SQFS_FILE_OPEN_READ_ONLY);
 	if (state->file == NULL) {
 		perror(path);
 		return -1;
 	}
 
-	if (sqfs_super_read(&state->super, state->file)) {
-		fprintf(stderr, "error reading super block from %s\n",
-			path);
+	ret = sqfs_super_read(&state->super, state->file);
+	if (ret) {
+		sqfs_perror(path, "reading super block", ret);
 		goto fail_file;
 	}
 
@@ -37,35 +39,38 @@ static int open_sfqs(sqfs_state_t *state, const char *path)
 	}
 
 	if (state->super.flags & SQFS_FLAG_COMPRESSOR_OPTIONS) {
-		if (state->cmp->read_options(state->cmp, state->file)) {
-			fprintf(stderr, "%s: error loading compressor "
-				"options.\n", path);
+		ret = state->cmp->read_options(state->cmp, state->file);
+		if (ret) {
+			sqfs_perror(path, "reading compressor options", ret);
 			goto fail_cmp;
 		}
 	}
 
 	state->idtbl = sqfs_id_table_create();
 	if (state->idtbl == NULL) {
-		perror("error creating ID table");
+		sqfs_perror(path, "creating ID table", SQFS_ERROR_ALLOC);
 		goto fail_cmp;
 	}
 
-	if (sqfs_id_table_read(state->idtbl, state->file,
-			       &state->super, state->cmp)) {
-		fprintf(stderr, "%s: error loading ID table\n", path);
+	ret = sqfs_id_table_read(state->idtbl, state->file,
+				 &state->super, state->cmp);
+	if (ret) {
+		sqfs_perror(path, "loading ID table", ret);
 		goto fail_id;
 	}
 
 	state->dr = sqfs_dir_reader_create(&state->super, state->cmp,
 					   state->file);
 	if (state->dr == NULL) {
-		perror("creating directory reader");
+		sqfs_perror(path, "creating directory reader",
+			    SQFS_ERROR_ALLOC);
 		goto fail_id;
 	}
 
-	if (sqfs_dir_reader_get_full_hierarchy(state->dr, state->idtbl,
-					       NULL, 0, &state->root)) {
-		fprintf(stderr, "%s: error loading file system tree\n", path);
+	ret = sqfs_dir_reader_get_full_hierarchy(state->dr, state->idtbl,
+						 NULL, 0, &state->root);
+	if (ret) {
+		sqfs_perror(path, "loading filesystem tree", ret);
 		goto fail_dr;
 	}
 
@@ -73,12 +78,15 @@ static int open_sfqs(sqfs_state_t *state, const char *path)
 					      state->super.block_size,
 					      state->cmp);
 	if (state->data == NULL) {
-		fprintf(stderr, "%s: error loading file system tree\n", path);
+		sqfs_perror(path, "creating data reader", SQFS_ERROR_ALLOC);
 		goto fail_tree;
 	}
 
-	if (sqfs_data_reader_load_fragment_table(state->data, &state->super))
+	ret = sqfs_data_reader_load_fragment_table(state->data, &state->super);
+	if (ret) {
+		sqfs_perror(path, "loading fragment table", ret);
 		goto fail_data;
+	}
 
 	return 0;
 fail_data:

@@ -143,7 +143,8 @@ static int fill_files(sqfs_data_reader_t *data, int flags)
 		if (!(flags & UNPACK_QUIET))
 			printf("unpacking %s\n", files[i].path);
 
-		if (sqfs_data_reader_dump(data, files[i].inode, fd, block_size,
+		if (sqfs_data_reader_dump(files[i].path, data, files[i].inode,
+					  fd, block_size,
 					  (flags & UNPACK_NO_SPARSE) == 0)) {
 			close(fd);
 			return -1;
