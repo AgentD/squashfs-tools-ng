@@ -359,6 +359,7 @@ static sqfs_s32 write_value(sqfs_meta_writer_t *mw, const char *value_str,
 	if (err)
 		goto fail;
 
+	free(value);
 	return sizeof(vent) + size;
 fail:
 	free(value);

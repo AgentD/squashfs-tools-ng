@@ -175,13 +175,17 @@ int sqfs_serialize_fstree(const char *filename, sqfs_file_t *file,
 
 		ret = sqfs_id_table_id_to_index(idtbl, n->uid,
 						&inode->base.uid_idx);
-		if (ret)
+		if (ret) {
+			free(inode);
 			goto out;
+		}
 
 		ret = sqfs_id_table_id_to_index(idtbl, n->gid,
 						&inode->base.gid_idx);
-		if (ret)
+		if (ret) {
+			free(inode);
 			goto out;
+		}
 
 		sqfs_meta_writer_get_position(im, &block, &offset);
 		fs->inode_table[i]->inode_ref = (block << 16) | offset;

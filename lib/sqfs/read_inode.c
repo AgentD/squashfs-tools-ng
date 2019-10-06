@@ -263,8 +263,10 @@ static int read_inode_dir_ext(sqfs_meta_reader_t *ir, sqfs_inode_t *base,
 
 	for (i = 0; i <= dir.inodex_count; ++i) {
 		err = sqfs_meta_reader_read(ir, &ent, sizeof(ent));
-		if (err)
+		if (err) {
+			free(out);
 			return err;
+		}
 
 		SWAB32(ent.start_block);
 		SWAB32(ent.index);
@@ -289,8 +291,10 @@ static int read_inode_dir_ext(sqfs_meta_reader_t *ir, sqfs_inode_t *base,
 
 		err = sqfs_meta_reader_read(ir, out->extra + index_used,
 					    ent.size + 1);
-		if (err)
+		if (err) {
+			free(out);
 			return err;
+		}
 	}
 
 	out->num_dir_idx_bytes = index_used;

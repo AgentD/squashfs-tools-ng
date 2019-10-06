@@ -211,7 +211,7 @@ static int populate_dir(fstree_t *fs, tree_node_t *root, dev_t devstart,
 		if (ret) {
 			sqfs_perror(n->name,
 				    "completing xattr key-value pairs", ret);
-			return -1;
+			goto fail;
 		}
 
 		free(extra);
