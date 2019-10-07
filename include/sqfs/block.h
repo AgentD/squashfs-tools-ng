@@ -73,12 +73,12 @@ typedef enum {
 	SQFS_BLK_DONT_COMPRESS = 0x0001,
 
 	/**
-	 * @brief Allign the block on disk to device block size.
+	 * @brief Align the block on disk to device block size.
 	 *
 	 * If set, the @ref sqfs_data_writer_t will add padding before the
 	 * first block of the affected file and after the last block.
 	 */
-	SQFS_BLK_ALLIGN = 0x0002,
+	SQFS_BLK_ALIGN = 0x0002,
 
 	/**
 	 * @brief Don't add the tail end of a file to a fragment block.

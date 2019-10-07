@@ -74,7 +74,7 @@ struct sqfs_block_hooks_t {
 	 * @brief Gets called before writing a block to disk.
 	 *
 	 * If this is not NULL, it gets called before a block is written to
-	 * disk. If the block has the @ref SQFS_BLK_ALLIGN flag set, the
+	 * disk. If the block has the @ref SQFS_BLK_ALIGN flag set, the
 	 * function is called before padding the file.
 	 *
 	 * The function may modify the block itself or write data to the file.
@@ -91,7 +91,7 @@ struct sqfs_block_hooks_t {
 	 * @brief Gets called after writing a block to disk.
 	 *
 	 * If this is not NULL, it gets called after a block is written to
-	 * disk. If the block has the @ref SQFS_BLK_ALLIGN flag set, the
+	 * disk. If the block has the @ref SQFS_BLK_ALIGN flag set, the
 	 * function is called before padding the file.
 	 *
 	 * Modifying the block is rather pointless, but the function may
@@ -167,7 +167,7 @@ extern "C" {
  *                    trying to add more, enqueueing blocks until the in-flight
  *                    block count drops below the threshold.
  * @param devblksz File can optionally be allgined to device block size. This
- *                 specifies the desired allignment.
+ *                 specifies the desired alignment.
  * @param file The output file to write the finished blocks to.
  *
  * @return A pointer to a data writer object on success, NULL on allocation

@@ -38,7 +38,7 @@
  * that are written to disk with a small header indicating the on-disk
  * size and whether it is compressed or not.
  *
- * Data written to meta data blocks doesn't have to be alligned, i.e.
+ * Data written to meta data blocks doesn't have to be aligned, i.e.
  * SquashFS doesn't care if an object is written across two blocks.
  *
  * The main task of the meta data writer is to provide a simple append

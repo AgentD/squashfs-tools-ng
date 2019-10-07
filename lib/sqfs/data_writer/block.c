@@ -50,7 +50,7 @@ static size_t deduplicate_blocks(sqfs_data_writer_t *proc, size_t count)
 	return i;
 }
 
-static int allign_file(sqfs_data_writer_t *proc, sqfs_block_t *blk)
+static int align_file(sqfs_data_writer_t *proc, sqfs_block_t *blk)
 {
 	sqfs_u32 chksum;
 	void *padding;
@@ -58,7 +58,7 @@ static int allign_file(sqfs_data_writer_t *proc, sqfs_block_t *blk)
 	size_t diff;
 	int ret;
 
-	if (!(blk->flags & SQFS_BLK_ALLIGN))
+	if (!(blk->flags & SQFS_BLK_ALIGN))
 		return 0;
 
 	size = proc->file->get_size(proc->file);
@@ -98,7 +98,7 @@ int process_completed_block(sqfs_data_writer_t *proc, sqfs_block_t *blk)
 		proc->start = proc->file->get_size(proc->file);
 		proc->file_start = proc->num_blocks;
 
-		err = allign_file(proc, blk);
+		err = align_file(proc, blk);
 		if (err)
 			return err;
 	}
@@ -134,7 +134,7 @@ int process_completed_block(sqfs_data_writer_t *proc, sqfs_block_t *blk)
 	}
 
 	if (blk->flags & SQFS_BLK_LAST_BLOCK) {
-		err = allign_file(proc, blk);
+		err = align_file(proc, blk);
 		if (err)
 			return err;
 
