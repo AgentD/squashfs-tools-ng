@@ -43,7 +43,6 @@ struct sqfs_dir_writer_t {
 
 	sqfs_u64 dir_ref;
 	size_t dir_size;
-	size_t idx_size;
 	size_t ent_count;
 	sqfs_meta_writer_t *dm;
 };
@@ -84,7 +83,6 @@ static void writer_reset(sqfs_dir_writer_t *writer)
 	writer->idx_end = NULL;
 	writer->dir_ref = 0;
 	writer->dir_size = 0;
-	writer->idx_size = 0;
 	writer->ent_count = 0;
 }
 
@@ -214,7 +212,6 @@ static int add_header(sqfs_dir_writer_t *writer, size_t count,
 	}
 
 	writer->dir_size += sizeof(hdr);
-	writer->idx_size += 1;
 	return 0;
 }
 
@@ -277,7 +274,13 @@ sqfs_u64 sqfs_dir_writer_get_dir_reference(const sqfs_dir_writer_t *writer)
 
 size_t sqfs_dir_writer_get_index_size(const sqfs_dir_writer_t *writer)
 {
-	return writer->idx_size;
+	size_t index_size = 0;
+	index_ent_t *idx;
+
+	for (idx = writer->idx; idx != NULL; idx = idx->next)
+		index_size += sizeof(sqfs_dir_index_t) + idx->ent->name_len;
+
+	return index_size;
 }
 
 size_t sqfs_dir_writer_get_entry_count(const sqfs_dir_writer_t *writer)
@@ -291,13 +294,19 @@ sqfs_inode_generic_t
 			      sqfs_u32 parent_ino)
 {
 	sqfs_inode_generic_t *inode;
-	sqfs_dir_index_t *ent;
+	sqfs_dir_index_t ent;
 	sqfs_u64 start_block;
 	sqfs_u16 block_offset;
+	size_t index_size;
 	index_ent_t *idx;
 	sqfs_u8 *ptr;
 
-	inode = alloc_flex(sizeof(*inode), 1, writer->idx_size);
+	index_size = 0;
+
+	for (idx = writer->idx; idx != NULL; idx = idx->next)
+		index_size += sizeof(ent) + idx->ent->name_len;
+
+	inode = alloc_flex(sizeof(*inode), 1, index_size);
 	if (inode == NULL)
 		return NULL;
 
@@ -324,21 +333,22 @@ sqfs_inode_generic_t
 		inode->data.dir_ext.parent_inode = parent_ino;
 		inode->data.dir_ext.offset = block_offset;
 		inode->data.dir_ext.xattr_idx = xattr;
-		inode->data.dir_ext.inodex_count =
-			writer->idx_size ? (writer->idx_size - 1) : 0;
-
-		inode->num_dir_idx_bytes = writer->idx_size;
-		ptr = inode->extra;
+		inode->data.dir_ext.inodex_count = 0;
+		inode->num_dir_idx_bytes = 0;
 
 		for (idx = writer->idx; idx != NULL; idx = idx->next) {
-			ent = (sqfs_dir_index_t *)ptr;
-			ent->start_block = idx->block;
-			ent->index = idx->index;
-			ent->size = idx->ent->name_len - 1;
+			ent.start_block = idx->block;
+			ent.index = idx->index;
+			ent.size = idx->ent->name_len - 1;
 
-			ptr += sizeof(*ent);
-			memcpy(ptr, idx->ent->name, idx->ent->name_len);
-			ptr += idx->ent->name_len;
+			ptr = inode->extra + inode->num_dir_idx_bytes;
+			memcpy(ptr, &ent, sizeof(ent));
+			memcpy(ptr + sizeof(ent), idx->ent->name,
+			       idx->ent->name_len);
+
+			inode->data.dir_ext.inodex_count += 1;
+			inode->num_dir_idx_bytes += sizeof(ent);
+			inode->num_dir_idx_bytes += idx->ent->name_len;
 		}
 	}
 
