@@ -175,8 +175,8 @@ static int terminate_archive(void)
 
 	memset(buffer, '\0', sizeof(buffer));
 
-	return write_data("adding archive terminator", STDOUT_FILENO,
-			  buffer, sizeof(buffer));
+	return write_retry("adding archive terminator", STDOUT_FILENO,
+			   buffer, sizeof(buffer));
 }
 
 static int get_xattrs(const char *name, const sqfs_inode_generic_t *inode,

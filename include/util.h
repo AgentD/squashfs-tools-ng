@@ -41,15 +41,6 @@
 #endif
 
 /*
-  A wrapper around the write() system call. It retries the write if it is
-  interrupted by a signal or only part of the data was written. Returns 0
-  on success. Writes to stderr on failure using 'errstr' as a perror style
-  error prefix.
-*/
-SQFS_INTERNAL
-int write_data(const char *errstr, int fd, const void *data, size_t size);
-
-/*
   Helper for allocating data structures with flexible array members.
 
   'base_size' is the size of the struct itself, 'item_size' the size of a

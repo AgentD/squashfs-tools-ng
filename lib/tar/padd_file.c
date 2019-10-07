@@ -25,8 +25,8 @@ int padd_file(int outfd, sqfs_u64 size)
 	if (buffer == NULL)
 		goto fail_errno;
 
-	if (write_data("padding output file to block size",
-		       outfd, buffer, padd_sz)) {
+	if (write_retry("padding output file to block size",
+			outfd, buffer, padd_sz)) {
 		goto out;
 	}
 

@@ -88,7 +88,7 @@ static int write_header(int fd, const struct stat *sb, const char *name,
 
 	update_checksum(&hdr);
 
-	return write_data("writing tar header record", fd, &hdr, sizeof(hdr));
+	return write_retry("writing tar header record", fd, &hdr, sizeof(hdr));
 }
 
 static int write_gnu_header(int fd, const struct stat *orig,
@@ -104,8 +104,8 @@ static int write_gnu_header(int fd, const struct stat *orig,
 	if (write_header(fd, &sb, name, NULL, type))
 		return -1;
 
-	if (write_data("writing GNU extension header",
-		       fd, payload, payload_len)) {
+	if (write_retry("writing GNU extension header",
+			fd, payload, payload_len)) {
 		return -1;
 	}
 

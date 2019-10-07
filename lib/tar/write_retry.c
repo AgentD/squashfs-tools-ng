@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: LGPL-3.0-or-later */
 /*
- * write_data.c
+ * write_retry.c
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
@@ -10,9 +10,9 @@
 #include <errno.h>
 #include <stdio.h>
 
-#include "util.h"
+#include "tar.h"
 
-int write_data(const char *errstr, int fd, const void *data, size_t size)
+int write_retry(const char *errstr, int fd, const void *data, size_t size)
 {
 	ssize_t ret;
 

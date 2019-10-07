@@ -147,4 +147,12 @@ int padd_file(int outfd, sqfs_u64 size);
 */
 int read_retry(const char *errstr, int fd, void *buffer, size_t size);
 
+/*
+  A wrapper around the write() system call. It retries the write if it is
+  interrupted by a signal or only part of the data was written. Returns 0
+  on success. Writes to stderr on failure using 'errstr' as a perror style
+  error prefix.
+*/
+int write_retry(const char *errstr, int fd, const void *data, size_t size);
+
 #endif /* TAR_H */
