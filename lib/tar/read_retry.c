@@ -1,6 +1,6 @@
-/* SPDX-License-Identifier: LGPL-3.0-or-later */
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /*
- * read_data.c
+ * read_retry.c
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
@@ -10,9 +10,9 @@
 #include <errno.h>
 #include <stdio.h>
 
-#include "util.h"
+#include "tar.h"
 
-int read_data(const char *errstr, int fd, void *buffer, size_t size)
+int read_retry(const char *errstr, int fd, void *buffer, size_t size)
 {
 	ssize_t ret;
 

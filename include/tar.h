@@ -138,4 +138,13 @@ void clear_header(tar_header_decoded_t *hdr);
 */
 int padd_file(int outfd, sqfs_u64 size);
 
+
+/*
+  A wrapper around the read() system call. It retries the read if it is
+  interrupted by a signal or less than the desired size was read. Returns 0
+  on success. Writes to stderr on failure using 'errstr' as a perror style
+  error prefix.
+*/
+int read_retry(const char *errstr, int fd, void *buffer, size_t size);
+
 #endif /* TAR_H */

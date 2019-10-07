@@ -51,7 +51,7 @@ int main(void)
 	assert(hdr.mtime == 1543094477);
 	assert(strcmp(hdr.name, "input.txt") == 0);
 	assert(!hdr.unknown_record);
-	assert(read_data("data0", fd, buffer, 5) == 0);
+	assert(read_retry("data0", fd, buffer, 5) == 0);
 	buffer[5] = '\0';
 	assert(strcmp(buffer, "test\n") == 0);
 

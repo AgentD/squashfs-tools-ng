@@ -47,8 +47,8 @@ sparse_map_t *read_gnu_old_sparse(int fd, tar_header_t *hdr)
 		return list;
 
 	do {
-		if (read_data("reading GNU sparse header",
-			      fd, &sph, sizeof(sph))) {
+		if (read_retry("reading GNU sparse header",
+			       fd, &sph, sizeof(sph))) {
 			goto fail;
 		}
 

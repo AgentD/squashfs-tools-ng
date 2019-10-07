@@ -42,7 +42,7 @@ static char *record_to_memory(int fd, sqfs_u64 size)
 	if (buffer == NULL)
 		goto fail_errno;
 
-	if (read_data("reading tar record", fd, buffer, size))
+	if (read_retry("reading tar record", fd, buffer, size))
 		goto fail;
 
 	if (skip_padding(fd, size))
@@ -368,7 +368,7 @@ int read_header(int fd, tar_header_decoded_t *out)
 	memset(out, 0, sizeof(*out));
 
 	for (;;) {
-		if (read_data("reading tar header", fd, &hdr, sizeof(hdr)))
+		if (read_retry("reading tar header", fd, &hdr, sizeof(hdr)))
 			goto fail;
 
 		if (is_zero_block(&hdr)) {

@@ -21,7 +21,7 @@ static int skip_bytes(int fd, sqfs_u64 size)
 		if (diff > size)
 			diff = size;
 
-		if (read_data("reading tar record padding", fd, buffer, diff))
+		if (read_retry("reading tar record padding", fd, buffer, diff))
 			return -1;
 
 		size -= diff;
