@@ -1,27 +1,25 @@
-/* SPDX-License-Identifier: LGPL-3.0-or-later */
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /*
  * padd_file.c
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
 #include "config.h"
-
-#include "sqfs/io.h"
-#include "util.h"
+#include "tar.h"
 
 #include <stdlib.h>
 #include <stdio.h>
 
-int padd_file(int outfd, sqfs_u64 size, size_t blocksize)
+int padd_file(int outfd, sqfs_u64 size)
 {
-	size_t padd_sz = size % blocksize;
+	size_t padd_sz = size % TAR_RECORD_SIZE;
 	int status = -1;
 	sqfs_u8 *buffer;
 
 	if (padd_sz == 0)
 		return 0;
 
-	padd_sz = blocksize - padd_sz;
+	padd_sz = TAR_RECORD_SIZE - padd_sz;
 
 	buffer = calloc(1, padd_sz);
 	if (buffer == NULL)

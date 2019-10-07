@@ -89,13 +89,6 @@ SQFS_INTERNAL
 int popd(void);
 
 /*
-  Write zero bytes to an output file to padd it to specified block size.
-  Returns 0 on success. On failure, prints error message to stderr.
-*/
-SQFS_INTERNAL
-int padd_file(int outfd, sqfs_u64 size, size_t blocksize);
-
-/*
   Helper for allocating data structures with flexible array members.
 
   'base_size' is the size of the struct itself, 'item_size' the size of a

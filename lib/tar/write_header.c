@@ -109,7 +109,7 @@ static int write_gnu_header(int fd, const struct stat *orig,
 		return -1;
 	}
 
-	return padd_file(fd, payload_len, 512);
+	return padd_file(fd, payload_len);
 }
 
 static size_t num_digits(size_t num)
@@ -152,7 +152,7 @@ static int write_schily_xattr(int fd, const struct stat *orig,
 		dprintf(fd, "%zu %s%s=%s\n", len, prefix, it->key, it->value);
 	}
 
-	return padd_file(fd, total_size, 512);
+	return padd_file(fd, total_size);
 }
 
 int write_tar_header(int fd, const struct stat *sb, const char *name,

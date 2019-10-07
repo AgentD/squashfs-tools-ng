@@ -109,6 +109,8 @@ typedef struct {
 #define TAR_MAGIC_OLD "ustar "
 #define TAR_VERSION_OLD " "
 
+#define TAR_RECORD_SIZE (512)
+
 /*
   Returns < 0 on failure, > 0 if cannot encode, 0 on success.
   Prints error/warning messages to stderr.
@@ -129,5 +131,11 @@ int skip_entry(int fd, sqfs_u64 size);
 int read_header(int fd, tar_header_decoded_t *out);
 
 void clear_header(tar_header_decoded_t *hdr);
+
+/*
+  Write zero bytes to an output file to padd it to the tar record size.
+  Returns 0 on success. On failure, prints error message to stderr.
+*/
+int padd_file(int outfd, sqfs_u64 size);
 
 #endif /* TAR_H */

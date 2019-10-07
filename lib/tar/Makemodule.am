@@ -2,7 +2,7 @@ libtar_a_SOURCES = lib/tar/read_header.c lib/tar/write_header.c lib/tar/skip.c
 libtar_a_SOURCES += lib/tar/number.c lib/tar/checksum.c lib/tar/cleanup.c
 libtar_a_SOURCES += lib/tar/read_sparse_map.c lib/tar/read_sparse_map_old.c
 libtar_a_SOURCES += lib/tar/base64.c lib/tar/urldecode.c lib/tar/internal.h
-libtar_a_SOURCES += include/tar.h
+libtar_a_SOURCES += lib/tar/padd_file.c include/tar.h
 libtar_a_CFLAGS = $(AM_CFLAGS)
 libtar_a_CPPFLAGS = $(AM_CPPFLAGS)
 
