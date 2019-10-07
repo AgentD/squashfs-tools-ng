@@ -18,7 +18,7 @@ TESTS =
 include doc/Makemodule.am
 include lib/fstree/Makemodule.am
 include lib/sqfs/Makemodule.am
-include lib/sqfshelper/Makemodule.am
+include lib/common/Makemodule.am
 include lib/tar/Makemodule.am
 include lib/util/Makemodule.am
 include tar/Makemodule.am

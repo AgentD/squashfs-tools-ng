@@ -1,0 +1,9 @@
+libcommon_a_SOURCES = lib/common/serialize_fstree.c lib/common/statistics.c
+libcommon_a_SOURCES += lib/common/write_export_table.c lib/common/inode_stat.c
+libcommon_a_SOURCES += lib/common/print_version.c lib/common/data_reader_dump.c
+libcommon_a_SOURCES += lib/common/compress.c lib/common/comp_opt.c
+libcommon_a_SOURCES += lib/common/data_writer.c include/common.h
+libcommon_a_SOURCES += lib/common/get_path.c lib/common/io_stdin.c
+libcommon_a_SOURCES += lib/common/writer.c lib/common/perror.c
+
+noinst_LIBRARIES += libcommon.a

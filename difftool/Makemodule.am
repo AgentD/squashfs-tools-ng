@@ -2,6 +2,6 @@ sqfsdiff_SOURCES = difftool/sqfsdiff.c difftool/sqfsdiff.h difftool/util.c
 sqfsdiff_SOURCES += difftool/compare_dir.c difftool/node_compare.c
 sqfsdiff_SOURCES += difftool/compare_files.c difftool/super.c
 sqfsdiff_SOURCES += difftool/extract.c difftool/options.c
-sqfsdiff_LDADD = libsqfshelper.a libsquashfs.la libutil.la
+sqfsdiff_LDADD = libcommon.a libsquashfs.la libutil.la
 
 bin_PROGRAMS += sqfsdiff

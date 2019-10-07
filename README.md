@@ -101,9 +101,8 @@ The following components exist:
    data structures for reading and writing SquashFS archives. Abstractions
    for data compression and so on. It contains the actual brains of this
    package. It uses `libutil.la` internally.
- - `libsqfshelper.a` built from files in `lib/sqfshelper` contains a bunch
-   of high level glue code that combines `libfstree.a` and `libsquashfs.so`
-   and provides common functionality used by all the tools.
+ - `libcommon.a` built from files in `lib/common` contains a bunch
+   of commonly used code shared across the utilities.
 
 The headers in `include` are stuffed with comments on functions an data
 structures.
