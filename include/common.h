@@ -138,4 +138,22 @@ void sqfs_writer_cleanup(sqfs_writer_t *sqfs);
 
 void sqfs_perror(const char *file, const char *action, int error_code);
 
+
+/*
+  A wrapper around mkdir() that behaves like 'mkdir -p'. It tries to create
+  every component of the given path and skips already existing entries.
+
+  Returns 0 on success.
+*/
+int mkdir_p(const char *path);
+
+/* Returns 0 on success. On failure, prints error message to stderr. */
+int pushd(const char *path);
+
+/* Same as pushd, but the string doesn't have to be null-terminated. */
+int pushdn(const char *path, size_t len);
+
+/* Returns 0 on success. On failure, prints error message to stderr. */
+int popd(void);
+
 #endif /* COMMON_H */

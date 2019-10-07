@@ -59,27 +59,6 @@ SQFS_INTERNAL
 void print_version(void);
 
 /*
-  A wrapper around mkdir() that behaves like 'mkdir -p'. It tries to create
-  every component of the given path and skips already existing entries.
-
-  Returns 0 on success.
-*/
-SQFS_INTERNAL
-int mkdir_p(const char *path);
-
-/* Returns 0 on success. On failure, prints error message to stderr. */
-SQFS_INTERNAL
-int pushd(const char *path);
-
-/* Same as pushd, but the string doesn't have to be null-terminated. */
-SQFS_INTERNAL
-int pushdn(const char *path, size_t len);
-
-/* Returns 0 on success. On failure, prints error message to stderr. */
-SQFS_INTERNAL
-int popd(void);
-
-/*
   Helper for allocating data structures with flexible array members.
 
   'base_size' is the size of the struct itself, 'item_size' the size of a

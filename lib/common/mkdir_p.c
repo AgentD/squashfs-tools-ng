@@ -1,17 +1,15 @@
-/* SPDX-License-Identifier: LGPL-3.0-or-later */
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /*
  * mkdir_p.c
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
-#include "config.h"
+#include "common.h"
 
 #include <string.h>
 #include <alloca.h>
 #include <stdio.h>
 #include <errno.h>
-
-#include "util.h"
 
 int mkdir_p(const char *path)
 {

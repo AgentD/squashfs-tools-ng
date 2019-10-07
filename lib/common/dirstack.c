@@ -1,10 +1,10 @@
-/* SPDX-License-Identifier: LGPL-3.0-or-later */
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /*
  * dirstack.c
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
-#include "config.h"
+#include "common.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -12,8 +12,6 @@
 #include <assert.h>
 #include <fcntl.h>
 #include <stdio.h>
-
-#include "util.h"
 
 #define STACK_DEPTH 128
 
