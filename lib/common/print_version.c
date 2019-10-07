@@ -4,9 +4,7 @@
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
-#include "config.h"
-
-#include "util.h"
+#include "common.h"
 
 #include <stdio.h>
 

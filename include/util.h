@@ -50,15 +50,6 @@ SQFS_INTERNAL
 int write_data(const char *errstr, int fd, const void *data, size_t size);
 
 /*
-  A common implementation of the '--version' command line flag.
-
-  Prints out version information. The program name is extracted from the
-  BSD style __progname global variable.
-*/
-SQFS_INTERNAL
-void print_version(void);
-
-/*
   Helper for allocating data structures with flexible array members.
 
   'base_size' is the size of the struct itself, 'item_size' the size of a

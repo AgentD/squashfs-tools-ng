@@ -156,4 +156,12 @@ int pushdn(const char *path, size_t len);
 /* Returns 0 on success. On failure, prints error message to stderr. */
 int popd(void);
 
+/*
+  A common implementation of the '--version' command line flag.
+
+  Prints out version information. The program name is extracted from the
+  BSD style __progname global variable.
+*/
+void print_version(void);
+
 #endif /* COMMON_H */
