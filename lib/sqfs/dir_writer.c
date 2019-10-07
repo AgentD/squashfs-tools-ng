@@ -337,6 +337,7 @@ sqfs_inode_generic_t
 		inode->num_dir_idx_bytes = 0;
 
 		for (idx = writer->idx; idx != NULL; idx = idx->next) {
+			memset(&ent, 0, sizeof(ent));
 			ent.start_block = idx->block;
 			ent.index = idx->index;
 			ent.size = idx->ent->name_len - 1;
