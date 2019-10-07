@@ -149,6 +149,7 @@ int sqfs_writer_init(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *wrcfg)
 		goto fail_cmp;
 	}
 
+	memset(&sqfs->stats, 0, sizeof(sqfs->stats));
 	register_stat_hooks(sqfs->data, &sqfs->stats);
 
 	sqfs->idtbl = sqfs_id_table_create();
