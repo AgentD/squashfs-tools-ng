@@ -199,6 +199,9 @@ int sqfs_dir_reader_get_full_hierarchy(sqfs_dir_reader_t *rd,
 	const char *ptr;
 	int ret;
 
+	if (flags & ~SQFS_TREE_ALL_FLAGS)
+		return SQFS_ERROR_UNSUPPORTED;
+
 	ret = sqfs_dir_reader_get_root_inode(rd, &inode);
 	if (ret)
 		return ret;

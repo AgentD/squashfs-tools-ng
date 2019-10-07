@@ -59,6 +59,18 @@
  */
 struct sqfs_block_hooks_t {
 	/**
+	 * @brief Set this to the size of the struct.
+	 *
+	 * This is required for future expandabillity while maintaining ABI
+	 * compatibillity. At the current time, the implementation of
+	 * @ref sqfs_data_writer_set_hooks rejects any hook struct where this
+	 * isn't the exact size. If new hooks are added in the future, the
+	 * struct grows and the future implementation can tell by the size
+	 * whether the application uses the new version or the old one.
+	 */
+	size_t size;
+
+	/**
 	 * @brief Gets called before writing a block to disk.
 	 *
 	 * If this is not NULL, it gets called before a block is written to
@@ -283,10 +295,13 @@ int sqfs_data_writer_write_fragment_table(sqfs_data_writer_t *proc,
  * @param proc A pointer to a data writer object.
  * @param user_ptr A user pointer to pass to the callbacks.
  * @param hooks A structure containing the hooks.
+ *
+ * @return Zero on success, @ref SQFS_ERROR_UNSUPPORTED if the size field of
+ *         the hooks doesn't match any size knwon to the library.
  */
 SQFS_API
-void sqfs_data_writer_set_hooks(sqfs_data_writer_t *proc, void *user_ptr,
-				const sqfs_block_hooks_t *hooks);
+int sqfs_data_writer_set_hooks(sqfs_data_writer_t *proc, void *user_ptr,
+			       const sqfs_block_hooks_t *hooks);
 
 #ifdef __cplusplus
 }

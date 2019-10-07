@@ -99,6 +99,8 @@ typedef enum {
 	 * of parent nodes with the subtree stored at the end.
 	 */
 	SQFS_TREE_STORE_PARENTS = 0x40,
+
+	SQFS_TREE_ALL_FLAGS = 0x7F,
 } E_SQFS_TREE_FILTER_FLAGS;
 
 /**

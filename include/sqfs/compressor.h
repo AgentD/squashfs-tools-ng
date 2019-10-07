@@ -100,6 +100,11 @@ struct sqfs_compressor_t {
  * @struct sqfs_compressor_config_t
  *
  * @brief Configuration parameters for instantiating a compressor backend.
+ *
+ * The unused fields MUST be set to 0. The easiest way to do this is by always
+ * clearing the struct using memset before setting anything, or using
+ * @ref sqfs_compressor_config_init to set defaults and then modify the struct
+ * from there.
  */
 struct sqfs_compressor_config_t {
 	/**
@@ -138,6 +143,8 @@ struct sqfs_compressor_config_t {
 			 * Default is 15, i.e. 32k window.
 			 */
 			sqfs_u16 window_size;
+
+			sqfs_u32 padd0[3];
 		} gzip;
 
 		/**
@@ -150,6 +157,8 @@ struct sqfs_compressor_config_t {
 			 * Default is 15.
 			 */
 			sqfs_u16 level;
+
+			sqfs_u16 padd0[7];
 		} zstd;
 
 		/**
@@ -174,6 +183,8 @@ struct sqfs_compressor_config_t {
 			 * Defaults to 9, i.e. best compression.
 			 */
 			sqfs_u16 level;
+
+			sqfs_u32 padd0[3];
 		} lzo;
 
 		/**
@@ -190,7 +201,11 @@ struct sqfs_compressor_config_t {
 			 * block size.
 			 */
 			sqfs_u32 dict_size;
+
+			sqfs_u32 padd0[3];
 		} xz;
+
+		sqfs_u64 padd0[2];
 	} opt;
 };
 

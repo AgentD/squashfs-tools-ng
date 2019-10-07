@@ -87,10 +87,40 @@ bool sqfs_compressor_exists(E_SQFS_COMPRESSOR id)
 
 sqfs_compressor_t *sqfs_compressor_create(const sqfs_compressor_config_t *cfg)
 {
+	sqfs_u8 padd0[sizeof(cfg->opt)];
+	int ret;
+
 	if (cfg == NULL || cfg->id < SQFS_COMP_MIN || cfg->id > SQFS_COMP_MAX)
 		return NULL;
 
 	if (compressors[cfg->id] == NULL)
+		return NULL;
+
+	memset(padd0, 0, sizeof(padd0));
+
+	switch (cfg->id) {
+	case SQFS_COMP_XZ:
+		ret = memcmp(cfg->opt.xz.padd0, padd0,
+			     sizeof(cfg->opt.xz.padd0));
+		break;
+	case SQFS_COMP_LZO:
+		ret = memcmp(cfg->opt.lzo.padd0, padd0,
+			     sizeof(cfg->opt.lzo.padd0));
+		break;
+	case SQFS_COMP_ZSTD:
+		ret = memcmp(cfg->opt.zstd.padd0, padd0,
+			     sizeof(cfg->opt.zstd.padd0));
+		break;
+	case SQFS_COMP_GZIP:
+		ret = memcmp(cfg->opt.gzip.padd0, padd0,
+			     sizeof(cfg->opt.gzip.padd0));
+		break;
+	default:
+		ret = memcmp(cfg->opt.padd0, padd0, sizeof(cfg->opt.padd0));
+		break;
+	}
+
+	if (ret != 0)
 		return NULL;
 
 	return compressors[cfg->id](cfg);

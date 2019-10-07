@@ -157,9 +157,13 @@ int sqfs_data_writer_write_fragment_table(sqfs_data_writer_t *proc,
 	return 0;
 }
 
-void sqfs_data_writer_set_hooks(sqfs_data_writer_t *proc, void *user_ptr,
-				const sqfs_block_hooks_t *hooks)
+int sqfs_data_writer_set_hooks(sqfs_data_writer_t *proc, void *user_ptr,
+			       const sqfs_block_hooks_t *hooks)
 {
+	if (hooks->size != sizeof(*hooks))
+		return SQFS_ERROR_UNSUPPORTED;
+
 	proc->hooks = hooks;
 	proc->user_ptr = user_ptr;
+	return 0;
 }

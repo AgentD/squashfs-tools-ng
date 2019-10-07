@@ -55,6 +55,7 @@ static void notify_fragment_discard(void *user, const sqfs_block_t *block)
 }
 
 static const sqfs_block_hooks_t hooks = {
+	.size = sizeof(hooks),
 	.post_block_write = post_block_write,
 	.pre_fragment_store = pre_fragment_store,
 	.notify_blocks_erased = notify_blocks_erased,
