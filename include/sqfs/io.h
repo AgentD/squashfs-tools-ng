@@ -140,7 +140,7 @@ extern "C" {
  * @return A pointer to a file object on success, NULL on allocation failure,
  *         failure to open the file or if an unknown flag was set.
  */
-SQFS_API sqfs_file_t *sqfs_open_file(const char *filename, int flags);
+SQFS_API sqfs_file_t *sqfs_open_file(const char *filename, sqfs_u32 flags);
 
 #ifdef __cplusplus
 }

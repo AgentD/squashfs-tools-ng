@@ -85,7 +85,7 @@ extern "C" {
  */
 SQFS_API sqfs_meta_writer_t *sqfs_meta_writer_create(sqfs_file_t *file,
 						     sqfs_compressor_t *cmp,
-						     int flags);
+						     sqfs_u32 flags);
 
 /**
  * @brief Destroy a meta data writer and free all memory used by it.

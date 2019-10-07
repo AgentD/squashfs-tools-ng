@@ -41,7 +41,7 @@ struct sqfs_meta_writer_t {
 	/* The raw data chunk that data is appended to */
 	sqfs_u8 data[SQFS_META_BLOCK_SIZE];
 
-	int flags;
+	sqfs_u32 flags;
 	meta_block_t *list;
 	meta_block_t *list_end;
 };
@@ -56,7 +56,7 @@ static int write_block(sqfs_file_t *file, meta_block_t *outblk)
 
 sqfs_meta_writer_t *sqfs_meta_writer_create(sqfs_file_t *file,
 					    sqfs_compressor_t *cmp,
-					    int flags)
+					    sqfs_u32 flags)
 {
 	sqfs_meta_writer_t *m;
 

@@ -107,7 +107,7 @@ static int stdio_truncate(sqfs_file_t *base, sqfs_u64 size)
 }
 
 
-sqfs_file_t *sqfs_open_file(const char *filename, int flags)
+sqfs_file_t *sqfs_open_file(const char *filename, sqfs_u32 flags)
 {
 	sqfs_file_stdio_t *file;
 	int open_mode, temp;

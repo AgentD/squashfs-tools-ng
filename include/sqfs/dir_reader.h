@@ -308,7 +308,7 @@ SQFS_API int sqfs_dir_reader_find_by_path(sqfs_dir_reader_t *rd,
 SQFS_API int sqfs_dir_reader_get_full_hierarchy(sqfs_dir_reader_t *rd,
 						const sqfs_id_table_t *idtbl,
 						const char *path,
-						unsigned int flags,
+						sqfs_u32 flags,
 						sqfs_tree_node_t **out);
 
 /**

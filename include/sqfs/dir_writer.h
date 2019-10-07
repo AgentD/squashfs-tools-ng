@@ -95,7 +95,7 @@ SQFS_API void sqfs_dir_writer_destroy(sqfs_dir_writer_t *writer);
  *
  * @return Zero on success, a @ref E_SQFS_ERROR value on failure.
  */
-SQFS_API int sqfs_dir_writer_begin(sqfs_dir_writer_t *writer, sqfs_u16 flags);
+SQFS_API int sqfs_dir_writer_begin(sqfs_dir_writer_t *writer, sqfs_u32 flags);
 
 /**
  * @brief Add add a directory entry.
