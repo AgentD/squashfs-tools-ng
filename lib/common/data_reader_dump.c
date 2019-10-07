@@ -11,6 +11,34 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
+#include <errno.h>
+
+static int append_block(int fd, const sqfs_block_t *blk)
+{
+	const unsigned char *ptr = blk->data;
+	size_t size = blk->size;
+	ssize_t ret;
+
+	while (size > 0) {
+		ret = write(fd, ptr, size);
+
+		if (ret < 0) {
+			if (errno == EINTR)
+				continue;
+			perror("writing data block");
+		}
+
+		if (ret == 0) {
+			fputs("writing data block: unexpected end of file\n",
+			      stderr);
+		}
+
+		ptr += ret;
+		size -= ret;
+	}
+
+	return 0;
+}
 
 int sqfs_data_reader_dump(const char *name, sqfs_data_reader_t *data,
 			  const sqfs_inode_generic_t *inode,
@@ -46,8 +74,7 @@ int sqfs_data_reader_dump(const char *name, sqfs_data_reader_t *data,
 				return -1;
 			}
 
-			if (write_data("writing uncompressed block",
-				       outfd, blk->data, blk->size)) {
+			if (append_block(outfd, blk)) {
 				free(blk);
 				return -1;
 			}
@@ -64,8 +91,7 @@ int sqfs_data_reader_dump(const char *name, sqfs_data_reader_t *data,
 			return -1;
 		}
 
-		if (write_data("writing uncompressed fragment", outfd,
-			       blk->data, blk->size)) {
+		if (append_block(outfd, blk)) {
 			free(blk);
 			return -1;
 		}
