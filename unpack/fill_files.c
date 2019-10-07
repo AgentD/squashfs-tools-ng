@@ -114,6 +114,12 @@ static void clear_file_list(void)
 
 static int gen_file_list_dfs(const sqfs_tree_node_t *n)
 {
+	if (!is_filename_sane((const char *)n->name)) {
+		fprintf(stderr, "Found an entry named '%s', skipping.\n",
+			n->name);
+		return 0;
+	}
+
 	if (S_ISREG(n->inode->base.mode))
 		return add_file(n);
 

@@ -12,6 +12,12 @@ static int create_node(const sqfs_tree_node_t *n, int flags)
 	int fd, ret;
 	char *name;
 
+	if (!is_filename_sane((const char *)n->name)) {
+		fprintf(stderr, "Found an entry named '%s', skipping.\n",
+			n->name);
+		return 0;
+	}
+
 	if (!(flags & UNPACK_QUIET)) {
 		name = sqfs_tree_node_get_path(n);
 		if (name != NULL) {
@@ -153,6 +159,9 @@ static int set_attribs(sqfs_xattr_reader_t *xattr,
 		       const sqfs_tree_node_t *n, int flags)
 {
 	const sqfs_tree_node_t *c;
+
+	if (!is_filename_sane((const char *)n->name))
+		return 0;
 
 	if (S_ISDIR(n->inode->base.mode)) {
 		if (pushd((const char *)n->name))

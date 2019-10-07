@@ -266,6 +266,16 @@ static int write_tree_dfs(const sqfs_tree_node_t *n)
 	if (n->parent == NULL && S_ISDIR(n->inode->base.mode))
 		goto skip_hdr;
 
+	if (!is_filename_sane((const char *)n->name)) {
+		fprintf(stderr, "Found a file named '%s', skipping.\n",
+			n->name);
+		if (dont_skip) {
+			fputs("Not allowed to skip files, aborting!\n", stderr);
+			return -1;
+		}
+		return 0;
+	}
+
 	name = sqfs_tree_node_get_path(n);
 	if (name == NULL) {
 		perror("resolving tree node path");
