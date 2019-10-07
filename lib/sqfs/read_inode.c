@@ -261,7 +261,7 @@ static int read_inode_dir_ext(sqfs_meta_reader_t *ir, sqfs_inode_t *base,
 		return 0;
 	}
 
-	for (i = 0; i <= dir.inodex_count; ++i) {
+	for (i = 0; i < dir.inodex_count; ++i) {
 		err = sqfs_meta_reader_read(ir, &ent, sizeof(ent));
 		if (err) {
 			free(out);
@@ -273,8 +273,12 @@ static int read_inode_dir_ext(sqfs_meta_reader_t *ir, sqfs_inode_t *base,
 		SWAB32(ent.size);
 
 		new_sz = index_max;
-		while (sizeof(ent) + ent.size + 1 > new_sz - index_used)
-			new_sz *= 2;
+		while (sizeof(ent) + ent.size + 1 > new_sz - index_used) {
+			if (SZ_MUL_OV(new_sz, 2, &new_sz)) {
+				free(out);
+				return SQFS_ERROR_OVERFLOW;
+			}
+		}
 
 		if (new_sz > index_max) {
 			new = realloc(out, sizeof(*out) + new_sz);
