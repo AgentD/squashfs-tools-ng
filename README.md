@@ -91,7 +91,8 @@ other headers are private to this package.
 
 The following components exist:
  - `libutil.la` built from files in `lib/util` contains miscellaneous helper
-   functions.
+   functions used by `libsquashfs.la` internally, but also of use to other
+   libraries or programs.
  - `libfstree.a` built from files in `lib/fstree` contains functions for
    manipulating a file system tree. It only depends on `libutil.la`
  - `libtar.a` built from files in `lib/tar` contains data structures and
