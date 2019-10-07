@@ -9,7 +9,7 @@
 
 #include "config.h"
 
-#include "highlevel.h"
+#include "common.h"
 #include "fstree.h"
 #include "util.h"
 

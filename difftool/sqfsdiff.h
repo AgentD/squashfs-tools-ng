@@ -8,9 +8,7 @@
 #define DIFFTOOL_H
 
 #include "config.h"
-
-#include "sqfs/error.h"
-#include "highlevel.h"
+#include "common.h"
 #include "fstree.h"
 #include "util.h"
 

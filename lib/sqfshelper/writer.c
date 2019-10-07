@@ -4,12 +4,7 @@
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
-#include "config.h"
-
-#include "sqfs/error.h"
-
-#include "highlevel.h"
-#include "util.h"
+#include "common.h"
 
 #include <string.h>
 #include <stdlib.h>

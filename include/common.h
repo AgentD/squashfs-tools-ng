@@ -1,19 +1,21 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 /*
- * highlevel.h
+ * common.h
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
-#ifndef HIGHLEVEL_H
-#define HIGHLEVEL_H
+#ifndef COMMON_H
+#define COMMON_H
 
 #include "config.h"
 
 #include "sqfs/xattr_writer.h"
+#include "sqfs/xattr_reader.h"
 #include "sqfs/compressor.h"
 #include "sqfs/id_table.h"
 #include "sqfs/inode.h"
 #include "sqfs/table.h"
+#include "sqfs/error.h"
 #include "sqfs/meta_writer.h"
 #include "sqfs/data_reader.h"
 #include "sqfs/data_writer.h"
@@ -134,4 +136,4 @@ void sqfs_writer_cleanup(sqfs_writer_t *sqfs);
 
 void sqfs_perror(const char *file, const char *action, int error_code);
 
-#endif /* HIGHLEVEL_H */
+#endif /* COMMON_H */

@@ -8,17 +8,7 @@
 #define RDSQUASHFS_H
 
 #include "config.h"
-
-#include "sqfs/xattr_reader.h"
-#include "sqfs/meta_reader.h"
-#include "sqfs/data_reader.h"
-#include "sqfs/compressor.h"
-#include "sqfs/id_table.h"
-#include "sqfs/xattr.h"
-#include "sqfs/block.h"
-#include "sqfs/error.h"
-
-#include "highlevel.h"
+#include "common.h"
 #include "fstree.h"
 #include "util.h"
 

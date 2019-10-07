@@ -4,9 +4,7 @@
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
-#include "config.h"
-
-#include "highlevel.h"
+#include "common.h"
 #include "util.h"
 
 static sqfs_u8 buffer[4096];

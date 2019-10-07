@@ -5,13 +5,7 @@
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
 #include "config.h"
-
-#include "sqfs/meta_reader.h"
-#include "sqfs/compressor.h"
-#include "sqfs/data_reader.h"
-#include "sqfs/xattr_reader.h"
-#include "sqfs/error.h"
-#include "highlevel.h"
+#include "common.h"
 #include "util.h"
 #include "tar.h"
 

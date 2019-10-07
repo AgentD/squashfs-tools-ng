@@ -4,7 +4,7 @@
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
-#include "highlevel.h"
+#include "common.h"
 
 E_SQFS_COMPRESSOR compressor_get_default(void)
 {

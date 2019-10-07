@@ -4,15 +4,7 @@
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
-#include "config.h"
-
-#include "sqfs/meta_writer.h"
-#include "sqfs/error.h"
-#include "sqfs/inode.h"
-#include "sqfs/dir.h"
-
-#include "highlevel.h"
-#include "util.h"
+#include "common.h"
 
 #include <assert.h>
 #include <unistd.h>
