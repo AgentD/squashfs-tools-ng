@@ -9,7 +9,7 @@
 
 #include "config.h"
 
-#include "util.h"
+#include "util/util.h"
 #include "tar.h"
 
 #include <string.h>

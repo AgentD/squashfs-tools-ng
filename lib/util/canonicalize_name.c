@@ -6,7 +6,7 @@
  */
 #include "config.h"
 
-#include "util.h"
+#include "util/util.h"
 
 static void normalize_slashes(char *filename)
 {

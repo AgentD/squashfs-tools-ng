@@ -12,7 +12,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "str_table.h"
+#include "util/str_table.h"
 
 #define STR(x) #x
 #define STRVALUE(x) STR(x)

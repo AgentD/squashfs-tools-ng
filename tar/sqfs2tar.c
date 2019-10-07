@@ -6,7 +6,6 @@
  */
 #include "config.h"
 #include "common.h"
-#include "util.h"
 #include "tar.h"
 
 #include <getopt.h>

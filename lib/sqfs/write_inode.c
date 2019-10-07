@@ -11,7 +11,7 @@
 #include "sqfs/error.h"
 #include "sqfs/inode.h"
 #include "sqfs/dir.h"
-#include "compat.h"
+#include "util/compat.h"
 
 static int write_block_sizes(sqfs_meta_writer_t *ir,
 			     const sqfs_inode_generic_t *n)

@@ -10,7 +10,7 @@
 #include "config.h"
 #include "common.h"
 #include "fstree.h"
-#include "util.h"
+#include "util/util.h"
 
 #include <unistd.h>
 #include <stdlib.h>

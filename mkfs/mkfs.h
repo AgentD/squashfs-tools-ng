@@ -11,7 +11,7 @@
 
 #include "common.h"
 #include "fstree.h"
-#include "util.h"
+#include "util/util.h"
 
 #ifdef HAVE_SYS_XATTR_H
 #include <sys/xattr.h>

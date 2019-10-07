@@ -11,7 +11,7 @@
 #include "sqfs/super.h"
 #include "sqfs/table.h"
 #include "sqfs/error.h"
-#include "compat.h"
+#include "util/compat.h"
 
 #include <stdlib.h>
 #include <string.h>

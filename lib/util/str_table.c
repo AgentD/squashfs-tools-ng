@@ -11,8 +11,8 @@
 #include <string.h>
 
 #include "sqfs/error.h"
-#include "str_table.h"
-#include "util.h"
+#include "util/str_table.h"
+#include "util/util.h"
 
 /* R5 hash function (borrowed from reiserfs) */
 static sqfs_u32 strhash(const char *s)

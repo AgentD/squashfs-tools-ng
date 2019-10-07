@@ -8,7 +8,7 @@
 #define TAR_H
 
 #include "config.h"
-#include "util.h"
+#include "util/util.h"
 
 #include <stdbool.h>
 #include <stdint.h>

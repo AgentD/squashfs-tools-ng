@@ -25,9 +25,11 @@
 #include "sqfs/xattr.h"
 #include "sqfs/dir.h"
 #include "sqfs/io.h"
-#include "compat.h"
+
+#include "util/compat.h"
+#include "util/util.h"
+
 #include "fstree.h"
-#include "util.h"
 #include "tar.h"
 
 #include <stddef.h>

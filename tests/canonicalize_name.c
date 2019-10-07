@@ -6,7 +6,7 @@
  */
 #include "config.h"
 
-#include "util.h"
+#include "util/util.h"
 
 #include <string.h>
 #include <stdlib.h>

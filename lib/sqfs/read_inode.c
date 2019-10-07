@@ -12,7 +12,7 @@
 #include "sqfs/super.h"
 #include "sqfs/inode.h"
 #include "sqfs/dir.h"
-#include "util.h"
+#include "util/util.h"
 
 #include <stdlib.h>
 #include <string.h>

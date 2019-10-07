@@ -11,7 +11,6 @@
 #include <stdlib.h>
 
 #include "internal.h"
-#include "util.h"
 
 typedef sqfs_compressor_t *(*compressor_fun_t)
 	(const sqfs_compressor_config_t *cfg);

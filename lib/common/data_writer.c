@@ -5,7 +5,6 @@
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
 #include "common.h"
-#include "util.h"
 
 static sqfs_u8 buffer[4096];
 
