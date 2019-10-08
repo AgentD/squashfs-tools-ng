@@ -5,10 +5,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.7]
+### Added
+- LGPLv3 licensed, shared library `libsquashfs.so` containing all the SquashFS
+  related logic.
+- Sanitized, public headers and pkg-config file for libsquashfs.
+- Doxygen reference manual for libsquashfs.
+- Legacy LZMA compression support.
+- User configurable queue backlog for tar2sqfs and gensquashfs.
+
 ### Changed
-- Move most of the SquashFS code to a shared library called `libsquashfs.so`
-- Install the headers for this library on the target system
-- Relicense the code for `libsquashfs.so` under the LGPLv3
+- Make sqfsdiff continue comparing even if the types are different,
+  but compatible (e.g. extended directory vs basic directory).
+- Try to determine the number of available CPU cores and use the
+  maximum by default.
+- Start numbering inodes at 1, instead of 2.
+- Only store permission bits in inodes, the reader reconstructs them from the
+  inode type.
+- Make "--keep-time" the default for tar2sqfs and use flag to disable it.
+
+### Fixed
+- An off-by-one error in the directory packing code.
+- Typo in configure fallback path searching for LZO library.
+- Typo that caused LZMA2 VLI filters to not be used at all.
+- Possible out-of-bounds access in LZO compressor constructor.
+- Inverted logic in sqfs2tar extended attributes processing.
+
+### Removed
+- Comparisong with directory from sqfsdiff.
 
 ## [0.6.1] - 2019-08-27
 ### Added
