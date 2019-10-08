@@ -10,6 +10,7 @@ int node_compare(sqfsdiff_t *sd, sqfs_tree_node_t *a, sqfs_tree_node_t *b)
 {
 	char *path = sqfs_tree_node_get_path(a);
 	sqfs_tree_node_t *ait, *bit;
+	bool promoted, demoted;
 	int ret, status = 0;
 
 	if (path == NULL) {
@@ -18,9 +19,78 @@ int node_compare(sqfsdiff_t *sd, sqfs_tree_node_t *a, sqfs_tree_node_t *b)
 	}
 
 	if (a->inode->base.type != b->inode->base.type) {
-		fprintf(stdout, "%s has a different type\n", path);
-		free(path);
-		return 1;
+		promoted = demoted = false;
+
+		switch (a->inode->base.type) {
+		case SQFS_INODE_DIR:
+			if (b->inode->base.type == SQFS_INODE_EXT_DIR)
+				promoted = true;
+			break;
+		case SQFS_INODE_FILE:
+			if (b->inode->base.type == SQFS_INODE_EXT_FILE)
+				promoted = true;
+			break;
+		case SQFS_INODE_SLINK:
+			if (b->inode->base.type == SQFS_INODE_EXT_SLINK)
+				promoted = true;
+			break;
+		case SQFS_INODE_BDEV:
+			if (b->inode->base.type == SQFS_INODE_EXT_BDEV)
+				promoted = true;
+			break;
+		case SQFS_INODE_CDEV:
+			if (b->inode->base.type == SQFS_INODE_EXT_CDEV)
+				promoted = true;
+			break;
+		case SQFS_INODE_FIFO:
+			if (b->inode->base.type == SQFS_INODE_EXT_FIFO)
+				promoted = true;
+			break;
+		case SQFS_INODE_SOCKET:
+			if (b->inode->base.type == SQFS_INODE_EXT_SOCKET)
+				promoted = true;
+			break;
+		case SQFS_INODE_EXT_DIR:
+			if (b->inode->base.type == SQFS_INODE_DIR)
+				demoted = true;
+			break;
+		case SQFS_INODE_EXT_FILE:
+			if (b->inode->base.type == SQFS_INODE_FILE)
+				demoted = true;
+			break;
+		case SQFS_INODE_EXT_SLINK:
+			if (b->inode->base.type == SQFS_INODE_SLINK)
+				demoted = true;
+			break;
+		case SQFS_INODE_EXT_BDEV:
+			if (b->inode->base.type == SQFS_INODE_BDEV)
+				demoted = true;
+			break;
+		case SQFS_INODE_EXT_CDEV:
+			if (b->inode->base.type == SQFS_INODE_CDEV)
+				demoted = true;
+			break;
+		case SQFS_INODE_EXT_FIFO:
+			if (b->inode->base.type == SQFS_INODE_FIFO)
+				demoted = true;
+			break;
+		case SQFS_INODE_EXT_SOCKET:
+			if (b->inode->base.type == SQFS_INODE_SOCKET)
+				demoted = true;
+			break;
+		}
+
+		if (promoted) {
+			fprintf(stdout, "%s has an extended type\n", path);
+			status = 1;
+		} else if (demoted) {
+			fprintf(stdout, "%s has a basic type\n", path);
+			status = 1;
+		} else {
+			fprintf(stdout, "%s has a different type\n", path);
+			free(path);
+			return 1;
+		}
 	}
 
 	if (!(sd->compare_flags & COMPARE_NO_PERM)) {
