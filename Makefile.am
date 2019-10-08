@@ -15,16 +15,20 @@ pkgconfig_DATA =
 EXTRA_DIST = autogen.sh LICENSE-gpl.txt LICENSE-lgpl.txt README.md CHANGELOG.md
 TESTS =
 
+include lib/sqfs/Makemodule.am
+include lib/util/Makemodule.am
+
+if BUILD_TOOLS
 include doc/Makemodule.am
 include lib/fstree/Makemodule.am
-include lib/sqfs/Makemodule.am
 include lib/common/Makemodule.am
 include lib/tar/Makemodule.am
-include lib/util/Makemodule.am
 include tar/Makemodule.am
 include mkfs/Makemodule.am
 include unpack/Makemodule.am
 include difftool/Makemodule.am
+endif
+
 include tests/Makemodule.am
 
 if HAVE_DOXYGEN

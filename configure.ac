@@ -69,6 +69,13 @@ AC_ARG_WITH([pthread],
 			[Build without pthread based block compressor])],
 	[want_pthread="${withval}"], [want_pthread="yes"])
 
+AC_ARG_WITH([tools],
+	[AS_HELP_STRING([--without-tools],
+			[Only build libsquashfs, do not build the tools.])],
+	[build_tools="${withval}"], [build_tools="yes"])
+
+AM_CONDITIONAL([BUILD_TOOLS], [test "x$build_tools" = "xyes"])
+
 ##### Doxygen reference manual #####
 
 AC_CHECK_PROGS([DOXYGEN], [doxygen])
@@ -131,17 +138,21 @@ if test "x$want_lzo" != "xno"; then
 		    )
 fi
 
-AM_CONDITIONAL([WITH_SELINUX], [false])
+if test "x$build_tools" = "xyes"; then
+	AM_CONDITIONAL([WITH_SELINUX], [false])
 
-if test "x$want_selinux" != "xno"; then
-	AM_CONDITIONAL([WITH_SELINUX], [true])
+	if test "x$want_selinux" != "xno"; then
+		AM_CONDITIONAL([WITH_SELINUX], [true])
 
-	PKG_CHECK_MODULES(LIBSELINUX, [libselinux], [],
-			  [AM_CONDITIONAL([WITH_SELINUX], [false])])
-	AC_CHECK_HEADERS([selinux/selinux.h], [],
-			 [AM_CONDITIONAL([WITH_SELINUX], [false])])
-	AC_CHECK_HEADERS([selinux/label.h], [],
-			 [AM_CONDITIONAL([WITH_SELINUX], [false])])
+		PKG_CHECK_MODULES(LIBSELINUX, [libselinux], [],
+				  [AM_CONDITIONAL([WITH_SELINUX], [false])])
+		AC_CHECK_HEADERS([selinux/selinux.h], [],
+				 [AM_CONDITIONAL([WITH_SELINUX], [false])])
+		AC_CHECK_HEADERS([selinux/label.h], [],
+				 [AM_CONDITIONAL([WITH_SELINUX], [false])])
+	fi
+else
+	want_selinux="no"
 fi
 
 case "$want_xz" in
