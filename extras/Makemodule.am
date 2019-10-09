@@ -1,0 +1,4 @@
+mknastyfs_SOURCES = extras/mknastyfs.c
+mknastyfs_LDADD = libsquashfs.la
+
+noinst_PROGRAMS += mknastyfs
