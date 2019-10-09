@@ -34,6 +34,7 @@ include unpack/Makemodule.am
 include difftool/Makemodule.am
 endif
 
+include extras/Makemodule.am
 include tests/Makemodule.am
 
 if HAVE_DOXYGEN
