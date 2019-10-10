@@ -8,6 +8,7 @@ AC_PROG_CC
 AC_PROG_CC_C99
 AC_PROG_INSTALL
 AC_SYS_LARGEFILE
+AC_CANONICAL_HOST
 
 m4_ifndef([PKG_PROG_PKG_CONFIG],
   [m4_fatal([Could not locate the pkg-config autoconf
@@ -41,6 +42,18 @@ UL_WARN_ADD([-pedantic])
 
 AC_SUBST([WARN_CFLAGS])
 
+##### target detection & target specific stuff #####
+
+build_windows="no"
+
+case "${host_os}" in
+cygwin*|mingw*)
+	build_windows=yes
+	;;
+esac
+
+AM_CONDITIONAL([WINDOWS], [test "x$build_windows" = "xyes"])
+
 ##### config options #####
 
 AC_ARG_WITH([xz],
@@ -73,6 +86,14 @@ AC_ARG_WITH([tools],
 	[AS_HELP_STRING([--without-tools],
 			[Only build libsquashfs, do not build the tools.])],
 	[build_tools="${withval}"], [build_tools="yes"])
+
+if test "x$build_windows" = "xyes"; then
+	want_pthread="no"
+fi
+
+if test "x$build_windows" = "xyes"; then
+	build_tools="no"
+fi
 
 AM_CONDITIONAL([BUILD_TOOLS], [test "x$build_tools" = "xyes"])
 
