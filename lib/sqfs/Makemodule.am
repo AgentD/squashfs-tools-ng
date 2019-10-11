@@ -10,7 +10,7 @@ LIBSQFS_HEARDS = include/sqfs/meta_writer.h \
 		include/sqfs/xattr_reader.h include/sqfs/xattr_writer.h
 
 libsquashfs_la_SOURCES = $(LIBSQFS_HEARDS) lib/sqfs/id_table.c lib/sqfs/super.c
-libsquashfs_la_SOURCES += lib/sqfs/readdir.c lib/sqfs/io_file.c lib/sqfs/xattr.c
+libsquashfs_la_SOURCES += lib/sqfs/readdir.c lib/sqfs/xattr.c
 libsquashfs_la_SOURCES += lib/sqfs/write_table.c lib/sqfs/meta_writer.c
 libsquashfs_la_SOURCES += lib/sqfs/read_super.c lib/sqfs/meta_reader.c
 libsquashfs_la_SOURCES += lib/sqfs/read_inode.c lib/sqfs/write_inode.c
@@ -29,6 +29,12 @@ libsquashfs_la_CFLAGS += $(XZ_CFLAGS) $(LZO_CFLAGS) $(LZ4_CFLAGS)
 libsquashfs_la_CFLAGS += $(ZSTD_CFLAGS) $(PTHREAD_CFLAGS)
 libsquashfs_la_LIBADD = $(XZ_LIBS) $(ZLIB_LIBS) $(LZO_LIBS) $(LZ4_LIBS)
 libsquashfs_la_LIBADD += $(ZSTD_LIBS) $(PTHREAD_LIBS) libutil.la
+
+if WINDOWS
+libsquashfs_la_SOURCES += lib/sqfs/win32/io_file.c
+else
+libsquashfs_la_SOURCES += lib/sqfs/unix/io_file.c
+endif
 
 if HAVE_PTHREAD
 libsquashfs_la_SOURCES += lib/sqfs/data_writer/pthread.c
