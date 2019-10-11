@@ -225,8 +225,14 @@ int sqfs_dir_reader_get_full_hierarchy(sqfs_dir_reader_t *rd,
 			goto fail;
 
 		ptr = strchr(path, '/');
-		if (ptr == NULL)
-			ptr = strchrnul(path, '\\');
+		if (ptr == NULL) {
+			ptr = strchr(path, '\\');
+
+			if (ptr == NULL) {
+				for (ptr = path; *ptr != '\0'; ++ptr)
+					;
+			}
+		}
 
 		for (;;) {
 			ret = sqfs_dir_reader_read(rd, &ent);

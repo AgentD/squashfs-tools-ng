@@ -235,8 +235,14 @@ int sqfs_dir_reader_find_by_path(sqfs_dir_reader_t *rd, const char *path,
 			return ret;
 
 		ptr = strchr(path, '/');
-		if (ptr == NULL)
-			ptr = strchrnul(path, '\\');
+		if (ptr == NULL) {
+			ptr = strchr(path, '\\');
+
+			if (ptr == NULL) {
+				for (ptr = path; *ptr != '\0'; ++ptr)
+					;
+			}
+		}
 
 		do {
 			ret = sqfs_dir_reader_read(rd, &ent);
