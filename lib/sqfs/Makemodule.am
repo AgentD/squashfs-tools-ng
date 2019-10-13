@@ -33,7 +33,8 @@ libsquashfs_la_LIBADD += $(ZSTD_LIBS) $(PTHREAD_LIBS) libutil.la
 
 if WINDOWS
 libsquashfs_la_SOURCES += lib/sqfs/win32/io_file.c
-libsquashfs_la_LDFLAGS += -no-undefined
+libsquashfs_la_CFLAGS += -Wc,-static-libgcc
+libsquashfs_la_LDFLAGS += -no-undefined -avoid-version
 else
 libsquashfs_la_SOURCES += lib/sqfs/unix/io_file.c
 endif
