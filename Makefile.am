@@ -13,6 +13,7 @@ check_PROGRAMS =
 pkgconfig_DATA =
 
 EXTRA_DIST = autogen.sh LICENSE-gpl.txt LICENSE-lgpl.txt README.md CHANGELOG.md
+EXTRA_DIST += mkwinbins.sh
 TESTS =
 
 include lib/sqfs/Makemodule.am
