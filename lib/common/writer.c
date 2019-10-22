@@ -215,14 +215,16 @@ int sqfs_writer_finish(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *cfg)
 		return -1;
 	}
 
-	if (!cfg->quiet)
-		fputs("Writing extended attributes...\n", stdout);
+	if (!cfg->no_xattr) {
+		if (!cfg->quiet)
+			fputs("Writing extended attributes...\n", stdout);
 
-	ret = sqfs_xattr_writer_flush(sqfs->xwr, sqfs->outfile,
-				      &sqfs->super, sqfs->cmp);
-	if (ret) {
-		sqfs_perror(cfg->filename, "writing extended attributes", ret);
-		return -1;
+		ret = sqfs_xattr_writer_flush(sqfs->xwr, sqfs->outfile,
+					      &sqfs->super, sqfs->cmp);
+		if (ret) {
+			sqfs_perror(cfg->filename, "writing extended attributes", ret);
+			return -1;
+		}
 	}
 
 	sqfs->super.bytes_used = sqfs->outfile->get_size(sqfs->outfile);
