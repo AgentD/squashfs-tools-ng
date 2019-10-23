@@ -345,9 +345,23 @@ static int process_tar_ball(void)
 
 		skip = false;
 
+		if (hdr.name != NULL && strcmp(hdr.name, "./") == 0 &&
+		    S_ISDIR(hdr.sb.st_mode)) {
+			/* XXX: tar entries might be prefixed with ./ which is
+			   stripped by cannonicalize_name, but the tar file may
+			   contain a directory entry named './' */
+			clear_header(&hdr);
+			continue;
+		}
+
 		if (hdr.name == NULL || canonicalize_name(hdr.name) != 0) {
 			fprintf(stderr, "skipping '%s' (invalid name)\n",
 				hdr.name);
+			skip = true;
+		}
+
+		if (hdr.name[0] == '\0') {
+			fputs("skipping entry with empty name\n", stderr);
 			skip = true;
 		}
 
