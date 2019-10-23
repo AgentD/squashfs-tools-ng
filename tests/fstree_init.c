@@ -29,7 +29,8 @@ int main(void)
 	fstree_cleanup(&fs);
 
 	assert(fstree_init(&fs, NULL) == 0);
-	assert(fs.defaults.st_mtime == 0);
+	assert(fs.defaults.st_mtime == 0 ||
+	       fs.defaults.st_mtime == get_source_date_epoch());
 	assert(fs.defaults.st_uid == 0);
 	assert(fs.defaults.st_gid == 0);
 	assert(fs.defaults.st_mode == (S_IFDIR | 0755));
