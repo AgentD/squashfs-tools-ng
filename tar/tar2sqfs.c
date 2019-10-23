@@ -383,6 +383,8 @@ static int process_tar_ball(void)
 				goto fail;
 			if (skip_entry(STDIN_FILENO, hdr.sb.st_size))
 				goto fail;
+
+			clear_header(&hdr);
 			continue;
 		}
 
