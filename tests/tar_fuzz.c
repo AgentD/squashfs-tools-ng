@@ -40,7 +40,7 @@ int main(int argc, char **argv)
 		ret = lseek(fd, hdr.sb.st_size, SEEK_CUR);
 
 		clear_header(&hdr);
-		if (ret)
+		if (ret < 0)
 			goto fail;
 	}
 
