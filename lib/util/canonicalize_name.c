@@ -38,8 +38,10 @@ int canonicalize_name(char *filename)
 
 	while (*src != '\0') {
 		if (src[0] == '.') {
-			if (src[1] == '\0')
+			if (src[1] == '\0') {
+				dst++;
 				break;
+			}
 			if (src[1] == '/') {
 				src += 2;
 				continue;
