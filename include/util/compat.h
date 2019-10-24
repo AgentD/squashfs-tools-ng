@@ -110,4 +110,8 @@ struct stat {
 #include <sys/sysmacros.h>
 #endif
 
+#ifndef HAVE_STRNDUP
+char *strndup(const char *str, size_t max_len);
+#endif
+
 #endif /* COMPAT_H */
