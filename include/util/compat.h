@@ -120,4 +120,8 @@ ssize_t getline(char **line, size_t *n, FILE *fp);
 char *strndup(const char *str, size_t max_len);
 #endif
 
+#ifndef HAVE_GETSUBOPT
+int getsubopt(char **opt, char *const *keys, char **val);
+#endif
+
 #endif /* COMPAT_H */
