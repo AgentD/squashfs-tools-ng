@@ -9,7 +9,6 @@
 #include "fstree.h"
 #include "util/util.h"
 
-#include <unistd.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
@@ -20,7 +19,7 @@ static int add_generic(fstree_t *fs, const char *filename, size_t line_num,
 		       const char *path, struct stat *sb, const char *extra)
 {
 	if (fstree_add_generic(fs, path, sb, extra) == NULL) {
-		fprintf(stderr, "%s: %zu: %s: %s\n",
+		fprintf(stderr, "%s: " PRI_SZ ": %s: %s\n",
 			filename, line_num, path, strerror(errno));
 		return -1;
 	}
@@ -35,7 +34,8 @@ static int add_device(fstree_t *fs, const char *filename, size_t line_num,
 	char c;
 
 	if (sscanf(extra, "%c %u %u", &c, &maj, &min) != 3) {
-		fprintf(stderr, "%s: %zu: expected '<c|b> major minor'\n",
+		fprintf(stderr, "%s: " PRI_SZ ": "
+			"expected '<c|b> major minor'\n",
 			filename, line_num);
 		return -1;
 	}
@@ -45,7 +45,7 @@ static int add_device(fstree_t *fs, const char *filename, size_t line_num,
 	} else if (c == 'b' || c == 'B') {
 		sb->st_mode |= S_IFBLK;
 	} else {
-		fprintf(stderr, "%s: %zu: unknown device type '%c'\n",
+		fprintf(stderr, "%s: " PRI_SZ ": unknown device type '%c'\n",
 			filename, line_num, c);
 		return -1;
 	}
@@ -240,11 +240,11 @@ static int handle_line(fstree_t *fs, const char *filename,
 		}
 	}
 
-	fprintf(stderr, "%s: %zu: unknown entry type '%s'.\n", filename,
+	fprintf(stderr, "%s: " PRI_SZ ": unknown entry type '%s'.\n", filename,
 		line_num, keyword);
 	return -1;
 fail_no_extra:
-	fprintf(stderr, "%s: %zu: missing argument for %s.\n",
+	fprintf(stderr, "%s: " PRI_SZ ": missing argument for %s.\n",
 		filename, line_num, keyword);
 	return -1;
 fail_uid_gid:
@@ -260,7 +260,7 @@ fail_ent:
 	msg = "error in entry description";
 	goto out_desc;
 out_desc:
-	fprintf(stderr, "%s: %zu: %s.\n", filename, line_num, msg);
+	fprintf(stderr, "%s: " PRI_SZ ": %s.\n", filename, line_num, msg);
 	fputs("expected: <type> <path> <mode> <uid> <gid> [<extra>]\n",
 	      stderr);
 	return -1;

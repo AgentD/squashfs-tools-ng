@@ -30,12 +30,15 @@
 #if SIZEOF_SIZE_T <= SIZEOF_INT
 #define SZ_ADD_OV UI_ADD_OV
 #define SZ_MUL_OV UI_MUL_OV
+#define PRI_SZ "%u"
 #elif SIZEOF_SIZE_T == SIZEOF_LONG
 #define SZ_ADD_OV UL_ADD_OV
 #define SZ_MUL_OV UL_MUL_OV
+#define PRI_SZ "%lu"
 #elif SIZEOF_SIZE_T == SIZEOF_LONG_LONG
 #define SZ_ADD_OV ULL_ADD_OV
 #define SZ_MUL_OV ULL_MUL_OV
+#define PRI_SZ "%llu"
 #else
 #error Cannot determine maximum value of size_t
 #endif
