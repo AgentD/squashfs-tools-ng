@@ -102,7 +102,7 @@ void process_options(sqfsdiff_t *sd, int argc, char **argv)
 			fputs(usagestr, stdout);
 			exit(0);
 		case 'V':
-			print_version();
+			print_version("sqfsdiff");
 			exit(0);
 		default:
 			goto fail_arg;

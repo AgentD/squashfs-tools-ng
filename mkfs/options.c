@@ -40,10 +40,8 @@ static const char *short_opts = "F:D:X:c:b:B:d:j:Q:kxoefqhV"
 #endif
 ;
 
-extern char *__progname;
-
 static const char *help_string =
-"Usage: %s [OPTIONS...] <squashfs-file>\n"
+"Usage: gensquashfs [OPTIONS...] <squashfs-file>\n"
 "\n"
 "Possible options:\n"
 "\n"
@@ -231,13 +229,13 @@ void process_command_line(options_t *opt, int argc, char **argv)
 			break;
 #endif
 		case 'h':
-			printf(help_string, __progname,
+			printf(help_string,
 			       SQFS_DEFAULT_BLOCK_SIZE, SQFS_DEVBLK_SIZE);
 			fputs(help_details, stdout);
 			compressor_print_available();
 			exit(EXIT_SUCCESS);
 		case 'V':
-			print_version();
+			print_version("gensquashfs");
 			exit(EXIT_SUCCESS);
 		default:
 			goto fail_arg;
@@ -269,6 +267,6 @@ void process_command_line(options_t *opt, int argc, char **argv)
 	opt->cfg.filename = argv[optind++];
 	return;
 fail_arg:
-	fprintf(stderr, "Try `%s --help' for more information.\n", __progname);
+	fputs("Try `gensquashfs --help' for more information.\n", stderr);
 	exit(EXIT_FAILURE);
 }

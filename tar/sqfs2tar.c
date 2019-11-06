@@ -126,7 +126,7 @@ static void process_args(int argc, char **argv)
 			fputs(usagestr, stdout);
 			goto out_success;
 		case 'V':
-			print_version();
+			print_version("sqfs2tar");
 			goto out_success;
 		default:
 			goto fail_arg;

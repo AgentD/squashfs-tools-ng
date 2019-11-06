@@ -38,7 +38,7 @@ static const char *short_opts =
 	;
 
 static const char *help_string =
-"Usage: %s [OPTIONS] <squashfs-file>\n"
+"Usage: rdsquashfs [OPTIONS] <squashfs-file>\n"
 "\n"
 "View or extract the contents of a squashfs image.\n"
 "\n"
@@ -82,8 +82,6 @@ static const char *help_string =
 "  --help, -h                Print help text and exit.\n"
 "  --version, -V             Print version information and exit.\n"
 "\n";
-
-extern const char *__progname;
 
 static char *get_path(char *old, const char *arg)
 {
@@ -183,11 +181,11 @@ void process_command_line(options_t *opt, int argc, char **argv)
 			opt->flags |= UNPACK_QUIET;
 			break;
 		case 'h':
-			printf(help_string, __progname);
+			fputs(help_string, stdout);
 			free(opt->cmdpath);
 			exit(EXIT_SUCCESS);
 		case 'V':
-			print_version();
+			print_version("rdsquashfs");
 			free(opt->cmdpath);
 			exit(EXIT_SUCCESS);
 		default:
@@ -212,7 +210,7 @@ void process_command_line(options_t *opt, int argc, char **argv)
 	opt->image_name = argv[optind++];
 	return;
 fail_arg:
-	fprintf(stderr, "Try `%s --help' for more information.\n", __progname);
+	fputs("Try `rdsquashfs --help' for more information.\n", stderr);
 	free(opt->cmdpath);
 	exit(EXIT_FAILURE);
 }

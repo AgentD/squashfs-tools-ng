@@ -163,7 +163,7 @@ static void process_args(int argc, char **argv)
 			compressor_print_available();
 			exit(EXIT_SUCCESS);
 		case 'V':
-			print_version();
+			print_version("tar2sqfs");
 			exit(EXIT_SUCCESS);
 		default:
 			goto fail_arg;
