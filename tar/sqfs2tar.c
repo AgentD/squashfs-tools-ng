@@ -174,7 +174,7 @@ static int terminate_archive(void)
 
 	memset(buffer, '\0', sizeof(buffer));
 
-	return write_retry("adding archive terminator", STDOUT_FILENO,
+	return write_retry("adding archive terminator", stdout,
 			   buffer, sizeof(buffer));
 }
 
@@ -295,7 +295,7 @@ static int write_tree_dfs(const sqfs_tree_node_t *n)
 	}
 
 	target = S_ISLNK(sb.st_mode) ? n->inode->slink_target : NULL;
-	ret = write_tar_header(STDOUT_FILENO, &sb, name, target, xattr,
+	ret = write_tar_header(stdout, &sb, name, target, xattr,
 			       record_counter++);
 
 	while (xattr != NULL) {
@@ -313,13 +313,13 @@ static int write_tree_dfs(const sqfs_tree_node_t *n)
 	}
 
 	if (S_ISREG(sb.st_mode)) {
-		if (sqfs_data_reader_dump(name, data, n->inode, STDOUT_FILENO,
+		if (sqfs_data_reader_dump(name, data, n->inode, stdout,
 					  super.block_size, false)) {
 			free(name);
 			return -1;
 		}
 
-		if (padd_file(STDOUT_FILENO, sb.st_size)) {
+		if (padd_file(stdout, sb.st_size)) {
 			free(name);
 			return -1;
 		}

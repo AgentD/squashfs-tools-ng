@@ -136,11 +136,11 @@ static int gen_file_list_dfs(const sqfs_tree_node_t *n)
 static int fill_files(sqfs_data_reader_t *data, int flags)
 {
 	size_t i;
-	int fd;
+	FILE *fp;
 
 	for (i = 0; i < num_files; ++i) {
-		fd = open(files[i].path, O_WRONLY);
-		if (fd < 0) {
+		fp = fopen(files[i].path, "wb");
+		if (fp == NULL) {
 			fprintf(stderr, "unpacking %s: %s\n",
 				files[i].path, strerror(errno));
 			return -1;
@@ -150,13 +150,14 @@ static int fill_files(sqfs_data_reader_t *data, int flags)
 			printf("unpacking %s\n", files[i].path);
 
 		if (sqfs_data_reader_dump(files[i].path, data, files[i].inode,
-					  fd, block_size,
+					  fp, block_size,
 					  (flags & UNPACK_NO_SPARSE) == 0)) {
-			close(fd);
+			fclose(fp);
 			return -1;
 		}
 
-		close(fd);
+		fflush(fp);
+		fclose(fp);
 	}
 
 	return 0;

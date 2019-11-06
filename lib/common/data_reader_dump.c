@@ -12,26 +12,23 @@
 #include <stdio.h>
 #include <errno.h>
 
-static int append_block(int fd, const sqfs_block_t *blk)
+static int append_block(FILE *fp, const sqfs_block_t *blk)
 {
 	const unsigned char *ptr = blk->data;
-	size_t size = blk->size;
-	ssize_t ret;
+	size_t ret, size = blk->size;
 
 	while (size > 0) {
-		ret = write(fd, ptr, size);
-
-		if (ret < 0) {
-			if (errno == EINTR)
-				continue;
-			perror("writing data block");
+		if (ferror(fp)) {
+			fputs("writing data block: error writing to file\n",
+			      stderr);
 		}
 
-		if (ret == 0) {
+		if (feof(fp)) {
 			fputs("writing data block: unexpected end of file\n",
 			      stderr);
 		}
 
+		ret = fwrite(ptr, 1, size, fp);
 		ptr += ret;
 		size -= ret;
 	}
@@ -41,7 +38,7 @@ static int append_block(int fd, const sqfs_block_t *blk)
 
 int sqfs_data_reader_dump(const char *name, sqfs_data_reader_t *data,
 			  const sqfs_inode_generic_t *inode,
-			  int outfd, size_t block_size, bool allow_sparse)
+			  FILE *fp, size_t block_size, bool allow_sparse)
 {
 	sqfs_block_t *blk;
 	sqfs_u64 filesz;
@@ -50,21 +47,23 @@ int sqfs_data_reader_dump(const char *name, sqfs_data_reader_t *data,
 
 	sqfs_inode_get_file_size(inode, &filesz);
 
-	if (allow_sparse && ftruncate(outfd, filesz))
-		goto fail_sparse;
+#if defined(_POSIX_VERSION) && (_POSIX_VERSION >= 200112L)
+	if (allow_sparse) {
+		int fd = fileno(fp);
+
+		if (ftruncate(fd, filesz))
+			goto fail_sparse;
+	}
+#else
+	allow_sparse = false;
+#endif
 
 	for (i = 0; i < inode->num_file_blocks; ++i) {
+		diff = (filesz < block_size) ? filesz : block_size;
+
 		if (SQFS_IS_SPARSE_BLOCK(inode->block_sizes[i]) &&
 		    allow_sparse) {
-			if (filesz < block_size) {
-				diff = filesz;
-				filesz = 0;
-			} else {
-				diff = block_size;
-				filesz -= block_size;
-			}
-
-			if (lseek(outfd, diff, SEEK_CUR) == (off_t)-1)
+			if (fseek(fp, diff, SEEK_CUR) < 0)
 				goto fail_sparse;
 		} else {
 			err = sqfs_data_reader_get_block(data, inode, i, &blk);
@@ -73,14 +72,14 @@ int sqfs_data_reader_dump(const char *name, sqfs_data_reader_t *data,
 				return -1;
 			}
 
-			if (append_block(outfd, blk)) {
-				free(blk);
-				return -1;
-			}
-
-			filesz -= blk->size;
+			err = append_block(fp, blk);
 			free(blk);
+
+			if (err)
+				return -1;
 		}
+
+		filesz -= diff;
 	}
 
 	if (filesz > 0) {
@@ -90,7 +89,7 @@ int sqfs_data_reader_dump(const char *name, sqfs_data_reader_t *data,
 			return -1;
 		}
 
-		if (append_block(outfd, blk)) {
+		if (append_block(fp, blk)) {
 			free(blk);
 			return -1;
 		}

@@ -12,23 +12,22 @@
 
 #include "tar.h"
 
-int write_retry(const char *errstr, int fd, const void *data, size_t size)
+int write_retry(const char *errstr, FILE *fp, const void *data, size_t size)
 {
-	ssize_t ret;
+	size_t ret;
 
 	while (size > 0) {
-		ret = write(fd, data, size);
-		if (ret == 0) {
+		if (feof(fp)) {
 			fprintf(stderr, "%s: write truncated\n", errstr);
 			return -1;
 		}
-		if (ret < 0) {
-			if (errno == EINTR)
-				continue;
-			perror(errstr);
+
+		if (ferror(fp)) {
+			fprintf(stderr, "%s: error writing to file\n", errstr);
 			return -1;
 		}
 
+		ret = fwrite(data, 1, size, fp);
 		data = (const char *)data + ret;
 		size -= ret;
 	}

@@ -128,8 +128,7 @@ int main(int argc, char **argv)
 		}
 
 		if (sqfs_data_reader_dump(opt.cmdpath, data, n->inode,
-					  STDOUT_FILENO,
-					  super.block_size, false)) {
+					  stdout, super.block_size, false)) {
 			goto out;
 		}
 		break;

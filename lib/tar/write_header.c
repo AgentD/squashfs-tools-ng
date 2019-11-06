@@ -53,7 +53,7 @@ static void write_number_signed(char *dst, sqfs_s64 value, int digits)
 	}
 }
 
-static int write_header(int fd, const struct stat *sb, const char *name,
+static int write_header(FILE *fp, const struct stat *sb, const char *name,
 			const char *slink_target, int type)
 {
 	int maj = 0, min = 0;
@@ -88,10 +88,10 @@ static int write_header(int fd, const struct stat *sb, const char *name,
 
 	update_checksum(&hdr);
 
-	return write_retry("writing tar header record", fd, &hdr, sizeof(hdr));
+	return write_retry("writing tar header record", fp, &hdr, sizeof(hdr));
 }
 
-static int write_gnu_header(int fd, const struct stat *orig,
+static int write_gnu_header(FILE *fp, const struct stat *orig,
 			    const char *payload, size_t payload_len,
 			    int type, const char *name)
 {
@@ -101,15 +101,15 @@ static int write_gnu_header(int fd, const struct stat *orig,
 	sb.st_mode = S_IFREG | 0644;
 	sb.st_size = payload_len;
 
-	if (write_header(fd, &sb, name, NULL, type))
+	if (write_header(fp, &sb, name, NULL, type))
 		return -1;
 
 	if (write_retry("writing GNU extension header",
-			fd, payload, payload_len)) {
+			fp, payload, payload_len)) {
 		return -1;
 	}
 
-	return padd_file(fd, payload_len);
+	return padd_file(fp, payload_len);
 }
 
 static size_t num_digits(size_t num)
@@ -124,7 +124,7 @@ static size_t num_digits(size_t num)
 	return i;
 }
 
-static int write_schily_xattr(int fd, const struct stat *orig,
+static int write_schily_xattr(FILE *fp, const struct stat *orig,
 			      const char *name, const tar_xattr_t *xattr)
 {
 	static const char *prefix = "SCHILY.xattr.";
@@ -142,20 +142,20 @@ static int write_schily_xattr(int fd, const struct stat *orig,
 	sb.st_mode = S_IFREG | 0644;
 	sb.st_size = total_size;
 
-	if (write_header(fd, &sb, name, NULL, TAR_TYPE_PAX))
+	if (write_header(fp, &sb, name, NULL, TAR_TYPE_PAX))
 		return -1;
 
 	for (it = xattr; it != NULL; it = it->next) {
 		len = strlen(prefix) + strlen(it->key) + strlen(it->value) + 2;
 		len += num_digits(len) + 1;
 
-		dprintf(fd, "%zu %s%s=%s\n", len, prefix, it->key, it->value);
+		fprintf(fp, "%zu %s%s=%s\n", len, prefix, it->key, it->value);
 	}
 
-	return padd_file(fd, total_size);
+	return padd_file(fp, total_size);
 }
 
-int write_tar_header(int fd, const struct stat *sb, const char *name,
+int write_tar_header(FILE *fp, const struct stat *sb, const char *name,
 		     const char *slink_target, const tar_xattr_t *xattr,
 		     unsigned int counter)
 {
@@ -166,7 +166,7 @@ int write_tar_header(int fd, const struct stat *sb, const char *name,
 	if (xattr != NULL) {
 		sprintf(buffer, "pax/xattr%u", counter);
 
-		if (write_schily_xattr(fd, sb, buffer, xattr))
+		if (write_schily_xattr(fp, sb, buffer, xattr))
 			return -1;
 	}
 
@@ -175,7 +175,7 @@ int write_tar_header(int fd, const struct stat *sb, const char *name,
 
 	if (S_ISLNK(sb->st_mode) && sb->st_size >= 100) {
 		sprintf(buffer, "gnu/target%u", counter);
-		if (write_gnu_header(fd, sb, slink_target, sb->st_size,
+		if (write_gnu_header(fp, sb, slink_target, sb->st_size,
 				     TAR_TYPE_GNU_SLINK, buffer))
 			return -1;
 		slink_target = NULL;
@@ -184,7 +184,7 @@ int write_tar_header(int fd, const struct stat *sb, const char *name,
 	if (strlen(name) >= 100) {
 		sprintf(buffer, "gnu/name%u", counter);
 
-		if (write_gnu_header(fd, sb, name, strlen(name),
+		if (write_gnu_header(fp, sb, name, strlen(name),
 				     TAR_TYPE_GNU_PATH, buffer)) {
 			return -1;
 		}
@@ -208,7 +208,7 @@ int write_tar_header(int fd, const struct stat *sb, const char *name,
 		goto out_skip;
 	}
 
-	return write_header(fd, sb, name, slink_target, type);
+	return write_header(fp, sb, name, slink_target, type);
 out_skip:
 	fprintf(stderr, "WARNING: %s: %s\n", name, reason);
 	return 1;

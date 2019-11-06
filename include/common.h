@@ -118,7 +118,7 @@ char *sqfs_tree_node_get_path(const sqfs_tree_node_t *node);
 
 int sqfs_data_reader_dump(const char *name, sqfs_data_reader_t *data,
 			  const sqfs_inode_generic_t *inode,
-			  int outfd, size_t block_size, bool allow_sparse);
+			  FILE *fp, size_t block_size, bool allow_sparse);
 
 sqfs_file_t *sqfs_get_stdin_file(const sparse_map_t *map, sqfs_u64 size);
 
