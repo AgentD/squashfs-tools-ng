@@ -122,8 +122,6 @@ int sqfs_data_reader_dump(const char *name, sqfs_data_reader_t *data,
 
 sqfs_file_t *sqfs_get_stdin_file(const sparse_map_t *map, sqfs_u64 size);
 
-sqfs_file_t *sqfs_get_stdout_file(void);
-
 void register_stat_hooks(sqfs_data_writer_t *data, data_writer_stats_t *stats);
 
 int write_data_from_file(const char *filename, sqfs_data_writer_t *data,

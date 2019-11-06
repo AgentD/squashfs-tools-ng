@@ -37,8 +37,6 @@ static int stdinout_truncate(sqfs_file_t *base, sqfs_u64 size)
 	return SQFS_ERROR_IO;
 }
 
-/*****************************************************************************/
-
 static int stdin_read_at(sqfs_file_t *base, sqfs_u64 offset,
 			 void *buffer, size_t size)
 {
@@ -148,66 +146,6 @@ static int stdin_write_at(sqfs_file_t *base, sqfs_u64 offset,
 	return SQFS_ERROR_IO;
 }
 
-/*****************************************************************************/
-
-static int stdout_read_at(sqfs_file_t *base, sqfs_u64 offset,
-			  void *buffer, size_t size)
-{
-	(void)base; (void)offset; (void)buffer; (void)size;
-	return SQFS_ERROR_IO;
-}
-
-static int stdout_write_at(sqfs_file_t *base, sqfs_u64 offset,
-			   const void *buffer, size_t size)
-{
-	sqfs_file_stdinout_t *file = (sqfs_file_stdinout_t *)base;
-	size_t temp_size = 0;
-	sqfs_u8 *temp = NULL;
-	sqfs_u64 diff;
-	ssize_t ret;
-
-	if (offset < file->size)
-		return SQFS_ERROR_IO;
-
-	if (offset > file->size) {
-		temp_size = 1024;
-		temp = alloca(temp_size);
-		memset(temp, 0, temp_size);
-	}
-
-	while (size > 0) {
-		if (offset > file->size) {
-			diff = offset - file->size;
-			diff = diff > (sqfs_u64)temp_size ? temp_size : diff;
-
-			ret = write(STDOUT_FILENO, temp, diff);
-		} else {
-			ret = write(STDOUT_FILENO, buffer, size);
-		}
-
-		if (ret < 0) {
-			if (errno == EINTR)
-				continue;
-			return SQFS_ERROR_IO;
-		}
-
-		if (ret == 0)
-			return SQFS_ERROR_OUT_OF_BOUNDS;
-
-		if (offset <= file->size) {
-			buffer = (char *)buffer + ret;
-			size -= ret;
-			offset += ret;
-		}
-
-		file->size += ret;
-	}
-
-	return 0;
-}
-
-/*****************************************************************************/
-
 sqfs_file_t *sqfs_get_stdin_file(const sparse_map_t *map, sqfs_u64 size)
 {
 	sqfs_file_stdinout_t *file = calloc(1, sizeof(*file));
@@ -229,22 +167,5 @@ sqfs_file_t *sqfs_get_stdin_file(const sparse_map_t *map, sqfs_u64 size)
 	} else {
 		base->read_at = stdin_read_condensed;
 	}
-	return base;
-}
-
-sqfs_file_t *sqfs_get_stdout_file(void)
-{
-	sqfs_file_stdinout_t *file = calloc(1, sizeof(*file));
-	sqfs_file_t *base = (sqfs_file_t *)file;
-
-	if (file == NULL)
-		return NULL;
-
-	base->destroy = stdinout_destroy;
-	base->write_at = stdout_write_at;
-	base->get_size = stdinout_get_size;
-	base->truncate = stdinout_truncate;
-	base->read_at = stdout_read_at;
-
 	return base;
 }
