@@ -149,7 +149,8 @@ static int write_schily_xattr(FILE *fp, const struct stat *orig,
 		len = strlen(prefix) + strlen(it->key) + strlen(it->value) + 2;
 		len += num_digits(len) + 1;
 
-		fprintf(fp, "%zu %s%s=%s\n", len, prefix, it->key, it->value);
+		fprintf(fp, PRI_SZ " %s%s=%s\n", len,
+			prefix, it->key, it->value);
 	}
 
 	return padd_file(fp, total_size);
