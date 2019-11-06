@@ -12,23 +12,23 @@
 
 #include "tar.h"
 
-int read_retry(const char *errstr, int fd, void *buffer, size_t size)
+int read_retry(const char *errstr, FILE *fp, void *buffer, size_t size)
 {
-	ssize_t ret;
+	size_t ret;
 
 	while (size > 0) {
-		ret = read(fd, buffer, size);
-		if (ret < 0) {
-			if (errno == EINTR)
-				continue;
-			perror(errstr);
+		if (ferror(fp)) {
+			fprintf(stderr, "%s: error reading from file\n",
+				errstr);
 			return -1;
 		}
-		if (ret == 0) {
+
+		if (feof(fp)) {
 			fprintf(stderr, "%s: short read\n", errstr);
 			return -1;
 		}
 
+		ret = fread(buffer, 1, size, fp);
 		size -= ret;
 		buffer = (char *)buffer + ret;
 	}

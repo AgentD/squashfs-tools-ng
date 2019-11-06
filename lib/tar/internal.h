@@ -56,7 +56,7 @@ bool is_checksum_valid(const tar_header_t *hdr);
 
 sparse_map_t *read_sparse_map(const char *line);
 
-sparse_map_t *read_gnu_old_sparse(int fd, tar_header_t *hdr);
+sparse_map_t *read_gnu_old_sparse(FILE *fp, tar_header_t *hdr);
 
 void free_sparse_list(sparse_map_t *sparse);
 

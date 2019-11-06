@@ -21,28 +21,28 @@
 
 #define TEST_PATH STRVALUE(TESTPATH)
 
-static int open_read(const char *path)
+static FILE *open_read(const char *path)
 {
-	int fd = open(path, O_RDONLY);
+	FILE *fp = fopen(path, "rb");
 
-	if (fd < 0) {
+	if (fp == NULL) {
 		perror(path);
 		exit(EXIT_FAILURE);
 	}
 
-	return fd;
+	return fp;
 }
 
 int main(void)
 {
 	tar_header_decoded_t hdr;
 	sparse_map_t *sparse;
-	int fd;
+	FILE *fp;
 
 	assert(chdir(TEST_PATH) == 0);
 
-	fd = open_read("sparse-files/pax-gnu0-0.tar");
-	assert(read_header(fd, &hdr) == 0);
+	fp = open_read("sparse-files/pax-gnu0-0.tar");
+	assert(read_header(fp, &hdr) == 0);
 	assert(hdr.sb.st_mode == (S_IFREG | 0644));
 	assert(hdr.sb.st_uid == 01750);
 	assert(hdr.sb.st_gid == 01750);
@@ -101,7 +101,7 @@ int main(void)
 	assert(sparse == NULL);
 
 	clear_header(&hdr);
-	close(fd);
+	fclose(fp);
 
 	return EXIT_SUCCESS;
 }

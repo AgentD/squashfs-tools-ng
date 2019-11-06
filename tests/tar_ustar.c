@@ -21,16 +21,16 @@
 
 #define TEST_PATH STRVALUE(TESTPATH)
 
-static int open_read(const char *path)
+static FILE *open_read(const char *path)
 {
-	int fd = open(path, O_RDONLY);
+	FILE *fp = fopen(path, "rb");
 
-	if (fd < 0) {
+	if (fp == NULL) {
 		perror(path);
 		exit(EXIT_FAILURE);
 	}
 
-	return fd;
+	return fp;
 }
 
 static const char *filename =
@@ -42,12 +42,12 @@ int main(void)
 {
 	tar_header_decoded_t hdr;
 	char buffer[6];
-	int fd;
+	FILE *fp;
 
 	assert(chdir(TEST_PATH) == 0);
 
-	fd = open_read("format-acceptance/ustar.tar");
-	assert(read_header(fd, &hdr) == 0);
+	fp = open_read("format-acceptance/ustar.tar");
+	assert(read_header(fp, &hdr) == 0);
 	assert(hdr.sb.st_mode == (S_IFREG | 0644));
 	assert(hdr.sb.st_uid == 01750);
 	assert(hdr.sb.st_gid == 01750);
@@ -56,14 +56,14 @@ int main(void)
 	assert(hdr.mtime == 1542905892);
 	assert(strcmp(hdr.name, "input.txt") == 0);
 	assert(!hdr.unknown_record);
-	assert(read_retry("data0", fd, buffer, 5) == 0);
+	assert(read_retry("data0", fp, buffer, 5) == 0);
 	buffer[5] = '\0';
 	assert(strcmp(buffer, "test\n") == 0);
 	clear_header(&hdr);
-	close(fd);
+	fclose(fp);
 
-	fd = open_read("format-acceptance/ustar-pre-posix.tar");
-	assert(read_header(fd, &hdr) == 0);
+	fp = open_read("format-acceptance/ustar-pre-posix.tar");
+	assert(read_header(fp, &hdr) == 0);
 	assert(hdr.sb.st_mode == (S_IFREG | 0644));
 	assert(hdr.sb.st_uid == 01750);
 	assert(hdr.sb.st_gid == 01750);
@@ -72,14 +72,14 @@ int main(void)
 	assert(hdr.mtime == 1542905892);
 	assert(strcmp(hdr.name, "input.txt") == 0);
 	assert(!hdr.unknown_record);
-	assert(read_retry("data1", fd, buffer, 5) == 0);
+	assert(read_retry("data1", fp, buffer, 5) == 0);
 	buffer[5] = '\0';
 	assert(strcmp(buffer, "test\n") == 0);
 	clear_header(&hdr);
-	close(fd);
+	fclose(fp);
 
-	fd = open_read("format-acceptance/v7.tar");
-	assert(read_header(fd, &hdr) == 0);
+	fp = open_read("format-acceptance/v7.tar");
+	assert(read_header(fp, &hdr) == 0);
 	assert(hdr.sb.st_mode == (S_IFREG | 0644));
 	assert(hdr.sb.st_uid == 01750);
 	assert(hdr.sb.st_gid == 01750);
@@ -88,14 +88,14 @@ int main(void)
 	assert(hdr.mtime == 1542905892);
 	assert(strcmp(hdr.name, "input.txt") == 0);
 	assert(!hdr.unknown_record);
-	assert(read_retry("data2", fd, buffer, 5) == 0);
+	assert(read_retry("data2", fp, buffer, 5) == 0);
 	buffer[5] = '\0';
 	assert(strcmp(buffer, "test\n") == 0);
 	clear_header(&hdr);
-	close(fd);
+	fclose(fp);
 
-	fd = open_read("file-size/12-digit.tar");
-	assert(read_header(fd, &hdr) == 0);
+	fp = open_read("file-size/12-digit.tar");
+	assert(read_header(fp, &hdr) == 0);
 	assert(hdr.sb.st_mode == (S_IFREG | 0644));
 	assert(hdr.sb.st_uid == 01750);
 	assert(hdr.sb.st_gid == 01750);
@@ -105,10 +105,10 @@ int main(void)
 	assert(strcmp(hdr.name, "big-file.bin") == 0);
 	assert(!hdr.unknown_record);
 	clear_header(&hdr);
-	close(fd);
+	fclose(fp);
 
-	fd = open_read("user-group-largenum/8-digit.tar");
-	assert(read_header(fd, &hdr) == 0);
+	fp = open_read("user-group-largenum/8-digit.tar");
+	assert(read_header(fp, &hdr) == 0);
 	assert(hdr.sb.st_mode == (S_IFREG | 0644));
 	assert(hdr.sb.st_uid == 8388608);
 	assert(hdr.sb.st_gid == 8388608);
@@ -117,14 +117,14 @@ int main(void)
 	assert(hdr.mtime == 013376036700);
 	assert(strcmp(hdr.name, "input.txt") == 0);
 	assert(!hdr.unknown_record);
-	assert(read_retry("data3", fd, buffer, 5) == 0);
+	assert(read_retry("data3", fp, buffer, 5) == 0);
 	buffer[5] = '\0';
 	assert(strcmp(buffer, "test\n") == 0);
 	clear_header(&hdr);
-	close(fd);
+	fclose(fp);
 
-	fd = open_read("large-mtime/12-digit.tar");
-	assert(read_header(fd, &hdr) == 0);
+	fp = open_read("large-mtime/12-digit.tar");
+	assert(read_header(fp, &hdr) == 0);
 	assert(hdr.sb.st_mode == (S_IFREG | 0644));
 	assert(hdr.sb.st_uid == 01750);
 	assert(hdr.sb.st_gid == 01750);
@@ -137,14 +137,14 @@ int main(void)
 	assert(hdr.mtime == 8589934592L);
 	assert(strcmp(hdr.name, "input.txt") == 0);
 	assert(!hdr.unknown_record);
-	assert(read_retry("data4", fd, buffer, 5) == 0);
+	assert(read_retry("data4", fp, buffer, 5) == 0);
 	buffer[5] = '\0';
 	assert(strcmp(buffer, "test\n") == 0);
 	clear_header(&hdr);
-	close(fd);
+	fclose(fp);
 
-	fd = open_read("long-paths/ustar.tar");
-	assert(read_header(fd, &hdr) == 0);
+	fp = open_read("long-paths/ustar.tar");
+	assert(read_header(fp, &hdr) == 0);
 	assert(hdr.sb.st_mode == (S_IFREG | 0644));
 	assert(hdr.sb.st_uid == 01750);
 	assert(hdr.sb.st_gid == 01750);
@@ -153,11 +153,11 @@ int main(void)
 	assert(hdr.mtime == 1542909670);
 	assert(strcmp(hdr.name, filename) == 0);
 	assert(!hdr.unknown_record);
-	assert(read_retry("data5", fd, buffer, 5) == 0);
+	assert(read_retry("data5", fp, buffer, 5) == 0);
 	buffer[5] = '\0';
 	assert(strcmp(buffer, "test\n") == 0);
 	clear_header(&hdr);
-	close(fd);
+	fclose(fp);
 
 	return EXIT_SUCCESS;
 }

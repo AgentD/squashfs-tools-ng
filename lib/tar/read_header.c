@@ -35,17 +35,17 @@ static int check_version(const tar_header_t *hdr)
 	return ETV_UNKNOWN;
 }
 
-static char *record_to_memory(int fd, sqfs_u64 size)
+static char *record_to_memory(FILE *fp, sqfs_u64 size)
 {
 	char *buffer = malloc(size + 1);
 
 	if (buffer == NULL)
 		goto fail_errno;
 
-	if (read_retry("reading tar record", fd, buffer, size))
+	if (read_retry("reading tar record", fp, buffer, size))
 		goto fail;
 
-	if (skip_padding(fd, size))
+	if (skip_padding(fp, size))
 		goto fail;
 
 	buffer[size] = '\0';
@@ -74,7 +74,7 @@ static tar_xattr_t *mkxattr(const char *key, size_t keylen,
 	return xattr;
 }
 
-static int read_pax_header(int fd, sqfs_u64 entsize, unsigned int *set_by_pax,
+static int read_pax_header(FILE *fp, sqfs_u64 entsize, unsigned int *set_by_pax,
 			   tar_header_decoded_t *out)
 {
 	sparse_map_t *sparse_last = NULL, *sparse;
@@ -83,7 +83,7 @@ static int read_pax_header(int fd, sqfs_u64 entsize, unsigned int *set_by_pax,
 	tar_xattr_t *xattr;
 	sqfs_u64 i;
 
-	buffer = record_to_memory(fd, entsize);
+	buffer = record_to_memory(fp, entsize);
 	if (buffer == NULL)
 		return -1;
 
@@ -357,7 +357,7 @@ static int decode_header(const tar_header_t *hdr, unsigned int set_by_pax,
 	return 0;
 }
 
-int read_header(int fd, tar_header_decoded_t *out)
+int read_header(FILE *fp, tar_header_decoded_t *out)
 {
 	unsigned int set_by_pax = 0;
 	bool prev_was_zero = false;
@@ -368,7 +368,7 @@ int read_header(int fd, tar_header_decoded_t *out)
 	memset(out, 0, sizeof(*out));
 
 	for (;;) {
-		if (read_retry("reading tar header", fd, &hdr, sizeof(hdr)))
+		if (read_retry("reading tar header", fp, &hdr, sizeof(hdr)))
 			goto fail;
 
 		if (is_zero_block(&hdr)) {
@@ -394,7 +394,7 @@ int read_header(int fd, tar_header_decoded_t *out)
 			if (pax_size < 1 || pax_size > TAR_MAX_SYMLINK_LEN)
 				goto fail_slink_len;
 			free(out->link_target);
-			out->link_target = record_to_memory(fd, pax_size);
+			out->link_target = record_to_memory(fp, pax_size);
 			if (out->link_target == NULL)
 				goto fail;
 			set_by_pax |= PAX_SLINK_TARGET;
@@ -405,7 +405,7 @@ int read_header(int fd, tar_header_decoded_t *out)
 			if (pax_size < 1 || pax_size > TAR_MAX_PATH_LEN)
 				goto fail_path_len;
 			free(out->name);
-			out->name = record_to_memory(fd, pax_size);
+			out->name = record_to_memory(fp, pax_size);
 			if (out->name == NULL)
 				goto fail;
 			set_by_pax |= PAX_NAME;
@@ -417,12 +417,12 @@ int read_header(int fd, tar_header_decoded_t *out)
 			if (pax_size < 1 || pax_size > TAR_MAX_PAX_LEN)
 				goto fail_pax_len;
 			set_by_pax = 0;
-			if (read_pax_header(fd, pax_size, &set_by_pax, out))
+			if (read_pax_header(fp, pax_size, &set_by_pax, out))
 				goto fail;
 			continue;
 		case TAR_TYPE_GNU_SPARSE:
 			free_sparse_list(out->sparse);
-			out->sparse = read_gnu_old_sparse(fd, &hdr);
+			out->sparse = read_gnu_old_sparse(fp, &hdr);
 			if (out->sparse == NULL)
 				goto fail;
 			if (read_number(hdr.tail.gnu.realsize,

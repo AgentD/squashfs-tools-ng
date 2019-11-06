@@ -124,12 +124,12 @@ int write_tar_header(FILE *fp, const struct stat *sb, const char *name,
 		     unsigned int counter);
 
 /* calcuate and skip the zero padding */
-int skip_padding(int fd, sqfs_u64 size);
+int skip_padding(FILE *fp, sqfs_u64 size);
 
 /* round up to block size and skip the entire entry */
-int skip_entry(int fd, sqfs_u64 size);
+int skip_entry(FILE *fp, sqfs_u64 size);
 
-int read_header(int fd, tar_header_decoded_t *out);
+int read_header(FILE *fp, tar_header_decoded_t *out);
 
 void clear_header(tar_header_decoded_t *hdr);
 
@@ -146,7 +146,7 @@ int padd_file(FILE *fp, sqfs_u64 size);
   on success. Writes to stderr on failure using 'errstr' as a perror style
   error prefix.
 */
-int read_retry(const char *errstr, int fd, void *buffer, size_t size);
+int read_retry(const char *errstr, FILE *fp, void *buffer, size_t size);
 
 /*
   A wrapper around the write() system call. It retries the write if it is

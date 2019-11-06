@@ -17,36 +17,37 @@
 int main(int argc, char **argv)
 {
 	tar_header_decoded_t hdr;
-	int fd, ret;
+	FILE *fp;
+	int ret;
 
 	if (argc != 2) {
 		fputs("usage: tar_fuzz <tarball>\n", stderr);
 		return EXIT_FAILURE;
 	}
 
-	fd = open(argv[1], O_RDONLY);
-	if (fd < 0) {
+	fp = fopen(argv[1], "rb");
+	if (fp == NULL) {
 		perror(argv[1]);
 		return EXIT_FAILURE;
 	}
 
 	for (;;) {
-		ret = read_header(fd, &hdr);
+		ret = read_header(fp, &hdr);
 		if (ret > 0)
 			break;
 		if (ret < 0)
 			goto fail;
 
-		ret = lseek(fd, hdr.sb.st_size, SEEK_CUR);
+		ret = fseek(fp, hdr.sb.st_size, SEEK_CUR);
 
 		clear_header(&hdr);
 		if (ret < 0)
 			goto fail;
 	}
 
-	close(fd);
+	fclose(fp);
 	return EXIT_SUCCESS;
 fail:
-	close(fd);
+	fclose(fp);
 	return EXIT_FAILURE;
 }

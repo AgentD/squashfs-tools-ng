@@ -46,7 +46,7 @@ static int stdin_read_at(sqfs_file_t *base, sqfs_u64 offset,
 	size_t temp_size = 0;
 	sqfs_u8 *temp = NULL;
 	sqfs_u64 diff;
-	ssize_t ret;
+	size_t ret;
 
 	if (offset < file->offset)
 		return SQFS_ERROR_IO;
@@ -60,23 +60,20 @@ static int stdin_read_at(sqfs_file_t *base, sqfs_u64 offset,
 		return SQFS_ERROR_OUT_OF_BOUNDS;
 
 	while (size > 0) {
+		if (ferror(stdin))
+			return SQFS_ERROR_IO;
+
+		if (feof(stdin))
+			return SQFS_ERROR_OUT_OF_BOUNDS;
+
 		if (offset > file->offset) {
 			diff = file->offset - offset;
 			diff = diff > (sqfs_u64)temp_size ? temp_size : diff;
 
-			ret = read(STDIN_FILENO, temp, diff);
+			ret = fread(temp, 1, diff, stdin);
 		} else {
-			ret = read(STDIN_FILENO, buffer, size);
+			ret = fread(buffer, 1, size, stdin);
 		}
-
-		if (ret < 0) {
-			if (errno == EINTR)
-				continue;
-			return SQFS_ERROR_IO;
-		}
-
-		if (ret == 0)
-			return SQFS_ERROR_OUT_OF_BOUNDS;
 
 		if (offset <= file->offset) {
 			buffer = (char *)buffer + ret;

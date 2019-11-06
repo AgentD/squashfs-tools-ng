@@ -251,7 +251,7 @@ static int write_file(tar_header_decoded_t *hdr, file_info_t *fi,
 	if (ret)
 		return -1;
 
-	return skip_padding(STDIN_FILENO, hdr->sparse == NULL ?
+	return skip_padding(stdin, hdr->sparse == NULL ?
 			    filesize : hdr->record_size);
 }
 
@@ -337,7 +337,7 @@ static int process_tar_ball(void)
 	int ret;
 
 	for (;;) {
-		ret = read_header(STDIN_FILENO, &hdr);
+		ret = read_header(stdin, &hdr);
 		if (ret > 0)
 			break;
 		if (ret < 0)
@@ -395,7 +395,7 @@ static int process_tar_ball(void)
 		if (skip) {
 			if (dont_skip)
 				goto fail;
-			if (skip_entry(STDIN_FILENO, hdr.sb.st_size))
+			if (skip_entry(stdin, hdr.sb.st_size))
 				goto fail;
 
 			clear_header(&hdr);

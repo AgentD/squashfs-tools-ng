@@ -8,7 +8,7 @@
 
 #include "internal.h"
 
-sparse_map_t *read_gnu_old_sparse(int fd, tar_header_t *hdr)
+sparse_map_t *read_gnu_old_sparse(FILE *fp, tar_header_t *hdr)
 {
 	sparse_map_t *list = NULL, *end = NULL, *node;
 	gnu_sparse_t sph;
@@ -48,7 +48,7 @@ sparse_map_t *read_gnu_old_sparse(int fd, tar_header_t *hdr)
 
 	do {
 		if (read_retry("reading GNU sparse header",
-			       fd, &sph, sizeof(sph))) {
+			       fp, &sph, sizeof(sph))) {
 			goto fail;
 		}
 
