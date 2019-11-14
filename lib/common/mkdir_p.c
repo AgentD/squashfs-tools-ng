@@ -7,7 +7,7 @@
 #include "common.h"
 
 #include <string.h>
-#include <alloca.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
 

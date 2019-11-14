@@ -5,6 +5,7 @@
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
 #include "common.h"
+#include "util/compat.h"
 
 #include <string.h>
 #include <stdlib.h>

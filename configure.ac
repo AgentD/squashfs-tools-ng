@@ -3,8 +3,8 @@ AC_INIT([squashfs-tools-ng], [0.7], [goliath@infraroot.at], squashfs-tools-ng)
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([foreign dist-xz subdir-objects])
 AM_SILENT_RULES([yes])
+AC_PROG_CC([cc gcc clang])
 LT_INIT([win32-dll])
-AC_PROG_CC
 AC_PROG_CC_C99
 AC_PROG_INSTALL
 AC_SYS_LARGEFILE

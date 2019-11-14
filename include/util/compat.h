@@ -7,6 +7,10 @@
 #ifndef COMPAT_H
 #define COMPAT_H
 
+#ifndef __linux__
+#define O_PATH 0
+#endif
+
 #if defined(__APPLE__)
 #include <libkern/OSByteOrder.h>
 
@@ -17,14 +21,8 @@
 #define le32toh(x) OSSwapLittleToHostInt32(x)
 #define le16toh(x) OSSwapLittleToHostInt16(x)
 #define le64toh(x) OSSwapLittleToHostInt64(x)
-#elif defined(__OpenBSD__)
+#elif defined(__DragonFly__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
 #include <sys/endian.h>
-#elif defined(__NetBSD__) || defined(__FreeBSD__) || defined(__DragonFly__)
-#include <sys/endian.h>
-
-#define le16toh(x) letoh16(x)
-#define le32toh(x) letoh32(x)
-#define le64toh(x) letoh64(x)
 #elif defined(_WIN32) || defined(__WINDOWS__)
 #define htole16(x) (x)
 #define htole32(x) (x)
@@ -107,7 +105,6 @@ struct stat {
 #else
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/sysmacros.h>
 #endif
 
 #ifndef HAVE_GETLINE
