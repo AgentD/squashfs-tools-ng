@@ -105,6 +105,10 @@ struct stat {
 #else
 #include <sys/types.h>
 #include <sys/stat.h>
+
+#ifdef __linux__
+#include <sys/sysmacros.h>
+#endif
 #endif
 
 #ifndef HAVE_GETLINE
