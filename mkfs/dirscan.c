@@ -7,14 +7,51 @@
 #include "mkfs.h"
 
 #ifdef HAVE_SYS_XATTR_H
-static int populate_xattr(sqfs_xattr_writer_t *xwr, tree_node_t *node)
+static char *get_full_path(const char *prefix, tree_node_t *node)
+{
+	char *path = NULL, *new = NULL;
+	size_t path_len, prefix_len;
+	int ret;
+
+	path = fstree_get_path(node);
+	if (path == NULL)
+		goto fail;
+
+	ret = canonicalize_name(path);
+	assert(ret == 0);
+
+	path_len = strlen(path);
+	prefix_len = strlen(prefix);
+
+	while (prefix_len > 0 && prefix[prefix_len - 1] == '/')
+		--prefix_len;
+
+	if (prefix_len > 0) {
+		new = realloc(path, path_len + prefix_len + 2);
+		if (new == NULL)
+			goto fail;
+
+		path = new;
+
+		memmove(path + prefix_len + 1, path, path_len + 1);
+		memcpy(path, prefix, prefix_len);
+		path[prefix_len] = '/';
+	}
+
+	return path;
+fail:
+	perror("getting full path for xattr scan");
+	free(path);
+	return NULL;
+}
+
+static int xattr_from_path(sqfs_xattr_writer_t *xwr, const char *path)
 {
 	char *key, *value = NULL, *buffer = NULL;
 	ssize_t buflen, vallen, keylen;
 	int ret;
 
-	buflen = listxattr(node->name, NULL, 0);
-
+	buflen = listxattr(path, NULL, 0);
 	if (buflen < 0) {
 		perror("listxattr");
 		return -1;
@@ -29,7 +66,7 @@ static int populate_xattr(sqfs_xattr_writer_t *xwr, tree_node_t *node)
 		return -1;
 	}
 
-	buflen = listxattr(node->name, buffer, buflen);
+	buflen = listxattr(path, buffer, buflen);
 	if (buflen == -1) {
 		perror("listxattr");
 		goto fail;
@@ -37,7 +74,7 @@ static int populate_xattr(sqfs_xattr_writer_t *xwr, tree_node_t *node)
 
 	key = buffer;
 	while (buflen > 0) {
-		vallen = getxattr(node->name, key, NULL, 0);
+		vallen = getxattr(path, key, NULL, 0);
 		if (vallen == -1)
 			goto fail;
 
@@ -48,16 +85,16 @@ static int populate_xattr(sqfs_xattr_writer_t *xwr, tree_node_t *node)
 				goto fail;
 			}
 
-			vallen = getxattr(node->name, key, value, vallen);
+			vallen = getxattr(path, key, value, vallen);
 			if (vallen == -1) {
 				fprintf(stderr, "%s: getxattr: %s\n",
-					node->name, strerror(errno));
+					path, strerror(errno));
 				goto fail;
 			}
 
 			ret = sqfs_xattr_writer_add(xwr, key, value, vallen);
 			if (ret) {
-				sqfs_perror(node->name,
+				sqfs_perror(path,
 					    "storing xattr key-value pairs",
 					    ret);
 				goto fail;
@@ -81,16 +118,80 @@ fail:
 }
 #endif
 
+static int xattr_xcan_dfs(const char *path_prefix, void *selinux_handle,
+			  sqfs_xattr_writer_t *xwr, unsigned int flags,
+			  tree_node_t *node)
+{
+	char *path;
+	int ret;
+
+	ret = sqfs_xattr_writer_begin(xwr);
+	if (ret) {
+		sqfs_perror(node->name, "recoding xattr key-value pairs\n",
+			    ret);
+		return -1;
+	}
+
+#ifdef HAVE_SYS_XATTR_H
+	if (flags & DIR_SCAN_READ_XATTR) {
+		path = get_full_path(path_prefix, node);
+		if (path == NULL)
+			return -1;
+
+		ret = xattr_from_path(xwr, path);
+		free(path);
+
+		if (ret)
+			return -1;
+	}
+#else
+	(void)path_prefix;
+#endif
+
+	if (selinux_handle != NULL) {
+		path = fstree_get_path(node);
+		if (path == NULL) {
+			perror("reconstructing absolute path");
+			return -1;
+		}
+
+		ret = selinux_relable_node(selinux_handle, xwr, node, path);
+		free(path);
+
+		if (ret)
+			return -1;
+	}
+
+	if (sqfs_xattr_writer_end(xwr, &node->xattr_idx)) {
+		sqfs_perror(node->name, "completing xattr key-value pairs",
+			    ret);
+		return -1;
+	}
+
+	if (S_ISDIR(node->mode)) {
+		node = node->data.dir.children;
+
+		while (node != NULL) {
+			if (xattr_xcan_dfs(path_prefix, selinux_handle, xwr,
+					   flags, node)) {
+				return -1;
+			}
+
+			node = node->next;
+		}
+	}
+
+	return 0;
+}
+
 static int populate_dir(fstree_t *fs, tree_node_t *root, dev_t devstart,
-			void *selinux_handle, sqfs_xattr_writer_t *xwr,
 			unsigned int flags)
 {
-	char *extra = NULL, *path;
+	char *extra = NULL;
 	struct dirent *ent;
 	struct stat sb;
 	tree_node_t *n;
 	DIR *dir;
-	int ret;
 
 	dir = opendir(".");
 	if (dir == NULL) {
@@ -142,41 +243,6 @@ static int populate_dir(fstree_t *fs, tree_node_t *root, dev_t devstart,
 			goto fail;
 		}
 
-		if (sqfs_xattr_writer_begin(xwr)) {
-			fputs("error recoding xattr key-value pairs\n", stderr);
-			return -1;
-		}
-
-#ifdef HAVE_SYS_XATTR_H
-		if (flags & DIR_SCAN_READ_XATTR) {
-			if (populate_xattr(xwr, n))
-				goto fail;
-		}
-#endif
-		if (selinux_handle != NULL) {
-			path = fstree_get_path(n);
-			if (path == NULL) {
-				perror("getting full path for "
-				       "SELinux relabeling");
-				goto fail;
-			}
-
-			if (selinux_relable_node(selinux_handle, xwr,
-						 n, path)) {
-				free(path);
-				goto fail;
-			}
-
-			free(path);
-		}
-
-		ret = sqfs_xattr_writer_end(xwr, &n->xattr_idx);
-		if (ret) {
-			sqfs_perror(n->name,
-				    "completing xattr key-value pairs", ret);
-			goto fail;
-		}
-
 		free(extra);
 		extra = NULL;
 	}
@@ -188,10 +254,8 @@ static int populate_dir(fstree_t *fs, tree_node_t *root, dev_t devstart,
 			if (pushd(n->name))
 				return -1;
 
-			if (populate_dir(fs, n, devstart, selinux_handle,
-					 xwr, flags)) {
+			if (populate_dir(fs, n, devstart, flags))
 				return -1;
-			}
 
 			if (popd())
 				return -1;
@@ -221,11 +285,19 @@ int fstree_from_dir(fstree_t *fs, const char *path, void *selinux_handle,
 	if (pushd(path))
 		return -1;
 
-	ret = populate_dir(fs, fs->root, sb.st_dev, selinux_handle,
-			   xwr, flags);
+	ret = populate_dir(fs, fs->root, sb.st_dev, flags);
 
 	if (popd())
-		ret = -1;
+		return -1;
+
+	if (ret != 0)
+		return -1;
+
+	if (xwr != NULL && (selinux_handle != NULL ||
+			    (flags & DIR_SCAN_READ_XATTR))) {
+		if (xattr_xcan_dfs(path, selinux_handle, xwr, flags, fs->root))
+			return -1;
+	}
 
 	return ret;
 }
