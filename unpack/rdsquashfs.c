@@ -135,10 +135,12 @@ int main(int argc, char **argv)
 	case OP_UNPACK:
 		if (opt.unpack_root != NULL) {
 			if (mkdir_p(opt.unpack_root))
-				return -1;
+				goto out;
 
-			if (pushd(opt.unpack_root))
-				return -1;
+			if (chdir(opt.unpack_root)) {
+				perror(opt.unpack_root);
+				goto out;
+			}
 		}
 
 		if (restore_fstree(n, opt.flags))
@@ -148,9 +150,6 @@ int main(int argc, char **argv)
 			goto out;
 
 		if (update_tree_attribs(xattr, n, opt.flags))
-			goto out;
-
-		if (opt.unpack_root != NULL && popd() != 0)
 			goto out;
 		break;
 	case OP_DESCRIBE:

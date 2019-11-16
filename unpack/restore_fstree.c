@@ -18,50 +18,49 @@ static int create_node(const sqfs_tree_node_t *n, int flags)
 		return 0;
 	}
 
-	if (!(flags & UNPACK_QUIET)) {
-		name = sqfs_tree_node_get_path(n);
-		if (name != NULL) {
-			ret = canonicalize_name(name);
-			assert(ret == 0);
-			printf("creating %s\n", name);
-			free(name);
-		}
+	name = sqfs_tree_node_get_path(n);
+	if (name == NULL) {
+		fprintf(stderr, "Constructing full path for '%s': %s\n",
+			(const char *)n->name, strerror(errno));
+		return -1;
 	}
+
+	ret = canonicalize_name(name);
+	assert(ret == 0);
+
+	if (!(flags & UNPACK_QUIET))
+		printf("creating %s\n", name);
 
 	switch (n->inode->base.mode & S_IFMT) {
 	case S_IFDIR:
-		if (mkdir((const char *)n->name, 0755) && errno != EEXIST) {
+		if (mkdir(name, 0755) && errno != EEXIST) {
 			fprintf(stderr, "mkdir %s: %s\n",
-				n->name, strerror(errno));
-			return -1;
+				name, strerror(errno));
+			goto fail;
 		}
 
-		if (pushd((const char *)n->name))
-			return -1;
+		free(name);
+		name = NULL;
 
 		for (c = n->children; c != NULL; c = c->next) {
 			if (create_node(c, flags))
-				return -1;
+				goto fail;
 		}
-
-		if (popd())
-			return -1;
 		break;
 	case S_IFLNK:
-		if (symlink(n->inode->slink_target, (const char *)n->name)) {
+		if (symlink(n->inode->slink_target, name)) {
 			fprintf(stderr, "ln -s %s %s: %s\n",
-				n->inode->slink_target, n->name,
+				n->inode->slink_target, name,
 				strerror(errno));
-			return -1;
+			goto fail;
 		}
 		break;
 	case S_IFSOCK:
 	case S_IFIFO:
-		if (mknod((const char *)n->name,
-			  (n->inode->base.mode & S_IFMT) | 0700, 0)) {
+		if (mknod(name, (n->inode->base.mode & S_IFMT) | 0700, 0)) {
 			fprintf(stderr, "creating %s: %s\n",
-				n->name, strerror(errno));
-			return -1;
+				name, strerror(errno));
+			goto fail;
 		}
 		break;
 	case S_IFBLK:
@@ -75,21 +74,19 @@ static int create_node(const sqfs_tree_node_t *n, int flags)
 			devno = n->inode->data.dev.devno;
 		}
 
-		if (mknod((const char *)n->name, n->inode->base.mode & S_IFMT,
-			  devno)) {
+		if (mknod(name, n->inode->base.mode & S_IFMT, devno)) {
 			fprintf(stderr, "creating device %s: %s\n",
-				n->name, strerror(errno));
-			return -1;
+				name, strerror(errno));
+			goto fail;
 		}
 		break;
 	}
 	case S_IFREG:
-		fd = open((const char *)n->name, O_WRONLY | O_CREAT | O_EXCL,
-			  0600);
+		fd = open(name, O_WRONLY | O_CREAT | O_EXCL, 0600);
 		if (fd < 0) {
 			fprintf(stderr, "creating %s: %s\n",
-				n->name, strerror(errno));
-			return -1;
+				name, strerror(errno));
+			goto fail;
 		}
 
 		close(fd);
@@ -98,11 +95,16 @@ static int create_node(const sqfs_tree_node_t *n, int flags)
 		break;
 	}
 
+	free(name);
 	return 0;
+fail:
+	free(name);
+	return -1;
 }
 
 #ifdef HAVE_SYS_XATTR_H
-static int set_xattr(sqfs_xattr_reader_t *xattr, const sqfs_tree_node_t *n)
+static int set_xattr(const char *path, sqfs_xattr_reader_t *xattr,
+		     const sqfs_tree_node_t *n)
 {
 	sqfs_xattr_value_t *value;
 	sqfs_xattr_entry_t *key;
@@ -138,11 +140,11 @@ static int set_xattr(sqfs_xattr_reader_t *xattr, const sqfs_tree_node_t *n)
 			return -1;
 		}
 
-		ret = lsetxattr((const char *)n->name, (const char *)key->key,
+		ret = lsetxattr(path, (const char *)key->key,
 				value->value, value->size, 0);
 		if (ret) {
 			fprintf(stderr, "setting xattr '%s' on %s: %s\n",
-				key->key, n->name, strerror(errno));
+				key->key, path, strerror(errno));
 		}
 
 		free(key);
@@ -159,27 +161,33 @@ static int set_attribs(sqfs_xattr_reader_t *xattr,
 		       const sqfs_tree_node_t *n, int flags)
 {
 	const sqfs_tree_node_t *c;
+	char *path;
+	int ret;
 
 	if (!is_filename_sane((const char *)n->name))
 		return 0;
 
 	if (S_ISDIR(n->inode->base.mode)) {
-		if (pushd((const char *)n->name))
-			return -1;
-
 		for (c = n->children; c != NULL; c = c->next) {
 			if (set_attribs(xattr, c, flags))
 				return -1;
 		}
-
-		if (popd())
-			return -1;
 	}
+
+	path = sqfs_tree_node_get_path(n);
+	if (path == NULL) {
+		fprintf(stderr, "Reconstructing full path: %s\n",
+			strerror(errno));
+		return -1;
+	}
+
+	ret = canonicalize_name(path);
+	assert(ret == 0);
 
 #ifdef HAVE_SYS_XATTR_H
 	if ((flags & UNPACK_SET_XATTR) && xattr != NULL) {
-		if (set_xattr(xattr, n))
-			return -1;
+		if (set_xattr(path, xattr, n))
+			goto fail;
 	}
 #endif
 
@@ -190,32 +198,36 @@ static int set_attribs(sqfs_xattr_reader_t *xattr,
 		times[0].tv_sec = n->inode->base.mod_time;
 		times[1].tv_sec = n->inode->base.mod_time;
 
-		if (utimensat(AT_FDCWD, (const char *)n->name, times,
-			      AT_SYMLINK_NOFOLLOW)) {
+		if (utimensat(AT_FDCWD, path, times, AT_SYMLINK_NOFOLLOW)) {
 			fprintf(stderr, "setting timestamp on %s: %s\n",
-				n->name, strerror(errno));
-			return -1;
+				path, strerror(errno));
+			goto fail;
 		}
 	}
 
 	if (flags & UNPACK_CHOWN) {
-		if (fchownat(AT_FDCWD, (const char *)n->name, n->uid, n->gid,
+		if (fchownat(AT_FDCWD, path, n->uid, n->gid,
 			     AT_SYMLINK_NOFOLLOW)) {
 			fprintf(stderr, "chown %s: %s\n",
-				n->name, strerror(errno));
-			return -1;
+				path, strerror(errno));
+			goto fail;
 		}
 	}
 
 	if (flags & UNPACK_CHMOD && !S_ISLNK(n->inode->base.mode)) {
-		if (fchmodat(AT_FDCWD, (const char *)n->name,
+		if (fchmodat(AT_FDCWD, path,
 			     n->inode->base.mode & ~S_IFMT, 0)) {
 			fprintf(stderr, "chmod %s: %s\n",
-				n->name, strerror(errno));
-			return -1;
+				path, strerror(errno));
+			goto fail;
 		}
 	}
+
+	free(path);
 	return 0;
+fail:
+	free(path);
+	return -1;
 }
 
 int restore_fstree(sqfs_tree_node_t *root, int flags)
