@@ -46,6 +46,9 @@ static int pack_files(sqfs_data_writer_t *data, fstree_t *fs,
 	size_t max_blk_count;
 	sqfs_u64 filesize;
 	sqfs_file_t *file;
+	tree_node_t *node;
+	const char *path;
+	char *node_path;
 	file_info_t *fi;
 	int ret;
 
@@ -53,13 +56,31 @@ static int pack_files(sqfs_data_writer_t *data, fstree_t *fs,
 		return -1;
 
 	for (fi = fs->files; fi != NULL; fi = fi->next) {
-		if (!opt->cfg.quiet)
-			printf("packing %s\n", fi->input_file);
+		if (fi->input_file == NULL) {
+			node = container_of(fi, tree_node_t, data.file);
 
-		file = sqfs_open_file(fi->input_file,
-				      SQFS_FILE_OPEN_READ_ONLY);
+			node_path = fstree_get_path(node);
+			if (node_path == NULL) {
+				perror("reconstructing file path");
+				return -1;
+			}
+
+			ret = canonicalize_name(node_path);
+			assert(ret == 0);
+
+			path = node_path;
+		} else {
+			node_path = NULL;
+			path = fi->input_file;
+		}
+
+		if (!opt->cfg.quiet)
+			printf("packing %s\n", path);
+
+		file = sqfs_open_file(path, SQFS_FILE_OPEN_READ_ONLY);
 		if (file == NULL) {
-			perror(fi->input_file);
+			perror(path);
+			free(node_path);
 			return -1;
 		}
 
@@ -74,6 +95,7 @@ static int pack_files(sqfs_data_writer_t *data, fstree_t *fs,
 		if (inode == NULL) {
 			perror("creating file inode");
 			file->destroy(file);
+			free(node_path);
 			return -1;
 		}
 
@@ -84,9 +106,9 @@ static int pack_files(sqfs_data_writer_t *data, fstree_t *fs,
 
 		fi->user_ptr = inode;
 
-		ret = write_data_from_file(fi->input_file, data,
-					   inode, file, 0);
+		ret = write_data_from_file(path, data, inode, file, 0);
 		file->destroy(file);
+		free(node_path);
 
 		if (ret)
 			return -1;

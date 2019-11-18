@@ -6,39 +6,6 @@
  */
 #include "mkfs.h"
 
-static char *get_file_path(tree_node_t *n, const char *name)
-{
-	char *ptr, *new;
-	int ret;
-
-	if (n->parent == NULL) {
-		ptr = strdup(name);
-		if (ptr == NULL)
-			goto fail;
-		return ptr;
-	}
-
-	ptr = fstree_get_path(n);
-	if (ptr == NULL)
-		goto fail;
-
-	ret = canonicalize_name(ptr);
-	assert(ret == 0);
-
-	new = realloc(ptr, strlen(ptr) + strlen(name) + 2);
-	if (new == NULL)
-		goto fail;
-
-	ptr = new;
-	strcat(ptr, "/");
-	strcat(ptr, name);
-	return ptr;
-fail:
-	perror("getting absolute file path");
-	free(ptr);
-	return NULL;
-}
-
 #ifdef HAVE_SYS_XATTR_H
 static int populate_xattr(sqfs_xattr_writer_t *xwr, tree_node_t *node)
 {
@@ -163,10 +130,6 @@ static int populate_dir(fstree_t *fs, tree_node_t *root, dev_t devstart,
 				goto fail_rdlink;
 
 			extra[sb.st_size] = '\0';
-		} else if (S_ISREG(sb.st_mode)) {
-			extra = get_file_path(root, ent->d_name);
-			if (extra == NULL)
-				goto fail;
 		}
 
 		if (!(flags & DIR_SCAN_KEEP_TIME))
