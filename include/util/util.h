@@ -15,6 +15,9 @@
 
 #include "compat.h"
 
+#define container_of(ptr, type, member) \
+	((type *)((char *)ptr - offsetof(type, member)))
+
 #if defined(__GNUC__) || defined(__clang__)
 #define UI_ADD_OV __builtin_uadd_overflow
 #define UL_ADD_OV __builtin_uaddl_overflow
