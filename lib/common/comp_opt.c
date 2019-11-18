@@ -255,8 +255,8 @@ fail_window:
 	return -1;
 fail_level:
 	fprintf(stderr,
-		"Compression level must be a number between %zu and %zu.\n",
-		min_level, max_level);
+		"Compression level must be a number between " PRI_SZ " and "
+		PRI_SZ ".\n", min_level, max_level);
 	return -1;
 fail_opt:
 	fprintf(stderr, "Unknown compressor option '%s'.\n", value);
