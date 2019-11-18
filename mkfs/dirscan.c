@@ -187,20 +187,26 @@ static int xattr_xcan_dfs(const char *path_prefix, void *selinux_handle,
 	return 0;
 }
 
-static int populate_dir(fstree_t *fs, tree_node_t *root, dev_t devstart,
-			unsigned int flags)
+static int populate_dir(int dir_fd, fstree_t *fs, tree_node_t *root,
+			dev_t devstart, unsigned int flags)
 {
 	char *extra = NULL;
 	struct dirent *ent;
 	struct stat sb;
 	tree_node_t *n;
+	int childfd;
 	DIR *dir;
 
-	dir = opendir(".");
+	dir = fdopendir(dir_fd);
 	if (dir == NULL) {
-		perror("opendir");
+		perror("fdopendir");
+		close(dir_fd);
 		return -1;
 	}
+
+	/* XXX: fdopendir can dup and close dir_fd internally
+	   and still be compliant with the spec. */
+	dir_fd = dirfd(dir);
 
 	for (;;) {
 		errno = 0;
@@ -217,7 +223,7 @@ static int populate_dir(fstree_t *fs, tree_node_t *root, dev_t devstart,
 		if (!strcmp(ent->d_name, "..") || !strcmp(ent->d_name, "."))
 			continue;
 
-		if (fstatat(AT_FDCWD, ent->d_name, &sb, AT_SYMLINK_NOFOLLOW)) {
+		if (fstatat(dir_fd, ent->d_name, &sb, AT_SYMLINK_NOFOLLOW)) {
 			perror(ent->d_name);
 			goto fail;
 		}
@@ -230,8 +236,10 @@ static int populate_dir(fstree_t *fs, tree_node_t *root, dev_t devstart,
 			if (extra == NULL)
 				goto fail_rdlink;
 
-			if (readlink(ent->d_name, extra, sb.st_size) < 0)
+			if (readlinkat(dir_fd, ent->d_name,
+				       extra, sb.st_size) < 0) {
 				goto fail_rdlink;
+			}
 
 			extra[sb.st_size] = '\0';
 		}
@@ -248,23 +256,21 @@ static int populate_dir(fstree_t *fs, tree_node_t *root, dev_t devstart,
 
 		free(extra);
 		extra = NULL;
-	}
 
-	closedir(dir);
-
-	for (n = root->data.dir.children; n != NULL; n = n->next) {
 		if (S_ISDIR(n->mode)) {
-			if (pushd(n->name))
-				return -1;
+			childfd = openat(dir_fd, n->name, O_DIRECTORY |
+					 O_RDONLY | O_CLOEXEC);
+			if (childfd < 0) {
+				perror(n->name);
+				goto fail;
+			}
 
-			if (populate_dir(fs, n, devstart, flags))
-				return -1;
-
-			if (popd())
-				return -1;
+			if (populate_dir(childfd, fs, n, devstart, flags))
+				goto fail;
 		}
 	}
 
+	closedir(dir);
 	return 0;
 fail_rdlink:
 	perror("readlink");
@@ -278,22 +284,21 @@ int fstree_from_dir(fstree_t *fs, const char *path, void *selinux_handle,
 		    sqfs_xattr_writer_t *xwr, unsigned int flags)
 {
 	struct stat sb;
-	int ret;
+	int fd;
 
-	if (stat(path, &sb)) {
+	fd = open(path, O_DIRECTORY | O_RDONLY | O_CLOEXEC);
+	if (fd < 0) {
 		perror(path);
 		return -1;
 	}
 
-	if (pushd(path))
+	if (fstat(fd, &sb)) {
+		perror(path);
+		close(fd);
 		return -1;
+	}
 
-	ret = populate_dir(fs, fs->root, sb.st_dev, flags);
-
-	if (popd())
-		return -1;
-
-	if (ret != 0)
+	if (populate_dir(fd, fs, fs->root, sb.st_dev, flags))
 		return -1;
 
 	if (xwr != NULL && (selinux_handle != NULL ||
@@ -302,5 +307,5 @@ int fstree_from_dir(fstree_t *fs, const char *path, void *selinux_handle,
 			return -1;
 	}
 
-	return ret;
+	return 0;
 }
