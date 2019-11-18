@@ -9,22 +9,33 @@
 static int set_working_dir(options_t *opt)
 {
 	const char *ptr;
+	char *path;
 
-	if (opt->packdir != NULL)
-		return pushd(opt->packdir);
+	if (opt->packdir != NULL) {
+		if (chdir(opt->packdir)) {
+			perror(opt->packdir);
+			return -1;
+		}
+		return 0;
+	}
 
 	ptr = strrchr(opt->infile, '/');
-	if (ptr != NULL)
-		return pushdn(opt->infile, ptr - opt->infile);
+	if (ptr == NULL)
+		return 0;
 
-	return 0;
-}
+	path = strndup(opt->infile, ptr - opt->infile);
+	if (path == NULL) {
+		perror("constructing input directory path");
+		return -1;
+	}
 
-static int restore_working_dir(options_t *opt)
-{
-	if (opt->packdir != NULL || strrchr(opt->infile, '/') != NULL)
-		return popd();
+	if (chdir(path)) {
+		perror(path);
+		free(path);
+		return -1;
+	}
 
+	free(path);
 	return 0;
 }
 
@@ -84,7 +95,7 @@ static int pack_files(sqfs_data_writer_t *data, fstree_t *fs,
 		stats->bytes_read += filesize;
 	}
 
-	return restore_working_dir(opt);
+	return 0;
 }
 
 static int relabel_tree_dfs(const char *filename, sqfs_xattr_writer_t *xwr,
