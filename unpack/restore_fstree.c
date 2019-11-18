@@ -6,11 +6,121 @@
  */
 #include "rdsquashfs.h"
 
-static int create_node(const sqfs_tree_node_t *n, int flags)
+#ifdef _WIN32
+static int create_node(const sqfs_tree_node_t *n, const char *name)
+{
+	WCHAR *wpath = NULL;
+	DWORD length;
+	HANDLE fh;
+
+	length = MultiByteToWideChar(CP_UTF8, 0, name, -1, NULL, 0) + 1;
+	if (length <= 0)
+		goto fail;
+
+	wpath = alloc_array(sizeof(wpath[0]), length);
+	if (wpath == NULL) {
+		perror(name);
+		return -1;
+	}
+
+	MultiByteToWideChar(CP_UTF8, 0, name, -1, wpath, length);
+	wpath[length - 1] = '\0';
+
+	switch (n->inode->base.mode & S_IFMT) {
+	case S_IFDIR:
+		if (!CreateDirectoryW(wpath, NULL))
+			goto fail;
+		break;
+	case S_IFREG:
+		fh = CreateFileW(wpath, GENERIC_READ,
+				 FILE_SHARE_READ | FILE_SHARE_WRITE,
+				 NULL, CREATE_NEW, 0, NULL);
+
+		if (fh == INVALID_HANDLE_VALUE)
+			goto fail;
+
+		CloseHandle(fh);
+		break;
+	default:
+		break;
+	}
+
+	free(wpath);
+	return 0;
+fail:
+	fprintf(stderr, "Creating %s: %ld\n", name, GetLastError());
+	free(wpath);
+	return -1;
+}
+#else
+static int create_node(const sqfs_tree_node_t *n, const char *name)
+{
+	sqfs_u32 devno;
+	int fd;
+
+	switch (n->inode->base.mode & S_IFMT) {
+	case S_IFDIR:
+		if (mkdir(name, 0755) && errno != EEXIST) {
+			fprintf(stderr, "mkdir %s: %s\n",
+				name, strerror(errno));
+			return -1;
+		}
+		break;
+	case S_IFLNK:
+		if (symlink(n->inode->slink_target, name)) {
+			fprintf(stderr, "ln -s %s %s: %s\n",
+				n->inode->slink_target, name,
+				strerror(errno));
+			return -1;
+		}
+		break;
+	case S_IFSOCK:
+	case S_IFIFO:
+		if (mknod(name, (n->inode->base.mode & S_IFMT) | 0700, 0)) {
+			fprintf(stderr, "creating %s: %s\n",
+				name, strerror(errno));
+			return -1;
+		}
+		break;
+	case S_IFBLK:
+	case S_IFCHR:
+		if (n->inode->base.type == SQFS_INODE_EXT_BDEV ||
+		    n->inode->base.type == SQFS_INODE_EXT_CDEV) {
+			devno = n->inode->data.dev_ext.devno;
+		} else {
+			devno = n->inode->data.dev.devno;
+		}
+
+		if (mknod(name, n->inode->base.mode & S_IFMT, devno)) {
+			fprintf(stderr, "creating device %s: %s\n",
+				name, strerror(errno));
+			return -1;
+		}
+		break;
+	case S_IFREG:
+		fd = open(name, O_WRONLY | O_CREAT | O_EXCL, 0600);
+
+		if (fd < 0) {
+			fprintf(stderr, "creating %s: %s\n",
+				name, strerror(errno));
+			return -1;
+		}
+
+		close(fd);
+		break;
+	default:
+		break;
+	}
+
+	return 0;
+}
+#endif
+
+static int create_node_dfs(const sqfs_tree_node_t *n, int flags)
 {
 	const sqfs_tree_node_t *c;
-	int fd, ret;
 	char *name;
+	int ret;
 
 	if (!is_filename_sane((const char *)n->name)) {
 		fprintf(stderr, "Found an entry named '%s', skipping.\n",
@@ -31,75 +141,18 @@ static int create_node(const sqfs_tree_node_t *n, int flags)
 	if (!(flags & UNPACK_QUIET))
 		printf("creating %s\n", name);
 
-	switch (n->inode->base.mode & S_IFMT) {
-	case S_IFDIR:
-		if (mkdir(name, 0755) && errno != EEXIST) {
-			fprintf(stderr, "mkdir %s: %s\n",
-				name, strerror(errno));
-			goto fail;
-		}
+	ret = create_node(n, name);
+	free(name);
+	if (ret)
+		return -1;
 
-		free(name);
-		name = NULL;
-
+	if (S_ISDIR(n->inode->base.mode)) {
 		for (c = n->children; c != NULL; c = c->next) {
-			if (create_node(c, flags))
-				goto fail;
+			if (create_node_dfs(c, flags))
+				return -1;
 		}
-		break;
-	case S_IFLNK:
-		if (symlink(n->inode->slink_target, name)) {
-			fprintf(stderr, "ln -s %s %s: %s\n",
-				n->inode->slink_target, name,
-				strerror(errno));
-			goto fail;
-		}
-		break;
-	case S_IFSOCK:
-	case S_IFIFO:
-		if (mknod(name, (n->inode->base.mode & S_IFMT) | 0700, 0)) {
-			fprintf(stderr, "creating %s: %s\n",
-				name, strerror(errno));
-			goto fail;
-		}
-		break;
-	case S_IFBLK:
-	case S_IFCHR: {
-		sqfs_u32 devno;
-
-		if (n->inode->base.type == SQFS_INODE_EXT_BDEV ||
-		    n->inode->base.type == SQFS_INODE_EXT_CDEV) {
-			devno = n->inode->data.dev_ext.devno;
-		} else {
-			devno = n->inode->data.dev.devno;
-		}
-
-		if (mknod(name, n->inode->base.mode & S_IFMT, devno)) {
-			fprintf(stderr, "creating device %s: %s\n",
-				name, strerror(errno));
-			goto fail;
-		}
-		break;
 	}
-	case S_IFREG:
-		fd = open(name, O_WRONLY | O_CREAT | O_EXCL, 0600);
-		if (fd < 0) {
-			fprintf(stderr, "creating %s: %s\n",
-				name, strerror(errno));
-			goto fail;
-		}
-
-		close(fd);
-		break;
-	default:
-		break;
-	}
-
-	free(name);
 	return 0;
-fail:
-	free(name);
-	return -1;
 }
 
 #ifdef HAVE_SYS_XATTR_H
@@ -191,6 +244,7 @@ static int set_attribs(sqfs_xattr_reader_t *xattr,
 	}
 #endif
 
+#ifndef _WIN32
 	if (flags & UNPACK_SET_TIMES) {
 		struct timespec times[2];
 
@@ -222,7 +276,7 @@ static int set_attribs(sqfs_xattr_reader_t *xattr,
 			goto fail;
 		}
 	}
-
+#endif
 	free(path);
 	return 0;
 fail:
@@ -240,11 +294,11 @@ int restore_fstree(sqfs_tree_node_t *root, int flags)
 
 	if (S_ISDIR(root->inode->base.mode)) {
 		for (n = root->children; n != NULL; n = n->next) {
-			if (create_node(n, flags))
+			if (create_node_dfs(n, flags))
 				return -1;
 		}
 	} else {
-		if (create_node(root, flags))
+		if (create_node_dfs(root, flags))
 			return -1;
 	}
 

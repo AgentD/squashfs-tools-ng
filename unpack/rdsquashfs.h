@@ -12,6 +12,10 @@
 #include "fstree.h"
 #include "util/util.h"
 
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#endif
 #ifdef HAVE_SYS_XATTR_H
 #include <sys/xattr.h>
 #endif
