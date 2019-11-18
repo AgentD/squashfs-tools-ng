@@ -11,6 +11,145 @@
 #include <stdio.h>
 #include <errno.h>
 
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+
+/*
+  Supported paths:
+   - <letter>:\ <absolute path>
+   - \\<server>\<share>\ <absolute path>
+   - \\?\<letter>:\ <absolute path>
+   - \\?\UNC\<server>\<share>\ <absolute path>
+   - Relative path not starting with '\'
+ */
+
+static WCHAR *skip_unc_path(WCHAR *ptr)
+{
+	/* server */
+	if (*ptr == '\0' || *ptr == '\\')
+		return NULL;
+
+	while (*ptr != '\0' && *ptr != '\\')
+		++ptr;
+
+	if (*(ptr++) != '\\')
+		return NULL;
+
+	/* share */
+	if (*ptr == '\0' || *ptr == '\\')
+		return NULL;
+
+	while (*ptr != '\0' && *ptr != '\\')
+		++ptr;
+
+	return (*ptr == '\\') ? (ptr + 1) : ptr;
+}
+
+static WCHAR *skip_prefix(WCHAR *ptr)
+{
+	if (isalpha(ptr[0]) && ptr[1] == ':' && ptr[2] == '\\')
+		return ptr + 3;
+
+	if (ptr[0] == '\\' && ptr[1] == '\\') {
+		if (ptr[2] == '?') {
+			if (ptr[3] != '\\')
+				return NULL;
+
+			ptr += 4;
+
+			if ((ptr[0] == 'u' || ptr[0] == 'U') &&
+			    (ptr[1] == 'n' || ptr[1] == 'N') &&
+			    (ptr[2] == 'c' || ptr[2] == 'C') &&
+			    ptr[3] == '\\') {
+				ptr += 4;
+
+				return skip_unc_path(ptr);
+			}
+
+			if (isalpha(ptr[0]) && ptr[1] == ':' && ptr[2] == '\\')
+				return ptr + 3;
+
+			return NULL;
+		}
+
+		return skip_unc_path(ptr);
+	}
+
+	if (ptr[0] == '\\')
+		return NULL;
+
+	return ptr;
+}
+
+int mkdir_p(const char *path)
+{
+	WCHAR *wpath, *ptr, *end;
+	DWORD length, error;
+	bool done;
+
+	length = MultiByteToWideChar(CP_UTF8, 0, path, -1, NULL, 0) + 1;
+	wpath = alloc_array(sizeof(wpath[0]), length);
+
+	if (wpath == NULL) {
+		fprintf(stderr, "Converting UTF-8 path to UTF-16: %ld\n",
+			GetLastError());
+		return -1;
+	}
+
+	MultiByteToWideChar(CP_UTF8, 0, path, -1, wpath, length);
+	wpath[length - 1] = '\0';
+
+	for (ptr = wpath; *ptr != '\0'; ++ptr) {
+		if (*ptr == '/')
+			*ptr = '\\';
+	}
+
+	ptr = skip_prefix(wpath);
+	if (ptr == NULL) {
+		fprintf(stderr, "Illegal or unsupported path: %s\n", path);
+		goto fail;
+	}
+
+	while (*ptr != '\0') {
+		if (*ptr == '\\') {
+			++ptr;
+			continue;
+		}
+
+		for (end = ptr; *end != '\0' && *end != '\\'; ++end)
+			++end;
+
+		if (*end == '\\') {
+			done = false;
+			*end = '\0';
+		} else {
+			done = true;
+		}
+
+		if (!CreateDirectoryW(wpath, NULL)) {
+			error = GetLastError();
+
+			if (error != ERROR_ALREADY_EXISTS) {
+				fprintf(stderr, "Creating %s: %ld\n",
+					path, error);
+				goto fail;
+			}
+		}
+
+		if (!done) {
+			*end = '\\';
+			ptr = end + 1;
+		}
+	}
+
+	free(wpath);
+	return 0;
+fail:
+	free(wpath);
+	return -1;
+}
+#else
 int mkdir_p(const char *path)
 {
 	size_t i, len;
@@ -43,3 +182,4 @@ int mkdir_p(const char *path)
 
 	return 0;
 }
+#endif
