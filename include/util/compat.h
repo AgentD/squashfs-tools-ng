@@ -7,10 +7,6 @@
 #ifndef COMPAT_H
 #define COMPAT_H
 
-#ifndef __linux__
-#define O_PATH 0
-#endif
-
 #if defined(__APPLE__)
 #include <libkern/OSByteOrder.h>
 
