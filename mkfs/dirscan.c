@@ -51,9 +51,9 @@ static int xattr_from_path(sqfs_xattr_writer_t *xwr, const char *path)
 	ssize_t buflen, vallen, keylen;
 	int ret;
 
-	buflen = listxattr(path, NULL, 0);
+	buflen = llistxattr(path, NULL, 0);
 	if (buflen < 0) {
-		perror("listxattr");
+		fprintf(stderr, "llistxattr %s: %s", path, strerror(errno));
 		return -1;
 	}
 
@@ -66,17 +66,20 @@ static int xattr_from_path(sqfs_xattr_writer_t *xwr, const char *path)
 		return -1;
 	}
 
-	buflen = listxattr(path, buffer, buflen);
+	buflen = llistxattr(path, buffer, buflen);
 	if (buflen == -1) {
-		perror("listxattr");
+		fprintf(stderr, "llistxattr %s: %s", path, strerror(errno));
 		goto fail;
 	}
 
 	key = buffer;
 	while (buflen > 0) {
-		vallen = getxattr(path, key, NULL, 0);
-		if (vallen == -1)
+		vallen = lgetxattr(path, key, NULL, 0);
+		if (vallen == -1) {
+			fprintf(stderr, "lgetxattr %s: %s",
+				path, strerror(errno));
 			goto fail;
+		}
 
 		if (vallen > 0) {
 			value = calloc(1, vallen);
@@ -85,9 +88,9 @@ static int xattr_from_path(sqfs_xattr_writer_t *xwr, const char *path)
 				goto fail;
 			}
 
-			vallen = getxattr(path, key, value, vallen);
+			vallen = lgetxattr(path, key, value, vallen);
 			if (vallen == -1) {
-				fprintf(stderr, "%s: getxattr: %s\n",
+				fprintf(stderr, "lgetxattr %s: %s\n",
 					path, strerror(errno));
 				goto fail;
 			}
