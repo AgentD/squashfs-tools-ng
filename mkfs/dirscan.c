@@ -121,6 +121,15 @@ fail:
 }
 #endif
 
+#ifdef _WIN32
+int fstree_from_dir(fstree_t *fs, const char *path, void *selinux_handle,
+		    sqfs_xattr_writer_t *xwr, unsigned int flags)
+{
+	(void)fs; (void)path; (void)selinux_handle; (void)xwr; (void)flags;
+	fputs("Packing a directory is not supported on Windows.\n", stderr);
+	return -1;
+}
+#else
 static int xattr_xcan_dfs(const char *path_prefix, void *selinux_handle,
 			  sqfs_xattr_writer_t *xwr, unsigned int flags,
 			  tree_node_t *node)
@@ -309,3 +318,4 @@ int fstree_from_dir(fstree_t *fs, const char *path, void *selinux_handle,
 
 	return 0;
 }
+#endif
