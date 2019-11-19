@@ -91,10 +91,6 @@ if test "x$build_windows" = "xyes"; then
 	want_pthread="no"
 fi
 
-if test "x$build_windows" = "xyes"; then
-	build_tools="no"
-fi
-
 AM_CONDITIONAL([BUILD_TOOLS], [test "x$build_tools" = "xyes"])
 
 ##### Doxygen reference manual #####
