@@ -120,7 +120,8 @@ int sqfs_data_reader_dump(const char *name, sqfs_data_reader_t *data,
 			  const sqfs_inode_generic_t *inode,
 			  FILE *fp, size_t block_size, bool allow_sparse);
 
-sqfs_file_t *sqfs_get_stdin_file(const sparse_map_t *map, sqfs_u64 size);
+sqfs_file_t *sqfs_get_stdin_file(FILE *fp, const sparse_map_t *map,
+				 sqfs_u64 size);
 
 void register_stat_hooks(sqfs_data_writer_t *data, data_writer_stats_t *stats);
 

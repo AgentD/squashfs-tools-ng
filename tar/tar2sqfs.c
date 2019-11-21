@@ -13,6 +13,11 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
+#include <fcntl.h>
+
+#ifdef _WIN32
+#include <io.h>
+#endif
 
 static struct option long_opts[] = {
 	{ "compressor", required_argument, NULL, 'c' },
@@ -87,6 +92,7 @@ static bool dont_skip = false;
 static bool keep_time = true;
 static sqfs_writer_cfg_t cfg;
 static sqfs_writer_t sqfs;
+static FILE *input_file = NULL;
 
 static void process_args(int argc, char **argv)
 {
@@ -229,13 +235,13 @@ static int write_file(tar_header_decoded_t *hdr, file_info_t *fi,
 		for (sum = 0, it = hdr->sparse; it != NULL; it = it->next)
 			sum += it->count;
 
-		file = sqfs_get_stdin_file(hdr->sparse, sum);
+		file = sqfs_get_stdin_file(input_file, hdr->sparse, sum);
 		if (file == NULL) {
 			perror("packing files");
 			return -1;
 		}
 	} else {
-		file = sqfs_get_stdin_file(NULL, filesize);
+		file = sqfs_get_stdin_file(input_file, NULL, filesize);
 		if (file == NULL) {
 			perror("packing files");
 			return -1;
@@ -251,7 +257,7 @@ static int write_file(tar_header_decoded_t *hdr, file_info_t *fi,
 	if (ret)
 		return -1;
 
-	return skip_padding(stdin, hdr->sparse == NULL ?
+	return skip_padding(input_file, hdr->sparse == NULL ?
 			    filesize : hdr->record_size);
 }
 
@@ -337,7 +343,7 @@ static int process_tar_ball(void)
 	int ret;
 
 	for (;;) {
-		ret = read_header(stdin, &hdr);
+		ret = read_header(input_file, &hdr);
 		if (ret > 0)
 			break;
 		if (ret < 0)
@@ -395,7 +401,7 @@ static int process_tar_ball(void)
 		if (skip) {
 			if (dont_skip)
 				goto fail;
-			if (skip_entry(stdin, hdr.sb.st_size))
+			if (skip_entry(input_file, hdr.sb.st_size))
 				goto fail;
 
 			clear_header(&hdr);
@@ -419,6 +425,18 @@ int main(int argc, char **argv)
 	int status = EXIT_FAILURE;
 
 	process_args(argc, argv);
+
+#ifdef _WIN32
+	_setmode(_fileno(stdin), _O_BINARY);
+	input_file = stdin;
+#else
+	input_file = freopen(NULL, "rb", stdin);
+#endif
+
+	if (input_file == NULL) {
+		perror("changing stdin to binary mode");
+		return EXIT_FAILURE;
+	}
 
 	if (sqfs_writer_init(&sqfs, &cfg))
 		return EXIT_FAILURE;

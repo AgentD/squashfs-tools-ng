@@ -18,6 +18,7 @@ typedef struct {
 	const sparse_map_t *map;
 	sqfs_u64 offset;
 	sqfs_u64 size;
+	FILE *fp;
 } sqfs_file_stdinout_t;
 
 
@@ -58,19 +59,19 @@ static int stdin_read_at(sqfs_file_t *base, sqfs_u64 offset,
 		return SQFS_ERROR_OUT_OF_BOUNDS;
 
 	while (size > 0) {
-		if (ferror(stdin))
+		if (ferror(file->fp))
 			return SQFS_ERROR_IO;
 
-		if (feof(stdin))
+		if (feof(file->fp))
 			return SQFS_ERROR_OUT_OF_BOUNDS;
 
 		if (offset > file->offset) {
 			diff = file->offset - offset;
 			diff = diff > (sqfs_u64)temp_size ? temp_size : diff;
 
-			ret = fread(temp, 1, diff, stdin);
+			ret = fread(temp, 1, diff, file->fp);
 		} else {
-			ret = fread(buffer, 1, size, stdin);
+			ret = fread(buffer, 1, size, file->fp);
 		}
 
 		if (offset <= file->offset) {
@@ -146,7 +147,8 @@ static int stdin_write_at(sqfs_file_t *base, sqfs_u64 offset,
 	return SQFS_ERROR_IO;
 }
 
-sqfs_file_t *sqfs_get_stdin_file(const sparse_map_t *map, sqfs_u64 size)
+sqfs_file_t *sqfs_get_stdin_file(FILE *fp, const sparse_map_t *map,
+				 sqfs_u64 size)
 {
 	sqfs_file_stdinout_t *file = calloc(1, sizeof(*file));
 	sqfs_file_t *base = (sqfs_file_t *)file;
@@ -156,6 +158,7 @@ sqfs_file_t *sqfs_get_stdin_file(const sparse_map_t *map, sqfs_u64 size)
 
 	file->size = size;
 	file->map = map;
+	file->fp = fp;
 
 	base->destroy = stdinout_destroy;
 	base->write_at = stdin_write_at;

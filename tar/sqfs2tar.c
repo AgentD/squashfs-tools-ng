@@ -78,6 +78,8 @@ static sqfs_data_reader_t *data;
 static sqfs_file_t *file;
 static sqfs_super_t super;
 
+static FILE *out_file = NULL;
+
 static void process_args(int argc, char **argv)
 {
 	size_t idx, new_count;
@@ -174,7 +176,7 @@ static int terminate_archive(void)
 
 	memset(buffer, '\0', sizeof(buffer));
 
-	return write_retry("adding archive terminator", stdout,
+	return write_retry("adding archive terminator", out_file,
 			   buffer, sizeof(buffer));
 }
 
@@ -295,7 +297,7 @@ static int write_tree_dfs(const sqfs_tree_node_t *n)
 	}
 
 	target = S_ISLNK(sb.st_mode) ? n->inode->slink_target : NULL;
-	ret = write_tar_header(stdout, &sb, name, target, xattr,
+	ret = write_tar_header(out_file, &sb, name, target, xattr,
 			       record_counter++);
 
 	while (xattr != NULL) {
@@ -313,13 +315,13 @@ static int write_tree_dfs(const sqfs_tree_node_t *n)
 	}
 
 	if (S_ISREG(sb.st_mode)) {
-		if (sqfs_data_reader_dump(name, data, n->inode, stdout,
+		if (sqfs_data_reader_dump(name, data, n->inode, out_file,
 					  super.block_size, false)) {
 			free(name);
 			return -1;
 		}
 
-		if (padd_file(stdout, sb.st_size)) {
+		if (padd_file(out_file, sb.st_size)) {
 			free(name);
 			return -1;
 		}
@@ -394,6 +396,18 @@ int main(int argc, char **argv)
 	size_t i;
 
 	process_args(argc, argv);
+
+#ifdef _WIN32
+	_setmode(_fileno(stdout), _O_BINARY);
+	out_file = stdout;
+#else
+	out_file = freopen(NULL, "wb", stdout);
+#endif
+
+	if (out_file == NULL) {
+		perror("changing stdout to binary mode");
+		goto out_dirs;
+	}
 
 	file = sqfs_open_file(filename, SQFS_FILE_OPEN_READ_ONLY);
 	if (file == NULL) {
@@ -518,6 +532,7 @@ int main(int argc, char **argv)
 		goto out;
 
 	status = EXIT_SUCCESS;
+	fflush(out_file);
 out:
 	if (root != NULL)
 		sqfs_dir_tree_destroy(root);
