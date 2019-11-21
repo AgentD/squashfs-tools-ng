@@ -23,6 +23,8 @@ config.*
 *~
 *.pc
 .#*
+*.exe
+*.dll
 gensquashfs
 rdsquashfs
 sqfs2tar
