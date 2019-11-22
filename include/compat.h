@@ -98,6 +98,13 @@ struct stat {
 	(((x)&0x00000fffULL) << 8) | \
         (((y)&0xffffff00ULL) << 12) | \
 	(((y)&0x000000ffULL)) )
+
+#define AT_FDCWD (0xDEADBEEF)
+#define AT_SYMLINK_NOFOLLOW (0x01)
+
+int fchownat(int dirfd, const char *path, int uid, int gid, int flags);
+
+int fchmodat(int dirfd, const char *path, int mode, int flags);
 #else
 #include <sys/types.h>
 #include <sys/stat.h>
