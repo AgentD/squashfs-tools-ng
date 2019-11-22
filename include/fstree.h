@@ -15,7 +15,7 @@
 #include <stdio.h>
 
 #include "sqfs/predef.h"
-#include "util/compat.h"
+#include "compat.h"
 
 typedef struct tree_node_t tree_node_t;
 typedef struct file_info_t file_info_t;

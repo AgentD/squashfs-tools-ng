@@ -104,6 +104,9 @@ The following components exist:
    package. It uses `libutil.la` internally.
  - `libcommon.a` built from files in `lib/common` contains a bunch
    of commonly used code shared across the utilities.
+ - `libcompat.a` built from files in `lib/compat` contains minimal
+   implementations of POSIX or GNU functions that are not available on some
+   platforms.
 
 The headers in `include` are stuffed with comments on functions an data
 structures.

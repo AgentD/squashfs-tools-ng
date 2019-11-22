@@ -78,10 +78,10 @@ test_tar_xattr_schily_CPPFLAGS = $(AM_CPPFLAGS)
 test_tar_xattr_schily_CPPFLAGS += -DTESTPATH=$(top_srcdir)/tests/tar
 
 fstree_fuzz_SOURCES = tests/fstree_fuzz.c
-fstree_fuzz_LDADD = libfstree.a libutil.la
+fstree_fuzz_LDADD = libfstree.a libcompat.a libutil.la
 
 tar_fuzz_SOURCES = tests/tar_fuzz.c
-tar_fuzz_LDADD = libtar.a libutil.la
+tar_fuzz_LDADD = libtar.a libcompat.a libutil.la
 
 check_PROGRAMS += test_mknode_simple test_mknode_slink test_mknode_reg
 check_PROGRAMS += test_mknode_dir test_gen_inode_table test_add_by_path

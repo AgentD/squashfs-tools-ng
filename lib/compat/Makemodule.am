@@ -1,0 +1,4 @@
+libcompat_a_SOURCES = lib/compat/getline.c lib/compat/getsubopt.c
+libcompat_a_SOURCES += lib/compat/strndup.c include/compat.h
+
+noinst_LIBRARIES += libcompat.a

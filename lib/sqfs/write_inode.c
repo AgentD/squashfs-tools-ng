@@ -11,7 +11,7 @@
 #include "sqfs/error.h"
 #include "sqfs/inode.h"
 #include "sqfs/dir.h"
-#include "util/compat.h"
+#include "compat.h"
 
 #include <string.h>
 

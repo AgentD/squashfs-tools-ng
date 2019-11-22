@@ -26,9 +26,8 @@
 #include "sqfs/dir.h"
 #include "sqfs/io.h"
 
-#include "util/compat.h"
 #include "util/util.h"
-
+#include "compat.h"
 #include "fstree.h"
 #include "tar.h"
 

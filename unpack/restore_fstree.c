@@ -258,7 +258,7 @@ static int set_attribs(sqfs_xattr_reader_t *xattr,
 			goto fail;
 		}
 	}
-
+#endif
 	if (flags & UNPACK_CHOWN) {
 		if (fchownat(AT_FDCWD, path, n->uid, n->gid,
 			     AT_SYMLINK_NOFOLLOW)) {
@@ -276,7 +276,7 @@ static int set_attribs(sqfs_xattr_reader_t *xattr,
 			goto fail;
 		}
 	}
-#endif
+
 	free(path);
 	return 0;
 fail:
