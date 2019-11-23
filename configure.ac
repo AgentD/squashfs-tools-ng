@@ -147,12 +147,14 @@ if test "x$want_lzo" != "xno"; then
 	AC_ARG_VAR([LZO_LIBS], [linker flags for lzo])
 	AM_CONDITIONAL([WITH_LZO], [true])
 
-	AC_CHECK_LIB([lzo2], [lzo1x_1_15_compress], [LZO_LIBS="-llzo2"],
-			     [AC_CHECK_LIB([lzo],[lzo1x_1_15_compress],
-				[LZO_LIBS="-llzo"],
-			     	[AM_CONDITIONAL([WITH_LZO], [false])]
-			     )]
-		    )
+	if test -z "$LZO_LIBS"; then
+		AC_CHECK_LIB([lzo2], [lzo1x_1_15_compress], [LZO_LIBS="-llzo2"],
+				     [AC_CHECK_LIB([lzo],[lzo1x_1_15_compress],
+					[LZO_LIBS="-llzo"],
+				     	[AM_CONDITIONAL([WITH_LZO], [false])]
+				     )]
+			    )
+	fi
 fi
 
 if test "x$build_tools" = "xyes"; then
