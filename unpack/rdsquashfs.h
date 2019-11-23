@@ -21,12 +21,10 @@
 #endif
 #include <string.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <getopt.h>
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
-#include <fcntl.h>
 #include <stdio.h>
 
 enum UNPACK_FLAGS {

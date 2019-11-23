@@ -10,7 +10,6 @@
 
 #include <stdlib.h>
 #include <getopt.h>
-#include <unistd.h>
 #include <string.h>
 #include <stdio.h>
 #include <fcntl.h>

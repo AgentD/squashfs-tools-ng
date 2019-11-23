@@ -13,7 +13,6 @@
 #include "util/util.h"
 
 #include <string.h>
-#include <unistd.h>
 
 int sqfs_super_init(sqfs_super_t *super, size_t block_size, sqfs_u32 mtime,
 		    E_SQFS_COMPRESSOR compressor)

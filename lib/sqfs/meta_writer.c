@@ -16,7 +16,6 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <unistd.h>
 
 typedef struct meta_block_t {
 	struct meta_block_t *next;

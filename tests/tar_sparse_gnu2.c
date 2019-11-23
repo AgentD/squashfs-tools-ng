@@ -9,11 +9,9 @@
 #include "util/util.h"
 #include "tar.h"
 
-#include <unistd.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
-#include <fcntl.h>
 #include <stdio.h>
 
 #define STR(x) #x

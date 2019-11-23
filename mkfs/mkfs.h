@@ -24,13 +24,11 @@
 
 #include <getopt.h>
 #include <assert.h>
-#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
 #include <dirent.h>
 #include <stdio.h>
-#include <fcntl.h>
 #include <errno.h>
 #include <ctype.h>
 

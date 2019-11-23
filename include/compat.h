@@ -108,6 +108,8 @@ int fchmodat(int dirfd, const char *path, int mode, int flags);
 #else
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 #ifdef __linux__
 #include <sys/sysmacros.h>
