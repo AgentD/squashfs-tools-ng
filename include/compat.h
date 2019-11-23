@@ -7,6 +7,38 @@
 #ifndef COMPAT_H
 #define COMPAT_H
 
+#if defined(__GNUC__) || defined(__clang__)
+#	if defined(__GNUC__) && __GNUC__ < 5
+#		if SIZEOF_SIZE_T <= SIZEOF_INT
+#			define SZ_ADD_OV __builtin_uadd_overflow
+#			define SZ_MUL_OV __builtin_umul_overflow
+#		elif SIZEOF_SIZE_T == SIZEOF_LONG
+#			define SZ_ADD_OV __builtin_uaddl_overflow
+#			define SZ_MUL_OV __builtin_umull_overflow
+#		elif SIZEOF_SIZE_T == SIZEOF_LONG_LONG
+#			define SZ_ADD_OV __builtin_uaddll_overflow
+#			define SZ_MUL_OV __builtin_umulll_overflow
+#		else
+#			error Cannot determine maximum value of size_t
+#		endif
+#	else
+#		define SZ_ADD_OV __builtin_add_overflow
+#		define SZ_MUL_OV __builtin_mul_overflow
+#	endif
+#else
+#	error I do not know how to trap integer overflows with this compiler
+#endif
+
+#if SIZEOF_SIZE_T <= SIZEOF_INT
+#	define PRI_SZ "%u"
+#elif SIZEOF_SIZE_T == SIZEOF_LONG
+#	define PRI_SZ "%lu"
+#elif defined(_WIN32) && SIZEOF_SIZE_T == 8
+#	define PRI_SZ "%I64u"
+#else
+#	error Cannot figure out propper printf specifier for size_t
+#endif
+
 #if defined(__APPLE__)
 #include <libkern/OSByteOrder.h>
 
@@ -99,7 +131,7 @@ struct stat {
         (((y)&0xffffff00ULL) << 12) | \
 	(((y)&0x000000ffULL)) )
 
-#define AT_FDCWD (0xDEADBEEF)
+#define AT_FDCWD ((int)0xDEADBEEF)
 #define AT_SYMLINK_NOFOLLOW (0x01)
 
 int fchownat(int dirfd, const char *path, int uid, int gid, int flags);
