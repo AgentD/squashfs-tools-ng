@@ -22,7 +22,14 @@ static int open_sfqs(sqfs_state_t *state, const char *path)
 		goto fail_file;
 	}
 
-	if (!sqfs_compressor_exists(state->super.compression_id)) {
+	ret = sqfs_compressor_exists(state->super.compression_id);
+
+#ifdef WITH_LZO
+	if (state->super.compression_id == SQFS_COMP_LZO)
+		ret = true;
+#endif
+
+	if (!ret) {
 		fprintf(stderr, "%s: unknown compressor used.\n",
 			path);
 		goto fail_file;
@@ -33,6 +40,12 @@ static int open_sfqs(sqfs_state_t *state, const char *path)
 				    SQFS_COMP_FLAG_UNCOMPRESS);
 
 	state->cmp = sqfs_compressor_create(&state->cfg);
+
+#ifdef WITH_LZO
+	if (state->super.compression_id == SQFS_COMP_LZO && state->cmp == NULL)
+		state->cmp = lzo_compressor_create(&state->cfg);
+#endif
+
 	if (state->cmp == NULL) {
 		fprintf(stderr, "%s: error creating compressor.\n", path);
 		goto fail_file;

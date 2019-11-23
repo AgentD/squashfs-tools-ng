@@ -3,6 +3,10 @@ ACLOCAL_AMFLAGS = -I m4
 AM_CPPFLAGS = -I$(top_srcdir)/include -D_GNU_SOURCE
 AM_CFLAGS = $(WARN_CFLAGS)
 
+if WITH_LZO
+AM_CPPFLAGS += -DWITH_LZO
+endif
+
 noinst_LTLIBRARIES =
 noinst_LIBRARIES =
 noinst_PROGRAMS =

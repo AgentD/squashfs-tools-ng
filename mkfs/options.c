@@ -168,6 +168,11 @@ void process_command_line(options_t *opt, int argc, char **argv)
 			if (!sqfs_compressor_exists(opt->cfg.comp_id))
 				have_compressor = false;
 
+#ifdef WITH_LZO
+			if (opt->cfg.comp_id == SQFS_COMP_LZO)
+				have_compressor = true;
+#endif
+
 			if (!have_compressor) {
 				fprintf(stderr, "Unsupported compressor '%s'\n",
 					optarg);

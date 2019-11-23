@@ -151,4 +151,11 @@ int mkdir_p(const char *path);
 /* A common implementation of the '--version' command line flag. */
 void print_version(const char *progname);
 
+/*
+  Create an liblzo2 based LZO compressor.
+
+  XXX: This must be in libcommon instead of libsquashfs for legal reasons.
+ */
+sqfs_compressor_t *lzo_compressor_create(const sqfs_compressor_config_t *cfg);
+
 #endif /* COMMON_H */

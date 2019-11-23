@@ -23,9 +23,6 @@ static compressor_fun_t compressors[SQFS_COMP_MAX + 1] = {
 	[SQFS_COMP_XZ] = xz_compressor_create,
 	[SQFS_COMP_LZMA] = lzma_compressor_create,
 #endif
-#ifdef WITH_LZO
-	[SQFS_COMP_LZO] = lzo_compressor_create,
-#endif
 #ifdef WITH_LZ4
 	[SQFS_COMP_LZ4] = lz4_compressor_create,
 #endif

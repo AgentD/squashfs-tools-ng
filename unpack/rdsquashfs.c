@@ -35,7 +35,14 @@ int main(int argc, char **argv)
 		goto out_file;
 	}
 
-	if (!sqfs_compressor_exists(super.compression_id)) {
+	ret = sqfs_compressor_exists(super.compression_id);
+
+#ifdef WITH_LZO
+	if (super.compression_id == SQFS_COMP_LZO)
+		ret = true;
+#endif
+
+	if (!ret) {
 		fprintf(stderr, "%s: unknown compressor used.\n",
 			opt.image_name);
 		goto out_file;
@@ -46,6 +53,12 @@ int main(int argc, char **argv)
 				    SQFS_COMP_FLAG_UNCOMPRESS);
 
 	cmp = sqfs_compressor_create(&cfg);
+
+#ifdef WITH_LZO
+	if (super.compression_id == SQFS_COMP_LZO && cmp == NULL)
+		cmp = lzo_compressor_create(&cfg);
+#endif
+
 	if (cmp == NULL) {
 		fputs("Error creating compressor.\n", stderr);
 		goto out_file;

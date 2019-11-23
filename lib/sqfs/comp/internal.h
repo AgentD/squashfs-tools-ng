@@ -30,9 +30,6 @@ SQFS_INTERNAL
 sqfs_compressor_t *gzip_compressor_create(const sqfs_compressor_config_t *cfg);
 
 SQFS_INTERNAL
-sqfs_compressor_t *lzo_compressor_create(const sqfs_compressor_config_t *cfg);
-
-SQFS_INTERNAL
 sqfs_compressor_t *lz4_compressor_create(const sqfs_compressor_config_t *cfg);
 
 SQFS_INTERNAL

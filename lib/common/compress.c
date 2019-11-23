@@ -19,12 +19,20 @@ E_SQFS_COMPRESSOR compressor_get_default(void)
 
 void compressor_print_available(void)
 {
+	bool have_compressor;
 	int i;
 
 	fputs("Available compressors:\n", stdout);
 
 	for (i = SQFS_COMP_MIN; i <= SQFS_COMP_MAX; ++i) {
-		if (sqfs_compressor_exists(i))
+		have_compressor = sqfs_compressor_exists(i);
+
+#ifdef WITH_LZO
+		if (i == SQFS_COMP_LZO)
+			have_compressor = true;
+#endif
+
+		if (have_compressor)
 			printf("\t%s\n", sqfs_compressor_name_from_id(i));
 	}
 

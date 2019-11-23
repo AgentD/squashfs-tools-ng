@@ -1,19 +1,17 @@
-/* SPDX-License-Identifier: LGPL-3.0-or-later */
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /*
- * lzo.c
+ * comp_lzo.c
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
-#define SQFS_BUILDING_DLL
 #include "config.h"
+#include "common.h"
 
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include <lzo/lzo1x.h>
-
-#include "internal.h"
 
 #define LZO_NUM_ALGS (sizeof(lzo_algs) / sizeof(lzo_algs[0]))
 
@@ -62,7 +60,9 @@ typedef struct {
 static int lzo_write_options(sqfs_compressor_t *base, sqfs_file_t *file)
 {
 	lzo_compressor_t *lzo = (lzo_compressor_t *)base;
+	sqfs_u8 buffer[sizeof(lzo_options_t) + 2];
 	lzo_options_t opt;
+	int ret;
 
 	if (lzo->algorithm == SQFS_LZO_DEFAULT_ALG &&
 	    lzo->level == SQFS_LZO_DEFAULT_LEVEL) {
@@ -77,19 +77,31 @@ static int lzo_write_options(sqfs_compressor_t *base, sqfs_file_t *file)
 		opt.level = 0;
 	}
 
-	return sqfs_generic_write_options(file, &opt, sizeof(opt));
+	*((sqfs_u16 *)buffer) = htole16(0x8000 | sizeof(opt));
+	memcpy(buffer + 2, &opt, sizeof(opt));
+
+	ret = file->write_at(file, sizeof(sqfs_super_t),
+			     buffer, sizeof(buffer));
+
+	return ret ? ret : (int)sizeof(buffer);
 }
 
 static int lzo_read_options(sqfs_compressor_t *base, sqfs_file_t *file)
 {
 	lzo_compressor_t *lzo = (lzo_compressor_t *)base;
+	sqfs_u8 buffer[sizeof(lzo_options_t) + 2];
 	lzo_options_t opt;
 	int ret;
 
-	ret = sqfs_generic_read_options(file, &opt, sizeof(opt));
+	ret = file->read_at(file, sizeof(sqfs_super_t),
+			    buffer, sizeof(buffer));
 	if (ret)
 		return ret;
 
+	if (le16toh(*((sqfs_u16 *)buffer)) != (0x8000 | sizeof(opt)))
+		return SQFS_ERROR_CORRUPTED;
+
+	memcpy(&opt, buffer + 2, sizeof(opt));
 	lzo->algorithm = le32toh(opt.algorithm);
 	lzo->level = le32toh(opt.level);
 

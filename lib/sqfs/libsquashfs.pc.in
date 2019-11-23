@@ -11,4 +11,4 @@ Cflags: -I${includedir}
 Libs: -L${libdir} -lsquashfs
 
 Requires.private: @LIBSQFS_DEP_MOD@
-Libs.private: @LZO_LIBS@ @PTHREAD_LIBS@
+Libs.private: @PTHREAD_LIBS@

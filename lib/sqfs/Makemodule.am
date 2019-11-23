@@ -26,9 +26,9 @@ libsquashfs_la_SOURCES += lib/sqfs/data_writer/fileapi.c
 libsquashfs_la_CPPFLAGS = $(AM_CPPFLAGS)
 libsquashfs_la_LDFLAGS = $(AM_LDFLAGS)
 libsquashfs_la_CFLAGS = $(AM_CFLAGS) $(PTHREAD_CFLAGS) $(ZLIB_CFLAGS)
-libsquashfs_la_CFLAGS += $(XZ_CFLAGS) $(LZO_CFLAGS) $(LZ4_CFLAGS)
+libsquashfs_la_CFLAGS += $(XZ_CFLAGS) $(LZ4_CFLAGS)
 libsquashfs_la_CFLAGS += $(ZSTD_CFLAGS) $(PTHREAD_CFLAGS)
-libsquashfs_la_LIBADD = $(XZ_LIBS) $(ZLIB_LIBS) $(LZO_LIBS) $(LZ4_LIBS)
+libsquashfs_la_LIBADD = $(XZ_LIBS) $(ZLIB_LIBS) $(LZ4_LIBS)
 libsquashfs_la_LIBADD += $(ZSTD_LIBS) $(PTHREAD_LIBS) libutil.la
 
 if WINDOWS
@@ -55,11 +55,6 @@ if WITH_XZ
 libsquashfs_la_SOURCES += lib/sqfs/comp/xz.c
 libsquashfs_la_SOURCES += lib/sqfs/comp/lzma.c
 libsquashfs_la_CPPFLAGS += -DWITH_XZ
-endif
-
-if WITH_LZO
-libsquashfs_la_SOURCES += lib/sqfs/comp/lzo.c
-libsquashfs_la_CPPFLAGS += -DWITH_LZO
 endif
 
 if WITH_LZ4
