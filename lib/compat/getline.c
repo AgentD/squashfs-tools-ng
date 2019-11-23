@@ -43,6 +43,16 @@ ssize_t getline(char **line, size_t *n, FILE *fp)
 		buffer[len++] = c;
 	} while (c != '\n');
 
+	if (len == cap) {
+		new = realloc(buffer, cap ? cap * 2 : 32);
+		if (new == NULL)
+			return -1;
+
+		buffer = new;
+	}
+
+	buffer[len] = '\0';
+
 	*line = buffer;
 	*n = len;
 	return len;
