@@ -12,6 +12,7 @@
 #include <stdio.h>
 
 #include "util/str_table.h"
+#include "compat.h"
 
 #define STR(x) #x
 #define STRVALUE(x) STR(x)
