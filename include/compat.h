@@ -105,6 +105,8 @@ struct stat {
 int fchownat(int dirfd, const char *path, int uid, int gid, int flags);
 
 int fchmodat(int dirfd, const char *path, int mode, int flags);
+
+int chdir(const char *path);
 #else
 #include <sys/types.h>
 #include <sys/stat.h>
