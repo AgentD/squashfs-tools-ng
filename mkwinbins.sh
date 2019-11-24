@@ -108,17 +108,26 @@ PKG_HASH="658ba6191fa44c92280d4aa2c271b0f4fbc0e34d249578dd05e50e76d0e5efcc"
 download
 
 pushd "$PKG_DIR"
-make -j BUILD_STATIC="yes" CC="${W32_PREFIX}-gcc" \
-     DLLTOOL="${W32_PREFIX}-dlltool" OS="Windows_NT" lib-release
-make PREFIX="$W32_DIR" -C "lib" install
+make -j BUILD_STATIC="no" BUILD_SHARED="yes" CC="${W32_PREFIX}-gcc" \
+     DLLTOOL="${W32_PREFIX}-dlltool" WINDRES="${W32_PREFIX}-windres" \
+     OS="Windows_NT" WINBASED="yes" PREFIX="$W32_DIR" \
+     lib-release
+make BUILD_STATIC="no" BUILD_SHARED="yes" CC="${W32_PREFIX}-gcc" \
+     DLLTOOL="${W32_PREFIX}-dlltool" WINDRES="${W32_PREFIX}-windres" \
+     OS="Windows_NT" WINBASED="yes" PREFIX="$W32_DIR" \
+     -C "lib" install
 
 make clean
 
-make -j BUILD_STATIC="yes" CC="${W64_PREFIX}-gcc" \
-     DLLTOOL="${W64_PREFIX}-dlltool" OS="Windows_NT" lib-release
-make PREFIX="$W64_DIR" -C "lib" install
+make -j BUILD_STATIC="no" BUILD_SHARED="yes" CC="${W64_PREFIX}-gcc" \
+     DLLTOOL="${W64_PREFIX}-dlltool" WINDRES="${W64_PREFIX}-windres" \
+     OS="Windows_NT" WINBASED="yes" PREFIX="$W64_DIR" \
+     lib-release
+make BUILD_STATIC="no" BUILD_SHARED="yes" CC="${W64_PREFIX}-gcc" \
+     DLLTOOL="${W64_PREFIX}-dlltool" WINDRES="${W64_PREFIX}-windres" \
+     OS="Windows_NT" WINBASED="yes" PREFIX="$W64_DIR" \
+     -C "lib" install
 popd
-
 
 ################################## get zstd ##################################
 
