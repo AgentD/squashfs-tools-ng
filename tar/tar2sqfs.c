@@ -277,7 +277,7 @@ static int copy_xattr(tree_node_t *node, tar_header_decoded_t *hdr)
 	}
 
 	for (xattr = hdr->xattr; xattr != NULL; xattr = xattr->next) {
-		if (!sqfs_has_xattr(xattr->key)) {
+		if (sqfs_get_xattr_prefix_id(xattr->key) < 0) {
 			fprintf(stderr, "%s: squashfs does not "
 				"support xattr prefix of %s\n",
 				dont_skip ? "ERROR" : "WARNING",

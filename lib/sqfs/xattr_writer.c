@@ -169,7 +169,7 @@ int sqfs_xattr_writer_add(sqfs_xattr_writer_t *xwr, const char *key,
 	char *value_str;
 	int err;
 
-	if (!sqfs_has_xattr(key))
+	if (sqfs_get_xattr_prefix_id(key) < 0)
 		return SQFS_ERROR_UNSUPPORTED;
 
 	/* resolve key and value into unique, incremental IDs */

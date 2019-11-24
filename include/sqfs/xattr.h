@@ -171,33 +171,11 @@ SQFS_API const char *sqfs_get_xattr_prefix(E_SQFS_XATTR_TYPE id);
  * prefix of the key string and storing an enumerator instead to save memory.
  *
  * This function takes a key and finds the enumerator value that represents
- * its prefix.
- *
- * This function will return a failure value to indicate that the given prefix
- * isn't supported. Another function called @ref sqfs_has_xattr is provided to
- * explicitly check if a prefix is supported.
+ * its prefix. An error value is returned if the given prefix isn't supported.
  *
  * @return On success an @ref E_SQFS_XATTR_TYPE, -1 if it isn't supported.
  */
 SQFS_API int sqfs_get_xattr_prefix_id(const char *key);
-
-/**
- * @brief Check if a given xattr key can actually be encoded in SquashFS
- *
- * Like many file systems, SquashFS stores xattrs be cutting off the common
- * prefix of the key string and storing an enumerator instead to save memory.
- *
- * However, this means if new prefixes are introduced, they are not immediately
- * supported since SquashFS may not have an enumerator defined for them.
- *
- * This function checks if the @ref sqfs_get_xattr_prefix_id function can
- * translate the prefix of the given key into a coresponding enumerator.
- *
- * If it returns false, this means either that SquashFS doesn't support this
- * prefix, or it has recently been added but the version of libsquashfs you
- * are using doesn't support it.
- */
-SQFS_API bool sqfs_has_xattr(const char *key);
 
 #ifdef __cplusplus
 }

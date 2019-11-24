@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+### Removed
+- Entirely redundant `sqfs_has_xattr` function from `libsquashfs`.
+
 ### Fixed
 - LZO compressor moved out of libsquashfs to avoid licensing problems.
 - Make overriding configure variables for LZO library actually work.

@@ -46,8 +46,3 @@ const char *sqfs_get_xattr_prefix(E_SQFS_XATTR_TYPE id)
 
 	return NULL;
 }
-
-bool sqfs_has_xattr(const char *key)
-{
-	return sqfs_get_xattr_prefix_id(key) >= 0;
-}
