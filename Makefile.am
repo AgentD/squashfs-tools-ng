@@ -16,8 +16,7 @@ dist_man1_MANS =
 check_PROGRAMS =
 pkgconfig_DATA =
 
-EXTRA_DIST = autogen.sh LICENSE-gpl.txt LICENSE-lgpl.txt README.md CHANGELOG.md
-EXTRA_DIST += mkwinbins.sh
+EXTRA_DIST = autogen.sh README.md CHANGELOG.md COPYING.md mkwinbins.sh licenses
 TESTS =
 
 include lib/sqfs/Makemodule.am

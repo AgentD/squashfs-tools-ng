@@ -45,11 +45,29 @@ together with the existing tools:
  - `sqfsdiff` can compare the contents of two SquashFS images.
 
 
-Most of the actual logic of those tools is implemented in the `libsquashfs.so`
+Most of the actual logic of those tools is implemented in the `libsquashfs`
 library that (by default) gets installed on the system along with its header
-files, allowing 3rd party applications to use it (e.g. for embedding SqushFS
+files, allowing 3rd party applications to use it (e.g. for embedding SquashFS
 inside a custom container format without having to implement the SquashFS
 part).
+
+# Pre-built Windows binary Packages
+
+Pre-compiled binary packages for Windows are available here:
+
+https://infraroot.at/pub/squashfs/windows
+
+Those packages contain the binaries for the tools, the SquashFS library
+and pre-compiled dependency libraries (zlib, zstd, lzo, lzma, lz4).
+
+The binary package does not contain any source code. See below on how to obtain
+and compile the source for squashfs-tools-ng. The corresponding source code
+from which the 3rd party libraries have been built is also available for
+download at the above location.
+
+The headers and import libraries to build applications that use libsquashfs are
+included. For convenience, the pre-compiled, 3rd party dependency libraries
+also come with headers and import libraries.
 
 # Getting and Building the Source Code
 
@@ -75,6 +93,12 @@ If you work on the git tree, you need to bootstrap the build system first:
 If Doxygen is available, a reference manual can be built as follows:
 
 	make doxygen-doc
+
+The pre-compiled binary packages for Windows are built using a helper script
+that uses a MinGW cross toolchain to build squashfs-tools-ng and any of the
+required dependencies:
+
+	./mkwinbins.sh
 
 ## Structure of the Source Code
 
@@ -118,6 +142,24 @@ their choice of license, the code in the `lib/sqfs` and `lib/util`
 sub-directories is licensed under the LGPLv3, in contrast to the rest of this
 package.
 
+## A Note on LZO Support
+
+The SquashFS format supports compression using LZO. The `liblzo2` library
+itself is released under the GNU GPL, version 2.
+
+To make the `libsquashfs` library available as an LGPL library, it *cannot* be
+linked against `liblzo2`, neither statically nor dynamically.
+
+This legal problem has been solved using the following technical measure:
+
+ - `libsquashfs`, as of right now, does not support LZO compression.
+ - The `libcommon` helper library has an implementation of an `liblzo2` based
+   compressor. This library and the tools that use it are released under
+   the GPL.
+
+This way, the tools themselves *do* support LZO compression seamlessly, while
+the `libsquashfs` library does not.
+
 ## Further Information
 
 A documentation of the SquashFS on-disk format can be found here:
@@ -126,22 +168,4 @@ https://dr-emann.github.io/squashfs/
 
 # Copyright & License
 
-The code of the `libsquashfs` library is released under the terms and
-conditions of the GNU Lesser General Public License version 3 or later. The
-file `LICENSE-lgpl.txt` contains a copy of the license. Since the license is
-based on the General Public License version 3 and makes references to it
-instead of duplicating text, a copy of the GPL version 3 is also provided
-by the file `LICENSE-gpl.txt`.
-
-The rest of the software in this package is released under the terms and
-conditions of the GNU General Public License version 3 or later. The
-file `LICENSE-gpl.txt` contains a copy of the license.
-
-The original source code in this package has been written by David
-Oberhollenzer in 2019. Additional contributions have been added since the
-initial release which makes some parts of the package subject to the copyright
-of the respective authors.
-
-Although the existing squashfs-tools and the Linux kernel implementation have
-been used for testing, the source code in this package is neither based on,
-nor derived from either of them.
+See [COPYING.md](COPYING.md) for copyright and licensing information.
