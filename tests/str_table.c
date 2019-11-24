@@ -11,7 +11,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "util/str_table.h"
+#include "str_table.h"
 #include "compat.h"
 
 #define STR(x) #x
