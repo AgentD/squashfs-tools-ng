@@ -2,10 +2,13 @@
 
 set -e
 
-W32_DIR="$(pwd)/out32"
+W32_ZIP_NAME="squashfs-tools-ng-0.7-mingw32"
+W64_ZIP_NAME="squashfs-tools-ng-0.7-mingw64"
+
+W32_DIR="$(pwd)/$W32_ZIP_NAME"
 W32_PREFIX="i686-w64-mingw32"
 
-W64_DIR="$(pwd)/out64"
+W64_DIR="$(pwd)/$W64_ZIP_NAME"
 W64_PREFIX="x86_64-w64-mingw32"
 
 download() {
@@ -202,3 +205,25 @@ export PKG_CONFIG_PATH="$W64_DIR/lib/pkgconfig"
 make clean
 make -j
 make install-strip
+
+############################# package everything #############################
+
+cp -r licenses "$W64_DIR"
+cp README.md COPYING.md CHANGELOG.md "$W64_DIR"
+
+cp -r licenses "$W32_DIR"
+cp README.md COPYING.md CHANGELOG.md "$W32_DIR"
+
+rm -r "$W32_DIR/lib/pkgconfig" "$W64_DIR/lib/pkgconfig"
+rm "$W32_DIR/lib"/*.la "$W64_DIR/lib"/*.la
+
+${W32_PREFIX}-strip --discard-all "$W32_DIR/bin"/*.dll "$W32_DIR/bin"/*.exe
+${W64_PREFIX}-strip --discard-all "$W64_DIR/bin"/*.dll "$W64_DIR/bin"/*.exe
+
+zip -r "${W32_ZIP_NAME}.zip" "$W32_ZIP_NAME/bin" "$W32_ZIP_NAME/lib"
+zip -g -r -l "${W32_ZIP_NAME}.zip" "$W32_ZIP_NAME/include"
+zip -g -r -l "${W32_ZIP_NAME}.zip" "$W32_ZIP_NAME/licenses" $W32_ZIP_NAME/*.md
+
+zip -r "${W64_ZIP_NAME}.zip" "$W64_ZIP_NAME/bin" "$W64_ZIP_NAME/lib"
+zip -g -r -l "${W64_ZIP_NAME}.zip" "$W64_ZIP_NAME/include"
+zip -g -r -l "${W64_ZIP_NAME}.zip" "$W64_ZIP_NAME/licenses" $W64_ZIP_NAME/*.md
