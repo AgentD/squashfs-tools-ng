@@ -11,6 +11,8 @@ W32_PREFIX="i686-w64-mingw32"
 W64_DIR="$(pwd)/$W64_ZIP_NAME"
 W64_PREFIX="x86_64-w64-mingw32"
 
+PKG_URL="https://infraroot.at/pub/squashfs/windows"
+
 download() {
 	echo "-- fetching $PKG_TAR -- "
 
@@ -35,7 +37,6 @@ download() {
 
 PKG_DIR="zlib-1.2.11"
 PKG_TAR="${PKG_DIR}.tar.xz"
-PKG_URL="https://zlib.net"
 PKG_HASH="4ff941449631ace0d4d203e3483be9dbc9da454084111f97ea0a2114e19bf066"
 
 download
@@ -57,7 +58,6 @@ popd
 
 PKG_DIR="xz-5.2.4"
 PKG_TAR="${PKG_DIR}.tar.xz"
-PKG_URL="https://tukaani.org/xz"
 PKG_HASH="9717ae363760dedf573dad241420c5fea86256b65bc21d2cf71b2b12f0544f4b"
 
 download
@@ -83,7 +83,6 @@ popd
 
 PKG_DIR="lzo-2.10"
 PKG_TAR="${PKG_DIR}.tar.gz"
-PKG_URL="http://www.oberhumer.com/opensource/lzo/download"
 PKG_HASH="c0f892943208266f9b6543b3ae308fab6284c5c90e627931446fb49b4221a072"
 
 download
@@ -104,8 +103,7 @@ popd
 ################################## get lz4 ###################################
 
 PKG_DIR="lz4-1.9.2"
-PKG_TAR="v1.9.2.tar.gz"
-PKG_URL="https://github.com/lz4/lz4/archive"
+PKG_TAR="${PKG_DIR}.tar.gz"
 PKG_HASH="658ba6191fa44c92280d4aa2c271b0f4fbc0e34d249578dd05e50e76d0e5efcc"
 
 download
@@ -135,8 +133,7 @@ popd
 ################################## get zstd ##################################
 
 PKG_DIR="zstd-v1.4.4-win32"
-PKG_TAR="zstd-v1.4.4-win32.zip"
-PKG_URL="https://github.com/facebook/zstd/releases/download/v1.4.4"
+PKG_TAR="${PKG_DIR}.zip"
 PKG_HASH="60d4cd6510e7253d33f47a68554a003b50dba05d1db89e16ef32bc26b126b92c"
 
 download
@@ -158,8 +155,7 @@ Cflags: -I$W32_DIR/include
 _EOF
 
 PKG_DIR="zstd-v1.4.4-win64"
-PKG_TAR="zstd-v1.4.4-win64.zip"
-PKG_URL="https://github.com/facebook/zstd/releases/download/v1.4.4"
+PKG_TAR="${PKG_DIR}.zip"
 PKG_HASH="bb1591db8376fb5360640088e0cc9920c6da9cd0f5fd4e9229316261808c1581"
 
 download
