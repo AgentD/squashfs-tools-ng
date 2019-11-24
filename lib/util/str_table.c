@@ -150,21 +150,6 @@ static str_bucket_t *bucket_by_index(str_table_t *table, size_t index)
 	return bucket;
 }
 
-void str_table_reset_ref_count(str_table_t *table)
-{
-	str_bucket_t *bucket;
-	size_t i;
-
-	for (i = 0; i < table->num_buckets; ++i) {
-		bucket = table->buckets[i];
-
-		while (bucket != NULL) {
-			bucket->refcount = 0;
-			bucket = bucket->next;
-		}
-	}
-}
-
 void str_table_add_ref(str_table_t *table, size_t index)
 {
 	str_bucket_t *bucket = bucket_by_index(table, index);

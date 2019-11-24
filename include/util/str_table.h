@@ -42,8 +42,6 @@ int str_table_get_index(str_table_t *table, const char *str, size_t *idx);
 SQFS_INTERNAL
 const char *str_table_get_string(str_table_t *table, size_t index);
 
-SQFS_INTERNAL void str_table_reset_ref_count(str_table_t *table);
-
 SQFS_INTERNAL void str_table_add_ref(str_table_t *table, size_t index);
 
 SQFS_INTERNAL void str_table_del_ref(str_table_t *table, size_t index);
