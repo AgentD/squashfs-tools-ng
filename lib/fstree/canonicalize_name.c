@@ -1,12 +1,11 @@
-/* SPDX-License-Identifier: LGPL-3.0-or-later */
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /*
  * canonicalize_name.c
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
 #include "config.h"
-
-#include "util/util.h"
+#include "fstree.h"
 
 static void normalize_slashes(char *filename)
 {

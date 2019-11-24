@@ -1,5 +1,5 @@
 test_canonicalize_name_SOURCES = tests/canonicalize_name.c
-test_canonicalize_name_LDADD = libutil.la
+test_canonicalize_name_LDADD = libfstree.a
 
 test_str_table_SOURCES = tests/str_table.c
 test_str_table_LDADD = libutil.la libcompat.a

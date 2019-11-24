@@ -183,4 +183,13 @@ void tree_node_sort_recursive(tree_node_t *root);
  */
 sqfs_u32 get_source_date_epoch(void);
 
+/*
+  Convert back to forward slashed, remove all preceeding and trailing slashes,
+  collapse all sequences of slashes, remove all path components that are '.'
+  and returns failure state if one of the path components is '..'.
+
+  Returns 0 on success.
+*/
+int canonicalize_name(char *filename);
+
 #endif /* FSTREE_H */

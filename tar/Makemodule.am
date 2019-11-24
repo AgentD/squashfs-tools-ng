@@ -1,9 +1,9 @@
 sqfs2tar_SOURCES = tar/sqfs2tar.c
 sqfs2tar_LDADD = libcommon.a libsquashfs.la libtar.a libcompat.a libutil.la
-sqfs2tar_LDADD += $(LZO_LIBS)
+sqfs2tar_LDADD += libfstree.a $(LZO_LIBS)
 
 tar2sqfs_SOURCES = tar/tar2sqfs.c
 tar2sqfs_LDADD = libcommon.a libsquashfs.la libtar.a
-tar2sqfs_LDADD += libfstree.a libcompat.a libutil.la $(LZO_LIBS)
+tar2sqfs_LDADD += libfstree.a libcompat.a libutil.la libfstree.a $(LZO_LIBS)
 
 bin_PROGRAMS += sqfs2tar tar2sqfs
