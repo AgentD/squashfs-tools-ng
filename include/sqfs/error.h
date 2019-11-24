@@ -128,6 +128,11 @@ typedef enum {
 	 *        a regular file or a regular file inode.
 	 */
 	SQFS_ERROR_NOT_FILE = -15,
+
+	/**
+	 * @brief An invalid argument was passed to a library function.
+	 */
+	SQFS_ERROR_ARG_INVALID = -16,
 } E_SQFS_ERROR;
 
 #endif /* SQFS_ERROR_H */

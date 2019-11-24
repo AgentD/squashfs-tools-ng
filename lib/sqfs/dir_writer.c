@@ -130,7 +130,7 @@ int sqfs_dir_writer_add_entry(sqfs_dir_writer_t *writer, const char *name,
 		return type;
 
 	if (name[0] == '\0')
-		return SQFS_ERROR_CORRUPTED;
+		return SQFS_ERROR_ARG_INVALID;
 
 	ent = alloc_flex(sizeof(*ent), 1, strlen(name));
 	if (ent == NULL)

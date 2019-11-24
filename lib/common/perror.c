@@ -58,6 +58,9 @@ void sqfs_perror(const char *file, const char *action, int error_code)
 	case SQFS_ERROR_NOT_FILE:
 		errstr = "target is not a file";
 		break;
+	case SQFS_ERROR_ARG_INVALID:
+		errstr = "invalid argument";
+		break;
 	default:
 		errstr = "libsquashfs returned an unknown error code";
 		break;

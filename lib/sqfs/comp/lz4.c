@@ -66,7 +66,7 @@ static sqfs_s32 lz4_comp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
 	int ret;
 
 	if (size >= 0x7FFFFFFF)
-		return 0;
+		return SQFS_ERROR_ARG_INVALID;
 
 	if (lz4->high_compression) {
 		ret = LZ4_compress_HC((void *)in, (void *)out,
@@ -89,7 +89,7 @@ static sqfs_s32 lz4_uncomp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
 	(void)base;
 
 	if (outsize >= 0x7FFFFFFF)
-		return 0;
+		return SQFS_ERROR_ARG_INVALID;
 
 	ret = LZ4_decompress_safe((void *)in, (void *)out, size, outsize);
 

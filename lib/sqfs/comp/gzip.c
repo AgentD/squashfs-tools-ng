@@ -156,7 +156,7 @@ static sqfs_s32 gzip_do_block(sqfs_compressor_t *base, const sqfs_u8 *in,
 	size_t written;
 
 	if (size >= 0x7FFFFFFF)
-		return 0;
+		return SQFS_ERROR_ARG_INVALID;
 
 	if (gzip->compress && gzip->opt.strategies != 0) {
 		strategy = find_strategy(gzip, in, size, out, outsize);

@@ -7,6 +7,7 @@
 #define SQFS_BUILDING_DLL
 #include "config.h"
 #include "sqfs/xattr.h"
+#include "sqfs/error.h"
 
 #include <string.h>
 
@@ -32,7 +33,7 @@ int sqfs_get_xattr_prefix_id(const char *key)
 		}
 	}
 
-	return -1;
+	return SQFS_ERROR_UNSUPPORTED;
 }
 
 const char *sqfs_get_xattr_prefix(E_SQFS_XATTR_TYPE id)

@@ -173,7 +173,8 @@ SQFS_API const char *sqfs_get_xattr_prefix(E_SQFS_XATTR_TYPE id);
  * This function takes a key and finds the enumerator value that represents
  * its prefix. An error value is returned if the given prefix isn't supported.
  *
- * @return On success an @ref E_SQFS_XATTR_TYPE, -1 if it isn't supported.
+ * @return On success an @ref E_SQFS_XATTR_TYPE. If not supported, the
+ *         @ref SQFS_ERROR_UNSUPPORTED error code.
  */
 SQFS_API int sqfs_get_xattr_prefix_id(const char *key);
 

@@ -58,7 +58,7 @@ static sqfs_s32 zstd_comp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
 	size_t ret;
 
 	if (size >= 0x7FFFFFFF)
-		return 0;
+		return SQFS_ERROR_ARG_INVALID;
 
 	ret = ZSTD_compressCCtx(zstd->zctx, out, outsize, in, size,
 				zstd->level);
@@ -76,7 +76,7 @@ static sqfs_s32 zstd_uncomp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
 	(void)base;
 
 	if (outsize >= 0x7FFFFFFF)
-		return 0;
+		return SQFS_ERROR_ARG_INVALID;
 
 	ret = ZSTD_decompress(out, outsize, in, size);
 

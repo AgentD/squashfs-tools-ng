@@ -141,7 +141,7 @@ int sqfs_compressor_id_from_name(const char *name, E_SQFS_COMPRESSOR *out)
 		}
 	}
 
-	return -1;
+	return SQFS_ERROR_UNSUPPORTED;
 }
 
 int sqfs_compressor_config_init(sqfs_compressor_config_t *cfg,

@@ -48,7 +48,7 @@ static sqfs_s32 lzma_comp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
 	int ret;
 
 	if (outsize < LZMA_HEADER_SIZE || size >= 0x7FFFFFFF)
-		return 0;
+		return SQFS_ERROR_ARG_INVALID;
 
 	lzma_lzma_preset(&opt, LZMA_DEFAULT_LEVEL);
 	opt.dict_size = lzma->block_size;
@@ -93,7 +93,7 @@ static sqfs_s32 lzma_uncomp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
 	(void)base;
 
 	if (size >= 0x7FFFFFFF)
-		return 0;
+		return SQFS_ERROR_ARG_INVALID;
 
 	if (size < sizeof(lzma_header))
 		return SQFS_ERROR_CORRUPTED;

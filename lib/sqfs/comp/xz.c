@@ -144,7 +144,7 @@ static sqfs_s32 xz_comp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
 	size_t i;
 
 	if (size >= 0x7FFFFFFF)
-		return 0;
+		return SQFS_ERROR_ARG_INVALID;
 
 	ret = compress(xz, LZMA_VLI_UNKNOWN, in, size, out, outsize);
 	if (ret < 0 || xz->flags == 0)
@@ -184,7 +184,7 @@ static sqfs_s32 xz_uncomp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
 	(void)base;
 
 	if (outsize >= 0x7FFFFFFF)
-		return 0;
+		return SQFS_ERROR_ARG_INVALID;
 
 	ret = lzma_stream_buffer_decode(&memlimit, 0, NULL,
 					in, &src_pos, size,
