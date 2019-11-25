@@ -59,6 +59,9 @@
 #define le16toh(x) (x)
 #define le32toh(x) (x)
 #define le64toh(x) (x)
+
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
 #else
 #include <endian.h>
 #endif
@@ -162,6 +165,10 @@ char *strndup(const char *str, size_t max_len);
 
 #ifndef HAVE_GETSUBOPT
 int getsubopt(char **opt, char *const *keys, char **val);
+#endif
+
+#if defined(_WIN32) || defined(__WINDOWS__)
+WCHAR *path_to_windows(const char *input);
 #endif
 
 #endif /* COMPAT_H */

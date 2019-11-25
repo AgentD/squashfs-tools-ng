@@ -20,7 +20,7 @@ int write_export_table(const char *filename, sqfs_file_t *file,
 	if (fs->inode_tbl_size < 1)
 		return 0;
 
-	table = alloc_array(sizeof(sqfs_u64), fs->inode_tbl_size);
+	table = calloc(1, sizeof(sqfs_u64) * fs->inode_tbl_size);
 
 	if (table == NULL) {
 		perror("Allocating NFS export table");

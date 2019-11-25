@@ -12,9 +12,6 @@
 #include <errno.h>
 
 #ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-
 /*
   Supported paths:
    - <letter>:\ <absolute path>
@@ -85,25 +82,13 @@ static WCHAR *skip_prefix(WCHAR *ptr)
 int mkdir_p(const char *path)
 {
 	WCHAR *wpath, *ptr, *end;
-	DWORD length, error;
+	DWORD error;
 	bool done;
 
-	length = MultiByteToWideChar(CP_UTF8, 0, path, -1, NULL, 0) + 1;
-	wpath = alloc_array(sizeof(wpath[0]), length);
 
-	if (wpath == NULL) {
-		fprintf(stderr, "Converting UTF-8 path to UTF-16: %ld\n",
-			GetLastError());
+	wpath = path_to_windows(path);
+	if (wpath == NULL)
 		return -1;
-	}
-
-	MultiByteToWideChar(CP_UTF8, 0, path, -1, wpath, length);
-	wpath[length - 1] = '\0';
-
-	for (ptr = wpath; *ptr != '\0'; ++ptr) {
-		if (*ptr == '/')
-			*ptr = '\\';
-	}
 
 	ptr = skip_prefix(wpath);
 	if (ptr == NULL) {

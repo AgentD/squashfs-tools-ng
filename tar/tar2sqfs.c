@@ -6,6 +6,7 @@
  */
 #include "config.h"
 #include "common.h"
+#include "compat.h"
 #include "tar.h"
 
 #include <stdlib.h>
@@ -213,7 +214,7 @@ static int write_file(tar_header_decoded_t *hdr, file_info_t *fi,
 {
 	const sparse_map_t *it;
 	sqfs_inode_generic_t *inode;
-	size_t max_blk_count;
+	size_t size, max_blk_count;
 	sqfs_file_t *file;
 	sqfs_u64 sum;
 	int ret;
@@ -222,7 +223,14 @@ static int write_file(tar_header_decoded_t *hdr, file_info_t *fi,
 	if (filesize % cfg.block_size)
 		++max_blk_count;
 
-	inode = alloc_flex(sizeof(*inode), sizeof(sqfs_u32), max_blk_count);
+	if (SZ_MUL_OV(sizeof(sqfs_u32), max_blk_count, &size) ||
+	    SZ_ADD_OV(sizeof(*inode), size, &size)) {
+		fputs("creating file inode: too many blocks\n",
+		      stderr);
+		return -1;
+	}
+
+	inode = calloc(1, size);
 	if (inode == NULL) {
 		perror("creating file inode");
 		return -1;

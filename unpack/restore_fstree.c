@@ -9,22 +9,12 @@
 #ifdef _WIN32
 static int create_node(const sqfs_tree_node_t *n, const char *name)
 {
-	WCHAR *wpath = NULL;
-	DWORD length;
+	WCHAR *wpath;
 	HANDLE fh;
 
-	length = MultiByteToWideChar(CP_UTF8, 0, name, -1, NULL, 0) + 1;
-	if (length <= 0)
-		goto fail;
-
-	wpath = alloc_array(sizeof(wpath[0]), length);
-	if (wpath == NULL) {
-		perror(name);
+	wpath = path_to_windows(name);
+	if (wpath == NULL)
 		return -1;
-	}
-
-	MultiByteToWideChar(CP_UTF8, 0, name, -1, wpath, length);
-	wpath[length - 1] = '\0';
 
 	switch (n->inode->base.mode & S_IFMT) {
 	case S_IFDIR:

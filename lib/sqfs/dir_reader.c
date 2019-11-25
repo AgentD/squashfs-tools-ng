@@ -14,7 +14,7 @@
 #include "sqfs/inode.h"
 #include "sqfs/error.h"
 #include "sqfs/dir.h"
-#include "util/util.h"
+#include "util.h"
 
 #include <string.h>
 #include <stdlib.h>

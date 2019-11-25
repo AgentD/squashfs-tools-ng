@@ -1,5 +1,6 @@
 libcompat_a_SOURCES = lib/compat/getline.c lib/compat/getsubopt.c
 libcompat_a_SOURCES += lib/compat/strndup.c lib/compat/mockups.c
 libcompat_a_SOURCES += lib/compat/chdir.c include/compat.h
+libcompat_a_SOURCES += lib/compat/path_to_windows.c
 
 noinst_LIBRARIES += libcompat.a

@@ -13,7 +13,7 @@
 #include "sqfs/table.h"
 #include "sqfs/block.h"
 #include "sqfs/io.h"
-#include "util/util.h"
+#include "util.h"
 
 #include <stdlib.h>
 

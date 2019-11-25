@@ -6,9 +6,8 @@
  */
 #include "config.h"
 
-#include "util/util.h"
+#include "util.h"
 
-#include <stddef.h>
 #include <stdlib.h>
 #include <errno.h>
 

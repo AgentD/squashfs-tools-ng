@@ -50,6 +50,7 @@ static int pack_files(sqfs_data_writer_t *data, fstree_t *fs,
 	const char *path;
 	char *node_path;
 	file_info_t *fi;
+	size_t size;
 	int ret;
 
 	if (set_working_dir(opt))
@@ -90,8 +91,16 @@ static int pack_files(sqfs_data_writer_t *data, fstree_t *fs,
 		if (filesize % opt->cfg.block_size)
 			++max_blk_count;
 
-		inode = alloc_flex(sizeof(*inode), sizeof(sqfs_u32),
-				   max_blk_count);
+		if (SZ_MUL_OV(sizeof(sqfs_u32), max_blk_count, &size) ||
+		    SZ_ADD_OV(sizeof(*inode), size, &size)) {
+			fputs("creating file inode: too many blocks\n",
+			      stderr);
+			file->destroy(file);
+			free(node_path);
+			return -1;
+		}
+
+		inode = calloc(1, size);
 		if (inode == NULL) {
 			perror("creating file inode");
 			file->destroy(file);

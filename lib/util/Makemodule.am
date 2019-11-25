@@ -1,4 +1,4 @@
-libutil_la_SOURCES = include/util/util.h lib/util/alloc.c
+libutil_la_SOURCES = include/util/util.h
 libutil_la_CFLAGS = $(AM_CFLAGS)
 libutil_la_CPPFLAGS = $(AM_CPPFLAGS)
 libutil_la_LDFLAGS = $(AM_LDFLAGS)

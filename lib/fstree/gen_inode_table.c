@@ -61,8 +61,7 @@ int fstree_gen_inode_table(fstree_t *fs)
 	size_t inum = 1;
 
 	fs->inode_tbl_size = count_nodes(fs->root);
-	fs->inode_table = alloc_array(sizeof(tree_node_t *),
-				      fs->inode_tbl_size);
+	fs->inode_table = calloc(1, sizeof(tree_node_t*) * fs->inode_tbl_size);
 
 	if (fs->inode_table == NULL) {
 		perror("allocating inode table");

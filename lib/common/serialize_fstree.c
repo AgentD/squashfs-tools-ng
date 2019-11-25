@@ -19,7 +19,7 @@ static sqfs_inode_generic_t *tree_node_to_inode(tree_node_t *node)
 	if (S_ISLNK(node->mode))
 		extra = strlen(node->data.slink_target);
 
-	inode = alloc_flex(sizeof(*inode), 1, extra);
+	inode = calloc(1, sizeof(*inode) + extra);
 	if (inode == NULL) {
 		perror("creating inode");
 		return NULL;

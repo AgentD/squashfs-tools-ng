@@ -15,8 +15,8 @@
 #include "sqfs/block.h"
 #include "sqfs/io.h"
 
-#include "util/util.h"
 #include "str_table.h"
+#include "util.h"
 
 #include <stdlib.h>
 #include <string.h>

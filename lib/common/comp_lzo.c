@@ -176,7 +176,7 @@ static sqfs_compressor_t *lzo_create_copy(sqfs_compressor_t *cmp)
 	lzo_compressor_t *other = (lzo_compressor_t *)cmp;
 	lzo_compressor_t *lzo;
 
-	lzo = alloc_flex(sizeof(*lzo), 1, lzo_algs[other->algorithm].bufsize);
+	lzo = calloc(1, sizeof(*lzo) + lzo_algs[other->algorithm].bufsize);
 	if (lzo == NULL)
 		return NULL;
 
@@ -209,8 +209,8 @@ sqfs_compressor_t *lzo_compressor_create(const sqfs_compressor_config_t *cfg)
 		return NULL;
 	}
 
-	lzo = alloc_flex(sizeof(*lzo), 1,
-			 lzo_algs[cfg->opt.lzo.algorithm].bufsize);
+	lzo = calloc(1,
+		     sizeof(*lzo) + lzo_algs[cfg->opt.lzo.algorithm].bufsize);
 	base = (sqfs_compressor_t *)lzo;
 
 	if (lzo == NULL)
