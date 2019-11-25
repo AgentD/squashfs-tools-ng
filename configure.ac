@@ -58,40 +58,40 @@ AM_CONDITIONAL([WINDOWS], [test "x$build_windows" = "xyes"])
 
 AC_ARG_WITH([xz],
 	[AS_HELP_STRING([--with-xz], [Build with xz compression support])],
-	[want_xz="${withval}"], [want_xz="maybe"])
+	[], [with_xz="check"])
 
 AC_ARG_WITH([lzo],
 	[AS_HELP_STRING([--with-lzo], [Build with lzo compression support])],
-	[want_lzo="${withval}"], [want_lzo="maybe"])
+	[], [with_lzo="check"])
 
 AC_ARG_WITH([lz4],
 	[AS_HELP_STRING([--without-lz4], [Build with lz4 compression support])],
-	[want_lz4="${withval}"], [want_lz4="maybe"])
+	[], [with_lz4="check"])
 
 AC_ARG_WITH([zstd],
 	[AS_HELP_STRING([--with-zstd], [Build with zstd compression support])],
-	[want_zstd="${withval}"], [want_zstd="maybe"])
+	[], [with_zstd="check"])
 
 AC_ARG_WITH([selinux],
 	[AS_HELP_STRING([--with-selinux],
 			[Build with SELinux label file support])],
-	[want_selinux="${withval}"], [want_selinux="maybe"])
+	[], [with_selinux="check"])
 
 AC_ARG_WITH([pthread],
 	[AS_HELP_STRING([--without-pthread],
 			[Build without pthread based block compressor])],
-	[want_pthread="${withval}"], [want_pthread="yes"])
+	[], [with_pthread="yes"])
 
 AC_ARG_WITH([tools],
 	[AS_HELP_STRING([--without-tools],
 			[Only build libsquashfs, do not build the tools.])],
-	[build_tools="${withval}"], [build_tools="yes"])
+	[], [with_tools="yes"])
 
-if test "x$build_windows" = "xyes"; then
-	want_pthread="no"
-fi
+AS_IF([test "x$build_windows" = "xyes"], [with_pthread="no"], [])
+AS_IF([test "x$with_tools" != "xyes"], [with_selinux="no"], [])
+AM_CONDITIONAL([BUILD_TOOLS], [test "x$with_tools" = "xyes"])
 
-AM_CONDITIONAL([BUILD_TOOLS], [test "x$build_tools" = "xyes"])
+with_gzip="yes"
 
 ##### Doxygen reference manual #####
 
@@ -99,9 +99,9 @@ AC_CHECK_PROGS([DOXYGEN], [doxygen])
 AM_CONDITIONAL([HAVE_DOXYGEN], [test -n "$DOXYGEN"])
 
 if test -z "$DOXYGEN"; then
-	AC_MSG_WARN([Doxygen not found - continuing without Doxygen support])
+	with_doxygen="no"
 else
-	AC_CONFIG_FILES([Doxyfile])
+	with_doxygen="yes"
 
 	DX_DOXYGEN_FEATURE(ON)
 	DX_DOT_FEATURE(ON)
@@ -118,20 +118,77 @@ fi
 
 ##### search for dependencies #####
 
-AM_CONDITIONAL([WITH_GZIP], [true])
-PKG_CHECK_MODULES(ZLIB, [zlib], [], [AC_MSG_ERROR([cannot find zlib])])
+AS_IF([test "x$with_gzip" != "xno"], [
+	PKG_CHECK_MODULES(ZLIB, [zlib], [with_gzip="yes"],
+				[AS_IF([test "x$with_gzip" != "xcheck"],
+				       [AC_MSG_ERROR([cannot find zlib])],
+				       [with_gzip="no"])])
+], [])
 
-PKG_CHECK_MODULES(XZ, [liblzma >= 5.0.0],
-		      [AM_CONDITIONAL([WITH_XZ], [true])],
-		      [AM_CONDITIONAL([WITH_XZ], [false])])
+AS_IF([test "x$with_xz" != "xno"], [
+	PKG_CHECK_MODULES(XZ, [liblzma >= 5.0.0], [with_xz="yes"],
+			      [AS_IF([test "x$with_xz" != "xcheck"],
+				     [AC_MSG_ERROR([cannot XZ sdk])],
+				     [with_xz="no"])])
+], [])
 
-PKG_CHECK_MODULES(LZ4, [liblz4],
-		       [AM_CONDITIONAL([WITH_LZ4], [true])],
-		       [AM_CONDITIONAL([WITH_LZ4], [false])])
+AS_IF([test "x$with_lz4" != "xno"], [
+	PKG_CHECK_MODULES(LZ4, [liblz4], [with_lz4="yes"],
+			       [AS_IF([test "x$with_lz4" = "xyes"],
+				      [AC_MSG_ERROR([cannot find liblz4])],
+				      [with_lz4="no"])])
+], [])
 
-PKG_CHECK_MODULES(ZSTD, [libzstd],
-			[AM_CONDITIONAL([WITH_ZSTD], [true])],
-			[AM_CONDITIONAL([WITH_ZSTD], [false])])
+AS_IF([test "x$with_zstd" != "xno"], [
+	PKG_CHECK_MODULES(ZSTD, [libzstd], [with_zstd="yes"],
+				[AS_IF([test "x$with_zstd" = "xyes"],
+				       [AC_MSG_ERROR([cannot find zstd])],
+				       [with_zstd="no"])])
+], [])
+
+AS_IF([test "x$with_selinux" != "xno"], [
+	have_selinux="yes"
+
+	PKG_CHECK_MODULES(LIBSELINUX, [libselinux], [], [have_selinux="no"])
+	AC_CHECK_HEADERS([selinux/selinux.h], [], [have_selinux="no"])
+	AC_CHECK_HEADERS([selinux/label.h], [], [have_selinux="no"])
+
+	AS_IF([test "x$with_selinux" != "xcheck" -a "x$have_selinux" = "xno"],
+	      [AC_MSG_ERROR([cannot find SELinux libraries])],
+	      [with_selinux="$have_selinux"])
+], [])
+
+AC_ARG_VAR([LZO_CFLAGS], [C compiler flags for lzo])
+AC_ARG_VAR([LZO_LIBS], [linker flags for lzo])
+
+AS_IF([test -z "$LZO_LIBS" -a "x$with_lzo" != "xno"], [
+	AC_CHECK_LIB([lzo2], [lzo1x_1_15_compress], [LZO_LIBS="-llzo2"],
+			     [AC_CHECK_LIB([lzo],[lzo1x_1_15_compress],
+				[LZO_LIBS="-llzo"],
+			     	[]
+			     )]
+		    )
+], [])
+
+AS_IF([test -z "$LZO_LIBS"], [AS_IF([test "x$with_lzo" = "xyes"],
+				    [AC_MSG_ERROR([cannot find liblzo])],
+				    [with_lzo="no"])],
+			     [with_lzo="yes"])
+
+AS_IF([test "x$with_pthread" != "xno"], [
+	AX_PTHREAD([with_pthread="yes"],
+		   [AS_IF([test "x$with_pthread" = "xyes"],
+			  [AC_MSG_ERROR([cannot find pthread])],
+			  [with_pthread="no"])])
+], [])
+
+AM_CONDITIONAL([WITH_GZIP], [test "x$with_gzip" = "xyes"])
+AM_CONDITIONAL([WITH_XZ], [test "x$with_xz" = "xyes"])
+AM_CONDITIONAL([WITH_LZ4], [test "x$with_lz4" = "xyes"])
+AM_CONDITIONAL([WITH_ZSTD], [test "x$with_zstd" = "xyes"])
+AM_CONDITIONAL([WITH_LZO], [test "x$with_lzo" = "xyes"])
+AM_CONDITIONAL([WITH_SELINUX], [test "x$with_selinux" = "xyes"])
+AM_CONDITIONAL([HAVE_PTHREAD], [test "x$with_pthread" = "xyes"])
 
 libsqfs_dep_mod=""
 AM_COND_IF([WITH_GZIP], [libsqfs_dep_mod="$libsqfs_dep_mod zlib"], [])
@@ -139,71 +196,6 @@ AM_COND_IF([WITH_XZ], [libsqfs_dep_mod="$libsqfs_dep_mod liblzma >= 5.0.0"], [])
 AM_COND_IF([WITH_LZ4], [libsqfs_dep_mod="$libsqfs_dep_mod liblz4"], [])
 AM_COND_IF([WITH_ZSTD], [libsqfs_dep_mod="$libsqfs_dep_mod libzstd"], [])
 AC_SUBST([LIBSQFS_DEP_MOD], ["$libsqfs_dep_mod"])
-
-AM_CONDITIONAL([WITH_LZO], [false])
-
-if test "x$want_lzo" != "xno"; then
-	AC_ARG_VAR([LZO_CFLAGS], [C compiler flags for lzo])
-	AC_ARG_VAR([LZO_LIBS], [linker flags for lzo])
-	AM_CONDITIONAL([WITH_LZO], [true])
-
-	if test -z "$LZO_LIBS"; then
-		AC_CHECK_LIB([lzo2], [lzo1x_1_15_compress], [LZO_LIBS="-llzo2"],
-				     [AC_CHECK_LIB([lzo],[lzo1x_1_15_compress],
-					[LZO_LIBS="-llzo"],
-				     	[AM_CONDITIONAL([WITH_LZO], [false])]
-				     )]
-			    )
-	fi
-fi
-
-if test "x$build_tools" = "xyes"; then
-	AM_CONDITIONAL([WITH_SELINUX], [false])
-
-	if test "x$want_selinux" != "xno"; then
-		AM_CONDITIONAL([WITH_SELINUX], [true])
-
-		PKG_CHECK_MODULES(LIBSELINUX, [libselinux], [],
-				  [AM_CONDITIONAL([WITH_SELINUX], [false])])
-		AC_CHECK_HEADERS([selinux/selinux.h], [],
-				 [AM_CONDITIONAL([WITH_SELINUX], [false])])
-		AC_CHECK_HEADERS([selinux/label.h], [],
-				 [AM_CONDITIONAL([WITH_SELINUX], [false])])
-	fi
-else
-	want_selinux="no"
-fi
-
-case "$want_xz" in
-yes) AM_COND_IF([WITH_XZ], [], [AC_MSG_ERROR([cannot find xz sdk])]) ;;
-no)  AM_CONDITIONAL([WITH_XZ], [false]) ;;
-esac
-
-case "$want_lzo" in
-yes) AM_COND_IF([WITH_LZO], [], [AC_MSG_ERROR([cannot find lzo library])]) ;;
-no)  AM_CONDITIONAL([WITH_LZO], [false]) ;;
-esac
-
-case "$want_lz4" in
-yes) AM_COND_IF([WITH_LZ4], [], [AC_MSG_ERROR([cannot find lz4 library])]) ;;
-no)  AM_CONDITIONAL([WITH_LZ4], [false]) ;;
-esac
-
-case "$want_zstd" in
-yes) AM_COND_IF([WITH_ZSTD], [], [AC_MSG_ERROR([cannot find zstd library])]) ;;
-no)  AM_CONDITIONAL([WITH_ZSTD], [false]) ;;
-esac
-
-case "$want_selinux" in
-yes) AM_COND_IF([WITH_SELINUX], [], [AC_MSG_ERROR([cannot find selinux])]) ;;
-no)  AM_CONDITIONAL([WITH_SELINUX], [false]) ;;
-esac
-
-AM_CONDITIONAL([HAVE_PTHREAD], [false])
-if test "x$want_pthread" = "xyes"; then
-	AX_PTHREAD([AM_CONDITIONAL([HAVE_PTHREAD], [true])],
-		   [AC_MSG_ERROR([cannot find pthread])])
-fi
 
 ##### additional checks #####
 AX_COMPILE_CHECK_SIZEOF(time_t)
@@ -222,5 +214,41 @@ AC_CHECK_FUNCS([strndup getline getsubopt])
 
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([lib/sqfs/libsquashfs.pc])
+AC_CONFIG_FILES([Doxyfile])
 
 AC_OUTPUT([Makefile])
+
+AC_MSG_RESULT([
+	${PACKAGE}  ${VERSION}
+
+	prefix:            ${prefix}
+	exec prefix:       ${exec_prefix}
+
+	runstatedir:       ${runstatedir}
+	bindir:            ${bindir}
+	sbindir:           ${sbindir}
+	libdir:            ${libdir}
+	includedir:        ${includedir}
+
+	compiler:          ${CC}
+	cflags:            ${CFLAGS}
+	ldflags:           ${LDFLAGS}
+
+	GZIP support:      ${with_gzip}
+	XZ/LZMA support:   ${with_xz}
+	LZO support:       ${with_lzo}
+	LZ4 support:       ${with_lz4}
+	ZSTD support:      ${with_zstd}
+
+	SELinux support:   ${with_selinux}
+	Using pthreads:    ${with_pthread}
+
+	Building tools:    ${with_tools}
+	Doxygen found:     ${with_doxygen}
+
+	warnings:
+
+${WARN_CFLAGS}
+
+	Type 'make' or 'make <utilname>' to compile.
+])
