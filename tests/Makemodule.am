@@ -4,7 +4,7 @@ test_canonicalize_name_LDADD = libfstree.a
 test_str_table_SOURCES = tests/str_table.c lib/sqfs/str_table.c
 test_str_table_SOURCES += lib/sqfs/alloc.c lib/sqfs/util.h
 test_str_table_SOURCES += lib/sqfs/str_table.h
-test_str_table_LDADD = libutil.la libcompat.a
+test_str_table_LDADD = libcompat.a
 test_str_table_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(top_srcdir)/tests
 test_str_table_CPPFLAGS += -I$(top_srcdir)/lib/sqfs
 
@@ -28,64 +28,64 @@ test_mknode_dir_SOURCES = tests/mknode_dir.c
 test_mknode_dir_LDADD = libfstree.a libcompat.a
 
 test_gen_inode_table_SOURCES = tests/gen_inode_table.c
-test_gen_inode_table_LDADD = libfstree.a libutil.la libcompat.a
+test_gen_inode_table_LDADD = libfstree.a libcompat.a
 
 test_add_by_path_SOURCES = tests/add_by_path.c
-test_add_by_path_LDADD = libfstree.a libutil.la libcompat.a
+test_add_by_path_LDADD = libfstree.a libcompat.a
 
 test_get_path_SOURCES = tests/get_path.c
-test_get_path_LDADD = libfstree.a libutil.la libcompat.a
+test_get_path_LDADD = libfstree.a libcompat.a
 
 test_fstree_sort_SOURCES = tests/fstree_sort.c
-test_fstree_sort_LDADD = libfstree.a libutil.la libcompat.a
+test_fstree_sort_LDADD = libfstree.a libcompat.a
 
 test_fstree_from_file_SOURCES = tests/fstree_from_file.c
 test_fstree_from_file_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(top_srcdir)/tests/fstree1.txt
-test_fstree_from_file_LDADD = libfstree.a libutil.la libcompat.a
+test_fstree_from_file_LDADD = libfstree.a libcompat.a
 
 test_fstree_init_SOURCES = tests/fstree_init.c
-test_fstree_init_LDADD = libfstree.a libutil.la libcompat.a
+test_fstree_init_LDADD = libfstree.a libcompat.a
 
 test_tar_gnu_SOURCES = tests/tar_gnu.c
-test_tar_gnu_LDADD = libtar.a libcompat.a libutil.la
+test_tar_gnu_LDADD = libtar.a libcompat.a
 test_tar_gnu_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(top_srcdir)/tests/tar
 
 test_tar_pax_SOURCES = tests/tar_pax.c
-test_tar_pax_LDADD = libtar.a libcompat.a libutil.la
+test_tar_pax_LDADD = libtar.a libcompat.a
 test_tar_pax_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(top_srcdir)/tests/tar
 
 test_tar_ustar_SOURCES = tests/tar_ustar.c
-test_tar_ustar_LDADD = libtar.a libcompat.a libutil.la
+test_tar_ustar_LDADD = libtar.a libcompat.a
 test_tar_ustar_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(top_srcdir)/tests/tar
 
 test_tar_sparse_gnu_SOURCES = tests/tar_sparse_gnu.c
-test_tar_sparse_gnu_LDADD = libtar.a libcompat.a libutil.la
+test_tar_sparse_gnu_LDADD = libtar.a libcompat.a
 test_tar_sparse_gnu_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(top_srcdir)/tests/tar
 
 test_tar_sparse_gnu1_SOURCES = tests/tar_sparse_gnu1.c
-test_tar_sparse_gnu1_LDADD = libtar.a libcompat.a libutil.la
+test_tar_sparse_gnu1_LDADD = libtar.a libcompat.a
 test_tar_sparse_gnu1_CPPFLAGS = $(AM_CPPFLAGS)
 test_tar_sparse_gnu1_CPPFLAGS += -DTESTPATH=$(top_srcdir)/tests/tar
 
 test_tar_sparse_gnu2_SOURCES = tests/tar_sparse_gnu1.c
-test_tar_sparse_gnu2_LDADD = libtar.a libcompat.a libutil.la
+test_tar_sparse_gnu2_LDADD = libtar.a libcompat.a
 test_tar_sparse_gnu2_CPPFLAGS = $(AM_CPPFLAGS)
 test_tar_sparse_gnu2_CPPFLAGS += -DTESTPATH=$(top_srcdir)/tests/tar
 
 test_tar_xattr_bsd_SOURCES = tests/tar_xattr_bsd.c
-test_tar_xattr_bsd_LDADD = libtar.a libcompat.a libutil.la
+test_tar_xattr_bsd_LDADD = libtar.a libcompat.a
 test_tar_xattr_bsd_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(top_srcdir)/tests/tar
 
 test_tar_xattr_schily_SOURCES = tests/tar_xattr_schily.c
-test_tar_xattr_schily_LDADD = libtar.a libcompat.a libutil.la
+test_tar_xattr_schily_LDADD = libtar.a libcompat.a
 test_tar_xattr_schily_CPPFLAGS = $(AM_CPPFLAGS)
 test_tar_xattr_schily_CPPFLAGS += -DTESTPATH=$(top_srcdir)/tests/tar
 
 fstree_fuzz_SOURCES = tests/fstree_fuzz.c
-fstree_fuzz_LDADD = libfstree.a libcompat.a libutil.la
+fstree_fuzz_LDADD = libfstree.a libcompat.a
 
 tar_fuzz_SOURCES = tests/tar_fuzz.c
-tar_fuzz_LDADD = libtar.a libcompat.a libutil.la
+tar_fuzz_LDADD = libtar.a libcompat.a
 
 check_PROGRAMS += test_mknode_simple test_mknode_slink test_mknode_reg
 check_PROGRAMS += test_mknode_dir test_gen_inode_table test_add_by_path

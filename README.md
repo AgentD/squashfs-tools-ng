@@ -114,18 +114,14 @@ headers of `libsquashfs.so` which are installed along with the library. All
 other headers are private to this package.
 
 The following components exist:
- - `libutil.la` built from files in `lib/util` contains miscellaneous helper
-   functions used by `libsquashfs.la` internally, but also of use to other
-   libraries or programs.
  - `libfstree.a` built from files in `lib/fstree` contains functions for
-   manipulating a file system tree. It only depends on `libutil.la`
+   manipulating a file system tree.
  - `libtar.a` built from files in `lib/tar` contains data structures and
-   functions for parsing and creating tar files. It only depends
-   on `libutil.la`.
+   functions for parsing and creating tar files.
  - `libsquashfs.so` built from files in `lib/sqfs` contains all kinds of
    data structures for reading and writing SquashFS archives. Abstractions
    for data compression and so on. It contains the actual brains of this
-   package. It uses `libutil.la` internally.
+   package.
  - `libcommon.a` built from files in `lib/common` contains a bunch
    of commonly used code shared across the utilities.
  - `libcompat.a` built from files in `lib/compat` contains minimal
@@ -138,9 +134,8 @@ structures.
 The `tests` sub-directory contains unit tests for the libraries.
 
 To allow 3rd party applications to use `libsquashfs.so` without restricting
-their choice of license, the code in the `lib/sqfs` and `lib/util`
-sub-directories is licensed under the LGPLv3, in contrast to the rest of this
-package.
+their choice of license, the code in the `lib/sqfs` sub-directories is
+licensed under the LGPLv3, in contrast to the rest of this package.
 
 ## A Note on LZO Support
 

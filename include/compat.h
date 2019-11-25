@@ -1,11 +1,13 @@
-/* SPDX-License-Identifier: LGPL-3.0-or-later */
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /*
- * util.h
+ * compat.h
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
 #ifndef COMPAT_H
 #define COMPAT_H
+
+#include "sqfs/predef.h"
 
 #if defined(__GNUC__) || defined(__clang__)
 #	if defined(__GNUC__) && __GNUC__ < 5

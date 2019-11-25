@@ -7,8 +7,6 @@
 #include "config.h"
 #include "compat.h"
 
-#include "util/util.h"
-
 #ifdef _WIN32
 #include <stdlib.h>
 

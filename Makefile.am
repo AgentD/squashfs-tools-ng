@@ -20,7 +20,6 @@ EXTRA_DIST = autogen.sh README.md CHANGELOG.md COPYING.md mkwinbins.sh licenses
 TESTS =
 
 include lib/sqfs/Makemodule.am
-include lib/util/Makemodule.am
 
 if BUILD_TOOLS
 include doc/Makemodule.am

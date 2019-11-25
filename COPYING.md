@@ -2,8 +2,7 @@
 
 The `libsquashfs` library is released under the terms and conditions of the
 **GNU Lesser General Public License version 3 or later**. This applies to
-all source code in the directories `lib/sqfs`, `lib/util`, `include/sqfs`
-and `include/util`.
+all source code in the directories `lib/sqfs` and `include/sqfs`.
 
 The rest of squashfs-tools-ng is released under the terms and conditions of
 the **GNU General Public License version 3 or later**.

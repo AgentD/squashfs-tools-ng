@@ -7,7 +7,6 @@
 #include "config.h"
 
 #include "fstree.h"
-#include "util/util.h"
 
 #include <stdlib.h>
 #include <stdint.h>

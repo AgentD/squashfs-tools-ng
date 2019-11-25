@@ -26,7 +26,6 @@
 #include "sqfs/dir.h"
 #include "sqfs/io.h"
 
-#include "util/util.h"
 #include "compat.h"
 #include "fstree.h"
 #include "tar.h"
@@ -72,6 +71,9 @@ typedef struct {
 	bool no_xattr;
 	bool quiet;
 } sqfs_writer_cfg_t;
+
+#define container_of(ptr, type, member) \
+	((type *)((char *)ptr - offsetof(type, member)))
 
 /*
   High level helper function to serialize an entire file system tree to

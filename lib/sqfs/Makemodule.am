@@ -31,7 +31,7 @@ libsquashfs_la_CFLAGS = $(AM_CFLAGS) $(PTHREAD_CFLAGS) $(ZLIB_CFLAGS)
 libsquashfs_la_CFLAGS += $(XZ_CFLAGS) $(LZ4_CFLAGS)
 libsquashfs_la_CFLAGS += $(ZSTD_CFLAGS) $(PTHREAD_CFLAGS)
 libsquashfs_la_LIBADD = $(XZ_LIBS) $(ZLIB_LIBS) $(LZ4_LIBS)
-libsquashfs_la_LIBADD += $(ZSTD_LIBS) $(PTHREAD_LIBS) libutil.la
+libsquashfs_la_LIBADD += $(ZSTD_LIBS) $(PTHREAD_LIBS)
 
 if WINDOWS
 libsquashfs_la_SOURCES += lib/sqfs/win32/io_file.c
