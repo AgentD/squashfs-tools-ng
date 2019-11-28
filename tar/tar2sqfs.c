@@ -97,7 +97,7 @@ static FILE *input_file = NULL;
 static void process_args(int argc, char **argv)
 {
 	bool have_compressor;
-	int i;
+	int i, ret;
 
 	sqfs_writer_cfg_init(&cfg);
 
@@ -120,23 +120,23 @@ static void process_args(int argc, char **argv)
 			break;
 		case 'c':
 			have_compressor = true;
+			ret = sqfs_compressor_id_from_name(optarg);
 
-			if (sqfs_compressor_id_from_name(optarg, &cfg.comp_id))
+			if (ret < 0) {
 				have_compressor = false;
-
-			if (!sqfs_compressor_exists(cfg.comp_id))
-				have_compressor = false;
-
 #ifdef WITH_LZO
-			if (cfg.comp_id == SQFS_COMP_LZO)
-				have_compressor = true;
+				if (cfg.comp_id == SQFS_COMP_LZO)
+					have_compressor = true;
 #endif
+			}
 
 			if (!have_compressor) {
 				fprintf(stderr, "Unsupported compressor '%s'\n",
 					optarg);
 				exit(EXIT_FAILURE);
 			}
+
+			cfg.comp_id = ret;
 			break;
 		case 'j':
 			cfg.num_jobs = strtol(optarg, NULL, 0);

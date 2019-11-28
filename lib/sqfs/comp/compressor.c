@@ -130,15 +130,13 @@ const char *sqfs_compressor_name_from_id(E_SQFS_COMPRESSOR id)
 	return names[id];
 }
 
-int sqfs_compressor_id_from_name(const char *name, E_SQFS_COMPRESSOR *out)
+int sqfs_compressor_id_from_name(const char *name)
 {
 	size_t i;
 
 	for (i = 0; i < sizeof(names) / sizeof(names[0]); ++i) {
-		if (names[i] != NULL && strcmp(names[i], name) == 0) {
-			*out = i;
-			return 0;
-		}
+		if (names[i] != NULL && strcmp(names[i], name) == 0)
+			return i;
 	}
 
 	return SQFS_ERROR_UNSUPPORTED;

@@ -146,7 +146,7 @@ const char *help_details =
 void process_command_line(options_t *opt, int argc, char **argv)
 {
 	bool have_compressor;
-	int i;
+	int i, ret;
 
 	memset(opt, 0, sizeof(*opt));
 	sqfs_writer_cfg_init(&opt->cfg);
@@ -159,25 +159,23 @@ void process_command_line(options_t *opt, int argc, char **argv)
 		switch (i) {
 		case 'c':
 			have_compressor = true;
+			ret = sqfs_compressor_id_from_name(optarg);
 
-			if (sqfs_compressor_id_from_name(optarg,
-							 &opt->cfg.comp_id)) {
+			if (ret < 0) {
 				have_compressor = false;
-			}
-
-			if (!sqfs_compressor_exists(opt->cfg.comp_id))
-				have_compressor = false;
-
 #ifdef WITH_LZO
-			if (opt->cfg.comp_id == SQFS_COMP_LZO)
-				have_compressor = true;
+				if (opt->cfg.comp_id == SQFS_COMP_LZO)
+					have_compressor = true;
 #endif
+			}
 
 			if (!have_compressor) {
 				fprintf(stderr, "Unsupported compressor '%s'\n",
 					optarg);
 				exit(EXIT_FAILURE);
 			}
+
+			opt->cfg.comp_id = ret;
 			break;
 		case 'b':
 			opt->cfg.block_size = strtol(optarg, NULL, 0);

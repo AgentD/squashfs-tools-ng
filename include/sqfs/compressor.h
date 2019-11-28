@@ -384,13 +384,11 @@ SQFS_API const char *sqfs_compressor_name_from_id(E_SQFS_COMPRESSOR id);
  * available.
  *
  * @param name The name of the compressor backend.
- * @param out Returns the coresponding @ref E_SQFS_COMPRESSOR identifier.
  *
- * @return Zero on success, @ref SQFS_ERROR_UNSUPPORTED if the backend
- *         is unknown.
+ * @return A positive, @ref E_SQFS_COMPRESSOR identifier on success
+ *         or @ref SQFS_ERROR_UNSUPPORTED if the backend is unknown.
  */
-SQFS_API
-int sqfs_compressor_id_from_name(const char *name, E_SQFS_COMPRESSOR *out);
+SQFS_API int sqfs_compressor_id_from_name(const char *name);
 
 #ifdef __cplusplus
 }
