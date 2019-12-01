@@ -8,8 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Port to Windows using MinGW cross compilation toolchain.
 - Port to BSD systems.
+- Explicit argument invalid error code in `libsquashfs`.
 
 ### Changed
+- Return propper error code from `sqfs_get_xattr_prefix_id`.
+- Return propper error code from `sqfs_compressor_id_from_name`.
+- Combined error and value return from `sqfs_compressor_id_from_name`.
+- Return error code from compressor functions if input is larger than 2G.
+- Lots of cleanups, including the build system.
 
 ### Removed
 - Entirely redundant `sqfs_has_xattr` function from `libsquashfs`.
@@ -24,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix tar_fuzz error check after seek.
 - Fix the `fstree_init` test to account for defaults from `SOURCE_DATE_EPOCH`.
 - Honor the no_xattr flag when generating SquashFS images.
+- Block size check in `sqfs_super_init`.
 
 ## [0.7] - 2019-10-08
 ### Added
