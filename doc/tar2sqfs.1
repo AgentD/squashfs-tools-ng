@@ -14,6 +14,18 @@ SquashFS.
 .PP
 Possible options:
 .TP
+\fB\-\-root\-becomes\fR, \fB\-r\fR <dir>
+If set, only pack entries that are underneath the specified directory and the
+prefix is stripped. The meta data for the directory itself is copied to the
+root inode, i.e. the ownership, permissions, extended attributes (unless
+\f\-\-no\-xattr\R is set), and modification time
+(unless \fB\-\-no\-keep\-time\fR is set).
+
+If this option is not set, tar2sqfs implicitly treats \fB./\fR or absolute
+paths this way, i.e. if the archive contains an entry for \fB./\fR, it becomes
+the root node and the prefix is stripped from all paths (and similar for
+absolute paths and \fB/\fR).
+.TP
 \fB\-\-compressor\fR, \fB\-c\fR <name>
 Select the compressor to use.
 Run \fBtar2sqfs \-\-help\fR to get a list of all available compressors

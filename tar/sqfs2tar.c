@@ -19,13 +19,14 @@
 static struct option long_opts[] = {
 	{ "subdir", required_argument, NULL, 'd' },
 	{ "keep-as-dir", no_argument, NULL, 'k' },
+	{ "root-becomes", required_argument, NULL, 'r' },
 	{ "no-skip", no_argument, NULL, 's' },
 	{ "no-xattr", no_argument, NULL, 'X' },
 	{ "help", no_argument, NULL, 'h' },
 	{ "version", no_argument, NULL, 'V' },
 };
 
-static const char *short_opts = "d:ksXhV";
+static const char *short_opts = "d:kr:sXhV";
 
 static const char *usagestr =
 "Usage: sqfs2tar [OPTIONS...] <sqfsfile>\n"
@@ -40,6 +41,14 @@ static const char *usagestr =
 "                            once to select multiple directories. If only\n"
 "                            one is specified, it becomes the new root of\n"
 "                            node of the archive file system tree.\n"
+"\n"
+"  --root-becomes, -r <dir>  Turn the root inode into a directory with the\n"
+"                            specified name. Everything else will be stored\n"
+"                            inside this directory. The special value '.' is\n"
+"                            allowed to prefix all tar paths with './' and\n"
+"                            add an entry named '.' for the root inode.\n"
+"                            If this option isn't used, all meta data stored\n"
+"                            in the root inode IS LOST!\n"
 "\n"
 "  --keep-as-dir, -k         If --subdir is used only once, don't make the\n"
 "                            subdir the archive root, instead keep it as\n"
@@ -68,6 +77,7 @@ static bool dont_skip = false;
 static bool keep_as_dir = false;
 static bool no_xattr = false;
 
+static char *root_becomes = NULL;
 static char **subdirs = NULL;
 static size_t num_subdirs = 0;
 static size_t max_subdirs = 0;
@@ -113,6 +123,26 @@ static void process_args(int argc, char **argv)
 			}
 
 			++num_subdirs;
+			break;
+		case 'r':
+			free(root_becomes);
+			root_becomes = strdup(optarg);
+			if (root_becomes == NULL)
+				goto fail_errno;
+
+			if (strcmp(root_becomes, "./") == 0)
+				root_becomes[1] = '\0';
+
+			if (strcmp(root_becomes, ".") == 0)
+				break;
+
+			if (canonicalize_name(root_becomes) != 0 ||
+			    strlen(root_becomes) == 0) {
+				fprintf(stderr,
+					"Invalid root directory '%s'.\n",
+					optarg);
+				goto fail_arg;
+			}
 			break;
 		case 'k':
 			keep_as_dir = true;
@@ -165,6 +195,7 @@ out_success:
 out_exit:
 	for (idx = 0; idx < num_subdirs; ++idx)
 		free(subdirs[idx]);
+	free(root_becomes);
 	free(subdirs);
 	exit(ret);
 }
@@ -260,31 +291,62 @@ fail:
 static int write_tree_dfs(const sqfs_tree_node_t *n)
 {
 	tar_xattr_t *xattr = NULL, *xit;
-	char *name, *target;
+	char *name, *target, *temp;
 	struct stat sb;
+	size_t len;
 	int ret;
 
-	if (n->parent == NULL && S_ISDIR(n->inode->base.mode))
-		goto skip_hdr;
+	if (n->parent == NULL) {
+		if (root_becomes == NULL)
+			goto skip_hdr;
 
-	if (!is_filename_sane((const char *)n->name)) {
-		fprintf(stderr, "Found a file named '%s', skipping.\n",
-			n->name);
-		if (dont_skip) {
-			fputs("Not allowed to skip files, aborting!\n", stderr);
+		len = strlen(root_becomes);
+		name = malloc(len + 2);
+		if (name == NULL) {
+			perror("creating root directory");
 			return -1;
 		}
-		return 0;
-	}
 
-	name = sqfs_tree_node_get_path(n);
-	if (name == NULL) {
-		perror("resolving tree node path");
-		return -1;
-	}
+		memcpy(name, root_becomes, len);
+		name[len] = '/';
+		name[len + 1] = '\0';
+	} else {
+		if (!is_filename_sane((const char *)n->name)) {
+			fprintf(stderr, "Found a file named '%s', skipping.\n",
+				n->name);
+			if (dont_skip) {
+				fputs("Not allowed to skip files, aborting!\n",
+				      stderr);
+				return -1;
+			}
+			return 0;
+		}
 
-	if (canonicalize_name(name))
-		goto out_skip;
+		name = sqfs_tree_node_get_path(n);
+		if (name == NULL) {
+			perror("resolving tree node path");
+			return -1;
+		}
+
+		if (canonicalize_name(name))
+			goto out_skip;
+
+		if (root_becomes != NULL) {
+			len = strlen(root_becomes);
+			temp = realloc(name, strlen(name) + len + 2);
+
+			if (temp == NULL) {
+				perror("assembling tar entry filename");
+				free(name);
+				return -1;
+			}
+
+			name = temp;
+			memmove(name + len + 1, name, strlen(name) + 1);
+			memcpy(name, root_becomes, len);
+			name[len] = '/';
+		}
+	}
 
 	inode_stat(n, &sb);
 
@@ -565,5 +627,6 @@ out_dirs:
 	for (i = 0; i < num_subdirs; ++i)
 		free(subdirs[i]);
 	free(subdirs);
+	free(root_becomes);
 	return status;
 }

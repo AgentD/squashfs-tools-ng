@@ -11,6 +11,16 @@ archives. The resulting archive is written to stdout.
 .PP
 Possible options:
 .TP
+\fB\-\-root\-becomes\fR, \fB\-r\fR <dir>
+Prefix all paths in the tarball with the given directory name and add an
+entry for this directory that receives all meta data (permissions, ownership,
+extended attributes, et cetera) of the root inode.
+
+The special value \fB.\fR can be used since many tar archivers themselves pack
+the attributes of the root directory that way and naturally support this.
+
+If this option is not used, all meta data from the root inode IS LOST!
+.TP
 \fB\-\-subdir\fR, \fB\-d\fR <dir>
 Unpack the given sub directory instead of the filesystem root. Can be specified
 more than once to select multiple directories. If only one is specified, it

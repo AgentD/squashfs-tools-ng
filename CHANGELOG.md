@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Port to Windows using MinGW cross compilation toolchain.
 - Port to BSD systems.
 - Explicit argument invalid error code in `libsquashfs`.
+- A `--root-becomes` option to `tar2sqfs` and `sqfs2tar`.
 
 ### Changed
 - Return propper error code from `sqfs_get_xattr_prefix_id`.

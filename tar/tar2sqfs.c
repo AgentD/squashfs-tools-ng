@@ -20,6 +20,7 @@
 #endif
 
 static struct option long_opts[] = {
+	{ "root-becomes", required_argument, NULL, 'r' },
 	{ "compressor", required_argument, NULL, 'c' },
 	{ "block-size", required_argument, NULL, 'b' },
 	{ "dev-block-size", required_argument, NULL, 'B' },
@@ -37,7 +38,7 @@ static struct option long_opts[] = {
 	{ "version", no_argument, NULL, 'V' },
 };
 
-static const char *short_opts = "c:b:B:d:X:j:Q:sxekfqhV";
+static const char *short_opts = "r:c:b:B:d:X:j:Q:sxekfqhV";
 
 static const char *usagestr =
 "Usage: tar2sqfs [OPTIONS...] <sqfsfile>\n"
@@ -46,6 +47,13 @@ static const char *usagestr =
 "filesystem image.\n"
 "\n"
 "Possible options:\n"
+"\n"
+"  --root-becomes, -r <dir>    The specified directory becomes the root.\n"
+"                              Only its children are packed into the image\n"
+"                              and its attributes (ownership, permissions,\n"
+"                              xattrs, ...) are stored in the root inode.\n"
+"                              If not set and a tarbal has an entry for './'\n"
+"                              or '/', it becomes the root instead.\n"
 "\n"
 "  --compressor, -c <name>     Select the compressor to use.\n"
 "                              A list of available compressors is below.\n"
@@ -93,6 +101,7 @@ static bool keep_time = true;
 static sqfs_writer_cfg_t cfg;
 static sqfs_writer_t sqfs;
 static FILE *input_file = NULL;
+static char *root_becomes = NULL;
 
 static void process_args(int argc, char **argv)
 {
@@ -155,6 +164,22 @@ static void process_args(int argc, char **argv)
 			break;
 		case 'k':
 			keep_time = false;
+			break;
+		case 'r':
+			free(root_becomes);
+			root_becomes = strdup(optarg);
+			if (root_becomes == NULL) {
+				perror("copying root directory name");
+				exit(EXIT_FAILURE);
+			}
+
+			if (canonicalize_name(root_becomes) != 0 ||
+			    strlen(root_becomes) == 0) {
+				fprintf(stderr,
+					"Invalid root directory '%s'.\n",
+					optarg);
+				goto fail_arg;
+			}
 			break;
 		case 's':
 			dont_skip = true;
@@ -273,7 +298,7 @@ static int write_file(tar_header_decoded_t *hdr, file_info_t *fi,
 			    filesize : hdr->record_size);
 }
 
-static int copy_xattr(tree_node_t *node, tar_header_decoded_t *hdr)
+static int copy_xattr(tree_node_t *node, const tar_header_decoded_t *hdr)
 {
 	tar_xattr_t *xattr;
 	int ret;
@@ -346,13 +371,38 @@ fail_errno:
 	return -1;
 }
 
+static int set_root_attribs(const tar_header_decoded_t *hdr)
+{
+	if (!S_ISDIR(hdr->sb.st_mode)) {
+		fprintf(stderr, "'%s' is not a directory!\n", hdr->name);
+		return -1;
+	}
+
+	sqfs.fs.root->uid = hdr->sb.st_uid;
+	sqfs.fs.root->gid = hdr->sb.st_gid;
+	sqfs.fs.root->mode = hdr->sb.st_mode;
+
+	if (keep_time)
+		sqfs.fs.root->mod_time = hdr->sb.st_mtime;
+
+	if (!cfg.no_xattr) {
+		if (copy_xattr(sqfs.fs.root, hdr))
+			return -1;
+	}
+
+	return 0;
+}
+
 static int process_tar_ball(void)
 {
+	bool skip, is_root, is_prefixed;
 	tar_header_decoded_t hdr;
 	sqfs_u64 offset, count;
 	sparse_map_t *m;
-	bool skip;
+	size_t rootlen;
 	int ret;
+
+	rootlen = root_becomes == NULL ? 0 : strlen(root_becomes);
 
 	for (;;) {
 		ret = read_header(input_file, &hdr);
@@ -362,15 +412,8 @@ static int process_tar_ball(void)
 			return -1;
 
 		skip = false;
-
-		if (hdr.name != NULL && strcmp(hdr.name, "./") == 0 &&
-		    S_ISDIR(hdr.sb.st_mode)) {
-			/* XXX: tar entries might be prefixed with ./ which is
-			   stripped by cannonicalize_name, but the tar file may
-			   contain a directory entry named './' */
-			clear_header(&hdr);
-			continue;
-		}
+		is_root = false;
+		is_prefixed = true;
 
 		if (hdr.name == NULL || canonicalize_name(hdr.name) != 0) {
 			fprintf(stderr, "skipping '%s' (invalid name)\n",
@@ -378,9 +421,41 @@ static int process_tar_ball(void)
 			skip = true;
 		}
 
-		if (hdr.name[0] == '\0') {
-			fputs("skipping entry with empty name\n", stderr);
-			skip = true;
+		if (root_becomes != NULL) {
+			if (strncmp(hdr.name, root_becomes, rootlen) == 0) {
+				if (hdr.name[rootlen] == '\0') {
+					is_root = true;
+				} else if (hdr.name[rootlen] != '/') {
+					is_prefixed = false;
+				}
+			} else {
+				is_prefixed = false;
+			}
+
+			if (is_prefixed && !is_root) {
+				memmove(hdr.name, hdr.name + rootlen + 1,
+					strlen(hdr.name + rootlen + 1) + 1);
+			}
+
+			if (is_prefixed && hdr.name[0] == '\0') {
+				fputs("skipping entry with empty name\n",
+				      stderr);
+				skip = true;
+			}
+		} else if (hdr.name[0] == '\0') {
+			is_root = true;
+		}
+
+		if (!is_prefixed) {
+			clear_header(&hdr);
+			continue;
+		}
+
+		if (is_root) {
+			if (set_root_attribs(&hdr))
+				goto fail;
+			clear_header(&hdr);
+			continue;
 		}
 
 		if (!skip && hdr.unknown_record) {
