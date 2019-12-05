@@ -45,6 +45,7 @@ sqfs_data_writer_t *sqfs_data_writer_create(size_t max_block_size,
 					    sqfs_file_t *file)
 {
 	sqfs_data_writer_t *proc;
+	sigset_t set, oldset;
 	unsigned int i;
 	int ret;
 
@@ -79,6 +80,9 @@ sqfs_data_writer_t *sqfs_data_writer_create(size_t max_block_size,
 			goto fail_init;
 	}
 
+	sigfillset(&set);
+	pthread_sigmask(SIG_SETMASK, &set, &oldset);
+
 	for (i = 0; i < num_workers; ++i) {
 		ret = pthread_create(&proc->workers[i]->thread, NULL,
 				     worker_proc, proc->workers[i]);
@@ -86,6 +90,8 @@ sqfs_data_writer_t *sqfs_data_writer_create(size_t max_block_size,
 		if (ret != 0)
 			goto fail_thread;
 	}
+
+	pthread_sigmask(SIG_SETMASK, &oldset, NULL);
 
 	return proc;
 fail_thread:
@@ -99,6 +105,7 @@ fail_thread:
 			pthread_join(proc->workers[i]->thread, NULL);
 		}
 	}
+	pthread_sigmask(SIG_SETMASK, &oldset, NULL);
 fail_init:
 	for (i = 0; i < num_workers; ++i) {
 		if (proc->workers[i] != NULL) {

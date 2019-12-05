@@ -24,6 +24,7 @@
 
 #ifdef WITH_PTHREAD
 #include <pthread.h>
+#include <signal.h>
 #endif
 
 
