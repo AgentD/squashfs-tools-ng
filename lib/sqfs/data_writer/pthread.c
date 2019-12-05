@@ -7,6 +7,13 @@
 #define SQFS_BUILDING_DLL
 #include "internal.h"
 
+struct compress_worker_t {
+	sqfs_data_writer_t *shared;
+	sqfs_compressor_t *cmp;
+	pthread_t thread;
+	sqfs_u8 scratch[];
+};
+
 static void *worker_proc(void *arg)
 {
 	compress_worker_t *worker = arg;

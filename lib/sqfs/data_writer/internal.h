@@ -45,15 +45,7 @@ typedef struct {
 	sqfs_u64 hash;
 } frag_info_t;
 
-
-#ifdef WITH_PTHREAD
-typedef struct {
-	sqfs_data_writer_t *shared;
-	sqfs_compressor_t *cmp;
-	pthread_t thread;
-	sqfs_u8 scratch[];
-} compress_worker_t;
-#endif
+typedef struct compress_worker_t compress_worker_t;
 
 struct sqfs_data_writer_t {
 	/* synchronization primitives */
