@@ -141,7 +141,7 @@ sqfs_file_t *sqfs_open_file(const char *filename, sqfs_u32 flags)
 		access_flags = GENERIC_READ | GENERIC_WRITE;
 
 		if (flags & SQFS_FILE_OPEN_OVERWRITE) {
-			creation_mode = TRUNCATE_EXISTING;
+			creation_mode = CREATE_ALWAYS;
 		} else {
 			creation_mode = CREATE_NEW;
 		}
