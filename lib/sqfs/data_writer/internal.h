@@ -58,8 +58,8 @@ struct sqfs_data_writer_t {
 	pthread_cond_t done_cond;
 #elif defined(_WIN32) || defined(__WINDOWS__)
 	CRITICAL_SECTION mtx;
-	HANDLE queue_cond;
-	HANDLE done_cond;
+	CONDITION_VARIABLE queue_cond;
+	CONDITION_VARIABLE done_cond;
 #endif
 
 	/* needs rw access by worker and main thread */

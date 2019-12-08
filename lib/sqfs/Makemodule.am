@@ -35,6 +35,7 @@ libsquashfs_la_LIBADD += $(ZSTD_LIBS) $(PTHREAD_LIBS)
 
 if WINDOWS
 libsquashfs_la_SOURCES += lib/sqfs/win32/io_file.c
+libsquashfs_la_CFLAGS += -DWINVER=0x0600 -D_WIN32_WINNT=0x0600
 libsquashfs_la_CFLAGS += -Wc,-static-libgcc
 libsquashfs_la_LDFLAGS += -no-undefined -avoid-version
 else

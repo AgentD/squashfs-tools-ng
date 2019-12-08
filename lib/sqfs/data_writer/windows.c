@@ -25,13 +25,12 @@ static DWORD WINAPI worker_proc(LPVOID arg)
 		EnterCriticalSection(&shared->mtx);
 		if (blk != NULL) {
 			data_writer_store_done(shared, blk, status);
-			SetEvent(shared->done_cond);
+			WakeConditionVariable(&shared->done_cond);
 		}
 
 		while (shared->queue == NULL && shared->status == 0) {
-			LeaveCriticalSection(&shared->mtx);
-			WaitForSingleObject(shared->queue_cond, INFINITE);
-			EnterCriticalSection(&shared->mtx);
+			SleepConditionVariableCS(&shared->queue_cond,
+						 &shared->mtx, INFINITE);
 		}
 
 		blk = data_writer_next_work_item(shared);
@@ -67,14 +66,8 @@ sqfs_data_writer_t *sqfs_data_writer_create(size_t max_block_size,
 		return NULL;
 
 	InitializeCriticalSection(&proc->mtx);
-
-	proc->queue_cond = CreateEvent(NULL, FALSE, FALSE, NULL);
-	if (proc->queue_cond == NULL)
-		goto fail;
-
-	proc->done_cond = CreateEvent(NULL, FALSE, FALSE, NULL);
-	if (proc->done_cond == NULL)
-		goto fail;
+	InitializeConditionVariable(&proc->queue_cond);
+	InitializeConditionVariable(&proc->done_cond);
 
 	if (data_writer_init(proc, max_block_size, cmp, num_workers,
 			     max_backlog, devblksz, file)) {
@@ -112,8 +105,7 @@ void sqfs_data_writer_destroy(sqfs_data_writer_t *proc)
 
 	EnterCriticalSection(&proc->mtx);
 	proc->status = -1;
-	if (proc->queue_cond != NULL)
-		SetEvent(proc->queue_cond);
+	WakeAllConditionVariable(&proc->queue_cond);
 	LeaveCriticalSection(&proc->mtx);
 
 	for (i = 0; i < proc->num_workers; ++i) {
@@ -130,12 +122,6 @@ void sqfs_data_writer_destroy(sqfs_data_writer_t *proc)
 
 		free(proc->workers[i]);
 	}
-
-	if (proc->queue_cond != NULL)
-		CloseHandle(proc->queue_cond);
-
-	if (proc->queue_cond != NULL)
-		CloseHandle(proc->done_cond);
 
 	DeleteCriticalSection(&proc->mtx);
 	data_writer_cleanup(proc);
@@ -154,7 +140,7 @@ static void append_to_work_queue(sqfs_data_writer_t *proc,
 	block->sequence_number = proc->enqueue_id++;
 	block->next = NULL;
 	proc->backlog += 1;
-	SetEvent(proc->queue_cond);
+	WakeAllConditionVariable(&proc->queue_cond);
 }
 
 static sqfs_block_t *try_dequeue(sqfs_data_writer_t *proc)
@@ -231,7 +217,7 @@ static int process_done_queue(sqfs_data_writer_t *proc, sqfs_block_t *queue)
 
 				proc->backlog += 1;
 				proc->done = queue_merge(queue, proc->done);
-				SetEvent(proc->queue_cond);
+				WakeAllConditionVariable(&proc->queue_cond);
 				LeaveCriticalSection(&proc->mtx);
 
 				queue = NULL;
@@ -257,7 +243,7 @@ int test_and_set_status(sqfs_data_writer_t *proc, int status)
 	} else {
 		status = proc->status;
 	}
-	SetEvent(proc->queue_cond);
+	WakeAllConditionVariable(&proc->queue_cond);
 	LeaveCriticalSection(&proc->mtx);
 	return status;
 }
@@ -269,9 +255,8 @@ int data_writer_enqueue(sqfs_data_writer_t *proc, sqfs_block_t *block)
 
 	EnterCriticalSection(&proc->mtx);
 	while (proc->backlog > proc->max_backlog && proc->status == 0) {
-		LeaveCriticalSection(&proc->mtx);
-		WaitForSingleObject(proc->done_cond, INFINITE);
-		EnterCriticalSection(&proc->mtx);
+		SleepConditionVariableCS(&proc->done_cond, &proc->mtx,
+					 INFINITE);
 	}
 
 	if (proc->status != 0) {
@@ -300,9 +285,8 @@ int sqfs_data_writer_finish(sqfs_data_writer_t *proc)
 	for (;;) {
 		EnterCriticalSection(&proc->mtx);
 		while (proc->backlog > 0 && proc->status == 0) {
-			LeaveCriticalSection(&proc->mtx);
-			WaitForSingleObject(proc->done_cond, INFINITE);
-			EnterCriticalSection(&proc->mtx);
+			SleepConditionVariableCS(&proc->done_cond, &proc->mtx,
+						 INFINITE);
 		}
 
 		if (proc->status != 0) {
