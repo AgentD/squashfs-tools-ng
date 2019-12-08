@@ -25,6 +25,9 @@
 #ifdef WITH_PTHREAD
 #include <pthread.h>
 #include <signal.h>
+#elif defined(_WIN32) || defined(__WINDOWS__)
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
 #endif
 
 
@@ -53,6 +56,10 @@ struct sqfs_data_writer_t {
 	pthread_mutex_t mtx;
 	pthread_cond_t queue_cond;
 	pthread_cond_t done_cond;
+#elif defined(_WIN32) || defined(__WINDOWS__)
+	CRITICAL_SECTION mtx;
+	HANDLE queue_cond;
+	HANDLE done_cond;
 #endif
 
 	/* needs rw access by worker and main thread */
@@ -102,7 +109,7 @@ struct sqfs_data_writer_t {
 	/* used only by workers */
 	size_t max_block_size;
 
-#ifdef WITH_PTHREAD
+#if defined(WITH_PTHREAD) || defined(_WIN32) || defined(__WINDOWS__)
 	compress_worker_t *workers[];
 #else
 	sqfs_u8 scratch[];
