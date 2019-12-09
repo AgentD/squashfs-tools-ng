@@ -25,13 +25,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - LZO compressor moved out of libsquashfs to avoid licensing problems.
 - Make overriding configure variables for LZO library actually work.
 - Do not follow symlinks when reading xattrs from input files.
-- Ignore directory entry named `./` in tar2sqfs.
-- Reject empty string as directory name in libsquashfs.
+- Ignore directory entry named `./` in tar2sqfs. (#22, #31)
+- Reject empty string as directory name in libsquashfs. (#22, #31)
 - Fix memory leak in tar2sqfs if entries are skipped.
 - Fix tar_fuzz error check after seek.
 - Fix the `fstree_init` test to account for defaults from `SOURCE_DATE_EPOCH`.
 - Honor the no_xattr flag when generating SquashFS images.
-- Block size check in `sqfs_super_init`.
+- Block size check in `sqfs_super_init`. (#29)
 - Fix pthread block processor interfering with application signal handling.
 
 ## [0.7] - 2019-10-08
@@ -40,7 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   related logic.
 - Sanitized, public headers and pkg-config file for libsquashfs.
 - Doxygen reference manual for libsquashfs.
-- Legacy LZMA compression support.
+- Legacy LZMA compression support. (#17)
 - User configurable queue backlog for tar2sqfs and gensquashfs.
 
 ### Changed
@@ -54,7 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Make "--keep-time" the default for tar2sqfs and use flag to disable it.
 
 ### Fixed
-- An off-by-one error in the directory packing code.
+- An off-by-one error in the directory packing code. (#18)
 - Typo in configure fallback path searching for LZO library.
 - Typo that caused LZMA2 VLI filters to not be used at all.
 - Possible out-of-bounds access in LZO compressor constructor.
@@ -69,18 +69,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add test programs for fuzzing tar and gensquashfs file format parsers
 
 ### Fixed
-- Harden against integer overflows when parsing squashfs images
-- Test against format limits when parsing directory entries
-- More thorough bounds checking when reading metadata blocks
+- Harden against integer overflows when parsing squashfs images (#13, #14)
+- Test against format limits when parsing directory entries (#12)
+- More thorough bounds checking when reading metadata blocks (#13, #14, #15)
 
 ## [0.6.0] - 2019-08-22
 ### Added
 - New utility `sqfsdiff` that can compare squashfs images
-- rdsquashfs can now dump extended attributes for an inode
-- rdsquashfs can now optionally set xattrs on unpacked files
-- rdsquashfs can now optionally restore timestamps on unpacked files
-- sqfs2tar can now optionally copy xattrs over to the resulting tarball
-- gensquashfs can now optionally read xattrs from input files
+- rdsquashfs can now dump extended attributes for an inode (#2)
+- rdsquashfs can now optionally set xattrs on unpacked files (#2)
+- rdsquashfs can now optionally restore timestamps on unpacked files (#2)
+- sqfs2tar can now optionally copy xattrs over to the resulting tarball (#2)
+- gensquashfs can now optionally read xattrs from input files (#2)
 - gensquashfs now has a --one-file-system option
 - tar2sqfs and gensquashfs now output some simple statistics
 - Full fragment and data block deduplication
@@ -119,7 +119,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Implement simple, fork() based parallel unpacking in rdsquashfs
 
 ### Fixed
-- Remove unfriendly words about squashfs-tools from README
+- Remove unfriendly words about squashfs-tools from README (#10)
 - Propper error message for ZSTD compressor
 - Correct copy-and-paste mistake in the build system
 - Make sure xattr string table is propperly initialized
@@ -127,7 +127,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix xattr unit test
 - Fix possible leak in tar2sqfs if writing xattrs fails
 - Fix corner cases in directory list parsing
-- Fix processing of tar mtime on 32 bit systems
+- Fix processing of tar mtime on 32 bit systems (#8)
 - libfstree: fix signed/unsigned comparisons
 - Fix fragment reader out of bounds read when loading table
 - Fix checks of super block block size
