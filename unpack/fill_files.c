@@ -114,7 +114,7 @@ static void clear_file_list(void)
 
 static int gen_file_list_dfs(const sqfs_tree_node_t *n)
 {
-	if (!is_filename_sane((const char *)n->name)) {
+	if (!is_filename_sane((const char *)n->name, true)) {
 		fprintf(stderr, "Found an entry named '%s', skipping.\n",
 			n->name);
 		return 0;

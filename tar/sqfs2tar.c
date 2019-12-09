@@ -311,7 +311,7 @@ static int write_tree_dfs(const sqfs_tree_node_t *n)
 		name[len] = '/';
 		name[len + 1] = '\0';
 	} else {
-		if (!is_filename_sane((const char *)n->name)) {
+		if (!is_filename_sane((const char *)n->name, false)) {
 			fprintf(stderr, "Found a file named '%s', skipping.\n",
 				n->name);
 			if (dont_skip) {

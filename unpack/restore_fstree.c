@@ -112,7 +112,7 @@ static int create_node_dfs(const sqfs_tree_node_t *n, int flags)
 	char *name;
 	int ret;
 
-	if (!is_filename_sane((const char *)n->name)) {
+	if (!is_filename_sane((const char *)n->name, true)) {
 		fprintf(stderr, "Found an entry named '%s', skipping.\n",
 			n->name);
 		return 0;
@@ -207,7 +207,7 @@ static int set_attribs(sqfs_xattr_reader_t *xattr,
 	char *path;
 	int ret;
 
-	if (!is_filename_sane((const char *)n->name))
+	if (!is_filename_sane((const char *)n->name, true))
 		return 0;
 
 	if (S_ISDIR(n->inode->base.mode)) {
