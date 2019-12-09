@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
-- Port to Windows using MinGW cross compilation toolchain.
+- Experimental Windows port using MinGW cross compilation toolchain.
 - Port to BSD systems.
 - Explicit argument invalid error code in `libsquashfs`.
 - A `--root-becomes` option to `tar2sqfs` and `sqfs2tar`.
@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix the `fstree_init` test to account for defaults from `SOURCE_DATE_EPOCH`.
 - Honor the no_xattr flag when generating SquashFS images.
 - Block size check in `sqfs_super_init`.
+- Fix pthread block processor interfering with application signal handling.
 
 ## [0.7] - 2019-10-08
 ### Added
