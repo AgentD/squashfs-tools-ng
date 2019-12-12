@@ -8,7 +8,6 @@ Version: @PACKAGE_VERSION@
 Description: A library for working with SquashFS file systems.
 
 Cflags: -I${includedir}
-Libs: -L${libdir} -lsquashfs
+Libs: -L${libdir} -lsquashfs @PTHREAD_LIBS@
 
 Requires.private: @LIBSQFS_DEP_MOD@
-Libs.private: @PTHREAD_LIBS@
