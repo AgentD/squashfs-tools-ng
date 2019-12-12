@@ -12,6 +12,7 @@
 #include <string.h>
 
 #include <zstd.h>
+#include <zstd_errors.h>
 
 #include "internal.h"
 
@@ -63,8 +64,12 @@ static sqfs_s32 zstd_comp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
 	ret = ZSTD_compressCCtx(zstd->zctx, out, outsize, in, size,
 				zstd->level);
 
-	if (ZSTD_isError(ret))
+	if (ZSTD_isError(ret)) {
+		if (ZSTD_getErrorCode(ret) == ZSTD_error_dstSize_tooSmall)
+			return 0;
+
 		return SQFS_ERROR_COMPRESSOR;
+	}
 
 	return ret < size ? ret : 0;
 }
