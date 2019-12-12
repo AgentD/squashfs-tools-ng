@@ -13,6 +13,8 @@
 
 #include <lzo/lzo1x.h>
 
+#define LZO_MAX_SIZE(size) (size + (size / 16) + 64 + 3)
+
 #define LZO_NUM_ALGS (sizeof(lzo_algs) / sizeof(lzo_algs[0]))
 
 typedef int (*lzo_cb_t)(const lzo_bytep src, lzo_uint src_len, lzo_bytep dst,
@@ -48,6 +50,9 @@ typedef struct {
 	sqfs_compressor_t base;
 	int algorithm;
 	int level;
+
+	size_t buf_size;
+	size_t work_size;
 
 	sqfs_u8 buffer[];
 } lzo_compressor_t;
@@ -128,27 +133,33 @@ static sqfs_s32 lzo_comp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
 			       sqfs_u32 size, sqfs_u8 *out, sqfs_u32 outsize)
 {
 	lzo_compressor_t *lzo = (lzo_compressor_t *)base;
-	lzo_uint len = outsize;
+	void *scratch;
+	lzo_uint len;
 	int ret;
 
 	if (size >= 0x7FFFFFFF)
 		return 0;
 
+	scratch = lzo->buffer + lzo->work_size;
+	len = lzo->buf_size - lzo->work_size;
+
 	if (lzo->algorithm == SQFS_LZO1X_999 &&
 	    lzo->level != SQFS_LZO_DEFAULT_LEVEL) {
-		ret = lzo1x_999_compress_level(in, size, out, &len,
+		ret = lzo1x_999_compress_level(in, size, scratch, &len,
 					       lzo->buffer, NULL, 0, 0,
 					       lzo->level);
 	} else {
-		ret = lzo_algs[lzo->algorithm].compress(in, size, out,
+		ret = lzo_algs[lzo->algorithm].compress(in, size, scratch,
 							&len, lzo->buffer);
 	}
 
 	if (ret != LZO_E_OK)
 		return SQFS_ERROR_COMPRESSOR;
 
-	if (len < size)
+	if (len < size && len <= outsize) {
+		memcpy(out, scratch, len);
 		return len;
+	}
 
 	return 0;
 }
@@ -176,7 +187,7 @@ static sqfs_compressor_t *lzo_create_copy(sqfs_compressor_t *cmp)
 	lzo_compressor_t *other = (lzo_compressor_t *)cmp;
 	lzo_compressor_t *lzo;
 
-	lzo = calloc(1, sizeof(*lzo) + lzo_algs[other->algorithm].bufsize);
+	lzo = calloc(1, sizeof(*lzo) + other->buf_size);
 	if (lzo == NULL)
 		return NULL;
 
@@ -193,6 +204,7 @@ sqfs_compressor_t *lzo_compressor_create(const sqfs_compressor_config_t *cfg)
 {
 	sqfs_compressor_t *base;
 	lzo_compressor_t *lzo;
+	size_t scratch_size;
 
 	if (cfg->flags & ~SQFS_COMP_FLAG_GENERIC_ALL)
 		return NULL;
@@ -209,8 +221,22 @@ sqfs_compressor_t *lzo_compressor_create(const sqfs_compressor_config_t *cfg)
 		return NULL;
 	}
 
-	lzo = calloc(1,
-		     sizeof(*lzo) + lzo_algs[cfg->opt.lzo.algorithm].bufsize);
+	/* XXX: liblzo does not do bounds checking internally,
+	   we need our own internal scratch buffer at worst case size... */
+	if (cfg->flags & SQFS_COMP_FLAG_UNCOMPRESS) {
+		scratch_size = 0;
+	} else {
+		scratch_size = cfg->block_size;
+		if (scratch_size < SQFS_META_BLOCK_SIZE)
+			scratch_size = SQFS_META_BLOCK_SIZE;
+
+		scratch_size = LZO_MAX_SIZE(scratch_size);
+	}
+
+	/* ...in addition to the LZO work space buffer of course */
+	scratch_size += lzo_algs[cfg->opt.lzo.algorithm].bufsize;
+
+	lzo = calloc(1, sizeof(*lzo) + scratch_size);
 	base = (sqfs_compressor_t *)lzo;
 
 	if (lzo == NULL)
@@ -218,6 +244,8 @@ sqfs_compressor_t *lzo_compressor_create(const sqfs_compressor_config_t *cfg)
 
 	lzo->algorithm = cfg->opt.lzo.algorithm;
 	lzo->level = cfg->opt.lzo.level;
+	lzo->buf_size = scratch_size;
+	lzo->work_size = lzo_algs[cfg->opt.lzo.algorithm].bufsize;
 
 	base->destroy = lzo_destroy;
 	base->do_block = (cfg->flags & SQFS_COMP_FLAG_UNCOMPRESS) ?
