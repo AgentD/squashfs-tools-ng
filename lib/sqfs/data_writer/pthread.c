@@ -155,7 +155,7 @@ void sqfs_data_writer_destroy(sqfs_data_writer_t *proc)
 }
 
 static int append_to_work_queue(sqfs_data_writer_t *proc,
-				sqfs_block_t *block)
+				sqfs_block_t *block, bool signal_threads)
 {
 	int status;
 
@@ -167,17 +167,21 @@ static int append_to_work_queue(sqfs_data_writer_t *proc,
 		return status;
 	}
 
-	if (proc->queue_last == NULL) {
-		proc->queue = proc->queue_last = block;
-	} else {
-		proc->queue_last->next = block;
-		proc->queue_last = block;
+	if (block != NULL) {
+		if (proc->queue_last == NULL) {
+			proc->queue = proc->queue_last = block;
+		} else {
+			proc->queue_last->next = block;
+			proc->queue_last = block;
+		}
+
+		block->sequence_number = proc->enqueue_id++;
+		block->next = NULL;
+		proc->backlog += 1;
 	}
 
-	block->sequence_number = proc->enqueue_id++;
-	block->next = NULL;
-	proc->backlog += 1;
-	pthread_cond_broadcast(&proc->queue_cond);
+	if (signal_threads)
+		pthread_cond_broadcast(&proc->queue_cond);
 	pthread_mutex_unlock(&proc->mtx);
 	return 0;
 }
@@ -327,12 +331,17 @@ int data_writer_enqueue(sqfs_data_writer_t *proc, sqfs_block_t *block)
 			return status;
 	}
 
-	return append_to_work_queue(proc, block);
+	if (proc->backlog == proc->max_backlog)
+		proc->notify_threads = true;
+
+	return append_to_work_queue(proc, block, proc->notify_threads);
 }
 
 int sqfs_data_writer_finish(sqfs_data_writer_t *proc)
 {
 	int status;
+
+	append_to_work_queue(proc, NULL, true);
 
 	while (proc->backlog > 0) {
 		status = wait_completed(proc);

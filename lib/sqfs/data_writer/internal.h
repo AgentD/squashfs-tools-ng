@@ -99,6 +99,7 @@ struct sqfs_data_writer_t {
 
 	const sqfs_block_hooks_t *hooks;
 	void *user_ptr;
+	bool notify_threads;
 
 	/* file API */
 	sqfs_inode_generic_t *inode;
