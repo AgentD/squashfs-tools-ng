@@ -77,8 +77,6 @@ void data_writer_store_done(sqfs_data_writer_t *proc, sqfs_block_t *blk,
 
 	if (status != 0 && proc->status == 0)
 		proc->status = status;
-
-	proc->backlog -= 1;
 }
 
 sqfs_block_t *data_writer_next_work_item(sqfs_data_writer_t *proc)
