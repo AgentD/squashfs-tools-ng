@@ -1,0 +1,46 @@
+#!/bin/sh
+
+set -e
+
+CORPUS="@abs_top_srcdir@/tests/corpus/cantrbry.tar.xz"
+SHA512FILE="@abs_top_srcdir@/tests/corpus/cantrbry.sha512"
+TAR2SQFS="@abs_top_builddir@/tar2sqfs"
+
+COMPRESSORS=$(@abs_top_builddir@/tar2sqfs --help |\
+	      sed -ne '/^Available compressors:$/{:a' -e 'n;p;ba' -e '}' |\
+	      sed -n '/\t/p')
+
+for size in 4096 8192 16384 32768 65536 131072 262144 524288 1048576; do
+	for cmp in $COMPRESSORS; do
+		for threads in 1 2 3 4; do
+			name="cantrbry_${cmp}_${size}_${threads}.sqfs"
+
+			xzcat "$CORPUS" | \
+				"$TAR2SQFS" -q -c "$cmp" -b "$size" \
+					    -j "$threads" "$name"
+
+			name="cantrbry_${cmp}_${size}_${threads}_T.sqfs"
+
+			xzcat "$CORPUS" | \
+				"$TAR2SQFS" -qT -c "$cmp" -b "$size" \
+					    -j "$threads" "$name"
+		done
+
+		# check that the ones with > 1 thread are identical,
+		# then remove them.
+		for threads in 2 3 4; do
+			name="cantrbry_${cmp}_${size}_${threads}.sqfs"
+			ref="cantrbry_${cmp}_${size}_1.sqfs"
+			diff "$name" "$ref"
+			rm "$name"
+
+			name="cantrbry_${cmp}_${size}_${threads}_T.sqfs"
+			ref="cantrbry_${cmp}_${size}_1_T.sqfs"
+			diff "$name" "$ref"
+			rm "$name"
+		done
+	done
+done
+
+sha512sum --ignore-missing -c "$SHA512FILE"
+rm cantrbry_*.sqfs

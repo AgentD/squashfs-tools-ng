@@ -14,6 +14,7 @@ bin_PROGRAMS =
 lib_LTLIBRARIES =
 dist_man1_MANS =
 check_PROGRAMS =
+check_SCRIPTS =
 pkgconfig_DATA =
 
 EXTRA_DIST = autogen.sh README.md CHANGELOG.md COPYING.md mkwinbins.sh licenses

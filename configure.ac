@@ -215,6 +215,7 @@ AC_CHECK_FUNCS([strndup getline getsubopt])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([lib/sqfs/libsquashfs.pc])
 AC_CONFIG_FILES([Doxyfile])
+AC_CONFIG_FILES([tests/cantrbry.sh], [chmod +x tests/cantrbry.sh])
 
 AC_OUTPUT([Makefile])
 

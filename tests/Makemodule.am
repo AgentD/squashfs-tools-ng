@@ -93,6 +93,7 @@ check_PROGRAMS += test_get_path test_fstree_sort test_fstree_from_file
 check_PROGRAMS += test_fstree_init test_tar_ustar test_tar_pax test_tar_gnu
 check_PROGRAMS += test_tar_sparse_gnu test_tar_sparse_gnu1 test_tar_sparse_gnu2
 check_PROGRAMS += test_tar_xattr_bsd test_tar_xattr_schily
+check_SCRIPTS += tests/cantrbry.sh
 
 noinst_PROGRAMS += fstree_fuzz tar_fuzz
 
@@ -102,7 +103,10 @@ TESTS += test_add_by_path test_get_path test_fstree_sort test_fstree_from_file
 TESTS += test_fstree_init test_tar_ustar test_tar_pax
 TESTS += test_tar_gnu test_tar_sparse_gnu test_tar_sparse_gnu1
 TESTS += test_tar_sparse_gnu2 test_tar_xattr_bsd test_tar_xattr_schily
+TESTS += tests/cantrbry.sh
 endif
 
 EXTRA_DIST += $(top_srcdir)/tests/tar $(top_srcdir)/tests/words.txt
 EXTRA_DIST += $(top_srcdir)/tests/fstree1.txt
+EXTRA_DIST += $(top_srcdir)/tests/corpus/cantrbry.tar.xz
+EXTRA_DIST += $(top_srcdir)/tests/corpus/cantrbry.sha512
