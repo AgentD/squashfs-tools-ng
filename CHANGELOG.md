@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Port to BSD systems.
 - Explicit argument invalid error code in `libsquashfs`.
 - A `--root-becomes` option to `tar2sqfs` and `sqfs2tar`.
+- A `--no-tail-packing` option to `tar2sqfs` and `sqfs2tar`.
+- CHANGELOG.md now references GitHub issue numbers.
+- Simple integration and regression test suit.
 
 ### Changed
 - Return propper error code from `sqfs_get_xattr_prefix_id`.
@@ -33,6 +36,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Honor the no_xattr flag when generating SquashFS images.
 - Block size check in `sqfs_super_init`. (#29)
 - Fix pthread block processor interfering with application signal handling.
+- Added pthread flags to the programs using libsquashfs.
+- Fix "buffer too small" being treated as fatal error by the zstd compressor.
+- Fix out of bounds write in the LZO compressor.
+- Fix queue accounting in the compressor thread pool. (#29)
+- Fix name of `libsquashfs` pkg-config file.
 
 ## [0.7] - 2019-10-08
 ### Added
