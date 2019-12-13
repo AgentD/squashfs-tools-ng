@@ -22,6 +22,7 @@ static struct option long_opts[] = {
 #endif
 	{ "one-file-system", no_argument, NULL, 'o' },
 	{ "exportable", no_argument, NULL, 'e' },
+	{ "no-tail-packing", no_argument, NULL, 'T' },
 	{ "force", no_argument, NULL, 'f' },
 	{ "quiet", no_argument, NULL, 'q' },
 #ifdef WITH_SELINUX
@@ -31,7 +32,7 @@ static struct option long_opts[] = {
 	{ "help", no_argument, NULL, 'h' },
 };
 
-static const char *short_opts = "F:D:X:c:b:B:d:j:Q:kxoefqhV"
+static const char *short_opts = "F:D:X:c:b:B:d:j:Q:kxoefqThV"
 #ifdef WITH_SELINUX
 "s:"
 #endif
@@ -93,6 +94,8 @@ static const char *help_string =
 "  --one-file-system, -o       When using --pack-dir only, stay in local file\n"
 "                              system and do not cross mount points.\n"
 "  --exportable, -e            Generate an export table for NFS support.\n"
+"  --no-tail-packing, -T       Do not perform tail end packing on files that\n"
+"                              are larger than block size.\n"
 "  --force, -f                 Overwrite the output file if it exists.\n"
 "  --quiet, -q                 Do not print out progress reports.\n"
 "  --help, -h                  Print help text and exit.\n"
@@ -157,6 +160,9 @@ void process_command_line(options_t *opt, int argc, char **argv)
 			break;
 
 		switch (i) {
+		case 'T':
+			opt->no_tail_packing = true;
+			break;
 		case 'c':
 			have_compressor = true;
 			ret = sqfs_compressor_id_from_name(optarg);

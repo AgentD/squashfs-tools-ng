@@ -32,13 +32,14 @@ static struct option long_opts[] = {
 	{ "no-xattr", no_argument, NULL, 'x' },
 	{ "no-keep-time", no_argument, NULL, 'k' },
 	{ "exportable", no_argument, NULL, 'e' },
+	{ "no-tail-packing", no_argument, NULL, 'T' },
 	{ "force", no_argument, NULL, 'f' },
 	{ "quiet", no_argument, NULL, 'q' },
 	{ "help", no_argument, NULL, 'h' },
 	{ "version", no_argument, NULL, 'V' },
 };
 
-static const char *short_opts = "r:c:b:B:d:X:j:Q:sxekfqhV";
+static const char *short_opts = "r:c:b:B:d:X:j:Q:sxekfqThV";
 
 static const char *usagestr =
 "Usage: tar2sqfs [OPTIONS...] <sqfsfile>\n"
@@ -84,6 +85,8 @@ static const char *usagestr =
 "  --no-keep-time, -k          Do not keep the time stamps stored in the\n"
 "                              archive. Instead, set defaults on all files.\n"
 "  --exportable, -e            Generate an export table for NFS support.\n"
+"  --no-tail-packing, -T       Do not perform tail end packing on files that\n"
+"                              are larger than block size.\n"
 "  --force, -f                 Overwrite the output file if it exists.\n"
 "  --quiet, -q                 Do not print out progress reports.\n"
 "  --help, -h                  Print help text and exit.\n"
@@ -98,6 +101,7 @@ static const char *usagestr =
 
 static bool dont_skip = false;
 static bool keep_time = true;
+static bool no_tail_pack = false;
 static sqfs_writer_cfg_t cfg;
 static sqfs_writer_t sqfs;
 static FILE *input_file = NULL;
@@ -116,6 +120,9 @@ static void process_args(int argc, char **argv)
 			break;
 
 		switch (i) {
+		case 'T':
+			no_tail_pack = true;
+			break;
 		case 'b':
 			cfg.block_size = strtol(optarg, NULL, 0);
 			break;
@@ -242,6 +249,7 @@ static int write_file(tar_header_decoded_t *hdr, file_info_t *fi,
 	size_t size, max_blk_count;
 	sqfs_file_t *file;
 	sqfs_u64 sum;
+	int flags;
 	int ret;
 
 	max_blk_count = filesize / cfg.block_size;
@@ -284,6 +292,10 @@ static int write_file(tar_header_decoded_t *hdr, file_info_t *fi,
 			return -1;
 		}
 	}
+
+	flags = 0;
+	if (no_tail_pack && filesize > cfg.block_size)
+		flags |= SQFS_BLK_DONT_FRAGMENT;
 
 	ret = write_data_from_file(hdr->name, sqfs.data, inode, file, 0);
 	file->destroy(file);

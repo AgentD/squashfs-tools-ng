@@ -51,6 +51,7 @@ static int pack_files(sqfs_data_writer_t *data, fstree_t *fs,
 	char *node_path;
 	file_info_t *fi;
 	size_t size;
+	int flags;
 	int ret;
 
 	if (set_working_dir(opt))
@@ -115,7 +116,12 @@ static int pack_files(sqfs_data_writer_t *data, fstree_t *fs,
 
 		fi->user_ptr = inode;
 
-		ret = write_data_from_file(path, data, inode, file, 0);
+		flags = 0;
+
+		if (opt->no_tail_packing && filesize > opt->cfg.block_size)
+			flags |= SQFS_BLK_DONT_FRAGMENT;
+
+		ret = write_data_from_file(path, data, inode, file, flags);
 		file->destroy(file);
 		free(node_path);
 

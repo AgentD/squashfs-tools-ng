@@ -37,6 +37,7 @@ typedef struct {
 	const char *infile;
 	const char *packdir;
 	const char *selinux;
+	bool no_tail_packing;
 } options_t;
 
 enum {
