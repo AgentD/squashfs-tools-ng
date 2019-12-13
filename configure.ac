@@ -65,7 +65,7 @@ AC_ARG_WITH([lzo],
 	[], [with_lzo="check"])
 
 AC_ARG_WITH([lz4],
-	[AS_HELP_STRING([--without-lz4], [Build with lz4 compression support])],
+	[AS_HELP_STRING([--with-lz4], [Build with lz4 compression support])],
 	[], [with_lz4="check"])
 
 AC_ARG_WITH([zstd],
