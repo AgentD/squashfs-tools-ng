@@ -133,7 +133,7 @@ static int write_schily_xattr(FILE *fp, const struct stat *orig,
 	struct stat sb;
 
 	for (it = xattr; it != NULL; it = it->next) {
-		len = strlen(prefix) + strlen(it->key) + strlen(it->value) + 2;
+		len = strlen(prefix) + strlen(it->key) + it->value_len + 2;
 
 		total_size += num_digits(len) + 1 + len;
 	}
@@ -146,11 +146,12 @@ static int write_schily_xattr(FILE *fp, const struct stat *orig,
 		return -1;
 
 	for (it = xattr; it != NULL; it = it->next) {
-		len = strlen(prefix) + strlen(it->key) + strlen(it->value) + 2;
+		len = strlen(prefix) + strlen(it->key) + it->value_len + 2;
 		len += num_digits(len) + 1;
 
-		fprintf(fp, PRI_SZ " %s%s=%s\n", len,
-			prefix, it->key, it->value);
+		fprintf(fp, PRI_SZ " %s%s=", len, prefix, it->key);
+		fwrite(it->value, 1, it->value_len, fp);
+		fputc('\n', fp);
 	}
 
 	return padd_file(fp, total_size);

@@ -68,7 +68,8 @@ static tar_xattr_t *mkxattr(const char *key, size_t keylen,
 		return NULL;
 
 	xattr->key = xattr->data;
-	xattr->value = xattr->data + keylen + 1;
+	xattr->value = (sqfs_u8 *)xattr->data + keylen + 1;
+	xattr->value_len = valuelen;
 	memcpy(xattr->key, key, keylen);
 	memcpy(xattr->value, value, valuelen);
 	return xattr;
@@ -201,7 +202,8 @@ static int read_pax_header(FILE *fp, sqfs_u64 entsize, unsigned int *set_by_pax,
 
 			value = ptr + 1;
 
-			xattr = mkxattr(key, ptr - key, value, strlen(value));
+			xattr = mkxattr(key, ptr - key,
+					value, len - (value - line) - 1);
 			if (xattr == NULL)
 				goto fail_errno;
 
@@ -221,7 +223,8 @@ static int read_pax_header(FILE *fp, sqfs_u64 entsize, unsigned int *set_by_pax,
 				goto fail_errno;
 
 			urldecode(xattr->key);
-			base64_decode((sqfs_u8 *)xattr->value, value);
+			xattr->value_len = base64_decode(xattr->value, value,
+							 xattr->value_len);
 
 			xattr->next = out->xattr;
 			out->xattr = xattr;

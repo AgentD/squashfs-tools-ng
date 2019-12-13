@@ -334,7 +334,7 @@ static int copy_xattr(tree_node_t *node, const tar_header_decoded_t *hdr)
 		}
 
 		ret = sqfs_xattr_writer_add(sqfs.xwr, xattr->key, xattr->value,
-					    strlen(xattr->value));
+					    xattr->value_len);
 		if (ret) {
 			sqfs_perror(hdr->name, "storing xattr key-value pair",
 				    ret);

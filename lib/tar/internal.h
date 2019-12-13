@@ -61,7 +61,7 @@ void free_sparse_list(sparse_map_t *sparse);
 
 void free_xattr_list(tar_xattr_t *list);
 
-void base64_decode(sqfs_u8 *out, const char *in);
+size_t base64_decode(sqfs_u8 *out, const char *in, size_t len);
 
 void urldecode(char *str);
 

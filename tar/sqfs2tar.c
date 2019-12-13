@@ -267,9 +267,10 @@ static int get_xattrs(const char *name, const sqfs_inode_generic_t *inode,
 		ent->key = ent->data;
 		strcpy(ent->key, (const char *)key->key);
 
-		ent->value = ent->key + strlen(ent->key) + 1;
+		ent->value = (sqfs_u8 *)ent->key + strlen(ent->key) + 1;
 		memcpy(ent->value, value->value, value->size + 1);
 
+		ent->value_len = value->size;
 		ent->next = list;
 		list = ent;
 

@@ -54,7 +54,8 @@ int main(void)
 
 	assert(hdr.xattr != NULL);
 	assert(strcmp(hdr.xattr->key, "user.mime_type") == 0);
-	assert(strcmp(hdr.xattr->value, "text/plain") == 0);
+	assert(strcmp((const char *)hdr.xattr->value, "text/plain") == 0);
+	assert(hdr.xattr->value_len == 10);
 	assert(hdr.xattr->next == NULL);
 
 	clear_header(&hdr);

@@ -71,7 +71,8 @@ typedef struct {
 typedef struct tar_xattr_t {
 	struct tar_xattr_t *next;
 	char *key;
-	char *value;
+	sqfs_u8 *value;
+	size_t value_len;
 	char data[];
 } tar_xattr_t;
 
