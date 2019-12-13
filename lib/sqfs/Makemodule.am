@@ -43,11 +43,11 @@ libsquashfs_la_SOURCES += lib/sqfs/unix/io_file.c
 endif
 
 if HAVE_PTHREAD
-libsquashfs_la_SOURCES += lib/sqfs/data_writer/pthread.c
+libsquashfs_la_SOURCES += lib/sqfs/data_writer/winpthread.c
 libsquashfs_la_CPPFLAGS += -DWITH_PTHREAD
 else
 if WINDOWS
-libsquashfs_la_SOURCES += lib/sqfs/data_writer/windows.c
+libsquashfs_la_SOURCES += lib/sqfs/data_writer/winpthread.c
 else
 libsquashfs_la_SOURCES += lib/sqfs/data_writer/serial.c
 endif
