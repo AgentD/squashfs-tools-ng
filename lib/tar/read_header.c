@@ -80,29 +80,45 @@ static int read_pax_header(FILE *fp, sqfs_u64 entsize, unsigned int *set_by_pax,
 	sparse_map_t *sparse_last = NULL, *sparse;
 	sqfs_u64 field, offset = 0, num_bytes = 0;
 	char *buffer, *line, *key, *ptr, *value;
+	sqfs_u64 i, start, len;
 	tar_xattr_t *xattr;
-	sqfs_u64 i;
+	int digit;
 
 	buffer = record_to_memory(fp, entsize);
 	if (buffer == NULL)
 		return -1;
 
-	for (i = 0; i < entsize; ++i) {
+	for (i = 0; i < entsize; i += len) {
+		start = i;
+
+		if (!isdigit(buffer[i]))
+			goto fail_malformed;
+
+		for (len = 0; i < entsize && isdigit(buffer[i]); ++i) {
+			digit = buffer[i] - '0';
+
+			if (len > (entsize - digit) / 10)
+				goto fail_ov;
+
+			len = len * 10 + digit;
+		}
+
+		if (!isspace(buffer[i]))
+			goto fail_malformed;
+
 		while (i < entsize && isspace(buffer[i]))
 			++i;
-		while (i < entsize && isdigit(buffer[i]))
-			++i;
-		while (i < entsize && isspace(buffer[i]))
-			++i;
-		if (i >= entsize)
-			break;
+
+		if (i >= entsize || (i - start) >= len)
+			goto fail_ov;
+
+		len -= i - start;
+
+		if (i + len > entsize)
+			goto fail_ov;
 
 		line = buffer + i;
-
-		while (i < entsize && buffer[i] != '\n')
-			++i;
-
-		buffer[i] = '\0';
+		line[len - 1] = '\0';
 
 		if (!strncmp(line, "uid=", 4)) {
 			if (pax_read_decimal(line + 4, &field))
@@ -214,6 +230,12 @@ static int read_pax_header(FILE *fp, sqfs_u64 entsize, unsigned int *set_by_pax,
 
 	free(buffer);
 	return 0;
+fail_malformed:
+	fputs("Found a malformed PAX header.\n", stderr);
+	goto fail;
+fail_ov:
+	fputs("Numeric overflow in PAX header.\n", stderr);
+	goto fail;
 fail_errno:
 	perror("reading pax header");
 	goto fail;
