@@ -79,4 +79,4 @@ sqfsinclude_HEADERS = $(LIBSQFS_HEARDS)
 
 lib_LTLIBRARIES += libsquashfs.la
 
-pkgconfig_DATA += lib/sqfs/libsquashfs.pc
+pkgconfig_DATA += lib/sqfs/libsquashfs0.pc
