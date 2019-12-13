@@ -6,6 +6,61 @@
  */
 #include "rdsquashfs.h"
 
+static void print_hex(const sqfs_u8 *value, size_t len)
+{
+	printf("0x");
+
+	while (len--)
+		printf("%02X", *(value++));
+}
+
+static bool is_printable(const sqfs_u8 *value, size_t len)
+{
+	size_t utf8_cont = 0;
+	sqfs_u8 x;
+
+	while (len--) {
+		x = *(value++);
+
+		if (utf8_cont > 0) {
+			if ((x & 0xC0) != 0x80)
+				return false;
+
+			--utf8_cont;
+		} else {
+			if (x < 0x80) {
+				if (x < 0x20) {
+					if (x >= 0x07 && x <= 0x0D)
+						continue;
+					if (x == 0x00)
+						continue;
+					return false;
+				}
+
+				if (x == 0x7F)
+					return false;
+			}
+
+			if ((x & 0xE0) == 0xC0) {
+				utf8_cont = 1;
+			} else if ((x & 0xF0) == 0xE0) {
+				utf8_cont = 2;
+			} else if ((x & 0xF8) == 0xF0) {
+				utf8_cont = 3;
+			} else if ((x & 0xFC) == 0xF8) {
+				utf8_cont = 4;
+			} else if ((x & 0xFE) == 0xFC) {
+				utf8_cont = 5;
+			}
+
+			if (utf8_cont > 0 && len < utf8_cont)
+				return false;
+		}
+	}
+
+	return true;
+}
+
 int dump_xattrs(sqfs_xattr_reader_t *xattr, const sqfs_inode_generic_t *inode)
 {
 	sqfs_xattr_value_t *value;
@@ -44,7 +99,19 @@ int dump_xattrs(sqfs_xattr_reader_t *xattr, const sqfs_inode_generic_t *inode)
 			return -1;
 		}
 
-		printf("%s=%s\n", key->key, value->value);
+		if (is_printable(key->key, key->size)) {
+			printf("%s=", key->key);
+		} else {
+			print_hex(key->key, key->size);
+		}
+
+		if (is_printable(value->value, value->size)) {
+			printf("%s\n", value->value);
+		} else {
+			print_hex(value->value, value->size);
+			printf("\n");
+		}
+
 		free(key);
 		free(value);
 	}
