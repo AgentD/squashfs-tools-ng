@@ -154,8 +154,8 @@ void sqfs_data_writer_destroy(sqfs_data_writer_t *proc)
 	data_writer_cleanup(proc);
 }
 
-static int append_to_work_queue(sqfs_data_writer_t *proc,
-				sqfs_block_t *block, bool signal_threads)
+int append_to_work_queue(sqfs_data_writer_t *proc, sqfs_block_t *block,
+			 bool signal_threads)
 {
 	int status;
 
@@ -292,7 +292,7 @@ int test_and_set_status(sqfs_data_writer_t *proc, int status)
 	return status;
 }
 
-static int wait_completed(sqfs_data_writer_t *proc)
+int wait_completed(sqfs_data_writer_t *proc)
 {
 	sqfs_block_t *queue;
 	int status;
@@ -315,53 +315,5 @@ static int wait_completed(sqfs_data_writer_t *proc)
 	}
 
 	status = process_done_queue(proc, queue);
-	if (status != 0)
-		return test_and_set_status(proc, status);
-
-	return status;
-}
-
-int data_writer_enqueue(sqfs_data_writer_t *proc, sqfs_block_t *block)
-{
-	int status;
-
-	while (proc->backlog > proc->max_backlog) {
-		status = wait_completed(proc);
-		if (status)
-			return status;
-	}
-
-	if (proc->backlog == proc->max_backlog)
-		proc->notify_threads = true;
-
-	return append_to_work_queue(proc, block, proc->notify_threads);
-}
-
-int sqfs_data_writer_finish(sqfs_data_writer_t *proc)
-{
-	int status;
-
-	append_to_work_queue(proc, NULL, true);
-
-	while (proc->backlog > 0) {
-		status = wait_completed(proc);
-		if (status)
-			return status;
-	}
-
-	if (proc->frag_block != NULL) {
-		status = data_writer_do_block(proc->frag_block,
-					      proc->workers[0]->cmp,
-					      proc->workers[0]->scratch,
-					      proc->max_block_size);
-		if (status)
-			return status;
-
-		status = process_done_queue(proc, proc->frag_block);
-		proc->frag_block = NULL;
-		if (status)
-			return status;
-	}
-
-	return 0;
+	return status ? test_and_set_status(proc, status) : status;
 }

@@ -127,20 +127,38 @@ void sqfs_data_writer_destroy(sqfs_data_writer_t *proc)
 	data_writer_cleanup(proc);
 }
 
-static void append_to_work_queue(sqfs_data_writer_t *proc,
-				 sqfs_block_t *block)
+int append_to_work_queue(sqfs_data_writer_t *proc, sqfs_block_t *block,
+			 bool signal_threads)
 {
-	if (proc->queue_last == NULL) {
-		proc->queue = proc->queue_last = block;
-	} else {
-		proc->queue_last->next = block;
-		proc->queue_last = block;
+	int status;
+
+	EnterCriticalSection(&proc->mtx);
+	status = proc->status;
+
+	if (status != 0) {
+		free(block);
+		LeaveCriticalSection(&proc->mtx);
+		return status;
 	}
 
-	block->sequence_number = proc->enqueue_id++;
-	block->next = NULL;
-	proc->backlog += 1;
-	WakeAllConditionVariable(&proc->queue_cond);
+	if (block != NULL) {
+		if (proc->queue_last == NULL) {
+			proc->queue = proc->queue_last = block;
+		} else {
+			proc->queue_last->next = block;
+			proc->queue_last = block;
+		}
+
+		block->sequence_number = proc->enqueue_id++;
+		block->next = NULL;
+		proc->backlog += 1;
+	}
+
+	if (signal_threads)
+		WakeAllConditionVariable(&proc->queue_cond);
+
+	LeaveCriticalSection(&proc->mtx);
+	return 0;
 }
 
 static sqfs_block_t *try_dequeue(sqfs_data_writer_t *proc)
@@ -248,70 +266,29 @@ int test_and_set_status(sqfs_data_writer_t *proc, int status)
 	return status;
 }
 
-int data_writer_enqueue(sqfs_data_writer_t *proc, sqfs_block_t *block)
+int wait_completed(sqfs_data_writer_t *proc)
 {
 	sqfs_block_t *queue;
 	int status;
 
 	EnterCriticalSection(&proc->mtx);
-	while (proc->backlog > proc->max_backlog && proc->status == 0) {
+	for (;;) {
+		queue = try_dequeue(proc);
+		status = proc->status;
+
+		if (queue != NULL || status != 0)
+			break;
+
 		SleepConditionVariableCS(&proc->done_cond, &proc->mtx,
 					 INFINITE);
 	}
+	LeaveCriticalSection(&proc->mtx);
 
-	if (proc->status != 0) {
-		status = proc->status;
-		LeaveCriticalSection(&proc->mtx);
-		free(block);
+	if (status != 0) {
+		free_blk_list(queue);
 		return status;
 	}
 
-	append_to_work_queue(proc, block);
-	block = NULL;
-
-	queue = try_dequeue(proc);
-	LeaveCriticalSection(&proc->mtx);
-
 	status = process_done_queue(proc, queue);
-
 	return status ? test_and_set_status(proc, status) : status;
-}
-
-int sqfs_data_writer_finish(sqfs_data_writer_t *proc)
-{
-	sqfs_block_t *queue;
-	int status = 0;
-
-	for (;;) {
-		EnterCriticalSection(&proc->mtx);
-		while (proc->backlog > 0 && proc->status == 0) {
-			SleepConditionVariableCS(&proc->done_cond, &proc->mtx,
-						 INFINITE);
-		}
-
-		if (proc->status != 0) {
-			status = proc->status;
-			LeaveCriticalSection(&proc->mtx);
-			return status;
-		}
-
-		queue = proc->done;
-		proc->done = NULL;
-		LeaveCriticalSection(&proc->mtx);
-
-		if (queue == NULL) {
-			if (proc->frag_block != NULL) {
-				append_to_work_queue(proc, proc->frag_block);
-				proc->frag_block = NULL;
-				continue;
-			}
-			break;
-		}
-
-		status = process_done_queue(proc, queue);
-		if (status != 0)
-			return status;
-	}
-
-	return 0;
 }

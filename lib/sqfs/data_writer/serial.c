@@ -43,11 +43,13 @@ int test_and_set_status(sqfs_data_writer_t *proc, int status)
 	return proc->status;
 }
 
-int data_writer_enqueue(sqfs_data_writer_t *proc, sqfs_block_t *block)
+int append_to_work_queue(sqfs_data_writer_t *proc, sqfs_block_t *block,
+			 bool signal_threads)
 {
 	sqfs_block_t *fragblk = NULL;
+	(void)signal_threads;
 
-	if (proc->status != 0) {
+	if (proc->status != 0 || block == NULL) {
 		free(block);
 		return proc->status;
 	}
@@ -80,19 +82,7 @@ int data_writer_enqueue(sqfs_data_writer_t *proc, sqfs_block_t *block)
 	return proc->status;
 }
 
-int sqfs_data_writer_finish(sqfs_data_writer_t *proc)
+int wait_completed(sqfs_data_writer_t *proc)
 {
-	if (proc->status != 0 || proc->frag_block == NULL)
-		return proc->status;
-
-	proc->status = data_writer_do_block(proc->frag_block, proc->cmp,
-					    proc->scratch,
-					    proc->max_block_size);
-
-	if (proc->status == 0)
-		proc->status = process_completed_block(proc, proc->frag_block);
-
-	free(proc->frag_block);
-	proc->frag_block = NULL;
 	return proc->status;
 }

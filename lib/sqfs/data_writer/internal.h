@@ -148,6 +148,9 @@ SQFS_INTERNAL
 int test_and_set_status(sqfs_data_writer_t *proc, int status);
 
 SQFS_INTERNAL
-int data_writer_enqueue(sqfs_data_writer_t *proc, sqfs_block_t *block);
+int append_to_work_queue(sqfs_data_writer_t *proc, sqfs_block_t *block,
+			 bool notify_threads);
+
+SQFS_INTERNAL int wait_completed(sqfs_data_writer_t *proc);
 
 #endif /* INTERNAL_H */

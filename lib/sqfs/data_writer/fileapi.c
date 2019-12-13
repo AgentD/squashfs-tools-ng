@@ -12,6 +12,22 @@ static bool is_zero_block(unsigned char *ptr, size_t size)
 	return ptr[0] == 0 && memcmp(ptr, ptr + 1, size - 1) == 0;
 }
 
+static int enqueue_block(sqfs_data_writer_t *proc, sqfs_block_t *block)
+{
+	int status;
+
+	while (proc->backlog > proc->max_backlog) {
+		status = wait_completed(proc);
+		if (status)
+			return status;
+	}
+
+	if (proc->backlog == proc->max_backlog)
+		proc->notify_threads = true;
+
+	return append_to_work_queue(proc, block, proc->notify_threads);
+}
+
 static int add_sentinel_block(sqfs_data_writer_t *proc)
 {
 	sqfs_block_t *blk = calloc(1, sizeof(*blk));
@@ -22,7 +38,7 @@ static int add_sentinel_block(sqfs_data_writer_t *proc)
 	blk->inode = proc->inode;
 	blk->flags = proc->blk_flags | SQFS_BLK_LAST_BLOCK;
 
-	return data_writer_enqueue(proc, blk);
+	return enqueue_block(proc, blk);
 }
 
 int sqfs_data_writer_begin_file(sqfs_data_writer_t *proc,
@@ -64,7 +80,7 @@ static int flush_block(sqfs_data_writer_t *proc, sqfs_block_t *block)
 		proc->blk_flags &= ~SQFS_BLK_FIRST_BLOCK;
 	}
 
-	return data_writer_enqueue(proc, block);
+	return enqueue_block(proc, block);
 }
 
 int sqfs_data_writer_append(sqfs_data_writer_t *proc, const void *data,
@@ -144,4 +160,29 @@ int sqfs_data_writer_end_file(sqfs_data_writer_t *proc)
 	proc->blk_flags = 0;
 	proc->blk_index = 0;
 	return 0;
+}
+
+int sqfs_data_writer_finish(sqfs_data_writer_t *proc)
+{
+	int status = 0;
+
+	append_to_work_queue(proc, NULL, true);
+
+	while (proc->backlog > 0) {
+		status = wait_completed(proc);
+		if (status)
+			return status;
+	}
+
+	if (proc->frag_block != NULL) {
+		status = append_to_work_queue(proc, proc->frag_block, true);
+		proc->frag_block = NULL;
+
+		if (status)
+			return status;
+
+		status = wait_completed(proc);
+	}
+
+	return status;
 }
