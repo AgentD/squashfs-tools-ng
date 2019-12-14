@@ -23,3 +23,8 @@ for those features:
 
 In addition to that, the files in "file-size" are truncated, since we are only
 interested in parsing the header.
+
+The following addtional files have been added:
+ - xattr/xattr-shily-binary.tar
+     Created from xattr/xattr-shily.tar by manually patching in a capability
+     xattr key/value pair.
