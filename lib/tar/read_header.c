@@ -160,7 +160,7 @@ static int read_pax_header(FILE *fp, sqfs_u64 entsize, unsigned int *set_by_pax,
 			*set_by_pax |= PAX_MTIME;
 		} else if (!strncmp(line, "GNU.sparse.name=", 16)) {
 			free(out->name);
-			out->name = strdup(line + 5);
+			out->name = strdup(line + 16);
 			if (out->name == NULL)
 				goto fail_errno;
 			*set_by_pax |= PAX_NAME;
