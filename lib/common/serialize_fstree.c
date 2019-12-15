@@ -168,7 +168,7 @@ int sqfs_serialize_fstree(const char *filename, sqfs_file_t *file,
 		goto out_im;
 	}
 
-	dirwr = sqfs_dir_writer_create(dm);
+	dirwr = sqfs_dir_writer_create(dm, 0);
 	if (dirwr == NULL) {
 		ret = SQFS_ERROR_ALLOC;
 		goto out_dm;

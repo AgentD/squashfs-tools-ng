@@ -58,6 +58,30 @@
  * writer used for inodes.
  */
 
+/**
+ * @enum SQFS_DIR_WRITER_CREATE_FLAGS
+ *
+ * @brief Flags that can be set for @ref sqfs_dir_writer_create
+ */
+typedef enum {
+	/**
+	 * @brief Record all inode locations to create an export table.
+	 *
+	 * For NFS export support, SquashFS needs an extra table that maps
+	 * inode numbers directly to on-disk locations.
+	 *
+	 * Since the @ref sqfs_dir_writer_t "sees" all inode numbers and
+	 * coresponding locations and easily create such a table.
+	 *
+	 * If this flag is set for @ref sqfs_dir_writer_create, the result
+	 * directory wrter collects such a table which it can then write to
+	 * disk using @ref sqfs_dir_writer_write_export_table.
+	 */
+	SQFS_DIR_WRITER_CREATE_EXPORT_TABLE = 0x01,
+
+	SQFS_DIR_WRITER_CREATE_ALL_FLAGS = 0x01
+} SQFS_DIR_WRITER_CREATE_FLAGS;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -69,11 +93,13 @@ extern "C" {
  *
  * @param dm A pointer to a meta data writer that the generated directory
  *           entries should be written to.
+ * @param flags A combination of @ref SQFS_DIR_WRITER_CREATE_FLAGS.
  *
  * @return A pointer to a directory writer on success, NULL on
- *         allocation failure.
+ *         allocation failure or if flags has unknown flags set.
  */
-SQFS_API sqfs_dir_writer_t *sqfs_dir_writer_create(sqfs_meta_writer_t *dm);
+SQFS_API sqfs_dir_writer_t *sqfs_dir_writer_create(sqfs_meta_writer_t *dm,
+						   sqfs_u32 flags);
 
 /**
  * @brief Destroy a directory writer and free all its memory.
@@ -216,6 +242,42 @@ SQFS_API size_t sqfs_dir_writer_get_index_size(const sqfs_dir_writer_t *writer);
 SQFS_API sqfs_inode_generic_t
 *sqfs_dir_writer_create_inode(const sqfs_dir_writer_t *writer, size_t hlinks,
 			      sqfs_u32 xattr, sqfs_u32 parent_ino);
+
+/**
+ * @brief Write an export table to a SquashFS image.
+ *
+ * @memberof sqfs_dir_writer_t
+ *
+ * If the @ref sqfs_dir_writer_t was created with the
+ * @ref SQFS_DIR_WRITER_CREATE_EXPORT_TABLE flag set, it has an internal table
+ * that maps all inode numbers to inode references. After writing the fragment
+ * table, this function can be used to write this inode mapping table for NFS
+ * export support.
+ *
+ * It is safe to call this function if the writer has been created without the
+ * flag. In this case, it is simply a noop.
+ *
+ * In theory, the writer "sees" the entire directory tree and for each entry,
+ * the inode number and on-disk location, so it can build this table. The only
+ * inode it never sees is the root inode, so that information has to be passed
+ * to this function to add it to the table just before writing it to disk.
+ *
+ * @param writer A pointer to a directory writer object.
+ * @param file The ouput file to write the table to.
+ * @param cmp The compressor to use to compress the table.
+ * @param root_inode_num The inode number of the root inode.
+ * @param root_inode_ref An inode reference for the root inode.
+ * @param super A pointer to the super block. Location of the export table and
+ *              the exportable flag are set.
+ *
+ * @return Zero on success, a @ref E_SQFS_ERROR value on failure.
+ */
+SQFS_API int sqfs_dir_writer_write_export_table(sqfs_dir_writer_t *writer,
+						sqfs_file_t *file,
+						sqfs_compressor_t *cmp,
+						sqfs_u32 root_inode_num,
+						sqfs_u64 root_inode_ref,
+						sqfs_super_t *super);
 
 #ifdef __cplusplus
 }
