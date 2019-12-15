@@ -423,6 +423,14 @@ static int process_tar_ball(void)
 		if (ret < 0)
 			return -1;
 
+		if (hdr.mtime < 0)
+			hdr.mtime = 0;
+
+		if ((sqfs_u64)hdr.mtime > 0x0FFFFFFFFUL)
+			hdr.mtime = 0x0FFFFFFFFUL;
+
+		hdr.sb.st_mtime = hdr.mtime;
+
 		skip = false;
 		is_root = false;
 		is_prefixed = true;
