@@ -1,0 +1,25 @@
+#!/bin/sh
+
+set -e
+
+TARDIR="@abs_top_srcdir@/tests/tar"
+SHA512FILE="@abs_top_srcdir@/tests/tar/sqfs.sha512"
+TAR2SQFS="@abs_top_builddir@/tar2sqfs"
+
+for filename in $(find "$TARDIR" -name "*.tar" | grep -v ".*/file-size/.*"); do
+	dir="$(dirname $filename | sed -n -e 's;.*/tests/;tests/;p')"
+	imgname="$dir/$(basename $filename .tar).sqfs"
+
+	mkdir -p "$dir"
+	"$TAR2SQFS" -c gzip -q "$imgname" < "$filename"
+done
+
+sha512sum -c "$SHA512FILE"
+
+for filename in $(find "$TARDIR" -name "*.tar" | grep -v ".*/file-size/.*"); do
+	dir="$(dirname $filename | sed -n -e 's;.*/tests/;tests/;p')"
+	imgname="$dir/$(basename $filename .tar).sqfs"
+
+	rm "$imgname"
+	rmdir -p "$dir" || true
+done

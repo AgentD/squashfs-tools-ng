@@ -216,6 +216,7 @@ AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([lib/sqfs/libsquashfs0.pc])
 AC_CONFIG_FILES([Doxyfile])
 AC_CONFIG_FILES([tests/cantrbry.sh], [chmod +x tests/cantrbry.sh])
+AC_CONFIG_FILES([tests/test_tar_sqfs.sh], [chmod +x tests/test_tar_sqfs.sh])
 
 AC_OUTPUT([Makefile])
 
