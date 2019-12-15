@@ -68,7 +68,7 @@ void sqfs_writer_cfg_init(sqfs_writer_cfg_t *cfg)
 int sqfs_writer_init(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *wrcfg)
 {
 	sqfs_compressor_config_t cfg;
-	int ret;
+	int ret, flags;
 
 	if (compressor_cfg_init_options(&cfg, wrcfg->comp_id,
 					wrcfg->block_size,
@@ -149,14 +149,42 @@ int sqfs_writer_init(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *wrcfg)
 		if (sqfs->xwr == NULL) {
 			sqfs_perror(wrcfg->filename, "creating xattr writer",
 				    SQFS_ERROR_ALLOC);
-			goto fail;
+			goto fail_id;
 		}
 	}
 
+	sqfs->im = sqfs_meta_writer_create(sqfs->outfile, sqfs->cmp, 0);
+	if (sqfs->im == NULL) {
+		fputs("Error creating inode meta data writer.\n", stderr);
+		goto fail_xwr;
+	}
+
+	sqfs->dm = sqfs_meta_writer_create(sqfs->outfile, sqfs->cmp,
+					   SQFS_META_WRITER_KEEP_IN_MEMORY);
+	if (sqfs->dm == NULL) {
+		fputs("Error creating directory meta data writer.\n", stderr);
+		goto fail_im;
+	}
+
+	flags = 0;
+	if (wrcfg->exportable)
+		flags |= SQFS_DIR_WRITER_CREATE_EXPORT_TABLE;
+
+	sqfs->dirwr = sqfs_dir_writer_create(sqfs->dm, flags);
+	if (sqfs->dirwr == NULL) {
+		fputs("Error creating directory table writer.\n", stderr);
+		goto fail_dm;
+	}
+
 	return 0;
-fail:
+fail_dm:
+	sqfs_meta_writer_destroy(sqfs->dm);
+fail_im:
+	sqfs_meta_writer_destroy(sqfs->im);
+fail_xwr:
 	if (sqfs->xwr != NULL)
 		sqfs_xattr_writer_destroy(sqfs->xwr);
+fail_id:
 	sqfs_id_table_destroy(sqfs->idtbl);
 fail_data:
 	sqfs_data_writer_destroy(sqfs->data);
@@ -191,10 +219,8 @@ int sqfs_writer_finish(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *cfg)
 
 	sqfs->super.inode_count = sqfs->fs.inode_tbl_size;
 
-	if (sqfs_serialize_fstree(cfg->filename, sqfs->outfile, &sqfs->super,
-				  &sqfs->fs, sqfs->cmp, sqfs->idtbl)) {
+	if (sqfs_serialize_fstree(cfg->filename, sqfs))
 		return -1;
-	}
 
 	if (!cfg->quiet)
 		fputs("Writing fragment table...\n", stdout);
@@ -209,10 +235,14 @@ int sqfs_writer_finish(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *cfg)
 		if (!cfg->quiet)
 			fputs("Writing export table...\n", stdout);
 
-		if (write_export_table(cfg->filename, sqfs->outfile, &sqfs->fs,
-				       &sqfs->super, sqfs->cmp)) {
+
+		ret = sqfs_dir_writer_write_export_table(sqfs->dirwr,
+						sqfs->outfile, sqfs->cmp,
+						sqfs->fs.root->inode_num,
+						sqfs->fs.root->inode_ref,
+						&sqfs->super);
+		if (ret)
 			return -1;
-		}
 	}
 
 	if (!cfg->quiet)
@@ -260,6 +290,10 @@ void sqfs_writer_cleanup(sqfs_writer_t *sqfs)
 {
 	if (sqfs->xwr != NULL)
 		sqfs_xattr_writer_destroy(sqfs->xwr);
+
+	sqfs_dir_writer_destroy(sqfs->dirwr);
+	sqfs_meta_writer_destroy(sqfs->dm);
+	sqfs_meta_writer_destroy(sqfs->im);
 	sqfs_id_table_destroy(sqfs->idtbl);
 	sqfs_data_writer_destroy(sqfs->data);
 	sqfs->cmp->destroy(sqfs->cmp);

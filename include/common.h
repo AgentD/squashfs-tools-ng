@@ -46,6 +46,9 @@ typedef struct {
 
 typedef struct {
 	sqfs_data_writer_t *data;
+	sqfs_dir_writer_t *dirwr;
+	sqfs_meta_writer_t *dm;
+	sqfs_meta_writer_t *im;
 	sqfs_compressor_t *cmp;
 	sqfs_id_table_t *idtbl;
 	sqfs_file_t *outfile;
@@ -87,18 +90,7 @@ typedef struct {
 
   Returns 0 on success. Prints error messages to stderr on failure.
  */
-int sqfs_serialize_fstree(const char *filename, sqfs_file_t *file,
-			  sqfs_super_t *super, fstree_t *fs,
-			  sqfs_compressor_t *cmp, sqfs_id_table_t *idtbl);
-
-/*
-  Generate an NFS export table.
-
-  Returns 0 on success. Prints error messages to stderr on failure.
- */
-int write_export_table(const char *filename, sqfs_file_t *file,
-		       fstree_t *fs, sqfs_super_t *super,
-		       sqfs_compressor_t *cmp);
+int sqfs_serialize_fstree(const char *filename, sqfs_writer_t *wr);
 
 /* Print out fancy statistics for squashfs packing tools */
 void sqfs_print_statistics(sqfs_super_t *super, data_writer_stats_t *stats);

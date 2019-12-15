@@ -97,8 +97,7 @@ fail:
 	return NULL;
 }
 
-static int serialize_tree_node(const char *filename, sqfs_dir_writer_t *dirwr,
-			       sqfs_meta_writer_t *im, sqfs_id_table_t *idtbl,
+static int serialize_tree_node(const char *filename, sqfs_writer_t *wr,
 			       tree_node_t *n)
 {
 	sqfs_inode_generic_t *inode;
@@ -107,7 +106,7 @@ static int serialize_tree_node(const char *filename, sqfs_dir_writer_t *dirwr,
 	int ret;
 
 	if (S_ISDIR(n->mode)) {
-		inode = write_dir_entries(filename, dirwr, n);
+		inode = write_dir_entries(filename, wr->dirwr, n);
 		ret = SQFS_ERROR_INTERNAL;
 	} else if (S_ISREG(n->mode)) {
 		inode = n->data.file.user_ptr;
@@ -127,88 +126,56 @@ static int serialize_tree_node(const char *filename, sqfs_dir_writer_t *dirwr,
 
 	sqfs_inode_set_xattr_index(inode, n->xattr_idx);
 
-	ret = sqfs_id_table_id_to_index(idtbl, n->uid,
+	ret = sqfs_id_table_id_to_index(wr->idtbl, n->uid,
 					&inode->base.uid_idx);
 	if (ret)
 		goto out;
 
-	ret = sqfs_id_table_id_to_index(idtbl, n->gid,
+	ret = sqfs_id_table_id_to_index(wr->idtbl, n->gid,
 					&inode->base.gid_idx);
 	if (ret)
 		goto out;
 
-	sqfs_meta_writer_get_position(im, &block, &offset);
+	sqfs_meta_writer_get_position(wr->im, &block, &offset);
 	n->inode_ref = (block << 16) | offset;
 
-	ret = sqfs_meta_writer_write_inode(im, inode);
+	ret = sqfs_meta_writer_write_inode(wr->im, inode);
 out:
 	free(inode);
 	return ret;
 }
 
-int sqfs_serialize_fstree(const char *filename, sqfs_file_t *file,
-			  sqfs_super_t *super, fstree_t *fs,
-			  sqfs_compressor_t *cmp, sqfs_id_table_t *idtbl)
+int sqfs_serialize_fstree(const char *filename, sqfs_writer_t *wr)
 {
-	sqfs_meta_writer_t *im, *dm;
-	sqfs_dir_writer_t *dirwr;
 	size_t i;
 	int ret;
 
-	im = sqfs_meta_writer_create(file, cmp, 0);
-	if (im == NULL) {
-		ret = SQFS_ERROR_ALLOC;
-		goto out_err;
-	}
+	wr->super.inode_table_start = wr->outfile->get_size(wr->outfile);
 
-	dm = sqfs_meta_writer_create(file, cmp,
-				     SQFS_META_WRITER_KEEP_IN_MEMORY);
-	if (dm == NULL) {
-		ret = SQFS_ERROR_ALLOC;
-		goto out_im;
-	}
-
-	dirwr = sqfs_dir_writer_create(dm, 0);
-	if (dirwr == NULL) {
-		ret = SQFS_ERROR_ALLOC;
-		goto out_dm;
-	}
-
-	super->inode_table_start = file->get_size(file);
-
-	for (i = 0; i < fs->inode_tbl_size; ++i) {
-		ret = serialize_tree_node(filename, dirwr, im, idtbl,
-					  fs->inode_table[i]);
+	for (i = 0; i < wr->fs.inode_tbl_size; ++i) {
+		ret = serialize_tree_node(filename, wr, wr->fs.inode_table[i]);
 		if (ret)
 			goto out;
 	}
 
-	ret = sqfs_meta_writer_flush(im);
+	ret = sqfs_meta_writer_flush(wr->im);
 	if (ret)
 		goto out;
 
-	ret = sqfs_meta_writer_flush(dm);
+	ret = sqfs_meta_writer_flush(wr->dm);
 	if (ret)
 		goto out;
 
-	super->root_inode_ref = fs->root->inode_ref;
-	super->directory_table_start = file->get_size(file);
+	wr->super.root_inode_ref = wr->fs.root->inode_ref;
+	wr->super.directory_table_start = wr->outfile->get_size(wr->outfile);
 
-	ret = sqfs_meta_write_write_to_file(dm);
+	ret = sqfs_meta_write_write_to_file(wr->dm);
 	if (ret)
 		goto out;
 
 	ret = 0;
 out:
-	sqfs_dir_writer_destroy(dirwr);
-out_dm:
-	sqfs_meta_writer_destroy(dm);
-out_im:
-	sqfs_meta_writer_destroy(im);
-out_err:
-	if (ret < 0) {
-		sqfs_perror(filename, "storing filesystem tree",
-			    ret);
-	}
+	if (ret)
+		sqfs_perror(filename, "storing filesystem tree", ret);
 	return ret;
 }
