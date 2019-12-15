@@ -50,15 +50,13 @@ static void check_children_continuous(tree_node_t *root)
 int main(void)
 {
 	tree_node_t *a, *b, *c;
-	unsigned int i;
 	fstree_t fs;
 
 	// inode table for the empty tree
 	assert(fstree_init(&fs, NULL) == 0);
-	assert(fstree_gen_inode_table(&fs) == 0);
-	assert(fs.inode_tbl_size == 1);
+	fstree_gen_inode_numbers(&fs);
+	assert(fs.unique_inode_count == 1);
 	assert(fs.root->inode_num == 1);
-	assert(fs.inode_table[0] == fs.root);
 	fstree_cleanup(&fs);
 
 	// tree with 2 levels under root, fan out 3
@@ -83,13 +81,8 @@ int main(void)
 	assert(gen_node(c, "c_b") != NULL);
 	assert(gen_node(c, "c_c") != NULL);
 
-	assert(fstree_gen_inode_table(&fs) == 0);
-	assert(fs.inode_tbl_size == 13);
-
-	for (i = 0; i < 13; ++i) {
-		assert(fs.inode_table[i] != NULL);
-		assert(fs.inode_table[i]->inode_num == i + 1);
-	}
+	fstree_gen_inode_numbers(&fs);
+	assert(fs.unique_inode_count == 13);
 
 	check_children_before_root(fs.root);
 	check_children_continuous(fs.root);

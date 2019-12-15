@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 /*
- * gen_inode_table.c
+ * gen_inode_numbers.c
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
@@ -10,23 +10,6 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-
-static size_t count_nodes(tree_node_t *root)
-{
-	tree_node_t *n = root->data.dir.children;
-	size_t count = 1;
-
-	while (n != NULL) {
-		if (S_ISDIR(n->mode)) {
-			count += count_nodes(n);
-		} else {
-			++count;
-		}
-		n = n->next;
-	}
-
-	return count;
-}
 
 static void map_child_nodes(fstree_t *fs, tree_node_t *root, size_t *counter)
 {
@@ -48,27 +31,19 @@ static void map_child_nodes(fstree_t *fs, tree_node_t *root, size_t *counter)
 	}
 
 	for (it = root->data.dir.children; it != NULL; it = it->next) {
+		fs->unique_inode_count += 1;
+
 		it->inode_num = *counter;
 		*counter += 1;
-
-		fs->inode_table[it->inode_num - 1] = it;
 	}
 }
 
-int fstree_gen_inode_table(fstree_t *fs)
+void fstree_gen_inode_numbers(fstree_t *fs)
 {
 	size_t inum = 1;
 
-	fs->inode_tbl_size = count_nodes(fs->root);
-	fs->inode_table = calloc(1, sizeof(tree_node_t*) * fs->inode_tbl_size);
-
-	if (fs->inode_table == NULL) {
-		perror("allocating inode table");
-		return -1;
-	}
-
+	fs->unique_inode_count = 0;
 	map_child_nodes(fs, fs->root, &inum);
 	fs->root->inode_num = inum;
-	fs->inode_table[inum - 1] = fs->root;
-	return 0;
+	fs->unique_inode_count += 1;
 }

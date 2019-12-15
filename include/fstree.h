@@ -83,12 +83,9 @@ struct tree_node_t {
 struct fstree_t {
 	struct stat defaults;
 	size_t block_size;
-	size_t inode_tbl_size;
+	size_t unique_inode_count;
 
 	tree_node_t *root;
-
-	/* linear array of tree nodes. inode number is array index */
-	tree_node_t **inode_table;
 
 	/* linear linked list of all regular files */
 	file_info_t *files;
@@ -157,8 +154,13 @@ tree_node_t *fstree_add_generic(fstree_t *fs, const char *path,
  */
 int fstree_from_file(fstree_t *fs, const char *filename, FILE *fp);
 
-/* Returns 0 on success. Prints to stderr on failure */
-int fstree_gen_inode_table(fstree_t *fs);
+/*
+  Allocates inode numbers for all nodes. Directory entries are numbered in
+  ascending order.
+
+  The total inode count is stored in unique_inode_count.
+ */
+void fstree_gen_inode_numbers(fstree_t *fs);
 
 void fstree_gen_file_list(fstree_t *fs);
 
