@@ -17,13 +17,15 @@ for size in 4096 8192 16384 32768 65536 131072 262144 524288 1048576; do
 
 			xzcat "$CORPUS" | \
 				"$TAR2SQFS" -q -c "$cmp" -b "$size" \
-					    -j "$threads" "$name"
+					    -j "$threads" --defaults mtime=0 \
+					    "$name"
 
 			name="cantrbry_${cmp}_${size}_${threads}_T.sqfs"
 
 			xzcat "$CORPUS" | \
 				"$TAR2SQFS" -qT -c "$cmp" -b "$size" \
-					    -j "$threads" "$name"
+					    -j "$threads" --defaults mtime=0 \
+					    "$name"
 		done
 
 		# check that the ones with > 1 thread are identical,

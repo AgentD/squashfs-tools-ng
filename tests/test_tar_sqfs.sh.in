@@ -11,7 +11,7 @@ for filename in $(find "$TARDIR" -name "*.tar" | grep -v ".*/file-size/.*"); do
 	imgname="$dir/$(basename $filename .tar).sqfs"
 
 	mkdir -p "$dir"
-	"$TAR2SQFS" -c gzip -q "$imgname" < "$filename"
+	"$TAR2SQFS" --defaults mtime=0 -c gzip -q "$imgname" < "$filename"
 done
 
 sha512sum -c "$SHA512FILE"
