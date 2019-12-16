@@ -33,7 +33,7 @@
  *
  * @brief Abstracts generating of directory entries
  *
- * SquashFS stores directory entries and inodes seperated from each other. The
+ * SquashFS stores directory entries and inodes separated from each other. The
  * inodes are stored in a series of meta data blocks before another series of
  * meta data blocks that contain the directory entries. Directory inodes point
  * to meta data block (and offset) where its contents are listed and the

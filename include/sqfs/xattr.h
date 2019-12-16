@@ -159,7 +159,7 @@ extern "C" {
  * prefix of the key string and storing an enumerator instead to save memory.
  *
  * This function takes an @ref E_SQFS_XATTR_TYPE identifier and returns the
- * coresponding prefix string, including the '.' at the end that seperates
+ * coresponding prefix string, including the '.' at the end that separates
  * the prefix from the rest of the key.
  */
 SQFS_API const char *sqfs_get_xattr_prefix(E_SQFS_XATTR_TYPE id);

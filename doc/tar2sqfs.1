@@ -32,7 +32,7 @@ Run \fBtar2sqfs \-\-help\fR to get a list of all available compressors
 and the default selection.
 .TP
 \fB\-\-comp\-extra\fR, \fB\-X\fR <options>
-A comma seperated list of extra options for the selected compressor. Specify
+A comma separated list of extra options for the selected compressor. Specify
 \fBhelp\fR to get a list of available options.
 .TP
 \fB\-\-num\-jobs\fR, \fB\-j\fR <count>
@@ -54,7 +54,7 @@ Device block size to padd the image to.
 Defaults to 4096.
 .TP
 \fB\-\-defaults\fR, \fB\-d\fR <options>
-A comma seperated list of default values for
+A comma separated list of default values for
 implicitly created directories.
 The following values can be set:
 .TS
@@ -121,7 +121,7 @@ If any unsupported section or extended attribute key is encountered in an
 archive a warning message is written to stderr. If the \fB\-\-no\-skip\fR
 option is set, processing aborts. By default, unknown sections and unsupported
 extended attributes are simply skipped after issuing a warning.
-.SH ENVIRONEMNT
+.SH ENVIRONMENT
 If the command line switch \fB\-\-defaults\fR is not used or no default mtime
 is specified, the value of the environment variable \fBSOURCE\_DATE\_EPOCH\fR
 is used for all file and filesystem timestamps.
