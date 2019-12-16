@@ -99,7 +99,7 @@ struct fstree_t {
   On error, an error message is written to stderr.
 
   The string `defaults` can specify default attributes (mode, uid, gid, mtime)
-  as a comma seperated list of key value paris (<key>=<value>[,...]). The string
+  as a comma separated list of key value paris (<key>=<value>[,...]). The string
   is passed to getsubopt and will be altered.
 
   Returns 0 on success.

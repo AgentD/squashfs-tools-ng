@@ -33,7 +33,7 @@
  *
  * @brief Abstracts reading of directory entries
  *
- * SquashFS stores directory listings and inode structures seperated from
+ * SquashFS stores directory listings and inode structures separated from
  * each other in meta data blocks.
  *
  * The sqfs_dir_reader_t abstracts access to the filesystem tree in a SquashFS
@@ -275,7 +275,7 @@ SQFS_API int sqfs_dir_reader_get_root_inode(sqfs_dir_reader_t *rd,
  *
  * @param rd A pointer to a directory reader.
  * @param path A path to resolve into an inode. Forward or backward slashes can
- *             be used to seperate path components. Resolving '.' or '..' is
+ *             be used to separate path components. Resolving '.' or '..' is
  *             not supported.
  * @param out Returns a pointer to a generic inode that can be freed with a
  *            single free call.
@@ -298,7 +298,7 @@ SQFS_API int sqfs_dir_reader_find_by_path(sqfs_dir_reader_t *rd,
  *
  * @param rd A pointer to a directory reader.
  * @param path A path to resolve into an inode. Forward or backward slashes can
- *             be used to seperate path components. Resolving '.' or '..' is
+ *             be used to separate path components. Resolving '.' or '..' is
  *             not supported. Can be set to NULL to get the root inode.
  * @param flags A combination of @ref E_SQFS_TREE_FILTER_FLAGS flags.
  * @param out Returns the top most tree node.
