@@ -173,6 +173,20 @@ void fstree_post_process(fstree_t *fs);
 char *fstree_get_path(tree_node_t *node);
 
 /*
+  Resolve a path to a tree node. Returns NULL on failure and sets errno.
+
+  If "create_implicitly" is set to true, the function acts essentially like
+  mkdir_p if part of the path doesn't exist yet.
+
+  If "stop_at_parent" is true, the function stops at the last component and
+  returns the parent or would-be-parent of the last path component, but doesn't
+  check if the last path component exists or not.
+ */
+tree_node_t *fstree_get_node_by_path(fstree_t *fs, tree_node_t *root,
+				     const char *path, bool create_implicitly,
+				     bool stop_at_parent);
+
+/*
   Convert back to forward slashed, remove all preceeding and trailing slashes,
   collapse all sequences of slashes, remove all path components that are '.'
   and returns failure state if one of the path components is '..'.
