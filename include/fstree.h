@@ -82,7 +82,6 @@ struct tree_node_t {
 /* Encapsulates a file system tree */
 struct fstree_t {
 	struct stat defaults;
-	size_t block_size;
 	size_t unique_inode_count;
 
 	tree_node_t *root;

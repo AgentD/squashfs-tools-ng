@@ -19,7 +19,6 @@ int main(void)
 	fstree_t fs;
 
 	memset(&fs, 0, sizeof(fs));
-	fs.block_size = 512;
 
 	memset(&sb, 0, sizeof(sb));
 	sb.st_mode = S_IFREG | 0654;
