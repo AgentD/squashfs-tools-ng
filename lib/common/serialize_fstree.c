@@ -17,7 +17,7 @@ static sqfs_inode_generic_t *tree_node_to_inode(tree_node_t *node)
 	size_t extra = 0;
 
 	if (S_ISLNK(node->mode))
-		extra = strlen(node->data.slink_target);
+		extra = strlen(node->data.target);
 
 	inode = calloc(1, sizeof(*inode) + extra);
 	if (inode == NULL) {
@@ -39,7 +39,7 @@ static sqfs_inode_generic_t *tree_node_to_inode(tree_node_t *node)
 		inode->data.slink.nlink = 1;
 		inode->data.slink.target_size = extra;
 		inode->slink_target = (char *)inode->extra;
-		memcpy(inode->extra, node->data.slink_target, extra);
+		memcpy(inode->extra, node->data.target, extra);
 		break;
 	case S_IFBLK:
 		inode->base.type = SQFS_INODE_BDEV;

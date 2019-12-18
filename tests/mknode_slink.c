@@ -32,10 +32,10 @@ int main(void)
 	assert(node->mode == (S_IFLNK | 0777));
 	assert(node->parent == NULL);
 	assert((char *)node->name >= (char *)node->payload);
-	assert(node->data.slink_target >= (char *)node->payload);
-	assert(node->data.slink_target >= node->name + 8);
+	assert(node->data.target >= (char *)node->payload);
+	assert(node->data.target >= node->name + 8);
 	assert(strcmp(node->name, "symlink") == 0);
-	assert(strcmp(node->data.slink_target, "target") == 0);
+	assert(strcmp(node->data.target, "target") == 0);
 	free(node);
 
 	node = fstree_mknode(NULL, "symlink", 7, "", &sb);
@@ -44,10 +44,10 @@ int main(void)
 	assert(node->mode == (S_IFLNK | 0777));
 	assert(node->parent == NULL);
 	assert((char *)node->name >= (char *)node->payload);
-	assert(node->data.slink_target >= (char *)node->payload);
-	assert(node->data.slink_target >= node->name + 8);
+	assert(node->data.target >= (char *)node->payload);
+	assert(node->data.target >= node->name + 8);
 	assert(strcmp(node->name, "symlink") == 0);
-	assert(node->data.slink_target[0] == '\0');
+	assert(node->data.target[0] == '\0');
 	free(node);
 
 	return EXIT_SUCCESS;

@@ -90,8 +90,8 @@ int main(void)
 	assert(n->uid == 2);
 	assert(n->gid == 3);
 	assert(strcmp(n->name, "slink") == 0);
-	fprintf(stderr, "'%s'\n", n->data.slink_target);
-	assert(strcmp(n->data.slink_target, "slinktarget") == 0);
+	fprintf(stderr, "'%s'\n", n->data.target);
+	assert(strcmp(n->data.target, "slinktarget") == 0);
 
 	n = n->next;
 	assert(n->mode == (S_IFSOCK | 0555));

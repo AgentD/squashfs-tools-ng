@@ -33,7 +33,7 @@ int main(void)
 	assert(node->gid == sb.st_gid);
 	assert(node->mode == sb.st_mode);
 	assert(node->parent == NULL);
-	assert(node->data.slink_target == NULL);
+	assert(node->data.target == NULL);
 	assert(node->data.devno == 0);
 	free(node);
 
@@ -52,7 +52,7 @@ int main(void)
 	assert(node->gid == sb.st_gid);
 	assert(node->mode == sb.st_mode);
 	assert(node->parent == NULL);
-	assert(node->data.slink_target == NULL);
+	assert(node->data.target == NULL);
 	assert(node->data.devno == 0);
 	free(node);
 

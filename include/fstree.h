@@ -72,7 +72,7 @@ struct tree_node_t {
 	union {
 		dir_info_t dir;
 		file_info_t file;
-		char *slink_target;
+		char *target;
 		sqfs_u64 devno;
 	} data;
 

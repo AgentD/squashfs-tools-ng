@@ -60,7 +60,7 @@ tree_node_t *fstree_mknode(tree_node_t *parent, const char *name,
 		break;
 	case S_IFLNK:
 		n->mode = S_IFLNK | 0777;
-		n->data.slink_target = ptr;
+		n->data.target = ptr;
 		break;
 	case S_IFBLK:
 	case S_IFCHR:
