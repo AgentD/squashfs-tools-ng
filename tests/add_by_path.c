@@ -29,6 +29,8 @@ int main(void)
 	sb.st_uid = 1000;
 	sb.st_gid = 100;
 
+	assert(fs.root->link_count == 2);
+
 	a = fstree_add_generic(&fs, "dir", &sb, NULL);
 	assert(a != NULL);
 	assert(strcmp(a->name, "dir") == 0);
@@ -36,8 +38,10 @@ int main(void)
 	assert(a->uid == sb.st_uid);
 	assert(a->gid == sb.st_gid);
 	assert(a->parent == fs.root);
+	assert(a->link_count == 2);
 	assert(a->next == NULL);
 	assert(fs.root->data.dir.children == a);
+	assert(fs.root->link_count == 3);
 	assert(!a->data.dir.created_implicitly);
 
 	memset(&sb, 0, sizeof(sb));
@@ -52,8 +56,10 @@ int main(void)
 	assert(b->uid == sb.st_uid);
 	assert(b->gid == sb.st_gid);
 	assert(b->parent == fs.root);
+	assert(b->link_count == 1);
 	assert(b->data.devno == sb.st_rdev);
 	assert(b->next == a);
+	assert(fs.root->link_count == 4);
 	assert(fs.root->data.dir.children == b);
 
 	assert(fstree_add_generic(&fs, "blkdev/foo", &sb, NULL) == NULL);
@@ -74,10 +80,14 @@ int main(void)
 	assert(b->mode == sb.st_mode);
 	assert(b->uid == sb.st_uid);
 	assert(b->gid == sb.st_gid);
+	assert(b->link_count == 1);
 	assert(b->parent == a);
 	assert(b->data.devno == sb.st_rdev);
 	assert(b->next == NULL);
 	assert(a->data.dir.children == b);
+
+	assert(a->link_count == 3);
+	assert(fs.root->link_count == 4);
 
 	b = fstree_add_generic(&fs, "dir/foo/chrdev", &sb, NULL);
 	assert(b != NULL);
@@ -85,10 +95,14 @@ int main(void)
 	assert(b->mode == sb.st_mode);
 	assert(b->uid == sb.st_uid);
 	assert(b->gid == sb.st_gid);
+	assert(b->link_count == 1);
 	assert(b->parent != a);
 	assert(b->parent->parent == a);
 	assert(b->data.devno == sb.st_rdev);
 	assert(b->next == NULL);
+
+	assert(a->link_count == 4);
+	assert(fs.root->link_count == 4);
 	assert(a->data.dir.children != b);
 
 	b = b->parent;
@@ -96,6 +110,7 @@ int main(void)
 	assert(b->mode == (S_IFDIR | 0755));
 	assert(b->uid == 21);
 	assert(b->gid == 42);
+	assert(b->link_count == 3);
 
 	memset(&sb, 0, sizeof(sb));
 	sb.st_mode = S_IFDIR | 0750;
@@ -109,6 +124,10 @@ int main(void)
 	assert(a->mode == sb.st_mode);
 	assert(a->uid == sb.st_uid);
 	assert(a->gid == sb.st_gid);
+	assert(a->link_count == 3);
+
+	assert(a->parent->link_count == 4);
+	assert(fs.root->link_count == 4);
 
 	assert(fstree_add_generic(&fs, "dir/foo", &sb, NULL) == NULL);
 	assert(errno == EEXIST);

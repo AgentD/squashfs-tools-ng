@@ -32,6 +32,7 @@ int main(void)
 	assert(node->gid == sb.st_gid);
 	assert(node->mode == sb.st_mode);
 	assert(node->parent == NULL);
+	assert(node->link_count == 1);
 	assert((char *)node->name >= (char *)node->payload);
 	assert(node->data.file.input_file >= (char *)node->payload);
 	assert(node->data.file.input_file >= node->name + 8);

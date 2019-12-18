@@ -32,6 +32,7 @@ int main(void)
 	assert(node->uid == sb.st_uid);
 	assert(node->gid == sb.st_gid);
 	assert(node->mode == sb.st_mode);
+	assert(node->link_count == 1);
 	assert(node->parent == NULL);
 	assert(node->data.target == NULL);
 	assert(node->data.devno == 0);
@@ -51,6 +52,7 @@ int main(void)
 	assert(node->uid == sb.st_uid);
 	assert(node->gid == sb.st_gid);
 	assert(node->mode == sb.st_mode);
+	assert(node->link_count == 1);
 	assert(node->parent == NULL);
 	assert(node->data.target == NULL);
 	assert(node->data.devno == 0);
@@ -70,6 +72,7 @@ int main(void)
 	assert(node->uid == sb.st_uid);
 	assert(node->gid == sb.st_gid);
 	assert(node->mode == sb.st_mode);
+	assert(node->link_count == 1);
 	assert(node->data.devno == sb.st_rdev);
 	assert(node->parent == NULL);
 	free(node);
@@ -88,6 +91,7 @@ int main(void)
 	assert(node->uid == sb.st_uid);
 	assert(node->gid == sb.st_gid);
 	assert(node->mode == sb.st_mode);
+	assert(node->link_count == 1);
 	assert(node->data.devno == sb.st_rdev);
 	assert(node->parent == NULL);
 	free(node);

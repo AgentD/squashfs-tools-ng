@@ -28,27 +28,27 @@ static sqfs_inode_generic_t *tree_node_to_inode(tree_node_t *node)
 	switch (node->mode & S_IFMT) {
 	case S_IFSOCK:
 		inode->base.type = SQFS_INODE_SOCKET;
-		inode->data.ipc.nlink = 1;
+		inode->data.ipc.nlink = node->link_count;
 		break;
 	case S_IFIFO:
 		inode->base.type = SQFS_INODE_FIFO;
-		inode->data.ipc.nlink = 1;
+		inode->data.ipc.nlink = node->link_count;
 		break;
 	case S_IFLNK:
 		inode->base.type = SQFS_INODE_SLINK;
-		inode->data.slink.nlink = 1;
+		inode->data.slink.nlink = node->link_count;
 		inode->data.slink.target_size = extra;
 		inode->slink_target = (char *)inode->extra;
 		memcpy(inode->extra, node->data.target, extra);
 		break;
 	case S_IFBLK:
 		inode->base.type = SQFS_INODE_BDEV;
-		inode->data.dev.nlink = 1;
+		inode->data.dev.nlink = node->link_count;
 		inode->data.dev.devno = node->data.devno;
 		break;
 	case S_IFCHR:
 		inode->base.type = SQFS_INODE_CDEV;
-		inode->data.dev.nlink = 1;
+		inode->data.dev.nlink = node->link_count;
 		inode->data.dev.devno = node->data.devno;
 		break;
 	default:
@@ -89,6 +89,12 @@ static sqfs_inode_generic_t *write_dir_entries(const char *filename,
 	if (inode == NULL) {
 		ret = SQFS_ERROR_ALLOC;
 		goto fail;
+	}
+
+	if (inode->base.type == SQFS_INODE_DIR) {
+		inode->data.dir.nlink = node->link_count;
+	} else {
+		inode->data.dir_ext.nlink = node->link_count;
 	}
 
 	return inode;

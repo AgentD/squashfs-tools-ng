@@ -30,6 +30,7 @@ int main(void)
 	assert(node->uid == sb.st_uid);
 	assert(node->gid == sb.st_gid);
 	assert(node->mode == (S_IFLNK | 0777));
+	assert(node->link_count == 1);
 	assert(node->parent == NULL);
 	assert((char *)node->name >= (char *)node->payload);
 	assert(node->data.target >= (char *)node->payload);
@@ -42,6 +43,7 @@ int main(void)
 	assert(node->uid == sb.st_uid);
 	assert(node->gid == sb.st_gid);
 	assert(node->mode == (S_IFLNK | 0777));
+	assert(node->link_count == 1);
 	assert(node->parent == NULL);
 	assert((char *)node->name >= (char *)node->payload);
 	assert(node->data.target >= (char *)node->payload);

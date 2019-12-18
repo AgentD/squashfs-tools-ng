@@ -59,7 +59,7 @@ struct tree_node_t {
 	sqfs_u32 inode_num;
 	sqfs_u32 mod_time;
 	sqfs_u16 mode;
-	sqfs_u16 pad0;
+	sqfs_u16 link_count;
 
 	/* SquashFS inode refernce number. 32 bit offset of the meta data
 	   block start (relative to inode table start), shifted left by 16

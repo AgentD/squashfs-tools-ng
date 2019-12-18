@@ -44,6 +44,7 @@ tree_node_t *fstree_mknode(tree_node_t *parent, const char *name,
 	n->gid = sb->st_gid;
 	n->mode = sb->st_mode;
 	n->mod_time = sb->st_mtime;
+	n->link_count = 1;
 	n->name = (char *)n->payload;
 	memcpy(n->name, name, name_len);
 
@@ -66,7 +67,13 @@ tree_node_t *fstree_mknode(tree_node_t *parent, const char *name,
 	case S_IFCHR:
 		n->data.devno = sb->st_rdev;
 		break;
+	case S_IFDIR:
+		n->link_count = 2;
+		break;
 	}
+
+	if (parent != NULL)
+		parent->link_count += 1;
 
 	return n;
 }

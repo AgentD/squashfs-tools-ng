@@ -30,6 +30,7 @@ int main(void)
 	assert(root->uid == sb.st_uid);
 	assert(root->gid == sb.st_gid);
 	assert(root->mode == sb.st_mode);
+	assert(root->link_count == 2);
 	assert((char *)root->name >= (char *)root->payload);
 	assert(root->name >= (char *)root->payload);
 	assert(strcmp(root->name, "rootdir") == 0);
@@ -40,6 +41,8 @@ int main(void)
 	a = fstree_mknode(root, "adir", 4, NULL, &sb);
 	assert(a->parent == root);
 	assert(a->next == NULL);
+	assert(a->link_count == 2);
+	assert(root->link_count == 3);
 	assert(root->data.dir.children == a);
 	assert(root->parent == NULL);
 	assert(root->next == NULL);
@@ -47,7 +50,9 @@ int main(void)
 	b = fstree_mknode(root, "bdir", 4, NULL, &sb);
 	assert(a->parent == root);
 	assert(b->parent == root);
+	assert(b->link_count == 2);
 	assert(root->data.dir.children == b);
+	assert(root->link_count == 4);
 	assert(b->next == a);
 	assert(a->next == NULL);
 	assert(root->parent == NULL);
