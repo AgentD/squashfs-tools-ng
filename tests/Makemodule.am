@@ -37,6 +37,7 @@ test_get_path_SOURCES = tests/get_path.c
 test_get_path_LDADD = libfstree.a libcompat.a
 
 test_fstree_sort_SOURCES = tests/fstree_sort.c
+test_fstree_sort_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/lib/fstree
 test_fstree_sort_LDADD = libfstree.a libcompat.a
 
 test_fstree_from_file_SOURCES = tests/fstree_from_file.c
@@ -44,6 +45,7 @@ test_fstree_from_file_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(top_srcdir)/tests/f
 test_fstree_from_file_LDADD = libfstree.a libcompat.a
 
 test_fstree_init_SOURCES = tests/fstree_init.c
+test_fstree_init_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/lib/fstree
 test_fstree_init_LDADD = libfstree.a libcompat.a
 
 test_tar_gnu_SOURCES = tests/tar_gnu.c

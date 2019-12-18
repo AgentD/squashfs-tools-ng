@@ -172,16 +172,6 @@ void fstree_post_process(fstree_t *fs);
 */
 char *fstree_get_path(tree_node_t *node);
 
-/* ASCIIbetically sort a linked list of tree nodes */
-tree_node_t *tree_node_list_sort(tree_node_t *head);
-
-/*
-  If the environment variable SOURCE_DATE_EPOCH is set to a parsable number
-  that fits into an unsigned 32 bit value, return its value. Otherwise,
-  default to 0.
- */
-sqfs_u32 get_source_date_epoch(void);
-
 /*
   Convert back to forward slashed, remove all preceeding and trailing slashes,
   collapse all sequences of slashes, remove all path components that are '.'

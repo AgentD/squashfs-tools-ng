@@ -1,11 +1,10 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 /*
- * source_date_epoch.h
+ * source_date_epoch.c
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
-#include "config.h"
-#include "fstree.h"
+#include "internal.h"
 
 #include <stdlib.h>
 #include <stdio.h>

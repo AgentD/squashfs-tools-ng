@@ -5,9 +5,7 @@
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  * Copyright (C) 2019 Zachary Dremann <dremann@gmail.com>
  */
-#include "config.h"
-
-#include "fstree.h"
+#include "internal.h"
 
 #include <string.h>
 
