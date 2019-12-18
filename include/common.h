@@ -132,8 +132,6 @@ void sqfs_writer_cleanup(sqfs_writer_t *sqfs);
 
 void sqfs_perror(const char *file, const char *action, int error_code);
 
-bool is_filename_sane(const char *name, bool check_os_specific);
-
 /*
   A wrapper around mkdir() that behaves like 'mkdir -p'. It tries to create
   every component of the given path and skips already existing entries.

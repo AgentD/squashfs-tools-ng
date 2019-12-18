@@ -48,6 +48,12 @@ test_fstree_init_SOURCES = tests/fstree_init.c
 test_fstree_init_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/lib/fstree
 test_fstree_init_LDADD = libfstree.a libcompat.a
 
+test_filename_sane_SOURCES = tests/filename_sane.c lib/fstree/filename_sane.c
+
+test_filename_sane_w32_SOURCES = tests/filename_sane.c
+test_filename_sane_w32_SOURCES += lib/fstree/filename_sane.c
+test_filename_sane_w32_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_WIN32=1
+
 test_tar_gnu_SOURCES = tests/tar_gnu.c
 test_tar_gnu_LDADD = libtar.a libcompat.a
 test_tar_gnu_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(top_srcdir)/tests/tar
@@ -97,7 +103,8 @@ tar_fuzz_LDADD = libtar.a libcompat.a
 check_PROGRAMS += test_mknode_simple test_mknode_slink test_mknode_reg
 check_PROGRAMS += test_mknode_dir test_gen_inode_numbers test_add_by_path
 check_PROGRAMS += test_get_path test_fstree_sort test_fstree_from_file
-check_PROGRAMS += test_fstree_init test_tar_ustar test_tar_pax test_tar_gnu
+check_PROGRAMS += test_fstree_init test_filename_sane test_filename_sane_w32
+check_PROGRAMS += test_tar_ustar test_tar_pax test_tar_gnu
 check_PROGRAMS += test_tar_sparse_gnu test_tar_sparse_gnu1 test_tar_sparse_gnu2
 check_PROGRAMS += test_tar_xattr_bsd test_tar_xattr_schily
 check_PROGRAMS += test_tar_xattr_schily_bin
@@ -108,7 +115,8 @@ noinst_PROGRAMS += fstree_fuzz tar_fuzz
 TESTS += test_mknode_simple test_mknode_slink
 TESTS += test_mknode_reg test_mknode_dir test_gen_inode_numbers
 TESTS += test_add_by_path test_get_path test_fstree_sort test_fstree_from_file
-TESTS += test_fstree_init test_tar_ustar test_tar_pax
+TESTS += test_fstree_init test_filename_sane test_filename_sane_w32
+TESTS += test_tar_ustar test_tar_pax
 TESTS += test_tar_gnu test_tar_sparse_gnu test_tar_sparse_gnu1
 TESTS += test_tar_sparse_gnu2 test_tar_xattr_bsd test_tar_xattr_schily
 TESTS += test_tar_xattr_schily_bin tests/cantrbry.sh tests/test_tar_sqfs.sh

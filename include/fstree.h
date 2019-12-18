@@ -181,4 +181,14 @@ char *fstree_get_path(tree_node_t *node);
 */
 int canonicalize_name(char *filename);
 
+/*
+  Returns true if a given filename is sane, false if it is not (e.g. contains
+  slashes or it is equal to '.' or '..').
+
+  If check_os_specific is true, this also checks if the filename contains
+  a character, or is equal to a name, that is black listed on the current OS.
+  E.g. on Windows, a file named "COM0" or "AUX" is a no-no.
+ */
+bool is_filename_sane(const char *name, bool check_os_specific);
+
 #endif /* FSTREE_H */

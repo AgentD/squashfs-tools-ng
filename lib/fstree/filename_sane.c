@@ -4,11 +4,12 @@
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
-#include "common.h"
+#include "config.h"
+#include "fstree.h"
 
 #include <string.h>
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__WINDOWS__) || defined(TEST_WIN32)
 #ifdef _MSC_VER
 #define strncasecmp _strnicmp
 #define strcasecmp _stricmp
@@ -59,7 +60,7 @@ bool is_filename_sane(const char *name, bool check_os_specific)
 		if (*name == '/' || *name == '\\')
 			return false;
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__WINDOWS__) || defined(TEST_WIN32)
 		if (check_os_specific) {
 			if (*name == '<' || *name == '>' || *name == ':')
 				return false;
