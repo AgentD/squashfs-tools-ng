@@ -60,13 +60,3 @@ tree_node_t *tree_node_list_sort(tree_node_t *head)
 
 	return merge(tree_node_list_sort(head), tree_node_list_sort(half));
 }
-
-void tree_node_sort_recursive(tree_node_t *n)
-{
-	n->data.dir.children = tree_node_list_sort(n->data.dir.children);
-
-	for (n = n->data.dir.children; n != NULL; n = n->next) {
-		if (S_ISDIR(n->mode))
-			tree_node_sort_recursive(n);
-	}
-}

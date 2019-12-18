@@ -232,8 +232,7 @@ int main(int argc, char **argv)
 		sehnd = NULL;
 	}
 
-	tree_node_sort_recursive(sqfs.fs.root);
-	fstree_gen_file_list(&sqfs.fs);
+	fstree_post_process(&sqfs.fs);
 
 	if (pack_files(sqfs.data, &sqfs.fs, &sqfs.stats, &opt))
 		goto out;

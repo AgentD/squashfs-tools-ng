@@ -213,9 +213,6 @@ int sqfs_writer_finish(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *cfg)
 	if (!cfg->quiet)
 		fputs("Writing inodes and directories...\n", stdout);
 
-	tree_node_sort_recursive(sqfs->fs.root);
-	fstree_gen_inode_numbers(&sqfs->fs);
-
 	sqfs->super.inode_count = sqfs->fs.unique_inode_count;
 
 	if (sqfs_serialize_fstree(cfg->filename, sqfs))

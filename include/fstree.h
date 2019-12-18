@@ -155,14 +155,15 @@ tree_node_t *fstree_add_generic(fstree_t *fs, const char *path,
 int fstree_from_file(fstree_t *fs, const char *filename, FILE *fp);
 
 /*
-  Allocates inode numbers for all nodes. Directory entries are numbered in
-  ascending order.
+  This function performs all the necessary post processing steps on the file
+  system tree, i.e. recursively sorting all directory entries by name,
+  allocating inode numbers and stringing all files nodes together into a
+  linked list.
 
-  The total inode count is stored in unique_inode_count.
+  The total inode count is stored in unique_inode_count. The head of the file
+  list is pointed to by fs->files.
  */
-void fstree_gen_inode_numbers(fstree_t *fs);
-
-void fstree_gen_file_list(fstree_t *fs);
+void fstree_post_process(fstree_t *fs);
 
 /*
   Generate a string holding the full path of a node. Returned
@@ -174,9 +175,6 @@ char *fstree_get_path(tree_node_t *node);
 
 /* ASCIIbetically sort a linked list of tree nodes */
 tree_node_t *tree_node_list_sort(tree_node_t *head);
-
-/* ASCIIbetically sort all sub directories recursively */
-void tree_node_sort_recursive(tree_node_t *root);
 
 /*
   If the environment variable SOURCE_DATE_EPOCH is set to a parsable number

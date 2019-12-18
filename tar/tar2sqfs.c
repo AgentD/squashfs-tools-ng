@@ -551,6 +551,8 @@ int main(int argc, char **argv)
 	if (process_tar_ball())
 		goto out;
 
+	fstree_post_process(&sqfs.fs);
+
 	if (sqfs_writer_finish(&sqfs, &cfg))
 		goto out;
 

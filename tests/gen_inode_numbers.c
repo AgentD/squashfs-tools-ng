@@ -54,7 +54,7 @@ int main(void)
 
 	// inode table for the empty tree
 	assert(fstree_init(&fs, NULL) == 0);
-	fstree_gen_inode_numbers(&fs);
+	fstree_post_process(&fs);
 	assert(fs.unique_inode_count == 1);
 	assert(fs.root->inode_num == 1);
 	fstree_cleanup(&fs);
@@ -81,7 +81,7 @@ int main(void)
 	assert(gen_node(c, "c_b") != NULL);
 	assert(gen_node(c, "c_c") != NULL);
 
-	fstree_gen_inode_numbers(&fs);
+	fstree_post_process(&fs);
 	assert(fs.unique_inode_count == 13);
 
 	check_children_before_root(fs.root);

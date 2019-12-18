@@ -42,7 +42,7 @@ int main(void)
 	assert(fstree_init(&fs, NULL) == 0);
 	assert(fstree_from_file(&fs, "testfile", fp) == 0);
 
-	tree_node_sort_recursive(fs.root);
+	fstree_post_process(&fs);
 	n = fs.root->data.dir.children;
 
 	assert(n->mode == (S_IFBLK | 0600));
