@@ -232,7 +232,8 @@ int main(int argc, char **argv)
 		sehnd = NULL;
 	}
 
-	fstree_post_process(&sqfs.fs);
+	if (fstree_post_process(&sqfs.fs))
+		goto out;
 
 	if (pack_files(sqfs.data, &sqfs.fs, &sqfs.stats, &opt))
 		goto out;

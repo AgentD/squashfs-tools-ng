@@ -64,7 +64,7 @@ static sqfs_inode_generic_t *write_dir_entries(const char *filename,
 {
 	sqfs_u32 xattr, parent_inode;
 	sqfs_inode_generic_t *inode;
-	tree_node_t *it;
+	tree_node_t *it, *tgt;
 	int ret;
 
 	ret = sqfs_dir_writer_begin(dirw, 0);
@@ -72,8 +72,14 @@ static sqfs_inode_generic_t *write_dir_entries(const char *filename,
 		goto fail;
 
 	for (it = node->data.dir.children; it != NULL; it = it->next) {
-		ret = sqfs_dir_writer_add_entry(dirw, it->name, it->inode_num,
-						it->inode_ref, it->mode);
+		if (it->mode == FSTREE_MODE_HARD_LINK_RESOLVED) {
+			tgt = it->data.target_node;
+		} else {
+			tgt = it;
+		}
+
+		ret = sqfs_dir_writer_add_entry(dirw, it->name, tgt->inode_num,
+						tgt->inode_ref, tgt->mode);
 		if (ret)
 			goto fail;
 	}
@@ -110,6 +116,9 @@ static int serialize_tree_node(const char *filename, sqfs_writer_t *wr,
 	sqfs_u32 offset;
 	sqfs_u64 block;
 	int ret;
+
+	if (n->mode == FSTREE_MODE_HARD_LINK_RESOLVED)
+		return 0;
 
 	if (S_ISDIR(n->mode)) {
 		inode = write_dir_entries(filename, wr->dirwr, n);

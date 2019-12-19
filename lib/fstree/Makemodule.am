@@ -1,5 +1,5 @@
 libfstree_a_SOURCES = lib/fstree/fstree.c lib/fstree/fstree_from_file.c
-libfstree_a_SOURCES += lib/fstree/fstree_sort.c
+libfstree_a_SOURCES += lib/fstree/fstree_sort.c lib/fstree/hardlink.c
 libfstree_a_SOURCES += lib/fstree/post_process.c lib/fstree/get_path.c
 libfstree_a_SOURCES += lib/fstree/mknode.c
 libfstree_a_SOURCES += lib/fstree/add_by_path.c lib/fstree/get_by_path.c

@@ -7,33 +7,129 @@
 #include "internal.h"
 
 #include <stdlib.h>
+#include <string.h>
+#include <assert.h>
 #include <stdio.h>
+#include <errno.h>
 
-static void map_child_nodes(fstree_t *fs, tree_node_t *root, size_t *counter)
+static void swap_link_with_target(tree_node_t *node)
+{
+	tree_node_t *tgt, *it;
+
+	tgt = node->data.target_node;
+
+	node->xattr_idx = tgt->xattr_idx;
+	node->uid = tgt->uid;
+	node->gid = tgt->gid;
+	node->inode_num = tgt->inode_num;
+	node->mod_time = tgt->mod_time;
+	node->mode = tgt->mode;
+	node->link_count = tgt->link_count;
+	node->inode_ref = tgt->inode_ref;
+
+	/* FIXME: data pointers now point to foreign node! */
+	node->data = tgt->data;
+
+	tgt->mode = FSTREE_MODE_HARD_LINK_RESOLVED;
+	tgt->data.target_node = node;
+
+	if (S_ISDIR(node->mode)) {
+		for (it = node->data.dir.children; it != NULL; it = it->next)
+			it->parent = node;
+	}
+}
+
+static void hard_link_snap(tree_node_t *n)
+{
+	/* XXX: the hard-link-vs-target swap may create hard links
+	   pointing to hard links, making this necessary */
+	while (n->data.target_node->mode == FSTREE_MODE_HARD_LINK_RESOLVED)
+		n->data.target_node = n->data.target_node->data.target_node;
+}
+
+static int map_child_nodes(fstree_t *fs, tree_node_t *root, size_t *counter)
 {
 	bool has_subdirs = false;
-	tree_node_t *it;
+	tree_node_t *it, *tgt;
 
 	for (it = root->data.dir.children; it != NULL; it = it->next) {
-		if (S_ISDIR(it->mode)) {
-			has_subdirs = true;
-			break;
+		if (it->mode == FSTREE_MODE_HARD_LINK_RESOLVED) {
+			hard_link_snap(it);
+			tgt = it->data.target_node;
+
+			if (tgt->inode_num == 0 && tgt->parent != root)
+				swap_link_with_target(it);
 		}
+
+		if (S_ISDIR(it->mode))
+			has_subdirs = true;
 	}
 
 	if (has_subdirs) {
 		for (it = root->data.dir.children; it != NULL; it = it->next) {
-			if (S_ISDIR(it->mode))
-				map_child_nodes(fs, it, counter);
+			if (S_ISDIR(it->mode)) {
+				if (map_child_nodes(fs, it, counter))
+					return -1;
+			}
 		}
 	}
 
 	for (it = root->data.dir.children; it != NULL; it = it->next) {
-		fs->unique_inode_count += 1;
+		if (it->mode == FSTREE_MODE_HARD_LINK_RESOLVED) {
+			hard_link_snap(it);
+		} else {
+			fs->unique_inode_count += 1;
 
-		it->inode_num = *counter;
-		*counter += 1;
+			it->inode_num = *counter;
+			*counter += 1;
+		}
 	}
+	return 0;
+}
+
+static int resolve_hard_links_dfs(fstree_t *fs, tree_node_t *n)
+{
+	tree_node_t *it;
+
+	if (n->mode == FSTREE_MODE_HARD_LINK) {
+		if (fstree_resolve_hard_link(fs, n))
+			goto fail_link;
+
+		assert(n->mode == FSTREE_MODE_HARD_LINK_RESOLVED);
+		it = n->data.target_node;
+
+		if (S_ISDIR(it->mode) && it->data.dir.visited)
+			goto fail_link_loop;
+	} else if (S_ISDIR(n->mode)) {
+		n->data.dir.visited = true;
+
+		for (it = n->data.dir.children; it != NULL; it = it->next) {
+			if (resolve_hard_links_dfs(fs, it))
+				return -1;
+		}
+
+		n->data.dir.visited = false;
+	}
+
+	return 0;
+fail_link: {
+	char *path = fstree_get_path(n);
+	fprintf(stderr, "Resolving hard link '%s' -> '%s': %s\n",
+		path == NULL ? n->name : path, n->data.target,
+		strerror(errno));
+	free(path);
+}
+	return -1;
+fail_link_loop: {
+	char *npath = fstree_get_path(n);
+	char *tpath = fstree_get_path(it);
+	fprintf(stderr, "Hard link loop detected in '%s' -> '%s'\n",
+		npath == NULL ? n->name : npath,
+		tpath == NULL ? it->name : tpath);
+	free(npath);
+	free(tpath);
+}
+	return -1;
 }
 
 static void sort_recursive(tree_node_t *n)
@@ -76,16 +172,21 @@ static file_info_t *file_list_dfs(tree_node_t *n)
 	return NULL;
 }
 
-void fstree_post_process(fstree_t *fs)
+int fstree_post_process(fstree_t *fs)
 {
 	size_t inum = 1;
 
 	sort_recursive(fs->root);
 
+	if (resolve_hard_links_dfs(fs, fs->root))
+		return -1;
+
 	fs->unique_inode_count = 0;
-	map_child_nodes(fs, fs->root, &inum);
+	if (map_child_nodes(fs, fs->root, &inum))
+		return -1;
 	fs->root->inode_num = inum;
 	fs->unique_inode_count += 1;
 
 	fs->files = file_list_dfs(fs->root);
+	return 0;
 }

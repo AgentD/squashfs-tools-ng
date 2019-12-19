@@ -17,6 +17,9 @@
 #include "sqfs/predef.h"
 #include "compat.h"
 
+#define FSTREE_MODE_HARD_LINK (0)
+#define FSTREE_MODE_HARD_LINK_RESOLVED (1)
+
 typedef struct tree_node_t tree_node_t;
 typedef struct file_info_t file_info_t;
 typedef struct dir_info_t dir_info_t;
@@ -40,6 +43,9 @@ struct dir_info_t {
 
 	/* Set to true for implicitly generated directories.  */
 	bool created_implicitly;
+
+	/* Used by recursive tree walking code to avoid hard link loops */
+	bool visited;
 };
 
 /* A node in a file system tree */
@@ -68,12 +74,13 @@ struct tree_node_t {
 	   Generated on the fly when writing inodes. */
 	sqfs_u64 inode_ref;
 
-	/* Type specific data. Pointers are into payload area blow. */
+	/* Type specific data. "target" pointer is into payload area below. */
 	union {
 		dir_info_t dir;
 		file_info_t file;
 		char *target;
 		sqfs_u64 devno;
+		tree_node_t *target_node;
 	} data;
 
 	sqfs_u8 payload[];
@@ -156,13 +163,15 @@ int fstree_from_file(fstree_t *fs, const char *filename, FILE *fp);
 /*
   This function performs all the necessary post processing steps on the file
   system tree, i.e. recursively sorting all directory entries by name,
-  allocating inode numbers and stringing all files nodes together into a
-  linked list.
+  allocating inode numbers, resolving hard links and stringing all files nodes
+  together into a linked list.
 
   The total inode count is stored in unique_inode_count. The head of the file
   list is pointed to by fs->files.
+
+  Returns 0 on success, prints to stderr on failure.
  */
-void fstree_post_process(fstree_t *fs);
+int fstree_post_process(fstree_t *fs);
 
 /*
   Generate a string holding the full path of a node. Returned
@@ -204,5 +213,18 @@ int canonicalize_name(char *filename);
   E.g. on Windows, a file named "COM0" or "AUX" is a no-no.
  */
 bool is_filename_sane(const char *name, bool check_os_specific);
+
+/*
+  Add a hard link node. Returns NULL on failure and sets errno.
+ */
+tree_node_t *fstree_add_hard_link(fstree_t *fs, const char *path,
+				  const char *target);
+
+/*
+  Resolve a hard link node and replace it with a direct pointer to the target.
+
+  Returns 0 on success. On failure, errno is set.
+ */
+int fstree_resolve_hard_link(fstree_t *fs, tree_node_t *node);
 
 #endif /* FSTREE_H */
