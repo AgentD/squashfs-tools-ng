@@ -355,6 +355,19 @@ static int create_node_and_repack_data(tar_header_decoded_t *hdr)
 {
 	tree_node_t *node;
 
+	if (hdr->is_hard_link) {
+		node = fstree_add_hard_link(&sqfs.fs, hdr->name,
+					    hdr->link_target);
+		if (node == NULL)
+			goto fail_errno;
+
+		if (!cfg.quiet) {
+			printf("Hard link %s -> %s\n", hdr->name,
+			       hdr->link_target);
+		}
+		return 0;
+	}
+
 	if (!keep_time) {
 		hdr->sb.st_mtime = sqfs.fs.defaults.st_mtime;
 	}
@@ -385,7 +398,7 @@ fail_errno:
 
 static int set_root_attribs(const tar_header_decoded_t *hdr)
 {
-	if (!S_ISDIR(hdr->sb.st_mode)) {
+	if (hdr->is_hard_link || !S_ISDIR(hdr->sb.st_mode)) {
 		fprintf(stderr, "'%s' is not a directory!\n", hdr->name);
 		return -1;
 	}

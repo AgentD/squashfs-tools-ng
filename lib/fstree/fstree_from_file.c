@@ -62,6 +62,19 @@ static int add_file(fstree_t *fs, const char *filename, size_t line_num,
 	return add_generic(fs, filename, line_num, path, basic, extra);
 }
 
+static int add_hard_link(fstree_t *fs, const char *filename, size_t line_num,
+			 const char *path, struct stat *basic, const char *extra)
+{
+	(void)basic;
+
+	if (fstree_add_hard_link(fs, path, extra) == NULL) {
+		fprintf(stderr, "%s: " PRI_SZ ": %s\n",
+			filename, line_num, strerror(errno));
+		return -1;
+	}
+	return 0;
+}
+
 static const struct {
 	const char *keyword;
 	unsigned int mode;
@@ -71,6 +84,7 @@ static const struct {
 } file_list_hooks[] = {
 	{ "dir", S_IFDIR, false, add_generic },
 	{ "slink", S_IFLNK, true, add_generic },
+	{ "link", 0, true, add_hard_link },
 	{ "nod", 0, true, add_device },
 	{ "pipe", S_IFIFO, false, add_generic },
 	{ "sock", S_IFSOCK, false, add_generic },

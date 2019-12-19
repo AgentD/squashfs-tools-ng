@@ -84,6 +84,7 @@ typedef struct {
 	sqfs_u64 actual_size;
 	sqfs_u64 record_size;
 	bool unknown_record;
+	bool is_hard_link;
 	tar_xattr_t *xattr;
 
 	/* broken out since struct stat could contain

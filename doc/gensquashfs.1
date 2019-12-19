@@ -105,6 +105,7 @@ file <path> <mode> <uid> <gid> [<location>]
 dir <path> <mode> <uid> <gid>
 nod <path> <mode> <uid> <gid> <dev_type> <maj> <min>
 slink <path> <mode> <uid> <gid> <target>
+link <path> <dummy> <dummy> <dummy> <target>
 pipe <path> <mode> <uid> <gid>
 sock <path> <mode> <uid> <gid>
 .fi
@@ -131,7 +132,7 @@ Optional location of the input file. Can be specified relative to either the
 description file or the pack directory. If omitted, the image path is used
 as a relative path.
 T}
-<target>;Symlink target.
+<target>;Symlink or hardlink target.
 <mode>;Mode/permissions of the entry.
 <uid>;Numeric user id.
 <gid>;Numeric group id.

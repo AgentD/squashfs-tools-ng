@@ -345,8 +345,7 @@ static int decode_header(const tar_header_t *hdr, unsigned int set_by_pax,
 		out->sb.st_mode |= S_IFREG;
 		break;
 	case TAR_TYPE_LINK:
-		/* XXX: hard links are not support yet */
-		out->sb.st_mode = S_IFLNK | 0777;
+		out->is_hard_link = true;
 		break;
 	case TAR_TYPE_SLINK:
 		out->sb.st_mode = S_IFLNK | 0777;
