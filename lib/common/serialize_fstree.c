@@ -118,6 +118,13 @@ static int serialize_tree_node(const char *filename, sqfs_writer_t *wr,
 		inode = n->data.file.user_ptr;
 		n->data.file.user_ptr = NULL;
 		ret = SQFS_ERROR_INTERNAL;
+
+		if (inode->base.type == SQFS_INODE_FILE && n->link_count > 1) {
+			sqfs_inode_make_extended(inode);
+			inode->data.file_ext.nlink = n->link_count;
+		} else {
+			inode->data.file_ext.nlink = n->link_count;
+		}
 	} else {
 		inode = tree_node_to_inode(n);
 		ret = SQFS_ERROR_ALLOC;
