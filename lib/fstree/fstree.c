@@ -126,5 +126,6 @@ int fstree_init(fstree_t *fs, char *defaults)
 void fstree_cleanup(fstree_t *fs)
 {
 	free_recursive(fs->root);
+	free(fs->inodes);
 	memset(fs, 0, sizeof(*fs));
 }

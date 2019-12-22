@@ -117,9 +117,6 @@ static int serialize_tree_node(const char *filename, sqfs_writer_t *wr,
 	sqfs_u64 block;
 	int ret;
 
-	if (n->mode == FSTREE_MODE_HARD_LINK_RESOLVED)
-		return 0;
-
 	if (S_ISDIR(n->mode)) {
 		inode = write_dir_entries(filename, wr->dirwr, n);
 		ret = SQFS_ERROR_INTERNAL;
@@ -167,54 +164,18 @@ out:
 	return ret;
 }
 
-static int serialize_recursive(const char *filename, sqfs_writer_t *wr,
-			       tree_node_t *root)
-{
-	bool has_subdirs = false;
-	tree_node_t *it;
-	int ret;
-
-	for (it = root->data.dir.children; it != NULL; it = it->next) {
-		if (S_ISDIR(it->mode)) {
-			has_subdirs = true;
-			break;
-		}
-	}
-
-	if (has_subdirs) {
-		for (it = root->data.dir.children; it != NULL; it = it->next) {
-			if (S_ISDIR(it->mode)) {
-				ret = serialize_recursive(filename, wr, it);
-				if (ret)
-					return ret;
-			}
-		}
-	}
-
-	for (it = root->data.dir.children; it != NULL; it = it->next) {
-		ret = serialize_tree_node(filename, wr, it);
-		if (ret)
-			return ret;
-	}
-
-	return 0;
-}
-
 int sqfs_serialize_fstree(const char *filename, sqfs_writer_t *wr)
 {
+	size_t i;
 	int ret;
 
 	wr->super.inode_table_start = wr->outfile->get_size(wr->outfile);
 
-	if (S_ISDIR(wr->fs.root->mode)) {
-		ret = serialize_recursive(filename, wr, wr->fs.root);
+	for (i = 0; i < wr->fs.unique_inode_count; ++i) {
+		ret = serialize_tree_node(filename, wr, wr->fs.inodes[i]);
 		if (ret)
 			goto out;
 	}
-
-	ret = serialize_tree_node(filename, wr, wr->fs.root);
-	if (ret)
-		goto out;
 
 	ret = sqfs_meta_writer_flush(wr->im);
 	if (ret)

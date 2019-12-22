@@ -91,6 +91,9 @@ struct fstree_t {
 	struct stat defaults;
 	size_t unique_inode_count;
 
+	/* flat array of all nodes that have an inode number */
+	tree_node_t **inodes;
+
 	tree_node_t *root;
 
 	/* linear linked list of all regular files */
@@ -168,6 +171,9 @@ int fstree_from_file(fstree_t *fs, const char *filename, FILE *fp);
 
   The total inode count is stored in unique_inode_count. The head of the file
   list is pointed to by fs->files.
+
+  The "inodes" array is allocated and each node that has an inode number is
+  mapped into the array at index inode_num - 1.
 
   Returns 0 on success, prints to stderr on failure.
  */

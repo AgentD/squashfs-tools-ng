@@ -47,7 +47,7 @@ static void hard_link_snap(tree_node_t *n)
 		n->data.target_node = n->data.target_node->data.target_node;
 }
 
-static int map_child_nodes(fstree_t *fs, tree_node_t *root, size_t *counter)
+static int alloc_inode_num_dfs(fstree_t *fs, tree_node_t *root, size_t *counter)
 {
 	bool has_subdirs = false;
 	tree_node_t *it, *tgt;
@@ -68,7 +68,7 @@ static int map_child_nodes(fstree_t *fs, tree_node_t *root, size_t *counter)
 	if (has_subdirs) {
 		for (it = root->data.dir.children; it != NULL; it = it->next) {
 			if (S_ISDIR(it->mode)) {
-				if (map_child_nodes(fs, it, counter))
+				if (alloc_inode_num_dfs(fs, it, counter))
 					return -1;
 			}
 		}
@@ -172,6 +172,19 @@ static file_info_t *file_list_dfs(tree_node_t *n)
 	return NULL;
 }
 
+static void map_inodes_dfs(fstree_t *fs, tree_node_t *n)
+{
+	if (n->mode == FSTREE_MODE_HARD_LINK_RESOLVED)
+		return;
+
+	fs->inodes[n->inode_num - 1] = n;
+
+	if (S_ISDIR(n->mode)) {
+		for (n = n->data.dir.children; n != NULL; n = n->next)
+			map_inodes_dfs(fs, n);
+	}
+}
+
 int fstree_post_process(fstree_t *fs)
 {
 	size_t inum = 1;
@@ -182,10 +195,18 @@ int fstree_post_process(fstree_t *fs)
 		return -1;
 
 	fs->unique_inode_count = 0;
-	if (map_child_nodes(fs, fs->root, &inum))
+	if (alloc_inode_num_dfs(fs, fs->root, &inum))
 		return -1;
 	fs->root->inode_num = inum;
 	fs->unique_inode_count += 1;
+
+	fs->inodes = calloc(sizeof(fs->inodes[0]), fs->unique_inode_count);
+	if (fs->inodes == NULL) {
+		perror("Allocating inode list");
+		return -1;
+	}
+
+	map_inodes_dfs(fs, fs->root);
 
 	fs->files = file_list_dfs(fs->root);
 	return 0;
