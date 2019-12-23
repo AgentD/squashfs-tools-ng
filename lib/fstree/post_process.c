@@ -47,7 +47,7 @@ static void hard_link_snap(tree_node_t *n)
 		n->data.target_node = n->data.target_node->data.target_node;
 }
 
-static int alloc_inode_num_dfs(fstree_t *fs, tree_node_t *root, size_t *counter)
+static void alloc_inode_num_dfs(fstree_t *fs, tree_node_t *root)
 {
 	bool has_subdirs = false;
 	tree_node_t *it, *tgt;
@@ -67,10 +67,8 @@ static int alloc_inode_num_dfs(fstree_t *fs, tree_node_t *root, size_t *counter)
 
 	if (has_subdirs) {
 		for (it = root->data.dir.children; it != NULL; it = it->next) {
-			if (S_ISDIR(it->mode)) {
-				if (alloc_inode_num_dfs(fs, it, counter))
-					return -1;
-			}
+			if (S_ISDIR(it->mode))
+				alloc_inode_num_dfs(fs, it);
 		}
 	}
 
@@ -78,13 +76,10 @@ static int alloc_inode_num_dfs(fstree_t *fs, tree_node_t *root, size_t *counter)
 		if (it->mode == FSTREE_MODE_HARD_LINK_RESOLVED) {
 			hard_link_snap(it);
 		} else {
+			it->inode_num = fs->unique_inode_count + 1;
 			fs->unique_inode_count += 1;
-
-			it->inode_num = *counter;
-			*counter += 1;
 		}
 	}
-	return 0;
 }
 
 static int resolve_hard_links_dfs(fstree_t *fs, tree_node_t *n)
@@ -187,17 +182,14 @@ static void map_inodes_dfs(fstree_t *fs, tree_node_t *n)
 
 int fstree_post_process(fstree_t *fs)
 {
-	size_t inum = 1;
-
 	sort_recursive(fs->root);
 
 	if (resolve_hard_links_dfs(fs, fs->root))
 		return -1;
 
 	fs->unique_inode_count = 0;
-	if (alloc_inode_num_dfs(fs, fs->root, &inum))
-		return -1;
-	fs->root->inode_num = inum;
+	alloc_inode_num_dfs(fs, fs->root);
+	fs->root->inode_num = fs->unique_inode_count + 1;
 	fs->unique_inode_count += 1;
 
 	fs->inodes = calloc(sizeof(fs->inodes[0]), fs->unique_inode_count);
