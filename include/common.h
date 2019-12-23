@@ -75,6 +75,12 @@ typedef struct {
 	bool quiet;
 } sqfs_writer_cfg_t;
 
+typedef struct sqfs_hard_link_t {
+	struct sqfs_hard_link_t *next;
+	sqfs_u32 inode_number;
+	char *target;
+} sqfs_hard_link_t;
+
 #define container_of(ptr, type, member) \
 	((type *)((char *)ptr - offsetof(type, member)))
 
@@ -131,6 +137,9 @@ int sqfs_writer_finish(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *cfg);
 void sqfs_writer_cleanup(sqfs_writer_t *sqfs);
 
 void sqfs_perror(const char *file, const char *action, int error_code);
+
+int sqfs_tree_find_hard_links(const sqfs_tree_node_t *root,
+			      sqfs_hard_link_t **out);
 
 /*
   A wrapper around mkdir() that behaves like 'mkdir -p'. It tries to create
