@@ -215,3 +215,53 @@ out_skip:
 	fprintf(stderr, "WARNING: %s: %s\n", name, reason);
 	return 1;
 }
+
+int write_hard_link(FILE *fp, const struct stat *sb, const char *name,
+		    const char *target, unsigned int counter)
+{
+	tar_header_t hdr;
+	char buffer[64];
+	size_t len;
+
+	memset(&hdr, 0, sizeof(hdr));
+
+	len = strlen(target);
+	if (len >= 100) {
+		sprintf(buffer, "gnu/target%u", counter);
+		if (write_gnu_header(fp, sb, target, len,
+				     TAR_TYPE_GNU_SLINK, buffer))
+			return -1;
+		sprintf(hdr.linkname, "hardlink_%u", counter);
+	} else {
+		memcpy(hdr.linkname, target, len);
+	}
+
+	len = strlen(name);
+	if (len >= 100) {
+		sprintf(buffer, "gnu/name%u", counter);
+		if (write_gnu_header(fp, sb, name, len,
+				     TAR_TYPE_GNU_PATH, buffer)) {
+			return -1;
+		}
+		sprintf(hdr.name, "gnu/data%u", counter);
+	} else {
+		memcpy(hdr.name, name, len);
+	}
+
+	write_number(hdr.mode, sb->st_mode & ~S_IFMT, sizeof(hdr.mode));
+	write_number(hdr.uid, sb->st_uid, sizeof(hdr.uid));
+	write_number(hdr.gid, sb->st_gid, sizeof(hdr.gid));
+	write_number(hdr.size, 0, sizeof(hdr.size));
+	write_number_signed(hdr.mtime, sb->st_mtime, sizeof(hdr.mtime));
+	hdr.typeflag = TAR_TYPE_LINK;
+	memcpy(hdr.magic, TAR_MAGIC_OLD, sizeof(hdr.magic));
+	memcpy(hdr.version, TAR_VERSION_OLD, sizeof(hdr.version));
+	sprintf(hdr.uname, "%u", sb->st_uid);
+	sprintf(hdr.gname, "%u", sb->st_gid);
+	write_number(hdr.devmajor, 0, sizeof(hdr.devmajor));
+	write_number(hdr.devminor, 0, sizeof(hdr.devminor));
+
+	update_checksum(&hdr);
+	return write_retry("writing tar hard link record",
+			   fp, &hdr, sizeof(hdr));
+}

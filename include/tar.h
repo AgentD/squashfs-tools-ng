@@ -125,6 +125,9 @@ int write_tar_header(FILE *fp, const struct stat *sb, const char *name,
 		     const char *slink_target, const tar_xattr_t *xattr,
 		     unsigned int counter);
 
+int write_hard_link(FILE *fp, const struct stat *sb, const char *name,
+		    const char *target, unsigned int counter);
+
 /* calcuate and skip the zero padding */
 int skip_padding(FILE *fp, sqfs_u64 size);
 
