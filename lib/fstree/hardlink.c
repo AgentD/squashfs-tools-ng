@@ -57,6 +57,11 @@ int fstree_resolve_hard_link(fstree_t *fs, tree_node_t *node)
 		}
 	}
 
+	if (S_ISDIR(node->mode)) {
+		errno = EPERM;
+		return -1;
+	}
+
 	start->mode = FSTREE_MODE_HARD_LINK_RESOLVED;
 	start->data.target_node = node;
 
