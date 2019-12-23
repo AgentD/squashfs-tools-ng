@@ -35,6 +35,12 @@ than once implies \fB\-\-keep\-as\-dir\fR.
 Discard extended attributes from the SquashFS image. The default behavior is
 to copy all xattrs attached to SquashFS inodes into the resulting tar archive.
 .TP
+\fB\-\-no\-hard\-links\fR, \fB\-L\fR
+Normally, sqfs2tar runs hard link detection and generates hard links for
+entries that refer to the same inode. If this flag is set, hard link
+detection is not performed and duplicate data records are generated
+instead.
+.TP
 \fB\-\-no\-skip\fR, \fB\-s\fR
 Abort if a file cannot be stored in a tar record instead of skipping it.
 .TP

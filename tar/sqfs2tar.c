@@ -22,11 +22,12 @@ static struct option long_opts[] = {
 	{ "root-becomes", required_argument, NULL, 'r' },
 	{ "no-skip", no_argument, NULL, 's' },
 	{ "no-xattr", no_argument, NULL, 'X' },
+	{ "no-hard-links", no_argument, NULL, 'L' },
 	{ "help", no_argument, NULL, 'h' },
 	{ "version", no_argument, NULL, 'V' },
 };
 
-static const char *short_opts = "d:kr:sXhV";
+static const char *short_opts = "d:kr:sXLhV";
 
 static const char *usagestr =
 "Usage: sqfs2tar [OPTIONS...] <sqfsfile>\n"
@@ -56,6 +57,8 @@ static const char *usagestr =
 "                            Using --subdir more than once implies\n"
 "                            --keep-as-dir.\n"
 "  --no-xattr, -X            Do not copy extended attributes.\n"
+"  --no-hard-links, -L       Do not generate hard links. Produce duplicate\n"
+"                            entries instead.\n"
 "\n"
 "  --no-skip, -s             Abort if a file cannot be stored in a tar\n"
 "                            archive. By default, it is simply skipped\n"
@@ -76,6 +79,7 @@ static unsigned int record_counter;
 static bool dont_skip = false;
 static bool keep_as_dir = false;
 static bool no_xattr = false;
+static bool no_links = false;
 
 static char *root_becomes = NULL;
 static char **subdirs = NULL;
@@ -86,6 +90,7 @@ static sqfs_xattr_reader_t *xr;
 static sqfs_data_reader_t *data;
 static sqfs_file_t *file;
 static sqfs_super_t super;
+static sqfs_hard_link_t *links = NULL;
 
 static FILE *out_file = NULL;
 
@@ -152,6 +157,9 @@ static void process_args(int argc, char **argv)
 			break;
 		case 'X':
 			no_xattr = true;
+			break;
+		case 'L':
+			no_links = true;
 			break;
 		case 'h':
 			fputs(usagestr, stdout);
@@ -289,10 +297,28 @@ fail:
 	return -1;
 }
 
+static char *prepend_prefix(char *name)
+{
+	size_t len = strlen(root_becomes);
+	char *temp = realloc(name, strlen(name) + len + 2);
+
+	if (temp == NULL) {
+		perror("assembling tar entry filename");
+		return NULL;
+	}
+
+	name = temp;
+	memmove(name + len + 1, name, strlen(name) + 1);
+	memcpy(name, root_becomes, len);
+	name[len] = '/';
+	return name;
+}
+
 static int write_tree_dfs(const sqfs_tree_node_t *n)
 {
 	tar_xattr_t *xattr = NULL, *xit;
-	char *name, *target, *temp;
+	sqfs_hard_link_t *lnk = NULL;
+	char *name, *target;
 	struct stat sb;
 	size_t len;
 	int ret;
@@ -332,24 +358,29 @@ static int write_tree_dfs(const sqfs_tree_node_t *n)
 		if (canonicalize_name(name))
 			goto out_skip;
 
-		if (root_becomes != NULL) {
-			len = strlen(root_becomes);
-			temp = realloc(name, strlen(name) + len + 2);
-
-			if (temp == NULL) {
-				perror("assembling tar entry filename");
-				free(name);
-				return -1;
+		for (lnk = links; lnk != NULL; lnk = lnk->next) {
+			if (lnk->inode_number == n->inode->base.inode_number) {
+				if (strcmp(name, lnk->target) == 0)
+					lnk = NULL;
+				break;
 			}
+		}
 
-			name = temp;
-			memmove(name + len + 1, name, strlen(name) + 1);
-			memcpy(name, root_becomes, len);
-			name[len] = '/';
+		if (root_becomes != NULL) {
+			name = prepend_prefix(name);
+			if (name == NULL)
+				return -1;
 		}
 	}
 
 	inode_stat(n, &sb);
+
+	if (lnk != NULL) {
+		ret = write_hard_link(out_file, &sb, name, lnk->target,
+				      record_counter++);
+		free(name);
+		return ret;
+	}
 
 	if (!no_xattr) {
 		if (get_xattrs(name, n->inode, &xattr)) {
@@ -455,6 +486,7 @@ int main(int argc, char **argv)
 	sqfs_compressor_t *cmp;
 	sqfs_id_table_t *idtbl;
 	sqfs_dir_reader_t *dr;
+	sqfs_hard_link_t *lnk;
 	size_t i;
 
 	process_args(argc, argv);
@@ -600,6 +632,19 @@ int main(int argc, char **argv)
 		}
 	}
 
+	if (!no_links) {
+		if (sqfs_tree_find_hard_links(root, &links))
+			goto out_tree;
+
+		if (root_becomes != NULL) {
+			for (lnk = links; lnk != NULL; lnk = lnk->next) {
+				lnk->target = prepend_prefix(lnk->target);
+				if (lnk->target == NULL)
+					goto out;
+			}
+		}
+	}
+
 	if (write_tree_dfs(root))
 		goto out;
 
@@ -609,6 +654,13 @@ int main(int argc, char **argv)
 	status = EXIT_SUCCESS;
 	fflush(out_file);
 out:
+	while (links != NULL) {
+		lnk = links;
+		links = links->next;
+		free(lnk->target);
+		free(lnk);
+	}
+out_tree:
 	if (root != NULL)
 		sqfs_dir_tree_destroy(root);
 out_xr:
