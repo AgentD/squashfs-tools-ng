@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A `--no-tail-packing` option to `tar2sqfs` and `sqfs2tar`.
 - CHANGELOG.md now references GitHub issue numbers.
 - Simple integration and regression test suit.
+- Simple creation of an NFS export table throught `libsquashfs`.
+- Support for non-directory hard links in `gensquashfs`, `tar2sqfs`
+  and `sqfs2tar`.
 
 ### Changed
 - Return propper error code from `sqfs_get_xattr_prefix_id`.
@@ -41,6 +44,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix out of bounds write in the LZO compressor.
 - Fix queue accounting in the compressor thread pool. (#29)
 - Fix name of `libsquashfs` pkg-config file.
+- Reading of binary (i.e. non-textual) xattr values from tar files. (#32)
+- A bug in parsing the GNU.sparse.name PAX attribute from tar files.
+- sqfsdiff: recurse into directories that are only in one image.
 
 ## [0.7] - 2019-10-08
 ### Added
