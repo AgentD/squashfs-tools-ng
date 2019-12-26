@@ -183,9 +183,17 @@ export PKG_CONFIG_LIBDIR="$W32_DIR/lib/pkgconfig"
 export PKG_CONFIG_PATH="$W32_DIR/lib/pkgconfig"
 
 ./autogen.sh
+./configure CFLAGS="-O2" LZO_CFLAGS="-I$W32_DIR/include" \
+	    LZO_LIBS="-L$W32_DIR/lib -llzo2" \
+	    --prefix="$W32_DIR" --host="$W32_PREFIX"
+cp "$W32_DIR/bin/"*.dll .
+make -j check
+rm *.dll
+
 ./configure CFLAGS="-O2 -DNDEBUG" LZO_CFLAGS="-I$W32_DIR/include" \
 	    LZO_LIBS="-L$W32_DIR/lib -llzo2" \
 	    --prefix="$W32_DIR" --host="$W32_PREFIX"
+make clean
 make -j
 make install-strip
 
@@ -194,6 +202,14 @@ make install-strip
 export PKG_CONFIG_SYSROOT_DIR="$W64_DIR"
 export PKG_CONFIG_LIBDIR="$W64_DIR/lib/pkgconfig"
 export PKG_CONFIG_PATH="$W64_DIR/lib/pkgconfig"
+
+./configure CFLAGS="-O2" LZO_CFLAGS="-I$W64_DIR/include" \
+	    LZO_LIBS="-L$W64_DIR/lib -llzo2" \
+	    --prefix="$W64_DIR" --host="$W64_PREFIX"
+make clean
+cp "$W64_DIR/bin/"*.dll .
+make -j check
+rm *.dll
 
 ./configure CFLAGS="-O2 -DNDEBUG" LZO_CFLAGS="-I$W64_DIR/include" \
 	    LZO_LIBS="-L$W64_DIR/lib -llzo2" \
