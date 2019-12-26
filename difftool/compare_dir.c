@@ -6,13 +6,40 @@
  */
 #include "sqfsdiff.h"
 
+static int print_omitted(sqfsdiff_t *sd, bool is_old, sqfs_tree_node_t *n)
+{
+	char *path = node_path(n);
+
+	if (path == NULL)
+		return -1;
+
+	fprintf(stdout, "%c %s\n", is_old ? '<' : '>', path);
+
+	if ((sd->compare_flags & COMPARE_EXTRACT_FILES) &&
+	    S_ISREG(n->inode->base.mode)) {
+		if (extract_files(sd, is_old ? n->inode : NULL,
+				  is_old ? NULL : n->inode, path)) {
+			free(path);
+			return -1;
+		}
+	}
+
+	free(path);
+
+	for (n = n->children; n->children != NULL; n = n->next) {
+		if (print_omitted(sd, is_old, n))
+			return -1;
+	}
+
+	return 0;
+}
+
 int compare_dir_entries(sqfsdiff_t *sd, sqfs_tree_node_t *old,
 			sqfs_tree_node_t *new)
 {
 	sqfs_tree_node_t *old_it = old->children, *old_prev = NULL;
 	sqfs_tree_node_t *new_it = new->children, *new_prev = NULL;
 	int ret, result = 0;
-	char *path;
 
 	while (old_it != NULL || new_it != NULL) {
 		if (old_it != NULL && new_it != NULL) {
@@ -26,56 +53,32 @@ int compare_dir_entries(sqfsdiff_t *sd, sqfs_tree_node_t *old,
 
 		if (ret < 0) {
 			result = 1;
-			path = node_path(old_it);
-			if (path == NULL)
+
+			if (print_omitted(sd, true, old_it))
 				return -1;
-
-			if ((sd->compare_flags & COMPARE_EXTRACT_FILES) &&
-			    S_ISREG(old_it->inode->base.mode)) {
-				if (extract_files(sd, old_it->inode,
-						  NULL, path)) {
-					free(path);
-					return -1;
-				}
-			}
-
-			fprintf(stdout, "< %s\n", path);
-			free(path);
 
 			if (old_prev == NULL) {
 				old->children = old_it->next;
-				free(old_it);
+				sqfs_dir_tree_destroy(old_it);
 				old_it = old->children;
 			} else {
 				old_prev->next = old_it->next;
-				free(old_it);
+				sqfs_dir_tree_destroy(old_it);
 				old_it = old_prev->next;
 			}
 		} else if (ret > 0) {
 			result = 1;
-			path = node_path(new_it);
-			if (path == NULL)
+
+			if (print_omitted(sd, false, new_it))
 				return -1;
-
-			if ((sd->compare_flags & COMPARE_EXTRACT_FILES) &&
-			    S_ISREG(new_it->inode->base.mode)) {
-				if (extract_files(sd, NULL, new_it->inode,
-						  path)) {
-					free(path);
-					return -1;
-				}
-			}
-
-			fprintf(stdout, "> %s\n", path);
-			free(path);
 
 			if (new_prev == NULL) {
 				new->children = new_it->next;
-				free(new_it);
+				sqfs_dir_tree_destroy(new_it);
 				new_it = new->children;
 			} else {
 				new_prev->next = new_it->next;
-				free(new_it);
+				sqfs_dir_tree_destroy(new_it);
 				new_it = new_prev->next;
 			}
 		} else {
