@@ -6,9 +6,12 @@ CORPUS="@abs_top_srcdir@/tests/corpus/cantrbry.tar.xz"
 SHA512FILE="@abs_top_srcdir@/tests/corpus/cantrbry.sha512"
 TAR2SQFS="@abs_top_builddir@/tar2sqfs"
 
-COMPRESSORS=$(@abs_top_builddir@/tar2sqfs --help |\
-	      sed -ne '/^Available compressors:$/{:a' -e 'n;p;ba' -e '}' |\
-	      sed -n '/\t/p')
+if [ ! -f "$TAR2SQFS" -a -f "${TAR2SQFS}.exe" ]; then
+	TAR2SQFS="${TAR2SQFS}.exe"
+fi
+
+COMPRESSORS=$("$TAR2SQFS" --help | tr -d '\015' |\
+	      awk '/Available compressors:/,EOF' | sed -n '/\t/p')
 
 for size in 4096 8192 16384 32768 65536 131072 262144 524288 1048576; do
 	for cmp in $COMPRESSORS; do

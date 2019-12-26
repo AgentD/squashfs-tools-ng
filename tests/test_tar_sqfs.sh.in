@@ -6,6 +6,10 @@ TARDIR="@abs_top_srcdir@/tests/tar"
 SHA512FILE="@abs_top_srcdir@/tests/tar/sqfs.sha512"
 TAR2SQFS="@abs_top_builddir@/tar2sqfs"
 
+if [ ! -f "$TAR2SQFS" -a -f "${TAR2SQFS}.exe" ]; then
+	TAR2SQFS="${TAR2SQFS}.exe"
+fi
+
 for filename in $(find "$TARDIR" -name "*.tar" | grep -v ".*/file-size/.*"); do
 	dir="$(dirname $filename | sed -n -e 's;.*/tests/;tests/;p')"
 	imgname="$dir/$(basename $filename .tar).sqfs"
