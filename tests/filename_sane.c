@@ -31,15 +31,14 @@ static const char *must_not_work[] = {
 };
 
 static const char *must_not_work_here[] = {
-#if defined(_WIN32) || defined(__WINDOWS__)
+#if defined(_WIN32) || defined(__WINDOWS__) || defined(TEST_WIN32)
 	"fo<o", "fo>o", "fo:o", "fo\"o",
 	"fo|o", "fo?o", "fo*o", "fo\ro",
 	"CON", "PRN", "AUX", "NUL",
 	"COM1", "COM2", "LPT1", "LPT2",
 	"con", "prn", "aux", "nul",
 	"com1", "com2", "lpt1", "lpt2",
-	"foo.AUX", "foo.NUL", "foo.aux", "foo.nul",
-	"NUL.txt", "nul.txt"
+	"AUX.txt", "aux.txt", "NUL.txt", "nul.txt",
 #endif
 	NULL,
 };
