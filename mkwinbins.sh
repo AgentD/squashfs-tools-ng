@@ -2,8 +2,8 @@
 
 set -e
 
-W32_ZIP_NAME="squashfs-tools-ng-0.7-mingw32"
-W64_ZIP_NAME="squashfs-tools-ng-0.7-mingw64"
+W32_ZIP_NAME="squashfs-tools-ng-0.8-mingw32"
+W64_ZIP_NAME="squashfs-tools-ng-0.8-mingw64"
 
 W32_DIR="$(pwd)/$W32_ZIP_NAME"
 W32_PREFIX="i686-w64-mingw32"
