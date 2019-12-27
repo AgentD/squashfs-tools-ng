@@ -1,0 +1,12 @@
+This source has been extracted from the lz4 release tarball, version 1.9.2
+released on August 20th, 2019.
+
+The source code originates from the "lib" subdirectory. The license is included
+in the subdirectory licenses/LZ4.txt in the tools-ng subdirectory of the
+squashfs-tools-ng source package.
+
+The following modifications have been made:
+ - Always define LZ4LIB_API and LZ4LIB_STATIC_API to set default visibility to
+   hidden, so the LZ4 functions aren't exported from libsquashfs.
+ - Remove the streaming functions and most of the functions that aren't used
+   by libsquashfs.

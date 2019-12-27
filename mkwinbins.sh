@@ -100,36 +100,6 @@ make -j
 make install-strip
 popd
 
-################################## get lz4 ###################################
-
-PKG_DIR="lz4-1.9.2"
-PKG_TAR="${PKG_DIR}.tar.gz"
-PKG_HASH="658ba6191fa44c92280d4aa2c271b0f4fbc0e34d249578dd05e50e76d0e5efcc"
-
-download
-
-pushd "$PKG_DIR"
-make -j BUILD_STATIC="no" BUILD_SHARED="yes" CC="${W32_PREFIX}-gcc" \
-     DLLTOOL="${W32_PREFIX}-dlltool" WINDRES="${W32_PREFIX}-windres" \
-     OS="Windows_NT" WINBASED="yes" PREFIX="$W32_DIR" \
-     lib-release
-make BUILD_STATIC="no" BUILD_SHARED="yes" CC="${W32_PREFIX}-gcc" \
-     DLLTOOL="${W32_PREFIX}-dlltool" WINDRES="${W32_PREFIX}-windres" \
-     OS="Windows_NT" WINBASED="yes" PREFIX="$W32_DIR" \
-     -C "lib" install
-
-make clean
-
-make -j BUILD_STATIC="no" BUILD_SHARED="yes" CC="${W64_PREFIX}-gcc" \
-     DLLTOOL="${W64_PREFIX}-dlltool" WINDRES="${W64_PREFIX}-windres" \
-     OS="Windows_NT" WINBASED="yes" PREFIX="$W64_DIR" \
-     lib-release
-make BUILD_STATIC="no" BUILD_SHARED="yes" CC="${W64_PREFIX}-gcc" \
-     DLLTOOL="${W64_PREFIX}-dlltool" WINDRES="${W64_PREFIX}-windres" \
-     OS="Windows_NT" WINBASED="yes" PREFIX="$W64_DIR" \
-     -C "lib" install
-popd
-
 ################################## get zstd ##################################
 
 PKG_DIR="zstd-v1.4.4-win32"
@@ -181,14 +151,14 @@ _EOF
 ./autogen.sh
 ./configure CFLAGS="-O2" LZO_CFLAGS="-I$W32_DIR/include" \
 	    LZO_LIBS="-L$W32_DIR/lib -llzo2" \
-	    --prefix="$W32_DIR" --host="$W32_PREFIX"
+	    --prefix="$W32_DIR" --host="$W32_PREFIX" --with-builtin-lz4
 cp "$W32_DIR/bin/"*.dll .
 make -j check
 rm *.dll
 
 ./configure CFLAGS="-O2 -DNDEBUG" LZO_CFLAGS="-I$W32_DIR/include" \
 	    LZO_LIBS="-L$W32_DIR/lib -llzo2" \
-	    --prefix="$W32_DIR" --host="$W32_PREFIX"
+	    --prefix="$W32_DIR" --host="$W32_PREFIX" --with-builtin-lz4
 make clean
 make -j
 make install-strip
@@ -197,7 +167,7 @@ make install-strip
 
 ./configure CFLAGS="-O2" LZO_CFLAGS="-I$W64_DIR/include" \
 	    LZO_LIBS="-L$W64_DIR/lib -llzo2" \
-	    --prefix="$W64_DIR" --host="$W64_PREFIX"
+	    --prefix="$W64_DIR" --host="$W64_PREFIX" --with-builtin-lz4
 make clean
 cp "$W64_DIR/bin/"*.dll .
 make -j check
@@ -205,7 +175,7 @@ rm *.dll
 
 ./configure CFLAGS="-O2 -DNDEBUG" LZO_CFLAGS="-I$W64_DIR/include" \
 	    LZO_LIBS="-L$W64_DIR/lib -llzo2" \
-	    --prefix="$W64_DIR" --host="$W64_PREFIX"
+	    --prefix="$W64_DIR" --host="$W64_PREFIX" --with-builtin-lz4
 make clean
 make -j
 make install-strip

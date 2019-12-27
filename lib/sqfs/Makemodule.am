@@ -67,6 +67,13 @@ endif
 if WITH_LZ4
 libsquashfs_la_SOURCES += lib/sqfs/comp/lz4.c
 libsquashfs_la_CPPFLAGS += -DWITH_LZ4
+
+if WITH_OWN_LZ4
+libsquashfs_la_CPPFLAGS += -I$(top_srcdir)/lib/sqfs/comp/lz4 -DLZ4_HEAPMODE=1
+
+libsquashfs_la_SOURCES += lib/sqfs/comp/lz4/lz4.c lib/sqfs/comp/lz4/lz4.h
+libsquashfs_la_SOURCES += lib/sqfs/comp/lz4/lz4hc.c lib/sqfs/comp/lz4/lz4hc.h
+endif
 endif
 
 if WITH_ZSTD
@@ -80,3 +87,5 @@ sqfsinclude_HEADERS = $(LIBSQFS_HEARDS)
 lib_LTLIBRARIES += libsquashfs.la
 
 pkgconfig_DATA += lib/sqfs/libsquashfs0.pc
+
+EXTRA_DIST += lib/sqfs/comp/lz4/README
