@@ -128,6 +128,11 @@ The following components exist:
    implementations of POSIX or GNU functions that are not available on some
    platforms.
 
+Optionally, `libsquashfs` can be compiled with builtin, custom versions of zlib
+and lz4. The configure options `--with-builtin-zlib` and `--with-builtin-lz4`
+can be used. The respective library sources are in `lib/sqfs/comp` in the
+squashfs-tools-ng source tree.
+
 The headers in `include` are stuffed with comments on functions an data
 structures.
 
