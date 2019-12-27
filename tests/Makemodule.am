@@ -108,7 +108,6 @@ check_PROGRAMS += test_tar_ustar test_tar_pax test_tar_gnu
 check_PROGRAMS += test_tar_sparse_gnu test_tar_sparse_gnu1 test_tar_sparse_gnu2
 check_PROGRAMS += test_tar_xattr_bsd test_tar_xattr_schily
 check_PROGRAMS += test_tar_xattr_schily_bin
-check_SCRIPTS += tests/cantrbry.sh tests/test_tar_sqfs.sh
 
 noinst_PROGRAMS += fstree_fuzz tar_fuzz
 
@@ -119,7 +118,12 @@ TESTS += test_fstree_init test_filename_sane test_filename_sane_w32
 TESTS += test_tar_ustar test_tar_pax
 TESTS += test_tar_gnu test_tar_sparse_gnu test_tar_sparse_gnu1
 TESTS += test_tar_sparse_gnu2 test_tar_xattr_bsd test_tar_xattr_schily
-TESTS += test_tar_xattr_schily_bin tests/cantrbry.sh tests/test_tar_sqfs.sh
+TESTS += test_tar_xattr_schily_bin
+
+if CORPORA_TESTS
+check_SCRIPTS += tests/cantrbry.sh tests/test_tar_sqfs.sh
+TESTS += tests/cantrbry.sh tests/test_tar_sqfs.sh
+endif
 endif
 
 EXTRA_DIST += $(top_srcdir)/tests/tar $(top_srcdir)/tests/words.txt
