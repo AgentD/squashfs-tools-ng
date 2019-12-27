@@ -33,27 +33,6 @@ download() {
 	}
 }
 
-################################## get zlib ##################################
-
-PKG_DIR="zlib-1.2.11"
-PKG_TAR="${PKG_DIR}.tar.xz"
-PKG_HASH="4ff941449631ace0d4d203e3483be9dbc9da454084111f97ea0a2114e19bf066"
-
-download
-
-pushd "$PKG_DIR"
-make -j PREFIX="${W32_PREFIX}-" -f win32/Makefile.gcc libz.a zlib1.dll
-make PREFIX="${W32_PREFIX}-" prefix="" DESTDIR="$W32_DIR" SHARED_MODE="1" \
-     INCLUDE_PATH="/include" LIBRARY_PATH="/lib" BINARY_PATH="/bin" \
-     -f win32/Makefile.gcc install
-make PREFIX="${W32_PREFIX}-" -f win32/Makefile.gcc clean
-
-make -j PREFIX="${W64_PREFIX}-" -f win32/Makefile.gcc libz.a zlib1.dll
-make PREFIX="${W64_PREFIX}-" prefix="" DESTDIR="$W64_DIR" SHARED_MODE="1" \
-     INCLUDE_PATH="/include" LIBRARY_PATH="/lib" BINARY_PATH="/bin" \
-     -f win32/Makefile.gcc install
-popd
-
 ################################### get xz ###################################
 
 PKG_DIR="xz-5.2.4"
@@ -151,14 +130,16 @@ _EOF
 ./autogen.sh
 ./configure CFLAGS="-O2" LZO_CFLAGS="-I$W32_DIR/include" \
 	    LZO_LIBS="-L$W32_DIR/lib -llzo2" \
-	    --prefix="$W32_DIR" --host="$W32_PREFIX" --with-builtin-lz4
+	    --prefix="$W32_DIR" --host="$W32_PREFIX" --with-builtin-lz4 \
+	    --with-builtin-zlib
 cp "$W32_DIR/bin/"*.dll .
 make -j check
 rm *.dll
 
 ./configure CFLAGS="-O2 -DNDEBUG" LZO_CFLAGS="-I$W32_DIR/include" \
 	    LZO_LIBS="-L$W32_DIR/lib -llzo2" \
-	    --prefix="$W32_DIR" --host="$W32_PREFIX" --with-builtin-lz4
+	    --prefix="$W32_DIR" --host="$W32_PREFIX" --with-builtin-lz4 \
+	    --with-builtin-zlib
 make clean
 make -j
 make install-strip
@@ -167,7 +148,8 @@ make install-strip
 
 ./configure CFLAGS="-O2" LZO_CFLAGS="-I$W64_DIR/include" \
 	    LZO_LIBS="-L$W64_DIR/lib -llzo2" \
-	    --prefix="$W64_DIR" --host="$W64_PREFIX" --with-builtin-lz4
+	    --prefix="$W64_DIR" --host="$W64_PREFIX" --with-builtin-lz4 \
+	    --with-builtin-zlib
 make clean
 cp "$W64_DIR/bin/"*.dll .
 make -j check
@@ -175,7 +157,8 @@ rm *.dll
 
 ./configure CFLAGS="-O2 -DNDEBUG" LZO_CFLAGS="-I$W64_DIR/include" \
 	    LZO_LIBS="-L$W64_DIR/lib -llzo2" \
-	    --prefix="$W64_DIR" --host="$W64_PREFIX" --with-builtin-lz4
+	    --prefix="$W64_DIR" --host="$W64_PREFIX" --with-builtin-lz4 \
+	    --with-builtin-zlib
 make clean
 make -j
 make install-strip

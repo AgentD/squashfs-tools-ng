@@ -56,6 +56,27 @@ endif
 if WITH_GZIP
 libsquashfs_la_SOURCES += lib/sqfs/comp/gzip.c
 libsquashfs_la_CPPFLAGS += -DWITH_GZIP
+
+if WITH_OWN_ZLIB
+libsquashfs_la_SOURCES += lib/sqfs/comp/zlib/adler32.c
+libsquashfs_la_SOURCES += lib/sqfs/comp/zlib/deflate.c
+libsquashfs_la_SOURCES += lib/sqfs/comp/deflate.h
+libsquashfs_la_SOURCES += lib/sqfs/comp/zlib/inffast.c
+libsquashfs_la_SOURCES += lib/sqfs/comp/zlib/inffast.h
+libsquashfs_la_SOURCES += lib/sqfs/comp/zlib/inffixed.h
+libsquashfs_la_SOURCES += lib/sqfs/comp/zlib/inflate.c
+libsquashfs_la_SOURCES += lib/sqfs/comp/zlib/inflate.h
+libsquashfs_la_SOURCES += lib/sqfs/comp/zlib/lib/zlib/zconf.h
+libsquashfs_la_SOURCES += lib/sqfs/comp/zlib/trees.c
+libsquashfs_la_SOURCES += lib/sqfs/comp/zlib/inftrees.c
+libsquashfs_la_SOURCES += lib/sqfs/comp/zlib/inftrees.h
+libsquashfs_la_SOURCES += lib/sqfs/comp/zlib/zlib.h lib/sqfs/comp/zlib/trees.h
+libsquashfs_la_SOURCES += lib/sqfs/comp/zlib/zutil.c lib/sqfs/comp/zlib/zutil.h
+libsquashfs_la_SOURCES += lib/sqfs/comp/zlib/crc32.c lib/sqfs/comp/zlib/crc32.h
+
+libsquashfs_la_CPPFLAGS += -I$(top_srcdir)/lib/sqfs/comp/zlib -DZLIB_CONST=1
+libsquashfs_la_CPPFLAGS += -DNO_GZCOMPRESS=1 -DNO_GZIP=1 -DHAVE_MEMCPY=1
+endif
 endif
 
 if WITH_XZ
@@ -88,4 +109,4 @@ lib_LTLIBRARIES += libsquashfs.la
 
 pkgconfig_DATA += lib/sqfs/libsquashfs0.pc
 
-EXTRA_DIST += lib/sqfs/comp/lz4/README
+EXTRA_DIST += lib/sqfs/comp/lz4/README lib/sqfs/compzlib/README
