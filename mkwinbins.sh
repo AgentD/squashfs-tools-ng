@@ -178,10 +178,6 @@ _EOF
 
 ################################ build 32 bit ################################
 
-export PKG_CONFIG_SYSROOT_DIR="$W32_DIR"
-export PKG_CONFIG_LIBDIR="$W32_DIR/lib/pkgconfig"
-export PKG_CONFIG_PATH="$W32_DIR/lib/pkgconfig"
-
 ./autogen.sh
 ./configure CFLAGS="-O2" LZO_CFLAGS="-I$W32_DIR/include" \
 	    LZO_LIBS="-L$W32_DIR/lib -llzo2" \
@@ -198,10 +194,6 @@ make -j
 make install-strip
 
 ################################ build 64 bit ################################
-
-export PKG_CONFIG_SYSROOT_DIR="$W64_DIR"
-export PKG_CONFIG_LIBDIR="$W64_DIR/lib/pkgconfig"
-export PKG_CONFIG_PATH="$W64_DIR/lib/pkgconfig"
 
 ./configure CFLAGS="-O2" LZO_CFLAGS="-I$W64_DIR/include" \
 	    LZO_LIBS="-L$W64_DIR/lib -llzo2" \
