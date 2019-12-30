@@ -60,13 +60,13 @@ libsquashfs_la_CPPFLAGS += -DWITH_GZIP
 if WITH_OWN_ZLIB
 libsquashfs_la_SOURCES += lib/sqfs/comp/zlib/adler32.c
 libsquashfs_la_SOURCES += lib/sqfs/comp/zlib/deflate.c
-libsquashfs_la_SOURCES += lib/sqfs/comp/deflate.h
+libsquashfs_la_SOURCES += lib/sqfs/comp/zlib/deflate.h
 libsquashfs_la_SOURCES += lib/sqfs/comp/zlib/inffast.c
 libsquashfs_la_SOURCES += lib/sqfs/comp/zlib/inffast.h
 libsquashfs_la_SOURCES += lib/sqfs/comp/zlib/inffixed.h
 libsquashfs_la_SOURCES += lib/sqfs/comp/zlib/inflate.c
 libsquashfs_la_SOURCES += lib/sqfs/comp/zlib/inflate.h
-libsquashfs_la_SOURCES += lib/sqfs/comp/zlib/lib/zlib/zconf.h
+libsquashfs_la_SOURCES += lib/sqfs/comp/zlib/zconf.h
 libsquashfs_la_SOURCES += lib/sqfs/comp/zlib/trees.c
 libsquashfs_la_SOURCES += lib/sqfs/comp/zlib/inftrees.c
 libsquashfs_la_SOURCES += lib/sqfs/comp/zlib/inftrees.h
@@ -109,4 +109,4 @@ lib_LTLIBRARIES += libsquashfs.la
 
 pkgconfig_DATA += lib/sqfs/libsquashfs0.pc
 
-EXTRA_DIST += lib/sqfs/comp/lz4/README lib/sqfs/compzlib/README
+EXTRA_DIST += lib/sqfs/comp/lz4/README lib/sqfs/comp/zlib/README
