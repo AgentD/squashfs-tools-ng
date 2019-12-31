@@ -150,7 +150,7 @@ int chdir(const char *path);
 #include <unistd.h>
 #include <fcntl.h>
 
-#ifdef __linux__
+#if defined(__linux__) || defined(__GLIBC__)
 #include <sys/sysmacros.h>
 #endif
 #endif
