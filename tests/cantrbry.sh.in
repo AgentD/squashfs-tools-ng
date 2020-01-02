@@ -13,7 +13,7 @@ fi
 COMPRESSORS=$("$TAR2SQFS" --help | tr -d '\015' |\
 	      awk '/Available compressors:/,EOF' | sed -n '/\t/p')
 
-for size in 4096 8192 16384 32768 65536 131072 262144 524288 1048576; do
+for size in 4k 8k 16k 32k 64k 128k 256k 512k 1M; do
 	for cmp in $COMPRESSORS; do
 		for threads in 1 2 3 4; do
 			name="cantrbry_${cmp}_${size}_${threads}.sqfs"

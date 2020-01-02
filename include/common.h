@@ -159,4 +159,12 @@ void print_version(const char *progname);
  */
 sqfs_compressor_t *lzo_compressor_create(const sqfs_compressor_config_t *cfg);
 
+/*
+  Parse a number optionally followed by a KMG suffix (case insensitive). Prints
+  an error message to stderr and returns -1 on failure, 0 on success.
+
+  The "what" string is used to prefix error messages (perror style).
+ */
+int parse_size(const char *what, size_t *out, const char *str);
+
 #endif /* COMMON_H */

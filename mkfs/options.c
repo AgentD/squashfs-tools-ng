@@ -185,7 +185,10 @@ void process_command_line(options_t *opt, int argc, char **argv)
 			opt->cfg.comp_id = ret;
 			break;
 		case 'b':
-			opt->cfg.block_size = strtol(optarg, NULL, 0);
+			if (parse_size("Block size", &opt->cfg.block_size,
+				       optarg)) {
+				exit(EXIT_FAILURE);
+			}
 			break;
 		case 'j':
 			opt->cfg.num_jobs = strtol(optarg, NULL, 0);
@@ -194,7 +197,10 @@ void process_command_line(options_t *opt, int argc, char **argv)
 			opt->cfg.max_backlog = strtol(optarg, NULL, 0);
 			break;
 		case 'B':
-			opt->cfg.devblksize = strtol(optarg, NULL, 0);
+			if (parse_size("Device block size",
+				       &opt->cfg.devblksize, optarg)) {
+				exit(EXIT_FAILURE);
+			}
 			if (opt->cfg.devblksize < 1024) {
 				fputs("Device block size must be at "
 				      "least 1024\n", stderr);
