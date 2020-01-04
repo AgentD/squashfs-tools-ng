@@ -1,0 +1,1116 @@
+
+                            Squashfs Binary Format
+                            **********************
+
+ 0) Index
+ ********
+
+   0............Index
+   1............About
+   2............Overview
+     2.1........Packing File Data
+     2.2........Packing Metadata
+     2.3........Storing Lookup Tables
+   3............The Superblock
+     3.1........Compression Options
+       3.1.1....GZIP
+       3.1.2....XZ
+       3.1.3....LZ4
+       3.1.4....ZSTD
+       3.1.5....LZO
+   4............Data and Fragment Blocks
+   5............Inode Table
+     5.1........Common Inode Header
+     5.2........Directory inodes
+     5.3........File Inodes
+     5.4........Symbolic Links
+     5.5........Device Special Files
+     5.6........IPC inodes (FIFO or Socket)
+   6............Directory Table
+     6.1........Directory Index
+   7............Fragment Table
+   8............Export Table
+   9............ID Table
+   10...........Extended Attribute Table
+
+ 1) About
+ ********
+
+ SquashFS is a compressed, read-only filesystem for Linux that can also be used
+ as a flexible, general purpose, compressed archive format, optimized for fast
+ random access with support for Unix permissions, sparse files and extended
+ attributes.
+
+ SquashFS supports data and metadata compression through zlib, lz4, lzo, lzma,
+ xz or zstd.
+
+ For fast random access, compressed files are split up in fixed size blocks
+ that are compressed separately. The block size can be set between 4k and 1M
+ (default is 128K).
+
+
+ This document attempts to specify the on-disk format in detail.
+
+ It is based on a previous on-line version that was originally written by
+ Zachary Dremann and subsequently expanded by David Oberhollenzer during
+ reverse engineering attempts and available here:
+
+   https://dr-emann.github.io/squashfs/
+
+
+ 2) Overview
+ ***********
+
+ A SquashFS archive consists of a maximum of nine parts, packed together on
+ a byte alignment:
+
+         _______________
+        |               |  Important information about the archive, including
+        |  Superblock 	|  locations of other sections.
+        |_______________|
+        |               |
+        |  Compression  |  If non-default compression options have been used,
+        |    options    |  then these are stored here.
+        |_______________|
+        |               |
+        |  Data blocks  |  The contents of the files in the archive,
+        |  & fragments  |  split into blocks.
+        |_______________|
+        |               |  Metadata (ownership, permissions, etc) for
+        |  Inode table	|  items in the archive.
+        |_______________|
+        |               |
+        |   Directory	|  Directory listings, including file names, and
+        |     table     |  references to inodes.
+        |_______________|
+        |               |
+        |   Fragment	|  Description of fragment locations within the
+        |    table      |  Datablocks & Fragments section.
+        |_______________|
+        |               |  A mapping from inode numbers to disk locations,
+        | Export table  |  required for NFS export.
+        |_______________|
+        |               |
+        |    UID/GID	|  A list of unique UID/GIDs. Inodes use an index into
+        |  lookup table	|  this table to save memory.
+        |_______________|
+        |               |
+        |     Xattr     |  Extended attributes for items in the archive.
+        |     table	|
+        |_______________|
+
+
+ 2.1) Packing File Data
+
+ The file data is packed into the archive after the super block (and optional
+ compressor options).
+
+ Files are divided into fixed size blocks that are separately compressed and
+ stored in order. SquashFS supports optional tail-end-packing of files that
+ are not an exact multiple of the block size. The remaining ends can either
+ be treated as a short block, or can be packed together with the tail ends of
+ other files in a single "fragment block". Files that are less than block size
+ are treated the same way.
+
+ If the size of a data or fragment block would exceed the input size after
+ compression, the original, uncompressed data is stored, so that the size of a
+ block after compression never exceeds the input block size.
+
+
+ 2.2) Packing Metadata
+
+ Metadata (e.g. inodes, directory listings, etc...) is stored in special
+ metadata blocks.
+
+ Metadata blocks always have a fixed input size of 8KiB. Similar to data
+ blocks, if the compressed would exceed 8KiB, the uncompressed block is stored
+ instead, so the on-disk size of a metadata block never exceeds 8KiB.
+
+ In contrast to data blocks, metadata blocks are prefixed by a single, 16 bit
+ unsigned integer.
+
+ This integer holds the on-disk size of the block that follows. The MSB is set
+ if the block is stored uncompressed.
+
+
+ To read a metadata block, seek to the indicated position and read the 16 bit
+ header. Then read the size indicated by the lower 15 bit. If the highest bit
+ of the header is set, uncompress the data you just read.
+
+
+ In the SquashFS archive format, metadata is often referenced using a 64 bit
+ integer, consisting of the on-disk location of the metadata block, shifted
+ left by 16, and OR-ed with a byte offset into the uncompressed block.
+
+ The location is relative to the type of metadata, i.e. for inodes it is an
+ offset relative to the start of the inode table.
+
+ The location of a metadata block always points to the 16 bit header.
+
+
+ 2.3) Storing Lookup Tables
+
+ Lookup tables are arrays (i.e. sequences of identical sized data) that are
+ addressed by an index in constant time.
+
+ Such tables are stored in the SquashFS format as metadata blocks, i.e. by
+ dividing the table data into 8KiB chunks that are separately compressed and
+ stored in sequence.
+
+ To allow constant time lookup, a list of 64 bit unsigned integers is stored,
+ holding the on-disk locations of each metadata block.
+
+ This list is itself uncompressed and not preceded by a header. It is just a
+ block of raw values.
+
+ When referring to a lookup table, the superblock gives the number of table
+ entries and points to this location list.
+
+ Since the table entry size is a known, fixed value, the required number of
+ metadata blocks can be computed:
+
+   block_count = ceil(table_count * entry_size / 8192)
+
+ Which is also the number of 64 bit integers in the location list.
+
+
+ When resolving a lookup table index, first work out the index of the
+ metadata block:
+
+   meta_index = floor(index * entry_size / 8129)
+
+ Using this index on the location list yields the on-disk location of
+ the metadata block containing the entry.
+
+ After reading this metadata block, the byte offset into the block can
+ be computed to get the entry:
+
+  offset = index * entry_size % 8192
+
+
+ The location list can be cached in memory. Resolving an index requires at
+ worst a single metadata block read (at most 8194 bytes).
+
+
+
+ 2) The superblock
+ *****************
+
+ The superblock is the first section of a SquashFS archive. It is always
+ 96 bytes in size and contains important information about the archive,
+ including the locations of other sections.
+
+ +======+===============+=====================================================+
+ | Type | Name          | Description                                         |
+ +======+===============+=====================================================+
+ | u32  | magic         | Must be set to 0x73717368 ("HSQS" on disk).         |
+ +------+---------------+-----------------------------------------------------+
+ | u32  | inode count   | The number of inodes stored in the archive.         |
+ +------+---------------+-----------------------------------------------------+
+ | u32  | mod time      | Last modification time of the archive. Count seconds|
+ |      |               | since 00:00, Jan 1st 1970 UTC (not counting leap    |
+ |      |               | seconds). This is unsigned, so it expires in the    |
+ |      |               | year 2106 (as opposed to 2038).                     |
+ +------+---------------+-----------------------------------------------------+
+ | u32  | block size    | The size of a data block in bytes. Must be a power  |
+ |      |               | of two between 4096 (4k) and 1048576 (1 MiB)        |
+ +------+---------------+-----------------------------------------------------+
+ | u32  | frag count    | The number of entries in the fragment table         |
+ +------+---------------+-----------------------------------------------------+
+ | u16  | compressor    | An ID designating the compressor used for both data |
+ |      |               | and meta data blocks.                               |
+ |      |               |                                                     |
+ |      |               +-------+------+--------------------------------------+
+ |      |               | Value | Name | Comment                              |
+ |      |               +-------+------+--------------------------------------+
+ |      |               | 1     | GZIP | just zlib deflate (no gzip headers!) |
+ |      |               | 2     | LZO  |                                      |
+ |      |               | 3     | LZMA | LZMA version 1                       |
+ |      |               | 4     | XZ   | LZMA version 2 (no XZ headers!)      |
+ |      |               | 5     | LZ4  |                                      |
+ |      |               | 6     | ZSTD |                                      |
+ +------+---------------+-------+------+--------------------------------------+
+ | u16  | block log     | The log2 of the block size. If the two fields do not|
+ |      |               | agree, the archive is considered corrupted.         |
+ +------+---------------+-----------------------------------------------------+
+ | u16  | flags         | Bit wise or of the flag bits below.                 |
+ |      |               |                                                     |
+ |      |               +--------+--------------------------------------------+
+ |      |               | Value  | Meaing                                     |
+ |      |               +--------+--------------------------------------------+
+ |      |               | 0x0001 | Inodes are stored uncompressed.            |
+ |      |               | 0x0002 | Data blocks are stored uncompressed.       |
+ |      |               | 0x0008 | Fragments are stored uncompressed.         |
+ |      |               | 0x0010 | Fragments are not used.                    |
+ |      |               | 0x0020 | Fragments are always generated.            |
+ |      |               | 0x0040 | Data has been deduplicated.                |
+ |      |               | 0x0080 | NFS export table exists.                   |
+ |      |               | 0x0100 | Xattrs are stored uncompressed.            |
+ |      |               | 0x0200 | There are no Xattrs in the archive.        |
+ |      |               | 0x0400 | Compressor options are present.            |
+ |      |               | 0x0800 | The ID table is uncompressed.              |
+ +------+---------------+--------+--------------------------------------------+
+ | u16  | id count      | The number of entries in the ID lookup table.       |
+ +------+---------------+-----------------------------------------------------+
+ | u16  | version major | Major version of the format. Must be set to 4.      |
+ +------+---------------+-----------------------------------------------------+
+ | u16  | version minor | Minor version of the format. Must be set to 0.      |
+ +------+---------------+-----------------------------------------------------+
+ | u64  | root inode    | A reference to the inode of the root directory.     |
+ +------+---------------+-----------------------------------------------------+
+ | u64  | bytes used    | The number of bytes used by the archive. Because    |
+ |      |               | SquashFS archives must be padded to a multiple of   |
+ |      |               | the underlying device block size (1k or 4k, default |
+ |      |               | is 4k), this can be less than the file size.        |
+ +------+---------------+-----------------------------------------------------+
+ | u64  | ID table      | The byte offset at which the id table starts.       |
+ +------+---------------+-----------------------------------------------------+
+ | u64  | Xattr table   | The byte offset at which the xattr id table starts. |
+ +------+---------------+-----------------------------------------------------+
+ | u64  | Inode table   | The byte offset at which the inode table starts.    |
+ +------+---------------+-----------------------------------------------------+
+ | u64  | Dir. table    | The byte offset at which the directory table starts.|
+ +------+---------------+-----------------------------------------------------+
+ | u64  | Frag table    | The byte offset at which the fragment table starts. |
+ +------+---------------+-----------------------------------------------------+
+ | u64  | Export table  | The byte offset at which the export table starts.   |
+ +------+---------------+-----------------------------------------------------+
+
+ The Xattr table, fragment table and export table are optional. If they are
+ omitted from the archive, the respective fields indicating their position
+ must be set to 0xFFFFFFFFFFFFFFFF (i.e. all bits set).
+
+ Please note that most of the flags are either redundant, or entirely useless
+ and only serve an informational purpose.
+
+ The only flag that actually carries information is the "Compressor options are
+ present" flag. In fact, this is the only flag that the Linux kernel
+ implementation actually tests for.
+
+
+
+ 3.1) Compression Options
+
+ If the compressor options flag is set in the superblock, the superblock is
+ immediately followed by a single metadata block, which is always uncompressed.
+
+ The data stored in this block is compressor dependent.
+
+ There are two special cases:
+  - For LZ4, the compressor options always have to be present.
+  - The LZMA compressor does not support compressor options, so this section
+    must never be present.
+
+ For the compressors currently implemented, a 4 to 8 byte payload follows.
+
+ The following sub sections outline the contents for each compressor that
+ supports options. The default values if the options are missing are outlined
+ as well.
+
+
+ 3.1.1) GZIP
+
+ +======+===================+=================================================+
+ | Type | Name              | Description                                     |
+ +======+===================+=================================================+
+ | u32  | compression level | In the range 1 to 9 (inclusive). Defaults to 9. |
+ +------+-------------------+-------------------------------------------------+
+ | u16  | window size       | In the range 8 to 15 (inclusive) Defaults to 15.|
+ +------+-------------------+-------------------------------------------------+
+ | u16  | strategies        | A bitfield describing the enabled strategies.   |
+ |      |                   | If no flags are set, the default strategy is    |
+ |      |                   | implicitly used. Please consult the ZLIB manual |
+ |      |                   | for details on specific strategies.             |
+ |      |                   |                                                 |
+ |      |                   +--------+----------------------------------------+
+ |      |                   | Value  | Comment                                |
+ |      |                   +--------+----------------------------------------+
+ |      |                   | 0x0001 | Default strategy.                      |
+ |      |                   | 0x0002 | Filtered.                              |
+ |      |                   | 0x0004 | Huffman Only.                          |
+ |      |                   | 0x0008 | Run Length Encoded.                    |
+ |      |                   | 0x0010 | Fixed.                                 |
+ +------+-------------------+--------+----------------------------------------+
+
+ 3.1.2) XZ
+
+ +======+===================+=================================================+
+ | Type | Name              | Description                                     |
+ +======+===================+=================================================+
+ | u32  | dictionary size   | Should be > 8KiB, and must be either a power of |
+ |      |                   | two, or the sum of two sequential powers of two.|
+ +------+-------------------+-------------------------------------------------+
+ | u32  | Filters           | A bitfield describing the additional enabled    |
+ |      |                   | filters attempted to better compress executable |
+ |      |                   | code.                                           |
+ |      |                   |                                                 |
+ |      |                   +--------+----------------------------------------+
+ |      |                   | Value  | Comment                                |
+ |      |                   +--------+----------------------------------------+
+ |      |                   | 0x0001 | x86                                    |
+ |      |                   | 0x0002 | PowerPC                                |
+ |      |                   | 0x0004 | IA64                                   |
+ |      |                   | 0x0008 | ARM                                    |
+ |      |                   | 0x0010 | ARM thumb                              |
+ |      |                   | 0x0020 | SPARC                                  |
+ +------+-------------------+--------+----------------------------------------+
+
+ 3.1.3) LZ4
+
+ +======+===================+=================================================+
+ | Type | Name              | Description                                     |
+ +======+===================+=================================================+
+ | u32  | Version           | Must be set to 1.                               |
+ +------+-------------------+-------------------------------------------------+
+ | u32  | Flags             | A bitfield describing the enabled LZ4 flags.    |
+ |      |                   | There is currently only one possible flag:      |
+ |      |                   |                                                 |
+ |      |                   +--------+----------------------------------------+
+ |      |                   | Value  | Comment                                |
+ |      |                   +--------+----------------------------------------+
+ |      |                   | 0x0001 | Use LZ4 High Compression(HC) mode.     |
+ +------+-------------------+--------+----------------------------------------+
+
+ 3.1.4) ZSTD
+
+ +======+===================+=================================================+
+ | Type | Name              | Description                                     |
+ +======+===================+=================================================+
+ | u32  | compression level | Should be in range 1 to 22 (inclusive). The real|
+ |      |                   | maximum is the zstd defined ZSTD_maxCLevel().   |
+ +------+-------------------+-------------------------------------------------+
+
+ 3.1.5) LZO
+
+ +======+===================+=================================================+
+ | Type | Name              | Description                                     |
+ +======+===================+=================================================+
+ | u32  | algorithm         | Which variant of LZO to use.                    |
+ |      |                   |                                                 |
+ |      |                   +--------+----------------------------------------+
+ |      |                   | Value  | Comment                                |
+ |      |                   +--------+----------------------------------------+
+ |      |                   | 0      | lzo1x_1                                |
+ |      |                   | 1      | lzo1x_1_11                             |
+ |      |                   | 2      | lzo1x_1_12                             |
+ |      |                   | 3      | lzo1x_1_15                             |
+ |      |                   | 4      | lzo1x_999 (default)                    |
+ +------+-------------------+--------+----------------------------------------+
+ | u32  | compression level | For lzo1x_999, this can be a value between 0    |
+ |      |                   | and 9 inclusive (defaults to 8). Has to be 0    |
+ |      |                   | for all other algorithms.                       |
+ +------+-------------------+-------------------------------------------------+
+
+
+
+ 4) Data and Fragment Blocks
+ ***************************
+
+ As outlined in 2.1, file data is packed by dividing the input files into fixed
+ size chunks (the block size from the super block) that are stored in sequence.
+
+ The picture below tries to illustrate this concept:
+
+
+           _____ _____ _____ _             _____ _____ _              _
+  File A: |__A__|__A__|__A__|A|   File B: |__B__|__B__|B|    File C: |C|
+             |     |     |   |               |     |   |              |
+             | +---+     |   |               |     |   |              |
+             | |  +------+   |               |     |   |              |
+             | |  |          |               |     |   |              |
+             | |  |   +------|---------------+     |   |              |
+             | |  |   |   +--|---------------------+   |              |
+             | |  |   |   |  |                         |              |
+	     | |  |   |   |  +-----------------------+ | +------------+
+	     | |  |   |   |                          | | |
+             V V  V   V   V                          V V V
+            __ _ ___ ___ ___ __     Fragment block: |A|B|C|
+   Output: |_A|A|_A_|_B_|_B_|_F|                       |
+                                                     __V__
+                              A                     |__F__|
+			      |                        |
+			      +------------------------+
+
+ Figure 1: Packing of File Data.
+
+
+ In Figure 1, file A consists of 3 blocks and a single tail end, file B has
+ 2 blocks and one tail end while file 3 is smaller than block size.
+
+ For each file, the blocks are compressed in sequence and stored on disk.
+
+ The tail ends of A and B, together with the entire contents of C are packed
+ together into a fragment block F, that is compressed and stored on disk once
+ it is full.
+
+ This tail-end-packing is completely optional. The tail ends (or in case of C
+ the entire file) can also be treated as truncated blocks that expand to less
+ than block size when uncompressed.
+
+
+ There are no headers in front of data or fragment blocks. Additional meta
+ information, stored in the inodes, is required to locate the blocks of a
+ file.
+
+
+ To locate file data, the inodes store the following information:
+  - The uncompressed size of the file. From this, the number of blocks can
+    be computed:
+
+      block_count = floor(file_size / block_size)   if tail end packing is used
+      block_count = ceil(file_size / block_size)    if NOT
+
+  - The exact location of the first block, if one exists.
+  - For each consecutive block, the on-disk size.
+      A 32 bit integer is used with bit 24 (i.e. 1 << 24) set if the block
+      is uncompressed.
+
+  - If tail-end-packing was done, the location of the fragment block and a
+    byte offset into the uncompressed fragment block. The size of the tail
+    end can be computed easily:
+
+      tail_end_size = file_size % block_size
+
+
+ To access fragment blocks, a lookup table is built (see section 7) that stores
+ the on-disk location and size of all fragment blocks. Inodes use an index into
+ this table together with a byte offset into the uncompressed fragment block to
+ access tail ends.
+
+
+ To support sparse files, an on-disk block size of 0 is used to indicate that
+ no data was written to disk and the SquashFS reader should supply a single
+ block filled with 0 bytes instead.
+
+
+ Typical SquashFS packers would also perform file deduplication. If the
+ compressed blocks of a file are identical to blocks already written to disk,
+ the already written blocks are reused. Similarly, the tail end can be
+ deduplicated independently, by pointing to an existing tail end.
+
+
+ 5) Inode Table
+ **************
+
+ Inodes are packed into metadata blocks and are not aligned, i.e. they can span
+ the boundary between metadata blocks. To save space, there are different
+ inodes for each type (regular file, directory, device, etc.) of varying
+ contents and size.
+
+ To further save more space, inodes come in two flavors: simple inode types
+ optimized for frequently occurring items, and extended inode types where
+ extra information has to be stored.
+
+ SquashFS more or less supports 32 bit UIDs and GIDs. As an optimization, those
+ IDs are stored in a lookup table (see section 9) and the inodes themselves
+ hold a 16 bit index into this table. This allows to 32 bit UIDs/GIDs, but only
+ among 2^16 unique values.
+
+
+ The location of the first metadata block is indicated by the inode table start
+ in the superblock. The inode table ends at the start of the directory table.
+
+
+ 5.1) Common Inode Header
+
+ All Inodes share a common header, which contains some common information,
+ as well as describing the type of Inode which follows. This header has the
+ following structure:
+
+ +======+==============+======================================================+
+ | Type | Name         | Description                                          |
+ +======+==============+======================================================+
+ | u16  | type         | The type of item described by the inode which follows|
+ |      |              | this header.                                         |
+ |      |              |                                                      |
+ |      |              +-------+----------------------------------------------+
+ |      |              | Value | Comment                                      |
+ |      |              +-------+----------------------------------------------+
+ |      |              | 1     | Basic Directory                              |
+ |      |              | 2     | Basic File                                   |
+ |      |              | 3     | Basic Symlink                                |
+ |      |              | 4     | Basic Block Device                           |
+ |      |              | 5     | Basic Character Device                       |
+ |      |              | 6     | Basic Named Pipe (FIFO)                      |
+ |      |              | 7     | Basic Socket                                 |
+ |      |              | 8     | Extended Directory                           |
+ |      |              | 9     | Extended File                                |
+ |      |              | 10    | Extended Symlink                             |
+ |      |              | 11    | Extended Block Device                        |
+ |      |              | 12    | Extended Character Device                    |
+ |      |              | 13    | Extended Named Pipe (FIFO)                   |
+ |      |              | 14    | Extended Socket                              |
+ +------+--------------+-------+----------------------------------------------+
+ | u16  | permissions  | A bitmask representing Unix file system permissions  |
+ |      |              | for the inode. This only stores permissions, not the |
+ |      |              | type. The type is reconstructed from the field above.|
+ +------+--------------+------------------------------------------------------+
+ | u16  | uid          | An index into the ID table, giving the user ID       |
+ |      |              | of the owner.                                        |
+ +------+--------------+------------------------------------------------------+
+ | u16  | gid          | An index into the ID table, giving the group ID      |
+ |      |              | of the owner.                                        |
+ +------+--------------+------------------------------------------------------+
+ | u32  | mtime        | The unsigned number of seconds (not counting leap    |
+ |      |              | seconds) since 00:00, Jan 1st, 1970 UTC when the item|
+ |      |              | described by the inode was last modified.            |
+ +------+--------------+------------------------------------------------------+
+ | u32  | inode number | Unique node number. Must be at least 1 and at most   |
+ |      |              | the inode count from the super block.                |
+ +------+--------------+------------------------------------------------------+
+
+ Depending on the type, additional data follows, outlined in sections 4.2
+ to 4.6.
+
+
+
+ 5.2) Directory inodes
+
+ Directory inodes mainly contain a reference into the directory table where
+ the listing of entries is stored.
+
+ A basic directory has an entry listing of at most 64k (uncompressed) and
+ no extended attributes. The layout of the inode data is as follows:
+
+ +======+==============+======================================================+
+ | Type | Name         | Description                                          |
+ +======+==============+======================================================+
+ | u32  | block index  | The location of the metadata block in the directory  |
+ |      |              | table where the entry information starts. This is    |
+ |      |              | relative to the directory table location.            |
+ +------+--------------+------------------------------------------------------+
+ | u32  | link count   | The number of hard links to this directory.          |
+ +------+--------------+------------------------------------------------------+
+ | u16  | file size    | Total (uncompressed) size in bytes of the entry      |
+ |      |              | listing in the directory table, including headers.   |
+ +------+--------------+------------------------------------------------------+
+ | u16  | block offset | The (uncompressed) offset within the metadata block  |
+ |      |              | in the directory table where the directory listing   |
+ |      |              | starts.                                              |
+ +------+--------------+------------------------------------------------------+
+ | u32  | parent inode | The inode number of the parent of this directory. If |
+ |      |              | this is the root directory, this will be 0.          |
+ +------+--------------+------------------------------------------------------+
+
+
+ Note that for historical reasons, the hard link count of a directory includes
+ the number of entries in the directory and is initialized to 2 for an empty
+ directory. I.e. an empty directory has a link count of 2, a directory with one
+ entry has 3, a directory with two entries has 4 and so on.
+
+
+ An extended directory can have a listing that is at most 4GiB in size, may
+ have extended attributes and can have an optional index for faster lookup:
+
+ +======+==============+======================================================+
+ | Type | Name         | Description                                          |
+ +======+==============+======================================================+
+ | u32  | link count   | Same as above.                                       |
+ +------+--------------+------------------------------------------------------+
+ | u32  | file size    | Same as above.                                       |
+ +------+--------------+------------------------------------------------------+
+ | u32  | block index  | Same as above.                                       |
+ +------+--------------+------------------------------------------------------+
+ | u32  | parent inode | Same as above.                                       |
+ +------+--------------+------------------------------------------------------+
+ | u16  | index count  | One less than the number of directory index entries  |
+ |      |              | following the inode structure.                       |
+ +------+--------------+------------------------------------------------------+
+ | u16  | block offset | Same as above.                                       |
+ +------+--------------+------------------------------------------------------+
+ | u32  | xattr index  | An index into the xattr lookup table or 0xFFFFFFFF   |
+ |      |              | if the inode has no extended attributes.             |
+ +------+--------------+------------------------------------------------------+
+
+ The index follows directly after the inode. See section 6.1 for details on
+ how the directory index is structured.
+
+
+ 5.3) File Inodes
+
+ Basic files can be at most 4 GiB in size (uncompressed), must be located
+ within the first 4 GiB of the SquashFS image, cannot have any extended
+ attributes and don't support hard-link or sparse file accounting:
+
+ +======+==============+======================================================+
+ | Type | Name         | Description                                          |
+ +======+==============+======================================================+
+ | u32  | blocks start | The offset from the start of the archive to the first|
+ |      |              | data block.                                          |
+ +------+--------------+------------------------------------------------------+
+ | u32  | frag index   | An index into the fragment table which describes the |
+ |      |              | fragment block that the tail end of this file is     |
+ |      |              | stored in. If not used, this is set to 0xFFFFFFFF.   |
+ +------+--------------+------------------------------------------------------+
+ | u32  | block offset | The (uncompressed) offset within the fragment block  |
+ |      |              | where the tail end of this file is. See section 3    |
+ |      |              | for details.                                         |
+ +------+--------------+------------------------------------------------------+
+ | u32  | file size    | The (uncompressed) size of this file.                |
+ +------+--------------+------------------------------------------------------+
+ | u32[]| block sizes  | An array of consecutive block sizes. See section 3   |
+ |      |              | for details.                                         |
+ +------+--------------+------------------------------------------------------+
+
+ If 'frag index' is set to 0xFFFFFFFF, the number of blocks is computed as
+
+   ceil(file_size / block_size)
+
+ otherwise, if 'frag index' is a valid fragment index, the block count is
+ computed as
+
+   floor(file_size / block_size)
+
+ and the size of the tail end is
+
+   file_size % block_size
+
+
+ To access a data block, first compute the block index as
+
+   index = floor(offset / block_size)
+
+ then compute the on-disk location of the block by summing up the sizes of the
+ blocks that come before it:
+
+   location = block_start
+
+   for i = 0; i < index; i++
+       location += block_sizes[i] & 0x00FFFFFF
+
+
+ There is one corner case: if the on-disk block size is 0, the block does not
+ exist on-disk. The reader has to substitute a single block full of 0 bytes
+ instead.
+
+
+ The tail end, if present, is accessed by resolving the fragment index through
+ the fragment lookup table (see section 7), loading the fragment block and
+ using the given 'block offset' into the fragment block.
+
+
+
+ Extended files have a 64 bit location and size, have additional counters for
+ sparse file accounting and hard links, and can have extended attributes:
+
+
+ +======+==============+======================================================+
+ | Type | Name         | Description                                          |
+ +======+==============+======================================================+
+ | u64  | blocks start | Same as above (but larger).                          |
+ +------+--------------+------------------------------------------------------+
+ | u64  | file size    | Same as above (but larger).                          |
+ +------+--------------+------------------------------------------------------+
+ | u64  | sparse       | The number of bytes saved by omitting blocks of zero |
+ |      |              | bytes. Used in the kernel for sparse file accounting.|
+ +------+--------------+------------------------------------------------------+
+ | u32  | link count   | The number of hard links to this node.               |
+ +------+--------------+------------------------------------------------------+
+ | u32  | frag index   | Same as above.                                       |
+ +------+--------------+------------------------------------------------------+
+ | u32  | block offset | Same as above.                                       |
+ +------+--------------+------------------------------------------------------+
+ | u32  | xattr index  | An index into the xattr lookup table or 0xFFFFFFFF   |
+ |      |              | if the inode has no extended attributes.             |
+ +------+--------------+------------------------------------------------------+
+ | u32[]| block sizes  | Same as above.                                       |
+ +------+--------------+------------------------------------------------------+
+
+
+ 5.4) Symbolic Links
+
+ Symbolic links mainly have a target path stored directly after the inode
+ header, as well as a hard-link counter (yes, you can have hard links to
+ symlinks):
+
+ +======+==============+======================================================+
+ | Type | Name         | Description                                          |
+ +======+==============+======================================================+
+ | u32  | link count   | The number of hard links to this symlink.            |
+ +------+--------------+------------------------------------------------------+
+ | u32  | target size  | The size in bytes of the target path this symlink    |
+ |      |              | points to.                                           |
+ +------+--------------+------------------------------------------------------+
+ | u8[] | target path  | An array of bytes holding the target path this       |
+ |      |              | symlink points to. The path is 'target size' bytes   |
+ |      |              | long and NOT null-terminated.                        |
+ +------+--------------+------------------------------------------------------+
+
+ The extended symlink type adds an additional extended attribute index:
+
+ +======+==============+=======================================+
+ | Type | Name         | Description                           |
+ +======+==============+=======================================+
+ | u32  | link count   | Same as above.                        |
+ +------+--------------+---------------------------------------+
+ | u32  | target size  | Same as above.                        |
+ +------+--------------+---------------------------------------+
+ | u8[] | target path  | Same as above.                        |
+ +------+--------------+---------------------------------------+
+ | u32  | xattr index  | An index into the xattr lookup table. |
+ +------+--------------+---------------------------------------+
+
+
+ 5.5) Device Special Files
+
+ Basic device special files only store a hard-link counter and a device number.
+ The layout is identical for both character and block devices:
+
+ +======+===============+=====================================================+
+ | Type | Name          | Description                                         |
+ +======+===============+=====================================================+
+ | u32  | link count    | The number of hard links to this entry.             |
+ +------+---------------+-----------------------------------------------------+
+ | u32  | device number | The system specific device number.                  |
+ |      |               |                                                     |
+ |      |               | On Linux, this consists of major and minor device   |
+ |      |               | numbers that can be extracted as follows:           |
+ |      |               |   major = (dev & 0xFFF00) >> 8.                     |
+ |      |               |   minor = (dev & 0x000FF) | ((dev >> 12) & 0xFFF00) |
+ +------+---------------+-----------------------------------------------------+
+
+ The extended device file inode adds an additional extended attribute index:
+
+ +======+===============+=========================================+
+ | Type | Name          | Description                             |
+ +======+===============+=========================================+
+ | u32  | link count    | The number of hard links to this entry. |
+ +------+---------------+-----------------------------------------+
+ | u32  | device number | Same as above.                          |
+ +------+---------------+-----------------------------------------+
+ | u32  | xattr index   | An index into the xattr lookup table.   |
+ +------+---------------+-----------------------------------------+
+
+
+ 5.6) IPC inodes (FIFO or Socket)
+
+ Named pipe (FIFO) and socket special files only add a hard-link counter
+ after the inode header:
+
+ +======+=============+=========================================+
+ | Type | Name        | Description                             |
+ +======+=============+=========================================+
+ | u32  | link count  | The number of hard links to this entry. |
+ +------+-------------+-----------------------------------------+
+
+ The extended versions add an additional extended attribute index:
+
+ +======+=============+=========================================+
+ | Type | Name        | Description                             |
+ +======+=============+=========================================+
+ | u32  | link count  | Same as above.                          |
+ +------+-------------+-----------------------------------------+
+ | u32  | xattr index | An index into the xattr lookup table.   |
+ +------+-------------+-----------------------------------------+
+
+
+
+ 6) Directory Table
+ ******************
+
+ For each directory inode, the directory table stores a linear list of all
+ entries, with references back to the inodes that describe those entries.
+
+ The entry list itself is sorted ASCIIbetically by entry name and split into
+ multiple runs that are preceded by a short header.
+
+ The directory inodes store the total, uncompressed size of the entire listing,
+ including headers. Using this size, a SquashFS reader can determine if another
+ header with further entries should be following once it reaches the end of a
+ run.
+
+ To save space, the header indicates a metadata block and a reference inode
+ number. All entries that follow simply store a difference to that inode number
+ and an offset into the specified metadata block.
+
+ Every time, the inode block changes or the difference of the inode number
+ to the reference in the header cannot be encoded in 16 bits anymore, a new
+ header is emitted.
+
+ A header must not be followed by more than 256 entries. If there are more
+ entries, a new header is emitted.
+
+ Typically, inode allocation strategies would sort the children of a directory
+ and then allocate inode numbers incrementally, to optimize directory entry
+ listings.
+
+ Hard links of course break the sequence and require a new header if they are
+ further away than +/- 32k of the reference number in the header. Inode number
+ allocation and picking of the reference could of course be optimized to
+ prevent this.
+
+ The directory header has the following structure:
+
+ +======+==============+======================================================+
+ | Type | Name         | Description                                          |
+ +======+==============+======================================================+
+ | u32  | count        | Number of entries following the header               |
+ +------+--------------+------------------------------------------------------+
+ | u32  | start        | The location of the metadata block in the inode table|
+ |      |              | where the inodes are stored. This is relative to the |
+ |      |              | inode table start from the super block.              |
+ +------+--------------+------------------------------------------------------+
+ | s32  | inode number | An arbitrary inode number. The entries that follow   |
+ |      |              | store their inode number as a difference to this.    |
+ +======+==============+======================================================+
+
+ And is followed by entries that each have this structure:
+
+ +======+==============+======================================================+
+ | Type | Name         | Description                                          |
+ +======+==============+======================================================+
+ | u16  | offset       | An offset into the uncompressed inode metadata block.|
+ +------+--------------+------------------------------------------------------+
+ | s16  | inode offset | The difference of this inodes number to the reference|
+ |      |              | stored in the header.                                |
+ +------+--------------+------------------------------------------------------+
+ | u16  | type         | The inode type. For extended inodes, the basic type  |
+ |      |              | is stored here instead.                              |
+ +------+--------------+------------------------------------------------------+
+ | u16  | name size    | One less than the size of the entry name.            |
+ +------+--------------+------------------------------------------------------+
+ | u8[] | name         | The file name of the entry without a trailing null   |
+ |      |              | byte. Has 'name size' + 1 bytes.                     |
+ +------+--------------+------------------------------------------------------+
+
+ In the entry structure itself, the file names are stored without trailing null
+ bytes. Since a zero length name makes no sense, the name length is stored
+ off-by-one, i.e. the value 0 cannot be encoded.
+
+ Also note, that the inode type is stored in the entry, but always as a basic
+ type!
+ 
+
+ 6.1) Directory Index
+
+ To speed up lookups on directories with lots of entries, the extended
+ directory inode can store an index, holding the locations of all directory
+ headers and the name of the first entry after the header.
+
+ When searching for an entry, the reader can then iterate over the index to
+ find a range of metadata blocks that should contain a given entry and then
+ only scan over the given range.
+
+ To allow for even faster lookups, a new header should be emitted every time
+ the entry list crosses a metadata block boundary. This narrows the boundary
+ down to a single metadata block lookup in most cases.
+
+ The index entries have the following structure:
+
+ +======+==============+======================================================+
+ | Type | Name         | Description                                          |
+ +======+==============+======================================================+
+ | u32  | index        | This stores a byte offset from the first directory   |
+ |      |              | header to the current header, as if the uncompressed |
+ |      |              | directory metadata blocks were laid out in memory    |
+ |      |              | consecutively.                                       |
+ +------+--------------+------------------------------------------------------+
+ | u32  | start        | Start offset of a directory table metadata block,    |
+ |      |              | relative to the directory table start.               |
+ +------+--------------+------------------------------------------------------+
+ | u32  | name size    | One less than the size of the entry name.            |
+ +------+--------------+------------------------------------------------------+
+ | u8[] | name         | The name of the first entry following the header     |
+ |      |              | without a trailing null byte.                        |
+ +------+--------------+------------------------------------------------------+
+
+
+ 7) Fragment Table
+ *****************
+
+ Tail-ends and smaller than block size files can be combined into fragment
+ blocks that are at most 'block size' bytes long.
+
+ The fragment table describes the location and size of the fragment blocks
+ (not the tail-ends within them).
+
+
+ This is a lookup table which stores entries of the following shape:
+
+ +======+==============+======================================================+
+ | Type | Name         | Description                                          |
+ +======+==============+======================================================+
+ | u64  | start        | The offset within the archive where the fragment     |
+ |      |              | block starts.                                        |
+ +------+--------------+------------------------------------------------------+
+ | u32  | size         | The on-disk size of the fragment block. If the block |
+ |      |              | is uncompressed, bit 24 (i.e. 1 << 24) is set.       |
+ +------+--------------+------------------------------------------------------+
+ | u32  | unused       | Must be set to 0.                                    |
+ +------+--------------+------------------------------------------------------+
+
+
+ The table is stored on-disk, as described in section 2.3.
+
+ The fragment table location in the superblock points to an array of 64 bit
+ integers that store the on-disk locations of the metadata blocks containing
+ the lookup table.
+
+ Each metadata block can store up to 512 entries (= 8129 / 16).
+
+
+ 8) Export Table
+ ***************
+
+ To support NFS exports, SquashFS needs a fast way to resolve an inode number
+ to an inode structure.
+
+ For this purpose, a SquashFS archive can optionally contain an export table,
+ which is basically a flat array of 64 bit inode references, with the inode
+ number being used as an index into the array.
+
+ Because the inode number 0 is not used (reserved as a sentinel value), the
+ array actually starts at inode number 1 and the index is thus
+ inode_number - 1.
+
+ The array itself is stored in a series of metadata blocks, as outlined in
+ section 2.3.
+
+ Since each block can store 1024 references (= 8192 / 8), there will be
+ ceil(inode_count / 1024) metadata blocks for the entire array.
+
+
+ 9) ID Table
+ ***********
+
+ As outlined in section 5.1, SquashFS supports 32 bit user and group IDs. To
+ compact the inode table, the unique UID/GID values are collected in a lookup
+ table and a 16 bit table index is stored in the inode instead.
+
+ This lookup table is stored as outlined in section 2.3.
+
+ Each metadata block can store up to 2048 IDs (=8192 / 4).
+
+
+ 10) Extended Attribute Table
+ ****************************
+
+ Extended attributes are arbitrary key value pairs attached to inodes. The key
+ names use dots as separators to create a hierarchy of name spaces.
+
+ The key value pairs of all inodes are stored consecutively in a series of
+ metadata blocks.
+
+ The values can be either be stored inline, i.e. a key entry is directly
+ followed by a value, or out-of-line to deduplicate identical values and
+ use a reference instead. Typically, the first occurrence of a value is
+ stored in line and every consecutive use of the same value uses an
+ out-of-line reference back to the first one.
+
+
+ The keys are stored using the following data structure:
+
+ +======+===========+=========================================================+
+ | Type | Name      | Description                                             |
+ +======+===========+=========================================================+
+ | u16  | type      | A prefix ID for the key name. If the value that follows |
+ |      |           | is stored out-of-line, the flag 0x0100 is ORed to the   |
+ |      |           | type ID.                                                |
+ |      |           |                                                         |
+ |      |           +-------+-------------------------------------------------+
+ |      |           | Value | Comment                                         |
+ |      |           +-------+-------------------------------------------------+
+ |      |           | 0     | Prefix the name with "user."                    |
+ |      |           | 1     | Prefix the name with "trusted."                 |
+ |      |           | 2     | Prefix the name with "security."                |
+ +------+-----------+-------+-------------------------------------------------+
+ | u16  | name size | The number of key bytes that follows.                   |
+ +------+-----------+---------------------------------------------------------+
+ | u8[] | name      | The remainder of the key without the prefix and without |
+ |      |           | trailing null byte.                                     |
+ +------+-----------+---------------------------------------------------------+
+
+
+ After a key, the following structure follows to store the value:
+
+ +======+============+========================================================+
+ | Type | Name       | Description                                            |
+ +======+============+========================================================+
+ | u32  | value size | The size of the value string. If the value is stored   |
+ |      |            | out of line, this is always 8, i.e. the size of an     |
+ |      |            | unsigned 64 bit integer.                               |
+ +------+------------+--------------------------------------------------------+
+ | u8[] | value      | This is 'value size' bytes of arbitrary binary data.   |
+ |      |            | If the value is stored out-of-line, this is a 64 bit   |
+ |      |            | reference, i.e. a location of a metadata block,        |
+ |      |            | shifted left by 16 and OR-ed with an offset into the   |
+ |      |            | uncompressed block, giving the location of another     |
+ |      |            | value structure.                                       |
+ +------+------------+--------------------------------------------------------+
+
+
+ The metadata block location given by an out-of-line reference is relative to
+ the location of the first block.
+
+
+ To actually address a block of key value pairs associated with an inode, a
+ lookup table is used that specifies the start and size of a block of key
+ value pairs.
+
+ All an inode needs to store is a 32 bit index into this table. If two inodes
+ have the identical attribute sets, the key/value block is only written once,
+ there is only one lookup table entry and both inodes have the same index.
+
+ Each lookup table entry has the following structure:
+
+ +======+============+========================================================+
+ | Type | Name       | Description                                            |
+ +======+============+========================================================+
+ | u64  | xattr ref  | A reference to the start of the key value block, i.e.  |
+ |      |            | the metadata block location shifted left by 16, OR-ed  |
+ |      |            | with am offset into the uncompressed block.            |
+ +------+------------+--------------------------------------------------------+
+ | u32  | count      | The number of key value pairs.                         |
+ +------+------------+--------------------------------------------------------+
+ | u32  | size       | The exact, uncompressed size in bytes of the entire    |
+ |      |            | block of key value pairs, counting what has been       |
+ |      |            | written to disk and including the key/value entry      |
+ |      |            | structures.                                            |
+ +------+------------+--------------------------------------------------------+
+
+ This lookup table is stored as outlined in section 2.3.
+
+ Each metadata block can hold 512 (= 8192 / 16) entries.
+
+ However, in contrast to section 2.3, additional data is given before the list
+ of metdata block locations, to locate the key-value pairs, as well as the
+ actual number of lookup table entries that are not specified in the super
+ block.
+
+
+ The 'Xattr table' entry in the superblock gives the absolute location of the
+ following data structure which is stored on-disk as is, uncompressed:
+
+ +=======+===========+========================================================+
+ | Type  | Name      | Description                                            |
+ +=======+===========+========================================================+
+ | u64   | kv start  | The absolute position of the first metadata block      |
+ |       |           | holding the key/value pairs.                           |
+ +-------+-----------+--------------------------------------------------------+
+ | u32   | count     | The number of entries in the lookup table.             |
+ +-------+-----------+--------------------------------------------------------+
+ | u32   | unused    | Always set this to 0.                                  |
+ +-------+-----------+--------------------------------------------------------+
+ | u64[] | locations | An array holding the absolute on-disk location of each |
+ |       |           | metadata block of the lookup table.                    |
+ +-------+-----------+--------------------------------------------------------+
+
+
+ If an inode has a a valid xattr index (i.e. not 0xFFFFFFFF), the metadata
+ block index is computed as
+
+   block_idx = floor(index / 512)
+
+ which is then used to retrieve the metadata block index from the locations
+ array.
+
+ Once the block has been read from disk and uncompressed, the byte offset into
+ the metadata block can be computed as
+
+   offset = (index * 16) % 8192
+
+ From this position, the structure can be read that holds a reference to the
+ metadata block that contains the key/value pairs (and byte offset into the
+ uncompressed block where the pairs start), as well as the number of key/value
+ pairs and their total, uncompressed size.
+
