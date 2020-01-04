@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+### Added
+- Support parsing [device] block size argument with SI suffix.
+- Add a write-up on the on-disk format.
+
+### Fixed
+- Include sys/sysmacros.h on any GNU libc platform.
+
 ## [0.8] - 2019-12-30
 ### Added
 - Experimental Windows port using MinGW cross compilation toolchain.
@@ -236,7 +244,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Insert abstraction layers and split generic code off into support libraries
 
-[Unreleased]: https://github.com/AgentD/squashfs-tools-ng/compare/v0.7...HEAD
+[Unreleased]: https://github.com/AgentD/squashfs-tools-ng/compare/v0.8...HEAD
+[0.8.0]: https://github.com/AgentD/squashfs-tools-ng/compare/v0.7...v0.8
 [0.7.0]: https://github.com/AgentD/squashfs-tools-ng/compare/v0.6.1...v0.7
 [0.6.1]: https://github.com/AgentD/squashfs-tools-ng/compare/v0.6...v0.6.1
 [0.6.0]: https://github.com/AgentD/squashfs-tools-ng/compare/v0.5...v0.6

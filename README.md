@@ -51,14 +51,32 @@ files, allowing 3rd party applications to use it (e.g. for embedding SquashFS
 inside a custom container format without having to implement the SquashFS
 part).
 
-# Pre-built Windows binary Packages
+
+# Installing
+
+If you are on one of the following Linux distributions, squashfs-tools-ng is
+already available through the package management system:
+
+ - Debian GNU/Linux
+ - Devuan GNU+Linux
+ - Gentoo
+ - NixOS
+ - Raspbian
+ - Ubuntu
+
+This list may change more often than this README. You can find a more detailed,
+up-to-date version here:
+
+https://repology.org/project/squashfs-tools-ng/versions
+
+## Pre-built Windows binary Packages
 
 Pre-compiled binary packages for Windows are available here:
 
 https://infraroot.at/pub/squashfs/windows
 
 Those packages contain the binaries for the tools, the SquashFS library
-and pre-compiled dependency libraries (zlib, zstd, lzo, lzma, lz4).
+and pre-compiled dependency libraries (zstd, lzo, lzma; others are built in).
 
 The binary package does not contain any source code. See below on how to obtain
 and compile the source for squashfs-tools-ng. The corresponding source code
