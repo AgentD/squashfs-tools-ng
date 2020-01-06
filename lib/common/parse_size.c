@@ -9,7 +9,8 @@
 #include <ctype.h>
 #include <limits.h>
 
-int parse_size(const char *what, size_t *out, const char *str)
+int parse_size(const char *what, size_t *out, const char *str,
+	       size_t reference)
 {
 	const char *in = str;
 	size_t acc = 0, x;
@@ -48,6 +49,15 @@ int parse_size(const char *what, size_t *out, const char *str)
 			goto fail_ov;
 		acc <<= 30;
 		++in;
+		break;
+	case '%':
+		if (reference == 0)
+			goto fail_suffix;
+
+		if (SZ_MUL_OV(acc, reference, &acc))
+			goto fail_ov;
+
+		acc /= 100;
 		break;
 	case '\0':
 		break;

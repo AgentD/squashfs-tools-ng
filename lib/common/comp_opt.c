@@ -74,39 +74,6 @@ static int find_lzo_alg(sqfs_compressor_config_t *cfg, const char *name)
 	return -1;
 }
 
-static int get_size_value(const char *value, sqfs_u32 *out, sqfs_u32 block_size)
-{
-	int i;
-
-	for (i = 0; isdigit(value[i]) && i < 9; ++i)
-		;
-
-	if (i < 1 || i > 9)
-		return -1;
-
-	*out = atol(value);
-
-	switch (value[i]) {
-	case '\0':
-		break;
-	case 'm':
-	case 'M':
-		*out <<= 20;
-		break;
-	case 'k':
-	case 'K':
-		*out <<= 10;
-		break;
-	case '%':
-		*out = (*out * block_size) / 100;
-		break;
-	default:
-		return -1;
-	}
-
-	return 0;
-}
-
 enum {
 	OPT_WINDOW = 0,
 	OPT_LEVEL,
@@ -125,7 +92,7 @@ int compressor_cfg_init_options(sqfs_compressor_config_t *cfg,
 				E_SQFS_COMPRESSOR id,
 				size_t block_size, char *options)
 {
-	size_t num_flags = 0, min_level = 0, max_level = 0, level;
+	size_t num_flags = 0, min_level = 0, max_level = 0, level, dict_size;
 	const flag_t *flags = NULL;
 	char *subopts, *value;
 	int i, opt;
@@ -234,10 +201,12 @@ int compressor_cfg_init_options(sqfs_compressor_config_t *cfg,
 			if (value == NULL)
 				goto fail_value;
 
-			if (get_size_value(value, &cfg->opt.xz.dict_size,
-					   cfg->block_size)) {
-				goto fail_dict;
+			if (parse_size("Parsing XZ dictionary size",
+				       &dict_size, value, cfg->block_size)) {
+				return -1;
 			}
+
+			cfg->opt.xz.dict_size = dict_size;
 			break;
 		default:
 			if (set_flag(cfg, value, flags, num_flags))
@@ -264,10 +233,6 @@ fail_opt:
 fail_value:
 	fprintf(stderr, "Missing value for compressor option '%s'.\n",
 		token[opt]);
-	return -1;
-fail_dict:
-	fputs("Dictionary size must be a number with the optional "
-	      "suffix 'm','k' or '%'.\n", stderr);
 	return -1;
 }
 

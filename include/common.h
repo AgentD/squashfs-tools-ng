@@ -164,7 +164,11 @@ sqfs_compressor_t *lzo_compressor_create(const sqfs_compressor_config_t *cfg);
   an error message to stderr and returns -1 on failure, 0 on success.
 
   The "what" string is used to prefix error messages (perror style).
+
+  If reference is non-zero, the suffix '%' can be used to compute the result as
+  a multiple of the reference value.
  */
-int parse_size(const char *what, size_t *out, const char *str);
+int parse_size(const char *what, size_t *out, const char *str,
+	       size_t reference);
 
 #endif /* COMMON_H */

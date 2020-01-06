@@ -124,12 +124,14 @@ static void process_args(int argc, char **argv)
 			no_tail_pack = true;
 			break;
 		case 'b':
-			if (parse_size("Block size", &cfg.block_size, optarg))
+			if (parse_size("Block size", &cfg.block_size,
+				       optarg, 0)) {
 				exit(EXIT_FAILURE);
+			}
 			break;
 		case 'B':
 			if (parse_size("Device block size", &cfg.devblksize,
-				       optarg)) {
+				       optarg, 0)) {
 				exit(EXIT_FAILURE);
 			}
 			if (cfg.devblksize < 1024) {

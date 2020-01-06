@@ -186,7 +186,7 @@ void process_command_line(options_t *opt, int argc, char **argv)
 			break;
 		case 'b':
 			if (parse_size("Block size", &opt->cfg.block_size,
-				       optarg)) {
+				       optarg, 0)) {
 				exit(EXIT_FAILURE);
 			}
 			break;
@@ -198,7 +198,7 @@ void process_command_line(options_t *opt, int argc, char **argv)
 			break;
 		case 'B':
 			if (parse_size("Device block size",
-				       &opt->cfg.devblksize, optarg)) {
+				       &opt->cfg.devblksize, optarg, 0)) {
 				exit(EXIT_FAILURE);
 			}
 			if (opt->cfg.devblksize < 1024) {
