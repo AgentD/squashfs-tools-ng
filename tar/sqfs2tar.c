@@ -297,20 +297,47 @@ fail:
 	return -1;
 }
 
-static char *prepend_prefix(char *name)
+static char *assemble_tar_path(char *name, bool is_dir)
 {
-	size_t len = strlen(root_becomes);
-	char *temp = realloc(name, strlen(name) + len + 2);
+	size_t len, new_len;
+	char *temp;
+	(void)is_dir;
 
+	if (root_becomes == NULL && !is_dir)
+		return name;
+
+	new_len = strlen(name);
+	if (root_becomes != NULL)
+		new_len += strlen(root_becomes) + 1;
+	if (is_dir)
+		new_len += 1;
+
+	temp = realloc(name, new_len + 1);
 	if (temp == NULL) {
 		perror("assembling tar entry filename");
+		free(name);
 		return NULL;
 	}
 
 	name = temp;
-	memmove(name + len + 1, name, strlen(name) + 1);
-	memcpy(name, root_becomes, len);
-	name[len] = '/';
+
+	if (root_becomes != NULL) {
+		len = strlen(root_becomes);
+
+		memmove(name + len + 1, name, strlen(name) + 1);
+		memcpy(name, root_becomes, len);
+		name[len] = '/';
+	}
+
+	if (is_dir) {
+		len = strlen(name);
+
+		if (len == 0 || name[len - 1] != '/') {
+			name[len++] = '/';
+			name[len] = '\0';
+		}
+	}
+
 	return name;
 }
 
@@ -366,11 +393,9 @@ static int write_tree_dfs(const sqfs_tree_node_t *n)
 			}
 		}
 
-		if (root_becomes != NULL) {
-			name = prepend_prefix(name);
-			if (name == NULL)
-				return -1;
-		}
+		name = assemble_tar_path(name, n->children != NULL);
+		if (name == NULL)
+			return -1;
 	}
 
 	inode_stat(n, &sb);
@@ -636,12 +661,10 @@ int main(int argc, char **argv)
 		if (sqfs_tree_find_hard_links(root, &links))
 			goto out_tree;
 
-		if (root_becomes != NULL) {
-			for (lnk = links; lnk != NULL; lnk = lnk->next) {
-				lnk->target = prepend_prefix(lnk->target);
-				if (lnk->target == NULL)
-					goto out;
-			}
+		for (lnk = links; lnk != NULL; lnk = lnk->next) {
+			lnk->target = assemble_tar_path(lnk->target, false);
+			if (lnk->target == NULL)
+				goto out;
 		}
 	}
 
