@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support parsing [device] block size argument with SI suffix.
 - Add a write-up on the on-disk format.
 
+### Changed
+- For better compatibility, sqfs2tar appends `/` to directory names. (#37)
+
 ### Fixed
 - Include sys/sysmacros.h on any GNU libc platform.
 

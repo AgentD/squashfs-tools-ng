@@ -180,7 +180,9 @@ the `libsquashfs` library does not.
 
 ## Further Information
 
-A documentation of the SquashFS on-disk format can be found here:
+A documentation of the SquashFS on-disk format in plain text format can be
+found in the [documentation directory](doc/format.txt), which is based on
+an online version that can be found here:
 
 https://dr-emann.github.io/squashfs/
 
