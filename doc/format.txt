@@ -61,8 +61,9 @@
  2) Overview
  ***********
 
- A SquashFS archive consists of a maximum of nine parts, packed together on
- a byte alignment:
+ SquashFS always stores integers in little endian format.
+
+ A SquashFS archive consists of a maximum of nine parts:
 
          _______________
         |               |  Important information about the archive, including
@@ -98,6 +99,19 @@
         |     Xattr     |  Extended attributes for items in the archive.
         |     table	|
         |_______________|
+
+
+ Although the super block details the exact positions of each section, most
+ implementations, including the one in the Linux kernel, insist on this exact
+ order.
+
+ The archive is usually padded with null bytes to make the size a multiple of
+ 1024 or 4096 bytes, called the "device block size". Some implementations
+ insists on the size to be a multiple of the device block size (particularly
+ the one in the Linux kernel where the device block size is a configure option).
+
+ The individual parts don't have to be aligned and it is perfectly fine to
+ cram them together at single byte alignment.
 
 
  2.1) Packing File Data
@@ -192,8 +206,33 @@
  worst a single metadata block read (at most 8194 bytes).
 
 
+ 2.4) Supported Compressors
 
- 2) The superblock
+ The SquashFS format supports the following compressors:
+
+  - zlib deflate (referred to as "gzip" but only uses raw deflate streams)
+  - lzo
+  - lzma 1
+  - lzma 2 (referred to as "xz")
+  - lz4
+  - zstd
+
+ The archive can only specify one compressor in the super block and has to use
+ it for both file data and metadata compression. Using one compressor for data
+ and switching to a different compressor for e.g. inodes is not supported.
+
+ A data or metadata block is only stored compressed, if compressing actually
+ shrinks the input data. If not, the original uncompressed block is stored.
+ So while it is technically not possible to pick a "null" compressor in the
+ super block, an implementation can still deliberately write only uncompressed
+ blocks to a SquashFS file.
+
+ If compatibility with the Linux implementation is desired, the lzma 2 aka xz
+ compressor should only use CRC32 checksums. The decompressor in the kernel
+ cannot process the data if checksummed with SHA-256.
+
+
+ 3) The superblock
  *****************
 
  The superblock is the first section of a SquashFS archive. It is always
@@ -332,6 +371,11 @@
  |      |                   | 0x0010 | Fixed.                                 |
  +------+-------------------+--------+----------------------------------------+
 
+ Note: If multiple strategies are selected, the SquashFS writer tries all of
+ them (including not setting any and letting zlib work with defaults) and
+ selects the resulting block that has the smallest size.
+
+
  3.1.2) XZ
 
  +======+===================+=================================================+
@@ -354,6 +398,11 @@
  |      |                   | 0x0010 | ARM thumb                              |
  |      |                   | 0x0020 | SPARC                                  |
  +------+-------------------+--------+----------------------------------------+
+
+ Note: If multiple filters are selected, the SquashFS writer tries all of
+ them (including not setting any and letting libxz work with defaults) and
+ selects the resulting block that has the smallest size.
+
 
  3.1.3) LZ4
 
@@ -435,7 +484,7 @@
 
 
  In Figure 1, file A consists of 3 blocks and a single tail end, file B has
- 2 blocks and one tail end while file 3 is smaller than block size.
+ 2 blocks and one tail end while file C is smaller than block size.
 
  For each file, the blocks are compressed in sequence and stored on disk.
 
@@ -879,7 +928,7 @@
 
  Also note, that the inode type is stored in the entry, but always as a basic
  type!
- 
+
 
  6.1) Directory Index
 
