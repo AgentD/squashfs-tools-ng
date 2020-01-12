@@ -44,3 +44,4 @@ m4/lt*.m4
 Doxyfile
 tests/cantrbry.sh
 mknastyfs
+mk42sqfs
