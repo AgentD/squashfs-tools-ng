@@ -10,6 +10,9 @@
 #include "sqfs/inode.h"
 #include "sqfs/error.h"
 
+#include <string.h>
+#include <stdlib.h>
+
 static int inverse_type[] = {
 	[SQFS_INODE_DIR] = SQFS_INODE_EXT_DIR,
 	[SQFS_INODE_FILE] = SQFS_INODE_EXT_FILE,
@@ -26,6 +29,52 @@ static int inverse_type[] = {
 	[SQFS_INODE_EXT_FIFO] = SQFS_INODE_FIFO,
 	[SQFS_INODE_EXT_SOCKET] = SQFS_INODE_SOCKET,
 };
+
+int sqfs_inode_copy(const sqfs_inode_generic_t *src,
+		    sqfs_inode_generic_t **out)
+{
+	sqfs_inode_generic_t *copy;
+	size_t size = sizeof(*src);
+
+	switch (src->base.type) {
+	case SQFS_INODE_FILE:
+	case SQFS_INODE_EXT_FILE:
+		size += src->num_file_blocks;
+		break;
+	case SQFS_INODE_DIR:
+	case SQFS_INODE_EXT_DIR:
+		size += src->num_dir_idx_bytes;
+		break;
+	case SQFS_INODE_SLINK:
+		size += src->data.slink.target_size;
+		break;
+	case SQFS_INODE_EXT_SLINK:
+		size += src->data.slink_ext.target_size;
+		break;
+	case SQFS_INODE_BDEV:
+	case SQFS_INODE_CDEV:
+	case SQFS_INODE_FIFO:
+	case SQFS_INODE_SOCKET:
+	case SQFS_INODE_EXT_BDEV:
+	case SQFS_INODE_EXT_CDEV:
+	case SQFS_INODE_EXT_FIFO:
+	case SQFS_INODE_EXT_SOCKET:
+		break;
+	default:
+		return SQFS_ERROR_CORRUPTED;
+	}
+
+	copy = calloc(1, size);
+	if (copy == NULL)
+		return SQFS_ERROR_ALLOC;
+
+	memcpy(copy, src, size);
+	copy->block_sizes = (sqfs_u32 *)copy->extra;
+	copy->slink_target = (char *)copy->extra;
+
+	*out = copy;
+	return 0;
+}
 
 int sqfs_inode_get_xattr_index(const sqfs_inode_generic_t *inode,
 			       sqfs_u32 *out)
