@@ -223,6 +223,10 @@ AM_COND_IF([WITH_XZ], [libsqfs_dep_mod="$libsqfs_dep_mod liblzma >= 5.0.0"], [])
 AM_COND_IF([WITH_ZSTD], [libsqfs_dep_mod="$libsqfs_dep_mod libzstd"], [])
 AC_SUBST([LIBSQFS_DEP_MOD], ["$libsqfs_dep_mod"])
 
+PKG_CHECK_MODULES(READLINE, [readline], [have_readline="yes"],
+			    [have_readline="no"])
+AM_CONDITIONAL([WITH_READLINE], [test "x$have_readline" = "xyes"])
+
 ##### additional checks #####
 AX_COMPILE_CHECK_SIZEOF(time_t)
 AX_COMPILE_CHECK_SIZEOF(size_t)
