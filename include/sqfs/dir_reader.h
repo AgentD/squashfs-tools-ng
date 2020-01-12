@@ -269,11 +269,14 @@ SQFS_API int sqfs_dir_reader_get_root_inode(sqfs_dir_reader_t *rd,
 					    sqfs_inode_generic_t **inode);
 
 /**
- * @brief Find an inode through path traversal from the root node downwards.
+ * @brief Find an inode through path traversal starting from the root or a
+ *        given node downwards.
  *
  * @memberof sqfs_dir_reader_t
  *
  * @param rd A pointer to a directory reader.
+ * @param start If not NULL, path traversal starts at this node downwards. If
+ *              set to NULL, start at the root node.
  * @param path A path to resolve into an inode. Forward or backward slashes can
  *             be used to separate path components. Resolving '.' or '..' is
  *             not supported.
@@ -283,6 +286,7 @@ SQFS_API int sqfs_dir_reader_get_root_inode(sqfs_dir_reader_t *rd,
  * @return Zero on success, an @ref E_SQFS_ERROR value on failure.
  */
 SQFS_API int sqfs_dir_reader_find_by_path(sqfs_dir_reader_t *rd,
+					  const sqfs_inode_generic_t *start,
 					  const char *path,
 					  sqfs_inode_generic_t **out);
 

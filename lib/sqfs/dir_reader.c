@@ -210,15 +210,21 @@ int sqfs_dir_reader_get_root_inode(sqfs_dir_reader_t *rd,
 					   block_start, offset, inode);
 }
 
-int sqfs_dir_reader_find_by_path(sqfs_dir_reader_t *rd, const char *path,
-				 sqfs_inode_generic_t **out)
+int sqfs_dir_reader_find_by_path(sqfs_dir_reader_t *rd,
+				 const sqfs_inode_generic_t *start,
+				 const char *path, sqfs_inode_generic_t **out)
 {
 	sqfs_inode_generic_t *inode;
 	sqfs_dir_entry_t *ent;
 	const char *ptr;
 	int ret;
 
-	ret = sqfs_dir_reader_get_root_inode(rd, &inode);
+	if (start == NULL) {
+		ret = sqfs_dir_reader_get_root_inode(rd, &inode);
+	} else {
+		ret = sqfs_inode_copy(start, &inode);
+	}
+
 	if (ret)
 		return ret;
 
