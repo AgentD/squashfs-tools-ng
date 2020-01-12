@@ -45,3 +45,4 @@ Doxyfile
 tests/cantrbry.sh
 mknastyfs
 mk42sqfs
+list_files
