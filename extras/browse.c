@@ -5,6 +5,7 @@
 #include "sqfs/inode.h"
 #include "sqfs/super.h"
 #include "sqfs/error.h"
+#include "sqfs/block.h"
 #include "sqfs/dir.h"
 #include "sqfs/io.h"
 
@@ -22,6 +23,8 @@ static sqfs_super_t super;
 static sqfs_inode_generic_t *working_dir;
 static sqfs_id_table_t *idtbl;
 static sqfs_data_reader_t *data;
+
+/*****************************************************************************/
 
 static void change_directory(const char *dirname)
 {
@@ -43,6 +46,8 @@ static void change_directory(const char *dirname)
 	}
 }
 
+/*****************************************************************************/
+
 static void list_directory(const char *dirname)
 {
 	sqfs_inode_generic_t *root, *inode;
@@ -50,6 +55,7 @@ static void list_directory(const char *dirname)
 	sqfs_dir_entry_t *ent;
 	int ret;
 
+	/* Get the directory inode we want to dump and open the directory */
 	if (dirname == NULL) {
 		ret = sqfs_dir_reader_open_dir(dr, working_dir);
 		if (ret)
@@ -78,6 +84,7 @@ static void list_directory(const char *dirname)
 			goto fail_open;
 	}
 
+	/* first pass over the directory to figure out column count/length */
 	for (max_len = 0; ; max_len = len > max_len ? len : max_len) {
 		ret = sqfs_dir_reader_read(dr, &ent);
 		if (ret > 0)
@@ -92,11 +99,12 @@ static void list_directory(const char *dirname)
 		free(ent);
 	}
 
-	sqfs_dir_reader_rewind(dr);
-
 	col_count = 79 / (max_len + 1);
 	col_count = col_count < 1 ? 1 : col_count;
 	i = 0;
+
+	/* second pass for printing directory contents */
+	sqfs_dir_reader_rewind(dr);
 
 	for (;;) {
 		ret = sqfs_dir_reader_read(dr, &ent);
@@ -108,6 +116,7 @@ static void list_directory(const char *dirname)
 			break;
 		}
 
+		/* entries always use basic types only */
 		switch (ent->type) {
 		case SQFS_INODE_DIR:
 			fputs("\033[01;34m", stdout);
@@ -158,6 +167,8 @@ fail_resolve:
 	return;
 }
 
+/*****************************************************************************/
+
 static void mode_to_str(sqfs_u16 mode, char *p)
 {
 	*(p++) = (mode & SQFS_INODE_OWNER_R) ? 'r' : '-';
@@ -205,6 +216,7 @@ static void stat_cmd(const char *filename)
 	size_t i;
 	int ret;
 
+	/* get the inode we are interested in */
 	if (filename == NULL) {
 		printf("Missing argument: file name\n");
 		return;
@@ -223,8 +235,7 @@ static void stat_cmd(const char *filename)
 			goto fail_resolve;
 	}
 
-	printf("Stat: %s\n", filename);
-
+	/* some basic information */
 	switch (inode->base.type) {
 	case SQFS_INODE_DIR:        type = "directory";                 break;
 	case SQFS_INODE_FILE:       type = "file";                      break;
@@ -243,6 +254,7 @@ static void stat_cmd(const char *filename)
 	default:                    type = "UNKNOWN";                   break;
 	}
 
+	printf("Stat: %s\n", filename);
 	printf("Type: %s\n", type);
 	printf("Inode number: %u\n", inode->base.inode_number);
 
@@ -250,6 +262,7 @@ static void stat_cmd(const char *filename)
 	printf("Access: 0%o/%s\n", inode->base.mode & ~SQFS_INODE_MODE_MASK,
 	       buffer);
 
+	/* resolve and print UID/GID */
 	if (sqfs_id_table_index_to_id(idtbl, inode->base.uid_idx, &uid)) {
 		strcpy(buffer, "-- error --");
 	} else {
@@ -266,11 +279,13 @@ static void stat_cmd(const char *filename)
 
 	printf("GID: %s (index = %u)\n", buffer, inode->base.gid_idx);
 
+	/* last modification time stamp */
 	timeval = inode->base.mod_time;
 	tm = gmtime(&timeval);
 	strftime(buffer, sizeof(buffer), "%a, %d %b %Y %T %z", tm);
 	printf("Last modified: %s (%u)\n", buffer, inode->base.mod_time);
 
+	/* inode type specific data */
 	switch (inode->base.type) {
 	case SQFS_INODE_BDEV:
 	case SQFS_INODE_CDEV:
@@ -315,9 +330,9 @@ static void stat_cmd(const char *filename)
 
 		for (i = 0; i < inode->num_file_blocks; ++i) {
 			printf("\tBlock #%lu size: %u (%s)\n", (unsigned long)i,
-			       inode->extra[i] & 0x00FFFFFF,
-			       inode->extra[i] & (1 << 24) ?
-			       "uncompressed" : "compressed");
+			       SQFS_ON_DISK_BLOCK_SIZE(inode->extra[i]),
+			       SQFS_IS_BLOCK_COMPRESSED(inode->extra[i]) ?
+			       "compressed" : "uncompressed");
 		}
 		break;
 	case SQFS_INODE_EXT_FILE:
@@ -336,8 +351,8 @@ static void stat_cmd(const char *filename)
 
 		for (i = 0; i < inode->num_file_blocks; ++i) {
 			printf("\tBlock #%lu size: %u (%s)\n", (unsigned long)i,
-			       inode->extra[i] & 0x00FFFFFF,
-			       inode->extra[i] & (1 << 24) ?
+			       SQFS_ON_DISK_BLOCK_SIZE(inode->extra[i]),
+			       SQFS_IS_BLOCK_COMPRESSED(inode->extra[i]) ?
 			       "compressed" : "uncompressed");
 		}
 		break;
@@ -361,6 +376,7 @@ static void stat_cmd(const char *filename)
 		if (inode->data.dir_ext.size == 0)
 			break;
 
+		/* dump the extended directories fast-lookup index */
 		for (i = 0; ; ++i) {
 			ret = sqfs_inode_unpack_dir_index_entry(inode, &idx, i);
 			if (ret == SQFS_ERROR_OUT_OF_BOUNDS)
@@ -388,6 +404,8 @@ fail_resolve:
 	return;
 }
 
+/*****************************************************************************/
+
 static void cat_cmd(const char *filename)
 {
 	sqfs_inode_generic_t *inode, *root;
@@ -396,6 +414,7 @@ static void cat_cmd(const char *filename)
 	sqfs_s32 diff;
 	int ret;
 
+	/* get the inode of the file */
 	if (filename == NULL) {
 		printf("Missing argument: file name\n");
 		return;
@@ -415,6 +434,10 @@ static void cat_cmd(const char *filename)
 		return;
 	}
 
+	/* Use the high level read-like function that uses the data-reader
+	 * internal cache. There are also other functions for direct block
+	 * or fragment access.
+	 */
 	for (;;) {
 		diff = sqfs_data_reader_read(data, inode, offset, buffer,
 					     sizeof(buffer));
@@ -431,6 +454,7 @@ static void cat_cmd(const char *filename)
 	}
 }
 
+/*****************************************************************************/
 
 static const struct {
 	const char *cmd;
