@@ -299,6 +299,8 @@ static int read_inode_dir_ext(sqfs_meta_reader_t *ir, sqfs_inode_t *base,
 			free(out);
 			return err;
 		}
+
+		index_used += ent.size + 1;
 	}
 
 	out->num_dir_idx_bytes = index_used;
