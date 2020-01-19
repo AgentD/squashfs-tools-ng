@@ -9,9 +9,12 @@
 
 #include "sqfs/inode.h"
 #include "sqfs/error.h"
+#include "sqfs/dir.h"
 
 #include <string.h>
 #include <stdlib.h>
+
+#include "util.h"
 
 static int inverse_type[] = {
 	[SQFS_INODE_DIR] = SQFS_INODE_EXT_DIR,
@@ -384,5 +387,46 @@ int sqfs_inode_get_file_block_start(const sqfs_inode_generic_t *inode,
 		return SQFS_ERROR_NOT_FILE;
 	}
 
+	return 0;
+}
+
+int sqfs_inode_unpack_dir_index_entry(const sqfs_inode_generic_t *inode,
+				      sqfs_dir_index_t **out,
+				      size_t index)
+{
+	sqfs_dir_index_t ent;
+	size_t offset;
+	char *ptr;
+
+	if (inode->base.type != SQFS_INODE_EXT_DIR) {
+		if (inode->base.type == SQFS_INODE_DIR)
+			return SQFS_ERROR_OUT_OF_BOUNDS;
+
+		return SQFS_ERROR_NOT_DIR;
+	}
+
+	offset = 0;
+	ptr = (char *)inode->extra;
+
+	for (;;) {
+		if (offset >= inode->num_dir_idx_bytes)
+			return SQFS_ERROR_OUT_OF_BOUNDS;
+
+		if (index == 0)
+			break;
+
+		memcpy(&ent, ptr + offset, sizeof(ent));
+		offset += sizeof(ent) + ent.size + 1;
+		index -= 1;
+	}
+
+	memcpy(&ent, ptr + offset, sizeof(ent));
+
+	*out = alloc_flex(sizeof(ent), 1, ent.size + 2);
+	if (*out == NULL)
+		return SQFS_ERROR_ALLOC;
+
+	memcpy(*out, &ent, sizeof(ent));
+	memcpy((*out)->name, ptr + offset + sizeof(ent), ent.size + 1);
 	return 0;
 }

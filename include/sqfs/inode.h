@@ -696,6 +696,27 @@ SQFS_API int sqfs_inode_get_frag_location(const sqfs_inode_generic_t *inode,
 SQFS_API int sqfs_inode_get_file_block_start(const sqfs_inode_generic_t *inode,
 					     sqfs_u64 *location);
 
+/**
+ * @brief Unpack the a directory index structure from an inode.
+ *
+ * The generic inode contains in its payload the raw directory index (with
+ * bytes swapped to host enian), but still with single byte alignment. This
+ * function seeks through the blob using an integer index (not offset) and
+ * fiddles the raw data out into a propperly aligned, external structure.
+ *
+ * @param inode A pointer to an inode.
+ * @param out Returns the index entry. Can be freed with a single free call.
+ * @param index An index value between 0 and inodex_count.
+ *
+ * @return Zero on success, @ref SQFS_ERROR_OUT_OF_BOUNDS if the given index
+ *         points outside the directory index. Can return other error codes
+ *         (e.g. if the inode isn't a directory or allocation failed).
+ */
+SQFS_API
+int sqfs_inode_unpack_dir_index_entry(const sqfs_inode_generic_t *inode,
+				      sqfs_dir_index_t **out,
+				      size_t index);
+
 #ifdef __cplusplus
 }
 #endif

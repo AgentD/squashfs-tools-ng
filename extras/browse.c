@@ -3,6 +3,7 @@
 #include "sqfs/id_table.h"
 #include "sqfs/inode.h"
 #include "sqfs/super.h"
+#include "sqfs/error.h"
 #include "sqfs/dir.h"
 #include "sqfs/io.h"
 
@@ -358,16 +359,22 @@ static void stat_cmd(const char *filename)
 		if (inode->data.dir_ext.size == 0)
 			break;
 
-		idx = (sqfs_dir_index_t *)inode->extra;
+		for (i = 0; ; ++i) {
+			ret = sqfs_inode_unpack_dir_index_entry(inode, &idx, i);
+			if (ret == SQFS_ERROR_OUT_OF_BOUNDS)
+				break;
+			if (ret < 0) {
+				printf("Error reading index, error code %d\n",
+				       ret);
+				break;
+			}
 
-		for (i = 0; i < inode->data.dir_ext.inodex_count; ++i) {
 			printf("\tIndex: %u\n", idx->index);
 			printf("\tStart block: %u\n", idx->start_block);
 			printf("\tSize: %u\n", idx->size + 1);
 			printf("\tEntry: %.*s\n\n", idx->size + 1, idx->name);
 
-			idx = (sqfs_dir_index_t *)
-				((char *)idx + sizeof(*idx) + idx->size + 1);
+			free(idx);
 		}
 		break;
 	}
