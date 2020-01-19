@@ -662,8 +662,8 @@
  +------+--------------+------------------------------------------------------+
  | u32  | parent inode | Same as above.                                       |
  +------+--------------+------------------------------------------------------+
- | u16  | index count  | One less than the number of directory index entries  |
- |      |              | following the inode structure.                       |
+ | u16  | index count  | The number of directory index entries following the  |
+ |      |              | inode structure.                                     |
  +------+--------------+------------------------------------------------------+
  | u16  | block offset | Same as above.                                       |
  +------+--------------+------------------------------------------------------+

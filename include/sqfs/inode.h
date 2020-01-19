@@ -447,8 +447,8 @@ struct sqfs_inode_dir_ext_t {
 	/**
 	 * @brief Number of directory index entries following the inode
 	 *
-	 * This number is stored off-by one and counts the number of
-	 * @ref sqfs_dir_index_t entries following the inode.
+	 * This number counts the number of @ref sqfs_dir_index_t entries
+	 * following the inode.
 	 */
 	sqfs_u16 inodex_count;
 
