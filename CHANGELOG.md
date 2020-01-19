@@ -8,12 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Support parsing [device] block size argument with SI suffix.
 - Add a write-up on the on-disk format.
+- A couple demo programs that make use of `libsquashfs`.
 
 ### Changed
 - For better compatibility, sqfs2tar appends `/` to directory names. (#37)
 
 ### Fixed
 - Include sys/sysmacros.h on any GNU libc platform.
+- Directory index accounting.
 
 ## [0.8] - 2019-12-30
 ### Added

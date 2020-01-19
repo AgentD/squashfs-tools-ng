@@ -156,6 +156,8 @@ structures.
 
 The `tests` sub-directory contains unit tests for the libraries.
 
+The `extras` sub-directory contains a few demo programs that use `libsquashfs`.
+
 To allow 3rd party applications to use `libsquashfs.so` without restricting
 their choice of license, the code in the `lib/sqfs` sub-directories is
 licensed under the LGPLv3, in contrast to the rest of this package.
