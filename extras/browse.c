@@ -1,3 +1,4 @@
+#include "sqfs/data_reader.h"
 #include "sqfs/compressor.h"
 #include "sqfs/dir_reader.h"
 #include "sqfs/id_table.h"
@@ -20,6 +21,7 @@ static sqfs_dir_reader_t *dr;
 static sqfs_super_t super;
 static sqfs_inode_generic_t *working_dir;
 static sqfs_id_table_t *idtbl;
+static sqfs_data_reader_t *data;
 
 static void change_directory(const char *dirname)
 {
@@ -386,6 +388,49 @@ fail_resolve:
 	return;
 }
 
+static void cat_cmd(const char *filename)
+{
+	sqfs_inode_generic_t *inode, *root;
+	sqfs_u64 offset = 0;
+	char buffer[512];
+	sqfs_s32 diff;
+	int ret;
+
+	if (filename == NULL) {
+		printf("Missing argument: file name\n");
+		return;
+	}
+
+	if (*filename == '/') {
+		sqfs_dir_reader_get_root_inode(dr, &root);
+		ret = sqfs_dir_reader_find_by_path(dr, root, filename, &inode);
+		free(root);
+	} else {
+		ret = sqfs_dir_reader_find_by_path(dr, working_dir,
+						   filename, &inode);
+	}
+
+	if (ret) {
+		printf("Error resolving '%s', error code %d\n", filename, ret);
+		return;
+	}
+
+	for (;;) {
+		diff = sqfs_data_reader_read(data, inode, offset, buffer,
+					     sizeof(buffer));
+		if (diff == 0)
+			break;
+		if (diff < 0) {
+			printf("Error reading from file '%s', error code %d\n",
+			       filename, diff);
+			break;
+		}
+
+		fwrite(buffer, 1, diff, stdout);
+		offset += diff;
+	}
+}
+
 
 static const struct {
 	const char *cmd;
@@ -394,6 +439,7 @@ static const struct {
 	{ "ls", list_directory },
 	{ "cd", change_directory },
 	{ "stat", stat_cmd },
+	{ "cat", cat_cmd },
 };
 
 int main(int argc, char **argv)
@@ -460,7 +506,7 @@ int main(int argc, char **argv)
 		goto out_id;
 	}
 
-	/* create a directory reader and scan the entire directory hiearchy */
+	/* create a directory reader and get the root inode */
 	dr = sqfs_dir_reader_create(&super, cmp, file);
 	if (dr == NULL) {
 		fprintf(stderr, "%s: error creating directory reader.\n",
@@ -470,6 +516,21 @@ int main(int argc, char **argv)
 
 	if (sqfs_dir_reader_get_root_inode(dr, &working_dir)) {
 		fprintf(stderr, "%s: error reading root inode.\n", argv[1]);
+		goto out_dir;
+	}
+
+	/* create a data reader */
+	data = sqfs_data_reader_create(file, super.block_size, cmp);
+
+	if (data == NULL) {
+		fprintf(stderr, "%s: error creating data reader.\n",
+			argv[1]);
+		goto out_dir;
+	}
+
+	if (sqfs_data_reader_load_fragment_table(data, &super)) {
+		fprintf(stderr, "%s: error loading fragment table.\n",
+			argv[1]);
 		goto out;
 	}
 
@@ -514,6 +575,8 @@ int main(int argc, char **argv)
 	status = EXIT_SUCCESS;
 	free(buffer);
 out:
+	sqfs_data_reader_destroy(data);
+out_dir:
 	if (working_dir != NULL)
 		free(working_dir);
 	sqfs_dir_reader_destroy(dr);
