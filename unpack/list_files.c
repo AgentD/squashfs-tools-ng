@@ -85,7 +85,7 @@ static void print_node_size(const sqfs_tree_node_t *n, char *buffer)
 {
 	switch (n->inode->base.mode & S_IFMT) {
 	case S_IFLNK:
-		print_size(strlen(n->inode->slink_target), buffer);
+		print_size(strlen((const char *)n->inode->extra), buffer);
 		break;
 	case S_IFREG: {
 		sqfs_u64 size;
@@ -151,7 +151,8 @@ void list_files(const sqfs_tree_node_t *node)
 			       n->name);
 
 			if (S_ISLNK(n->inode->base.mode)) {
-				printf(" -> %s\n", n->inode->slink_target);
+				printf(" -> %s\n",
+				       (const char *)n->inode->extra);
 			} else {
 				fputc('\n', stdout);
 			}
@@ -164,7 +165,7 @@ void list_files(const sqfs_tree_node_t *node)
 		       node->uid, node->gid, sizestr, node->name);
 
 		if (S_ISLNK(node->inode->base.mode)) {
-			printf(" -> %s\n", node->inode->slink_target);
+			printf(" -> %s\n", (const char *)node->inode->extra);
 		} else {
 			fputc('\n', stdout);
 		}

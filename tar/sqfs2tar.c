@@ -414,7 +414,7 @@ static int write_tree_dfs(const sqfs_tree_node_t *n)
 		}
 	}
 
-	target = S_ISLNK(sb.st_mode) ? n->inode->slink_target : NULL;
+	target = S_ISLNK(sb.st_mode) ? (char *)n->inode->extra : NULL;
 	ret = write_tar_header(out_file, &sb, name, target, xattr,
 			       record_counter++);
 

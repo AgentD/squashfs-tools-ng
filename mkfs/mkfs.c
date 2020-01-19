@@ -109,7 +109,6 @@ static int pack_files(sqfs_data_writer_t *data, fstree_t *fs,
 			return -1;
 		}
 
-		inode->block_sizes = (sqfs_u32 *)inode->extra;
 		inode->base.type = SQFS_INODE_FILE;
 		sqfs_inode_set_file_size(inode, filesize);
 		sqfs_inode_set_frag_location(inode, 0xFFFFFFFF, 0xFFFFFFFF);

@@ -42,8 +42,7 @@ static sqfs_inode_generic_t *create_file_inode(sqfs_id_table_t *idtbl,
 	inode->data.file.fragment_index = 0xFFFFFFFF;
 
 	inode->num_file_blocks = 1;
-	inode->block_sizes = (sqfs_u32 *)inode->extra;
-	inode->block_sizes[0] = (1 << 24) | inode->data.file.file_size;
+	inode->extra[0] = (1 << 24) | inode->data.file.file_size;
 	return inode;
 }
 
@@ -144,7 +143,7 @@ int main(void)
 	inode = create_file_inode(idtbl, inode_num++);
 	inode->data.file.blocks_start = sizeof(super);
 	inode->data.file.file_size = strlen(README);
-	inode->block_sizes[0] = (1 << 24) | inode->data.file.file_size;
+	inode->extra[0] = (1 << 24) | inode->data.file.file_size;
 
 	sqfs_meta_writer_get_position(inode_m, &block_start, &offset);
 	sqfs_meta_writer_write_inode(inode_m, inode);

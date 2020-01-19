@@ -72,9 +72,6 @@ int sqfs_inode_copy(const sqfs_inode_generic_t *src,
 		return SQFS_ERROR_ALLOC;
 
 	memcpy(copy, src, size);
-	copy->block_sizes = (sqfs_u32 *)copy->extra;
-	copy->slink_target = (char *)copy->extra;
-
 	*out = copy;
 	return 0;
 }

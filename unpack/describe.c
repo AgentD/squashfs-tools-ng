@@ -74,7 +74,8 @@ int describe_tree(const sqfs_tree_node_t *root, const char *unpack_root)
 	case S_IFSOCK:
 		return print_simple("sock", root, NULL);
 	case S_IFLNK:
-		return print_simple("slink", root, root->inode->slink_target);
+		return print_simple("slink", root,
+				    (const char *)root->inode->extra);
 	case S_IFIFO:
 		return print_simple("pipe", root, NULL);
 	case S_IFREG:

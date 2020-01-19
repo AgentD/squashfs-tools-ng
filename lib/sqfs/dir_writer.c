@@ -419,7 +419,8 @@ sqfs_inode_generic_t
 			ent.index = idx->index;
 			ent.size = idx->ent->name_len - 1;
 
-			ptr = inode->extra + inode->num_dir_idx_bytes;
+			ptr = (sqfs_u8 *)inode->extra +
+				inode->num_dir_idx_bytes;
 			memcpy(ptr, &ent, sizeof(ent));
 			memcpy(ptr + sizeof(ent), idx->ent->name,
 			       idx->ent->name_len);

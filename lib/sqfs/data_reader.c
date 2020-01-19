@@ -219,14 +219,13 @@ int sqfs_data_reader_get_block(sqfs_data_reader_t *data,
 		return SQFS_ERROR_OUT_OF_BOUNDS;
 
 	for (i = 0; i < index; ++i) {
-		off += SQFS_ON_DISK_BLOCK_SIZE(inode->block_sizes[i]);
+		off += SQFS_ON_DISK_BLOCK_SIZE(inode->extra[i]);
 		filesz -= data->block_size;
 	}
 
 	unpacked_size = filesz < data->block_size ? filesz : data->block_size;
 
-	return get_block(data, off, inode->block_sizes[index],
-			 unpacked_size, out);
+	return get_block(data, off, inode->extra[index], unpacked_size, out);
 }
 
 int sqfs_data_reader_get_fragment(sqfs_data_reader_t *data,
@@ -285,7 +284,7 @@ sqfs_s32 sqfs_data_reader_read(sqfs_data_reader_t *data,
 	i = 0;
 
 	while (offset > data->block_size && i < inode->num_file_blocks) {
-		off += SQFS_ON_DISK_BLOCK_SIZE(inode->block_sizes[i++]);
+		off += SQFS_ON_DISK_BLOCK_SIZE(inode->extra[i++]);
 		offset -= data->block_size;
 
 		if (filesz >= data->block_size) {
@@ -301,17 +300,15 @@ sqfs_s32 sqfs_data_reader_read(sqfs_data_reader_t *data,
 		if (size < diff)
 			diff = size;
 
-		if (SQFS_IS_SPARSE_BLOCK(inode->block_sizes[i])) {
+		if (SQFS_IS_SPARSE_BLOCK(inode->extra[i])) {
 			memset(buffer, 0, diff);
 		} else {
-			if (precache_data_block(data, off,
-						inode->block_sizes[i])) {
+			if (precache_data_block(data, off, inode->extra[i]))
 				return -1;
-			}
 
 			memcpy(buffer, (char *)data->data_block->data + offset,
 			       diff);
-			off += SQFS_ON_DISK_BLOCK_SIZE(inode->block_sizes[i]);
+			off += SQFS_ON_DISK_BLOCK_SIZE(inode->extra[i]);
 		}
 
 		if (filesz >= data->block_size) {

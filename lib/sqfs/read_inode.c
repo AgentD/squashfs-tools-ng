@@ -101,18 +101,16 @@ static int read_inode_file(sqfs_meta_reader_t *ir, sqfs_inode_t *base,
 
 	out->base = *base;
 	out->data.file = file;
-	out->block_sizes = (sqfs_u32 *)out->extra;
 	out->num_file_blocks = count;
 
-	err = sqfs_meta_reader_read(ir, out->block_sizes,
-				    count * sizeof(sqfs_u32));
+	err = sqfs_meta_reader_read(ir, out->extra, count * sizeof(sqfs_u32));
 	if (err) {
 		free(out);
 		return err;
 	}
 
 	for (i = 0; i < count; ++i)
-		SWAB32(out->block_sizes[i]);
+		SWAB32(out->extra[i]);
 
 	*result = out;
 	return 0;
@@ -149,18 +147,16 @@ static int read_inode_file_ext(sqfs_meta_reader_t *ir, sqfs_inode_t *base,
 
 	out->base = *base;
 	out->data.file_ext = file;
-	out->block_sizes = (sqfs_u32 *)out->extra;
 	out->num_file_blocks = count;
 
-	err = sqfs_meta_reader_read(ir, out->block_sizes,
-				    count * sizeof(sqfs_u32));
+	err = sqfs_meta_reader_read(ir, out->extra, count * sizeof(sqfs_u32));
 	if (err) {
 		free(out);
 		return err;
 	}
 
 	for (i = 0; i < count; ++i)
-		SWAB32(out->block_sizes[i]);
+		SWAB32(out->extra[i]);
 
 	*result = out;
 	return 0;
@@ -190,11 +186,10 @@ static int read_inode_slink(sqfs_meta_reader_t *ir, sqfs_inode_t *base,
 	if (out == NULL)
 		return SQFS_ERROR_ALLOC;
 
-	out->slink_target = (char *)out->extra;
 	out->base = *base;
 	out->data.slink = slink;
 
-	err = sqfs_meta_reader_read(ir, out->slink_target, slink.target_size);
+	err = sqfs_meta_reader_read(ir, (void *)out->extra, slink.target_size);
 	if (err) {
 		free(out);
 		return err;
@@ -290,10 +285,10 @@ static int read_inode_dir_ext(sqfs_meta_reader_t *ir, sqfs_inode_t *base,
 			index_max = new_sz;
 		}
 
-		memcpy(out->extra + index_used, &ent, sizeof(ent));
+		memcpy((char *)out->extra + index_used, &ent, sizeof(ent));
 		index_used += sizeof(ent);
 
-		err = sqfs_meta_reader_read(ir, out->extra + index_used,
+		err = sqfs_meta_reader_read(ir, (char *)out->extra + index_used,
 					    ent.size + 1);
 		if (err) {
 			free(out);

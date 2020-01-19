@@ -38,7 +38,6 @@ static sqfs_inode_generic_t *tree_node_to_inode(tree_node_t *node)
 		inode->base.type = SQFS_INODE_SLINK;
 		inode->data.slink.nlink = node->link_count;
 		inode->data.slink.target_size = extra;
-		inode->slink_target = (char *)inode->extra;
 		memcpy(inode->extra, node->data.target, extra);
 		break;
 	case S_IFBLK:

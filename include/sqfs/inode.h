@@ -483,23 +483,6 @@ struct sqfs_inode_generic_t {
 	sqfs_inode_t base;
 
 	/**
-	 * @brief A pointer into the extra field holding the symlink target.
-	 *
-	 * @param This string is not null terminated. The helper functions rely
-	 *        entirely on the length stored in the symlink inode.
-	 */
-	char *slink_target;
-
-	/**
-	 * @brief A pointer into the extra field holding file blocks sizes.
-	 *
-	 * For file inodes, holds the consecutive block sizes. Bit number 24 is
-	 * set if the block is stored uncompressed. If it the size is zero,
-	 * the block is sparse.
-	 */
-	sqfs_u32 *block_sizes;
-
-	/**
 	 * @brief For file inodes, stores the number of blocks used.
 	 */
 	size_t num_file_blocks;
@@ -528,8 +511,13 @@ struct sqfs_inode_generic_t {
 
 	/**
 	 * @brief Holds type specific extra data, such as symlink target.
+	 *
+	 * For regular file inodes, this is an array of block sizes. For symlink
+	 * inodes, this is actually a string holding the target. For extended
+	 * directory inodes, this is actually a blob of tightly packed directory
+	 * index entries.
 	 */
-	sqfs_u8 extra[];
+	sqfs_u32 extra[];
 };
 
 #ifdef __cplusplus

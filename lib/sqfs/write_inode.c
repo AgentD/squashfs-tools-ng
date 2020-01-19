@@ -22,7 +22,7 @@ static int write_block_sizes(sqfs_meta_writer_t *ir,
 	size_t i;
 
 	for (i = 0; i < n->num_file_blocks; ++i)
-		sizes[i] = htole32(n->block_sizes[i]);
+		sizes[i] = htole32(n->extra[i]);
 
 	return sqfs_meta_writer_append(ir, sizes,
 				       sizeof(sqfs_u32) * n->num_file_blocks);
@@ -112,7 +112,7 @@ int sqfs_meta_writer_write_inode(sqfs_meta_writer_t *ir,
 		ret = sqfs_meta_writer_append(ir, &slink, sizeof(slink));
 		if (ret)
 			return ret;
-		return sqfs_meta_writer_append(ir, n->slink_target,
+		return sqfs_meta_writer_append(ir, n->extra,
 					       n->data.slink.target_size);
 	}
 	case SQFS_INODE_BDEV:
@@ -143,7 +143,8 @@ int sqfs_meta_writer_write_inode(sqfs_meta_writer_t *ir,
 		ret = sqfs_meta_writer_append(ir, &dir, sizeof(dir));
 		if (ret)
 			return ret;
-		return write_dir_index(ir, n->extra, n->num_dir_idx_bytes);
+		return write_dir_index(ir, (const sqfs_u8 *)n->extra,
+				       n->num_dir_idx_bytes);
 	}
 	case SQFS_INODE_EXT_FILE: {
 		sqfs_inode_file_ext_t file = {
@@ -171,7 +172,7 @@ int sqfs_meta_writer_write_inode(sqfs_meta_writer_t *ir,
 		ret = sqfs_meta_writer_append(ir, &slink, sizeof(slink));
 		if (ret)
 			return ret;
-		ret = sqfs_meta_writer_append(ir, n->slink_target,
+		ret = sqfs_meta_writer_append(ir, n->extra,
 					      n->data.slink_ext.target_size);
 		if (ret)
 			return ret;

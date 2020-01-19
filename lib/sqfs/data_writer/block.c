@@ -116,7 +116,7 @@ int process_completed_block(sqfs_data_writer_t *proc, sqfs_block_t *blk)
 			proc->fragments[blk->index].pad0 = 0;
 			proc->fragments[blk->index].size = htole32(out);
 		} else {
-			blk->inode->block_sizes[blk->index] = out;
+			blk->inode->extra[blk->index] = out;
 		}
 
 		err = store_block_location(proc, offset, out, blk->checksum);

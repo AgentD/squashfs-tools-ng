@@ -150,7 +150,8 @@ int node_compare(sqfsdiff_t *sd, sqfs_tree_node_t *a, sqfs_tree_node_t *b)
 		break;
 	case SQFS_INODE_SLINK:
 	case SQFS_INODE_EXT_SLINK:
-		if (strcmp(a->inode->slink_target, b->inode->slink_target)) {
+		if (strcmp((const char *)a->inode->extra,
+			   (const char *)b->inode->extra)) {
 			fprintf(stdout, "%s has a different link target\n",
 				path);
 		}

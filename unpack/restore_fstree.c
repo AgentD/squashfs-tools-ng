@@ -57,9 +57,9 @@ static int create_node(const sqfs_tree_node_t *n, const char *name)
 		}
 		break;
 	case S_IFLNK:
-		if (symlink(n->inode->slink_target, name)) {
+		if (symlink((const char *)n->inode->extra, name)) {
 			fprintf(stderr, "ln -s %s %s: %s\n",
-				n->inode->slink_target, name,
+				(const char *)n->inode->extra, name,
 				strerror(errno));
 			return -1;
 		}

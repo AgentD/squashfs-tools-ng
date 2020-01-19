@@ -67,7 +67,7 @@ static int flush_block(sqfs_data_writer_t *proc, sqfs_block_t *block)
 		sqfs_inode_make_extended(proc->inode);
 		proc->inode->data.file_ext.sparse += block->size;
 		proc->inode->num_file_blocks += 1;
-		proc->inode->block_sizes[block->index] = 0;
+		proc->inode->extra[block->index] = 0;
 		free(block);
 		return 0;
 	}

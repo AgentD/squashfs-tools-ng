@@ -293,13 +293,13 @@ static void stat_cmd(const char *filename)
 	case SQFS_INODE_SLINK:
 		printf("Hard link count: %u\n", inode->data.slink.nlink);
 		printf("Link target: %.*s\n", inode->data.slink.target_size,
-		       inode->slink_target);
+		       (const char *)inode->extra);
 		break;
 	case SQFS_INODE_EXT_SLINK:
 		printf("Hard link count: %u\n", inode->data.slink_ext.nlink);
 		printf("Xattr index: 0x%X\n", inode->data.slink_ext.xattr_idx);
-		printf("Link target: %.*s\n",
-		       inode->data.slink_ext.target_size, inode->slink_target);
+		printf("Link target: %.*s\n", inode->data.slink_ext.target_size,
+		       (const char *)inode->extra);
 		break;
 	case SQFS_INODE_FILE:
 		printf("Blocks start: %u\n", inode->data.file.blocks_start);
@@ -313,8 +313,8 @@ static void stat_cmd(const char *filename)
 
 		for (i = 0; i < inode->num_file_blocks; ++i) {
 			printf("\tBlock #%lu size: %u (%s)\n", (unsigned long)i,
-			       inode->block_sizes[i] & 0x00FFFFFF,
-			       inode->block_sizes[i] & (1 << 24) ?
+			       inode->extra[i] & 0x00FFFFFF,
+			       inode->extra[i] & (1 << 24) ?
 			       "uncompressed" : "compressed");
 		}
 		break;
@@ -334,8 +334,8 @@ static void stat_cmd(const char *filename)
 
 		for (i = 0; i < inode->num_file_blocks; ++i) {
 			printf("\tBlock #%lu size: %u (%s)\n", (unsigned long)i,
-			       inode->block_sizes[i] & 0x00FFFFFF,
-			       inode->block_sizes[i] & (1 << 24) ?
+			       inode->extra[i] & 0x00FFFFFF,
+			       inode->extra[i] & (1 << 24) ?
 			       "compressed" : "uncompressed");
 		}
 		break;

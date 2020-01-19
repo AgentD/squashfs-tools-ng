@@ -60,8 +60,7 @@ int sqfs_data_reader_dump(const char *name, sqfs_data_reader_t *data,
 	for (i = 0; i < inode->num_file_blocks; ++i) {
 		diff = (filesz < block_size) ? filesz : block_size;
 
-		if (SQFS_IS_SPARSE_BLOCK(inode->block_sizes[i]) &&
-		    allow_sparse) {
+		if (SQFS_IS_SPARSE_BLOCK(inode->extra[i]) && allow_sparse) {
 			if (fseek(fp, diff, SEEK_CUR) < 0)
 				goto fail_sparse;
 		} else {
