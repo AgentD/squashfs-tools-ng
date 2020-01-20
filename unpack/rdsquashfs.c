@@ -89,7 +89,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	idtbl = sqfs_id_table_create();
+	idtbl = sqfs_id_table_create(0);
 	if (idtbl == NULL) {
 		sqfs_perror(opt.image_name, "creating ID table",
 			    SQFS_ERROR_ALLOC);

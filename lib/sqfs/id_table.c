@@ -22,8 +22,11 @@ struct sqfs_id_table_t {
 	size_t max_ids;
 };
 
-sqfs_id_table_t *sqfs_id_table_create(void)
+sqfs_id_table_t *sqfs_id_table_create(sqfs_u32 flags)
 {
+	if (flags != 0)
+		return NULL;
+
 	return calloc(1, sizeof(sqfs_id_table_t));
 }
 

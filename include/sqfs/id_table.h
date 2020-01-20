@@ -50,9 +50,11 @@ extern "C" {
  *
  * @memberof sqfs_id_table_t
  *
+ * @param flags Currently must be set to 0 or creating the table fails.
+ *
  * @return A pointer to an ID table object, NULL on allocation failure.
  */
-SQFS_API sqfs_id_table_t *sqfs_id_table_create(void);
+SQFS_API sqfs_id_table_t *sqfs_id_table_create(sqfs_u32 flags);
 
 /**
  * @brief Destroy an ID table object and free all memory used by it.

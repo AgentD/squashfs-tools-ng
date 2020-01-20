@@ -136,7 +136,7 @@ int sqfs_writer_init(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *wrcfg)
 	memset(&sqfs->stats, 0, sizeof(sqfs->stats));
 	register_stat_hooks(sqfs->data, &sqfs->stats);
 
-	sqfs->idtbl = sqfs_id_table_create();
+	sqfs->idtbl = sqfs_id_table_create(0);
 	if (sqfs->idtbl == NULL) {
 		sqfs_perror(wrcfg->filename, "creating ID table",
 			    SQFS_ERROR_ALLOC);

@@ -100,7 +100,7 @@ int main(int argc, char **argv)
 	}
 
 	/* Create and read the UID/GID mapping table */
-	idtbl = sqfs_id_table_create();
+	idtbl = sqfs_id_table_create(0);
 	if (idtbl == NULL) {
 		fputs("Error creating ID table.\n", stderr);
 		goto out_cmp;

@@ -59,7 +59,7 @@ static int open_sfqs(sqfs_state_t *state, const char *path)
 		}
 	}
 
-	state->idtbl = sqfs_id_table_create();
+	state->idtbl = sqfs_id_table_create(0);
 	if (state->idtbl == NULL) {
 		sqfs_perror(path, "creating ID table", SQFS_ERROR_ALLOC);
 		goto fail_cmp;
