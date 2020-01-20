@@ -54,20 +54,10 @@ part).
 
 # Installing
 
-If you are on one of the following Linux distributions, squashfs-tools-ng is
-already available through the package management system:
+A number of Linux distributions already offer squashfs-tools-ng through their
+package management system. Replogy maintains an up to date list:
 
- - Debian GNU/Linux
- - Devuan GNU+Linux
- - Gentoo
- - NixOS
- - Raspbian
- - Ubuntu
-
-This list may change more often than this README. You can find a more detailed,
-up-to-date version here:
-
-https://repology.org/project/squashfs-tools-ng/versions
+[![Packaging status](https://repology.org/badge/vertical-allrepos/squashfs-tools-ng.svg)](https://repology.org/project/squashfs-tools-ng/versions)
 
 ## Pre-built Windows binary Packages
 
