@@ -9,6 +9,7 @@
 
 #include "sqfs/data_reader.h"
 #include "sqfs/compressor.h"
+#include "sqfs/frag_table.h"
 #include "sqfs/block.h"
 #include "sqfs/error.h"
 #include "sqfs/table.h"
@@ -20,7 +21,7 @@
 #include <string.h>
 
 struct sqfs_data_reader_t {
-	sqfs_fragment_t *frag;
+	sqfs_frag_table_t *frag_tbl;
 	sqfs_compressor_t *cmp;
 	sqfs_block_t *data_block;
 	sqfs_block_t *frag_block;
@@ -29,7 +30,6 @@ struct sqfs_data_reader_t {
 
 	sqfs_file_t *file;
 
-	sqfs_u32 num_fragments;
 	sqfs_u32 current_frag_index;
 	sqfs_u32 block_size;
 
@@ -112,19 +112,20 @@ static int precache_data_block(sqfs_data_reader_t *data, sqfs_u64 location,
 
 static int precache_fragment_block(sqfs_data_reader_t *data, size_t idx)
 {
+	sqfs_fragment_t ent;
 	int ret;
 
 	if (data->frag_block != NULL && idx == data->current_frag_index)
 		return 0;
 
-	if (idx >= data->num_fragments)
-		return SQFS_ERROR_OUT_OF_BOUNDS;
+	ret = sqfs_frag_table_lookup(data->frag_tbl, idx, &ent);
+	if (ret != 0)
+		return ret;
 
 	free(data->frag_block);
 	data->frag_block = NULL;
 
-	ret = get_block(data, data->frag[idx].start_offset,
-			data->frag[idx].size, data->block_size,
+	ret = get_block(data, ent.start_offset, ent.size, data->block_size,
 			&data->frag_block);
 	if (ret < 0)
 		return -1;
@@ -139,69 +140,44 @@ sqfs_data_reader_t *sqfs_data_reader_create(sqfs_file_t *file,
 {
 	sqfs_data_reader_t *data = alloc_flex(sizeof(*data), 1, block_size);
 
-	if (data != NULL) {
-		data->file = file;
-		data->block_size = block_size;
-		data->cmp = cmp;
+	if (data == NULL)
+		return NULL;
+
+	data->frag_tbl = sqfs_frag_table_create(0);
+	if (data->frag_tbl == NULL) {
+		free(data);
+		return NULL;
 	}
 
+	data->file = file;
+	data->block_size = block_size;
+	data->cmp = cmp;
 	return data;
 }
 
 int sqfs_data_reader_load_fragment_table(sqfs_data_reader_t *data,
 					 const sqfs_super_t *super)
 {
-	void *raw_frag;
-	size_t size;
-	sqfs_u32 i;
 	int ret;
 
 	free(data->frag_block);
-	free(data->frag);
-
-	data->frag = NULL;
 	data->frag_block = NULL;
-	data->num_fragments = 0;
 	data->current_frag_index = 0;
 
-	if (super->fragment_entry_count == 0 ||
-	    (super->flags & SQFS_FLAG_NO_FRAGMENTS) != 0) {
-		return 0;
-	}
-
-	if (super->fragment_table_start >= super->bytes_used)
-		return SQFS_ERROR_OUT_OF_BOUNDS;
-
-	if (SZ_MUL_OV(sizeof(data->frag[0]), super->fragment_entry_count,
-		      &size)) {
-		return SQFS_ERROR_OVERFLOW;
-	}
-
-	ret = sqfs_read_table(data->file, data->cmp, size,
-			      super->fragment_table_start,
-			      super->directory_table_start,
-			      super->fragment_table_start, &raw_frag);
-	if (ret)
+	ret = sqfs_frag_table_read(data->frag_tbl, data->file,
+				   super, data->cmp);
+	if (ret != 0)
 		return ret;
 
-	data->num_fragments = super->fragment_entry_count;
-	data->current_frag_index = super->fragment_entry_count;
-	data->frag = raw_frag;
-
-	for (i = 0; i < data->num_fragments; ++i) {
-		data->frag[i].size = le32toh(data->frag[i].size);
-		data->frag[i].start_offset =
-			le64toh(data->frag[i].start_offset);
-	}
-
+	data->current_frag_index = sqfs_frag_table_get_size(data->frag_tbl);
 	return 0;
 }
 
 void sqfs_data_reader_destroy(sqfs_data_reader_t *data)
 {
+	sqfs_frag_table_destroy(data->frag_tbl);
 	free(data->data_block);
 	free(data->frag_block);
-	free(data->frag);
 	free(data);
 }
 
