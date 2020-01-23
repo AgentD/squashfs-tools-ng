@@ -25,6 +25,7 @@ libsquashfs_la_SOURCES += lib/sqfs/data_writer/common.c
 libsquashfs_la_SOURCES += lib/sqfs/data_writer/fileapi.c
 libsquashfs_la_SOURCES += lib/sqfs/str_table.c lib/sqfs/str_table.h
 libsquashfs_la_SOURCES += lib/sqfs/alloc.c lib/sqfs/util.h
+libsquashfs_la_SOURCES += lib/sqfs/frag_table.c include/sqfs/frag_table.h
 libsquashfs_la_CPPFLAGS = $(AM_CPPFLAGS)
 libsquashfs_la_LDFLAGS = $(AM_LDFLAGS)
 libsquashfs_la_CFLAGS = $(AM_CFLAGS) $(PTHREAD_CFLAGS) $(ZLIB_CFLAGS)
