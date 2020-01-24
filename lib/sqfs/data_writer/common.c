@@ -55,47 +55,6 @@ void data_writer_cleanup(sqfs_data_writer_t *proc)
 	free(proc);
 }
 
-void data_writer_store_done(sqfs_data_writer_t *proc, sqfs_block_t *blk,
-			    int status)
-{
-	sqfs_block_t *it = proc->done, *prev = NULL;
-
-	while (it != NULL) {
-		if (it->sequence_number >= blk->sequence_number)
-			break;
-		prev = it;
-		it = it->next;
-	}
-
-	if (prev == NULL) {
-		blk->next = proc->done;
-		proc->done = blk;
-	} else {
-		blk->next = prev->next;
-		prev->next = blk;
-	}
-
-	if (status != 0 && proc->status == 0)
-		proc->status = status;
-}
-
-sqfs_block_t *data_writer_next_work_item(sqfs_data_writer_t *proc)
-{
-	sqfs_block_t *blk;
-
-	if (proc->status != 0)
-		return NULL;
-
-	blk = proc->queue;
-	proc->queue = blk->next;
-	blk->next = NULL;
-
-	if (proc->queue == NULL)
-		proc->queue_last = NULL;
-
-	return blk;
-}
-
 int sqfs_data_writer_write_fragment_table(sqfs_data_writer_t *proc,
 					  sqfs_super_t *super)
 {

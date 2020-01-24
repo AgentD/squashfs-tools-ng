@@ -38,20 +38,48 @@ static THREAD_TYPE worker_proc(THREAD_ARG arg)
 {
 	compress_worker_t *worker = arg;
 	sqfs_data_writer_t *shared = worker->shared;
-	sqfs_block_t *blk = NULL;
+	sqfs_block_t *it, *prev, *blk = NULL;
 	int status = 0;
 
 	for (;;) {
 		LOCK(&shared->mtx);
 		if (blk != NULL) {
-			data_writer_store_done(shared, blk, status);
+			it = shared->done;
+			prev = NULL;
+
+			while (it != NULL) {
+				if (it->sequence_number >= blk->sequence_number)
+					break;
+				prev = it;
+				it = it->next;
+			}
+
+			if (prev == NULL) {
+				blk->next = shared->done;
+				shared->done = blk;
+			} else {
+				blk->next = prev->next;
+				prev->next = blk;
+			}
+
+			if (status != 0 && shared->status == 0)
+				shared->status = status;
 			SIGNAL_ALL(&shared->done_cond);
 		}
 
 		while (shared->queue == NULL && shared->status == 0)
 			AWAIT(&shared->queue_cond, &shared->mtx);
 
-		blk = data_writer_next_work_item(shared);
+		if (shared->status == 0) {
+			blk = shared->queue;
+			shared->queue = blk->next;
+			blk->next = NULL;
+
+			if (shared->queue == NULL)
+				shared->queue_last = NULL;
+		} else {
+			blk = NULL;
+		}
 		UNLOCK(&shared->mtx);
 
 		if (blk == NULL)

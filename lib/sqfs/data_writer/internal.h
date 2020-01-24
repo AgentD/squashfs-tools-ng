@@ -134,13 +134,6 @@ int data_writer_init(sqfs_data_writer_t *proc, size_t max_block_size,
 SQFS_INTERNAL void data_writer_cleanup(sqfs_data_writer_t *proc);
 
 SQFS_INTERNAL
-void data_writer_store_done(sqfs_data_writer_t *proc, sqfs_block_t *blk,
-			    int status);
-
-SQFS_INTERNAL
-sqfs_block_t *data_writer_next_work_item(sqfs_data_writer_t *proc);
-
-SQFS_INTERNAL
 int data_writer_do_block(sqfs_block_t *block, sqfs_compressor_t *cmp,
 			 sqfs_u8 *scratch, size_t scratch_size);
 
