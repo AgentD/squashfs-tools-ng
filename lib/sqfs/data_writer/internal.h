@@ -10,6 +10,7 @@
 #include "config.h"
 
 #include "sqfs/data_writer.h"
+#include "sqfs/frag_table.h"
 #include "sqfs/compressor.h"
 #include "sqfs/inode.h"
 #include "sqfs/table.h"
@@ -80,9 +81,7 @@ struct sqfs_data_writer_t {
 	size_t devblksz;
 	sqfs_file_t *file;
 
-	sqfs_fragment_t *fragments;
-	size_t num_fragments;
-	size_t max_fragments;
+	sqfs_frag_table_t *frag_tbl;
 
 	sqfs_u64 start;
 

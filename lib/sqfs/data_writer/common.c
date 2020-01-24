@@ -31,6 +31,10 @@ int data_writer_init(sqfs_data_writer_t *proc, size_t max_block_size,
 	proc->max_blocks = INIT_BLOCK_COUNT;
 	proc->frag_list_max = INIT_BLOCK_COUNT;
 
+	proc->frag_tbl = sqfs_frag_table_create(0);
+	if (proc->frag_tbl == NULL)
+		return -1;
+
 	proc->blocks = alloc_array(sizeof(proc->blocks[0]), proc->max_blocks);
 	if (proc->blocks == NULL)
 		return -1;
@@ -45,12 +49,13 @@ int data_writer_init(sqfs_data_writer_t *proc, size_t max_block_size,
 
 void data_writer_cleanup(sqfs_data_writer_t *proc)
 {
+	if (proc->frag_tbl != NULL)
+		sqfs_frag_table_destroy(proc->frag_tbl);
 	free_blk_list(proc->queue);
 	free_blk_list(proc->done);
 	free(proc->blk_current);
 	free(proc->frag_block);
 	free(proc->frag_list);
-	free(proc->fragments);
 	free(proc->blocks);
 	free(proc);
 }
@@ -58,29 +63,8 @@ void data_writer_cleanup(sqfs_data_writer_t *proc)
 int sqfs_data_writer_write_fragment_table(sqfs_data_writer_t *proc,
 					  sqfs_super_t *super)
 {
-	sqfs_u64 start;
-	size_t size;
-	int ret;
-
-	if (proc->num_fragments == 0) {
-		super->fragment_entry_count = 0;
-		super->fragment_table_start = 0xFFFFFFFFFFFFFFFFUL;
-		super->flags &= ~SQFS_FLAG_ALWAYS_FRAGMENTS;
-		super->flags |= SQFS_FLAG_NO_FRAGMENTS;
-		return 0;
-	}
-
-	size = sizeof(proc->fragments[0]) * proc->num_fragments;
-	ret = sqfs_write_table(proc->file, proc->cmp,
-			       proc->fragments, size, &start);
-	if (ret)
-		return ret;
-
-	super->flags &= ~SQFS_FLAG_NO_FRAGMENTS;
-	super->flags |= SQFS_FLAG_ALWAYS_FRAGMENTS;
-	super->fragment_entry_count = proc->num_fragments;
-	super->fragment_table_start = start;
-	return 0;
+	return sqfs_frag_table_write(proc->frag_tbl, proc->file,
+				     super, proc->cmp);
 }
 
 int sqfs_data_writer_set_hooks(sqfs_data_writer_t *proc, void *user_ptr,

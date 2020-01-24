@@ -111,10 +111,10 @@ int process_completed_block(sqfs_data_writer_t *proc, sqfs_block_t *blk)
 		offset = proc->file->get_size(proc->file);
 
 		if (blk->flags & SQFS_BLK_FRAGMENT_BLOCK) {
-			offset = htole64(offset);
-			proc->fragments[blk->index].start_offset = offset;
-			proc->fragments[blk->index].pad0 = 0;
-			proc->fragments[blk->index].size = htole32(out);
+			err = sqfs_frag_table_set(proc->frag_tbl, blk->index,
+						  offset, out);
+			if (err)
+				return err;
 		} else {
 			blk->inode->extra[blk->index] = out;
 		}

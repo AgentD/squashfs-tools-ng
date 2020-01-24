@@ -7,27 +7,6 @@
 #define SQFS_BUILDING_DLL
 #include "internal.h"
 
-static int grow_fragment_table(sqfs_data_writer_t *proc)
-{
-	size_t newsz;
-	void *new;
-
-	if (proc->num_fragments >= proc->max_fragments) {
-		newsz = proc->max_fragments ? proc->max_fragments * 2 : 16;
-
-		new = realloc(proc->fragments,
-			      sizeof(proc->fragments[0]) * newsz);
-
-		if (new == NULL)
-			return SQFS_ERROR_ALLOC;
-
-		proc->max_fragments = newsz;
-		proc->fragments = new;
-	}
-
-	return 0;
-}
-
 static int grow_deduplication_list(sqfs_data_writer_t *proc)
 {
 	size_t new_sz;
@@ -80,6 +59,7 @@ int process_completed_fragment(sqfs_data_writer_t *proc, sqfs_block_t *frag,
 			       sqfs_block_t **blk_out)
 {
 	sqfs_u64 hash;
+	sqfs_u32 index;
 	size_t i, size;
 	int err;
 
@@ -102,7 +82,7 @@ int process_completed_fragment(sqfs_data_writer_t *proc, sqfs_block_t *frag,
 	if (proc->frag_block == NULL) {
 		size = sizeof(sqfs_block_t) + proc->max_block_size;
 
-		err = grow_fragment_table(proc);
+		err= sqfs_frag_table_append(proc->frag_tbl, 0, 0, &index);
 		if (err)
 			goto fail;
 
@@ -112,7 +92,7 @@ int process_completed_fragment(sqfs_data_writer_t *proc, sqfs_block_t *frag,
 			goto fail;
 		}
 
-		proc->frag_block->index = proc->num_fragments++;
+		proc->frag_block->index = index;
 		proc->frag_block->flags = SQFS_BLK_FRAGMENT_BLOCK;
 	}
 
