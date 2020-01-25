@@ -7,7 +7,8 @@ LIBSQFS_HEARDS = include/sqfs/meta_writer.h \
 		include/sqfs/error.h include/sqfs/dir_reader.h \
 		include/sqfs/dir_writer.h include/sqfs/io.h \
 		include/sqfs/data_reader.h include/sqfs/block.h \
-		include/sqfs/xattr_reader.h include/sqfs/xattr_writer.h
+		include/sqfs/xattr_reader.h include/sqfs/xattr_writer.h \
+		include/sqfs/frag_table.h
 
 libsquashfs_la_SOURCES = $(LIBSQFS_HEARDS) lib/sqfs/id_table.c lib/sqfs/super.c
 libsquashfs_la_SOURCES += lib/sqfs/readdir.c lib/sqfs/xattr.c
