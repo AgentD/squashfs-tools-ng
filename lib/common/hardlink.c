@@ -89,6 +89,7 @@ int sqfs_tree_find_hard_links(const sqfs_tree_node_t *root,
 	}
 
 	*out = hardlinks;
+	free(list);
 	return 0;
 fail:
 	perror("detecting hard links in file system tree");
