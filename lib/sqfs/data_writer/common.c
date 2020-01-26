@@ -29,7 +29,6 @@ int data_writer_init(sqfs_data_writer_t *proc, size_t max_block_size,
 	proc->cmp = cmp;
 	proc->file = file;
 	proc->max_blocks = INIT_BLOCK_COUNT;
-	proc->frag_list_max = INIT_BLOCK_COUNT;
 
 	proc->frag_tbl = sqfs_frag_table_create(0);
 	if (proc->frag_tbl == NULL)
@@ -37,11 +36,6 @@ int data_writer_init(sqfs_data_writer_t *proc, size_t max_block_size,
 
 	proc->blocks = alloc_array(sizeof(proc->blocks[0]), proc->max_blocks);
 	if (proc->blocks == NULL)
-		return -1;
-
-	proc->frag_list = alloc_array(sizeof(proc->frag_list[0]),
-				      proc->frag_list_max);
-	if (proc->frag_list == NULL)
 		return -1;
 
 	return 0;
@@ -55,7 +49,6 @@ void data_writer_cleanup(sqfs_data_writer_t *proc)
 	free_blk_list(proc->done);
 	free(proc->blk_current);
 	free(proc->frag_block);
-	free(proc->frag_list);
 	free(proc->blocks);
 	free(proc);
 }

@@ -43,11 +43,6 @@ typedef struct {
 	sqfs_u64 hash;
 } blk_info_t;
 
-typedef struct {
-	sqfs_u32 index;
-	sqfs_u32 offset;
-	sqfs_u64 hash;
-} frag_info_t;
 
 typedef struct compress_worker_t compress_worker_t;
 
@@ -92,9 +87,6 @@ struct sqfs_data_writer_t {
 	sqfs_compressor_t *cmp;
 
 	sqfs_block_t *frag_block;
-	frag_info_t *frag_list;
-	size_t frag_list_num;
-	size_t frag_list_max;
 
 	const sqfs_block_hooks_t *hooks;
 	void *user_ptr;

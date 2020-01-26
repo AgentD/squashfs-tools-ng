@@ -17,10 +17,24 @@
 #include <stdlib.h>
 #include <string.h>
 
+
+typedef struct {
+	sqfs_u32 index;
+	sqfs_u32 offset;
+	sqfs_u32 size;
+	sqfs_u32 hash;
+} chunk_info_t;
+
+
 struct sqfs_frag_table_t {
 	size_t capacity;
 	size_t used;
 	sqfs_fragment_t *table;
+
+	/* TODO: more efficient data structure */
+	size_t chunk_num;
+	size_t chunk_max;
+	chunk_info_t *chunk_list;
 };
 
 sqfs_frag_table_t *sqfs_frag_table_create(sqfs_u32 flags)
@@ -39,6 +53,7 @@ sqfs_frag_table_t *sqfs_frag_table_create(sqfs_u32 flags)
 
 void sqfs_frag_table_destroy(sqfs_frag_table_t *tbl)
 {
+	free(tbl->chunk_list);
 	free(tbl->table);
 	free(tbl);
 }
@@ -192,4 +207,51 @@ int sqfs_frag_table_set(sqfs_frag_table_t *tbl, sqfs_u32 index,
 size_t sqfs_frag_table_get_size(sqfs_frag_table_t *tbl)
 {
 	return tbl->used;
+}
+
+int sqfs_frag_table_add_tail_end(sqfs_frag_table_t *tbl,
+				 sqfs_u32 index, sqfs_u32 offset,
+				 sqfs_u32 size, sqfs_u32 hash)
+{
+	size_t new_sz;
+	void *new;
+
+	if (tbl->chunk_num == tbl->chunk_max) {
+		new_sz = tbl->chunk_max ? tbl->chunk_max * 2 : 128;
+		new = realloc(tbl->chunk_list,
+			      sizeof(tbl->chunk_list[0]) * new_sz);
+
+		if (new == NULL)
+			return SQFS_ERROR_ALLOC;
+
+		tbl->chunk_list = new;
+		tbl->chunk_max = new_sz;
+	}
+
+	tbl->chunk_list[tbl->chunk_num].index = index;
+	tbl->chunk_list[tbl->chunk_num].offset = offset;
+	tbl->chunk_list[tbl->chunk_num].size = size;
+	tbl->chunk_list[tbl->chunk_num].hash = hash;
+	tbl->chunk_num += 1;
+	return 0;
+}
+
+int sqfs_frag_table_find_tail_end(sqfs_frag_table_t *tbl,
+				  sqfs_u32 hash, sqfs_u32 size,
+				  sqfs_u32 *index, sqfs_u32 *offset)
+{
+	size_t i;
+
+	for (i = 0; i < tbl->chunk_num; ++i) {
+		if (tbl->chunk_list[i].hash == hash &&
+		    tbl->chunk_list[i].size == size) {
+			if (index != NULL)
+				*index = tbl->chunk_list[i].index;
+			if (offset != NULL)
+				*offset = tbl->chunk_list[i].offset;
+			return 0;
+		}
+	}
+
+	return SQFS_ERROR_NO_ENTRY;
 }

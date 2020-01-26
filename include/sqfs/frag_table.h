@@ -151,6 +151,48 @@ SQFS_API int sqfs_frag_table_set(sqfs_frag_table_t *tbl, sqfs_u32 index,
  */
 SQFS_API size_t sqfs_frag_table_get_size(sqfs_frag_table_t *tbl);
 
+/**
+ * @brief Remember a specific tail end chunk within a fragment block.
+ *
+ * @memberof sqfs_frag_table_t
+ *
+ * This is a convenience function that memorizes a specific tail end packed
+ * into a fragment block, primarily for looking it up later by hash and size
+ * using @ref sqfs_frag_table_find_tail_end.
+ *
+ * @param tbl A pointer to the fragmen table object.
+ * @param index An index into the fragment table that identifies the
+ *              fragment block.
+ * @param offset A byte offset into the actual fragment block itself.
+ * @param size The size of the tail en inside the fragment block.
+ * @param hash An arbitrary 32 bit data hash to memorize.
+ *
+ * @return Zero on success, an @ref E_SQFS_ERROR on faiure.
+ */
+SQFS_API int sqfs_frag_table_add_tail_end(sqfs_frag_table_t *tbl,
+					  sqfs_u32 index, sqfs_u32 offset,
+					  sqfs_u32 size, sqfs_u32 hash);
+
+/**
+ * @brief RFetch a fragment block index and offset by hash and size
+ *
+ * @memberof sqfs_frag_table_t
+ *
+ * This is a convenience function that can find data chunks previously
+ * memorized using @ref sqfs_frag_table_add_tail_end.
+ *
+ * @param tbl A pointer to the fragmen table object.
+ * @param hash An arbitrary 32 bit data hash that describes the chunk.
+ * @param size The size of the chunk to look for.
+ * @param index Returns an index into the fragment table on success.
+ * @param offset Returns a byte offset into the fragment block on success.
+ *
+ * @return Zero on success, non-zero if the chunk could not be found.
+ */
+SQFS_API int sqfs_frag_table_find_tail_end(sqfs_frag_table_t *tbl,
+					   sqfs_u32 hash, sqfs_u32 size,
+					   sqfs_u32 *index, sqfs_u32 *offset);
+
 #ifdef __cplusplus
 }
 #endif
