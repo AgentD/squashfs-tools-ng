@@ -7,7 +7,7 @@
 #define SQFS_BUILDING_DLL
 #include "internal.h"
 
-int process_completed_fragment(sqfs_data_writer_t *proc, sqfs_block_t *frag,
+int process_completed_fragment(sqfs_block_processor_t *proc, sqfs_block_t *frag,
 			       sqfs_block_t **blk_out)
 {
 	sqfs_u32 index, offset;

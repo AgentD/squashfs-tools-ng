@@ -9,7 +9,7 @@
 
 #include "config.h"
 
-#include "sqfs/data_writer.h"
+#include "sqfs/block_processor.h"
 #include "sqfs/frag_table.h"
 #include "sqfs/compressor.h"
 #include "sqfs/inode.h"
@@ -46,7 +46,7 @@ typedef struct {
 
 typedef struct compress_worker_t compress_worker_t;
 
-struct sqfs_data_writer_t {
+struct sqfs_block_processor_t {
 	/* synchronization primitives */
 #ifdef WITH_PTHREAD
 	pthread_mutex_t mtx;
@@ -108,33 +108,34 @@ struct sqfs_data_writer_t {
 #endif
 };
 
-SQFS_INTERNAL int process_completed_block(sqfs_data_writer_t *proc,
+SQFS_INTERNAL int process_completed_block(sqfs_block_processor_t *proc,
 					  sqfs_block_t *block);
 
 SQFS_INTERNAL
-int process_completed_fragment(sqfs_data_writer_t *proc, sqfs_block_t *frag,
+int process_completed_fragment(sqfs_block_processor_t *proc, sqfs_block_t *frag,
 			       sqfs_block_t **blk_out);
 
 SQFS_INTERNAL void free_blk_list(sqfs_block_t *list);
 
 SQFS_INTERNAL
-int data_writer_init(sqfs_data_writer_t *proc, size_t max_block_size,
-		     sqfs_compressor_t *cmp, unsigned int num_workers,
-		     size_t max_backlog, size_t devblksz, sqfs_file_t *file);
+int block_processor_init(sqfs_block_processor_t *proc, size_t max_block_size,
+			 sqfs_compressor_t *cmp, unsigned int num_workers,
+			 size_t max_backlog, size_t devblksz,
+			 sqfs_file_t *file);
 
-SQFS_INTERNAL void data_writer_cleanup(sqfs_data_writer_t *proc);
-
-SQFS_INTERNAL
-int data_writer_do_block(sqfs_block_t *block, sqfs_compressor_t *cmp,
-			 sqfs_u8 *scratch, size_t scratch_size);
+SQFS_INTERNAL void block_processor_cleanup(sqfs_block_processor_t *proc);
 
 SQFS_INTERNAL
-int test_and_set_status(sqfs_data_writer_t *proc, int status);
+int block_processor_do_block(sqfs_block_t *block, sqfs_compressor_t *cmp,
+			     sqfs_u8 *scratch, size_t scratch_size);
 
 SQFS_INTERNAL
-int append_to_work_queue(sqfs_data_writer_t *proc, sqfs_block_t *block,
+int test_and_set_status(sqfs_block_processor_t *proc, int status);
+
+SQFS_INTERNAL
+int append_to_work_queue(sqfs_block_processor_t *proc, sqfs_block_t *block,
 			 bool notify_threads);
 
-SQFS_INTERNAL int wait_completed(sqfs_data_writer_t *proc);
+SQFS_INTERNAL int wait_completed(sqfs_block_processor_t *proc);
 
 #endif /* INTERNAL_H */

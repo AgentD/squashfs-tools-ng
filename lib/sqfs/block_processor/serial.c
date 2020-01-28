@@ -7,35 +7,35 @@
 #define SQFS_BUILDING_DLL
 #include "internal.h"
 
-sqfs_data_writer_t *sqfs_data_writer_create(size_t max_block_size,
-					    sqfs_compressor_t *cmp,
-					    unsigned int num_workers,
-					    size_t max_backlog,
-					    size_t devblksz,
-					    sqfs_file_t *file)
+sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
+						    sqfs_compressor_t *cmp,
+						    unsigned int num_workers,
+						    size_t max_backlog,
+						    size_t devblksz,
+						    sqfs_file_t *file)
 {
-	sqfs_data_writer_t *proc;
+	sqfs_block_processor_t *proc;
 
 	proc = alloc_flex(sizeof(*proc), 1, max_block_size);
 
 	if (proc == NULL)
 		return NULL;
 
-	if (data_writer_init(proc, max_block_size, cmp, num_workers,
-			     max_backlog, devblksz, file)) {
-		data_writer_cleanup(proc);
+	if (block_processor_init(proc, max_block_size, cmp, num_workers,
+				 max_backlog, devblksz, file)) {
+		block_processor_cleanup(proc);
 		return NULL;
 	}
 
 	return proc;
 }
 
-void sqfs_data_writer_destroy(sqfs_data_writer_t *proc)
+void sqfs_block_processor_destroy(sqfs_block_processor_t *proc)
 {
-	data_writer_cleanup(proc);
+	block_processor_cleanup(proc);
 }
 
-int test_and_set_status(sqfs_data_writer_t *proc, int status)
+int test_and_set_status(sqfs_block_processor_t *proc, int status)
 {
 	if (proc->status == 0)
 		proc->status = status;
@@ -43,7 +43,7 @@ int test_and_set_status(sqfs_data_writer_t *proc, int status)
 	return proc->status;
 }
 
-int append_to_work_queue(sqfs_data_writer_t *proc, sqfs_block_t *block,
+int append_to_work_queue(sqfs_block_processor_t *proc, sqfs_block_t *block,
 			 bool signal_threads)
 {
 	sqfs_block_t *fragblk = NULL;
@@ -72,8 +72,8 @@ int append_to_work_queue(sqfs_data_writer_t *proc, sqfs_block_t *block,
 		block = fragblk;
 	}
 
-	proc->status = data_writer_do_block(block, proc->cmp, proc->scratch,
-					    proc->max_block_size);
+	proc->status = block_processor_do_block(block, proc->cmp, proc->scratch,
+						proc->max_block_size);
 
 	if (proc->status == 0)
 		proc->status = process_completed_block(proc, block);
@@ -82,7 +82,7 @@ int append_to_work_queue(sqfs_data_writer_t *proc, sqfs_block_t *block,
 	return proc->status;
 }
 
-int wait_completed(sqfs_data_writer_t *proc)
+int wait_completed(sqfs_block_processor_t *proc)
 {
 	return proc->status;
 }

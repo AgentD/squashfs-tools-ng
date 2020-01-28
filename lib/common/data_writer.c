@@ -8,7 +8,7 @@
 
 static sqfs_u8 buffer[4096];
 
-int write_data_from_file(const char *filename, sqfs_data_writer_t *data,
+int write_data_from_file(const char *filename, sqfs_block_processor_t *data,
 			 sqfs_inode_generic_t *inode, sqfs_file_t *file,
 			 int flags)
 {
@@ -16,7 +16,7 @@ int write_data_from_file(const char *filename, sqfs_data_writer_t *data,
 	size_t diff;
 	int ret;
 
-	ret = sqfs_data_writer_begin_file(data, inode, flags);
+	ret = sqfs_block_processor_begin_file(data, inode, flags);
 	if (ret) {
 		sqfs_perror(filename, "beginning file data blocks", ret);
 		return -1;
@@ -37,14 +37,14 @@ int write_data_from_file(const char *filename, sqfs_data_writer_t *data,
 			return -1;
 		}
 
-		ret = sqfs_data_writer_append(data, buffer, diff);
+		ret = sqfs_block_processor_append(data, buffer, diff);
 		if (ret) {
 			sqfs_perror(filename, "packing file data", ret);
 			return -1;
 		}
 	}
 
-	ret = sqfs_data_writer_end_file(data);
+	ret = sqfs_block_processor_end_file(data);
 	if (ret) {
 		sqfs_perror(filename, "finishing file data", ret);
 		return -1;

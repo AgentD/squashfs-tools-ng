@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: LGPL-3.0-or-later */
 /*
- * data_writer.h - This file is part of libsquashfs
+ * block_processor.h - This file is part of libsquashfs
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  *
@@ -17,25 +17,26 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef SFQS_DATA_WRITER_H
-#define SFQS_DATA_WRITER_H
+#ifndef SFQS_BLOCK_PROCESSOR_H
+#define SFQS_BLOCK_PROCESSOR_H
 
 #include "sqfs/predef.h"
 
 /**
- * @file data_writer.h
+ * @file block_processor.h
  *
  * @brief Contains declarations for the data block processor.
  */
 
 /**
- * @struct sqfs_data_writer_t
+ * @struct sqfs_block_processor_t
  *
  * @brief Abstracts generating of file data and fragment blocks.
  *
  * This data structure provides a simple begin/append/end interface
- * to generate file data blocks (see @ref sqfs_data_writer_begin_file,
- * @ref sqfs_data_writer_append and @ref sqfs_data_writer_end respectively).
+ * to generate file data blocks (see @ref sqfs_block_processor_begin_file,
+ * @ref sqfs_block_processor_append and @ref sqfs_block_processor_end
+ * respectively).
  *
  * Internally it takes care of partitioning data in the correct block sizes,
  * adding tail-ens to fragment blocks, compressing the data, deduplicating data
@@ -47,7 +48,7 @@
  *
  * @brief A set of hooks for tapping into the data writer.
  *
- * This structure can be registered with an @ref sqfs_data_writer_t and
+ * This structure can be registered with an @ref sqfs_block_processor_t and
  * contains function pointers that will be called during various stages
  * when writing data to disk.
  *
@@ -63,9 +64,9 @@ struct sqfs_block_hooks_t {
 	 *
 	 * This is required for future expandabillity while maintaining ABI
 	 * compatibillity. At the current time, the implementation of
-	 * @ref sqfs_data_writer_set_hooks rejects any hook struct where this
-	 * isn't the exact size. If new hooks are added in the future, the
-	 * struct grows and the future implementation can tell by the size
+	 * @ref sqfs_block_processor_set_hooks rejects any hook struct where
+	 * this isn't the exact size. If new hooks are added in the future,
+	 * the struct grows and the future implementation can tell by the size
 	 * whether the application uses the new version or the old one.
 	 */
 	size_t size;
@@ -155,7 +156,7 @@ extern "C" {
 /**
  * @brief Create a data block writer.
  *
- * @memberof sqfs_data_writer_t
+ * @memberof sqfs_block_processor_t
  *
  * @param max_block_size The maximum size of a data block. Required for the
  *                       internal scratch buffer used for compressing data.
@@ -174,39 +175,40 @@ extern "C" {
  *         failure or on failure to create and initialize the worker threads.
  */
 SQFS_API
-sqfs_data_writer_t *sqfs_data_writer_create(size_t max_block_size,
-					    sqfs_compressor_t *cmp,
-					    unsigned int num_workers,
-					    size_t max_backlog,
-					    size_t devblksz,
-					    sqfs_file_t *file);
+sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
+						    sqfs_compressor_t *cmp,
+						    unsigned int num_workers,
+						    size_t max_backlog,
+						    size_t devblksz,
+						    sqfs_file_t *file);
 
 /**
  * @brief Destroy a data writer and free all memory used by it.
  *
- * @memberof sqfs_data_writer_t
+ * @memberof sqfs_block_processor_t
  *
  * @param proc A pointer to a data writer object.
  */
-SQFS_API void sqfs_data_writer_destroy(sqfs_data_writer_t *proc);
+SQFS_API void sqfs_block_processor_destroy(sqfs_block_processor_t *proc);
 
 /**
  * @brief Start writing a file.
  *
- * @memberof sqfs_data_writer_t
+ * @memberof sqfs_block_processor_t
  *
- * After calling this function, call @ref sqfs_data_writer_append repeatedly to
- * add data to the file. Finally call @ref sqfs_data_writer_end_file when you
- * are done. After writing all files, use @ref sqfs_data_writer_finish to wait
- * until all blocks that are still in flight are done and written to disk.
+ * After calling this function, call @ref sqfs_block_processor_append
+ * repeatedly to add data to the file. Finally
+ * call @ref sqfs_block_processor_end_file when you
+ * are done. After writing all files, use @ref sqfs_block_processor_finish to
+ * wait until all blocks that are still in flight are done and written to disk.
  *
  * The specified inode pointer is kept internally and updated with the
  * compressed block sizes and final destinations of the file and possible
  * fragment. You need to make sure it has enough backing-store for all blocks
  * to come. Furthermore, since there can still be blocks in-flight even after
- * calling @ref sqfs_data_writer_end_file, the data in the inode may still
+ * calling @ref sqfs_block_processor_end_file, the data in the inode may still
  * change. The only point at which the data writer is guarnteed to not touch
- * them anymore is after @ref sqfs_data_writer_finish has returned.
+ * them anymore is after @ref sqfs_block_processor_finish has returned.
  *
  * @param proc A pointer to a data writer object.
  * @param inode The regular file inode representing the file. The data writer
@@ -216,16 +218,16 @@ SQFS_API void sqfs_data_writer_destroy(sqfs_data_writer_t *proc);
  *
  * @return Zero on success, an @ref E_SQFS_ERROR value on failure.
  */
-SQFS_API int sqfs_data_writer_begin_file(sqfs_data_writer_t *proc,
-					 sqfs_inode_generic_t *inode,
-					 sqfs_u32 flags);
+SQFS_API int sqfs_block_processor_begin_file(sqfs_block_processor_t *proc,
+					     sqfs_inode_generic_t *inode,
+					     sqfs_u32 flags);
 
 /**
  * @brief Append data to the current file.
  *
- * @memberof sqfs_data_writer_t
+ * @memberof sqfs_block_processor_t
  *
- * Call this after @ref sqfs_data_writer_begin_file to add data to a file.
+ * Call this after @ref sqfs_block_processor_begin_file to add data to a file.
  *
  * @param proc A pointer to a data writer object.
  * @param data A pointer to a buffer to read data from.
@@ -234,32 +236,32 @@ SQFS_API int sqfs_data_writer_begin_file(sqfs_data_writer_t *proc,
  *
  * @return Zero on success, an @ref E_SQFS_ERROR value on failure.
  */
-SQFS_API int sqfs_data_writer_append(sqfs_data_writer_t *proc,
-				     const void *data, size_t size);
+SQFS_API int sqfs_block_processor_append(sqfs_block_processor_t *proc,
+					 const void *data, size_t size);
 
 /**
  * @brief Stop writing the current file and flush everything that is
  *        buffered internally.
  *
- * @memberof sqfs_data_writer_t
+ * @memberof sqfs_block_processor_t
  *
- * The counter part to @ref sqfs_data_writer_begin_file.
+ * The counter part to @ref sqfs_block_processor_begin_file.
  *
  * Even after calling this, there might still be data blocks in-flight.
- * Use @ref sqfs_data_writer_finish when you are done writing files to force
+ * Use @ref sqfs_block_processor_finish when you are done writing files to force
  * the remaining blocks to be processed and written to disk.
  *
  * @param proc A pointer to a data writer object.
  *
  * @return Zero on success, an @ref E_SQFS_ERROR value on failure.
  */
-SQFS_API int sqfs_data_writer_end_file(sqfs_data_writer_t *proc);
+SQFS_API int sqfs_block_processor_end_file(sqfs_block_processor_t *proc);
 
 /**
  * @brief Wait for the in-flight data blocks to finish and finally flush the
  *        current fragment block.
  *
- * @memberof sqfs_data_writer_t
+ * @memberof sqfs_block_processor_t
  *
  * @param proc A pointer to a block processor object.
  *
@@ -267,12 +269,12 @@ SQFS_API int sqfs_data_writer_end_file(sqfs_data_writer_t *proc);
  *         return value can either be an error encountered during enqueueing,
  *         processing or writing to disk.
  */
-SQFS_API int sqfs_data_writer_finish(sqfs_data_writer_t *proc);
+SQFS_API int sqfs_block_processor_finish(sqfs_block_processor_t *proc);
 
 /**
  * @brief Write the completed fragment table to disk.
  *
- * @memberof sqfs_data_writer_t
+ * @memberof sqfs_block_processor_t
  *
  * Call this after producing the inode and directory table to generate
  * the fragment table for the squashfs image.
@@ -284,13 +286,13 @@ SQFS_API int sqfs_data_writer_finish(sqfs_data_writer_t *proc);
  * @return Zero on success, an @ref E_SQFS_ERROR value on failure.
  */
 SQFS_API
-int sqfs_data_writer_write_fragment_table(sqfs_data_writer_t *proc,
-					  sqfs_super_t *super);
+int sqfs_block_processor_write_fragment_table(sqfs_block_processor_t *proc,
+					      sqfs_super_t *super);
 
 /**
  * @brief Register a set of hooks to be invoked when writing blocks to disk.
  *
- * @memberof sqfs_data_writer_t
+ * @memberof sqfs_block_processor_t
  *
  * @param proc A pointer to a data writer object.
  * @param user_ptr A user pointer to pass to the callbacks.
@@ -300,11 +302,11 @@ int sqfs_data_writer_write_fragment_table(sqfs_data_writer_t *proc,
  *         the hooks doesn't match any size knwon to the library.
  */
 SQFS_API
-int sqfs_data_writer_set_hooks(sqfs_data_writer_t *proc, void *user_ptr,
-			       const sqfs_block_hooks_t *hooks);
+int sqfs_block_processor_set_hooks(sqfs_block_processor_t *proc, void *user_ptr,
+				   const sqfs_block_hooks_t *hooks);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* SFQS_DATA_WRITER_H */
+#endif /* SFQS_BLOCK_PROCESSOR_H */

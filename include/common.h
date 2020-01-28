@@ -18,7 +18,7 @@
 #include "sqfs/error.h"
 #include "sqfs/meta_writer.h"
 #include "sqfs/data_reader.h"
-#include "sqfs/data_writer.h"
+#include "sqfs/block_processor.h"
 #include "sqfs/dir_writer.h"
 #include "sqfs/dir_reader.h"
 #include "sqfs/block.h"
@@ -42,10 +42,10 @@ typedef struct {
 	size_t frag_dup;
 	sqfs_u64 bytes_written;
 	sqfs_u64 bytes_read;
-} data_writer_stats_t;
+} block_processor_stats_t;
 
 typedef struct {
-	sqfs_data_writer_t *data;
+	sqfs_block_processor_t *data;
 	sqfs_dir_writer_t *dirwr;
 	sqfs_meta_writer_t *dm;
 	sqfs_meta_writer_t *im;
@@ -54,7 +54,7 @@ typedef struct {
 	sqfs_file_t *outfile;
 	sqfs_super_t super;
 	fstree_t fs;
-	data_writer_stats_t stats;
+	block_processor_stats_t stats;
 	sqfs_xattr_writer_t *xwr;
 } sqfs_writer_t;
 
@@ -99,7 +99,7 @@ typedef struct sqfs_hard_link_t {
 int sqfs_serialize_fstree(const char *filename, sqfs_writer_t *wr);
 
 /* Print out fancy statistics for squashfs packing tools */
-void sqfs_print_statistics(sqfs_super_t *super, data_writer_stats_t *stats);
+void sqfs_print_statistics(sqfs_super_t *super, block_processor_stats_t *stats);
 
 void compressor_print_available(void);
 
@@ -122,9 +122,10 @@ int sqfs_data_reader_dump(const char *name, sqfs_data_reader_t *data,
 sqfs_file_t *sqfs_get_stdin_file(FILE *fp, const sparse_map_t *map,
 				 sqfs_u64 size);
 
-void register_stat_hooks(sqfs_data_writer_t *data, data_writer_stats_t *stats);
+void register_stat_hooks(sqfs_block_processor_t *data,
+			 block_processor_stats_t *stats);
 
-int write_data_from_file(const char *filename, sqfs_data_writer_t *data,
+int write_data_from_file(const char *filename, sqfs_block_processor_t *data,
 			 sqfs_inode_generic_t *inode,
 			 sqfs_file_t *file, int flags);
 

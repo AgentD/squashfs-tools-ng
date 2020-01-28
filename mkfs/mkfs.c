@@ -39,8 +39,8 @@ static int set_working_dir(options_t *opt)
 	return 0;
 }
 
-static int pack_files(sqfs_data_writer_t *data, fstree_t *fs,
-		      data_writer_stats_t *stats, options_t *opt)
+static int pack_files(sqfs_block_processor_t *data, fstree_t *fs,
+		      block_processor_stats_t *stats, options_t *opt)
 {
 	sqfs_inode_generic_t *inode;
 	size_t max_blk_count;

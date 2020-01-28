@@ -123,11 +123,11 @@ int sqfs_writer_init(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *wrcfg)
 	if (ret > 0)
 		sqfs->super.flags |= SQFS_FLAG_COMPRESSOR_OPTIONS;
 
-	sqfs->data = sqfs_data_writer_create(sqfs->super.block_size,
-					     sqfs->cmp, wrcfg->num_jobs,
-					     wrcfg->max_backlog,
-					     wrcfg->devblksize,
-					     sqfs->outfile);
+	sqfs->data = sqfs_block_processor_create(sqfs->super.block_size,
+						 sqfs->cmp, wrcfg->num_jobs,
+						 wrcfg->max_backlog,
+						 wrcfg->devblksize,
+						 sqfs->outfile);
 	if (sqfs->data == NULL) {
 		perror("creating data block processor");
 		goto fail_cmp;
@@ -187,7 +187,7 @@ fail_xwr:
 fail_id:
 	sqfs_id_table_destroy(sqfs->idtbl);
 fail_data:
-	sqfs_data_writer_destroy(sqfs->data);
+	sqfs_block_processor_destroy(sqfs->data);
 fail_cmp:
 	sqfs->cmp->destroy(sqfs->cmp);
 fail_fs:
@@ -204,7 +204,7 @@ int sqfs_writer_finish(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *cfg)
 	if (!cfg->quiet)
 		fputs("Waiting for remaining data blocks...\n", stdout);
 
-	ret = sqfs_data_writer_finish(sqfs->data);
+	ret = sqfs_block_processor_finish(sqfs->data);
 	if (ret) {
 		sqfs_perror(cfg->filename, "finishing data blocks", ret);
 		return -1;
@@ -221,7 +221,8 @@ int sqfs_writer_finish(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *cfg)
 	if (!cfg->quiet)
 		fputs("Writing fragment table...\n", stdout);
 
-	ret = sqfs_data_writer_write_fragment_table(sqfs->data, &sqfs->super);
+	ret = sqfs_block_processor_write_fragment_table(sqfs->data,
+							&sqfs->super);
 	if (ret) {
 		sqfs_perror(cfg->filename, "writing fragment table", ret);
 		return -1;
@@ -291,7 +292,7 @@ void sqfs_writer_cleanup(sqfs_writer_t *sqfs)
 	sqfs_meta_writer_destroy(sqfs->dm);
 	sqfs_meta_writer_destroy(sqfs->im);
 	sqfs_id_table_destroy(sqfs->idtbl);
-	sqfs_data_writer_destroy(sqfs->data);
+	sqfs_block_processor_destroy(sqfs->data);
 	sqfs->cmp->destroy(sqfs->cmp);
 	fstree_cleanup(&sqfs->fs);
 	sqfs->outfile->destroy(sqfs->outfile);

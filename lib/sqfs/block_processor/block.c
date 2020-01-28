@@ -9,7 +9,7 @@
 
 #include <string.h>
 
-static int store_block_location(sqfs_data_writer_t *proc, sqfs_u64 offset,
+static int store_block_location(sqfs_block_processor_t *proc, sqfs_u64 offset,
 				sqfs_u32 size, sqfs_u32 chksum)
 {
 	size_t new_sz;
@@ -32,7 +32,7 @@ static int store_block_location(sqfs_data_writer_t *proc, sqfs_u64 offset,
 	return 0;
 }
 
-static size_t deduplicate_blocks(sqfs_data_writer_t *proc, size_t count)
+static size_t deduplicate_blocks(sqfs_block_processor_t *proc, size_t count)
 {
 	size_t i, j;
 
@@ -50,7 +50,7 @@ static size_t deduplicate_blocks(sqfs_data_writer_t *proc, size_t count)
 	return i;
 }
 
-static int align_file(sqfs_data_writer_t *proc, sqfs_block_t *blk)
+static int align_file(sqfs_block_processor_t *proc, sqfs_block_t *blk)
 {
 	sqfs_u32 chksum;
 	void *padding;
@@ -83,7 +83,7 @@ static int align_file(sqfs_data_writer_t *proc, sqfs_block_t *blk)
 	return store_block_location(proc, size, diff | (1 << 24), chksum);
 }
 
-int process_completed_block(sqfs_data_writer_t *proc, sqfs_block_t *blk)
+int process_completed_block(sqfs_block_processor_t *proc, sqfs_block_t *blk)
 {
 	sqfs_u64 offset, bytes;
 	size_t start, count;
@@ -171,8 +171,8 @@ int process_completed_block(sqfs_data_writer_t *proc, sqfs_block_t *blk)
 	return 0;
 }
 
-int data_writer_do_block(sqfs_block_t *block, sqfs_compressor_t *cmp,
-			 sqfs_u8 *scratch, size_t scratch_size)
+int block_processor_do_block(sqfs_block_t *block, sqfs_compressor_t *cmp,
+			     sqfs_u8 *scratch, size_t scratch_size)
 {
 	ssize_t ret;
 

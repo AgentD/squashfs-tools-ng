@@ -12,7 +12,7 @@ static bool is_zero_block(unsigned char *ptr, size_t size)
 	return ptr[0] == 0 && memcmp(ptr, ptr + 1, size - 1) == 0;
 }
 
-static int enqueue_block(sqfs_data_writer_t *proc, sqfs_block_t *block)
+static int enqueue_block(sqfs_block_processor_t *proc, sqfs_block_t *block)
 {
 	int status;
 
@@ -28,7 +28,7 @@ static int enqueue_block(sqfs_data_writer_t *proc, sqfs_block_t *block)
 	return append_to_work_queue(proc, block, proc->notify_threads);
 }
 
-static int add_sentinel_block(sqfs_data_writer_t *proc)
+static int add_sentinel_block(sqfs_block_processor_t *proc)
 {
 	sqfs_block_t *blk = calloc(1, sizeof(*blk));
 
@@ -41,8 +41,8 @@ static int add_sentinel_block(sqfs_data_writer_t *proc)
 	return enqueue_block(proc, blk);
 }
 
-int sqfs_data_writer_begin_file(sqfs_data_writer_t *proc,
-				sqfs_inode_generic_t *inode, sqfs_u32 flags)
+int sqfs_block_processor_begin_file(sqfs_block_processor_t *proc,
+				    sqfs_inode_generic_t *inode, sqfs_u32 flags)
 {
 	if (proc->inode != NULL)
 		return test_and_set_status(proc, SQFS_ERROR_INTERNAL);
@@ -57,7 +57,7 @@ int sqfs_data_writer_begin_file(sqfs_data_writer_t *proc,
 	return 0;
 }
 
-static int flush_block(sqfs_data_writer_t *proc, sqfs_block_t *block)
+static int flush_block(sqfs_block_processor_t *proc, sqfs_block_t *block)
 {
 	block->index = proc->blk_index++;
 	block->flags = proc->blk_flags;
@@ -83,8 +83,8 @@ static int flush_block(sqfs_data_writer_t *proc, sqfs_block_t *block)
 	return enqueue_block(proc, block);
 }
 
-int sqfs_data_writer_append(sqfs_data_writer_t *proc, const void *data,
-			    size_t size)
+int sqfs_block_processor_append(sqfs_block_processor_t *proc, const void *data,
+				size_t size)
 {
 	size_t diff;
 	void *new;
@@ -133,7 +133,7 @@ int sqfs_data_writer_append(sqfs_data_writer_t *proc, const void *data,
 	return 0;
 }
 
-int sqfs_data_writer_end_file(sqfs_data_writer_t *proc)
+int sqfs_block_processor_end_file(sqfs_block_processor_t *proc)
 {
 	int err;
 
@@ -162,7 +162,7 @@ int sqfs_data_writer_end_file(sqfs_data_writer_t *proc)
 	return 0;
 }
 
-int sqfs_data_writer_finish(sqfs_data_writer_t *proc)
+int sqfs_block_processor_finish(sqfs_block_processor_t *proc)
 {
 	int status = 0;
 

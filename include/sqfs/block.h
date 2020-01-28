@@ -68,14 +68,14 @@ typedef enum {
 	 * @brief Only calculate checksum, do NOT compress the data.
 	 *
 	 * If set, the blocks of a file will not be compressed by the
-	 * @ref sqfs_data_writer_t.
+	 * @ref sqfs_block_processor_t.
 	 */
 	SQFS_BLK_DONT_COMPRESS = 0x0001,
 
 	/**
 	 * @brief Align the block on disk to device block size.
 	 *
-	 * If set, the @ref sqfs_data_writer_t will add padding before the
+	 * If set, the @ref sqfs_block_processor_t will add padding before the
 	 * first block of the affected file and after the last block.
 	 */
 	SQFS_BLK_ALIGN = 0x0002,
@@ -83,38 +83,38 @@ typedef enum {
 	/**
 	 * @brief Don't add the tail end of a file to a fragment block.
 	 *
-	 * If set, the @ref sqfs_data_writer_t will always generate a final
+	 * If set, the @ref sqfs_block_processor_t will always generate a final
 	 * block for a file, even if it is truncated. It will not add the
 	 * tail end to a fragment block.
 	 */
 	SQFS_BLK_DONT_FRAGMENT = 0x0004,
 
 	/**
-	 * @brief Set by the @ref sqfs_data_writer_t on the first
+	 * @brief Set by the @ref sqfs_block_processor_t on the first
 	 *        block of a file.
 	 */
 	SQFS_BLK_FIRST_BLOCK = 0x0800,
 
 	/**
-	 * @brief Set by the @ref sqfs_data_writer_t on the last
+	 * @brief Set by the @ref sqfs_block_processor_t on the last
 	 *        block of a file.
 	 */
 	SQFS_BLK_LAST_BLOCK = 0x1000,
 
 	/**
-	 * @brief Set by the @ref sqfs_data_writer_t to indicate that a block
-	 *        is a tail end of a file and the block.
+	 * @brief Set by the @ref sqfs_block_processor_t to indicate that a
+	 *        block is a tail end of a file and the block.
 	 */
 	SQFS_BLK_IS_FRAGMENT = 0x2000,
 
 	/**
-	 * @brief Set by the @ref sqfs_data_writer_t on fragment blocks that
+	 * @brief Set by the @ref sqfs_block_processor_t on fragment blocks that
 	 *        it generates.
 	 */
 	SQFS_BLK_FRAGMENT_BLOCK = 0x4000,
 
 	/**
-	 * @brief Set by @ref sqfs_data_writer_t if the block was
+	 * @brief Set by @ref sqfs_block_processor_t if the block was
 	 *        actually compressed.
 	 */
 	SQFS_BLK_IS_COMPRESSED = 0x8000,

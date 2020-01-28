@@ -28,7 +28,7 @@
 #endif
 
 struct compress_worker_t {
-	sqfs_data_writer_t *shared;
+	sqfs_block_processor_t *shared;
 	sqfs_compressor_t *cmp;
 	THREAD_HANDLE thread;
 	sqfs_u8 scratch[];
@@ -37,7 +37,7 @@ struct compress_worker_t {
 static THREAD_TYPE worker_proc(THREAD_ARG arg)
 {
 	compress_worker_t *worker = arg;
-	sqfs_data_writer_t *shared = worker->shared;
+	sqfs_block_processor_t *shared = worker->shared;
 	sqfs_block_t *it, *prev, *blk = NULL;
 	int status = 0;
 
@@ -85,23 +85,23 @@ static THREAD_TYPE worker_proc(THREAD_ARG arg)
 		if (blk == NULL)
 			break;
 
-		status = data_writer_do_block(blk, worker->cmp,
-					      worker->scratch,
-					      shared->max_block_size);
+		status = block_processor_do_block(blk, worker->cmp,
+						  worker->scratch,
+						  shared->max_block_size);
 	}
 
 	return THREAD_EXIT_SUCCESS;
 }
 
 #if defined(_WIN32) || defined(__WINDOWS__)
-sqfs_data_writer_t *sqfs_data_writer_create(size_t max_block_size,
-					    sqfs_compressor_t *cmp,
-					    unsigned int num_workers,
-					    size_t max_backlog,
-					    size_t devblksz,
-					    sqfs_file_t *file)
+sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
+						    sqfs_compressor_t *cmp,
+						    unsigned int num_workers,
+						    size_t max_backlog,
+						    size_t devblksz,
+						    sqfs_file_t *file)
 {
-	sqfs_data_writer_t *proc;
+	sqfs_block_processor_t *proc;
 	unsigned int i;
 
 	if (num_workers < 1)
@@ -116,8 +116,8 @@ sqfs_data_writer_t *sqfs_data_writer_create(size_t max_block_size,
 	InitializeConditionVariable(&proc->queue_cond);
 	InitializeConditionVariable(&proc->done_cond);
 
-	if (data_writer_init(proc, max_block_size, cmp, num_workers,
-			     max_backlog, devblksz, file)) {
+	if (block_processor_init(proc, max_block_size, cmp, num_workers,
+				 max_backlog, devblksz, file)) {
 		goto fail;
 	}
 
@@ -142,11 +142,11 @@ sqfs_data_writer_t *sqfs_data_writer_create(size_t max_block_size,
 
 	return proc;
 fail:
-	sqfs_data_writer_destroy(proc);
+	sqfs_block_processor_destroy(proc);
 	return NULL;
 }
 
-void sqfs_data_writer_destroy(sqfs_data_writer_t *proc)
+void sqfs_block_processor_destroy(sqfs_block_processor_t *proc)
 {
 	unsigned int i;
 
@@ -171,17 +171,17 @@ void sqfs_data_writer_destroy(sqfs_data_writer_t *proc)
 	}
 
 	DeleteCriticalSection(&proc->mtx);
-	data_writer_cleanup(proc);
+	block_processor_cleanup(proc);
 }
 #else
-sqfs_data_writer_t *sqfs_data_writer_create(size_t max_block_size,
-					    sqfs_compressor_t *cmp,
-					    unsigned int num_workers,
-					    size_t max_backlog,
-					    size_t devblksz,
-					    sqfs_file_t *file)
+sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
+						    sqfs_compressor_t *cmp,
+						    unsigned int num_workers,
+						    size_t max_backlog,
+						    size_t devblksz,
+						    sqfs_file_t *file)
 {
-	sqfs_data_writer_t *proc;
+	sqfs_block_processor_t *proc;
 	sigset_t set, oldset;
 	unsigned int i;
 	int ret;
@@ -198,8 +198,8 @@ sqfs_data_writer_t *sqfs_data_writer_create(size_t max_block_size,
 	proc->queue_cond = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
 	proc->done_cond = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
 
-	if (data_writer_init(proc, max_block_size, cmp, num_workers,
-			     max_backlog, devblksz, file)) {
+	if (block_processor_init(proc, max_block_size, cmp, num_workers,
+				 max_backlog, devblksz, file)) {
 		goto fail_init;
 	}
 
@@ -257,11 +257,11 @@ fail_init:
 	pthread_cond_destroy(&proc->done_cond);
 	pthread_cond_destroy(&proc->queue_cond);
 	pthread_mutex_destroy(&proc->mtx);
-	data_writer_cleanup(proc);
+	block_processor_cleanup(proc);
 	return NULL;
 }
 
-void sqfs_data_writer_destroy(sqfs_data_writer_t *proc)
+void sqfs_block_processor_destroy(sqfs_block_processor_t *proc)
 {
 	unsigned int i;
 
@@ -281,11 +281,11 @@ void sqfs_data_writer_destroy(sqfs_data_writer_t *proc)
 	pthread_cond_destroy(&proc->queue_cond);
 	pthread_mutex_destroy(&proc->mtx);
 
-	data_writer_cleanup(proc);
+	block_processor_cleanup(proc);
 }
 #endif
 
-int append_to_work_queue(sqfs_data_writer_t *proc, sqfs_block_t *block,
+int append_to_work_queue(sqfs_block_processor_t *proc, sqfs_block_t *block,
 			 bool signal_threads)
 {
 	int status;
@@ -317,7 +317,7 @@ out:
 	return 0;
 }
 
-static sqfs_block_t *try_dequeue(sqfs_data_writer_t *proc)
+static sqfs_block_t *try_dequeue(sqfs_block_processor_t *proc)
 {
 	sqfs_block_t *queue, *it, *prev;
 
@@ -363,7 +363,7 @@ static sqfs_block_t *queue_merge(sqfs_block_t *lhs, sqfs_block_t *rhs)
 	return head;
 }
 
-static int process_done_queue(sqfs_data_writer_t *proc, sqfs_block_t *queue)
+static int process_done_queue(sqfs_block_processor_t *proc, sqfs_block_t *queue)
 {
 	sqfs_block_t *it, *block = NULL;
 	int status = 0;
@@ -410,7 +410,7 @@ static int process_done_queue(sqfs_data_writer_t *proc, sqfs_block_t *queue)
 	return status;
 }
 
-int test_and_set_status(sqfs_data_writer_t *proc, int status)
+int test_and_set_status(sqfs_block_processor_t *proc, int status)
 {
 	LOCK(&proc->mtx);
 	if (proc->status == 0) {
@@ -423,7 +423,7 @@ int test_and_set_status(sqfs_data_writer_t *proc, int status)
 	return status;
 }
 
-int wait_completed(sqfs_data_writer_t *proc)
+int wait_completed(sqfs_block_processor_t *proc)
 {
 	sqfs_block_t *queue;
 	int status;

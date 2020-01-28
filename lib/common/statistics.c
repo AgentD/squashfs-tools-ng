@@ -11,7 +11,7 @@
 static void post_block_write(void *user, const sqfs_block_t *block,
 			     sqfs_file_t *file)
 {
-	data_writer_stats_t *stats = user;
+	block_processor_stats_t *stats = user;
 	(void)file;
 
 	if (block->size == 0)
@@ -28,7 +28,7 @@ static void post_block_write(void *user, const sqfs_block_t *block,
 
 static void pre_fragment_store(void *user, sqfs_block_t *block)
 {
-	data_writer_stats_t *stats = user;
+	block_processor_stats_t *stats = user;
 	(void)block;
 
 	stats->frag_count += 1;
@@ -36,7 +36,7 @@ static void pre_fragment_store(void *user, sqfs_block_t *block)
 
 static void notify_blocks_erased(void *user, size_t count, sqfs_u64 bytes)
 {
-	data_writer_stats_t *stats = user;
+	block_processor_stats_t *stats = user;
 
 	stats->bytes_written -= bytes;
 	stats->blocks_written -= count;
@@ -45,7 +45,7 @@ static void notify_blocks_erased(void *user, size_t count, sqfs_u64 bytes)
 
 static void notify_fragment_discard(void *user, const sqfs_block_t *block)
 {
-	data_writer_stats_t *stats = user;
+	block_processor_stats_t *stats = user;
 	(void)block;
 
 	stats->frag_dup += 1;
@@ -59,12 +59,13 @@ static const sqfs_block_hooks_t hooks = {
 	.notify_fragment_discard = notify_fragment_discard,
 };
 
-void register_stat_hooks(sqfs_data_writer_t *data, data_writer_stats_t *stats)
+void register_stat_hooks(sqfs_block_processor_t *data,
+			 block_processor_stats_t *stats)
 {
-	sqfs_data_writer_set_hooks(data, stats, &hooks);
+	sqfs_block_processor_set_hooks(data, stats, &hooks);
 }
 
-void sqfs_print_statistics(sqfs_super_t *super, data_writer_stats_t *stats)
+void sqfs_print_statistics(sqfs_super_t *super, block_processor_stats_t *stats)
 {
 	size_t ratio;
 
