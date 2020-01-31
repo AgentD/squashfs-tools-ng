@@ -19,6 +19,7 @@
 #include "sqfs/meta_writer.h"
 #include "sqfs/data_reader.h"
 #include "sqfs/block_processor.h"
+#include "sqfs/block_writer.h"
 #include "sqfs/dir_writer.h"
 #include "sqfs/dir_reader.h"
 #include "sqfs/block.h"

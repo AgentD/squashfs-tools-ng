@@ -10,6 +10,7 @@
 #include "config.h"
 
 #include "sqfs/block_processor.h"
+#include "sqfs/block_writer.h"
 #include "sqfs/frag_table.h"
 #include "sqfs/compressor.h"
 #include "sqfs/inode.h"
@@ -30,19 +31,6 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #endif
-
-
-#define MK_BLK_HASH(chksum, size) \
-	(((sqfs_u64)(size) << 32) | (sqfs_u64)(chksum))
-
-#define INIT_BLOCK_COUNT (128)
-
-
-typedef struct {
-	sqfs_u64 offset;
-	sqfs_u64 hash;
-} blk_info_t;
-
 
 typedef struct compress_worker_t compress_worker_t;
 
@@ -73,24 +61,18 @@ struct sqfs_block_processor_t {
 	unsigned int num_workers;
 	size_t max_backlog;
 
-	size_t devblksz;
 	sqfs_file_t *file;
 
 	sqfs_frag_table_t *frag_tbl;
 
-	sqfs_u64 start;
-
-	size_t file_start;
-	size_t num_blocks;
-	size_t max_blocks;
-	blk_info_t *blocks;
 	sqfs_compressor_t *cmp;
 
 	sqfs_block_t *frag_block;
+	bool notify_threads;
 
+	sqfs_block_writer_t *wr;
 	const sqfs_block_hooks_t *hooks;
 	void *user_ptr;
-	bool notify_threads;
 
 	/* file API */
 	sqfs_inode_generic_t *inode;
