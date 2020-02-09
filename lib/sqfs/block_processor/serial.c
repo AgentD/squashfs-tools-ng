@@ -11,8 +11,8 @@ sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
 						    sqfs_compressor_t *cmp,
 						    unsigned int num_workers,
 						    size_t max_backlog,
-						    size_t devblksz,
-						    sqfs_file_t *file)
+						    sqfs_block_writer_t *wr,
+						    sqfs_frag_table_t *tbl)
 {
 	sqfs_block_processor_t *proc;
 
@@ -22,7 +22,7 @@ sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
 		return NULL;
 
 	if (block_processor_init(proc, max_block_size, cmp, num_workers,
-				 max_backlog, devblksz, file)) {
+				 max_backlog, wr, tbl)) {
 		block_processor_cleanup(proc);
 		return NULL;
 	}

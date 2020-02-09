@@ -61,9 +61,9 @@ extern "C" {
  * @param max_backlog The maximum number of blocks currently in flight. When
  *                    trying to add more, enqueueing blocks until the in-flight
  *                    block count drops below the threshold.
- * @param devblksz File can optionally be allgined to device block size. This
- *                 specifies the desired alignment.
- * @param file The output file to write the finished blocks to.
+ * @param wr A block writer to send to finished blocks to.
+ * @param tbl A fragment table to use for storing fragment and fragment block
+ *            locations.
  *
  * @return A pointer to a data writer object on success, NULL on allocation
  *         failure or on failure to create and initialize the worker threads.
@@ -73,8 +73,8 @@ sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
 						    sqfs_compressor_t *cmp,
 						    unsigned int num_workers,
 						    size_t max_backlog,
-						    size_t devblksz,
-						    sqfs_file_t *file);
+						    sqfs_block_writer_t *wr,
+						    sqfs_frag_table_t *tbl);
 
 /**
  * @brief Destroy a data writer and free all memory used by it.
@@ -164,24 +164,6 @@ SQFS_API int sqfs_block_processor_end_file(sqfs_block_processor_t *proc);
  *         processing or writing to disk.
  */
 SQFS_API int sqfs_block_processor_finish(sqfs_block_processor_t *proc);
-
-/**
- * @brief Write the completed fragment table to disk.
- *
- * @memberof sqfs_block_processor_t
- *
- * Call this after producing the inode and directory table to generate
- * the fragment table for the squashfs image.
- *
- * @param proc A pointer to a data writer object.
- * @param super A pointer to a super block to write information about the
- *              fragment table to.
- *
- * @return Zero on success, an @ref E_SQFS_ERROR value on failure.
- */
-SQFS_API
-int sqfs_block_processor_write_fragment_table(sqfs_block_processor_t *proc,
-					      sqfs_super_t *super);
 
 /**
  * @brief Register a set of hooks to be invoked when writing blocks to disk.

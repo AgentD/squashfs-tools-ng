@@ -20,6 +20,7 @@
 #include "sqfs/data_reader.h"
 #include "sqfs/block_processor.h"
 #include "sqfs/block_writer.h"
+#include "sqfs/frag_table.h"
 #include "sqfs/dir_writer.h"
 #include "sqfs/dir_reader.h"
 #include "sqfs/block.h"
@@ -46,6 +47,8 @@ typedef struct {
 } block_processor_stats_t;
 
 typedef struct {
+	sqfs_block_writer_t *blkwr;
+	sqfs_frag_table_t *fragtbl;
 	sqfs_block_processor_t *data;
 	sqfs_dir_writer_t *dirwr;
 	sqfs_meta_writer_t *dm;

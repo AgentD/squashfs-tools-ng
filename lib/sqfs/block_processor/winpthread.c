@@ -98,8 +98,8 @@ sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
 						    sqfs_compressor_t *cmp,
 						    unsigned int num_workers,
 						    size_t max_backlog,
-						    size_t devblksz,
-						    sqfs_file_t *file)
+						    sqfs_block_writer_t *wr,
+						    sqfs_frag_table_t *tbl)
 {
 	sqfs_block_processor_t *proc;
 	unsigned int i;
@@ -117,7 +117,7 @@ sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
 	InitializeConditionVariable(&proc->done_cond);
 
 	if (block_processor_init(proc, max_block_size, cmp, num_workers,
-				 max_backlog, devblksz, file)) {
+				 max_backlog, wr, tbl)) {
 		goto fail;
 	}
 
@@ -178,8 +178,8 @@ sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
 						    sqfs_compressor_t *cmp,
 						    unsigned int num_workers,
 						    size_t max_backlog,
-						    size_t devblksz,
-						    sqfs_file_t *file)
+						    sqfs_block_writer_t *wr,
+						    sqfs_frag_table_t *tbl)
 {
 	sqfs_block_processor_t *proc;
 	sigset_t set, oldset;
@@ -199,7 +199,7 @@ sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
 	proc->done_cond = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
 
 	if (block_processor_init(proc, max_block_size, cmp, num_workers,
-				 max_backlog, devblksz, file)) {
+				 max_backlog, wr, tbl)) {
 		goto fail_init;
 	}
 

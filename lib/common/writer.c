@@ -123,14 +123,26 @@ int sqfs_writer_init(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *wrcfg)
 	if (ret > 0)
 		sqfs->super.flags |= SQFS_FLAG_COMPRESSOR_OPTIONS;
 
+	sqfs->blkwr = sqfs_block_writer_create(sqfs->outfile,
+					       wrcfg->devblksize, 0);
+	if (sqfs->blkwr == NULL) {
+		perror("creating block writer");
+		goto fail_cmp;
+	}
+
+	sqfs->fragtbl = sqfs_frag_table_create(0);
+	if (sqfs->fragtbl == NULL) {
+		perror("creating fragment table");
+		goto fail_blkwr;
+	}
+
 	sqfs->data = sqfs_block_processor_create(sqfs->super.block_size,
 						 sqfs->cmp, wrcfg->num_jobs,
 						 wrcfg->max_backlog,
-						 wrcfg->devblksize,
-						 sqfs->outfile);
+						 sqfs->blkwr, sqfs->fragtbl);
 	if (sqfs->data == NULL) {
 		perror("creating data block processor");
-		goto fail_cmp;
+		goto fail_fragtbl;
 	}
 
 	memset(&sqfs->stats, 0, sizeof(sqfs->stats));
@@ -188,6 +200,10 @@ fail_id:
 	sqfs_id_table_destroy(sqfs->idtbl);
 fail_data:
 	sqfs_block_processor_destroy(sqfs->data);
+fail_fragtbl:
+	sqfs_frag_table_destroy(sqfs->fragtbl);
+fail_blkwr:
+	sqfs_block_writer_destroy(sqfs->blkwr);
 fail_cmp:
 	sqfs->cmp->destroy(sqfs->cmp);
 fail_fs:
@@ -221,8 +237,8 @@ int sqfs_writer_finish(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *cfg)
 	if (!cfg->quiet)
 		fputs("Writing fragment table...\n", stdout);
 
-	ret = sqfs_block_processor_write_fragment_table(sqfs->data,
-							&sqfs->super);
+	ret = sqfs_frag_table_write(sqfs->fragtbl, sqfs->outfile,
+				    &sqfs->super, sqfs->cmp);
 	if (ret) {
 		sqfs_perror(cfg->filename, "writing fragment table", ret);
 		return -1;
@@ -293,6 +309,8 @@ void sqfs_writer_cleanup(sqfs_writer_t *sqfs)
 	sqfs_meta_writer_destroy(sqfs->im);
 	sqfs_id_table_destroy(sqfs->idtbl);
 	sqfs_block_processor_destroy(sqfs->data);
+	sqfs_block_writer_destroy(sqfs->blkwr);
+	sqfs_frag_table_destroy(sqfs->fragtbl);
 	sqfs->cmp->destroy(sqfs->cmp);
 	fstree_cleanup(&sqfs->fs);
 	sqfs->outfile->destroy(sqfs->outfile);

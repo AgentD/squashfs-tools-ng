@@ -61,10 +61,7 @@ struct sqfs_block_processor_t {
 	unsigned int num_workers;
 	size_t max_backlog;
 
-	sqfs_file_t *file;
-
 	sqfs_frag_table_t *frag_tbl;
-
 	sqfs_compressor_t *cmp;
 
 	sqfs_block_t *frag_block;
@@ -102,8 +99,8 @@ SQFS_INTERNAL void free_blk_list(sqfs_block_t *list);
 SQFS_INTERNAL
 int block_processor_init(sqfs_block_processor_t *proc, size_t max_block_size,
 			 sqfs_compressor_t *cmp, unsigned int num_workers,
-			 size_t max_backlog, size_t devblksz,
-			 sqfs_file_t *file);
+			 size_t max_backlog, sqfs_block_writer_t *wr,
+			 sqfs_frag_table_t *tbl);
 
 SQFS_INTERNAL void block_processor_cleanup(sqfs_block_processor_t *proc);
 
