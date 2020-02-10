@@ -219,22 +219,6 @@ SQFS_API int sqfs_block_processor_end_file(sqfs_block_processor_t *proc);
 SQFS_API int sqfs_block_processor_finish(sqfs_block_processor_t *proc);
 
 /**
- * @brief Register a set of hooks to be invoked when writing blocks to disk.
- *
- * @memberof sqfs_block_processor_t
- *
- * @param proc A pointer to a data writer object.
- * @param user_ptr A user pointer to pass to the callbacks.
- * @param hooks A structure containing the hooks.
- *
- * @return Zero on success, @ref SQFS_ERROR_UNSUPPORTED if the size field of
- *         the hooks doesn't match any size knwon to the library.
- */
-SQFS_API
-int sqfs_block_processor_set_hooks(sqfs_block_processor_t *proc, void *user_ptr,
-				   const sqfs_block_hooks_t *hooks);
-
-/**
  * @brief Get accumulated runtime statistics from a block processor
  *
  * @memberof sqfs_block_processor_t

@@ -68,9 +68,6 @@ struct sqfs_block_processor_t {
 	bool notify_threads;
 
 	sqfs_block_writer_t *wr;
-	const sqfs_block_hooks_t *hooks;
-	void *user_ptr;
-
 	sqfs_block_processor_stats_t stats;
 
 	/* file API */

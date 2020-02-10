@@ -44,15 +44,6 @@ void block_processor_cleanup(sqfs_block_processor_t *proc)
 	free(proc);
 }
 
-int sqfs_block_processor_set_hooks(sqfs_block_processor_t *proc, void *user_ptr,
-				   const sqfs_block_hooks_t *hooks)
-{
-	proc->hooks = hooks;
-	proc->user_ptr = user_ptr;
-
-	return sqfs_block_writer_set_hooks(proc->wr, user_ptr, hooks);
-}
-
 int process_completed_block(sqfs_block_processor_t *proc, sqfs_block_t *blk)
 {
 	sqfs_u64 location;
