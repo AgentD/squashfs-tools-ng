@@ -165,10 +165,6 @@ int process_completed_fragment(sqfs_block_processor_t *proc, sqfs_block_t *frag,
 	sqfs_inode_set_frag_location(frag->inode, proc->frag_block->index,
 				     proc->frag_block->size);
 
-	if (proc->hooks != NULL && proc->hooks->pre_fragment_store != NULL) {
-		proc->hooks->pre_fragment_store(proc->user_ptr, frag);
-	}
-
 	memcpy(proc->frag_block->data + proc->frag_block->size,
 	       frag->data, frag->size);
 
@@ -182,11 +178,6 @@ fail:
 	return err;
 out_duplicate:
 	sqfs_inode_set_frag_location(frag->inode, index, offset);
-
-	if (proc->hooks != NULL &&
-	    proc->hooks->notify_fragment_discard != NULL) {
-		proc->hooks->notify_fragment_discard(proc->user_ptr, frag);
-	}
 	return 0;
 }
 

@@ -98,39 +98,6 @@ struct sqfs_block_hooks_t {
 				 sqfs_file_t *file);
 
 	/**
-	 * @brief Gets called before storing a fragment in a fragment block.
-	 *
-	 * The function can modify the block before it is stored.
-	 *
-	 * @param user A user pointer.
-	 * @param block The data chunk that is about to be merged into the
-	 *              fragment block.
-	 */
-	void (*pre_fragment_store)(void *user, sqfs_block_t *block);
-
-	/**
-	 * @brief Gets called if block deduplication managed to get
-	 *        rid of the data blocks of a file.
-	 *
-	 * @param user A user pointer.
-	 * @param count The number of blocks that have been erased.
-	 * @param bytes The number of bytes that have been erased. Includes
-	 *              potential padding before and after the end.
-	 */
-	void (*notify_blocks_erased)(void *user, size_t count,
-				     sqfs_u64 bytes);
-
-	/**
-	 * @brief Gets called before throwing away a fragment that turned out
-	 *        to be a duplicate.
-	 *
-	 * @param user A user pointer.
-	 * @param block The data chunk that is about to be merged into the
-	 *              fragment block.
-	 */
-	void (*notify_fragment_discard)(void *user, const sqfs_block_t *block);
-
-	/**
 	 * @brief Gets called before writing a block of padding bytes to disk.
 	 *
 	 * @param user A user pointer.

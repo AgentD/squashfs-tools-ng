@@ -165,8 +165,8 @@ void sqfs_block_writer_destroy(sqfs_block_writer_t *wr)
 int sqfs_block_writer_write(sqfs_block_writer_t *wr, sqfs_block_t *block,
 			    sqfs_u64 *location)
 {
-	sqfs_u64 offset, bytes;
 	size_t start, count;
+	sqfs_u64 offset;
 	sqfs_u32 out;
 	int err;
 
@@ -228,14 +228,6 @@ int sqfs_block_writer_write(sqfs_block_writer_t *wr, sqfs_block_t *block,
 			wr->num_blocks = offset;
 		} else {
 			wr->num_blocks = wr->file_start;
-		}
-
-		if (wr->hooks != NULL &&
-		    wr->hooks->notify_blocks_erased != NULL) {
-			bytes = wr->file->get_size(wr->file) - wr->start;
-
-			wr->hooks->notify_blocks_erased(wr->user_ptr,
-							count, bytes);
 		}
 
 		err = wr->file->truncate(wr->file, wr->start);
