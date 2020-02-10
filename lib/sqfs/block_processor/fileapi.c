@@ -69,15 +69,21 @@ static int flush_block(sqfs_block_processor_t *proc, sqfs_block_t *block)
 		proc->inode->num_file_blocks += 1;
 		proc->inode->extra[block->index] = 0;
 		free(block);
+
+		proc->stats.sparse_block_count += 1;
 		return 0;
 	}
 
 	if (block->size < proc->max_block_size &&
 	    !(block->flags & SQFS_BLK_DONT_FRAGMENT)) {
 		block->flags |= SQFS_BLK_IS_FRAGMENT;
+
+		proc->stats.total_frag_count += 1;
 	} else {
 		proc->inode->num_file_blocks += 1;
 		proc->blk_flags &= ~SQFS_BLK_FIRST_BLOCK;
+
+		proc->stats.data_block_count += 1;
 	}
 
 	return enqueue_block(proc, block);
@@ -121,6 +127,8 @@ int sqfs_block_processor_append(sqfs_block_processor_t *proc, const void *data,
 		size -= diff;
 		proc->blk_current->size += diff;
 		data = (const char *)data + diff;
+
+		proc->stats.input_bytes_read += diff;
 	}
 
 	if (proc->blk_current != NULL &&

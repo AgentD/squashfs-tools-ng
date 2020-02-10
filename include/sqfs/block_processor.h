@@ -43,6 +43,59 @@
  * and finally writing it to disk.
  */
 
+/**
+ * @struct sqfs_block_processor_stats_t
+ *
+ * @brief Used to store runtime statistics about the @ref sqf_block_processor_t.
+ */
+struct sqfs_block_processor_stats_t {
+	/**
+	 * @brief Holds the size of the structure.
+	 *
+	 * If a later version of libsquashfs expands this structure, the value
+	 * of this field can be used to check at runtime whether the newer
+	 * fields are avaialable or not.
+	 */
+	size_t size;
+
+	/**
+	 * @brief Total number of bytes fed into the front end API.
+	 */
+	sqfs_u64 input_bytes_read;
+
+	/**
+	 * @brief Total number of data blocks produced.
+	 */
+	sqfs_u64 data_block_count;
+
+	/**
+	 * @brief Total number of fragment blocks produced.
+	 */
+	sqfs_u64 frag_block_count;
+
+	/**
+	 * @brief Total number of sparse blocks encountered.
+	 */
+	sqfs_u64 sparse_block_count;
+
+	/**
+	 * @brief Total number of tail-end fragments produced.
+	 *
+	 * This number also includes the fragments that have later been
+	 * eliminated by deduplication.
+	 */
+	sqfs_u64 total_frag_count;
+
+	/**
+	 * @brief Total number of tail-end fragments actually stored in
+	 *        fragment blocks.
+	 *
+	 * This number does not include the fragments that have been
+	 * eliminated by deduplication.
+	 */
+	sqfs_u64 actual_frag_count;
+};
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -180,6 +233,18 @@ SQFS_API int sqfs_block_processor_finish(sqfs_block_processor_t *proc);
 SQFS_API
 int sqfs_block_processor_set_hooks(sqfs_block_processor_t *proc, void *user_ptr,
 				   const sqfs_block_hooks_t *hooks);
+
+/**
+ * @brief Get accumulated runtime statistics from a block processor
+ *
+ * @memberof sqfs_block_processor_t
+ *
+ * @param proc A pointer to a data writer object.
+ *
+ * @return A pointer to a @ref sqfs_block_processor_stats_t structure.
+ */
+SQFS_API const sqfs_block_processor_stats_t
+*sqfs_block_processor_get_stats(const sqfs_block_processor_t *proc);
 
 #ifdef __cplusplus
 }

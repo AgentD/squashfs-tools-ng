@@ -71,6 +71,8 @@ struct sqfs_block_processor_t {
 	const sqfs_block_hooks_t *hooks;
 	void *user_ptr;
 
+	sqfs_block_processor_stats_t stats;
+
 	/* file API */
 	sqfs_inode_generic_t *inode;
 	sqfs_block_t *blk_current;

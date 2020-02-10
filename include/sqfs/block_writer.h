@@ -140,6 +140,46 @@ struct sqfs_block_hooks_t {
 	void (*prepare_padding)(void *user, sqfs_u8 *block, size_t count);
 };
 
+/**
+ * @struct sqfs_block_writer_stats_t
+ *
+ * @brief Collects run time statistics of the @ref sqfs_block_writer_t
+ */
+struct sqfs_block_writer_stats_t {
+	/**
+	 * @brief Holds the size of the structure.
+	 *
+	 * If a later version of libsquashfs expands this structure, the value
+	 * of this field can be used to check at runtime whether the newer
+	 * fields are avaialable or not.
+	 */
+	size_t size;
+
+	/**
+	 * @brief Total number of bytes submitted, including blocks that were
+	 *        removed by deduplication and not counting any padding.
+	 */
+	sqfs_u64 bytes_submitted;
+
+	/**
+	 * @brief Actual number of bytes written to disk, excluding deduplicated
+	 *        blocks and including padding.
+	 */
+	sqfs_u64 bytes_written;
+
+	/**
+	 * @brief Total number of submitted blocks, including ones later
+	 *        removed by deduplication.
+	 */
+	sqfs_u64 blocks_submitted;
+
+	/**
+	 * @brief Total number of blocks actually written, excluding
+	 *        deduplicated blocks.
+	 */
+	sqfs_u64 blocks_written;
+};
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -157,6 +197,9 @@ SQFS_API void sqfs_block_writer_destroy(sqfs_block_writer_t *wr);
 SQFS_API int sqfs_block_writer_write(sqfs_block_writer_t *wr,
 				     sqfs_block_t *block,
 				     sqfs_u64 *location);
+
+SQFS_API const sqfs_block_writer_stats_t
+*sqfs_block_writer_get_stats(const sqfs_block_writer_t *wr);
 
 #ifdef __cplusplus
 }

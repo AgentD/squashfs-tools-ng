@@ -33,8 +33,12 @@ struct sqfs_block_writer_t {
 	blk_info_t *blocks;
 	size_t devblksz;
 
+	sqfs_block_writer_stats_t stats;
+
 	const sqfs_block_hooks_t *hooks;
 	void *user_ptr;
+
+	sqfs_u64 data_area_start;
 
 	sqfs_u64 start;
 	size_t file_start;
@@ -129,6 +133,8 @@ sqfs_block_writer_t *sqfs_block_writer_create(sqfs_file_t *file,
 	wr->file = file;
 	wr->devblksz = devblksz;
 	wr->max_blocks = INIT_BLOCK_COUNT;
+	wr->stats.size = sizeof(wr->stats);
+	wr->data_area_start = wr->file->get_size(wr->file);
 
 	wr->blocks = alloc_array(sizeof(wr->blocks[0]), wr->max_blocks);
 	if (wr->blocks == NULL) {
@@ -192,6 +198,12 @@ int sqfs_block_writer_write(sqfs_block_writer_t *wr, sqfs_block_t *block,
 					 block->data, block->size);
 		if (err)
 			return err;
+
+		wr->stats.bytes_submitted += block->size;
+		wr->stats.blocks_submitted += 1;
+		wr->stats.blocks_written = wr->num_blocks;
+		wr->stats.bytes_written = offset + block->size -
+					  wr->data_area_start;
 	}
 
 	if (wr->hooks != NULL && wr->hooks->post_block_write != NULL)
@@ -229,7 +241,16 @@ int sqfs_block_writer_write(sqfs_block_writer_t *wr, sqfs_block_t *block,
 		err = wr->file->truncate(wr->file, wr->start);
 		if (err)
 			return err;
+
+		wr->stats.blocks_written = wr->num_blocks;
+		wr->stats.bytes_written = wr->start - wr->data_area_start;
 	}
 
 	return 0;
+}
+
+const sqfs_block_writer_stats_t
+*sqfs_block_writer_get_stats(const sqfs_block_writer_t *wr)
+{
+	return &wr->stats;
 }

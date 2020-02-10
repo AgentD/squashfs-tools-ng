@@ -29,6 +29,9 @@ int block_processor_init(sqfs_block_processor_t *proc, size_t max_block_size,
 	proc->cmp = cmp;
 	proc->frag_tbl = tbl;
 	proc->wr = wr;
+
+	memset(&proc->stats, 0, sizeof(proc->stats));
+	proc->stats.size = sizeof(proc->stats);
 	return 0;
 }
 
@@ -149,6 +152,7 @@ int process_completed_fragment(sqfs_block_processor_t *proc, sqfs_block_t *frag,
 
 		proc->frag_block->index = index;
 		proc->frag_block->flags = SQFS_BLK_FRAGMENT_BLOCK;
+		proc->stats.frag_block_count += 1;
 	}
 
 	err = sqfs_frag_table_add_tail_end(proc->frag_tbl,
@@ -170,6 +174,7 @@ int process_completed_fragment(sqfs_block_processor_t *proc, sqfs_block_t *frag,
 
 	proc->frag_block->flags |= (frag->flags & SQFS_BLK_DONT_COMPRESS);
 	proc->frag_block->size += frag->size;
+	proc->stats.actual_frag_count += 1;
 	return 0;
 fail:
 	free(*blk_out);
@@ -183,4 +188,10 @@ out_duplicate:
 		proc->hooks->notify_fragment_discard(proc->user_ptr, frag);
 	}
 	return 0;
+}
+
+const sqfs_block_processor_stats_t
+*sqfs_block_processor_get_stats(const sqfs_block_processor_t *proc)
+{
+	return &proc->stats;
 }
