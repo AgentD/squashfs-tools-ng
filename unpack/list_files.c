@@ -64,40 +64,23 @@ static int count_int_chars(unsigned int i)
 	return count;
 }
 
-static void print_size(sqfs_u64 size, char *buffer)
-{
-	static const char *suffices = "kMGTPEZY";
-	int suffix = -1;
-
-	while (size > 1024) {
-		++suffix;
-		size /= 1024;
-	}
-
-	if (suffix >= 0) {
-		sprintf(buffer, "%u%c", (unsigned int)size, suffices[suffix]);
-	} else {
-		sprintf(buffer, "%u", (unsigned int)size);
-	}
-}
-
 static void print_node_size(const sqfs_tree_node_t *n, char *buffer)
 {
 	switch (n->inode->base.mode & S_IFMT) {
 	case S_IFLNK:
-		print_size(strlen((const char *)n->inode->extra), buffer);
+		print_size(strlen((const char *)n->inode->extra), buffer, true);
 		break;
 	case S_IFREG: {
 		sqfs_u64 size;
 		sqfs_inode_get_file_size(n->inode, &size);
-		print_size(size, buffer);
+		print_size(size, buffer, true);
 		break;
 	}
 	case S_IFDIR:
 		if (n->inode->base.type == SQFS_INODE_EXT_DIR) {
-			print_size(n->inode->data.dir_ext.size, buffer);
+			print_size(n->inode->data.dir_ext.size, buffer, true);
 		} else {
-			print_size(n->inode->data.dir.size, buffer);
+			print_size(n->inode->data.dir.size, buffer, true);
 		}
 		break;
 	case S_IFBLK:

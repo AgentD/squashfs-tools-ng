@@ -162,4 +162,6 @@ sqfs_compressor_t *lzo_compressor_create(const sqfs_compressor_config_t *cfg);
 int parse_size(const char *what, size_t *out, const char *str,
 	       size_t reference);
 
+void print_size(sqfs_u64 size, char *buffer, bool round_to_int);
+
 #endif /* COMMON_H */

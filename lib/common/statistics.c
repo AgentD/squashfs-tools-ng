@@ -14,6 +14,7 @@ void sqfs_print_statistics(const sqfs_super_t *super,
 {
 	const sqfs_block_processor_stats_t *proc_stats;
 	const sqfs_block_writer_stats_t *wr_stats;
+	char read_sz[32], written_sz[32];
 	size_t ratio;
 
 	proc_stats = sqfs_block_processor_get_stats(blk);
@@ -26,18 +27,28 @@ void sqfs_print_statistics(const sqfs_super_t *super,
 		ratio = 100;
 	}
 
+	print_size(proc_stats->input_bytes_read, read_sz, false);
+	print_size(wr_stats->bytes_written, written_sz, false);
+
 	fputs("---------------------------------------------------\n", stdout);
-	printf("Input files processed: %lu\n", proc_stats->input_bytes_read);
-	printf("Data blocks actually written: %lu\n", wr_stats->blocks_written);
-	printf("Fragment blocks written: %lu\n", proc_stats->frag_block_count);
-	printf("Duplicate data blocks omitted: %lu\n",
+	printf("Data bytes read: %s\n", read_sz);
+	printf("Data bytes written: %s\n", written_sz);
+	printf("Data compression ratio: " PRI_SZ "%%\n", ratio);
+	fputc('\n', stdout);
+
+	printf("Data blocks written: %lu\n", wr_stats->blocks_written);
+	printf("Out of which where fragment blocks: %lu\n",
+	       proc_stats->frag_block_count);
+	printf("Duplicate blocks omitted: %lu\n",
 	       wr_stats->blocks_submitted - wr_stats->blocks_written);
 	printf("Sparse blocks omitted: %lu\n", proc_stats->sparse_block_count);
+	fputc('\n', stdout);
+
 	printf("Fragments actually written: %lu\n",
 	       proc_stats->actual_frag_count);
 	printf("Duplicated fragments omitted: %lu\n",
 	       proc_stats->total_frag_count - proc_stats->actual_frag_count);
 	printf("Total number of inodes: %u\n", super->inode_count);
 	printf("Number of unique group/user IDs: %u\n", super->id_count);
-	printf("Data compression ratio: " PRI_SZ "%%\n", ratio);
+	fputc('\n', stdout);
 }
