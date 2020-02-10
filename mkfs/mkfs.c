@@ -40,7 +40,7 @@ static int set_working_dir(options_t *opt)
 }
 
 static int pack_files(sqfs_block_processor_t *data, fstree_t *fs,
-		      block_processor_stats_t *stats, options_t *opt)
+		      options_t *opt)
 {
 	sqfs_inode_generic_t *inode;
 	size_t max_blk_count;
@@ -126,9 +126,6 @@ static int pack_files(sqfs_block_processor_t *data, fstree_t *fs,
 
 		if (ret)
 			return -1;
-
-		stats->file_count += 1;
-		stats->bytes_read += filesize;
 	}
 
 	return 0;
@@ -234,7 +231,7 @@ int main(int argc, char **argv)
 	if (fstree_post_process(&sqfs.fs))
 		goto out;
 
-	if (pack_files(sqfs.data, &sqfs.fs, &sqfs.stats, &opt))
+	if (pack_files(sqfs.data, &sqfs.fs, &opt))
 		goto out;
 
 	if (sqfs_writer_finish(&sqfs, &opt.cfg))

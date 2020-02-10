@@ -145,9 +145,6 @@ int sqfs_writer_init(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *wrcfg)
 		goto fail_fragtbl;
 	}
 
-	memset(&sqfs->stats, 0, sizeof(sqfs->stats));
-	register_stat_hooks(sqfs->data, &sqfs->stats);
-
 	sqfs->idtbl = sqfs_id_table_create(0);
 	if (sqfs->idtbl == NULL) {
 		sqfs_perror(wrcfg->filename, "creating ID table",
@@ -294,7 +291,7 @@ int sqfs_writer_finish(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *cfg)
 	}
 
 	if (!cfg->quiet)
-		sqfs_print_statistics(&sqfs->super, &sqfs->stats);
+		sqfs_print_statistics(&sqfs->super, sqfs->data, sqfs->blkwr);
 
 	return 0;
 }

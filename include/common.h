@@ -35,18 +35,6 @@
 #include <stddef.h>
 
 typedef struct {
-	size_t file_count;
-	size_t blocks_written;
-	size_t frag_blocks_written;
-	size_t duplicate_blocks;
-	size_t sparse_blocks;
-	size_t frag_count;
-	size_t frag_dup;
-	sqfs_u64 bytes_written;
-	sqfs_u64 bytes_read;
-} block_processor_stats_t;
-
-typedef struct {
 	sqfs_block_writer_t *blkwr;
 	sqfs_frag_table_t *fragtbl;
 	sqfs_block_processor_t *data;
@@ -58,7 +46,6 @@ typedef struct {
 	sqfs_file_t *outfile;
 	sqfs_super_t super;
 	fstree_t fs;
-	block_processor_stats_t stats;
 	sqfs_xattr_writer_t *xwr;
 } sqfs_writer_t;
 
@@ -103,7 +90,9 @@ typedef struct sqfs_hard_link_t {
 int sqfs_serialize_fstree(const char *filename, sqfs_writer_t *wr);
 
 /* Print out fancy statistics for squashfs packing tools */
-void sqfs_print_statistics(sqfs_super_t *super, block_processor_stats_t *stats);
+void sqfs_print_statistics(const sqfs_super_t *super,
+			   const sqfs_block_processor_t *blk,
+			   const sqfs_block_writer_t *wr);
 
 void compressor_print_available(void);
 
@@ -125,9 +114,6 @@ int sqfs_data_reader_dump(const char *name, sqfs_data_reader_t *data,
 
 sqfs_file_t *sqfs_get_stdin_file(FILE *fp, const sparse_map_t *map,
 				 sqfs_u64 size);
-
-void register_stat_hooks(sqfs_block_processor_t *data,
-			 block_processor_stats_t *stats);
 
 int write_data_from_file(const char *filename, sqfs_block_processor_t *data,
 			 sqfs_inode_generic_t *inode,

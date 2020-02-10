@@ -305,9 +305,6 @@ static int write_file(tar_header_decoded_t *hdr, file_info_t *fi,
 	ret = write_data_from_file(hdr->name, sqfs.data, inode, file, 0);
 	file->destroy(file);
 
-	sqfs.stats.bytes_read += filesize;
-	sqfs.stats.file_count += 1;
-
 	if (ret)
 		return -1;
 
