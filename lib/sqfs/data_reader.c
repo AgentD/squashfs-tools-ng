@@ -103,7 +103,7 @@ static int precache_data_block(sqfs_data_reader_t *data, sqfs_u64 location,
 
 	if (ret < 0) {
 		data->data_block = NULL;
-		return -1;
+		return ret;
 	}
 
 	data->current_block = location;
@@ -128,7 +128,7 @@ static int precache_fragment_block(sqfs_data_reader_t *data, size_t idx)
 	ret = get_block(data, ent.start_offset, ent.size, data->block_size,
 			&data->frag_block);
 	if (ret < 0)
-		return -1;
+		return ret;
 
 	data->current_frag_index = idx;
 	return 0;
@@ -211,6 +211,7 @@ int sqfs_data_reader_get_fragment(sqfs_data_reader_t *data,
 	sqfs_u32 frag_idx, frag_off, frag_sz;
 	sqfs_block_t *blk;
 	sqfs_u64 filesz;
+	int err;
 
 	sqfs_inode_get_file_size(inode, &filesz);
 	sqfs_inode_get_frag_location(inode, &frag_idx, &frag_off);
@@ -222,15 +223,16 @@ int sqfs_data_reader_get_fragment(sqfs_data_reader_t *data,
 
 	frag_sz = filesz % data->block_size;
 
-	if (precache_fragment_block(data, frag_idx))
-		return -1;
+	err = precache_fragment_block(data, frag_idx);
+	if (err)
+		return err;
 
 	if (frag_off + frag_sz > data->block_size)
-		return -1;
+		return SQFS_ERROR_OUT_OF_BOUNDS;
 
 	blk = alloc_flex(sizeof(*blk), 1, frag_sz);
 	if (blk == NULL)
-		return -1;
+		return SQFS_ERROR_ALLOC;
 
 	blk->size = frag_sz;
 	memcpy(blk->data, (char *)data->frag_block->data + frag_off, frag_sz);
@@ -247,6 +249,7 @@ sqfs_s32 sqfs_data_reader_read(sqfs_data_reader_t *data,
 	sqfs_u64 off, filesz;
 	char *ptr;
 	size_t i;
+	int err;
 
 	if (size >= 0x7FFFFFFF)
 		size = 0x7FFFFFFE;
@@ -279,8 +282,9 @@ sqfs_s32 sqfs_data_reader_read(sqfs_data_reader_t *data,
 		if (SQFS_IS_SPARSE_BLOCK(inode->extra[i])) {
 			memset(buffer, 0, diff);
 		} else {
-			if (precache_data_block(data, off, inode->extra[i]))
-				return -1;
+			err = precache_data_block(data, off, inode->extra[i]);
+			if (err)
+				return err;
 
 			memcpy(buffer, (char *)data->data_block->data + offset,
 			       diff);
@@ -302,8 +306,9 @@ sqfs_s32 sqfs_data_reader_read(sqfs_data_reader_t *data,
 
 	/* copy from fragment */
 	if (i == inode->num_file_blocks && size > 0 && filesz > 0) {
-		if (precache_fragment_block(data, frag_idx))
-			return -1;
+		err = precache_fragment_block(data, frag_idx);
+		if (err)
+			return err;
 
 		if (frag_off + filesz > data->block_size)
 			return SQFS_ERROR_OUT_OF_BOUNDS;
