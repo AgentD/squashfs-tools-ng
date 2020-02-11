@@ -54,7 +54,8 @@ int process_completed_block(sqfs_block_processor_t *proc, sqfs_block_t *blk)
 	if (!(blk->flags & SQFS_BLK_IS_COMPRESSED))
 		size |= 1 << 24;
 
-	err = sqfs_block_writer_write(proc->wr, blk, &location);
+	err = sqfs_block_writer_write(proc->wr, blk->size, blk->checksum,
+				      blk->flags, blk->data, &location);
 	if (err)
 		return err;
 

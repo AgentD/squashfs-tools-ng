@@ -88,15 +88,12 @@ static size_t deduplicate_blocks(sqfs_block_writer_t *wr, size_t count)
 	return i;
 }
 
-static int align_file(sqfs_block_writer_t *wr, sqfs_block_t *blk)
+static int align_file(sqfs_block_writer_t *wr)
 {
 	void *padding;
 	sqfs_u64 size;
 	size_t diff;
 	int ret;
-
-	if (!(blk->flags & SQFS_BLK_ALIGN))
-		return 0;
 
 	size = wr->file->get_size(wr->file);
 	diff = size % wr->devblksz;
@@ -162,57 +159,69 @@ void sqfs_block_writer_destroy(sqfs_block_writer_t *wr)
 	free(wr);
 }
 
-int sqfs_block_writer_write(sqfs_block_writer_t *wr, sqfs_block_t *block,
-			    sqfs_u64 *location)
+int sqfs_block_writer_write(sqfs_block_writer_t *wr, sqfs_u32 size,
+			    sqfs_u32 checksum, sqfs_u32 flags,
+			    const sqfs_u8 *data, sqfs_u64 *location)
 {
 	size_t start, count;
 	sqfs_u64 offset;
 	sqfs_u32 out;
 	int err;
 
-	if (wr->hooks != NULL && wr->hooks->pre_block_write != NULL)
-		wr->hooks->pre_block_write(wr->user_ptr, block, wr->file);
+	if (wr->hooks != NULL && wr->hooks->pre_block_write != NULL) {
+		out = flags;
+		flags &= ~SQFS_BLK_USER_SETTABLE_FLAGS;
 
-	if (block->flags & SQFS_BLK_FIRST_BLOCK) {
+		wr->hooks->pre_block_write(wr->user_ptr, &out, size,
+					   data, wr->file);
+
+		flags |= out & SQFS_BLK_USER_SETTABLE_FLAGS;
+	}
+
+	if (flags & SQFS_BLK_FIRST_BLOCK) {
 		wr->start = wr->file->get_size(wr->file);
 		wr->file_start = wr->num_blocks;
 
-		err = align_file(wr, block);
-		if (err)
-			return err;
+		if (flags & SQFS_BLK_ALIGN) {
+			err = align_file(wr);
+			if (err)
+				return err;
+		}
 	}
 
-	if (block->size != 0) {
-		out = block->size;
-		if (!(block->flags & SQFS_BLK_IS_COMPRESSED))
+	if (size != 0) {
+		out = size;
+		if (!(flags & SQFS_BLK_IS_COMPRESSED))
 			out |= 1 << 24;
 
 		offset = wr->file->get_size(wr->file);
 		*location = offset;
 
-		err = store_block_location(wr, offset, out, block->checksum);
+		err = store_block_location(wr, offset, out, checksum);
 		if (err)
 			return err;
 
-		err = wr->file->write_at(wr->file, offset,
-					 block->data, block->size);
+		err = wr->file->write_at(wr->file, offset, data, size);
 		if (err)
 			return err;
 
-		wr->stats.bytes_submitted += block->size;
+		wr->stats.bytes_submitted += size;
 		wr->stats.blocks_submitted += 1;
 		wr->stats.blocks_written = wr->num_blocks;
-		wr->stats.bytes_written = offset + block->size -
-					  wr->data_area_start;
+		wr->stats.bytes_written = offset + size - wr->data_area_start;
 	}
 
-	if (wr->hooks != NULL && wr->hooks->post_block_write != NULL)
-		wr->hooks->post_block_write(wr->user_ptr, block, wr->file);
+	if (wr->hooks != NULL && wr->hooks->post_block_write != NULL) {
+		wr->hooks->post_block_write(wr->user_ptr, flags, size, data,
+					    wr->file);
+	}
 
-	if (block->flags & SQFS_BLK_LAST_BLOCK) {
-		err = align_file(wr, block);
-		if (err)
-			return err;
+	if (flags & SQFS_BLK_LAST_BLOCK) {
+		if (flags & SQFS_BLK_ALIGN) {
+			err = align_file(wr);
+			if (err)
+				return err;
+		}
 
 		count = wr->num_blocks - wr->file_start;
 		start = deduplicate_blocks(wr, count);

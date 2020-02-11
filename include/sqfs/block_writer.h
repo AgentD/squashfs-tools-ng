@@ -69,15 +69,19 @@ struct sqfs_block_hooks_t {
 	 * disk. If the block has the @ref SQFS_BLK_ALIGN flag set, the
 	 * function is called before padding the file.
 	 *
-	 * The function may modify the block itself or write data to the file.
-	 * which is taken into account when padding the file.
+	 * The function may write additional data to the file, which is taken
+	 * into account when padding the file.
 	 *
 	 * @param user A user pointer.
-	 * @param block The block that is about to be written.
+	 * @param flags A pointer to a combination of @ref E_SQFS_BLK_FLAGS
+	 *              describing the block. The callback can modify the
+	 *              user settable flags.
+	 * @param size The size of the block in bytes.
+	 * @param data A pointer to the raw block data.
 	 * @param file The file that the block will be written to.
 	 */
-	void (*pre_block_write)(void *user, sqfs_block_t *block,
-				sqfs_file_t *file);
+	void (*pre_block_write)(void *user, sqfs_u32 *flags, sqfs_u32 size,
+				const sqfs_u8 *data, sqfs_file_t *file);
 
 	/**
 	 * @brief Gets called after writing a block to disk.
@@ -91,11 +95,14 @@ struct sqfs_block_hooks_t {
 	 * the file.
 	 *
 	 * @param user A user pointer.
-	 * @param block The block that is about to be written.
+	 * @param flags A combination of @ref E_SQFS_BLK_FLAGS describing
+	 *              the block.
+	 * @param size The size of the block in bytes.
+	 * @param data A pointer to the raw block data.
 	 * @param file The file that the block was written to.
 	 */
-	void (*post_block_write)(void *user, const sqfs_block_t *block,
-				 sqfs_file_t *file);
+	void (*post_block_write)(void *user, sqfs_u32 flags, sqfs_u32 size,
+				 const sqfs_u8 *data, sqfs_file_t *file);
 
 	/**
 	 * @brief Gets called before writing a block of padding bytes to disk.
@@ -216,7 +223,8 @@ SQFS_API void sqfs_block_writer_destroy(sqfs_block_writer_t *wr);
  * @return Zero on success, an @ref E_SQFS_ERROR error on failure.
  */
 SQFS_API int sqfs_block_writer_write(sqfs_block_writer_t *wr,
-				     sqfs_block_t *block,
+				     sqfs_u32 size, sqfs_u32 checksum,
+				     sqfs_u32 flags, const sqfs_u8 *data,
 				     sqfs_u64 *location);
 
 /**
