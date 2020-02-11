@@ -11,10 +11,10 @@
 #include <stdio.h>
 #include <errno.h>
 
-static int append_block(FILE *fp, const sqfs_block_t *blk)
+static int append_block(FILE *fp, const sqfs_u8 *data, size_t size)
 {
-	const unsigned char *ptr = blk->data;
-	size_t ret, size = blk->size;
+	const sqfs_u8 *ptr = data;
+	size_t ret;
 
 	while (size > 0) {
 		if (ferror(fp)) {
@@ -39,9 +39,9 @@ int sqfs_data_reader_dump(const char *name, sqfs_data_reader_t *data,
 			  const sqfs_inode_generic_t *inode,
 			  FILE *fp, size_t block_size, bool allow_sparse)
 {
-	sqfs_block_t *blk;
+	size_t i, diff, chunk_size;
 	sqfs_u64 filesz;
-	size_t i, diff;
+	sqfs_u8 *chunk;
 	int err;
 
 	sqfs_inode_get_file_size(inode, &filesz);
@@ -64,14 +64,15 @@ int sqfs_data_reader_dump(const char *name, sqfs_data_reader_t *data,
 			if (fseek(fp, diff, SEEK_CUR) < 0)
 				goto fail_sparse;
 		} else {
-			err = sqfs_data_reader_get_block(data, inode, i, &blk);
+			err = sqfs_data_reader_get_block(data, inode, i,
+							 &chunk_size, &chunk);
 			if (err) {
 				sqfs_perror(name, "reading data block", err);
 				return -1;
 			}
 
-			err = append_block(fp, blk);
-			free(blk);
+			err = append_block(fp, chunk, chunk_size);
+			free(chunk);
 
 			if (err)
 				return -1;
@@ -81,18 +82,19 @@ int sqfs_data_reader_dump(const char *name, sqfs_data_reader_t *data,
 	}
 
 	if (filesz > 0) {
-		err = sqfs_data_reader_get_fragment(data, inode, &blk);
+		err = sqfs_data_reader_get_fragment(data, inode,
+						    &chunk_size, &chunk);
 		if (err) {
 			sqfs_perror(name, "reading fragment block", err);
 			return -1;
 		}
 
-		if (append_block(fp, blk)) {
-			free(blk);
+		if (append_block(fp, chunk, chunk_size)) {
+			free(chunk);
 			return -1;
 		}
 
-		free(blk);
+		free(chunk);
 	}
 
 	return 0;

@@ -97,13 +97,15 @@ SQFS_API int sqfs_data_reader_load_fragment_table(sqfs_data_reader_t *data,
  *
  * @param data A pointer to a data reader object.
  * @param inode A pointer to the inode describing the file.
- * @param out Returns a pointer to the tail block of the file.
+ * @param size Returns the size of the data read.
+ * @param out Returns a pointer to the raw data that must be
+ *            released using free.
  *
  * @return Zero on succcess, an @ref E_SQFS_ERROR value on failure.
  */
 SQFS_API int sqfs_data_reader_get_fragment(sqfs_data_reader_t *data,
 					   const sqfs_inode_generic_t *inode,
-					   sqfs_block_t **out);
+					   size_t *size, sqfs_u8 **out);
 
 /**
  * @brief Get a full sized data block of a file by block index.
@@ -113,13 +115,16 @@ SQFS_API int sqfs_data_reader_get_fragment(sqfs_data_reader_t *data,
  * @param data A pointer to a data reader object.
  * @param inode A pointer to the inode describing the file.
  * @param index The block index in the inodes block list.
- * @param out Returns a pointer to the data block.
+ * @param size Returns the size of the data read.
+ * @param out Returns a pointer to the raw data that must be
+ *            released using free.
  *
  * @return Zero on succcess, an @ref E_SQFS_ERROR value on failure.
  */
 SQFS_API int sqfs_data_reader_get_block(sqfs_data_reader_t *data,
 					const sqfs_inode_generic_t *inode,
-					size_t index, sqfs_block_t **out);
+					size_t index, size_t *size,
+					sqfs_u8 **out);
 
 /**
  * @brief A simple UNIX-read-like function to read data from a file.
