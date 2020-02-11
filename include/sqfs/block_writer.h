@@ -151,20 +151,83 @@ struct sqfs_block_writer_stats_t {
 extern "C" {
 #endif
 
+/**
+ * @brief Create a block writer object.
+ *
+ * @memberof sqfs_block_writer_t
+ *
+ * @param file A pointer to a file object that data should be appended to.
+ * @param devblksz The underlying device block size if output data
+ *                 should be aligned.
+ * @param flags Currently must be set to 0 or creation will fail.
+ *
+ * @return A pointer to a new block writer on success, NULL on failure.
+ */
 SQFS_API sqfs_block_writer_t *sqfs_block_writer_create(sqfs_file_t *file,
 						       size_t devblksz,
 						       sqfs_u32 flags);
 
+/**
+ * @brief Register a set of callbacks with a block writer.
+ *
+ * @memberof sqfs_block_writer_t
+ *
+ * @param wr A pointer to a block writer object.
+ * @param user_ptr A user data pointer that should be passed to the callbacks.
+ * @param hooks A structure holding various callbacks.
+ *
+ * @return Zero on success, an @ref E_SQFS_ERROR on failure.
+ */
 SQFS_API int sqfs_block_writer_set_hooks(sqfs_block_writer_t *wr,
 					 void *user_ptr,
 					 const sqfs_block_hooks_t *hooks);
 
+/**
+ * @brief Destroy a block writer object.
+ *
+ * @memberof sqfs_block_writer_t
+ *
+ * @param wr A pointer to a block writer object.
+ */
 SQFS_API void sqfs_block_writer_destroy(sqfs_block_writer_t *wr);
 
+/**
+ * @brief Submit a data block to a blokc writer.
+ *
+ * @memberof sqfs_block_writer_t
+ *
+ * If the @ref SQFS_BLK_FIRST_BLOCK flag is set, the data block writer
+ * memorizes the starting location and block index of the block. If the
+ * @ref SQFS_BLK_LAST_BLOCK flag is set, it uses those stored locations
+ * to do block deduplication.
+ *
+ * If the flag @ref SQFS_BLK_ALIGN is set in combination with the
+ * @ref SQFS_BLK_FIRST_BLOCK, the file size is padded to a multiple of the
+ * device block size before writing. If it is set together with the
+ * @ref SQFS_BLK_LAST_BLOCK flag, the padding is added afterwards.
+ *
+ * @param wr A pointer to a block writer.
+ * @param block The block to write to disk next.
+ * @param location Returns the location where the block has been written.
+ *                 If the @ref SQFS_BLK_LAST_BLOCK flag was set, deduplication
+ *                 is performed and this returns the (new) location of the
+ *                 first block instead.
+ *
+ * @return Zero on success, an @ref E_SQFS_ERROR error on failure.
+ */
 SQFS_API int sqfs_block_writer_write(sqfs_block_writer_t *wr,
 				     sqfs_block_t *block,
 				     sqfs_u64 *location);
 
+/**
+ * @brief Get access to a block writers run time statistics.
+ *
+ * @memberof sqfs_block_writer_t
+ *
+ * @param wr A pointer to a block writer.
+ *
+ * @return A pointer to the internal statistics counters.
+ */
 SQFS_API const sqfs_block_writer_stats_t
 *sqfs_block_writer_get_stats(const sqfs_block_writer_t *wr);
 
