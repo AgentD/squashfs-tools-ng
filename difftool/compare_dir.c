@@ -26,7 +26,7 @@ static int print_omitted(sqfsdiff_t *sd, bool is_old, sqfs_tree_node_t *n)
 
 	free(path);
 
-	for (n = n->children; n->children != NULL; n = n->next) {
+	for (n = n->children; n != NULL; n = n->next) {
 		if (print_omitted(sd, is_old, n))
 			return -1;
 	}
