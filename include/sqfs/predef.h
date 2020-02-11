@@ -67,7 +67,6 @@ typedef int16_t sqfs_s16;
 typedef int32_t sqfs_s32;
 typedef int64_t sqfs_s64;
 
-typedef struct sqfs_block_t sqfs_block_t;
 typedef struct sqfs_block_processor_t sqfs_block_processor_t;
 typedef struct sqfs_compressor_config_t sqfs_compressor_config_t;
 typedef struct sqfs_compressor_t sqfs_compressor_t;

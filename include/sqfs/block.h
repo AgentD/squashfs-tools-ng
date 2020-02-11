@@ -25,8 +25,7 @@
 /**
  * @file block.h
  *
- * @brief Contains on-disk data structures for data block management,
- *        helper macros and the higher level @ref sqfs_block_t structure.
+ * @brief Contains on-disk data structures for data block management.
  */
 
 #define SQFS_META_BLOCK_SIZE 8192
@@ -124,57 +123,5 @@ typedef enum {
 	 */
 	SQFS_BLK_USER_SETTABLE_FLAGS = 0x0007,
 } E_SQFS_BLK_FLAGS;
-
-/**
- * @struct sqfs_block_t
- *
- * @brief Encapsulates a chunk of data to be processed by the block processor.
- */
-struct sqfs_block_t {
-	/**
-	 * @brief Used internally, existing value is ignored and overwritten
-	 *        when enqueueing a block.
-	 */
-	sqfs_block_t *next;
-
-	/**
-	 * @brief Used internally, existing value is ignored and overwritten
-	 *        when enqueueing a block.
-	 */
-	sqfs_u32 sequence_number;
-
-	/**
-	 * @brief Size of the data area.
-	 */
-	sqfs_u32 size;
-
-	/**
-	 * @brief Checksum of the input data.
-	 */
-	sqfs_u32 checksum;
-
-	/**
-	 * @brief Data block index within the inode.
-	 */
-	sqfs_u32 index;
-
-	/**
-	 * @brief The squashfs inode related to this block.
-	 */
-	sqfs_inode_generic_t *inode;
-
-	/**
-	 * @brief User settable flag field.
-	 *
-	 * A combination of @ref E_SQFS_BLK_FLAGS and custom, user
-	 * settable flags.
-	 */
-	sqfs_u32 flags;
-
-	/**
-	 * @brief Raw data to be processed.
-	 */
-	sqfs_u8 data[];
-};
 
 #endif /* SQFS_BLOCK_H */

@@ -34,6 +34,21 @@
 
 typedef struct compress_worker_t compress_worker_t;
 
+typedef struct sqfs_block_t {
+	struct sqfs_block_t *next;
+	sqfs_inode_generic_t *inode;
+
+	sqfs_u32 sequence_number;
+	sqfs_u32 flags;
+	sqfs_u32 size;
+	sqfs_u32 checksum;
+
+	/* Data block index within the inode or fragment block index. */
+	sqfs_u32 index;
+
+	sqfs_u8 data[];
+} sqfs_block_t;
+
 struct sqfs_block_processor_t {
 	/* synchronization primitives */
 #ifdef WITH_PTHREAD
