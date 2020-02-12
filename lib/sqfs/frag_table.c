@@ -18,7 +18,11 @@
 #include <string.h>
 
 
-typedef struct {
+#define NUM_BUCKETS (128)
+
+
+typedef struct chunk_info_t {
+	struct chunk_info_t *next;
 	sqfs_u32 index;
 	sqfs_u32 offset;
 	sqfs_u32 size;
@@ -33,17 +37,23 @@ struct sqfs_frag_table_t {
 	size_t used;
 	sqfs_fragment_t *table;
 
-	/* TODO: more efficient data structure */
-	size_t chunk_num;
-	size_t chunk_max;
-	chunk_info_t *chunk_list;
+	chunk_info_t chunks[NUM_BUCKETS];
 };
 
 static void frag_table_destroy(sqfs_object_t *obj)
 {
 	sqfs_frag_table_t *tbl = (sqfs_frag_table_t *)obj;
+	chunk_info_t *info;
+	size_t i;
 
-	free(tbl->chunk_list);
+	for (i = 0; i < NUM_BUCKETS; ++i) {
+		while (tbl->chunks[i].next != NULL) {
+			info = tbl->chunks[i].next;
+			tbl->chunks[i].next = info->next;
+			free(info);
+		}
+	}
+
 	free(tbl->table);
 	free(tbl);
 }
@@ -218,26 +228,31 @@ int sqfs_frag_table_add_tail_end(sqfs_frag_table_t *tbl,
 				 sqfs_u32 index, sqfs_u32 offset,
 				 sqfs_u32 size, sqfs_u32 hash)
 {
-	size_t new_sz;
-	void *new;
+	size_t idx = hash % NUM_BUCKETS;
+	chunk_info_t *new, *it;
 
-	if (tbl->chunk_num == tbl->chunk_max) {
-		new_sz = tbl->chunk_max ? tbl->chunk_max * 2 : 128;
-		new = realloc(tbl->chunk_list,
-			      sizeof(tbl->chunk_list[0]) * new_sz);
-
+	if (tbl->chunks[idx].size == 0 && tbl->chunks[idx].hash == 0) {
+		tbl->chunks[idx].index = index;
+		tbl->chunks[idx].offset = offset;
+		tbl->chunks[idx].size = size;
+		tbl->chunks[idx].hash = hash;
+	} else {
+		new = calloc(1, sizeof(*new));
 		if (new == NULL)
 			return SQFS_ERROR_ALLOC;
 
-		tbl->chunk_list = new;
-		tbl->chunk_max = new_sz;
+		new->index = index;
+		new->offset = offset;
+		new->size = size;
+		new->hash = hash;
+
+		it = &tbl->chunks[idx];
+		while (it->next != NULL)
+			it = it->next;
+
+		it->next = new;
 	}
 
-	tbl->chunk_list[tbl->chunk_num].index = index;
-	tbl->chunk_list[tbl->chunk_num].offset = offset;
-	tbl->chunk_list[tbl->chunk_num].size = size;
-	tbl->chunk_list[tbl->chunk_num].hash = hash;
-	tbl->chunk_num += 1;
 	return 0;
 }
 
@@ -245,15 +260,16 @@ int sqfs_frag_table_find_tail_end(sqfs_frag_table_t *tbl,
 				  sqfs_u32 hash, sqfs_u32 size,
 				  sqfs_u32 *index, sqfs_u32 *offset)
 {
-	size_t i;
+	size_t idx = hash % NUM_BUCKETS;
+	chunk_info_t *it;
 
-	for (i = 0; i < tbl->chunk_num; ++i) {
-		if (tbl->chunk_list[i].hash == hash &&
-		    tbl->chunk_list[i].size == size) {
-			if (index != NULL)
-				*index = tbl->chunk_list[i].index;
-			if (offset != NULL)
-				*offset = tbl->chunk_list[i].offset;
+	if (tbl->chunks[idx].size == 0 && tbl->chunks[idx].hash == 0)
+		return SQFS_ERROR_NO_ENTRY;
+
+	for (it = &tbl->chunks[idx]; it != NULL; it = it->next) {
+		if (it->hash == hash && it->size == size) {
+			*index = it->index;
+			*offset = it->offset;
 			return 0;
 		}
 	}
