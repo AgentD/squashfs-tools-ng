@@ -9,13 +9,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support parsing [device] block size argument with SI suffix.
 - Add a write-up on the on-disk format.
 - A couple demo programs that make use of `libsquashfs`.
+- Add statistics counters to the block writer and processor.
 
 ### Changed
 - For better compatibility, sqfs2tar appends `/` to directory names. (#37)
+- Extra data in sqfs_inode_generic_t no longer handled via payload pointers.
+- Add a currently unsued flag field to the id table create function.
+- Split off fragment table handling from data reader and writer into
+  dedicated fragment table data type.
+- Split data writer up into a block writer and a block processor.
+- All abstract data types inhert from an sqfs_object_t with common
+  functionality.
 
 ### Fixed
 - Include sys/sysmacros.h on any GNU libc platform.
 - Directory index accounting.
+- Memory leak in hard link detection code.
+- Broken iteration over directory children in sqfsdiff.
+- Data reader returning -1 instead of an error code.
+
+### Removed
+- A number of hook callbacks from the block writer.
+- sqfs_block_t from the public API.
 
 ## [0.8] - 2019-12-30
 ### Added
