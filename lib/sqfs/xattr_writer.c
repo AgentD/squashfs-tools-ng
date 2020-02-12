@@ -99,6 +99,8 @@ typedef struct kv_block_desc_t {
 } kv_block_desc_t;
 
 struct sqfs_xattr_writer_t {
+	sqfs_object_t base;
+
 	str_table_t keys;
 	str_table_t values;
 
@@ -112,6 +114,23 @@ struct sqfs_xattr_writer_t {
 	size_t num_blocks;
 };
 
+
+static void xattr_writer_destroy(sqfs_object_t *obj)
+{
+	sqfs_xattr_writer_t *xwr = (sqfs_xattr_writer_t *)obj;
+	kv_block_desc_t *blk;
+
+	while (xwr->kv_blocks != NULL) {
+		blk = xwr->kv_blocks;
+		xwr->kv_blocks = xwr->kv_blocks->next;
+		free(blk);
+	}
+
+	free(xwr->kv_pairs);
+	str_table_cleanup(&xwr->values);
+	str_table_cleanup(&xwr->keys);
+	free(xwr);
+}
 
 sqfs_xattr_writer_t *sqfs_xattr_writer_create(void)
 {
@@ -129,6 +148,7 @@ sqfs_xattr_writer_t *sqfs_xattr_writer_create(void)
 	if (xwr->kv_pairs == NULL)
 		goto fail_pairs;
 
+	((sqfs_object_t *)xwr)->destroy = xattr_writer_destroy;
 	return xwr;
 fail_pairs:
 	str_table_cleanup(&xwr->values);
@@ -137,22 +157,6 @@ fail_values:
 fail_keys:
 	free(xwr);
 	return NULL;
-}
-
-void sqfs_xattr_writer_destroy(sqfs_xattr_writer_t *xwr)
-{
-	kv_block_desc_t *blk;
-
-	while (xwr->kv_blocks != NULL) {
-		blk = xwr->kv_blocks;
-		xwr->kv_blocks = xwr->kv_blocks->next;
-		free(blk);
-	}
-
-	free(xwr->kv_pairs);
-	str_table_cleanup(&xwr->values);
-	str_table_cleanup(&xwr->keys);
-	free(xwr);
 }
 
 int sqfs_xattr_writer_begin(sqfs_xattr_writer_t *xwr)
@@ -603,6 +607,6 @@ int sqfs_xattr_writer_flush(sqfs_xattr_writer_t *xwr, sqfs_file_t *file,
 				   locations, count);
 out:
 	free(locations);
-	sqfs_meta_writer_destroy(mw);
+	sqfs_destroy(mw);
 	return err;
 }

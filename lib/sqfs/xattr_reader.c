@@ -21,6 +21,8 @@
 #include <errno.h>
 
 struct sqfs_xattr_reader_t {
+	sqfs_object_t base;
+
 	sqfs_u64 xattr_start;
 
 	size_t num_id_blocks;
@@ -33,6 +35,20 @@ struct sqfs_xattr_reader_t {
 	sqfs_super_t *super;
 	sqfs_file_t *file;
 };
+
+static void xattr_reader_destroy(sqfs_object_t *obj)
+{
+	sqfs_xattr_reader_t *xr = (sqfs_xattr_reader_t *)obj;
+
+	if (xr->kvrd != NULL)
+		sqfs_destroy(xr->kvrd);
+
+	if (xr->idrd != NULL)
+		sqfs_destroy(xr->idrd);
+
+	free(xr->id_block_starts);
+	free(xr);
+}
 
 int sqfs_xattr_reader_load_locations(sqfs_xattr_reader_t *xr)
 {
@@ -242,18 +258,6 @@ int sqfs_xattr_reader_get_desc(sqfs_xattr_reader_t *xr, sqfs_u32 idx,
 	return 0;
 }
 
-void sqfs_xattr_reader_destroy(sqfs_xattr_reader_t *xr)
-{
-	if (xr->kvrd != NULL)
-		sqfs_meta_reader_destroy(xr->kvrd);
-
-	if (xr->idrd != NULL)
-		sqfs_meta_reader_destroy(xr->idrd);
-
-	free(xr->id_block_starts);
-	free(xr);
-}
-
 sqfs_xattr_reader_t *sqfs_xattr_reader_create(sqfs_file_t *file,
 					      sqfs_super_t *super,
 					      sqfs_compressor_t *cmp)
@@ -263,6 +267,7 @@ sqfs_xattr_reader_t *sqfs_xattr_reader_create(sqfs_file_t *file,
 	if (xr == NULL)
 		return NULL;
 
+	((sqfs_object_t *)xr)->destroy = xattr_reader_destroy;
 	xr->file = file;
 	xr->super = super;
 
@@ -286,6 +291,6 @@ sqfs_xattr_reader_t *sqfs_xattr_reader_create(sqfs_file_t *file,
 
 	return xr;
 fail:
-	sqfs_xattr_reader_destroy(xr);
+	sqfs_destroy(xr);
 	return NULL;
 }

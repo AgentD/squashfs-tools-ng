@@ -7,6 +7,11 @@
 #define SQFS_BUILDING_DLL
 #include "internal.h"
 
+static void block_processor_destroy(sqfs_object_t *obj)
+{
+	block_processor_cleanup((sqfs_block_processor_t *)obj);
+}
+
 sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
 						    sqfs_compressor_t *cmp,
 						    unsigned int num_workers,
@@ -27,12 +32,8 @@ sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
 		return NULL;
 	}
 
+	((sqfs_object_t *)proc)->destroy = block_processor_destroy;
 	return proc;
-}
-
-void sqfs_block_processor_destroy(sqfs_block_processor_t *proc)
-{
-	block_processor_cleanup(proc);
 }
 
 int test_and_set_status(sqfs_block_processor_t *proc, int status)

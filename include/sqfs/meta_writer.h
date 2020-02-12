@@ -31,6 +31,8 @@
 /**
  * @struct sqfs_meta_writer_t
  *
+ * @implements sqfs_object_t
+ *
  * @brief Abstracts generating of meta data blocks, either in memory or
  *        directly on disk.
  *
@@ -86,15 +88,6 @@ extern "C" {
 SQFS_API sqfs_meta_writer_t *sqfs_meta_writer_create(sqfs_file_t *file,
 						     sqfs_compressor_t *cmp,
 						     sqfs_u32 flags);
-
-/**
- * @brief Destroy a meta data writer and free all memory used by it.
- *
- * @memberof sqfs_meta_writer_t
- *
- * @param m A pointer to a meta data writer.
- */
-SQFS_API void sqfs_meta_writer_destroy(sqfs_meta_writer_t *m);
 
 /**
  * @brief Finish the current block, even if it isn't full yet.

@@ -31,6 +31,8 @@
 /**
  * @struct sqfs_id_table_t
  *
+ * @implements sqfs_object_t
+ *
  * @brief A simple data structure that encapsulates ID to index mapping for
  *        user and group IDs.
  *
@@ -55,15 +57,6 @@ extern "C" {
  * @return A pointer to an ID table object, NULL on allocation failure.
  */
 SQFS_API sqfs_id_table_t *sqfs_id_table_create(sqfs_u32 flags);
-
-/**
- * @brief Destroy an ID table object and free all memory used by it.
- *
- * @memberof sqfs_id_table_t
- *
- * @param tbl A pointer to an ID table object.
- */
-SQFS_API void sqfs_id_table_destroy(sqfs_id_table_t *tbl);
 
 /**
  * @brief Resolve a 32 bit ID to a unique 16 bit index.

@@ -31,6 +31,8 @@
 /**
  * @struct sqfs_dir_reader_t
  *
+ * @implements sqfs_object_t
+ *
  * @brief Abstracts reading of directory entries
  *
  * SquashFS stores directory listings and inode structures separated from
@@ -165,13 +167,6 @@ extern "C" {
 SQFS_API sqfs_dir_reader_t *sqfs_dir_reader_create(const sqfs_super_t *super,
 						   sqfs_compressor_t *cmp,
 						   sqfs_file_t *file);
-
-/**
- * @brief Cleanup a directory reader and free all its memory.
- *
- * @memberof sqfs_dir_reader_t
- */
-SQFS_API void sqfs_dir_reader_destroy(sqfs_dir_reader_t *rd);
 
 /**
  * @brief Navigate a directory reader to the location of a directory

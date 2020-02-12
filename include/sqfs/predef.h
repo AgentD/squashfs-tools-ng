@@ -57,6 +57,12 @@
 	#endif
 #endif
 
+#ifdef _MSC_VER
+	#define SQFS_INLINE __forceinline
+#else
+	#define SQFS_INLINE __inline__ __attribute__((always_inline))
+#endif
+
 typedef uint8_t sqfs_u8;
 typedef uint16_t sqfs_u16;
 typedef uint32_t sqfs_u32;
@@ -107,5 +113,26 @@ typedef struct sqfs_xattr_entry_t sqfs_xattr_entry_t;
 typedef struct sqfs_xattr_value_t sqfs_xattr_value_t;
 typedef struct sqfs_xattr_id_t sqfs_xattr_id_t;
 typedef struct sqfs_xattr_id_table_t sqfs_xattr_id_table_t;
+
+/**
+ * @interface sqfs_object_t
+ *
+ * @brief Base interface for all libsquashfs in-memory data structures.
+ */
+typedef struct sqfs_object_t {
+	void (*destroy)(struct sqfs_object_t *instance);
+} sqfs_object_t;
+
+/**
+ * @brief Destroy an object and free all its memory
+ *
+ * @memberof sqfs_object_t
+ *
+ * @param obj A pointer to an object
+ */
+static SQFS_INLINE void sqfs_destroy(void *obj)
+{
+	((sqfs_object_t *)obj)->destroy(obj);
+}
 
 #endif /* SQFS_PREDEF_H */

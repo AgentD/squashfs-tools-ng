@@ -94,6 +94,35 @@ static THREAD_TYPE worker_proc(THREAD_ARG arg)
 }
 
 #if defined(_WIN32) || defined(__WINDOWS__)
+static void block_processor_destroy(sqfs_object_t *obj)
+{
+	sqfs_block_processor_t *proc = (sqfs_block_processor_t *)obj;
+	unsigned int i;
+
+	EnterCriticalSection(&proc->mtx);
+	proc->status = -1;
+	WakeAllConditionVariable(&proc->queue_cond);
+	LeaveCriticalSection(&proc->mtx);
+
+	for (i = 0; i < proc->num_workers; ++i) {
+		if (proc->workers[i] == NULL)
+			continue;
+
+		if (proc->workers[i]->thread != NULL) {
+			WaitForSingleObject(proc->workers[i]->thread, INFINITE);
+			CloseHandle(proc->workers[i]->thread);
+		}
+
+		if (proc->workers[i]->cmp != NULL)
+			sqfs_destroy(proc->workers[i]->cmp);
+
+		free(proc->workers[i]);
+	}
+
+	DeleteCriticalSection(&proc->mtx);
+	block_processor_cleanup(proc);
+}
+
 sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
 						    sqfs_compressor_t *cmp,
 						    unsigned int num_workers,
@@ -111,6 +140,8 @@ sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
 			  sizeof(proc->workers[0]), num_workers);
 	if (proc == NULL)
 		return NULL;
+
+	((sqfs_object_t *)obj)->destroy = block_processor_destroy;
 
 	InitializeCriticalSection(&proc->mtx);
 	InitializeConditionVariable(&proc->queue_cond);
@@ -142,38 +173,34 @@ sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
 
 	return proc;
 fail:
-	sqfs_block_processor_destroy(proc);
+	block_processor_destroy(proc);
 	return NULL;
 }
-
-void sqfs_block_processor_destroy(sqfs_block_processor_t *proc)
+#else
+static void block_processor_destroy(sqfs_object_t *obj)
 {
+	sqfs_block_processor_t *proc = (sqfs_block_processor_t *)obj;
 	unsigned int i;
 
-	EnterCriticalSection(&proc->mtx);
+	pthread_mutex_lock(&proc->mtx);
 	proc->status = -1;
-	WakeAllConditionVariable(&proc->queue_cond);
-	LeaveCriticalSection(&proc->mtx);
+	pthread_cond_broadcast(&proc->queue_cond);
+	pthread_mutex_unlock(&proc->mtx);
 
 	for (i = 0; i < proc->num_workers; ++i) {
-		if (proc->workers[i] == NULL)
-			continue;
+		pthread_join(proc->workers[i]->thread, NULL);
 
-		if (proc->workers[i]->thread != NULL) {
-			WaitForSingleObject(proc->workers[i]->thread, INFINITE);
-			CloseHandle(proc->workers[i]->thread);
-		}
-
-		if (proc->workers[i]->cmp != NULL)
-			proc->workers[i]->cmp->destroy(proc->workers[i]->cmp);
-
+		sqfs_destroy(proc->workers[i]->cmp);
 		free(proc->workers[i]);
 	}
 
-	DeleteCriticalSection(&proc->mtx);
+	pthread_cond_destroy(&proc->done_cond);
+	pthread_cond_destroy(&proc->queue_cond);
+	pthread_mutex_destroy(&proc->mtx);
+
 	block_processor_cleanup(proc);
 }
-#else
+
 sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
 						    sqfs_compressor_t *cmp,
 						    unsigned int num_workers,
@@ -194,6 +221,7 @@ sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
 	if (proc == NULL)
 		return NULL;
 
+	((sqfs_object_t *)proc)->destroy = block_processor_destroy;
 	proc->mtx = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
 	proc->queue_cond = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
 	proc->done_cond = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
@@ -246,10 +274,8 @@ fail_thread:
 fail_init:
 	for (i = 0; i < num_workers; ++i) {
 		if (proc->workers[i] != NULL) {
-			if (proc->workers[i]->cmp != NULL) {
-				proc->workers[i]->cmp->
-					destroy(proc->workers[i]->cmp);
-			}
+			if (proc->workers[i]->cmp != NULL)
+				sqfs_destroy(proc->workers[i]->cmp);
 
 			free(proc->workers[i]);
 		}
@@ -259,29 +285,6 @@ fail_init:
 	pthread_mutex_destroy(&proc->mtx);
 	block_processor_cleanup(proc);
 	return NULL;
-}
-
-void sqfs_block_processor_destroy(sqfs_block_processor_t *proc)
-{
-	unsigned int i;
-
-	pthread_mutex_lock(&proc->mtx);
-	proc->status = -1;
-	pthread_cond_broadcast(&proc->queue_cond);
-	pthread_mutex_unlock(&proc->mtx);
-
-	for (i = 0; i < proc->num_workers; ++i) {
-		pthread_join(proc->workers[i]->thread, NULL);
-
-		proc->workers[i]->cmp->destroy(proc->workers[i]->cmp);
-		free(proc->workers[i]);
-	}
-
-	pthread_cond_destroy(&proc->done_cond);
-	pthread_cond_destroy(&proc->queue_cond);
-	pthread_mutex_destroy(&proc->mtx);
-
-	block_processor_cleanup(proc);
 }
 #endif
 

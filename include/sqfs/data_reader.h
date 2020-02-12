@@ -31,6 +31,8 @@
 /**
  * @struct sqfs_data_reader_t
  *
+ * @implements sqfs_object_t
+ *
  * @brief Abstracts access to data blocks stored in a SquashFS image.
  *
  * A SquashFS image can contain a series of file data blocks between the
@@ -67,15 +69,6 @@ extern "C" {
 SQFS_API sqfs_data_reader_t *sqfs_data_reader_create(sqfs_file_t *file,
 						     size_t block_size,
 						     sqfs_compressor_t *cmp);
-
-/**
- * @brief Destroy a data reader instance and free all memory used by it.
- *
- * @memberof sqfs_data_reader_t
- *
- * @param data A pointer to a data reader object.
- */
-SQFS_API void sqfs_data_reader_destroy(sqfs_data_reader_t *data);
 
 /**
  * @brief Read and decode the fragment table from disk.

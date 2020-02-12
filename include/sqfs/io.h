@@ -60,15 +60,12 @@ typedef enum {
 /**
  * @interface sqfs_file_t
  *
+ * @extends sqfs_object_t
+ *
  * @brief Abstracts file I/O to make it easy to embedd SquashFS.
  */
 struct sqfs_file_t {
-	/**
-	 * @brief Close the file and destroy the interface implementation.
-	 *
-	 * @param file A pointer to the file object.
-	 */
-	void (*destroy)(sqfs_file_t *file);
+	sqfs_object_t base;
 
 	/**
 	 * @brief Read a chunk of data from an absolute position.

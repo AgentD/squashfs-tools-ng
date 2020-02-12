@@ -26,6 +26,7 @@ typedef struct {
 } blk_info_t;
 
 struct sqfs_block_writer_t {
+	sqfs_object_t *base;
 	sqfs_file_t *file;
 
 	size_t num_blocks;
@@ -115,6 +116,12 @@ static int align_file(sqfs_block_writer_t *wr)
 	return store_block_location(wr, size, 0, 0);
 }
 
+static void block_writer_destroy(sqfs_object_t *wr)
+{
+	free(((sqfs_block_writer_t *)wr)->blocks);
+	free(wr);
+}
+
 sqfs_block_writer_t *sqfs_block_writer_create(sqfs_file_t *file,
 					      size_t devblksz, sqfs_u32 flags)
 {
@@ -127,6 +134,7 @@ sqfs_block_writer_t *sqfs_block_writer_create(sqfs_file_t *file,
 	if (wr == NULL)
 		return NULL;
 
+	((sqfs_object_t *)wr)->destroy = block_writer_destroy;
 	wr->file = file;
 	wr->devblksz = devblksz;
 	wr->max_blocks = INIT_BLOCK_COUNT;
@@ -151,12 +159,6 @@ int sqfs_block_writer_set_hooks(sqfs_block_writer_t *wr, void *user_ptr,
 	wr->hooks = hooks;
 	wr->user_ptr = user_ptr;
 	return 0;
-}
-
-void sqfs_block_writer_destroy(sqfs_block_writer_t *wr)
-{
-	free(wr->blocks);
-	free(wr);
 }
 
 int sqfs_block_writer_write(sqfs_block_writer_t *wr, sqfs_u32 size,

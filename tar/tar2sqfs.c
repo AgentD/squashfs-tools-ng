@@ -303,7 +303,7 @@ static int write_file(tar_header_decoded_t *hdr, file_info_t *fi,
 		flags |= SQFS_BLK_DONT_FRAGMENT;
 
 	ret = write_data_from_file(hdr->name, sqfs.data, inode, file, 0);
-	file->destroy(file);
+	sqfs_destroy(file);
 
 	if (ret)
 		return -1;

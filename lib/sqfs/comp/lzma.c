@@ -153,7 +153,7 @@ static sqfs_compressor_t *lzma_create_copy(sqfs_compressor_t *cmp)
 	return (sqfs_compressor_t *)copy;
 }
 
-static void lzma_destroy(sqfs_compressor_t *base)
+static void lzma_destroy(sqfs_object_t *base)
 {
 	free(base);
 }
@@ -176,11 +176,11 @@ sqfs_compressor_t *lzma_compressor_create(const sqfs_compressor_config_t *cfg)
 	if (lzma->block_size < SQFS_META_BLOCK_SIZE)
 		lzma->block_size = SQFS_META_BLOCK_SIZE;
 
-	base->destroy = lzma_destroy;
 	base->do_block = (cfg->flags & SQFS_COMP_FLAG_UNCOMPRESS) ?
 		lzma_uncomp_block : lzma_comp_block;
 	base->write_options = lzma_write_options;
 	base->read_options = lzma_read_options;
 	base->create_copy = lzma_create_copy;
+	((sqfs_object_t *)base)->destroy = lzma_destroy;
 	return base;
 }

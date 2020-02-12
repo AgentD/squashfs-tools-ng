@@ -168,16 +168,16 @@ int main(void)
 
 	/* cleanup */
 	status = EXIT_SUCCESS;
-	sqfs_id_table_destroy(idtbl);
+	sqfs_destroy(idtbl);
 out_dirwr:
-	sqfs_dir_writer_destroy(dirwr);
+	sqfs_destroy(dirwr);
 out_dm:
-	sqfs_meta_writer_destroy(dir_m);
+	sqfs_destroy(dir_m);
 out_im:
-	sqfs_meta_writer_destroy(inode_m);
+	sqfs_destroy(inode_m);
 out_cmp:
-	cmp->destroy(cmp);
+	sqfs_destroy(cmp);
 out_file:
-	file->destroy(file);
+	sqfs_destroy(file);
 	return status;
 }

@@ -37,6 +37,8 @@ typedef struct index_ent_t {
 } index_ent_t;
 
 struct sqfs_dir_writer_t {
+	sqfs_object_t base;
+
 	dir_entry_t *list;
 	dir_entry_t *list_end;
 
@@ -136,6 +138,15 @@ static int add_export_table_entry(sqfs_dir_writer_t *writer,
 	return 0;
 }
 
+static void dir_writer_destroy(sqfs_object_t *obj)
+{
+	sqfs_dir_writer_t *writer = (sqfs_dir_writer_t *)obj;
+
+	writer_reset(writer);
+	free(writer->export_tbl);
+	free(writer);
+}
+
 sqfs_dir_writer_t *sqfs_dir_writer_create(sqfs_meta_writer_t *dm,
 					  sqfs_u32 flags)
 {
@@ -162,15 +173,9 @@ sqfs_dir_writer_t *sqfs_dir_writer_create(sqfs_meta_writer_t *dm,
 		       sizeof(writer->export_tbl[0]) * writer->export_tbl_max);
 	}
 
+	((sqfs_object_t *)writer)->destroy = dir_writer_destroy;
 	writer->dm = dm;
 	return writer;
-}
-
-void sqfs_dir_writer_destroy(sqfs_dir_writer_t *writer)
-{
-	writer_reset(writer);
-	free(writer->export_tbl);
-	free(writer);
 }
 
 int sqfs_dir_writer_begin(sqfs_dir_writer_t *writer, sqfs_u32 flags)

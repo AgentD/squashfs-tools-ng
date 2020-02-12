@@ -31,6 +31,8 @@
 /**
  * @struct sqfs_xattr_reader_t
  *
+ * @implements sqfs_object_t
+ *
  * @brief Abstracts read access to extended attributes in a SquashFS filesystem
  *
  * SquashFS stores extended attributes using multiple levels of indirection.
@@ -93,15 +95,6 @@ extern "C" {
 SQFS_API sqfs_xattr_reader_t *sqfs_xattr_reader_create(sqfs_file_t *file,
 						       sqfs_super_t *super,
 						       sqfs_compressor_t *cmp);
-
-/**
- * @brief Destroy an xattr reader and free all memory used by it
- *
- * @memberof sqfs_xattr_reader_t
- *
- * @param xr A pointer to an xattr reader instance
- */
-SQFS_API void sqfs_xattr_reader_destroy(sqfs_xattr_reader_t *xr);
 
 /**
  * @brief Load the locations of the xattr meta data blocks into memory

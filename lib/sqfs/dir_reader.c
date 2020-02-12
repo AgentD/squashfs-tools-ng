@@ -20,6 +20,8 @@
 #include <stdlib.h>
 
 struct sqfs_dir_reader_t {
+	sqfs_object_t base;
+
 	sqfs_meta_reader_t *meta_dir;
 	sqfs_meta_reader_t *meta_inode;
 	const sqfs_super_t *super;
@@ -33,6 +35,15 @@ struct sqfs_dir_reader_t {
 	sqfs_u16 dir_offset;
 	sqfs_u16 inode_offset;
 };
+
+static void dir_reader_destroy(sqfs_object_t *obj)
+{
+	sqfs_dir_reader_t *rd = (sqfs_dir_reader_t *)obj;
+
+	sqfs_destroy(rd->meta_inode);
+	sqfs_destroy(rd->meta_dir);
+	free(rd);
+}
 
 sqfs_dir_reader_t *sqfs_dir_reader_create(const sqfs_super_t *super,
 					  sqfs_compressor_t *cmp,
@@ -66,20 +77,14 @@ sqfs_dir_reader_t *sqfs_dir_reader_create(const sqfs_super_t *super,
 	rd->meta_dir = sqfs_meta_reader_create(file, cmp, start, limit);
 
 	if (rd->meta_dir == NULL) {
-		sqfs_meta_reader_destroy(rd->meta_inode);
+		sqfs_destroy(rd->meta_inode);
 		free(rd);
 		return NULL;
 	}
 
+	((sqfs_object_t *)rd)->destroy = dir_reader_destroy;
 	rd->super = super;
 	return rd;
-}
-
-void sqfs_dir_reader_destroy(sqfs_dir_reader_t *rd)
-{
-	sqfs_meta_reader_destroy(rd->meta_inode);
-	sqfs_meta_reader_destroy(rd->meta_dir);
-	free(rd);
 }
 
 int sqfs_dir_reader_open_dir(sqfs_dir_reader_t *rd,

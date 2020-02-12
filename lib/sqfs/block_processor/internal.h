@@ -50,6 +50,8 @@ typedef struct sqfs_block_t {
 } sqfs_block_t;
 
 struct sqfs_block_processor_t {
+	sqfs_object_t obj;
+
 	/* synchronization primitives */
 #ifdef WITH_PTHREAD
 	pthread_mutex_t mtx;

@@ -31,6 +31,8 @@
 /**
  * @struct sqfs_xattr_writer_t
  *
+ * @implements sqfs_object_t
+ *
  * @brief Abstracts writing of extended attributes to a SquashFS filesystem.
  *
  * This data structure provides a simple, abstract interface to recording
@@ -62,15 +64,6 @@ extern "C" {
  * @return A pointer to a new xattr writer, NULL on allocation failure.
  */
 SQFS_API sqfs_xattr_writer_t *sqfs_xattr_writer_create(void);
-
-/**
- * @brief Destroy an xattr writer instance and free all memory it used.
- *
- * @memberof sqfs_xattr_writer_t
- *
- * @param xwr A pointer to an xattr writer instance.
- */
-SQFS_API void sqfs_xattr_writer_destroy(sqfs_xattr_writer_t *xwr);
 
 /**
  * @brief Begin recording a block of key-value pairs.

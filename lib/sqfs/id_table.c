@@ -17,23 +17,35 @@
 #include <string.h>
 
 struct sqfs_id_table_t {
+	sqfs_object_t base;
+
 	sqfs_u32 *ids;
 	size_t num_ids;
 	size_t max_ids;
 };
 
+static void id_table_destroy(sqfs_object_t *obj)
+{
+	sqfs_id_table_t *tbl = (sqfs_id_table_t *)obj;
+
+	free(tbl->ids);
+	free(tbl);
+}
+
 sqfs_id_table_t *sqfs_id_table_create(sqfs_u32 flags)
 {
+	sqfs_id_table_t *tbl;
+
 	if (flags != 0)
 		return NULL;
 
-	return calloc(1, sizeof(sqfs_id_table_t));
-}
+	tbl = calloc(1, sizeof(sqfs_id_table_t));
 
-void sqfs_id_table_destroy(sqfs_id_table_t *tbl)
-{
-	free(tbl->ids);
-	free(tbl);
+	if (tbl != NULL) {
+		((sqfs_object_t *)tbl)->destroy = id_table_destroy;
+	}
+
+	return tbl;
 }
 
 int sqfs_id_table_id_to_index(sqfs_id_table_t *tbl, sqfs_u32 id, sqfs_u16 *out)

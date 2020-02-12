@@ -31,7 +31,7 @@ typedef struct {
 	gzip_options_t opt;
 } gzip_compressor_t;
 
-static void gzip_destroy(sqfs_compressor_t *base)
+static void gzip_destroy(sqfs_object_t *base)
 {
 	gzip_compressor_t *gzip = (gzip_compressor_t *)base;
 
@@ -264,10 +264,10 @@ sqfs_compressor_t *gzip_compressor_create(const sqfs_compressor_config_t *cfg)
 	gzip->compress = (cfg->flags & SQFS_COMP_FLAG_UNCOMPRESS) == 0;
 	gzip->block_size = cfg->block_size;
 	base->do_block = gzip_do_block;
-	base->destroy = gzip_destroy;
 	base->write_options = gzip_write_options;
 	base->read_options = gzip_read_options;
 	base->create_copy = gzip_create_copy;
+	((sqfs_object_t *)base)->destroy = gzip_destroy;
 
 	if (gzip->compress) {
 		ret = deflateInit2(&gzip->strm, cfg->opt.gzip.level,

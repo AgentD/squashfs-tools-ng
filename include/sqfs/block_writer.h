@@ -31,6 +31,8 @@
 /**
  * @struct sqfs_block_writer_t
  *
+ * @implements sqfs_object_t
+ *
  * @brief Abstracts writing and deduplicating of data and fragment blocks.
  */
 
@@ -188,15 +190,6 @@ SQFS_API sqfs_block_writer_t *sqfs_block_writer_create(sqfs_file_t *file,
 SQFS_API int sqfs_block_writer_set_hooks(sqfs_block_writer_t *wr,
 					 void *user_ptr,
 					 const sqfs_block_hooks_t *hooks);
-
-/**
- * @brief Destroy a block writer object.
- *
- * @memberof sqfs_block_writer_t
- *
- * @param wr A pointer to a block writer object.
- */
-SQFS_API void sqfs_block_writer_destroy(sqfs_block_writer_t *wr);
 
 /**
  * @brief Submit a data block to a blokc writer.

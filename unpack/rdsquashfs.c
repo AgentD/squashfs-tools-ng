@@ -179,18 +179,18 @@ int main(int argc, char **argv)
 out:
 	sqfs_dir_tree_destroy(n);
 out_data:
-	sqfs_data_reader_destroy(data);
+	sqfs_destroy(data);
 out_dr:
-	sqfs_dir_reader_destroy(dirrd);
+	sqfs_destroy(dirrd);
 out_id:
-	sqfs_id_table_destroy(idtbl);
+	sqfs_destroy(idtbl);
 out_xr:
 	if (xattr != NULL)
-		sqfs_xattr_reader_destroy(xattr);
+		sqfs_destroy(xattr);
 out_cmp:
-	cmp->destroy(cmp);
+	sqfs_destroy(cmp);
 out_file:
-	file->destroy(file);
+	sqfs_destroy(file);
 out_cmd:
 	free(opt.cmdpath);
 	return status;

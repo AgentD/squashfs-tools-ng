@@ -31,6 +31,8 @@
 /**
  * @struct sqfs_dir_writer_t
  *
+ * @implements sqfs_object_t
+ *
  * @brief Abstracts generating of directory entries
  *
  * SquashFS stores directory entries and inodes separated from each other. The
@@ -100,15 +102,6 @@ extern "C" {
  */
 SQFS_API sqfs_dir_writer_t *sqfs_dir_writer_create(sqfs_meta_writer_t *dm,
 						   sqfs_u32 flags);
-
-/**
- * @brief Destroy a directory writer and free all its memory.
- *
- * @memberof sqfs_dir_writer_t
- *
- * @param writer A pointer to a directory writer object.
- */
-SQFS_API void sqfs_dir_writer_destroy(sqfs_dir_writer_t *writer);
 
 /**
  * @brief Begin writing a directory, i.e. reset and initialize all internal

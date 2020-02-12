@@ -32,16 +32,13 @@
 /**
  * @interface sqfs_compressor_t
  *
+ * @extends sqfs_object_t
+ *
  * @brief Encapsultes a compressor with a simple interface to compress or
  *        extract chunks of data.
  */
 struct sqfs_compressor_t {
-	/**
-	 * @brief Destroy a compressor and free all memory used by it.
-	 *
-	 * @param cmp A pointer to a compressor object.
-	 */
-	void (*destroy)(sqfs_compressor_t *cmp);
+	sqfs_object_t base;
 
 	/**
 	 * @brief Write compressor options to disk if non-default settings

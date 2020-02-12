@@ -25,7 +25,7 @@ typedef struct {
 } sqfs_file_stdio_t;
 
 
-static void stdio_destroy(sqfs_file_t *base)
+static void stdio_destroy(sqfs_object_t *base)
 {
 	sqfs_file_stdio_t *file = (sqfs_file_stdio_t *)base;
 
@@ -154,10 +154,10 @@ sqfs_file_t *sqfs_open_file(const char *filename, sqfs_u32 flags)
 
 	file->size = sb.st_size;
 
-	base->destroy = stdio_destroy;
 	base->read_at = stdio_read_at;
 	base->write_at = stdio_write_at;
 	base->get_size = stdio_get_size;
 	base->truncate = stdio_truncate;
+	((sqfs_object_t *)base)->destroy = stdio_destroy;
 	return base;
 }

@@ -195,7 +195,7 @@ static sqfs_compressor_t *lzo_create_copy(sqfs_compressor_t *cmp)
 	return (sqfs_compressor_t *)lzo;
 }
 
-static void lzo_destroy(sqfs_compressor_t *base)
+static void lzo_destroy(sqfs_object_t *base)
 {
 	free(base);
 }
@@ -247,11 +247,11 @@ sqfs_compressor_t *lzo_compressor_create(const sqfs_compressor_config_t *cfg)
 	lzo->buf_size = scratch_size;
 	lzo->work_size = lzo_algs[cfg->opt.lzo.algorithm].bufsize;
 
-	base->destroy = lzo_destroy;
 	base->do_block = (cfg->flags & SQFS_COMP_FLAG_UNCOMPRESS) ?
 		lzo_uncomp_block : lzo_comp_block;
 	base->write_options = lzo_write_options;
 	base->read_options = lzo_read_options;
 	base->create_copy = lzo_create_copy;
+	((sqfs_object_t *)base)->destroy = lzo_destroy;
 	return base;
 }

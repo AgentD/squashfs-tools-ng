@@ -688,17 +688,17 @@ out_tree:
 		sqfs_dir_tree_destroy(root);
 out_xr:
 	if (xr != NULL)
-		sqfs_xattr_reader_destroy(xr);
+		sqfs_destroy(xr);
 out_dr:
-	sqfs_dir_reader_destroy(dr);
+	sqfs_destroy(dr);
 out_data:
-	sqfs_data_reader_destroy(data);
+	sqfs_destroy(data);
 out_id:
-	sqfs_id_table_destroy(idtbl);
+	sqfs_destroy(idtbl);
 out_cmp:
-	cmp->destroy(cmp);
+	sqfs_destroy(cmp);
 out_fd:
-	file->destroy(file);
+	sqfs_destroy(file);
 out_dirs:
 	for (i = 0; i < num_subdirs; ++i)
 		free(subdirs[i]);

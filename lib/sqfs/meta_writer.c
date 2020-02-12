@@ -25,6 +25,8 @@ typedef struct meta_block_t {
 } meta_block_t;
 
 struct sqfs_meta_writer_t {
+	sqfs_object_t base;
+
 	/* A byte offset into the uncompressed data of the current block */
 	size_t offset;
 
@@ -53,6 +55,20 @@ static int write_block(sqfs_file_t *file, meta_block_t *outblk)
 	return file->write_at(file, off, outblk->data, count + 2);
 }
 
+static void meta_writer_destroy(sqfs_object_t *obj)
+{
+	sqfs_meta_writer_t *m = (sqfs_meta_writer_t *)obj;
+	meta_block_t *blk;
+
+	while (m->list != NULL) {
+		blk = m->list;
+		m->list = blk->next;
+		free(blk);
+	}
+
+	free(m);
+}
+
 sqfs_meta_writer_t *sqfs_meta_writer_create(sqfs_file_t *file,
 					    sqfs_compressor_t *cmp,
 					    sqfs_u32 flags)
@@ -66,23 +82,11 @@ sqfs_meta_writer_t *sqfs_meta_writer_create(sqfs_file_t *file,
 	if (m == NULL)
 		return NULL;
 
+	((sqfs_object_t *)m)->destroy = meta_writer_destroy;
 	m->cmp = cmp;
 	m->file = file;
 	m->flags = flags;
 	return m;
-}
-
-void sqfs_meta_writer_destroy(sqfs_meta_writer_t *m)
-{
-	meta_block_t *blk;
-
-	while (m->list != NULL) {
-		blk = m->list;
-		m->list = blk->next;
-		free(blk);
-	}
-
-	free(m);
 }
 
 int sqfs_meta_writer_flush(sqfs_meta_writer_t *m)

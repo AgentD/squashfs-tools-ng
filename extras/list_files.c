@@ -134,12 +134,12 @@ int main(int argc, char **argv)
 out:
 	if (root != NULL)
 		sqfs_dir_tree_destroy(root);
-	sqfs_dir_reader_destroy(dr);
+	sqfs_destroy(dr);
 out_id:
-	sqfs_id_table_destroy(idtbl);
+	sqfs_destroy(idtbl);
 out_cmp:
-	cmp->destroy(cmp);
+	sqfs_destroy(cmp);
 out_fd:
-	file->destroy(file);
+	sqfs_destroy(file);
 	return status;
 }

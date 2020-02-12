@@ -31,6 +31,8 @@
 /**
  * @struct sqfs_meta_reader_t
  *
+ * @implements sqfs_object_t
+ *
  * @brief Abstracts reading of meta data blocks.
  *
  * SquashFS stores meta data by dividing it into fixed size (8k) chunks
@@ -68,15 +70,6 @@ SQFS_API sqfs_meta_reader_t *sqfs_meta_reader_create(sqfs_file_t *file,
 						     sqfs_compressor_t *cmp,
 						     sqfs_u64 start,
 						     sqfs_u64 limit);
-
-/**
- * @brief Destroy a meta data reader and free all memory used by it.
- *
- * @memberof sqfs_meta_reader_t
- *
- * @param m A pointer to a meta data reader.
- */
-SQFS_API void sqfs_meta_reader_destroy(sqfs_meta_reader_t *m);
 
 /**
  * @brief Seek to a specific meta data block and offset.

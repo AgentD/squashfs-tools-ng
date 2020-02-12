@@ -96,7 +96,7 @@ static int pack_files(sqfs_block_processor_t *data, fstree_t *fs,
 		    SZ_ADD_OV(sizeof(*inode), size, &size)) {
 			fputs("creating file inode: too many blocks\n",
 			      stderr);
-			file->destroy(file);
+			sqfs_destroy(file);
 			free(node_path);
 			return -1;
 		}
@@ -104,7 +104,7 @@ static int pack_files(sqfs_block_processor_t *data, fstree_t *fs,
 		inode = calloc(1, size);
 		if (inode == NULL) {
 			perror("creating file inode");
-			file->destroy(file);
+			sqfs_destroy(file);
 			free(node_path);
 			return -1;
 		}
@@ -121,7 +121,7 @@ static int pack_files(sqfs_block_processor_t *data, fstree_t *fs,
 			flags |= SQFS_BLK_DONT_FRAGMENT;
 
 		ret = write_data_from_file(path, data, inode, file, flags);
-		file->destroy(file);
+		sqfs_destroy(file);
 		free(node_path);
 
 		if (ret)

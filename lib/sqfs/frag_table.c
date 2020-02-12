@@ -27,6 +27,8 @@ typedef struct {
 
 
 struct sqfs_frag_table_t {
+	sqfs_object_t base;
+
 	size_t capacity;
 	size_t used;
 	sqfs_fragment_t *table;
@@ -36,6 +38,15 @@ struct sqfs_frag_table_t {
 	size_t chunk_max;
 	chunk_info_t *chunk_list;
 };
+
+static void frag_table_destroy(sqfs_object_t *obj)
+{
+	sqfs_frag_table_t *tbl = (sqfs_frag_table_t *)obj;
+
+	free(tbl->chunk_list);
+	free(tbl->table);
+	free(tbl);
+}
 
 sqfs_frag_table_t *sqfs_frag_table_create(sqfs_u32 flags)
 {
@@ -48,14 +59,8 @@ sqfs_frag_table_t *sqfs_frag_table_create(sqfs_u32 flags)
 	if (tbl == NULL)
 		return NULL;
 
+	((sqfs_object_t *)tbl)->destroy = frag_table_destroy;
 	return tbl;
-}
-
-void sqfs_frag_table_destroy(sqfs_frag_table_t *tbl)
-{
-	free(tbl->chunk_list);
-	free(tbl->table);
-	free(tbl);
 }
 
 int sqfs_frag_table_read(sqfs_frag_table_t *tbl, sqfs_file_t *file,

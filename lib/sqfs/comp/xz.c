@@ -207,7 +207,7 @@ static sqfs_compressor_t *xz_create_copy(sqfs_compressor_t *cmp)
 	return (sqfs_compressor_t *)xz;
 }
 
-static void xz_destroy(sqfs_compressor_t *base)
+static void xz_destroy(sqfs_object_t *base)
 {
 	free(base);
 }
@@ -233,11 +233,11 @@ sqfs_compressor_t *xz_compressor_create(const sqfs_compressor_config_t *cfg)
 	xz->flags = cfg->flags;
 	xz->dict_size = cfg->opt.xz.dict_size;
 	xz->block_size = cfg->block_size;
-	base->destroy = xz_destroy;
 	base->do_block = (cfg->flags & SQFS_COMP_FLAG_UNCOMPRESS) ?
 		xz_uncomp_block : xz_comp_block;
 	base->write_options = xz_write_options;
 	base->read_options = xz_read_options;
 	base->create_copy = xz_create_copy;
+	((sqfs_object_t *)base)->destroy = xz_destroy;
 	return base;
 }

@@ -18,6 +18,8 @@
 #include <string.h>
 
 struct sqfs_meta_reader_t {
+	sqfs_object_t base;
+
 	sqfs_u64 start;
 	sqfs_u64 limit;
 	size_t data_used;
@@ -44,6 +46,11 @@ struct sqfs_meta_reader_t {
 	sqfs_u8 scratch[SQFS_META_BLOCK_SIZE];
 };
 
+static void meta_reader_destroy(sqfs_object_t *m)
+{
+	free(m);
+}
+
 sqfs_meta_reader_t *sqfs_meta_reader_create(sqfs_file_t *file,
 					    sqfs_compressor_t *cmp,
 					    sqfs_u64 start, sqfs_u64 limit)
@@ -53,16 +60,12 @@ sqfs_meta_reader_t *sqfs_meta_reader_create(sqfs_file_t *file,
 	if (m == NULL)
 		return NULL;
 
+	((sqfs_object_t *)m)->destroy = meta_reader_destroy;
 	m->start = start;
 	m->limit = limit;
 	m->file = file;
 	m->cmp = cmp;
 	return m;
-}
-
-void sqfs_meta_reader_destroy(sqfs_meta_reader_t *m)
-{
-	free(m);
 }
 
 int sqfs_meta_reader_seek(sqfs_meta_reader_t *m, sqfs_u64 block_start,

@@ -599,16 +599,16 @@ int main(int argc, char **argv)
 	status = EXIT_SUCCESS;
 	free(buffer);
 out:
-	sqfs_data_reader_destroy(data);
+	sqfs_destroy(data);
 out_dir:
 	if (working_dir != NULL)
 		free(working_dir);
-	sqfs_dir_reader_destroy(dr);
+	sqfs_destroy(dr);
 out_id:
-	sqfs_id_table_destroy(idtbl);
+	sqfs_destroy(idtbl);
 out_cmp:
-	cmp->destroy(cmp);
+	sqfs_destroy(cmp);
 out_fd:
-	file->destroy(file);
+	sqfs_destroy(file);
 	return status;
 }

@@ -21,6 +21,8 @@
 #include <string.h>
 
 struct sqfs_data_reader_t {
+	sqfs_object_t obj;
+
 	sqfs_frag_table_t *frag_tbl;
 	sqfs_compressor_t *cmp;
 	sqfs_file_t *file;
@@ -125,6 +127,16 @@ static int precache_fragment_block(sqfs_data_reader_t *data, size_t idx)
 			 &data->frag_blk_size, &data->frag_block);
 }
 
+static void data_reader_destroy(sqfs_object_t *obj)
+{
+	sqfs_data_reader_t *data = (sqfs_data_reader_t *)obj;
+
+	sqfs_destroy(data->frag_tbl);
+	free(data->data_block);
+	free(data->frag_block);
+	free(data);
+}
+
 sqfs_data_reader_t *sqfs_data_reader_create(sqfs_file_t *file,
 					    size_t block_size,
 					    sqfs_compressor_t *cmp)
@@ -140,6 +152,7 @@ sqfs_data_reader_t *sqfs_data_reader_create(sqfs_file_t *file,
 		return NULL;
 	}
 
+	((sqfs_object_t *)data)->destroy = data_reader_destroy;
 	data->file = file;
 	data->block_size = block_size;
 	data->cmp = cmp;
@@ -162,14 +175,6 @@ int sqfs_data_reader_load_fragment_table(sqfs_data_reader_t *data,
 
 	data->current_frag_index = sqfs_frag_table_get_size(data->frag_tbl);
 	return 0;
-}
-
-void sqfs_data_reader_destroy(sqfs_data_reader_t *data)
-{
-	sqfs_frag_table_destroy(data->frag_tbl);
-	free(data->data_block);
-	free(data->frag_block);
-	free(data);
 }
 
 int sqfs_data_reader_get_block(sqfs_data_reader_t *data,

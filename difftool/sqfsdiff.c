@@ -103,28 +103,28 @@ static int open_sfqs(sqfs_state_t *state, const char *path)
 
 	return 0;
 fail_data:
-	sqfs_data_reader_destroy(state->data);
+	sqfs_destroy(state->data);
 fail_tree:
 	sqfs_dir_tree_destroy(state->root);
 fail_dr:
-	sqfs_dir_reader_destroy(state->dr);
+	sqfs_destroy(state->dr);
 fail_id:
-	sqfs_id_table_destroy(state->idtbl);
+	sqfs_destroy(state->idtbl);
 fail_cmp:
-	state->cmp->destroy(state->cmp);
+	sqfs_destroy(state->cmp);
 fail_file:
-	state->file->destroy(state->file);
+	sqfs_destroy(state->file);
 	return -1;
 }
 
 static void close_sfqs(sqfs_state_t *state)
 {
-	sqfs_data_reader_destroy(state->data);
+	sqfs_destroy(state->data);
 	sqfs_dir_tree_destroy(state->root);
-	sqfs_dir_reader_destroy(state->dr);
-	sqfs_id_table_destroy(state->idtbl);
-	state->cmp->destroy(state->cmp);
-	state->file->destroy(state->file);
+	sqfs_destroy(state->dr);
+	sqfs_destroy(state->idtbl);
+	sqfs_destroy(state->cmp);
+	sqfs_destroy(state->file);
 }
 
 int main(int argc, char **argv)

@@ -33,6 +33,8 @@
  *
  * @brief Abstracts generating of file data and fragment blocks.
  *
+ * @implements sqfs_object_t
+ *
  * This data structure provides a simple begin/append/end interface
  * to generate file data blocks (see @ref sqfs_block_processor_begin_file,
  * @ref sqfs_block_processor_append and @ref sqfs_block_processor_end
@@ -128,15 +130,6 @@ sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
 						    size_t max_backlog,
 						    sqfs_block_writer_t *wr,
 						    sqfs_frag_table_t *tbl);
-
-/**
- * @brief Destroy a data writer and free all memory used by it.
- *
- * @memberof sqfs_block_processor_t
- *
- * @param proc A pointer to a data writer object.
- */
-SQFS_API void sqfs_block_processor_destroy(sqfs_block_processor_t *proc);
 
 /**
  * @brief Start writing a file.

@@ -90,7 +90,7 @@ int sqfs_writer_init(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *wrcfg)
 #ifdef WITH_LZO
 	if (cfg.id == SQFS_COMP_LZO) {
 		if (sqfs->cmp != NULL)
-			sqfs->cmp->destroy(sqfs->cmp);
+			sqfs_destroy(sqfs->cmp);
 
 		sqfs->cmp = lzo_compressor_create(&cfg);
 	}
@@ -187,26 +187,26 @@ int sqfs_writer_init(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *wrcfg)
 
 	return 0;
 fail_dm:
-	sqfs_meta_writer_destroy(sqfs->dm);
+	sqfs_destroy(sqfs->dm);
 fail_im:
-	sqfs_meta_writer_destroy(sqfs->im);
+	sqfs_destroy(sqfs->im);
 fail_xwr:
 	if (sqfs->xwr != NULL)
-		sqfs_xattr_writer_destroy(sqfs->xwr);
+		sqfs_destroy(sqfs->xwr);
 fail_id:
-	sqfs_id_table_destroy(sqfs->idtbl);
+	sqfs_destroy(sqfs->idtbl);
 fail_data:
-	sqfs_block_processor_destroy(sqfs->data);
+	sqfs_destroy(sqfs->data);
 fail_fragtbl:
-	sqfs_frag_table_destroy(sqfs->fragtbl);
+	sqfs_destroy(sqfs->fragtbl);
 fail_blkwr:
-	sqfs_block_writer_destroy(sqfs->blkwr);
+	sqfs_destroy(sqfs->blkwr);
 fail_cmp:
-	sqfs->cmp->destroy(sqfs->cmp);
+	sqfs_destroy(sqfs->cmp);
 fail_fs:
 	fstree_cleanup(&sqfs->fs);
 fail_file:
-	sqfs->outfile->destroy(sqfs->outfile);
+	sqfs_destroy(sqfs->outfile);
 	return -1;
 }
 
@@ -299,16 +299,16 @@ int sqfs_writer_finish(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *cfg)
 void sqfs_writer_cleanup(sqfs_writer_t *sqfs)
 {
 	if (sqfs->xwr != NULL)
-		sqfs_xattr_writer_destroy(sqfs->xwr);
+		sqfs_destroy(sqfs->xwr);
 
-	sqfs_dir_writer_destroy(sqfs->dirwr);
-	sqfs_meta_writer_destroy(sqfs->dm);
-	sqfs_meta_writer_destroy(sqfs->im);
-	sqfs_id_table_destroy(sqfs->idtbl);
-	sqfs_block_processor_destroy(sqfs->data);
-	sqfs_block_writer_destroy(sqfs->blkwr);
-	sqfs_frag_table_destroy(sqfs->fragtbl);
-	sqfs->cmp->destroy(sqfs->cmp);
+	sqfs_destroy(sqfs->dirwr);
+	sqfs_destroy(sqfs->dm);
+	sqfs_destroy(sqfs->im);
+	sqfs_destroy(sqfs->idtbl);
+	sqfs_destroy(sqfs->data);
+	sqfs_destroy(sqfs->blkwr);
+	sqfs_destroy(sqfs->fragtbl);
+	sqfs_destroy(sqfs->cmp);
 	fstree_cleanup(&sqfs->fs);
-	sqfs->outfile->destroy(sqfs->outfile);
+	sqfs_destroy(sqfs->outfile);
 }

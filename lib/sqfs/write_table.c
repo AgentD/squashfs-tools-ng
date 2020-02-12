@@ -74,7 +74,7 @@ int sqfs_write_table(sqfs_file_t *file, sqfs_compressor_t *cmp,
 	/* cleanup */
 	ret = 0;
 out:
-	sqfs_meta_writer_destroy(m);
+	sqfs_destroy(m);
 out_idx:
 	free(locations);
 	return ret;

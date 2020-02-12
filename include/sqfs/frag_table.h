@@ -31,6 +31,8 @@
 /**
  * @struct sqfs_frag_table_t
  *
+ * @implements sqfs_object_t
+ *
  * @brief Abstracts reading, writing and management of the fragment table.
  */
 
@@ -48,13 +50,6 @@ extern "C" {
  * @return A pointer to a new fragment table object on success, NULL on failure.
  */
 SQFS_API sqfs_frag_table_t *sqfs_frag_table_create(sqfs_u32 flags);
-
-/**
- * @brief Destroy a fragment table and release all associated memory.
- *
- * @memberof sqfs_frag_table_t
- */
-SQFS_API void sqfs_frag_table_destroy(sqfs_frag_table_t *tbl);
 
 /**
  * @brief Load a fragment table from a SquashFS image.

@@ -21,7 +21,7 @@ typedef struct {
 } sqfs_file_stdinout_t;
 
 
-static void stdinout_destroy(sqfs_file_t *base)
+static void stdinout_destroy(sqfs_object_t *base)
 {
 	free(base);
 }
@@ -159,7 +159,7 @@ sqfs_file_t *sqfs_get_stdin_file(FILE *fp, const sparse_map_t *map,
 	file->map = map;
 	file->fp = fp;
 
-	base->destroy = stdinout_destroy;
+	((sqfs_object_t *)base)->destroy = stdinout_destroy;
 	base->write_at = stdin_write_at;
 	base->get_size = stdinout_get_size;
 	base->truncate = stdinout_truncate;
