@@ -133,6 +133,18 @@ typedef enum {
 	 * @brief An invalid argument was passed to a library function.
 	 */
 	SQFS_ERROR_ARG_INVALID = -16,
+
+	/**
+	 * @brief Library functions were called an a nonsensical order.
+	 *
+	 * Some libsquashfs functions operate on an object with an internal
+	 * state. Depending on the state, calling a function might not make
+	 * sense at all (e.g. calling foo_end before foo_begin). In that case,
+	 * this error is returned, signifying to the caller that the sequence
+	 * makes not sense, but the object itself is unchanged, no action was
+	 * performed and the object can still be used.
+	 */
+	SQFS_ERROR_SEQUENCE = -17,
 } E_SQFS_ERROR;
 
 #endif /* SQFS_ERROR_H */
