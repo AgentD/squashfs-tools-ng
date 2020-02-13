@@ -410,19 +410,6 @@ static int process_done_queue(sqfs_block_processor_t *proc, sqfs_block_t *queue)
 	return status;
 }
 
-int test_and_set_status(sqfs_block_processor_t *proc, int status)
-{
-	LOCK(&proc->mtx);
-	if (proc->status == 0) {
-		proc->status = status;
-	} else {
-		status = proc->status;
-	}
-	SIGNAL_ALL(&proc->queue_cond);
-	UNLOCK(&proc->mtx);
-	return status;
-}
-
 int wait_completed(sqfs_block_processor_t *proc)
 {
 	sqfs_block_t *queue;
@@ -446,5 +433,16 @@ int wait_completed(sqfs_block_processor_t *proc)
 	}
 
 	status = process_done_queue(proc, queue);
-	return status ? test_and_set_status(proc, status) : status;
+
+	if (status != 0) {
+		LOCK(&proc->mtx);
+		if (proc->status == 0) {
+			proc->status = status;
+		} else {
+			status = proc->status;
+		}
+		SIGNAL_ALL(&proc->queue_cond);
+		UNLOCK(&proc->mtx);
+	}
+	return status;
 }
