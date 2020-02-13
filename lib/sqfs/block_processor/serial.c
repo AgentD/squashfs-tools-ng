@@ -44,11 +44,9 @@ int test_and_set_status(sqfs_block_processor_t *proc, int status)
 	return proc->status;
 }
 
-int append_to_work_queue(sqfs_block_processor_t *proc, sqfs_block_t *block,
-			 bool signal_threads)
+int append_to_work_queue(sqfs_block_processor_t *proc, sqfs_block_t *block)
 {
 	sqfs_block_t *fragblk = NULL;
-	(void)signal_threads;
 
 	if (proc->status != 0 || block == NULL) {
 		free(block);

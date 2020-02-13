@@ -22,10 +22,7 @@ static int enqueue_block(sqfs_block_processor_t *proc, sqfs_block_t *block)
 			return status;
 	}
 
-	if (proc->backlog == proc->max_backlog)
-		proc->notify_threads = true;
-
-	return append_to_work_queue(proc, block, proc->notify_threads);
+	return append_to_work_queue(proc, block);
 }
 
 static int add_sentinel_block(sqfs_block_processor_t *proc)
@@ -174,7 +171,7 @@ int sqfs_block_processor_finish(sqfs_block_processor_t *proc)
 {
 	int status = 0;
 
-	append_to_work_queue(proc, NULL, true);
+	append_to_work_queue(proc, NULL);
 
 	while (proc->backlog > 0) {
 		status = wait_completed(proc);
@@ -183,7 +180,7 @@ int sqfs_block_processor_finish(sqfs_block_processor_t *proc)
 	}
 
 	if (proc->frag_block != NULL) {
-		status = append_to_work_queue(proc, proc->frag_block, true);
+		status = append_to_work_queue(proc, proc->frag_block);
 		proc->frag_block = NULL;
 
 		if (status)

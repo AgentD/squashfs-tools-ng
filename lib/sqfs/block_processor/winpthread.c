@@ -288,8 +288,7 @@ fail_init:
 }
 #endif
 
-int append_to_work_queue(sqfs_block_processor_t *proc, sqfs_block_t *block,
-			 bool signal_threads)
+int append_to_work_queue(sqfs_block_processor_t *proc, sqfs_block_t *block)
 {
 	int status;
 
@@ -312,9 +311,7 @@ int append_to_work_queue(sqfs_block_processor_t *proc, sqfs_block_t *block,
 		block = NULL;
 	}
 out:
-	if (signal_threads)
-		SIGNAL_ALL(&proc->queue_cond);
-
+	SIGNAL_ALL(&proc->queue_cond);
 	UNLOCK(&proc->mtx);
 	free(block);
 	return 0;

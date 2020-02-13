@@ -82,7 +82,6 @@ struct sqfs_block_processor_t {
 	sqfs_compressor_t *cmp;
 
 	sqfs_block_t *frag_block;
-	bool notify_threads;
 
 	sqfs_block_writer_t *wr;
 	sqfs_block_processor_stats_t stats;
@@ -128,8 +127,7 @@ SQFS_INTERNAL
 int test_and_set_status(sqfs_block_processor_t *proc, int status);
 
 SQFS_INTERNAL
-int append_to_work_queue(sqfs_block_processor_t *proc, sqfs_block_t *block,
-			 bool notify_threads);
+int append_to_work_queue(sqfs_block_processor_t *proc, sqfs_block_t *block);
 
 SQFS_INTERNAL int wait_completed(sqfs_block_processor_t *proc);
 
