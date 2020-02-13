@@ -30,7 +30,7 @@ static int add_sentinel_block(sqfs_block_processor_t *proc)
 	sqfs_block_t *blk = calloc(1, sizeof(*blk));
 
 	if (blk == NULL)
-		return test_and_set_status(proc, SQFS_ERROR_ALLOC);
+		return SQFS_ERROR_ALLOC;
 
 	blk->inode = proc->inode;
 	blk->flags = proc->blk_flags | SQFS_BLK_LAST_BLOCK;
@@ -42,10 +42,10 @@ int sqfs_block_processor_begin_file(sqfs_block_processor_t *proc,
 				    sqfs_inode_generic_t *inode, sqfs_u32 flags)
 {
 	if (proc->inode != NULL)
-		return test_and_set_status(proc, SQFS_ERROR_INTERNAL);
+		return SQFS_ERROR_SEQUENCE;
 
 	if (flags & ~SQFS_BLK_USER_SETTABLE_FLAGS)
-		return test_and_set_status(proc, SQFS_ERROR_UNSUPPORTED);
+		return SQFS_ERROR_UNSUPPORTED;
 
 	proc->inode = inode;
 	proc->blk_flags = flags | SQFS_BLK_FIRST_BLOCK;
@@ -99,8 +99,7 @@ int sqfs_block_processor_append(sqfs_block_processor_t *proc, const void *data,
 					 proc->max_block_size);
 
 			if (new == NULL)
-				return test_and_set_status(proc,
-							   SQFS_ERROR_ALLOC);
+				return SQFS_ERROR_ALLOC;
 
 			proc->blk_current = new;
 		}
@@ -143,7 +142,7 @@ int sqfs_block_processor_end_file(sqfs_block_processor_t *proc)
 	int err;
 
 	if (proc->inode == NULL)
-		return test_and_set_status(proc, SQFS_ERROR_INTERNAL);
+		return SQFS_ERROR_SEQUENCE;
 
 	if (!(proc->blk_flags & SQFS_BLK_FIRST_BLOCK)) {
 		if (proc->blk_current != NULL &&
