@@ -446,3 +446,28 @@ int wait_completed(sqfs_block_processor_t *proc)
 	}
 	return status;
 }
+
+int sqfs_block_processor_finish(sqfs_block_processor_t *proc)
+{
+	int status = 0;
+
+	append_to_work_queue(proc, NULL);
+
+	while (proc->backlog > 0) {
+		status = wait_completed(proc);
+		if (status)
+			return status;
+	}
+
+	if (proc->frag_block != NULL) {
+		status = append_to_work_queue(proc, proc->frag_block);
+		proc->frag_block = NULL;
+
+		if (status)
+			return status;
+
+		status = wait_completed(proc);
+	}
+
+	return status;
+}

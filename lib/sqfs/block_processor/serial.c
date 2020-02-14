@@ -77,3 +77,22 @@ int wait_completed(sqfs_block_processor_t *proc)
 {
 	return proc->status;
 }
+
+int sqfs_block_processor_finish(sqfs_block_processor_t *proc)
+{
+	if (proc->frag_block != NULL && proc->status == 0) {
+		proc->status = block_processor_do_block(proc->frag_block,
+							proc->cmp,
+							proc->scratch,
+							proc->max_block_size);
+
+		if (proc->status == 0) {
+			proc->status = process_completed_block(proc,
+							       proc->frag_block);
+		}
+	}
+
+	free(proc->frag_block);
+	proc->frag_block = NULL;
+	return proc->status;
+}
