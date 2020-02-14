@@ -34,6 +34,17 @@ struct compress_worker_t {
 	sqfs_u8 scratch[];
 };
 
+static void free_blk_list(sqfs_block_t *list)
+{
+	sqfs_block_t *it;
+
+	while (list != NULL) {
+		it = list;
+		list = list->next;
+		free(it);
+	}
+}
+
 static THREAD_TYPE worker_proc(THREAD_ARG arg)
 {
 	compress_worker_t *worker = arg;
@@ -120,7 +131,11 @@ static void block_processor_destroy(sqfs_object_t *obj)
 	}
 
 	DeleteCriticalSection(&proc->mtx);
-	block_processor_cleanup(proc);
+	free_blk_list(proc->queue);
+	free_blk_list(proc->done);
+	free(proc->blk_current);
+	free(proc->frag_block);
+	free(proc);
 }
 
 sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
@@ -141,16 +156,18 @@ sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
 	if (proc == NULL)
 		return NULL;
 
+	proc->max_block_size = max_block_size;
+	proc->num_workers = num_workers;
+	proc->max_backlog = max_backlog;
+	proc->cmp = cmp;
+	proc->frag_tbl = tbl;
+	proc->wr = wr;
+	proc->stats.size = sizeof(proc->stats);
 	((sqfs_object_t *)obj)->destroy = block_processor_destroy;
 
 	InitializeCriticalSection(&proc->mtx);
 	InitializeConditionVariable(&proc->queue_cond);
 	InitializeConditionVariable(&proc->done_cond);
-
-	if (block_processor_init(proc, max_block_size, cmp, num_workers,
-				 max_backlog, wr, tbl)) {
-		goto fail;
-	}
 
 	for (i = 0; i < num_workers; ++i) {
 		proc->workers[i] = alloc_flex(sizeof(compress_worker_t),
@@ -198,7 +215,11 @@ static void block_processor_destroy(sqfs_object_t *obj)
 	pthread_cond_destroy(&proc->queue_cond);
 	pthread_mutex_destroy(&proc->mtx);
 
-	block_processor_cleanup(proc);
+	free_blk_list(proc->queue);
+	free_blk_list(proc->done);
+	free(proc->blk_current);
+	free(proc->frag_block);
+	free(proc);
 }
 
 sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
@@ -225,11 +246,13 @@ sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
 	proc->mtx = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
 	proc->queue_cond = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
 	proc->done_cond = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
-
-	if (block_processor_init(proc, max_block_size, cmp, num_workers,
-				 max_backlog, wr, tbl)) {
-		goto fail_init;
-	}
+	proc->max_block_size = max_block_size;
+	proc->num_workers = num_workers;
+	proc->max_backlog = max_backlog;
+	proc->cmp = cmp;
+	proc->frag_tbl = tbl;
+	proc->wr = wr;
+	proc->stats.size = sizeof(proc->stats);
 
 	for (i = 0; i < num_workers; ++i) {
 		proc->workers[i] = alloc_flex(sizeof(compress_worker_t),
@@ -283,7 +306,7 @@ fail_init:
 	pthread_cond_destroy(&proc->done_cond);
 	pthread_cond_destroy(&proc->queue_cond);
 	pthread_mutex_destroy(&proc->mtx);
-	block_processor_cleanup(proc);
+	free(proc);
 	return NULL;
 }
 #endif

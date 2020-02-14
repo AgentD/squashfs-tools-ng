@@ -9,7 +9,11 @@
 
 static void block_processor_destroy(sqfs_object_t *obj)
 {
-	block_processor_cleanup((sqfs_block_processor_t *)obj);
+	sqfs_block_processor_t *proc = (sqfs_block_processor_t *)obj;
+
+	free(proc->blk_current);
+	free(proc->frag_block);
+	free(proc);
 }
 
 sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
@@ -20,18 +24,17 @@ sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
 						    sqfs_frag_table_t *tbl)
 {
 	sqfs_block_processor_t *proc;
+	(void)num_workers; (void)max_backlog;
 
 	proc = alloc_flex(sizeof(*proc), 1, max_block_size);
-
 	if (proc == NULL)
 		return NULL;
 
-	if (block_processor_init(proc, max_block_size, cmp, num_workers,
-				 max_backlog, wr, tbl)) {
-		block_processor_cleanup(proc);
-		return NULL;
-	}
-
+	proc->max_block_size = max_block_size;
+	proc->cmp = cmp;
+	proc->frag_tbl = tbl;
+	proc->wr = wr;
+	proc->stats.size = sizeof(proc->stats);
 	((sqfs_object_t *)proc)->destroy = block_processor_destroy;
 	return proc;
 }
@@ -80,18 +83,17 @@ int wait_completed(sqfs_block_processor_t *proc)
 
 int sqfs_block_processor_finish(sqfs_block_processor_t *proc)
 {
-	if (proc->frag_block != NULL && proc->status == 0) {
-		proc->status = block_processor_do_block(proc->frag_block,
-							proc->cmp,
-							proc->scratch,
-							proc->max_block_size);
+	if (proc->frag_block == NULL || proc->status != 0)
+		goto out;
 
-		if (proc->status == 0) {
-			proc->status = process_completed_block(proc,
-							       proc->frag_block);
-		}
-	}
+	proc->status = block_processor_do_block(proc->frag_block, proc->cmp,
+						proc->scratch,
+						proc->max_block_size);
+	if (proc->status != 0)
+		goto out;
 
+	proc->status = process_completed_block(proc, proc->frag_block);
+out:
 	free(proc->frag_block);
 	proc->frag_block = NULL;
 	return proc->status;

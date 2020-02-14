@@ -7,43 +7,6 @@
 #define SQFS_BUILDING_DLL
 #include "internal.h"
 
-void free_blk_list(sqfs_block_t *list)
-{
-	sqfs_block_t *it;
-
-	while (list != NULL) {
-		it = list;
-		list = list->next;
-		free(it);
-	}
-}
-
-int block_processor_init(sqfs_block_processor_t *proc, size_t max_block_size,
-			 sqfs_compressor_t *cmp, unsigned int num_workers,
-			 size_t max_backlog, sqfs_block_writer_t *wr,
-			 sqfs_frag_table_t *tbl)
-{
-	proc->max_block_size = max_block_size;
-	proc->num_workers = num_workers;
-	proc->max_backlog = max_backlog;
-	proc->cmp = cmp;
-	proc->frag_tbl = tbl;
-	proc->wr = wr;
-
-	memset(&proc->stats, 0, sizeof(proc->stats));
-	proc->stats.size = sizeof(proc->stats);
-	return 0;
-}
-
-void block_processor_cleanup(sqfs_block_processor_t *proc)
-{
-	free_blk_list(proc->queue);
-	free_blk_list(proc->done);
-	free(proc->blk_current);
-	free(proc->frag_block);
-	free(proc);
-}
-
 int process_completed_block(sqfs_block_processor_t *proc, sqfs_block_t *blk)
 {
 	sqfs_u64 location;

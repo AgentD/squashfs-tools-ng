@@ -109,16 +109,6 @@ SQFS_INTERNAL
 int process_completed_fragment(sqfs_block_processor_t *proc, sqfs_block_t *frag,
 			       sqfs_block_t **blk_out);
 
-SQFS_INTERNAL void free_blk_list(sqfs_block_t *list);
-
-SQFS_INTERNAL
-int block_processor_init(sqfs_block_processor_t *proc, size_t max_block_size,
-			 sqfs_compressor_t *cmp, unsigned int num_workers,
-			 size_t max_backlog, sqfs_block_writer_t *wr,
-			 sqfs_frag_table_t *tbl);
-
-SQFS_INTERNAL void block_processor_cleanup(sqfs_block_processor_t *proc);
-
 SQFS_INTERNAL
 int block_processor_do_block(sqfs_block_t *block, sqfs_compressor_t *cmp,
 			     sqfs_u8 *scratch, size_t scratch_size);
