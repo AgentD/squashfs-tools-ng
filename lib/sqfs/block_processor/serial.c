@@ -43,35 +43,33 @@ int append_to_work_queue(sqfs_block_processor_t *proc, sqfs_block_t *block)
 {
 	sqfs_block_t *fragblk = NULL;
 
-	if (proc->status != 0 || block == NULL) {
-		free(block);
-		return proc->status;
-	}
+	if (proc->status != 0)
+		goto done;
+
+	proc->status = block_processor_do_block(block, proc->cmp,
+						proc->scratch,
+						proc->max_block_size);
+	if (proc->status != 0)
+		goto done;
 
 	if (block->flags & SQFS_BLK_IS_FRAGMENT) {
-		block->checksum = crc32(0, block->data, block->size);
-
 		proc->status = process_completed_fragment(proc, block,
 							  &fragblk);
-		free(block);
-
-		if (proc->status != 0) {
-			free(fragblk);
-			return proc->status;
-		}
-
 		if (fragblk == NULL)
-			return 0;
+			goto done;
 
+		free(block);
 		block = fragblk;
+
+		proc->status = block_processor_do_block(block, proc->cmp,
+							proc->scratch,
+							proc->max_block_size);
+		if (proc->status != 0)
+			goto done;
 	}
 
-	proc->status = block_processor_do_block(block, proc->cmp, proc->scratch,
-						proc->max_block_size);
-
-	if (proc->status == 0)
-		proc->status = process_completed_block(proc, block);
-
+	proc->status = process_completed_block(proc, block);
+done:
 	free(block);
 	return proc->status;
 }

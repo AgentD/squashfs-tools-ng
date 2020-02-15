@@ -7,11 +7,6 @@
 #define SQFS_BUILDING_DLL
 #include "internal.h"
 
-static bool is_zero_block(unsigned char *ptr, size_t size)
-{
-	return ptr[0] == 0 && memcmp(ptr, ptr + 1, size - 1) == 0;
-}
-
 static int enqueue_block(sqfs_block_processor_t *proc, sqfs_block_t *block)
 {
 	int status;
@@ -58,10 +53,8 @@ static int flush_block(sqfs_block_processor_t *proc, sqfs_block_t *block)
 	block->flags = proc->blk_flags;
 	block->inode = proc->inode;
 
-	if (is_zero_block(block->data, block->size)) {
-		block->flags |= SQFS_BLK_IS_SPARSE;
-	} else if (block->size < proc->max_block_size &&
-		   !(block->flags & SQFS_BLK_DONT_FRAGMENT)) {
+	if (block->size < proc->max_block_size &&
+	    !(block->flags & SQFS_BLK_DONT_FRAGMENT)) {
 		block->flags |= SQFS_BLK_IS_FRAGMENT;
 	} else {
 		proc->blk_flags &= ~SQFS_BLK_FIRST_BLOCK;

@@ -191,13 +191,13 @@ int sqfs_block_writer_write(sqfs_block_writer_t *wr, sqfs_u32 size,
 		}
 	}
 
-	if (size != 0) {
+	offset = wr->file->get_size(wr->file);
+	*location = offset;
+
+	if (size != 0 && !(flags & SQFS_BLK_IS_SPARSE)) {
 		out = size;
 		if (!(flags & SQFS_BLK_IS_COMPRESSED))
 			out |= 1 << 24;
-
-		offset = wr->file->get_size(wr->file);
-		*location = offset;
 
 		err = store_block_location(wr, offset, out, checksum);
 		if (err)
@@ -226,19 +226,24 @@ int sqfs_block_writer_write(sqfs_block_writer_t *wr, sqfs_u32 size,
 		}
 
 		count = wr->num_blocks - wr->file_start;
-		start = deduplicate_blocks(wr, count);
-		offset = wr->blocks[start].offset;
 
-		*location = offset;
-		if (start >= wr->file_start)
-			return 0;
-
-		offset = start + count;
-		if (offset >= wr->file_start) {
-			count = wr->num_blocks - offset;
-			wr->num_blocks = offset;
+		if (count == 0) {
+			*location = 0;
 		} else {
-			wr->num_blocks = wr->file_start;
+			start = deduplicate_blocks(wr, count);
+			offset = wr->blocks[start].offset;
+
+			*location = offset;
+			if (start >= wr->file_start)
+				return 0;
+
+			offset = start + count;
+			if (offset >= wr->file_start) {
+				count = wr->num_blocks - offset;
+				wr->num_blocks = offset;
+			} else {
+				wr->num_blocks = wr->file_start;
+			}
 		}
 
 		err = wr->file->truncate(wr->file, wr->start);

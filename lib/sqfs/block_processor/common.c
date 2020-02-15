@@ -13,6 +13,11 @@ int process_completed_block(sqfs_block_processor_t *proc, sqfs_block_t *blk)
 	sqfs_u32 size;
 	int err;
 
+	err = sqfs_block_writer_write(proc->wr, blk->size, blk->checksum,
+				      blk->flags, blk->data, &location);
+	if (err)
+		return err;
+
 	if (blk->flags & SQFS_BLK_IS_SPARSE) {
 		sqfs_inode_make_extended(blk->inode);
 		blk->inode->data.file_ext.sparse += blk->size;
@@ -20,19 +25,11 @@ int process_completed_block(sqfs_block_processor_t *proc, sqfs_block_t *blk)
 		blk->inode->num_file_blocks += 1;
 
 		proc->stats.sparse_block_count += 1;
-		return 0;
-	}
+	} else if (blk->size != 0) {
+		size = blk->size;
+		if (!(blk->flags & SQFS_BLK_IS_COMPRESSED))
+			size |= 1 << 24;
 
-	size = blk->size;
-	if (!(blk->flags & SQFS_BLK_IS_COMPRESSED))
-		size |= 1 << 24;
-
-	err = sqfs_block_writer_write(proc->wr, blk->size, blk->checksum,
-				      blk->flags, blk->data, &location);
-	if (err)
-		return err;
-
-	if (blk->size != 0) {
 		if (blk->flags & SQFS_BLK_FRAGMENT_BLOCK) {
 			err = sqfs_frag_table_set(proc->frag_tbl, blk->index,
 						  location, size);
@@ -52,12 +49,23 @@ int process_completed_block(sqfs_block_processor_t *proc, sqfs_block_t *blk)
 	return 0;
 }
 
+static bool is_zero_block(unsigned char *ptr, size_t size)
+{
+	return ptr[0] == 0 && memcmp(ptr, ptr + 1, size - 1) == 0;
+}
+
 int block_processor_do_block(sqfs_block_t *block, sqfs_compressor_t *cmp,
 			     sqfs_u8 *scratch, size_t scratch_size)
 {
 	ssize_t ret;
 
-	if (block->size == 0 || (block->flags & SQFS_BLK_IS_SPARSE)) {
+	if (block->size == 0) {
+		block->checksum = 0;
+		return 0;
+	}
+
+	if (is_zero_block(block->data, block->size)) {
+		block->flags |= SQFS_BLK_IS_SPARSE;
 		block->checksum = 0;
 		return 0;
 	}
@@ -89,6 +97,16 @@ int process_completed_fragment(sqfs_block_processor_t *proc, sqfs_block_t *frag,
 	sqfs_u32 index, offset;
 	size_t size;
 	int err;
+
+	if (frag->flags & SQFS_BLK_IS_SPARSE) {
+		sqfs_inode_make_extended(frag->inode);
+		frag->inode->data.file_ext.sparse += frag->size;
+		frag->inode->extra[frag->inode->num_file_blocks] = 0;
+		frag->inode->num_file_blocks += 1;
+
+		proc->stats.sparse_block_count += 1;
+		return 0;
+	}
 
 	proc->stats.total_frag_count += 1;
 
