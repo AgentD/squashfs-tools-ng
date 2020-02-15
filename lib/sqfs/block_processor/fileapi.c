@@ -49,38 +49,22 @@ int sqfs_block_processor_begin_file(sqfs_block_processor_t *proc,
 
 	proc->inode = inode;
 	proc->blk_flags = flags | SQFS_BLK_FIRST_BLOCK;
-	proc->blk_index = 0;
 	proc->blk_current = NULL;
 	return 0;
 }
 
 static int flush_block(sqfs_block_processor_t *proc, sqfs_block_t *block)
 {
-	block->index = proc->blk_index++;
 	block->flags = proc->blk_flags;
 	block->inode = proc->inode;
 
 	if (is_zero_block(block->data, block->size)) {
-		sqfs_inode_make_extended(proc->inode);
-		proc->inode->data.file_ext.sparse += block->size;
-		proc->inode->num_file_blocks += 1;
-		proc->inode->extra[block->index] = 0;
-		free(block);
-
-		proc->stats.sparse_block_count += 1;
-		return 0;
-	}
-
-	if (block->size < proc->max_block_size &&
-	    !(block->flags & SQFS_BLK_DONT_FRAGMENT)) {
+		block->flags |= SQFS_BLK_IS_SPARSE;
+	} else if (block->size < proc->max_block_size &&
+		   !(block->flags & SQFS_BLK_DONT_FRAGMENT)) {
 		block->flags |= SQFS_BLK_IS_FRAGMENT;
-
-		proc->stats.total_frag_count += 1;
 	} else {
-		proc->inode->num_file_blocks += 1;
 		proc->blk_flags &= ~SQFS_BLK_FIRST_BLOCK;
-
-		proc->stats.data_block_count += 1;
 	}
 
 	return enqueue_block(proc, block);
@@ -162,6 +146,5 @@ int sqfs_block_processor_end_file(sqfs_block_processor_t *proc)
 
 	proc->inode = NULL;
 	proc->blk_flags = 0;
-	proc->blk_index = 0;
 	return 0;
 }

@@ -90,7 +90,6 @@ struct sqfs_block_processor_t {
 	sqfs_inode_generic_t *inode;
 	sqfs_block_t *blk_current;
 	sqfs_u32 blk_flags;
-	size_t blk_index;
 
 	/* used only by workers */
 	size_t max_block_size;

@@ -89,6 +89,12 @@ typedef enum {
 	SQFS_BLK_DONT_FRAGMENT = 0x0004,
 
 	/**
+	 * @brief Set by the @ref sqfs_block_processor_t if it determines a
+	 *        block of a file to be sparse, i.e. only zero bytes.
+	 */
+	SQFS_BLK_IS_SPARSE = 0x0400,
+
+	/**
 	 * @brief Set by the @ref sqfs_block_processor_t on the first
 	 *        block of a file.
 	 */

@@ -13,6 +13,16 @@ int process_completed_block(sqfs_block_processor_t *proc, sqfs_block_t *blk)
 	sqfs_u32 size;
 	int err;
 
+	if (blk->flags & SQFS_BLK_IS_SPARSE) {
+		sqfs_inode_make_extended(blk->inode);
+		blk->inode->data.file_ext.sparse += blk->size;
+		blk->inode->extra[blk->inode->num_file_blocks] = 0;
+		blk->inode->num_file_blocks += 1;
+
+		proc->stats.sparse_block_count += 1;
+		return 0;
+	}
+
 	size = blk->size;
 	if (!(blk->flags & SQFS_BLK_IS_COMPRESSED))
 		size |= 1 << 24;
@@ -29,7 +39,10 @@ int process_completed_block(sqfs_block_processor_t *proc, sqfs_block_t *blk)
 			if (err)
 				return err;
 		} else {
-			blk->inode->extra[blk->index] = size;
+			blk->inode->extra[blk->inode->num_file_blocks] = size;
+			blk->inode->num_file_blocks += 1;
+
+			proc->stats.data_block_count += 1;
 		}
 	}
 
@@ -44,7 +57,7 @@ int block_processor_do_block(sqfs_block_t *block, sqfs_compressor_t *cmp,
 {
 	ssize_t ret;
 
-	if (block->size == 0) {
+	if (block->size == 0 || (block->flags & SQFS_BLK_IS_SPARSE)) {
 		block->checksum = 0;
 		return 0;
 	}
@@ -76,6 +89,8 @@ int process_completed_fragment(sqfs_block_processor_t *proc, sqfs_block_t *frag,
 	sqfs_u32 index, offset;
 	size_t size;
 	int err;
+
+	proc->stats.total_frag_count += 1;
 
 	err = sqfs_frag_table_find_tail_end(proc->frag_tbl,
 					    frag->checksum, frag->size,
