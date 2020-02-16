@@ -311,35 +311,6 @@ fail_init:
 }
 #endif
 
-int append_to_work_queue(sqfs_block_processor_t *proc, sqfs_block_t *block)
-{
-	int status;
-
-	LOCK(&proc->mtx);
-	status = proc->status;
-	if (status != 0)
-		goto out;
-
-	if (block != NULL) {
-		if (proc->queue_last == NULL) {
-			proc->queue = proc->queue_last = block;
-		} else {
-			proc->queue_last->next = block;
-			proc->queue_last = block;
-		}
-
-		block->sequence_number = proc->enqueue_id++;
-		block->next = NULL;
-		proc->backlog += 1;
-		block = NULL;
-	}
-out:
-	SIGNAL_ALL(&proc->queue_cond);
-	UNLOCK(&proc->mtx);
-	free(block);
-	return 0;
-}
-
 static sqfs_block_t *try_dequeue(sqfs_block_processor_t *proc)
 {
 	sqfs_block_t *queue, *it, *prev;
@@ -433,7 +404,7 @@ static int process_done_queue(sqfs_block_processor_t *proc, sqfs_block_t *queue)
 	return status;
 }
 
-int wait_completed(sqfs_block_processor_t *proc)
+static int wait_completed(sqfs_block_processor_t *proc)
 {
 	sqfs_block_t *queue;
 	int status;
@@ -470,19 +441,54 @@ int wait_completed(sqfs_block_processor_t *proc)
 	return status;
 }
 
-int sqfs_block_processor_finish(sqfs_block_processor_t *proc)
+int append_to_work_queue(sqfs_block_processor_t *proc, sqfs_block_t *block)
 {
-	int status = 0;
+	int status;
 
-	append_to_work_queue(proc, NULL);
-
-	while (proc->backlog > 0) {
+	while (proc->backlog > proc->max_backlog) {
 		status = wait_completed(proc);
 		if (status)
 			return status;
 	}
 
-	if (proc->frag_block != NULL) {
+	LOCK(&proc->mtx);
+	status = proc->status;
+	if (status != 0)
+		goto out;
+
+	if (block != NULL) {
+		if (proc->queue_last == NULL) {
+			proc->queue = proc->queue_last = block;
+		} else {
+			proc->queue_last->next = block;
+			proc->queue_last = block;
+		}
+
+		block->sequence_number = proc->enqueue_id++;
+		block->next = NULL;
+		proc->backlog += 1;
+		block = NULL;
+	}
+out:
+	SIGNAL_ALL(&proc->queue_cond);
+	UNLOCK(&proc->mtx);
+	free(block);
+	return 0;
+}
+
+int sqfs_block_processor_finish(sqfs_block_processor_t *proc)
+{
+	int status;
+
+	LOCK(&proc->mtx);
+	status = proc->status;
+	SIGNAL_ALL(&proc->queue_cond);
+	UNLOCK(&proc->mtx);
+
+	while (status == 0 && proc->backlog > 0)
+		status = wait_completed(proc);
+
+	if (status == 0 && proc->frag_block != NULL) {
 		status = append_to_work_queue(proc, proc->frag_block);
 		proc->frag_block = NULL;
 

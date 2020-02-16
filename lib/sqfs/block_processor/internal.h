@@ -115,6 +115,4 @@ int block_processor_do_block(sqfs_block_t *block, sqfs_compressor_t *cmp,
 SQFS_INTERNAL
 int append_to_work_queue(sqfs_block_processor_t *proc, sqfs_block_t *block);
 
-SQFS_INTERNAL int wait_completed(sqfs_block_processor_t *proc);
-
 #endif /* INTERNAL_H */

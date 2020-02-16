@@ -74,11 +74,6 @@ done:
 	return proc->status;
 }
 
-int wait_completed(sqfs_block_processor_t *proc)
-{
-	return proc->status;
-}
-
 int sqfs_block_processor_finish(sqfs_block_processor_t *proc)
 {
 	if (proc->frag_block == NULL || proc->status != 0)
