@@ -22,17 +22,6 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <zlib.h>
-
-#ifdef WITH_PTHREAD
-#include <pthread.h>
-#include <signal.h>
-#elif defined(_WIN32) || defined(__WINDOWS__)
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#endif
-
-typedef struct compress_worker_t compress_worker_t;
 
 typedef struct sqfs_block_t {
 	struct sqfs_block_t *next;
@@ -52,53 +41,18 @@ typedef struct sqfs_block_t {
 struct sqfs_block_processor_t {
 	sqfs_object_t obj;
 
-	/* synchronization primitives */
-#ifdef WITH_PTHREAD
-	pthread_mutex_t mtx;
-	pthread_cond_t queue_cond;
-	pthread_cond_t done_cond;
-#elif defined(_WIN32) || defined(__WINDOWS__)
-	CRITICAL_SECTION mtx;
-	CONDITION_VARIABLE queue_cond;
-	CONDITION_VARIABLE done_cond;
-#endif
-
-	/* needs rw access by worker and main thread */
-	sqfs_block_t *queue;
-	sqfs_block_t *queue_last;
-
-	sqfs_block_t *done;
-	size_t backlog;
-	int status;
-
-	/* used by main thread only */
-	sqfs_u32 enqueue_id;
-	sqfs_u32 dequeue_id;
-
-	unsigned int num_workers;
-	size_t max_backlog;
-
 	sqfs_frag_table_t *frag_tbl;
 	sqfs_compressor_t *cmp;
-
 	sqfs_block_t *frag_block;
-
 	sqfs_block_writer_t *wr;
+
 	sqfs_block_processor_stats_t stats;
 
-	/* file API */
 	sqfs_inode_generic_t *inode;
 	sqfs_block_t *blk_current;
 	sqfs_u32 blk_flags;
 
-	/* used only by workers */
 	size_t max_block_size;
-
-#if defined(WITH_PTHREAD) || defined(_WIN32) || defined(__WINDOWS__)
-	compress_worker_t *workers[];
-#else
-	sqfs_u8 scratch[];
-#endif
 };
 
 SQFS_INTERNAL int process_completed_block(sqfs_block_processor_t *proc,
