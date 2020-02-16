@@ -23,7 +23,6 @@ libsquashfs_la_SOURCES += lib/sqfs/inode.c
 libsquashfs_la_SOURCES += lib/sqfs/write_super.c lib/sqfs/data_reader.c
 libsquashfs_la_SOURCES += lib/sqfs/block_processor/internal.h
 libsquashfs_la_SOURCES += lib/sqfs/block_processor/common.c
-libsquashfs_la_SOURCES += lib/sqfs/block_processor/fileapi.c
 libsquashfs_la_SOURCES += lib/sqfs/block_processor/xxhash.c
 libsquashfs_la_SOURCES += lib/sqfs/str_table.c lib/sqfs/str_table.h
 libsquashfs_la_SOURCES += lib/sqfs/alloc.c lib/sqfs/util.h
