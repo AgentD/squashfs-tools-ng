@@ -106,8 +106,6 @@ AS_IF([test "x$build_windows" = "xyes"], [with_pthread="no"], [])
 AS_IF([test "x$with_tools" != "xyes"], [with_selinux="no"], [])
 AM_CONDITIONAL([BUILD_TOOLS], [test "x$with_tools" = "xyes"])
 
-with_gzip="yes"
-
 ##### Doxygen reference manual #####
 
 AC_CHECK_PROGS([DOXYGEN], [doxygen])
