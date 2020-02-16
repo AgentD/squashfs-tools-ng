@@ -24,6 +24,7 @@ libsquashfs_la_SOURCES += lib/sqfs/write_super.c lib/sqfs/data_reader.c
 libsquashfs_la_SOURCES += lib/sqfs/block_processor/internal.h
 libsquashfs_la_SOURCES += lib/sqfs/block_processor/common.c
 libsquashfs_la_SOURCES += lib/sqfs/block_processor/fileapi.c
+libsquashfs_la_SOURCES += lib/sqfs/block_processor/xxhash.c
 libsquashfs_la_SOURCES += lib/sqfs/str_table.c lib/sqfs/str_table.h
 libsquashfs_la_SOURCES += lib/sqfs/alloc.c lib/sqfs/util.h
 libsquashfs_la_SOURCES += lib/sqfs/frag_table.c include/sqfs/frag_table.h
@@ -75,7 +76,6 @@ libsquashfs_la_SOURCES += lib/sqfs/comp/zlib/inftrees.c
 libsquashfs_la_SOURCES += lib/sqfs/comp/zlib/inftrees.h
 libsquashfs_la_SOURCES += lib/sqfs/comp/zlib/zlib.h lib/sqfs/comp/zlib/trees.h
 libsquashfs_la_SOURCES += lib/sqfs/comp/zlib/zutil.c lib/sqfs/comp/zlib/zutil.h
-libsquashfs_la_SOURCES += lib/sqfs/comp/zlib/crc32.c lib/sqfs/comp/zlib/crc32.h
 
 libsquashfs_la_CPPFLAGS += -I$(top_srcdir)/lib/sqfs/comp/zlib -DZLIB_CONST=1
 libsquashfs_la_CPPFLAGS += -DNO_GZCOMPRESS=1 -DNO_GZIP=1 -DHAVE_MEMCPY=1

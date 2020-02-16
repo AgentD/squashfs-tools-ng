@@ -67,7 +67,7 @@ int block_processor_do_block(sqfs_block_t *block, sqfs_compressor_t *cmp,
 		return 0;
 	}
 
-	block->checksum = crc32(0, block->data, block->size);
+	block->checksum = xxh32(block->data, block->size);
 
 	if (block->flags & (SQFS_BLK_IS_FRAGMENT | SQFS_BLK_DONT_COMPRESS))
 		return 0;
