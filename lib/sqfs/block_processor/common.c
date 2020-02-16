@@ -57,37 +57,31 @@ static bool is_zero_block(unsigned char *ptr, size_t size)
 int block_processor_do_block(sqfs_block_t *block, sqfs_compressor_t *cmp,
 			     sqfs_u8 *scratch, size_t scratch_size)
 {
-	ssize_t ret;
+	sqfs_s32 ret;
 
-	if (block->size == 0) {
-		block->checksum = 0;
+	if (block->size == 0)
 		return 0;
-	}
 
 	if (is_zero_block(block->data, block->size)) {
 		block->flags |= SQFS_BLK_IS_SPARSE;
-		block->checksum = 0;
 		return 0;
 	}
 
 	block->checksum = crc32(0, block->data, block->size);
 
-	if (block->flags & SQFS_BLK_IS_FRAGMENT)
+	if (block->flags & (SQFS_BLK_IS_FRAGMENT | SQFS_BLK_DONT_COMPRESS))
 		return 0;
 
-	if (!(block->flags & SQFS_BLK_DONT_COMPRESS)) {
-		ret = cmp->do_block(cmp, block->data, block->size,
-				    scratch, scratch_size);
-		if (ret < 0)
-			return ret;
+	ret = cmp->do_block(cmp, block->data, block->size,
+			    scratch, scratch_size);
+	if (ret < 0)
+		return ret;
 
-		if (ret > 0) {
-			memcpy(block->data, scratch, ret);
-			block->size = ret;
-			block->flags |= SQFS_BLK_IS_COMPRESSED;
-		}
+	if (ret > 0) {
+		memcpy(block->data, scratch, ret);
+		block->size = ret;
+		block->flags |= SQFS_BLK_IS_COMPRESSED;
 	}
-
 	return 0;
 }
 
@@ -110,11 +104,12 @@ int process_completed_fragment(sqfs_block_processor_t *proc, sqfs_block_t *frag,
 
 	proc->stats.total_frag_count += 1;
 
-	err = sqfs_frag_table_find_tail_end(proc->frag_tbl,
-					    frag->checksum, frag->size,
-					    &index, &offset);
-	if (err == 0)
-		goto out_duplicate;
+	err = sqfs_frag_table_find_tail_end(proc->frag_tbl, frag->checksum,
+					    frag->size, &index, &offset);
+	if (err == 0) {
+		sqfs_inode_set_frag_location(frag->inode, index, offset);
+		return 0;
+	}
 
 	if (proc->frag_block != NULL) {
 		size = proc->frag_block->size + frag->size;
@@ -164,9 +159,6 @@ fail:
 	free(*blk_out);
 	*blk_out = NULL;
 	return err;
-out_duplicate:
-	sqfs_inode_set_frag_location(frag->inode, index, offset);
-	return 0;
 }
 
 const sqfs_block_processor_stats_t

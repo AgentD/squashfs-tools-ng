@@ -44,14 +44,14 @@ int sqfs_block_processor_begin_file(sqfs_block_processor_t *proc,
 
 	proc->inode = inode;
 	proc->blk_flags = flags | SQFS_BLK_FIRST_BLOCK;
-	proc->blk_current = NULL;
 	return 0;
 }
 
-static int flush_block(sqfs_block_processor_t *proc, sqfs_block_t *block)
+static int flush_block(sqfs_block_processor_t *proc)
 {
-	block->flags = proc->blk_flags;
-	block->inode = proc->inode;
+	sqfs_block_t *block = proc->blk_current;
+
+	proc->blk_current = NULL;
 
 	if (block->size < proc->max_block_size &&
 	    !(block->flags & SQFS_BLK_DONT_FRAGMENT)) {
@@ -66,26 +66,25 @@ static int flush_block(sqfs_block_processor_t *proc, sqfs_block_t *block)
 int sqfs_block_processor_append(sqfs_block_processor_t *proc, const void *data,
 				size_t size)
 {
+	sqfs_block_t *new;
 	size_t diff;
-	void *new;
 	int err;
 
 	while (size > 0) {
 		if (proc->blk_current == NULL) {
-			new = alloc_flex(sizeof(*proc->blk_current), 1,
-					 proc->max_block_size);
-
+			new = alloc_flex(sizeof(*new), 1, proc->max_block_size);
 			if (new == NULL)
 				return SQFS_ERROR_ALLOC;
 
 			proc->blk_current = new;
+			proc->blk_current->flags = proc->blk_flags;
+			proc->blk_current->inode = proc->inode;
 		}
 
 		diff = proc->max_block_size - proc->blk_current->size;
 
 		if (diff == 0) {
-			err = flush_block(proc, proc->blk_current);
-			proc->blk_current = NULL;
+			err = flush_block(proc);
 			if (err)
 				return err;
 			continue;
@@ -106,9 +105,7 @@ int sqfs_block_processor_append(sqfs_block_processor_t *proc, const void *data,
 
 	if (proc->blk_current != NULL &&
 	    proc->blk_current->size == proc->max_block_size) {
-		err = flush_block(proc, proc->blk_current);
-		proc->blk_current = NULL;
-		return err;
+		return flush_block(proc);
 	}
 
 	return 0;
@@ -133,8 +130,9 @@ int sqfs_block_processor_end_file(sqfs_block_processor_t *proc)
 	}
 
 	if (proc->blk_current != NULL) {
-		err = flush_block(proc, proc->blk_current);
-		proc->blk_current = NULL;
+		err = flush_block(proc);
+		if (err)
+			return err;
 	}
 
 	proc->inode = NULL;
