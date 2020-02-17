@@ -1,0 +1,163 @@
+
+                      Parallelizing SquashFS Data Packing
+                      ***********************************
+
+ 0) Overview
+ ***********
+
+ On a high level, data blocks are processed as follows:
+
+ The "block processor" has a simple begin/append/end interface for submitting
+ file data. Internally it chops the file data up into fixed size blocks that
+ are each [optionally] compressed and hashed. If the "end" function is called
+ and there is still left over data, a fragment is created.
+
+ Fragments are only hashed. If another fragment exists with the same size and
+ hash, it is discarded and the existing fragment is referenced. Fragments are
+ collected in a fragment block that, once it overflows, is processed like a
+ normal block.
+
+ The final compressed & hashed data blocks & fragment blocks are passed on to
+ the "block writer".
+
+ The block writer simply writes blocks to the output file. Flags are used to
+ communicate what the first and last block of a file are. Entire files are
+ deduplicated by trying to find a sequence of identical size/hash pairs in
+ the already written blocks.
+
+
+ 0.1) Implementation
+
+ The implementation of the block processor is in lib/sqfs/block_processor. The
+ file common.c contains the frontend for file data submission and common
+ functions for processing a single block, handling a completed block and
+ handling a completed fragment.
+
+ A reference serial implementation is provided in the file serial.c
+
+
+ 1) Thread Pool Based Block Processor
+ ************************************
+
+ The main challenge of parallelizing the block processor lies in the fact the
+ output HAS TO BE byte-for-byte equivalent to the serial reference
+ implementation.
+
+ This means:
+  - File blocks have to be written in the exact same order as they
+    are submitted.
+  - If storing a fragment overflows the fragment block, the resulting
+    fragment block has to be written next, no file data.
+
+
+ The current implementation in winpthread.c (based on pthread or Windows
+ native threads, depending on whats available) uses the following approach:
+
+  - Each submitted data block or fragment gets an incremental sequence number
+    and is appended to a FIFO queue.
+  - Multiple threads consume blocks from the queue and use the function
+    from common.c to process the dequeued blocks.
+  - Completed blocks are inserted into a "done" queue, sorted by their
+    sequence number.
+  - The main thread that submits blocks also dequeues the completed ones,
+    keeping track of the sequence numbers, and calls the respective common
+    functions for processing completed blocks and fragments.
+  - If a fragment block is created, it is submitted with *the same* sequence
+    number as the fragment that caused it to overflow and the next expected
+    sequence number is reset to that.
+
+ To make sure the queue doesn't fill all RAM, submitted blocks are counted.
+ The counter is decremented when dequeueing completed blocks. If it reaches
+ a maximum, signal/await is used to wait for the worker threads to complete
+ some blocks to process. Similarly, the worker threads use signal/await to
+ wait on the queue if it is empty.
+
+
+ 1.1) Problems
+
+ The outlined approach performs sub-optimal, with an efficiency somewhere
+ between 50% to 75% on the bench mark data used.
+
+ Profiling using perf shows that almost a third of the time, only one
+ worker thread is actually active, while the others are waiting.
+
+ The current hypothesis is that this is caused by many small input files
+ being processed, causing a work load consisting primarily of fragments.
+
+  - Fragments are only hashed, not compressed, so the work is
+    primarily I/O bound.
+  - After a number of fragments are consumed, a fragment block is created.
+  - The fragment block is submitted to the almost empty queue and the
+    I/O thread waits for it to be completed before doing anything else.
+  - One thread gets to handle the fragment block, which involves a lot more
+    work. Meanwhile the other threads starve on the empty queue.
+  - After that has finally been handed of to the I/O thread, another burst of
+    fragments comes in.
+  - Rinse and repeat.
+
+
+ 1.2) Proposed Solution
+
+ It makes no sense for the main thread to block until the fragment block is
+ done. It can process further fragments (just not write blocks), creating
+ more fragment blocks on the way.
+
+ A possible implementation might be to maintain 3 queues instead of 2:
+
+  - A queue with submitted blocks.
+  - A queue with completed blocks.
+  - A queue for blocks ready to be written to disk ("I/O queue").
+
+ A second sequence number is needed for keeping order on the I/O queue:
+
+  - Submit blocks as before with incremental processing sequence number.
+  - Dequeue completed blocks in order by processing sequence number.
+     - For regular blocks, add them to the I/O queue with incremental I/O
+       sequence number.
+     - For fragments, consolidate them into fragment blocks. On overflow,
+       dispatch a fragment block with incremental processing sequence number,
+       BUT give it an I/O queue sequence number NOW.
+     - For fragment blocks, add them to the I/O queue without allocating an
+       I/O sequence number, it already has one.
+  - Dequeue ordered by I/O sequence number from the I/O queue and send the
+    completed blocks to the block writer.
+
+
+ If you have a more insights or a better idea, please let me know.
+
+
+
+ 2) Benchmarks
+ *************
+
+ TODO: benchmarks with the following images:
+        - Debian live iso (2G)
+	- Arch Linux live iso (550M)
+	- Raspberry Pi 3 QT demo image (~300M)
+
+       sqfs2tar $IMAGE | tar2sqfs -j $NUM_CPU -f out.sqfs
+
+       Values to measure:
+        - Total wall clock time of tar2sqfs.
+	- Througput (bytes read / time, bytes written / time).
+
+       Try the above for different compressors and stuff everything into
+       a huge spread sheet. Then, determine the following and plot some
+       nice graphs:
+
+        - Absolute speedup (normalized to serial implementation).
+	- Absolute efficiency (= speedup / $NUM_CPU)
+        - Relative speedup (normalized to thread pool with -j 1).
+	- Relative efficiency
+
+
+ Available test hardware:
+  - 8(16) core AMD Ryzen 7 3700X, 32GiB DDR4 RAM.
+  - Various 4 core Intel Xeon servers. Precise Specs not known yet.
+  - TODO: Check if my credentials on LCC2 still work. The cluster nodes AFAIK
+    have dual socket Xeons. Not sure if 8 cores per CPU or 8 in total?
+
+ For some compressors and work load, tar2sqfs may be I/O bound rather than CPU
+ bound. The different machines have different storage which may impact the
+ result. Should this be taken into account for comparison or eliminated by
+ using a ramdisk or fiddling with the queue backlog?
