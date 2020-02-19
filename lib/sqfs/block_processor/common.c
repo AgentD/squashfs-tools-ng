@@ -21,8 +21,10 @@ int process_completed_block(sqfs_block_processor_t *proc, sqfs_block_t *blk)
 	if (blk->flags & SQFS_BLK_IS_SPARSE) {
 		sqfs_inode_make_extended(blk->inode);
 		blk->inode->data.file_ext.sparse += blk->size;
-		blk->inode->extra[blk->inode->num_file_blocks] = 0;
-		blk->inode->num_file_blocks += 1;
+		blk->inode->extra[blk->index] = 0;
+
+		if (blk->index >= blk->inode->num_file_blocks)
+			blk->inode->num_file_blocks = blk->index + 1;
 
 		proc->stats.sparse_block_count += 1;
 	} else if (blk->size != 0) {
@@ -36,8 +38,10 @@ int process_completed_block(sqfs_block_processor_t *proc, sqfs_block_t *blk)
 			if (err)
 				return err;
 		} else {
-			blk->inode->extra[blk->inode->num_file_blocks] = size;
-			blk->inode->num_file_blocks += 1;
+			blk->inode->extra[blk->index] = size;
+
+			if (blk->index >= blk->inode->num_file_blocks)
+				blk->inode->num_file_blocks = blk->index + 1;
 
 			proc->stats.data_block_count += 1;
 		}
@@ -95,8 +99,10 @@ int process_completed_fragment(sqfs_block_processor_t *proc, sqfs_block_t *frag,
 	if (frag->flags & SQFS_BLK_IS_SPARSE) {
 		sqfs_inode_make_extended(frag->inode);
 		frag->inode->data.file_ext.sparse += frag->size;
-		frag->inode->extra[frag->inode->num_file_blocks] = 0;
-		frag->inode->num_file_blocks += 1;
+		frag->inode->extra[frag->index] = 0;
+
+		if (frag->index >= frag->inode->num_file_blocks)
+			frag->inode->num_file_blocks = frag->index + 1;
 
 		proc->stats.sparse_block_count += 1;
 		return 0;
@@ -187,6 +193,7 @@ static int flush_block(sqfs_block_processor_t *proc)
 		proc->blk_flags &= ~SQFS_BLK_FIRST_BLOCK;
 	}
 
+	block->index = proc->blk_index++;
 	return append_to_work_queue(proc, block);
 }
 
@@ -201,6 +208,7 @@ int sqfs_block_processor_begin_file(sqfs_block_processor_t *proc,
 
 	proc->inode = inode;
 	proc->blk_flags = flags | SQFS_BLK_FIRST_BLOCK;
+	proc->blk_index = 0;
 	return 0;
 }
 

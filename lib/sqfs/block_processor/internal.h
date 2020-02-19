@@ -27,7 +27,8 @@ typedef struct sqfs_block_t {
 	struct sqfs_block_t *next;
 	sqfs_inode_generic_t *inode;
 
-	sqfs_u32 sequence_number;
+	sqfs_u32 proc_seq_num;
+	sqfs_u32 io_seq_num;
 	sqfs_u32 flags;
 	sqfs_u32 size;
 	sqfs_u32 checksum;
@@ -51,6 +52,7 @@ struct sqfs_block_processor_t {
 	sqfs_inode_generic_t *inode;
 	sqfs_block_t *blk_current;
 	sqfs_u32 blk_flags;
+	sqfs_u32 blk_index;
 
 	size_t max_block_size;
 };
