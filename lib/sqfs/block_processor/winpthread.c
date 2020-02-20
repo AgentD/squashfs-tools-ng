@@ -465,10 +465,15 @@ int append_to_work_queue(sqfs_block_processor_t *proc, sqfs_block_t *block)
 		if (status != 0)
 			break;
 
-		if (thproc->backlog < thproc->max_backlog) {
-			append_block(thproc, block);
-			block = NULL;
-			break;
+		if (block == NULL) {
+			if (thproc->backlog == 0)
+				break;
+		} else {
+			if (thproc->backlog < thproc->max_backlog) {
+				append_block(thproc, block);
+				block = NULL;
+				break;
+			}
 		}
 
 		blk = try_dequeue_io(thproc);
@@ -521,70 +526,23 @@ int append_to_work_queue(sqfs_block_processor_t *proc, sqfs_block_t *block)
 int sqfs_block_processor_finish(sqfs_block_processor_t *proc)
 {
 	thread_pool_processor_t *thproc = (thread_pool_processor_t *)proc;
-	sqfs_block_t *io_list = NULL, *io_list_last = NULL;
-	sqfs_block_t *blk, *fragblk, *free_list = NULL;
+	sqfs_block_t *blk;
 	int status;
 
-	LOCK(&thproc->mtx);
-	for (;;) {
-		status = thproc->status;
-		if (status != 0)
-			break;
-
-		if (thproc->backlog == 0)
-			break;
-
-		blk = try_dequeue_io(thproc);
-		if (blk != NULL) {
-			if (io_list_last == NULL) {
-				io_list = io_list_last = blk;
-			} else {
-				io_list_last->next = blk;
-				io_list_last = blk;
-			}
-			continue;
-		}
-
-		blk = try_dequeue_done(thproc);
-		if (blk == NULL) {
-			AWAIT(&thproc->done_cond, &thproc->mtx);
-			continue;
-		}
-
-		if (blk->flags & SQFS_BLK_IS_FRAGMENT) {
-			fragblk = NULL;
-			thproc->status = process_completed_fragment(proc, blk,
-								    &fragblk);
-			blk->next = free_list;
-			free_list = blk;
-
-			if (fragblk != NULL) {
-				fragblk->io_seq_num = thproc->io_enq_id++;
-				append_block(thproc, fragblk);
-				SIGNAL_ALL(&thproc->queue_cond);
-			}
-		} else {
-			if (!(blk->flags & SQFS_BLK_FRAGMENT_BLOCK))
-				blk->io_seq_num = thproc->io_enq_id++;
-			store_io_block(thproc, blk);
-		}
-	}
-	UNLOCK(&thproc->mtx);
+	status = append_to_work_queue(proc, NULL);
 
 	if (status == 0 && proc->frag_block != NULL) {
 		blk = proc->frag_block;
+		blk->next = NULL;
 		proc->frag_block = NULL;
 
 		status = block_processor_do_block(blk, proc->cmp,
 						  thproc->workers[0]->scratch,
 						  proc->max_block_size);
 
-		if (io_list_last == NULL) {
-			io_list = io_list_last = blk;
-		} else {
-			io_list_last->next = blk;
-			io_list_last = blk;
-		}
+		if (status == 0)
+			status = handle_io_queue(thproc, blk);
+		free(blk);
 
 		if (status != 0) {
 			LOCK(&thproc->mtx);
@@ -595,10 +553,5 @@ int sqfs_block_processor_finish(sqfs_block_processor_t *proc)
 		}
 	}
 
-	if (status == 0)
-		status = handle_io_queue(thproc, io_list);
-
-	free_blk_list(io_list);
-	free_blk_list(free_list);
 	return status;
 }
