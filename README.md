@@ -135,6 +135,8 @@ The following components exist:
  - `libcompat.a` built from files in `lib/compat` contains minimal
    implementations of POSIX or GNU functions that are not available on some
    platforms.
+ - `libutil.a` contains common utilities that are used internally by both the
+   programs and `libsquashfs.so`.
 
 Optionally, `libsquashfs` can be compiled with builtin, custom versions of zlib
 and lz4. The configure options `--with-builtin-zlib` and `--with-builtin-lz4`
@@ -149,8 +151,8 @@ The `tests` sub-directory contains unit tests for the libraries.
 The `extras` sub-directory contains a few demo programs that use `libsquashfs`.
 
 To allow 3rd party applications to use `libsquashfs.so` without restricting
-their choice of license, the code in the `lib/sqfs` sub-directories is
-licensed under the LGPLv3, in contrast to the rest of this package.
+their choice of license, the code in the `lib/sqfs` and `lib/util` directories
+is licensed under the LGPLv3, in contrast to the rest of this package.
 
 ## A Note on LZO Support
 
@@ -179,5 +181,11 @@ an online version that can be found here:
 https://dr-emann.github.io/squashfs/
 
 # Copyright & License
+
+In short: libsquashfs.so is LGPLv3 licensed, the utility programs are GPLv3.
+
+Some 3rd party source code is included with more permissive licenses, some of
+which is actually compiled into libsquashfs. Copyright notices for those must
+be included when distributing either source or binaries of squashfs-tools-ng.
 
 See [COPYING.md](COPYING.md) for copyright and licensing information.

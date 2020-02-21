@@ -2,43 +2,34 @@
 
 The `libsquashfs` library is released under the terms and conditions of the
 **GNU Lesser General Public License version 3 or later**. This applies to
-all source code in the directories `lib/sqfs` and `include/sqfs`, unless
-otherwise noted.
+all source code in the directories `lib/sqfs`, `lib/util` and `include/sqfs`
+with the following exceptions:
+
+ - `lib/sqfs/block_processor/xxhash.c` contains a modified implementation of
+   the xxhash32 algorithm. See `licenses/xxhash.txt` for copyright and
+   licensing information (2 clause BSD license).
+ - `lib/sqfs/comp/lz4` contains files extracted from the LZ4 compression
+   library. See `lib/sqfs/comp/lz4/README` for details and `licenses/LZ4.txt`
+   for copyright and licensing information (2 clause BSD license).
+ - `lib/sqfs/comp/zlib` contains files that have been extracted from the the
+   zlib compression library and modified. See `lib/sqfs/comp/zlib/README` for
+   details and `licenses/zlib.txt` for details.
 
 The rest of squashfs-tools-ng is released under the terms and conditions of
 the **GNU General Public License version 3 or later**.
 
-Copies of the licenses are included in `licenses/LGPLv3.txt` and
+Copies of the LGPLv3 and GPLv3 are included in `licenses/LGPLv3.txt` and
 `licenses/GPLv3.txt` respectively.
 
 The original source code of squashfs-tools-ng has been written by David
-Oberhollenzer in 2019. Additional contributions have been added since the
-initial release which makes some parts of the package subject to the copyright
-of the respective authors. Appropriate copyright notices and SPDX identifiers
-are included in the source code files.
+Oberhollenzer in 2019 and onward. Additional contributions have been added
+since the initial release which makes some parts of the package subject to the
+copyright of the respective authors. Appropriate copyright notices and SPDX
+identifiers are included in the source code files.
 
 Although the existing squashfs-tools and the Linux kernel implementation have
 been used for testing, the source code in this package is neither based on,
 nor derived from either of them.
-
-## Third Party Library Source Code
-
-The source code of `libsquashfs` incorporates modified copies of third party
-libraries that are subject to the terms and conditions of their respective
-licenses.
-
-The following is included:
-
- - `lib/sqfs/block_processor/xxhash.c` contains a modified implementation of
-   the xxhash32 algorithm. See `licenses/xxhash.txt` for information on
-   copyright and licensing terms and conditions.
- - `lib/sqfs/comp/lz4` contains files extracted from the LZ4 compression
-   library. See `lib/sqfs/comp/lz4/README` for details and `licenses/LZ4.txt`
-   for information on copyright and licensing terms and conditions.
- - `lib/sqfs/comp/zlib` contains files that have been extracted from the the
-   zlib compression library and modified. See `lib/sqfs/comp/zlib/README` for
-   details and `licenses/zlib.txt` for information on copyright and licensing
-   terms and conditions.
 
 # Binary Packages with 3rd Party Libraries
 
