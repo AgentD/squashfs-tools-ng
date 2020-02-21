@@ -14,7 +14,7 @@
 #include "sqfs/error.h"
 #include "sqfs/block.h"
 #include "sqfs/io.h"
-#include "../util.h"
+#include "util.h"
 
 SQFS_INTERNAL
 int sqfs_generic_write_options(sqfs_file_t *file, const void *data,
