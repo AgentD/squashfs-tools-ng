@@ -903,7 +903,13 @@
  |      |              | store their inode number as a difference to this.    |
  +======+==============+======================================================+
 
- And is followed by entries that each have this structure:
+ The counter is stored off-by-one, i.e. a value of 0 indicates 1 entry follows.
+ This also makes it impossible to encode a size of 0, which wouldn't make any
+ sense. Empty directories simply have their size set to 0 in the inode instead,
+ so no extra dummy header has to be store or looked up.
+
+
+ The header is followed by multiple entries that each have this structure:
 
  +======+==============+======================================================+
  | Type | Name         | Description                                          |
