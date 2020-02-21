@@ -60,71 +60,37 @@
   - Completed blocks are inserted into a "done" queue, sorted by their
     sequence number.
   - The main thread that submits blocks also dequeues the completed ones,
-    keeping track of the sequence numbers, and calls the respective common
-    functions for processing completed blocks and fragments.
-  - If a fragment block is created, it is submitted with *the same* sequence
-    number as the fragment that caused it to overflow and the next expected
-    sequence number is reset to that.
+    in order of their sequence number.
+      - Data blocks are given an "i/o sequence number" and inserted into
+        an I/O queue in order by this number.
+      - For fragments, it and calls the respective function from common.c
+        to deduplicate and append to the current fragment block.
+      - If the current fragment block overflows, it is given the next free
+        **I/O sequence number** and inserted into the **processing queue**.
+      - Completed fragment blocks are inserted into the I/O queue with
+        regard to the I/O sequence number they already have
+  - The main thread also dequeues I/O blocks ordered by their I/O sequence
+    number, and passes them to the respective common.c function that eventually
+    forwards it to the block writer.
 
- To make sure the queue doesn't fill all RAM, submitted blocks are counted.
- The counter is decremented when dequeueing completed blocks. If it reaches
- a maximum, signal/await is used to wait for the worker threads to complete
- some blocks to process. Similarly, the worker threads use signal/await to
- wait on the queue if it is empty.
+ To make sure the queue doesn't fill all RAM, submitted blocks are counted. The
+ counter is also incremented when submitting to the I/O queue. The counter is
+ decremented when dequeueing completed blocks or blocks from the I/O queue.
 
+ The block submission function tries to add blocks only if the counter is below
+ a pre-set threshold. If it is above, it first tries to dequeue I/O block, and
+ if there are no I/O blocks, dequeue and handle "done" blocks. If the "done"
+ queue is also empty, it uses signal/await to wait for the worker threads to
+ complete some blocks to process. The main thread in turn uses signal/await to
+ tell the worker threads it has submitted block (they wait if the work queue is
+ empty).
 
- 1.1) Problems
-
- The outlined approach performs sub-optimal, with an efficiency somewhere
- between 50% to 75% on the bench mark data used.
-
- Profiling using perf shows that almost a third of the time, only one
- worker thread is actually active, while the others are waiting.
-
- The current hypothesis is that this is caused by many small input files
- being processed, causing a work load consisting primarily of fragments.
-
-  - Fragments are only hashed, not compressed, so the work is
-    primarily I/O bound.
-  - After a number of fragments are consumed, a fragment block is created.
-  - The fragment block is submitted to the almost empty queue and the
-    I/O thread waits for it to be completed before doing anything else.
-  - One thread gets to handle the fragment block, which involves a lot more
-    work. Meanwhile the other threads starve on the empty queue.
-  - After that has finally been handed of to the I/O thread, another burst of
-    fragments comes in.
-  - Rinse and repeat.
-
-
- 1.2) Proposed Solution
-
- It makes no sense for the main thread to block until the fragment block is
- done. It can process further fragments (just not write blocks), creating
- more fragment blocks on the way.
-
- A possible implementation might be to maintain 3 queues instead of 2:
-
-  - A queue with submitted blocks.
-  - A queue with completed blocks.
-  - A queue for blocks ready to be written to disk ("I/O queue").
-
- A second sequence number is needed for keeping order on the I/O queue:
-
-  - Submit blocks as before with incremental processing sequence number.
-  - Dequeue completed blocks in order by processing sequence number.
-     - For regular blocks, add them to the I/O queue with incremental I/O
-       sequence number.
-     - For fragments, consolidate them into fragment blocks. On overflow,
-       dispatch a fragment block with incremental processing sequence number,
-       BUT give it an I/O queue sequence number NOW.
-     - For fragment blocks, add them to the I/O queue without allocating an
-       I/O sequence number, it already has one.
-  - Dequeue ordered by I/O sequence number from the I/O queue and send the
-    completed blocks to the block writer.
-
+ Profiling on small filesystems using perf shows that the outlined approach
+ seems to perform quite well for CPU bound compressors like XZ, but doesn't
+ add a lot for I/O bound compressors like zstd. Actual measurements still
+ need to be done.
 
  If you have a more insights or a better idea, please let me know.
-
 
 
  2) Benchmarks
@@ -132,8 +98,8 @@
 
  TODO: benchmarks with the following images:
         - Debian live iso (2G)
-	- Arch Linux live iso (550M)
-	- Raspberry Pi 3 QT demo image (~300M)
+	- Arch Linux live iso (~550M)
+	- Raspberry Pi 3 QT demo image (~390M)
 
        sqfs2tar $IMAGE | tar2sqfs -j $NUM_CPU -f out.sqfs
 

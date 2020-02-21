@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Split data writer up into a block writer and a block processor.
 - All abstract data types inhert from an sqfs_object_t with common
   functionality.
+- Lots of performance improvements.
 
 ### Fixed
 - Include sys/sysmacros.h on any GNU libc platform.
