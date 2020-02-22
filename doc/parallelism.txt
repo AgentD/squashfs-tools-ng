@@ -39,58 +39,74 @@
  1) Thread Pool Based Block Processor
  ************************************
 
- The main challenge of parallelizing the block processor lies in the fact the
- output HAS TO BE byte-for-byte equivalent to the serial reference
- implementation.
+ 1.1) Goals and Challanges
 
- This means:
-  - File blocks have to be written in the exact same order as they
-    are submitted.
-  - If storing a fragment overflows the fragment block, the resulting
-    fragment block has to be written next, no file data.
+ In addition to the goal of boosting performance, the thread pool based block
+ processor must meet the following requirements:
+
+  - Output MUST be deterministic and reproducible. I.e. feeding byte-for-byte
+    the same input MUST ALWAYS produce byte-for-byte the same output.
+  - Blocks the belong to a single file MUST be written in the order that
+    they were submitted.
+  - Output MUST be byte-for-byte equivalent to the serial reference
+    implementation. Changing the serial reference implementation to
+    achieve this is OK.
+  - I/O cannot be done in worker threads. The underlying back-end must be
+    assumed to not be thread safe and may get very confused by suddenly running
+    in a different thread, even if only one thread at a time uses it.
 
 
- The current implementation in winpthread.c (based on pthread or Windows
- native threads, depending on whats available) uses the following approach:
+ 1.2) The Current Approach
 
-  - Each submitted data block or fragment gets an incremental sequence number
-    and is appended to a FIFO queue.
-  - Multiple threads consume blocks from the queue and use the function
-    from common.c to process the dequeued blocks.
-  - Completed blocks are inserted into a "done" queue, sorted by their
-    sequence number.
-  - The main thread that submits blocks also dequeues the completed ones,
-    in order of their sequence number.
-      - Data blocks are given an "i/o sequence number" and inserted into
-        an I/O queue in order by this number.
-      - For fragments, it and calls the respective function from common.c
-        to deduplicate and append to the current fragment block.
-      - If the current fragment block overflows, it is given the next free
-        **I/O sequence number** and inserted into the **processing queue**.
-      - Completed fragment blocks are inserted into the I/O queue with
-        regard to the I/O sequence number they already have
-  - The main thread also dequeues I/O blocks ordered by their I/O sequence
-    number, and passes them to the respective common.c function that eventually
-    forwards it to the block writer.
+ The current implementation is in winpthread.c (based on pthread or Windows
+ native threads, depending on whats available).
 
- To make sure the queue doesn't fill all RAM, submitted blocks are counted. The
- counter is also incremented when submitting to the I/O queue. The counter is
- decremented when dequeueing completed blocks or blocks from the I/O queue.
+ It keeps track of blocks in 3 different FIFO queues:
+  - A "work queue" that freshly submitted blocks go to. Worker threads take
+    blocks from this queue for processing.
+  - A "done queue" that worker threads submit blocks to, once completed.
+  - An "I/O queue" that contains blocks ready to be written to disk.
 
- The block submission function tries to add blocks only if the counter is below
- a pre-set threshold. If it is above, it first tries to dequeue I/O block, and
- if there are no I/O blocks, dequeue and handle "done" blocks. If the "done"
- queue is also empty, it uses signal/await to wait for the worker threads to
- complete some blocks to process. The main thread in turn uses signal/await to
- tell the worker threads it has submitted block (they wait if the work queue is
- empty).
+
+ When the main thread submits a block, it gives it an incremental "processing"
+ sequence number and appends it to the "work queue". Thread pool workers take
+ the first best block of the queue, process it and added it to the "done"
+ queue, sorted by its processing sequence number.
+
+ The main thread dequeues blocks from the done queue sorted by their processing
+ sequence number, using a second counter to make sure blocks are dequeued in
+ the exact same order as they were added to the work queue.
+
+ Regular data blocks from the "done queue" are given an incremental I/O
+ sequence number and added to the "I/O queue", sorted by this number.
+
+ Fragments are deduplicated and consolidated into a fragment block. If this
+ block overflows, it is appended to the "work queue" the exact same way as
+ regular blocks, but it is **already given an I/O sequence number**.
+
+ If a block dequeued from the "done queue" turns out to be a fragment block, it
+ is added to the "I/O queue", sorted by its I/O sequence number **that it
+ already has**, i.e. no new sequence number is allocated.
+
+ The I/O queue is dequeued in the same fashion as the "done queue", using a
+ second counter to enforce ordering.
+
+
+ The actual implementation interleaves enqueueing and dequeueing in the block
+ submission function. It dequeues blocks if the queues reach a pre-set maximum
+ backlog. In that case, it tries to dequeue from the I/O queue first and if
+ that fails, tries to dequeue from the "done queue". If that also fails, it
+ uses signal/await to be woken up by a worker thread once it adds a block to
+ the "done queue". Fragment post-processing and re-queueing of blocks is done
+ inside the critical region, but the actual I/O is obviously done outside.
+
 
  Profiling on small filesystems using perf shows that the outlined approach
  seems to perform quite well for CPU bound compressors like XZ, but doesn't
  add a lot for I/O bound compressors like zstd. Actual measurements still
  need to be done.
 
- If you have a more insights or a better idea, please let me know.
+ If you have a better idea how to do this, please let me know.
 
 
  2) Benchmarks
