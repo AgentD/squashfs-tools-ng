@@ -523,6 +523,11 @@ int append_to_work_queue(sqfs_block_processor_t *proc, sqfs_block_t *block)
 	return status;
 }
 
+int sqfs_block_processor_sync(sqfs_block_processor_t *proc)
+{
+	return append_to_work_queue(proc, NULL);
+}
+
 int sqfs_block_processor_finish(sqfs_block_processor_t *proc)
 {
 	thread_pool_processor_t *thproc = (thread_pool_processor_t *)proc;

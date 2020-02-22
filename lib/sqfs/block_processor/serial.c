@@ -81,6 +81,11 @@ done:
 	return sproc->status;
 }
 
+int sqfs_block_processor_sync(sqfs_block_processor_t *proc)
+{
+	return ((serial_block_processor_t *)proc)->status;
+}
+
 int sqfs_block_processor_finish(sqfs_block_processor_t *proc)
 {
 	serial_block_processor_t *sproc = (serial_block_processor_t *)proc;

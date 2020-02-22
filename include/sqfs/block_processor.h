@@ -198,10 +198,27 @@ SQFS_API int sqfs_block_processor_append(sqfs_block_processor_t *proc,
 SQFS_API int sqfs_block_processor_end_file(sqfs_block_processor_t *proc);
 
 /**
+ * @brief Wait for the in-flight data blocks to finish.
+ *
+ * @memberof sqfs_block_processor_t
+ *
+ * @param proc A pointer to a block processor object.
+ *
+ * @return Zero on success, an @ref E_SQFS_ERROR value on failure. The failure
+ *         return value can either be an error encountered during enqueueing,
+ *         processing or writing to disk.
+ */
+SQFS_API int sqfs_block_processor_sync(sqfs_block_processor_t *proc);
+
+/**
  * @brief Wait for the in-flight data blocks to finish and finally flush the
  *        current fragment block.
  *
  * @memberof sqfs_block_processor_t
+ *
+ * This does essentially the same as @ref sqfs_block_processor_sync, but after
+ * syncing, it also flushes the current fragment block, even if it isn't full
+ * yet and waits for it to be completed as well.
  *
  * @param proc A pointer to a block processor object.
  *
