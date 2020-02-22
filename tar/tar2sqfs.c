@@ -250,11 +250,9 @@ fail_arg:
 static int write_file(tar_header_decoded_t *hdr, file_info_t *fi,
 		      sqfs_u64 filesize)
 {
-	const sparse_map_t *it;
 	sqfs_inode_generic_t *inode;
 	size_t size, max_blk_count;
 	sqfs_file_t *file;
-	sqfs_u64 sum;
 	int flags;
 	int ret;
 
@@ -278,21 +276,10 @@ static int write_file(tar_header_decoded_t *hdr, file_info_t *fi,
 	inode->base.type = SQFS_INODE_FILE;
 	fi->user_ptr = inode;
 
-	if (hdr->sparse != NULL) {
-		for (sum = 0, it = hdr->sparse; it != NULL; it = it->next)
-			sum += it->count;
-
-		file = sqfs_get_stdin_file(input_file, hdr->sparse, sum);
-		if (file == NULL) {
-			perror("packing files");
-			return -1;
-		}
-	} else {
-		file = sqfs_get_stdin_file(input_file, NULL, filesize);
-		if (file == NULL) {
-			perror("packing files");
-			return -1;
-		}
+	file = sqfs_get_stdin_file(input_file, hdr->sparse, filesize);
+	if (file == NULL) {
+		perror("packing files");
+		return -1;
 	}
 
 	flags = 0;

@@ -16,7 +16,8 @@ typedef struct {
 
 	const sparse_map_t *map;
 	sqfs_u64 offset;
-	sqfs_u64 size;
+	sqfs_u64 real_size;
+	sqfs_u64 apparent_size;
 	FILE *fp;
 } sqfs_file_stdinout_t;
 
@@ -28,7 +29,7 @@ static void stdinout_destroy(sqfs_object_t *base)
 
 static sqfs_u64 stdinout_get_size(const sqfs_file_t *base)
 {
-	return ((const sqfs_file_stdinout_t *)base)->size;
+	return ((const sqfs_file_stdinout_t *)base)->apparent_size;
 }
 
 static int stdinout_truncate(sqfs_file_t *base, sqfs_u64 size)
@@ -54,7 +55,7 @@ static int stdin_read_at(sqfs_file_t *base, sqfs_u64 offset,
 		temp = alloca(temp_size);
 	}
 
-	if (offset >= file->size || (offset + size) > file->size)
+	if (offset >= file->real_size || (offset + size) > file->real_size)
 		return SQFS_ERROR_OUT_OF_BOUNDS;
 
 	while (size > 0) {
@@ -151,13 +152,21 @@ sqfs_file_t *sqfs_get_stdin_file(FILE *fp, const sparse_map_t *map,
 {
 	sqfs_file_stdinout_t *file = calloc(1, sizeof(*file));
 	sqfs_file_t *base = (sqfs_file_t *)file;
+	const sparse_map_t *it;
 
 	if (file == NULL)
 		return NULL;
 
-	file->size = size;
+	file->apparent_size = size;
 	file->map = map;
 	file->fp = fp;
+
+	if (map != NULL) {
+		for (it = map; it != NULL; it = it->next)
+			file->real_size += map->count;
+	} else {
+		file->real_size = size;
+	}
 
 	((sqfs_object_t *)base)->destroy = stdinout_destroy;
 	base->write_at = stdin_write_at;
