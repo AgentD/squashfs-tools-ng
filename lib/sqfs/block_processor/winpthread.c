@@ -14,6 +14,13 @@
 #	define UNLOCK(mtx) LeaveCriticalSection(mtx)
 #	define AWAIT(cond, mtx) SleepConditionVariableCS(cond, mtx, INFINITE)
 #	define SIGNAL_ALL(cond) WakeAllConditionVariable(cond)
+#	define THREAD_JOIN(t) \
+		if (t != NULL) { \
+			WaitForSingleObject(t, INFINITE); \
+			CloseHandle(t); \
+		}
+#	define MUTEX_DESTROY(mtx) DeleteCriticalSection(mtx)
+#	define CONDITION_DESTROY(cond)
 #	define THREAD_EXIT_SUCCESS 0
 #	define THREAD_TYPE DWORD WINAPI
 #	define THREAD_ARG LPVOID
@@ -27,6 +34,9 @@
 #	define UNLOCK(mtx) pthread_mutex_unlock(mtx)
 #	define AWAIT(cond, mtx) pthread_cond_wait(cond, mtx)
 #	define SIGNAL_ALL(cond) pthread_cond_broadcast(cond)
+#	define THREAD_JOIN(t) if (t > 0) { pthread_join(t, NULL); }
+#	define MUTEX_DESTROY(mtx) pthread_mutex_destroy(mtx)
+#	define CONDITION_DESTROY(cond) pthread_cond_destroy(cond)
 #	define THREAD_EXIT_SUCCESS NULL
 #	define THREAD_TYPE void *
 #	define THREAD_ARG void *
@@ -154,40 +164,40 @@ static THREAD_TYPE worker_proc(THREAD_ARG arg)
 	return THREAD_EXIT_SUCCESS;
 }
 
-#if defined(_WIN32) || defined(__WINDOWS__)
 static void block_processor_destroy(sqfs_object_t *obj)
 {
 	thread_pool_processor_t *proc = (thread_pool_processor_t *)obj;
 	unsigned int i;
 
-	EnterCriticalSection(&proc->mtx);
+	LOCK(&proc->mtx);
 	proc->status = -1;
-	WakeAllConditionVariable(&proc->queue_cond);
-	LeaveCriticalSection(&proc->mtx);
+	SIGNAL_ALL(&proc->queue_cond);
+	UNLOCK(&proc->mtx);
 
 	for (i = 0; i < proc->num_workers; ++i) {
-		if (proc->workers[i] == NULL)
-			continue;
+		if (proc->workers[i] != NULL) {
+			THREAD_JOIN(proc->workers[i]->thread);
 
-		if (proc->workers[i]->thread != NULL) {
-			WaitForSingleObject(proc->workers[i]->thread, INFINITE);
-			CloseHandle(proc->workers[i]->thread);
+			if (proc->workers[i]->cmp != NULL)
+				sqfs_destroy(proc->workers[i]->cmp);
+
+			free(proc->workers[i]);
 		}
-
-		if (proc->workers[i]->cmp != NULL)
-			sqfs_destroy(proc->workers[i]->cmp);
-
-		free(proc->workers[i]);
 	}
 
-	DeleteCriticalSection(&proc->mtx);
+	CONDITION_DESTROY(&proc->done_cond);
+	CONDITION_DESTROY(&proc->queue_cond);
+	MUTEX_DESTROY(&proc->mtx);
+
 	free_blk_list(proc->proc_queue);
+	free_blk_list(proc->io_queue);
 	free_blk_list(proc->done);
 	free(proc->base.blk_current);
 	free(proc->base.frag_block);
 	free(proc);
 }
 
+#if defined(_WIN32) || defined(__WINDOWS__)
 sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
 						    sqfs_compressor_t *cmp,
 						    unsigned int num_workers,
@@ -240,38 +250,10 @@ sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
 
 	return (sqfs_block_processor_t *)proc;
 fail:
-	block_processor_destroy(proc);
+	block_processor_destroy((sqfs_object_t *)proc);
 	return NULL;
 }
 #else
-static void block_processor_destroy(sqfs_object_t *obj)
-{
-	thread_pool_processor_t *proc = (thread_pool_processor_t *)obj;
-	unsigned int i;
-
-	pthread_mutex_lock(&proc->mtx);
-	proc->status = -1;
-	pthread_cond_broadcast(&proc->queue_cond);
-	pthread_mutex_unlock(&proc->mtx);
-
-	for (i = 0; i < proc->num_workers; ++i) {
-		pthread_join(proc->workers[i]->thread, NULL);
-
-		sqfs_destroy(proc->workers[i]->cmp);
-		free(proc->workers[i]);
-	}
-
-	pthread_cond_destroy(&proc->done_cond);
-	pthread_cond_destroy(&proc->queue_cond);
-	pthread_mutex_destroy(&proc->mtx);
-
-	free_blk_list(proc->proc_queue);
-	free_blk_list(proc->done);
-	free(proc->base.blk_current);
-	free(proc->base.frag_block);
-	free(proc);
-}
-
 sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
 						    sqfs_compressor_t *cmp,
 						    unsigned int num_workers,
@@ -309,13 +291,13 @@ sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
 					      1, max_block_size);
 
 		if (proc->workers[i] == NULL)
-			goto fail_init;
+			goto fail;
 
 		proc->workers[i]->shared = proc;
 		proc->workers[i]->cmp = cmp->create_copy(cmp);
 
 		if (proc->workers[i]->cmp == NULL)
-			goto fail_init;
+			goto fail;
 	}
 
 	sigfillset(&set);
@@ -326,37 +308,16 @@ sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
 				     worker_proc, proc->workers[i]);
 
 		if (ret != 0)
-			goto fail_thread;
+			goto fail_sigmask;
 	}
 
 	pthread_sigmask(SIG_SETMASK, &oldset, NULL);
 
 	return (sqfs_block_processor_t *)proc;
-fail_thread:
-	pthread_mutex_lock(&proc->mtx);
-	proc->status = -1;
-	pthread_cond_broadcast(&proc->queue_cond);
-	pthread_mutex_unlock(&proc->mtx);
-
-	for (i = 0; i < num_workers; ++i) {
-		if (proc->workers[i]->thread > 0) {
-			pthread_join(proc->workers[i]->thread, NULL);
-		}
-	}
+fail_sigmask:
 	pthread_sigmask(SIG_SETMASK, &oldset, NULL);
-fail_init:
-	for (i = 0; i < num_workers; ++i) {
-		if (proc->workers[i] != NULL) {
-			if (proc->workers[i]->cmp != NULL)
-				sqfs_destroy(proc->workers[i]->cmp);
-
-			free(proc->workers[i]);
-		}
-	}
-	pthread_cond_destroy(&proc->done_cond);
-	pthread_cond_destroy(&proc->queue_cond);
-	pthread_mutex_destroy(&proc->mtx);
-	free(proc);
+fail:
+	block_processor_destroy((sqfs_object_t *)proc);
 	return NULL;
 }
 #endif
