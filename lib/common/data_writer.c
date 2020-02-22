@@ -22,7 +22,7 @@ int write_data_from_file(const char *filename, sqfs_block_processor_t *data,
 		return -1;
 	}
 
-	sqfs_inode_get_file_size(inode, &filesz);
+	filesz = file->get_size(file);
 
 	for (offset = 0; offset < filesz; offset += diff) {
 		if (filesz - offset > sizeof(buffer)) {

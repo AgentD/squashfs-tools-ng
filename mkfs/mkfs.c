@@ -110,9 +110,6 @@ static int pack_files(sqfs_block_processor_t *data, fstree_t *fs,
 		}
 
 		inode->base.type = SQFS_INODE_FILE;
-		sqfs_inode_set_file_size(inode, filesize);
-		sqfs_inode_set_frag_location(inode, 0xFFFFFFFF, 0xFFFFFFFF);
-
 		fi->user_ptr = inode;
 
 		flags = 0;

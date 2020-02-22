@@ -7,6 +7,15 @@
 #define SQFS_BUILDING_DLL
 #include "internal.h"
 
+static void set_block_size(sqfs_inode_generic_t *inode,
+			   sqfs_u32 index, sqfs_u32 size)
+{
+	inode->extra[index] = size;
+
+	if (index >= inode->num_file_blocks)
+		inode->num_file_blocks = index + 1;
+}
+
 int process_completed_block(sqfs_block_processor_t *proc, sqfs_block_t *blk)
 {
 	sqfs_u64 location;
@@ -21,10 +30,8 @@ int process_completed_block(sqfs_block_processor_t *proc, sqfs_block_t *blk)
 	if (blk->flags & SQFS_BLK_IS_SPARSE) {
 		sqfs_inode_make_extended(blk->inode);
 		blk->inode->data.file_ext.sparse += blk->size;
-		blk->inode->extra[blk->index] = 0;
 
-		if (blk->index >= blk->inode->num_file_blocks)
-			blk->inode->num_file_blocks = blk->index + 1;
+		set_block_size(blk->inode, blk->index, 0);
 
 		proc->stats.sparse_block_count += 1;
 	} else if (blk->size != 0) {
@@ -38,11 +45,7 @@ int process_completed_block(sqfs_block_processor_t *proc, sqfs_block_t *blk)
 			if (err)
 				return err;
 		} else {
-			blk->inode->extra[blk->index] = size;
-
-			if (blk->index >= blk->inode->num_file_blocks)
-				blk->inode->num_file_blocks = blk->index + 1;
-
+			set_block_size(blk->inode, blk->index, size);
 			proc->stats.data_block_count += 1;
 		}
 	}
@@ -98,11 +101,8 @@ int process_completed_fragment(sqfs_block_processor_t *proc, sqfs_block_t *frag,
 
 	if (frag->flags & SQFS_BLK_IS_SPARSE) {
 		sqfs_inode_make_extended(frag->inode);
+		set_block_size(frag->inode, frag->index, 0);
 		frag->inode->data.file_ext.sparse += frag->size;
-		frag->inode->extra[frag->index] = 0;
-
-		if (frag->index >= frag->inode->num_file_blocks)
-			frag->inode->num_file_blocks = frag->index + 1;
 
 		proc->stats.sparse_block_count += 1;
 		return 0;
@@ -206,6 +206,9 @@ int sqfs_block_processor_begin_file(sqfs_block_processor_t *proc,
 	if (flags & ~SQFS_BLK_USER_SETTABLE_FLAGS)
 		return SQFS_ERROR_UNSUPPORTED;
 
+	sqfs_inode_set_file_size(inode, 0);
+	sqfs_inode_set_frag_location(inode, 0xFFFFFFFF, 0xFFFFFFFF);
+
 	proc->inode = inode;
 	proc->blk_flags = flags | SQFS_BLK_FIRST_BLOCK;
 	proc->blk_index = 0;
@@ -216,8 +219,12 @@ int sqfs_block_processor_append(sqfs_block_processor_t *proc, const void *data,
 				size_t size)
 {
 	sqfs_block_t *new;
+	sqfs_u64 filesize;
 	size_t diff;
 	int err;
+
+	sqfs_inode_get_file_size(proc->inode, &filesize);
+	sqfs_inode_set_file_size(proc->inode, filesize + size);
 
 	while (size > 0) {
 		if (proc->blk_current == NULL) {

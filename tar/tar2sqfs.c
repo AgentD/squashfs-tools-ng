@@ -276,9 +276,6 @@ static int write_file(tar_header_decoded_t *hdr, file_info_t *fi,
 	}
 
 	inode->base.type = SQFS_INODE_FILE;
-	sqfs_inode_set_file_size(inode, filesize);
-	sqfs_inode_set_frag_location(inode, 0xFFFFFFFF, 0xFFFFFFFF);
-
 	fi->user_ptr = inode;
 
 	if (hdr->sparse != NULL) {
