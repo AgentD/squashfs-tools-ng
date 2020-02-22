@@ -69,5 +69,11 @@ void sqfs_perror(const char *file, const char *action, int error_code)
 		break;
 	}
 
-	fprintf(stderr, "%s: %s: %s.\n", file, action, errstr);
+	if (file != NULL)
+		fprintf(stderr, "%s: ", file);
+
+	if (action != NULL)
+		fprintf(stderr, "%s: ", action);
+
+	fprintf(stderr, "%s.\n", errstr);
 }

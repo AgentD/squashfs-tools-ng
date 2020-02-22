@@ -5,101 +5,107 @@
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
 #include "common.h"
+#include "rbtree.h"
 
 #include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
 
-static size_t count_nodes(const sqfs_tree_node_t *n)
+static int map_nodes(rbtree_t *inumtree, sqfs_hard_link_t **out,
+		     const sqfs_tree_node_t *n)
 {
-	size_t count = n->children == NULL ? 1 : 0;
+	const sqfs_tree_node_t *target;
+	sqfs_hard_link_t *lnk;
+	rbtree_node_t *tn;
+	sqfs_u32 idx;
+	int ret;
 
-	for (n = n->children; n != NULL; n = n->next)
-		count += count_nodes(n);
+	/* XXX: refuse to generate hard links to directories */
+	if (n->children != NULL) {
+		for (n = n->children; n != NULL; n = n->next) {
+			if (map_nodes(inumtree, out, n))
+				return -1;
+		}
+		return 0;
+	}
 
-	return count;
+	if (!is_filename_sane((const char *)n->name, false))
+		return 0;
+
+	idx = n->inode->base.inode_number;
+	tn = rbtree_lookup(inumtree, &idx);
+
+	if (tn == NULL) {
+		ret = rbtree_insert(inumtree, &idx, &n);
+		if (ret != 0)
+			goto fail_insert;
+		return 0;
+	}
+
+	target = *((const sqfs_tree_node_t **)rbtree_node_value(tn));
+
+	lnk = calloc(1, sizeof(*lnk));
+	if (lnk == NULL)
+		goto fail_oom;
+
+	lnk->inode_number = idx;
+	lnk->target = sqfs_tree_node_get_path(target);
+	if (lnk->target == NULL)
+		goto fail_oom;
+
+	if (canonicalize_name(lnk->target) == 0) {
+		lnk->next = (*out);
+		(*out) = lnk;
+	} else {
+		free(lnk->target);
+		free(lnk);
+	}
+	return 0;
+fail_oom:
+	fputs("detecting hard links in file system tree: out of memory\n",
+	      stderr);
+	free(lnk);
+	return -1;
+fail_insert:
+	sqfs_perror(NULL, "detecting hard links in file system tree", ret);
+	return -1;
 }
 
-static size_t map_nodes(const sqfs_tree_node_t **list,
-			const sqfs_tree_node_t *n,
-			size_t idx)
+static int compare_inum(const void *lhs, const void *rhs)
 {
-	if (n->children == NULL)
-		list[idx++] = n;
+	sqfs_u32 l = *((sqfs_u32 *)lhs), r = *((sqfs_u32 *)rhs);
 
-	for (n = n->children; n != NULL; n = n->next)
-		idx = map_nodes(list, n, idx);
-
-	return idx;
+	return l < r ? -1 : (l > r ? 1 : 0);
 }
 
 int sqfs_tree_find_hard_links(const sqfs_tree_node_t *root,
 			      sqfs_hard_link_t **out)
 {
-	sqfs_hard_link_t *hardlinks = NULL, *lnk = NULL;
-	const sqfs_tree_node_t **list = NULL;
-	size_t i, j, count;
-	const char *name;
-	bool is_dup;
+	sqfs_hard_link_t *lnk = NULL;
+	rbtree_t inumtree;
+	int ret;
 
-	count = count_nodes(root);
-	list = malloc(sizeof(list[0]) * count);
-	if (list == NULL)
-		goto fail;
-
-	map_nodes(list, root, 0);
-
-	for (i = 0; i < count; ++i) {
-		name = (const char *)list[i]->name;
-		if (!is_filename_sane(name, false))
-			continue;
-
-		is_dup = false;
-
-		for (j = 0; j < i; ++j) {
-			if (list[j]->inode->base.inode_number ==
-			    list[i]->inode->base.inode_number) {
-				name = (const char *)list[j]->name;
-				if (!is_filename_sane(name, false))
-					continue;
-
-				is_dup = true;
-				break;
-			}
-		}
-
-		if (is_dup) {
-			lnk = calloc(1, sizeof(*lnk));
-			if (lnk == NULL)
-				goto fail;
-
-			lnk->inode_number = list[j]->inode->base.inode_number;
-			lnk->target = sqfs_tree_node_get_path(list[j]);
-			if (lnk->target == NULL)
-				goto fail;
-
-			if (canonicalize_name(lnk->target) == 0) {
-				lnk->next = hardlinks;
-				hardlinks = lnk;
-			} else {
-				free(lnk->target);
-				free(lnk);
-			}
-		}
+	ret = rbtree_init(&inumtree, sizeof(sqfs_u32),
+			  sizeof(sqfs_tree_node_t *),
+			  compare_inum);
+	if (ret != 0) {
+		sqfs_perror(NULL,
+			    "detecting hard links in file system tree", ret);
+		return -1;
 	}
 
-	*out = hardlinks;
-	free(list);
+	ret = map_nodes(&inumtree, out, root);
+	rbtree_cleanup(&inumtree);
+
+	if (ret != 0) {
+		while ((*out) != NULL) {
+			lnk = (*out);
+			(*out) = lnk->next;
+			free(lnk->target);
+			free(lnk);
+		}
+		return -1;
+	}
+
 	return 0;
-fail:
-	perror("detecting hard links in file system tree");
-	free(lnk);
-	while (hardlinks != NULL) {
-		lnk = hardlinks;
-		hardlinks = hardlinks->next;
-		free(lnk->target);
-		free(lnk);
-	}
-	free(list);
-	return -1;
 }
