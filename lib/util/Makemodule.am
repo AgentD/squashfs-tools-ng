@@ -1,5 +1,6 @@
 libutil_a_SOURCES = include/util.h include/str_table.h
 libutil_a_SOURCES += lib/util/str_table.c lib/util/alloc.c
+libutil_a_SOURCES += lib/util/rbtree.c include/rbtree.h
 libutil_a_CFLAGS = $(AM_CFLAGS)
 libutil_a_CPPFLAGS = $(AM_CPPFLAGS)
 
