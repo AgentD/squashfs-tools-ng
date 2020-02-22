@@ -197,13 +197,12 @@ static void block_processor_destroy(sqfs_object_t *obj)
 	free(proc);
 }
 
-#if defined(_WIN32) || defined(__WINDOWS__)
-sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
-						    sqfs_compressor_t *cmp,
-						    unsigned int num_workers,
-						    size_t max_backlog,
-						    sqfs_block_writer_t *wr,
-						    sqfs_frag_table_t *tbl)
+static thread_pool_processor_t *block_processor_create(size_t max_block_size,
+						       sqfs_compressor_t *cmp,
+						       unsigned int num_workers,
+						       size_t max_backlog,
+						       sqfs_block_writer_t *wr,
+						       sqfs_frag_table_t *tbl)
 {
 	thread_pool_processor_t *proc;
 	unsigned int i;
@@ -223,11 +222,7 @@ sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
 	proc->base.frag_tbl = tbl;
 	proc->base.wr = wr;
 	proc->base.stats.size = sizeof(proc->base.stats);
-	((sqfs_object_t *)obj)->destroy = block_processor_destroy;
-
-	InitializeCriticalSection(&proc->mtx);
-	InitializeConditionVariable(&proc->queue_cond);
-	InitializeConditionVariable(&proc->done_cond);
+	((sqfs_object_t *)proc)->destroy = block_processor_destroy;
 
 	for (i = 0; i < num_workers; ++i) {
 		proc->workers[i] = alloc_flex(sizeof(compress_worker_t),
@@ -241,7 +236,35 @@ sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
 
 		if (proc->workers[i]->cmp == NULL)
 			goto fail;
+	}
 
+	return proc;
+fail:
+	block_processor_destroy((sqfs_object_t *)proc);
+	return NULL;
+}
+
+#if defined(_WIN32) || defined(__WINDOWS__)
+sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
+						    sqfs_compressor_t *cmp,
+						    unsigned int num_workers,
+						    size_t max_backlog,
+						    sqfs_block_writer_t *wr,
+						    sqfs_frag_table_t *tbl)
+{
+	thread_pool_processor_t *proc;
+	unsigned int i;
+
+	proc = block_processor_create(max_block_size, cmp, num_workers,
+				      max_backlog, wr, tbl);
+	if (proc == NULL)
+		return NULL;
+
+	InitializeCriticalSection(&proc->mtx);
+	InitializeConditionVariable(&proc->queue_cond);
+	InitializeConditionVariable(&proc->done_cond);
+
+	for (i = 0; i < num_workers; ++i) {
 		proc->workers[i]->thread = CreateThread(NULL, 0, worker_proc,
 							proc->workers[i], 0, 0);
 		if (proc->workers[i]->thread == NULL)
@@ -266,39 +289,14 @@ sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
 	unsigned int i;
 	int ret;
 
-	if (num_workers < 1)
-		num_workers = 1;
-
-	proc = alloc_flex(sizeof(*proc),
-			  sizeof(proc->workers[0]), num_workers);
+	proc = block_processor_create(max_block_size, cmp, num_workers,
+				      max_backlog, wr, tbl);
 	if (proc == NULL)
 		return NULL;
 
-	((sqfs_object_t *)proc)->destroy = block_processor_destroy;
 	proc->mtx = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
 	proc->queue_cond = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
 	proc->done_cond = (pthread_cond_t)PTHREAD_COND_INITIALIZER;
-	proc->num_workers = num_workers;
-	proc->max_backlog = max_backlog;
-	proc->base.max_block_size = max_block_size;
-	proc->base.cmp = cmp;
-	proc->base.frag_tbl = tbl;
-	proc->base.wr = wr;
-	proc->base.stats.size = sizeof(proc->base.stats);
-
-	for (i = 0; i < num_workers; ++i) {
-		proc->workers[i] = alloc_flex(sizeof(compress_worker_t),
-					      1, max_block_size);
-
-		if (proc->workers[i] == NULL)
-			goto fail;
-
-		proc->workers[i]->shared = proc;
-		proc->workers[i]->cmp = cmp->create_copy(cmp);
-
-		if (proc->workers[i]->cmp == NULL)
-			goto fail;
-	}
 
 	sigfillset(&set);
 	pthread_sigmask(SIG_SETMASK, &set, &oldset);
@@ -308,15 +306,13 @@ sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
 				     worker_proc, proc->workers[i]);
 
 		if (ret != 0)
-			goto fail_sigmask;
+			goto fail;
 	}
 
 	pthread_sigmask(SIG_SETMASK, &oldset, NULL);
-
 	return (sqfs_block_processor_t *)proc;
-fail_sigmask:
-	pthread_sigmask(SIG_SETMASK, &oldset, NULL);
 fail:
+	pthread_sigmask(SIG_SETMASK, &oldset, NULL);
 	block_processor_destroy((sqfs_object_t *)proc);
 	return NULL;
 }
