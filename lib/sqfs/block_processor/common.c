@@ -10,10 +10,14 @@
 static void set_block_size(sqfs_inode_generic_t *inode,
 			   sqfs_u32 index, sqfs_u32 size)
 {
+	size_t min_size = (index + 1) * sizeof(sqfs_u32);
+
 	inode->extra[index] = size;
 
-	if (index >= inode->num_file_blocks)
-		inode->num_file_blocks = index + 1;
+	if (min_size >= inode->payload_bytes_used) {
+		inode->payload_bytes_used = min_size;
+		inode->payload_bytes_available = min_size;
+	}
 }
 
 int process_completed_block(sqfs_block_processor_t *proc, sqfs_block_t *blk)

@@ -101,7 +101,8 @@ static int read_inode_file(sqfs_meta_reader_t *ir, sqfs_inode_t *base,
 
 	out->base = *base;
 	out->data.file = file;
-	out->num_file_blocks = count;
+	out->payload_bytes_available = count * sizeof(sqfs_u32);
+	out->payload_bytes_used = count * sizeof(sqfs_u32);
 
 	err = sqfs_meta_reader_read(ir, out->extra, count * sizeof(sqfs_u32));
 	if (err) {
@@ -147,7 +148,8 @@ static int read_inode_file_ext(sqfs_meta_reader_t *ir, sqfs_inode_t *base,
 
 	out->base = *base;
 	out->data.file_ext = file;
-	out->num_file_blocks = count;
+	out->payload_bytes_available = count * sizeof(sqfs_u32);
+	out->payload_bytes_used = count * sizeof(sqfs_u32);
 
 	err = sqfs_meta_reader_read(ir, out->extra, count * sizeof(sqfs_u32));
 	if (err) {
@@ -186,6 +188,8 @@ static int read_inode_slink(sqfs_meta_reader_t *ir, sqfs_inode_t *base,
 	if (out == NULL)
 		return SQFS_ERROR_ALLOC;
 
+	out->payload_bytes_available = size - sizeof(*out);
+	out->payload_bytes_used = size - sizeof(*out) - 1;
 	out->base = *base;
 	out->data.slink = slink;
 
@@ -298,7 +302,8 @@ static int read_inode_dir_ext(sqfs_meta_reader_t *ir, sqfs_inode_t *base,
 		index_used += ent.size + 1;
 	}
 
-	out->num_dir_idx_bytes = index_used;
+	out->payload_bytes_used = index_used;
+	out->payload_bytes_available = index_used;
 	*result = out;
 	return 0;
 }

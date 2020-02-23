@@ -321,14 +321,14 @@ static void stat_cmd(const char *filename)
 	case SQFS_INODE_FILE:
 		printf("Blocks start: %u\n", inode->data.file.blocks_start);
 		printf("Block count: %lu\n",
-		       (unsigned long)inode->num_file_blocks);
+		       (unsigned long)sqfs_inode_get_file_block_count(inode));
 		printf("Fragment index: 0x%X\n",
 		       inode->data.file.fragment_index);
 		printf("Fragment offset: %u\n",
 		       inode->data.file.fragment_offset);
 		printf("File size: %u\n", inode->data.file.file_size);
 
-		for (i = 0; i < inode->num_file_blocks; ++i) {
+		for (i = 0; i < sqfs_inode_get_file_block_count(inode); ++i) {
 			printf("\tBlock #%lu size: %u (%s)\n", (unsigned long)i,
 			       SQFS_ON_DISK_BLOCK_SIZE(inode->extra[i]),
 			       SQFS_IS_BLOCK_COMPRESSED(inode->extra[i]) ?
@@ -339,7 +339,7 @@ static void stat_cmd(const char *filename)
 		printf("Blocks start: %lu\n",
 		       inode->data.file_ext.blocks_start);
 		printf("Block count: %lu\n",
-		       (unsigned long)inode->num_file_blocks);
+		       (unsigned long)sqfs_inode_get_file_block_count(inode));
 		printf("Fragment index: 0x%X\n",
 		       inode->data.file_ext.fragment_idx);
 		printf("Fragment offset: %u\n",
@@ -349,7 +349,7 @@ static void stat_cmd(const char *filename)
 		printf("Hard link count: %u\n", inode->data.file_ext.nlink);
 		printf("Xattr index: 0x%X\n", inode->data.file_ext.xattr_idx);
 
-		for (i = 0; i < inode->num_file_blocks; ++i) {
+		for (i = 0; i < sqfs_inode_get_file_block_count(inode); ++i) {
 			printf("\tBlock #%lu size: %u (%s)\n", (unsigned long)i,
 			       SQFS_ON_DISK_BLOCK_SIZE(inode->extra[i]),
 			       SQFS_IS_BLOCK_COMPRESSED(inode->extra[i]) ?

@@ -36,38 +36,9 @@ static int inverse_type[] = {
 int sqfs_inode_copy(const sqfs_inode_generic_t *src,
 		    sqfs_inode_generic_t **out)
 {
-	sqfs_inode_generic_t *copy;
-	size_t size = sizeof(*src);
+	size_t size = sizeof(*src) + src->payload_bytes_used;
+	sqfs_inode_generic_t *copy = calloc(1, size);
 
-	switch (src->base.type) {
-	case SQFS_INODE_FILE:
-	case SQFS_INODE_EXT_FILE:
-		size += src->num_file_blocks;
-		break;
-	case SQFS_INODE_DIR:
-	case SQFS_INODE_EXT_DIR:
-		size += src->num_dir_idx_bytes;
-		break;
-	case SQFS_INODE_SLINK:
-		size += src->data.slink.target_size;
-		break;
-	case SQFS_INODE_EXT_SLINK:
-		size += src->data.slink_ext.target_size;
-		break;
-	case SQFS_INODE_BDEV:
-	case SQFS_INODE_CDEV:
-	case SQFS_INODE_FIFO:
-	case SQFS_INODE_SOCKET:
-	case SQFS_INODE_EXT_BDEV:
-	case SQFS_INODE_EXT_CDEV:
-	case SQFS_INODE_EXT_FIFO:
-	case SQFS_INODE_EXT_SOCKET:
-		break;
-	default:
-		return SQFS_ERROR_CORRUPTED;
-	}
-
-	copy = calloc(1, size);
 	if (copy == NULL)
 		return SQFS_ERROR_ALLOC;
 
@@ -406,7 +377,7 @@ int sqfs_inode_unpack_dir_index_entry(const sqfs_inode_generic_t *inode,
 	ptr = (char *)inode->extra;
 
 	for (;;) {
-		if (offset >= inode->num_dir_idx_bytes)
+		if (offset >= inode->payload_bytes_used)
 			return SQFS_ERROR_OUT_OF_BOUNDS;
 
 		if (index == 0)

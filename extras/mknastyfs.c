@@ -37,7 +37,8 @@ static sqfs_inode_generic_t *create_file_inode(sqfs_id_table_t *idtbl,
 	inode->data.file.file_size = 1337;
 	inode->data.file.fragment_index = 0xFFFFFFFF;
 
-	inode->num_file_blocks = 1;
+	inode->payload_bytes_used = sizeof(sqfs_u32);
+	inode->payload_bytes_available = sizeof(sqfs_u32);
 	inode->extra[0] = (1 << 24) | inode->data.file.file_size;
 	return inode;
 }

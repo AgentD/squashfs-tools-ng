@@ -14,18 +14,26 @@
 #include "compat.h"
 
 #include <string.h>
+#include <alloca.h>
 
 static int write_block_sizes(sqfs_meta_writer_t *ir,
 			     const sqfs_inode_generic_t *n)
 {
-	sqfs_u32 sizes[n->num_file_blocks];
+	sqfs_u32 *sizes;
 	size_t i;
 
-	for (i = 0; i < n->num_file_blocks; ++i)
+	if (n->payload_bytes_used < sizeof(sizes[0]))
+		return 0;
+
+	if ((n->payload_bytes_used % sizeof(sizes[0])) != 0)
+		return SQFS_ERROR_CORRUPTED;
+
+	sizes = alloca(n->payload_bytes_used);
+
+	for (i = 0; i < (n->payload_bytes_used / sizeof(sizes[0])); ++i)
 		sizes[i] = htole32(n->extra[i]);
 
-	return sqfs_meta_writer_append(ir, sizes,
-				       sizeof(sqfs_u32) * n->num_file_blocks);
+	return sqfs_meta_writer_append(ir, sizes, n->payload_bytes_used);
 }
 
 static int write_dir_index(sqfs_meta_writer_t *ir, const sqfs_u8 *data,
@@ -102,7 +110,7 @@ int sqfs_meta_writer_write_inode(sqfs_meta_writer_t *ir,
 		ret = sqfs_meta_writer_append(ir, &file, sizeof(file));
 		if (ret)
 			return ret;
-		return n->num_file_blocks ? write_block_sizes(ir, n) : 0;
+		return write_block_sizes(ir, n);
 	}
 	case SQFS_INODE_SLINK: {
 		sqfs_inode_slink_t slink = {
@@ -144,7 +152,7 @@ int sqfs_meta_writer_write_inode(sqfs_meta_writer_t *ir,
 		if (ret)
 			return ret;
 		return write_dir_index(ir, (const sqfs_u8 *)n->extra,
-				       n->num_dir_idx_bytes);
+				       n->payload_bytes_used);
 	}
 	case SQFS_INODE_EXT_FILE: {
 		sqfs_inode_file_ext_t file = {
@@ -160,7 +168,7 @@ int sqfs_meta_writer_write_inode(sqfs_meta_writer_t *ir,
 		ret = sqfs_meta_writer_append(ir, &file, sizeof(file));
 		if (ret)
 			return ret;
-		return n->num_file_blocks ? write_block_sizes(ir, n) : 0;
+		return write_block_sizes(ir, n);
 	}
 	case SQFS_INODE_EXT_SLINK: {
 		sqfs_inode_slink_t slink = {

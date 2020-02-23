@@ -187,7 +187,7 @@ int sqfs_data_reader_get_block(sqfs_data_reader_t *data,
 	sqfs_inode_get_file_block_start(inode, &off);
 	sqfs_inode_get_file_size(inode, &filesz);
 
-	if (index >= inode->num_file_blocks)
+	if (index >= sqfs_inode_get_file_block_count(inode))
 		return SQFS_ERROR_OUT_OF_BOUNDS;
 
 	for (i = 0; i < index; ++i) {
@@ -206,6 +206,7 @@ int sqfs_data_reader_get_fragment(sqfs_data_reader_t *data,
 				  size_t *size, sqfs_u8 **out)
 {
 	sqfs_u32 frag_idx, frag_off, frag_sz;
+	size_t block_count;
 	sqfs_u64 filesz;
 	int err;
 
@@ -214,7 +215,9 @@ int sqfs_data_reader_get_fragment(sqfs_data_reader_t *data,
 	*size = 0;
 	*out = NULL;
 
-	if (inode->num_file_blocks * data->block_size >= filesz)
+	block_count = sqfs_inode_get_file_block_count(inode);
+
+	if (block_count * data->block_size >= filesz)
 		return 0;
 
 	frag_sz = filesz % data->block_size;
@@ -240,9 +243,9 @@ sqfs_s32 sqfs_data_reader_read(sqfs_data_reader_t *data,
 			       sqfs_u64 offset, void *buffer, sqfs_u32 size)
 {
 	sqfs_u32 frag_idx, frag_off, diff, total = 0;
+	size_t i, block_count;
 	sqfs_u64 off, filesz;
 	char *ptr;
-	size_t i;
 	int err;
 
 	if (size >= 0x7FFFFFFF)
@@ -252,11 +255,12 @@ sqfs_s32 sqfs_data_reader_read(sqfs_data_reader_t *data,
 	sqfs_inode_get_file_size(inode, &filesz);
 	sqfs_inode_get_frag_location(inode, &frag_idx, &frag_off);
 	sqfs_inode_get_file_block_start(inode, &off);
+	block_count = sqfs_inode_get_file_block_count(inode);
 
 	/* find location of the first block */
 	i = 0;
 
-	while (offset > data->block_size && i < inode->num_file_blocks) {
+	while (offset > data->block_size && i < block_count) {
 		off += SQFS_ON_DISK_BLOCK_SIZE(inode->extra[i++]);
 		offset -= data->block_size;
 
@@ -268,7 +272,7 @@ sqfs_s32 sqfs_data_reader_read(sqfs_data_reader_t *data,
 	}
 
 	/* copy data from blocks */
-	while (i < inode->num_file_blocks && size > 0 && filesz > 0) {
+	while (i < block_count && size > 0 && filesz > 0) {
 		diff = data->block_size - offset;
 		if (size < diff)
 			diff = size;
@@ -298,7 +302,7 @@ sqfs_s32 sqfs_data_reader_read(sqfs_data_reader_t *data,
 	}
 
 	/* copy from fragment */
-	if (i == inode->num_file_blocks && size > 0 && filesz > 0) {
+	if (i == block_count && size > 0 && filesz > 0) {
 		err = precache_fragment_block(data, frag_idx);
 		if (err)
 			return err;

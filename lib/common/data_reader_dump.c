@@ -57,7 +57,7 @@ int sqfs_data_reader_dump(const char *name, sqfs_data_reader_t *data,
 	allow_sparse = false;
 #endif
 
-	for (i = 0; i < inode->num_file_blocks; ++i) {
+	for (i = 0; i < sqfs_inode_get_file_block_count(inode); ++i) {
 		diff = (filesz < block_size) ? filesz : block_size;
 
 		if (SQFS_IS_SPARSE_BLOCK(inode->extra[i]) && allow_sparse) {

@@ -392,6 +392,7 @@ sqfs_inode_generic_t
 	if (inode == NULL)
 		return NULL;
 
+	inode->payload_bytes_available = index_size;
 	start_block = writer->dir_ref >> 16;
 	block_offset = writer->dir_ref & 0xFFFF;
 
@@ -416,7 +417,7 @@ sqfs_inode_generic_t
 		inode->data.dir_ext.offset = block_offset;
 		inode->data.dir_ext.xattr_idx = xattr;
 		inode->data.dir_ext.inodex_count = 0;
-		inode->num_dir_idx_bytes = 0;
+		inode->payload_bytes_used = 0;
 
 		for (idx = writer->idx; idx != NULL; idx = idx->next) {
 			memset(&ent, 0, sizeof(ent));
@@ -425,14 +426,14 @@ sqfs_inode_generic_t
 			ent.size = idx->ent->name_len - 1;
 
 			ptr = (sqfs_u8 *)inode->extra +
-				inode->num_dir_idx_bytes;
+				inode->payload_bytes_used;
 			memcpy(ptr, &ent, sizeof(ent));
 			memcpy(ptr + sizeof(ent), idx->ent->name,
 			       idx->ent->name_len);
 
 			inode->data.dir_ext.inodex_count += 1;
-			inode->num_dir_idx_bytes += sizeof(ent);
-			inode->num_dir_idx_bytes += idx->ent->name_len;
+			inode->payload_bytes_used += sizeof(ent);
+			inode->payload_bytes_used += idx->ent->name_len;
 		}
 	}
 

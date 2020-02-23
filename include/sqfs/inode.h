@@ -483,15 +483,21 @@ struct sqfs_inode_generic_t {
 	sqfs_inode_t base;
 
 	/**
-	 * @brief For file inodes, stores the number of blocks used.
+	 * @brief Maximum number of available data bytes in the payload.
+	 *
+	 * This is used for dynamically growing an inode. The actual number
+	 * of used payload bytes is stored in @ref payload_bytes_used.
 	 */
-	size_t num_file_blocks;
+	sqfs_u32 payload_bytes_available;
 
 	/**
-	 * @brief For extended directory inodes, stores the number of payload
-	 *        bytes following for the directory index.
+	 * @brief Number of used data bytes in the payload.
+	 *
+	 * For file inodes, stores the number of blocks used. For extended
+	 * directory inodes, stores the number of payload bytes following
+	 * for the directory index.
 	 */
-	size_t num_dir_idx_bytes;
+	sqfs_u32 payload_bytes_used;
 
 	/**
 	 * @brief Type specific inode data.
@@ -523,6 +529,19 @@ struct sqfs_inode_generic_t {
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @brief Get the number of file blocks in a regular file inode.
+ *
+ * @param inode A pointer to an inode.
+ *
+ * @return The number of blocks.
+ */
+static SQFS_INLINE
+size_t sqfs_inode_get_file_block_count(const sqfs_inode_generic_t *inode)
+{
+	return inode->payload_bytes_used / sizeof(sqfs_u32);
+}
 
 /**
  * @brief Create a deep copy of a generic inode.
