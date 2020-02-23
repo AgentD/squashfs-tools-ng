@@ -116,7 +116,7 @@ sqfs_file_t *sqfs_get_stdin_file(FILE *fp, const sparse_map_t *map,
 				 sqfs_u64 size);
 
 int write_data_from_file(const char *filename, sqfs_block_processor_t *data,
-			 sqfs_inode_generic_t *inode,
+			 sqfs_inode_generic_t **inode,
 			 sqfs_file_t *file, int flags);
 
 void sqfs_writer_cfg_init(sqfs_writer_cfg_t *cfg);

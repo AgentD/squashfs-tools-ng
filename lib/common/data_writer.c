@@ -9,7 +9,7 @@
 static sqfs_u8 buffer[4096];
 
 int write_data_from_file(const char *filename, sqfs_block_processor_t *data,
-			 sqfs_inode_generic_t *inode, sqfs_file_t *file,
+			 sqfs_inode_generic_t **inode, sqfs_file_t *file,
 			 int flags)
 {
 	sqfs_u64 filesz, offset;

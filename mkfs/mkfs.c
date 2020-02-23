@@ -42,15 +42,13 @@ static int set_working_dir(options_t *opt)
 static int pack_files(sqfs_block_processor_t *data, fstree_t *fs,
 		      options_t *opt)
 {
-	sqfs_inode_generic_t *inode;
-	size_t max_blk_count;
+	sqfs_inode_generic_t **inode_ptr;
 	sqfs_u64 filesize;
 	sqfs_file_t *file;
 	tree_node_t *node;
 	const char *path;
 	char *node_path;
 	file_info_t *fi;
-	size_t size;
 	int flags;
 	int ret;
 
@@ -86,38 +84,15 @@ static int pack_files(sqfs_block_processor_t *data, fstree_t *fs,
 			return -1;
 		}
 
-		filesize = file->get_size(file);
-
-		max_blk_count = filesize / opt->cfg.block_size;
-		if (filesize % opt->cfg.block_size)
-			++max_blk_count;
-
-		if (SZ_MUL_OV(sizeof(sqfs_u32), max_blk_count, &size) ||
-		    SZ_ADD_OV(sizeof(*inode), size, &size)) {
-			fputs("creating file inode: too many blocks\n",
-			      stderr);
-			sqfs_destroy(file);
-			free(node_path);
-			return -1;
-		}
-
-		inode = calloc(1, size);
-		if (inode == NULL) {
-			perror("creating file inode");
-			sqfs_destroy(file);
-			free(node_path);
-			return -1;
-		}
-
-		inode->base.type = SQFS_INODE_FILE;
-		fi->user_ptr = inode;
-
 		flags = 0;
+		filesize = file->get_size(file);
 
 		if (opt->no_tail_packing && filesize > opt->cfg.block_size)
 			flags |= SQFS_BLK_DONT_FRAGMENT;
 
-		ret = write_data_from_file(path, data, inode, file, flags);
+		inode_ptr = (sqfs_inode_generic_t **)&fi->user_ptr;
+
+		ret = write_data_from_file(path, data, inode_ptr, file, flags);
 		sqfs_destroy(file);
 		free(node_path);
 

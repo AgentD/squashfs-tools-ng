@@ -250,31 +250,9 @@ fail_arg:
 static int write_file(tar_header_decoded_t *hdr, file_info_t *fi,
 		      sqfs_u64 filesize)
 {
-	sqfs_inode_generic_t *inode;
-	size_t size, max_blk_count;
 	sqfs_file_t *file;
 	int flags;
 	int ret;
-
-	max_blk_count = filesize / cfg.block_size;
-	if (filesize % cfg.block_size)
-		++max_blk_count;
-
-	if (SZ_MUL_OV(sizeof(sqfs_u32), max_blk_count, &size) ||
-	    SZ_ADD_OV(sizeof(*inode), size, &size)) {
-		fputs("creating file inode: too many blocks\n",
-		      stderr);
-		return -1;
-	}
-
-	inode = calloc(1, size);
-	if (inode == NULL) {
-		perror("creating file inode");
-		return -1;
-	}
-
-	inode->base.type = SQFS_INODE_FILE;
-	fi->user_ptr = inode;
 
 	file = sqfs_get_stdin_file(input_file, hdr->sparse, filesize);
 	if (file == NULL) {
@@ -286,7 +264,9 @@ static int write_file(tar_header_decoded_t *hdr, file_info_t *fi,
 	if (no_tail_pack && filesize > cfg.block_size)
 		flags |= SQFS_BLK_DONT_FRAGMENT;
 
-	ret = write_data_from_file(hdr->name, sqfs.data, inode, file, 0);
+	ret = write_data_from_file(hdr->name, sqfs.data,
+				   (sqfs_inode_generic_t **)&fi->user_ptr,
+				   file, 0);
 	sqfs_destroy(file);
 
 	if (ret)
