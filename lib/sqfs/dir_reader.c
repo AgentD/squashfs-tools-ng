@@ -222,12 +222,19 @@ int sqfs_dir_reader_find_by_path(sqfs_dir_reader_t *rd,
 	sqfs_inode_generic_t *inode;
 	sqfs_dir_entry_t *ent;
 	const char *ptr;
-	int ret;
+	int ret = 0;
 
 	if (start == NULL) {
 		ret = sqfs_dir_reader_get_root_inode(rd, &inode);
 	} else {
-		ret = sqfs_inode_copy(start, &inode);
+		inode = alloc_flex(sizeof(*inode), 1,
+				   start->payload_bytes_used);
+		if (inode == NULL) {
+			ret = SQFS_ERROR_ALLOC;
+		} else {
+			memcpy(inode, start,
+			       sizeof(*start) + start->payload_bytes_used);
+		}
 	}
 
 	if (ret)

@@ -33,20 +33,6 @@ static int inverse_type[] = {
 	[SQFS_INODE_EXT_SOCKET] = SQFS_INODE_SOCKET,
 };
 
-int sqfs_inode_copy(const sqfs_inode_generic_t *src,
-		    sqfs_inode_generic_t **out)
-{
-	size_t size = sizeof(*src) + src->payload_bytes_used;
-	sqfs_inode_generic_t *copy = calloc(1, size);
-
-	if (copy == NULL)
-		return SQFS_ERROR_ALLOC;
-
-	memcpy(copy, src, size);
-	*out = copy;
-	return 0;
-}
-
 int sqfs_inode_get_xattr_index(const sqfs_inode_generic_t *inode,
 			       sqfs_u32 *out)
 {

@@ -544,24 +544,6 @@ size_t sqfs_inode_get_file_block_count(const sqfs_inode_generic_t *inode)
 }
 
 /**
- * @brief Create a deep copy of a generic inode.
- *
- * The @ref sqfs_inode_generic_t structure contains inlined fields that have a
- * size depending on the inode data and pointers to the inlined fields. This
- * helper function calculates the actual size of the structure in memory, makes
- * a copy and propperly sets up the pointers.
- *
- * @param src The inode to copy.
- * @param copy Returns a pointer to the copy on success. Can be released with a
- *             single free call.
- *
- * @return Zero on success, an @ref SQFS_ERROR_CORRUPTED if the node has
- *         an unknown type set.
- */
-SQFS_API int sqfs_inode_copy(const sqfs_inode_generic_t *src,
-			     sqfs_inode_generic_t **copy);
-
-/**
  * @brief Get the extended attribute index of an inode
  *
  * For basic inodes, this returns the inode index 0xFFFFFFFF, i.e. the
