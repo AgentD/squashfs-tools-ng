@@ -18,6 +18,7 @@
 
 typedef struct {
 	sqfs_compressor_t base;
+	size_t block_size;
 	bool high_compression;
 } lz4_compressor_t;
 
@@ -99,6 +100,22 @@ static sqfs_s32 lz4_uncomp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
 	return ret;
 }
 
+static void lz4_get_configuration(const sqfs_compressor_t *base,
+				  sqfs_compressor_config_t *cfg)
+{
+	const lz4_compressor_t *lz4 = (const lz4_compressor_t *)base;
+
+	memset(cfg, 0, sizeof(*cfg));
+	cfg->id = SQFS_COMP_LZ4;
+	cfg->block_size = lz4->block_size;
+
+	if (lz4->high_compression)
+		cfg->flags |= SQFS_COMP_FLAG_LZ4_HC;
+
+	if (base->do_block == lz4_uncomp_block)
+		cfg->flags |= SQFS_COMP_FLAG_UNCOMPRESS;
+}
+
 static sqfs_compressor_t *lz4_create_copy(sqfs_compressor_t *cmp)
 {
 	lz4_compressor_t *lz4 = malloc(sizeof(*lz4));
@@ -131,7 +148,9 @@ sqfs_compressor_t *lz4_compressor_create(const sqfs_compressor_config_t *cfg)
 		return NULL;
 
 	lz4->high_compression = (cfg->flags & SQFS_COMP_FLAG_LZ4_HC) != 0;
+	lz4->block_size = cfg->block_size;
 
+	base->get_configuration = lz4_get_configuration;
 	base->do_block = (cfg->flags & SQFS_COMP_FLAG_UNCOMPRESS) ?
 		lz4_uncomp_block : lz4_comp_block;
 	base->write_options = lz4_write_options;

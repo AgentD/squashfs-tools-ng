@@ -44,6 +44,22 @@ static void gzip_destroy(sqfs_object_t *base)
 	free(gzip);
 }
 
+static void gzip_get_configuration(const sqfs_compressor_t *base,
+				   sqfs_compressor_config_t *cfg)
+{
+	const gzip_compressor_t *gzip = (const gzip_compressor_t *)base;
+
+	memset(cfg, 0, sizeof(*cfg));
+	cfg->id = SQFS_COMP_GZIP;
+	cfg->flags = gzip->opt.strategies;
+	cfg->block_size = gzip->block_size;
+	cfg->opt.gzip.level = gzip->opt.level;
+	cfg->opt.gzip.window_size = gzip->opt.window;
+
+	if (!gzip->compress)
+		cfg->flags |= SQFS_COMP_FLAG_UNCOMPRESS;
+}
+
 static int gzip_write_options(sqfs_compressor_t *base, sqfs_file_t *file)
 {
 	gzip_compressor_t *gzip = (gzip_compressor_t *)base;
@@ -263,6 +279,7 @@ sqfs_compressor_t *gzip_compressor_create(const sqfs_compressor_config_t *cfg)
 	gzip->opt.strategies = cfg->flags & SQFS_COMP_FLAG_GZIP_ALL;
 	gzip->compress = (cfg->flags & SQFS_COMP_FLAG_UNCOMPRESS) == 0;
 	gzip->block_size = cfg->block_size;
+	base->get_configuration = gzip_get_configuration;
 	base->do_block = gzip_do_block;
 	base->write_options = gzip_write_options;
 	base->read_options = gzip_read_options;

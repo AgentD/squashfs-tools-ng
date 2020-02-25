@@ -18,6 +18,7 @@
 
 typedef struct {
 	sqfs_compressor_t base;
+	size_t block_size;
 	ZSTD_CCtx *zctx;
 	int level;
 } zstd_compressor_t;
@@ -91,6 +92,21 @@ static sqfs_s32 zstd_uncomp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
 	return ret;
 }
 
+static void zstd_get_configuration(const sqfs_compressor_t *base,
+				   sqfs_compressor_config_t *cfg)
+{
+	const zstd_compressor_t *zstd = (const zstd_compressor_t *)base;
+
+	memset(cfg, 0, sizeof(*cfg));
+	cfg->id = SQFS_COMP_ZSTD;
+
+	cfg->block_size = zstd->block_size;
+	cfg->opt.zstd.level = zstd->level;
+
+	if (base->do_block == zstd_uncomp_block)
+		cfg->flags |= SQFS_COMP_FLAG_UNCOMPRESS;
+}
+
 static sqfs_compressor_t *zstd_create_copy(sqfs_compressor_t *cmp)
 {
 	zstd_compressor_t *zstd = malloc(sizeof(*zstd));
@@ -136,12 +152,14 @@ sqfs_compressor_t *zstd_compressor_create(const sqfs_compressor_config_t *cfg)
 	if (zstd == NULL)
 		return NULL;
 
+	zstd->block_size = cfg->block_size;
 	zstd->zctx = ZSTD_createCCtx();
 	if (zstd->zctx == NULL) {
 		free(zstd);
 		return NULL;
 	}
 
+	base->get_configuration = zstd_get_configuration;
 	base->do_block = cfg->flags & SQFS_COMP_FLAG_UNCOMPRESS ?
 		zstd_uncomp_block : zstd_comp_block;
 	base->write_options = zstd_write_options;

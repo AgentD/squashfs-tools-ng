@@ -48,6 +48,7 @@ static const struct {
 
 typedef struct {
 	sqfs_compressor_t base;
+	size_t block_size;
 	int algorithm;
 	int level;
 
@@ -182,6 +183,22 @@ static sqfs_s32 lzo_uncomp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
 	return len;
 }
 
+static void lzo_get_configuration(const sqfs_compressor_t *base,
+				  sqfs_compressor_config_t *cfg)
+{
+	const lzo_compressor_t *lzo = (const lzo_compressor_t *)base;
+
+	memset(cfg, 0, sizeof(*cfg));
+	cfg->id = SQFS_COMP_LZO;
+	cfg->block_size = lzo->block_size;
+
+	cfg->opt.lzo.algorithm = lzo->algorithm;
+	cfg->opt.lzo.level = lzo->level;
+
+	if (base->do_block == lzo_uncomp_block)
+		cfg->flags |= SQFS_COMP_FLAG_UNCOMPRESS;
+}
+
 static sqfs_compressor_t *lzo_create_copy(sqfs_compressor_t *cmp)
 {
 	lzo_compressor_t *other = (lzo_compressor_t *)cmp;
@@ -242,11 +259,13 @@ sqfs_compressor_t *lzo_compressor_create(const sqfs_compressor_config_t *cfg)
 	if (lzo == NULL)
 		return NULL;
 
+	lzo->block_size = cfg->block_size;
 	lzo->algorithm = cfg->opt.lzo.algorithm;
 	lzo->level = cfg->opt.lzo.level;
 	lzo->buf_size = scratch_size;
 	lzo->work_size = lzo_algs[cfg->opt.lzo.algorithm].bufsize;
 
+	base->get_configuration = lzo_get_configuration;
 	base->do_block = (cfg->flags & SQFS_COMP_FLAG_UNCOMPRESS) ?
 		lzo_uncomp_block : lzo_comp_block;
 	base->write_options = lzo_write_options;

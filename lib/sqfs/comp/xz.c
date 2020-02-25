@@ -196,6 +196,21 @@ static sqfs_s32 xz_uncomp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
 	return SQFS_ERROR_COMPRESSOR;
 }
 
+static void xz_get_configuration(const sqfs_compressor_t *base,
+				 sqfs_compressor_config_t *cfg)
+{
+	const xz_compressor_t *xz = (const xz_compressor_t *)base;
+
+	memset(cfg, 0, sizeof(*cfg));
+	cfg->id = SQFS_COMP_XZ;
+	cfg->flags = xz->flags;
+	cfg->block_size = xz->block_size;
+	cfg->opt.xz.dict_size = xz->dict_size;
+
+	if (base->do_block == xz_uncomp_block)
+		cfg->flags |= SQFS_COMP_FLAG_UNCOMPRESS;
+}
+
 static sqfs_compressor_t *xz_create_copy(sqfs_compressor_t *cmp)
 {
 	xz_compressor_t *xz = malloc(sizeof(*xz));
@@ -233,6 +248,7 @@ sqfs_compressor_t *xz_compressor_create(const sqfs_compressor_config_t *cfg)
 	xz->flags = cfg->flags;
 	xz->dict_size = cfg->opt.xz.dict_size;
 	xz->block_size = cfg->block_size;
+	base->get_configuration = xz_get_configuration;
 	base->do_block = (cfg->flags & SQFS_COMP_FLAG_UNCOMPRESS) ?
 		xz_uncomp_block : xz_comp_block;
 	base->write_options = xz_write_options;

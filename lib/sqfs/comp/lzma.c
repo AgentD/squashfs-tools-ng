@@ -143,6 +143,19 @@ static sqfs_s32 lzma_uncomp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
 	return hdrsize;
 }
 
+static void lzma_get_configuration(const sqfs_compressor_t *base,
+				   sqfs_compressor_config_t *cfg)
+{
+	const lzma_compressor_t *lzma = (const lzma_compressor_t *)base;
+
+	memset(cfg, 0, sizeof(*cfg));
+	cfg->id = SQFS_COMP_LZMA;
+	cfg->block_size = lzma->block_size;
+
+	if (base->do_block == lzma_uncomp_block)
+		cfg->flags |= SQFS_COMP_FLAG_UNCOMPRESS;
+}
+
 static sqfs_compressor_t *lzma_create_copy(sqfs_compressor_t *cmp)
 {
 	lzma_compressor_t *copy = malloc(sizeof(*copy));
@@ -176,6 +189,7 @@ sqfs_compressor_t *lzma_compressor_create(const sqfs_compressor_config_t *cfg)
 	if (lzma->block_size < SQFS_META_BLOCK_SIZE)
 		lzma->block_size = SQFS_META_BLOCK_SIZE;
 
+	base->get_configuration = lzma_get_configuration;
 	base->do_block = (cfg->flags & SQFS_COMP_FLAG_UNCOMPRESS) ?
 		lzma_uncomp_block : lzma_comp_block;
 	base->write_options = lzma_write_options;

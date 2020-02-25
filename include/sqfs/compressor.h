@@ -41,6 +41,15 @@ struct sqfs_compressor_t {
 	sqfs_object_t base;
 
 	/**
+	 * @brief Get the current compressor configuration.
+	 *
+	 * @param cmp A pointer to the compressor object.
+	 * @param cfg A pointer to the object to write the configuration to.
+	 */
+	void (*get_configuration)(const sqfs_compressor_t *cmp,
+				  sqfs_compressor_config_t *cfg);
+
+	/**
 	 * @brief Write compressor options to disk if non-default settings
 	 *        have been used.
 	 *
