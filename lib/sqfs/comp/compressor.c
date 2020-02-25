@@ -146,14 +146,13 @@ int sqfs_compressor_config_init(sqfs_compressor_config_t *cfg,
 				E_SQFS_COMPRESSOR id,
 				size_t block_size, sqfs_u16 flags)
 {
-	memset(cfg, 0, sizeof(*cfg));
+	sqfs_u32 flag_mask = SQFS_COMP_FLAG_GENERIC_ALL;
 
-	cfg->id = id;
-	cfg->flags = flags;
-	cfg->block_size = block_size;
+	memset(cfg, 0, sizeof(*cfg));
 
 	switch (id) {
 	case SQFS_COMP_GZIP:
+		flag_mask |= SQFS_COMP_FLAG_GZIP_ALL;
 		cfg->opt.gzip.level = SQFS_GZIP_DEFAULT_LEVEL;
 		cfg->opt.gzip.window_size = SQFS_GZIP_DEFAULT_WINDOW;
 		break;
@@ -165,11 +164,25 @@ int sqfs_compressor_config_init(sqfs_compressor_config_t *cfg,
 		cfg->opt.zstd.level = SQFS_ZSTD_DEFAULT_LEVEL;
 		break;
 	case SQFS_COMP_XZ:
+		flag_mask |= SQFS_COMP_FLAG_XZ_ALL;
 		cfg->opt.xz.dict_size = block_size;
 		break;
-	default:
+	case SQFS_COMP_LZMA:
 		break;
+	case SQFS_COMP_LZ4:
+		flag_mask |= SQFS_COMP_FLAG_LZ4_ALL;
+		break;
+	default:
+		return SQFS_ERROR_UNSUPPORTED;
 	}
 
+	if (flags & ~flag_mask) {
+		memset(cfg, 0, sizeof(*cfg));
+		return SQFS_ERROR_UNSUPPORTED;
+	}
+
+	cfg->id = id;
+	cfg->flags = flags;
+	cfg->block_size = block_size;
 	return 0;
 }
