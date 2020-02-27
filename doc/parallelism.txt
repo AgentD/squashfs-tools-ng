@@ -112,34 +112,129 @@
  2) Benchmarks
  *************
 
- TODO: benchmarks with the following images:
-        - Debian live iso (2G)
-	- Arch Linux live iso (~550M)
-	- Raspberry Pi 3 QT demo image (~390M)
+ 2.1) How was the Benchmark Performed?
 
-       sqfs2tar $IMAGE | tar2sqfs -j $NUM_CPU -f out.sqfs
+ An optimized build of squashfs-tools-ng was compiled and installed to a tmpfs:
 
-       Values to measure:
-        - Total wall clock time of tar2sqfs.
-	- Througput (bytes read / time, bytes written / time).
+  $ mkdir /dev/shm/temp
+  $ ln -s /dev/shm/temp out
+  $ ./autogen.sh
+  $ ./configure CFLAGS="-O3 -Ofast -march=native -mtune=native" \
+                LDFLAGS="-O3 -Ofast" --prefix=$(pwd)/out
+  $ make -j install
+  $ cd out
 
-       Try the above for different compressors and stuff everything into
-       a huge spread sheet. Then, determine the following and plot some
-       nice graphs:
+ A SquashFS image to be tested was unpacked in this directory:
 
-        - Absolute speedup (normalized to serial implementation).
-	- Absolute efficiency (= speedup / $NUM_CPU)
-        - Relative speedup (normalized to thread pool with -j 1).
-	- Relative efficiency
+  $ ./bin/sqfs2tar <IMAGE> > test.tar
+
+ And then repacked as follows:
+
+  $ time ./bin/tar2sqfs -j <NUM_CPU> -c <COMPRESSOR> -f test.sqfs < test.tar
 
 
- Available test hardware:
-  - 8(16) core AMD Ryzen 7 3700X, 32GiB DDR4 RAM.
-  - Various 4 core Intel Xeon servers. Precise Specs not known yet.
-  - TODO: Check if my credentials on LCC2 still work. The cluster nodes AFAIK
-    have dual socket Xeons. Not sure if 8 cores per CPU or 8 in total?
+ Out of 4 runs, the worst wall-clock time ("real") was used for comparison.
 
- For some compressors and work load, tar2sqfs may be I/O bound rather than CPU
- bound. The different machines have different storage which may impact the
- result. Should this be taken into account for comparison or eliminated by
- using a ramdisk or fiddling with the queue backlog?
+
+ For the serial reference version, configure was re-run with the option
+ --without-pthread, the tools re-compiled and re-installed.
+
+
+ 2.2) What Image was Tested?
+
+ A Debian image extracted from the Debian 10.2 LiveDVD for AMD64 with XFCE
+ was used.
+
+ The input size and resulting output sizes turned out to be as follows:
+
+  - As uncompressed tarball:           ~6.5GiB (7,008,118,272)
+  - As LZ4 compressed SquashFS image:  ~3.1GiB (3,381,751,808)
+  - As LZO compressed SquashFS image:  ~2.5GiB (2,732,015,616)
+  - As zstd compressed SquashFS image: ~2.4GiB (2,536,910,848)
+  - As gzip compressed SquashFS image: ~2.3GiB (2,471,276,544)
+  - As lzma compressed SquashFS image: ~2.0GiB (2,102,169,600)
+  - As XZ compressed SquashFS image:   ~2.0GiB (2,098,466,816)
+
+
+ The Debian image is expected to contain realistic input data for a Linux
+ file system and also provide enough data for an interesting benchmark.
+
+
+ 2.3) What Test System was used?
+
+  AMD Ryzen 7 3700X
+  32GiB DDR4 RAM
+  Fedora 31 with Linux 5.4.17
+
+
+ 2.4) Results
+
+ The raw timing results are as follows:
+
+ Jobs    XZ          lzma        gzip        LZO         LZ4      zstd
+ serial  17m59.413s  16m08.868s  10m02.632s  13m17.956s  18.218s  35.280s
+      1  18m01.695s  16m02.329s   9m57.334s  13m14.374s  16.727s  34.108s
+      2   9m34.939s   8m32.806s   5m12.791s   6m56.017s  13.161s  21.696s
+      3   6m37.701s   5m55.246s   3m35.409s   4m50.138s  12.798s  18.265s
+      4   5m07.896s   4m34.419s   2m47.108s   3m43.153s  13.191s  16.885s
+      5   4m11.593s   3m44.764s   2m17.371s   3m02.429s  14.251s  17.389s
+      6   3m34.115s   3m12.032s   1m57.972s   2m35.601s  14.824s  17.023s
+      7   3m07.806s   2m47.815s   1m44.661s   2m16.289s  15.643s  17.676s
+      8   2m47.589s   2m30.433s   1m33.865s   2m01.389s  16.262s  17.524s
+      9   2m38.737s   2m22.159s   1m27.477s   1m53.976s  16.887s  18.110s
+     10   2m30.942s   2m14.427s   1m22.424s   1m47.411s  17.316s  18.497s
+     11   2m23.512s   2m08.470s   1m17.419s   1m41.965s  17.759s  18.831s
+     12   2m17.083s   2m02.814s   1m13.644s   1m36.742s  18.335s  19.082s
+     13   2m11.450s   1m57.820s   1m10.310s   1m32.492s  18.827s  19.232s
+     14   2m06.525s   1m53.951s   1m07.483s   1m28.779s  19.471s  20.070s
+     15   2m02.338s   1m50.358s   1m04.954s   1m25.993s  19.772s  20.608s
+     16   1m58.566s   1m47.371s   1m03.616s   1m23.241s  20.188s  21.779s
+
+ The file "benchmark.ods" contains those values, values derived from this and
+ charts depicting the results.
+
+
+ 2.5) Discussion
+
+ Most obviously, the results indicate that LZ4 and zstd compression are clearly
+ I/O bound and not CPU bound. They don't benefit from parallelization beyond
+ 2-4 worker threads and even that benefit is marginal with efficiency
+ plummetting immediately.
+
+
+ The other compressors (XZ, lzma, gzip, lzo) are clearly CPU bound. Speedup
+ increases linearly until about 8 cores, but with a factor k < 1, paralleled by
+ efficiency decreasing down to 80% for 8 cores.
+
+ A reason for this sub-linear scaling may be the choke point introduced by the
+ creation of fragment blocks, that *requires* a synchronization. To test this
+ theory, a second benchmark should be performed with fragment block generation
+ completely disabled. This requires a new flag to be added to tar2sqfs (and
+ also gensquashfs).
+
+
+ Using more than 8 jobs causes a much slower increase in speedup and efficency
+ declines even faster. This is probably due to the fact that the test system
+ only has 8 physical cores and beyond that, SMT has to be used.
+
+
+ It should also be noted that the thread pool compressor with only a single
+ thread turns out to be *slightly* faster than the serial reference
+ implementation. A possible explanation for this might be that the fragment
+ blocks are actually assembled in the main thread, in parallel to the worker
+ that can still continue with other data blocks. Because of this decoupling
+ there is in fact some degree of parallelism, even if only one worker thread
+ is used.
+
+
+ As a side effect, this benchmark also produces some insights into the
+ compression ratio and throughput of the supported compressors. Indicating that
+ for the Debian live image, XZ clearly provides the highest data density, while
+ LZ4 is clearly the fastest compressor available, directly followed by zstd
+ which has a much better compression ratio than LZ4, comparable to the gzip
+ compressor, while being almost 50 times faster. The throughput of the zstd
+ compressor is truly impressive, considering the compression ratio it achieves.
+
+ Repeating the benchmark without tail-end-packing and wit fragments completely
+ disabled would also show the effectiveness of tail-end-packing and fragment
+ packing as a side effect.
