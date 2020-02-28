@@ -29,6 +29,7 @@ static sqfs_data_reader_t *data;
 static void change_directory(const char *dirname)
 {
 	sqfs_inode_generic_t *inode;
+	int ret;
 
 	if (dirname == NULL || *dirname == '/') {
 		free(working_dir);
@@ -38,8 +39,13 @@ static void change_directory(const char *dirname)
 	}
 
 	if (dirname != NULL) {
-		sqfs_dir_reader_find_by_path(dr, working_dir,
-					     dirname, &inode);
+		ret = sqfs_dir_reader_find_by_path(dr, working_dir,
+						   dirname, &inode);
+		if (ret != 0) {
+			printf("Error resolving '%s', error code %d\n",
+			       dirname, ret);
+			return;
+		}
 
 		free(working_dir);
 		working_dir = inode;
@@ -452,6 +458,8 @@ static void cat_cmd(const char *filename)
 		fwrite(buffer, 1, diff, stdout);
 		offset += diff;
 	}
+
+	free(inode);
 }
 
 /*****************************************************************************/
