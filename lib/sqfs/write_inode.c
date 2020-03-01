@@ -14,7 +14,15 @@
 #include "compat.h"
 
 #include <string.h>
-#include <alloca.h>
+
+#if defined(_WIN32) || defined(__WINDOWS__)
+#	include <malloc.h>
+#	ifdef _MSC_VER
+#		define alloca _alloca
+#	endif
+#else
+#	include <alloca.h>
+#endif
 
 static int write_block_sizes(sqfs_meta_writer_t *ir,
 			     const sqfs_inode_generic_t *n)
