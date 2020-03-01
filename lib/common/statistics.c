@@ -36,17 +36,18 @@ void sqfs_print_statistics(const sqfs_super_t *super,
 	printf("Data compression ratio: " PRI_SZ "%%\n", ratio);
 	fputc('\n', stdout);
 
-	printf("Data blocks written: %lu\n", wr_stats->blocks_written);
-	printf("Out of which where fragment blocks: %lu\n",
+	printf("Data blocks written: " PRI_U64 "\n", wr_stats->blocks_written);
+	printf("Out of which where fragment blocks: " PRI_U64 "\n",
 	       proc_stats->frag_block_count);
-	printf("Duplicate blocks omitted: %lu\n",
+	printf("Duplicate blocks omitted: " PRI_U64 "\n",
 	       wr_stats->blocks_submitted - wr_stats->blocks_written);
-	printf("Sparse blocks omitted: %lu\n", proc_stats->sparse_block_count);
+	printf("Sparse blocks omitted: " PRI_U64 "\n",
+	       proc_stats->sparse_block_count);
 	fputc('\n', stdout);
 
-	printf("Fragments actually written: %lu\n",
+	printf("Fragments actually written: " PRI_U64 "\n",
 	       proc_stats->actual_frag_count);
-	printf("Duplicated fragments omitted: %lu\n",
+	printf("Duplicated fragments omitted: " PRI_U64 "\n",
 	       proc_stats->total_frag_count - proc_stats->actual_frag_count);
 	printf("Total number of inodes: %u\n", super->inode_count);
 	printf("Number of unique group/user IDs: %u\n", super->id_count);

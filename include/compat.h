@@ -31,6 +31,15 @@
 #	error I do not know how to trap integer overflows with this compiler
 #endif
 
+#if defined(_WIN32) || defined(__WINDOWS__)
+#	define PRI_U64 "%I64u"
+#	define PRI_U32 "%I32u"
+#else
+#	include <inttypes.h>
+#	define PRI_U64 PRIu64
+#	define PRI_U32 PRIu32
+#endif
+
 #if SIZEOF_SIZE_T <= SIZEOF_INT
 #	define PRI_SZ "%u"
 #elif SIZEOF_SIZE_T == SIZEOF_LONG
