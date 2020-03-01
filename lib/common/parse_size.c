@@ -31,23 +31,20 @@ int parse_size(const char *what, size_t *out, const char *str,
 	switch (*in) {
 	case 'k':
 	case 'K':
-		if (acc > ((1UL << (SIZEOF_SIZE_T * CHAR_BIT - 10)) - 1UL))
+		if (SZ_MUL_OV(acc, 1024, &acc))
 			goto fail_ov;
-		acc <<= 10;
 		++in;
 		break;
 	case 'm':
 	case 'M':
-		if (acc > ((1UL << (SIZEOF_SIZE_T * CHAR_BIT - 20)) - 1UL))
+		if (SZ_MUL_OV(acc, 1048576, &acc))
 			goto fail_ov;
-		acc <<= 20;
 		++in;
 		break;
 	case 'g':
 	case 'G':
-		if (acc > ((1UL << (SIZEOF_SIZE_T * CHAR_BIT - 30)) - 1UL))
+		if (SZ_MUL_OV(acc, 1073741824, &acc))
 			goto fail_ov;
-		acc <<= 30;
 		++in;
 		break;
 	case '%':
