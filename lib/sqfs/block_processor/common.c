@@ -142,11 +142,15 @@ int process_completed_fragment(sqfs_block_processor_t *proc, sqfs_block_t *frag,
 
 	proc->stats.total_frag_count += 1;
 
-	err = sqfs_frag_table_find_tail_end(proc->frag_tbl, frag->checksum,
-					    frag->size, &index, &offset);
-	if (err == 0) {
-		sqfs_inode_set_frag_location(*(frag->inode), index, offset);
-		return 0;
+	if (!(frag->flags & SQFS_BLK_DONT_DEDUPLICATE)) {
+		err = sqfs_frag_table_find_tail_end(proc->frag_tbl,
+						    frag->checksum, frag->size,
+						    &index, &offset);
+		if (err == 0) {
+			sqfs_inode_set_frag_location(*(frag->inode),
+						     index, offset);
+			return 0;
+		}
 	}
 
 	if (proc->frag_block != NULL) {

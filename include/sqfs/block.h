@@ -89,6 +89,14 @@ typedef enum {
 	SQFS_BLK_DONT_FRAGMENT = 0x0004,
 
 	/**
+	 * @brief Surpress deduplication.
+	 *
+	 * If set on fragments or the last block of a file, it is always
+	 * written to disk, even if a duplicate copy already exists.
+	 */
+	SQFS_BLK_DONT_DEDUPLICATE = 0x0008,
+
+	/**
 	 * @brief Set by the @ref sqfs_block_processor_t if it determines a
 	 *        block of a file to be sparse, i.e. only zero bytes.
 	 */
@@ -127,7 +135,7 @@ typedef enum {
 	/**
 	 * @brief The combination of all flags that are user settable.
 	 */
-	SQFS_BLK_USER_SETTABLE_FLAGS = 0x0007,
+	SQFS_BLK_USER_SETTABLE_FLAGS = 0x000F,
 } E_SQFS_BLK_FLAGS;
 
 #endif /* SQFS_BLOCK_H */

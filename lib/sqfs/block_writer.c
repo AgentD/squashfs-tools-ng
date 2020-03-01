@@ -229,7 +229,7 @@ int sqfs_block_writer_write(sqfs_block_writer_t *wr, sqfs_u32 size,
 
 		if (count == 0) {
 			*location = 0;
-		} else {
+		} else if (!(flags & SQFS_BLK_DONT_DEDUPLICATE)) {
 			start = deduplicate_blocks(wr, count);
 			offset = wr->blocks[start].offset;
 
@@ -244,11 +244,11 @@ int sqfs_block_writer_write(sqfs_block_writer_t *wr, sqfs_u32 size,
 			} else {
 				wr->num_blocks = wr->file_start;
 			}
-		}
 
-		err = wr->file->truncate(wr->file, wr->start);
-		if (err)
-			return err;
+			err = wr->file->truncate(wr->file, wr->start);
+			if (err)
+				return err;
+		}
 
 		wr->stats.blocks_written = wr->num_blocks;
 		wr->stats.bytes_written = wr->start - wr->data_area_start;
