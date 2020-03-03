@@ -33,6 +33,8 @@ SQFS_INTERNAL int str_table_init(str_table_t *table, size_t size);
 
 SQFS_INTERNAL void str_table_cleanup(str_table_t *table);
 
+SQFS_INTERNAL int str_table_copy(str_table_t *dst, const str_table_t *src);
+
 /* Resolve a string to an incremental, unique ID. */
 SQFS_INTERNAL
 int str_table_get_index(str_table_t *table, const char *str, size_t *idx);

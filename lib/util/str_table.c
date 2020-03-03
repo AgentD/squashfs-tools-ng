@@ -62,6 +62,69 @@ int str_table_init(str_table_t *table, size_t size)
 	return 0;
 }
 
+int str_table_copy(str_table_t *dst, const str_table_t *src)
+{
+	str_bucket_t *bucket, *it, **next;
+	size_t i;
+
+	dst->num_strings = src->num_strings;
+	dst->max_strings = src->max_strings;
+	dst->strings = calloc(sizeof(dst->strings[0]), src->num_strings);
+
+	if (dst->strings == NULL)
+		return -1;
+
+	for (i = 0; i < src->num_strings; ++i) {
+		dst->strings[i] = strdup(src->strings[i]);
+
+		if (dst->strings[i] == NULL)
+			goto fail_str;
+	}
+
+	dst->num_buckets = src->num_buckets;
+	dst->buckets = calloc(sizeof(dst->buckets[0]), src->num_buckets);
+
+	if (dst->buckets == NULL)
+		goto fail_str;
+
+	for (i = 0; i < src->num_buckets; ++i) {
+		next = &(dst->buckets[i]);
+
+		for (it = src->buckets[i]; it != NULL; it = it->next) {
+			bucket = malloc(sizeof(*bucket));
+			if (bucket == NULL)
+				goto fail_buck;
+
+			bucket->next = NULL;
+			bucket->index = it->index;
+			bucket->refcount = it->refcount;
+			bucket->str = dst->strings[bucket->index];
+
+			*next = bucket;
+			next = &(bucket->next);
+		}
+	}
+
+	return 0;
+fail_buck:
+	for (i = 0; i < dst->num_buckets; ++i) {
+		while (dst->buckets[i] != NULL) {
+			bucket = dst->buckets[i];
+			dst->buckets[i] = bucket->next;
+
+			free(bucket);
+		}
+	}
+	free(dst->buckets);
+fail_str:
+	for (i = 0; i < dst->num_strings; ++i)
+		free(dst->strings[i]);
+
+	free(dst->strings);
+	dst->strings = NULL;
+	return -1;
+}
+
 void str_table_cleanup(str_table_t *table)
 {
 	str_bucket_t *bucket;
