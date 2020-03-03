@@ -46,6 +46,8 @@
  * The main task of the meta data writer is to provide a simple append
  * function that transparently takes care of chopping data up into blocks,
  * compressing the blocks and pre-pending a header.
+ *
+ * This object is not copyable, i.e. @ref sqfs_copy will always return NULL.
  */
 
 /**

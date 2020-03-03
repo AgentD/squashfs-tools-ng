@@ -13,6 +13,7 @@
 #include <sys/stat.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 #include <errno.h>
 #include <fcntl.h>
 
@@ -20,6 +21,7 @@
 typedef struct {
 	sqfs_file_t base;
 
+	bool readonly;
 	sqfs_u64 size;
 	int fd;
 } sqfs_file_stdio_t;
@@ -31,6 +33,34 @@ static void stdio_destroy(sqfs_object_t *base)
 
 	close(file->fd);
 	free(file);
+}
+
+static sqfs_object_t *stdio_copy(const sqfs_object_t *base)
+{
+	const sqfs_file_stdio_t *file = (const sqfs_file_stdio_t *)base;
+	sqfs_file_stdio_t *copy;
+	int err;
+
+	if (!file->readonly) {
+		errno = ENOTSUP;
+		return NULL;
+	}
+
+	copy = calloc(1, sizeof(*copy));
+	if (copy == NULL)
+		return NULL;
+
+	memcpy(copy, file, sizeof(*file));
+
+	copy->fd = dup(file->fd);
+	if (copy->fd < 0) {
+		err = errno;
+		free(copy);
+		copy = NULL;
+		errno = err;
+	}
+
+	return (sqfs_object_t *)copy;
 }
 
 static int stdio_read_at(sqfs_file_t *base, sqfs_u64 offset,
@@ -125,8 +155,10 @@ sqfs_file_t *sqfs_open_file(const char *filename, sqfs_u32 flags)
 		return NULL;
 
 	if (flags & SQFS_FILE_OPEN_READ_ONLY) {
+		file->readonly = true;
 		open_mode = O_RDONLY;
 	} else {
+		file->readonly = false;
 		open_mode = O_CREAT | O_RDWR;
 
 		if (flags & SQFS_FILE_OPEN_OVERWRITE) {
@@ -158,6 +190,7 @@ sqfs_file_t *sqfs_open_file(const char *filename, sqfs_u32 flags)
 	base->write_at = stdio_write_at;
 	base->get_size = stdio_get_size;
 	base->truncate = stdio_truncate;
+	((sqfs_object_t *)base)->copy = stdio_copy;
 	((sqfs_object_t *)base)->destroy = stdio_destroy;
 	return base;
 }

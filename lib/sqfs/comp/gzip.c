@@ -221,7 +221,7 @@ static sqfs_s32 gzip_do_block(sqfs_compressor_t *base, const sqfs_u8 *in,
 	return 0;
 }
 
-static sqfs_compressor_t *gzip_create_copy(sqfs_compressor_t *cmp)
+static sqfs_object_t *gzip_create_copy(const sqfs_object_t *cmp)
 {
 	gzip_compressor_t *gzip = malloc(sizeof(*gzip));
 	int ret;
@@ -244,7 +244,7 @@ static sqfs_compressor_t *gzip_create_copy(sqfs_compressor_t *cmp)
 		return NULL;
 	}
 
-	return (sqfs_compressor_t *)gzip;
+	return (sqfs_object_t *)gzip;
 }
 
 sqfs_compressor_t *gzip_compressor_create(const sqfs_compressor_config_t *cfg)
@@ -283,7 +283,7 @@ sqfs_compressor_t *gzip_compressor_create(const sqfs_compressor_config_t *cfg)
 	base->do_block = gzip_do_block;
 	base->write_options = gzip_write_options;
 	base->read_options = gzip_read_options;
-	base->create_copy = gzip_create_copy;
+	((sqfs_object_t *)base)->copy = gzip_create_copy;
 	((sqfs_object_t *)base)->destroy = gzip_destroy;
 
 	if (gzip->compress) {

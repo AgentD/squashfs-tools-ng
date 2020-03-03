@@ -58,6 +58,44 @@ static void frag_table_destroy(sqfs_object_t *obj)
 	free(tbl);
 }
 
+static sqfs_object_t *frag_table_copy(const sqfs_object_t *obj)
+{
+	const sqfs_frag_table_t *tbl = (const sqfs_frag_table_t *)obj;
+	sqfs_frag_table_t *copy;
+	const chunk_info_t *it;
+	chunk_info_t *last;
+	size_t i;
+
+	copy = malloc(sizeof(*copy));
+	if (copy == NULL)
+		return NULL;
+
+	memcpy(copy, tbl, sizeof(*tbl));
+	for (i = 0; i < NUM_BUCKETS; ++i)
+		copy->chunks[i].next = NULL;
+
+	for (i = 0; i < NUM_BUCKETS; ++i) {
+		last = &(copy->chunks[i]);
+		it = tbl->chunks[i].next;
+
+		while (it != NULL) {
+			last->next = malloc(sizeof(*it));
+			if (last->next == NULL)
+				goto fail;
+
+			memcpy(last->next, it, sizeof(*it));
+			last = last->next;
+			last->next = NULL;
+			it = it->next;
+		}
+	}
+
+	return (sqfs_object_t *)copy;
+fail:
+	frag_table_destroy((sqfs_object_t *)copy);
+	return NULL;
+}
+
 sqfs_frag_table_t *sqfs_frag_table_create(sqfs_u32 flags)
 {
 	sqfs_frag_table_t *tbl;
@@ -69,6 +107,7 @@ sqfs_frag_table_t *sqfs_frag_table_create(sqfs_u32 flags)
 	if (tbl == NULL)
 		return NULL;
 
+	((sqfs_object_t *)tbl)->copy = frag_table_copy;
 	((sqfs_object_t *)tbl)->destroy = frag_table_destroy;
 	return tbl;
 }

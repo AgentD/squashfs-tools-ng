@@ -51,6 +51,20 @@ static void meta_reader_destroy(sqfs_object_t *m)
 	free(m);
 }
 
+static sqfs_object_t *meta_reader_copy(const sqfs_object_t *obj)
+{
+	const sqfs_meta_reader_t *m = (const sqfs_meta_reader_t *)obj;
+	sqfs_meta_reader_t *copy = malloc(sizeof(*copy));
+
+	if (copy != NULL) {
+		memcpy(copy, m, sizeof(*m));
+	}
+
+	/* XXX: cmp and file aren't deep-copied because m
+	        doesn't own them either. */
+	return (sqfs_object_t *)copy;
+}
+
 sqfs_meta_reader_t *sqfs_meta_reader_create(sqfs_file_t *file,
 					    sqfs_compressor_t *cmp,
 					    sqfs_u64 start, sqfs_u64 limit)
@@ -60,6 +74,7 @@ sqfs_meta_reader_t *sqfs_meta_reader_create(sqfs_file_t *file,
 	if (m == NULL)
 		return NULL;
 
+	((sqfs_object_t *)m)->copy = meta_reader_copy;
 	((sqfs_object_t *)m)->destroy = meta_reader_destroy;
 	m->start = start;
 	m->limit = limit;

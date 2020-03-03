@@ -91,15 +91,6 @@ struct sqfs_compressor_t {
 	 */
 	sqfs_s32 (*do_block)(sqfs_compressor_t *cmp, const sqfs_u8 *in,
 			     sqfs_u32 size, sqfs_u8 *out, sqfs_u32 outsize);
-
-	/**
-	 * @brief Create an exact copt of agiven compressor
-	 *
-	 * @param cmp A pointer to a compressor object.
-	 *
-	 * @return A deep copy of the given compressor.
-	 */
-	sqfs_compressor_t *(*create_copy)(sqfs_compressor_t *cmp);
 };
 
 /**

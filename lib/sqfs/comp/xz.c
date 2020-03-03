@@ -211,7 +211,7 @@ static void xz_get_configuration(const sqfs_compressor_t *base,
 		cfg->flags |= SQFS_COMP_FLAG_UNCOMPRESS;
 }
 
-static sqfs_compressor_t *xz_create_copy(sqfs_compressor_t *cmp)
+static sqfs_object_t *xz_create_copy(const sqfs_object_t *cmp)
 {
 	xz_compressor_t *xz = malloc(sizeof(*xz));
 
@@ -219,7 +219,7 @@ static sqfs_compressor_t *xz_create_copy(sqfs_compressor_t *cmp)
 		return NULL;
 
 	memcpy(xz, cmp, sizeof(*xz));
-	return (sqfs_compressor_t *)xz;
+	return (sqfs_object_t *)xz;
 }
 
 static void xz_destroy(sqfs_object_t *base)
@@ -253,7 +253,7 @@ sqfs_compressor_t *xz_compressor_create(const sqfs_compressor_config_t *cfg)
 		xz_uncomp_block : xz_comp_block;
 	base->write_options = xz_write_options;
 	base->read_options = xz_read_options;
-	base->create_copy = xz_create_copy;
+	((sqfs_object_t *)base)->copy = xz_create_copy;
 	((sqfs_object_t *)base)->destroy = xz_destroy;
 	return base;
 }

@@ -232,7 +232,7 @@ static thread_pool_processor_t *block_processor_create(size_t max_block_size,
 			goto fail;
 
 		proc->workers[i]->shared = proc;
-		proc->workers[i]->cmp = cmp->create_copy(cmp);
+		proc->workers[i]->cmp = sqfs_copy(cmp);
 
 		if (proc->workers[i]->cmp == NULL)
 			goto fail;

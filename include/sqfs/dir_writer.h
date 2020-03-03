@@ -58,6 +58,8 @@
  * adding entries. Internally it fills data into a meta data writer and
  * generates an index that it can, on request, write to another meta data
  * writer used for inodes.
+ *
+ * This object is not copyable, i.e. @ref sqfs_copy will always return NULL.
  */
 
 /**

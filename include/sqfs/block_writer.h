@@ -34,6 +34,8 @@
  * @implements sqfs_object_t
  *
  * @brief Abstracts writing and deduplicating of data and fragment blocks.
+ *
+ * This object is not copyable, i.e. @ref sqfs_copy will always return NULL.
  */
 
 /**

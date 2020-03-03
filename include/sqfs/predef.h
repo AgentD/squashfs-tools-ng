@@ -121,6 +121,8 @@ typedef struct sqfs_xattr_id_table_t sqfs_xattr_id_table_t;
  */
 typedef struct sqfs_object_t {
 	void (*destroy)(struct sqfs_object_t *instance);
+
+	struct sqfs_object_t *(*copy)(const struct sqfs_object_t *orig);
 } sqfs_object_t;
 
 /**
@@ -133,6 +135,24 @@ typedef struct sqfs_object_t {
 static SQFS_INLINE void sqfs_destroy(void *obj)
 {
 	((sqfs_object_t *)obj)->destroy(obj);
+}
+
+/**
+ * @brief Create a deep copy of an object if possible.
+ *
+ * @memberof sqfs_object_t
+ *
+ * @param obj A pointer to an object
+ *
+ * @return A pointer to a new object, instantiated from the old on success,
+ *         NULL on failure.
+ */
+static SQFS_INLINE void *sqfs_copy(const void *obj)
+{
+	if (((sqfs_object_t *)obj)->copy != NULL)
+		return ((sqfs_object_t *)obj)->copy(obj);
+
+	return NULL;
 }
 
 #endif /* SQFS_PREDEF_H */

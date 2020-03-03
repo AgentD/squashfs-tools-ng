@@ -45,6 +45,32 @@ static void dir_reader_destroy(sqfs_object_t *obj)
 	free(rd);
 }
 
+static sqfs_object_t *dir_reader_copy(const sqfs_object_t *obj)
+{
+	const sqfs_dir_reader_t *rd = (const sqfs_dir_reader_t *)obj;
+	sqfs_dir_reader_t *copy  = malloc(sizeof(*copy));
+
+	if (copy == NULL)
+		return NULL;
+
+	memcpy(copy, rd, sizeof(*copy));
+
+	copy->meta_inode = sqfs_copy(rd->meta_inode);
+	if (copy->meta_inode == NULL)
+		goto fail_mino;
+
+	copy->meta_dir = sqfs_copy(rd->meta_dir);
+	if (copy->meta_dir == NULL)
+		goto fail_mdir;
+
+	return (sqfs_object_t *)copy;
+fail_mdir:
+	sqfs_destroy(copy->meta_inode);
+fail_mino:
+	free(copy);
+	return NULL;
+}
+
 sqfs_dir_reader_t *sqfs_dir_reader_create(const sqfs_super_t *super,
 					  sqfs_compressor_t *cmp,
 					  sqfs_file_t *file)
@@ -83,6 +109,7 @@ sqfs_dir_reader_t *sqfs_dir_reader_create(const sqfs_super_t *super,
 	}
 
 	((sqfs_object_t *)rd)->destroy = dir_reader_destroy;
+	((sqfs_object_t *)rd)->copy = dir_reader_copy;
 	rd->super = super;
 	return rd;
 }

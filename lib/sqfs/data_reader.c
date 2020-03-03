@@ -137,6 +137,51 @@ static void data_reader_destroy(sqfs_object_t *obj)
 	free(data);
 }
 
+static sqfs_object_t *data_reader_copy(const sqfs_object_t *obj)
+{
+	const sqfs_data_reader_t *data = (const sqfs_data_reader_t *)obj;
+	sqfs_data_reader_t *copy;
+
+	copy = alloc_flex(sizeof(*data), 1, data->block_size);
+	if (copy == NULL)
+		return NULL;
+
+	memcpy(copy, data, sizeof(*data) + data->block_size);
+
+	copy->frag_tbl = sqfs_copy(data->frag_tbl);
+	if (copy->frag_tbl == NULL)
+		goto fail_ftbl;
+
+	if (data->data_block != NULL) {
+		copy->data_block = malloc(data->data_blk_size);
+		if (copy->data_block == NULL)
+			goto fail_dblk;
+
+		memcpy(copy->data_block, data->data_block,
+		       data->data_blk_size);
+	}
+
+	if (copy->frag_block != NULL) {
+		copy->frag_block = malloc(copy->frag_blk_size);
+		if (copy->frag_block == NULL)
+			goto fail_fblk;
+
+		memcpy(copy->frag_block, data->frag_block,
+		       data->frag_blk_size);
+	}
+
+	/* XXX: file and cmp aren't deep-copied becaues data
+	        doesn't own them either. */
+	return (sqfs_object_t *)copy;
+fail_fblk:
+	free(copy->data_block);
+fail_dblk:
+	sqfs_destroy(copy->frag_tbl);
+fail_ftbl:
+	free(copy);
+	return NULL;
+}
+
 sqfs_data_reader_t *sqfs_data_reader_create(sqfs_file_t *file,
 					    size_t block_size,
 					    sqfs_compressor_t *cmp)
@@ -153,6 +198,7 @@ sqfs_data_reader_t *sqfs_data_reader_create(sqfs_file_t *file,
 	}
 
 	((sqfs_object_t *)data)->destroy = data_reader_destroy;
+	((sqfs_object_t *)data)->copy = data_reader_copy;
 	data->file = file;
 	data->block_size = block_size;
 	data->cmp = cmp;

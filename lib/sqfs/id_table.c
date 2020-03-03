@@ -32,6 +32,30 @@ static void id_table_destroy(sqfs_object_t *obj)
 	free(tbl);
 }
 
+static sqfs_object_t *id_table_copy(const sqfs_object_t *obj)
+{
+	const sqfs_id_table_t *tbl = (const sqfs_id_table_t *)obj;
+	sqfs_id_table_t *copy;
+
+	copy = malloc(sizeof(*copy));
+	if (copy == NULL)
+		return NULL;
+
+	memcpy(copy, tbl, sizeof(*tbl));
+
+	copy->num_ids = tbl->num_ids;
+	copy->max_ids = tbl->num_ids;
+	copy->ids = malloc(tbl->num_ids * sizeof(tbl->ids[0]));
+
+	if (copy->ids == NULL) {
+		free(copy);
+		return NULL;
+	}
+
+	memcpy(copy->ids, tbl->ids, tbl->num_ids * sizeof(tbl->ids[0]));
+	return (sqfs_object_t *)copy;
+}
+
 sqfs_id_table_t *sqfs_id_table_create(sqfs_u32 flags)
 {
 	sqfs_id_table_t *tbl;
@@ -43,6 +67,7 @@ sqfs_id_table_t *sqfs_id_table_create(sqfs_u32 flags)
 
 	if (tbl != NULL) {
 		((sqfs_object_t *)tbl)->destroy = id_table_destroy;
+		((sqfs_object_t *)tbl)->copy = id_table_copy;
 	}
 
 	return tbl;

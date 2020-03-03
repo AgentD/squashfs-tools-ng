@@ -19,6 +19,7 @@
 typedef struct {
 	sqfs_file_t base;
 
+	bool readonly;
 	sqfs_u64 size;
 	HANDLE fd;
 } sqfs_file_stdio_t;
@@ -30,6 +31,35 @@ static void stdio_destroy(sqfs_object_t *base)
 
 	CloseHandle(file->fd);
 	free(file);
+}
+
+static sqfs_object_t *stdio_copy(const sqfs_object_t *base)
+{
+	const sqfs_file_stdio_t *file = (const sqfs_file_stdio_t *)base;
+	sqfs_file_stdio_t *copy;
+	BOOL ret;
+
+	if (!file->readonly) {
+		SetLastError(ERROR_NOT_SUPPORTED);
+		return NULL;
+	}
+
+	copy = calloc(1, sizeof(*copy));
+	if (copy == NULL)
+		return NULL;
+
+	memcpy(copy, file, sizeof(*file));
+
+	ret = DuplicateHandle(GetCurrentProcess(), file->fd,
+			      GetCurrentProcess(), &copy->fd,
+			      0, FALSE, DUPLICATE_SAME_ACCESS);
+
+	if (!ret) {
+		free(copy);
+		return NULL;
+	}
+
+	return (sqfs_object_t *)copy;
 }
 
 static int stdio_read_at(sqfs_file_t *base, sqfs_u64 offset,
@@ -135,9 +165,11 @@ sqfs_file_t *sqfs_open_file(const char *filename, sqfs_u32 flags)
 		return NULL;
 
 	if (flags & SQFS_FILE_OPEN_READ_ONLY) {
+		file->readonly = true;
 		access_flags = GENERIC_READ;
 		creation_mode = OPEN_EXISTING;
 	} else {
+		file->readonly = false;
 		access_flags = GENERIC_READ | GENERIC_WRITE;
 
 		if (flags & SQFS_FILE_OPEN_OVERWRITE) {
@@ -166,5 +198,6 @@ sqfs_file_t *sqfs_open_file(const char *filename, sqfs_u32 flags)
 	base->get_size = stdio_get_size;
 	base->truncate = stdio_truncate;
 	((sqfs_object_t *)base)->destroy = stdio_destroy;
+	((sqfs_object_t *)base)->copy = stdio_copy;
 	return base;
 }

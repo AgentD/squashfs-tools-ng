@@ -36,6 +36,50 @@ struct sqfs_xattr_reader_t {
 	sqfs_file_t *file;
 };
 
+static sqfs_object_t *xattr_reader_copy(const sqfs_object_t *obj)
+{
+	const sqfs_xattr_reader_t *xr = (const sqfs_xattr_reader_t *)obj;
+	sqfs_xattr_reader_t *copy = malloc(sizeof(*copy));
+
+	if (copy == NULL)
+		return NULL;
+
+	memcpy(copy, xr, sizeof(*xr));
+
+	if (xr->kvrd != NULL) {
+		copy->kvrd = sqfs_copy(xr->kvrd);
+		if (copy->kvrd == NULL)
+			goto fail_kvrd;
+	}
+
+	if (xr->idrd != NULL) {
+		copy->idrd = sqfs_copy(xr->idrd);
+		if (copy->idrd == NULL)
+			goto fail_idrd;
+	}
+
+	if (xr->id_block_starts != NULL) {
+		copy->id_block_starts = alloc_array(sizeof(sqfs_u64),
+						    xr->num_id_blocks);
+		if (copy->id_block_starts == NULL)
+			goto fail_idblk;
+
+		memcpy(copy->id_block_starts, xr->id_block_starts,
+		       sizeof(sqfs_u64) * xr->num_id_blocks);
+	}
+
+	return (sqfs_object_t *)copy;
+fail_idblk:
+	if (copy->idrd != NULL)
+		sqfs_destroy(copy->idrd);
+fail_idrd:
+	if (copy->kvrd != NULL)
+		sqfs_destroy(copy->kvrd);
+fail_kvrd:
+	free(copy);
+	return NULL;
+}
+
 static void xattr_reader_destroy(sqfs_object_t *obj)
 {
 	sqfs_xattr_reader_t *xr = (sqfs_xattr_reader_t *)obj;
@@ -267,6 +311,7 @@ sqfs_xattr_reader_t *sqfs_xattr_reader_create(sqfs_file_t *file,
 	if (xr == NULL)
 		return NULL;
 
+	((sqfs_object_t *)xr)->copy = xattr_reader_copy;
 	((sqfs_object_t *)xr)->destroy = xattr_reader_destroy;
 	xr->file = file;
 	xr->super = super;

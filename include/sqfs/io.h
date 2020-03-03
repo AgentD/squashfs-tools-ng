@@ -63,6 +63,11 @@ typedef enum {
  * @extends sqfs_object_t
  *
  * @brief Abstracts file I/O to make it easy to embedd SquashFS.
+ *
+ * Files are only copyable if they are read only, i.e. if a file has been
+ * opened with write access, @ref sqfs_copy will always return NULL. The
+ * other data types inside libsquashfs assume this to hold for all
+ * implementations of this interface.
  */
 struct sqfs_file_t {
 	sqfs_object_t base;

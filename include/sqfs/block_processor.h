@@ -43,6 +43,8 @@
  * Internally it takes care of partitioning data in the correct block sizes,
  * adding tail-ens to fragment blocks, compressing the data, deduplicating data
  * and finally writing it to disk.
+ *
+ * This object is not copyable, i.e. @ref sqfs_copy will always return NULL.
  */
 
 /**
