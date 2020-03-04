@@ -26,7 +26,7 @@ typedef struct {
 } blk_info_t;
 
 struct sqfs_block_writer_t {
-	sqfs_object_t *base;
+	sqfs_object_t base;
 	sqfs_file_t *file;
 
 	size_t num_blocks;
