@@ -611,14 +611,14 @@ int main(int argc, char **argv)
 	}
 
 	if (!no_xattr && !(super.flags & SQFS_FLAG_NO_XATTRS)) {
-		xr = sqfs_xattr_reader_create(file, &super, cmp);
+		xr = sqfs_xattr_reader_create(0);
 		if (xr == NULL) {
 			sqfs_perror(filename, "creating xattr reader",
 				    SQFS_ERROR_ALLOC);
 			goto out_dr;
 		}
 
-		ret = sqfs_xattr_reader_load_locations(xr);
+		ret = sqfs_xattr_reader_load(xr, &super, file, cmp);
 		if (ret) {
 			sqfs_perror(filename, "loading xattr table", ret);
 			goto out_xr;

@@ -83,18 +83,12 @@ extern "C" {
  * Do not destroy any of the pointed to objects before destroying the xattr
  * reader.
  *
- * @param file A pointer to a file object that contains the SquashFS filesystem
- * @param super A pointer to the SquashFS super block required to find the
- *              location tables.
- * @param cmp A pointer to a compressor used to uncompress the loaded meta data
- *            blocks.
+ * @param flags Currently must be set to 0, or creation will fail.
  *
  * @return A pointer to a new xattr reader instance on success, NULL on
  *         allocation failure.
  */
-SQFS_API sqfs_xattr_reader_t *sqfs_xattr_reader_create(sqfs_file_t *file,
-						       sqfs_super_t *super,
-						       sqfs_compressor_t *cmp);
+SQFS_API sqfs_xattr_reader_t *sqfs_xattr_reader_create(sqfs_u32 flags);
 
 /**
  * @brief Load the locations of the xattr meta data blocks into memory
@@ -104,9 +98,18 @@ SQFS_API sqfs_xattr_reader_t *sqfs_xattr_reader_create(sqfs_file_t *file,
  * This function must be called explicitly after an xattr reader has been
  * created to load the actual location table from disk.
  *
+ * @param xr A pointer to an xattr reader instance.
+ * @param super A pointer to the SquashFS super block required to find the
+ *              location tables.
+ * @param file A pointer to a file object that contains the SquashFS filesystem.
+ * @param cmp A pointer to a compressor used to uncompress the loaded meta data
+ *            blocks.
+ *
  * @return Zero on success, a negative @ref E_SQFS_ERROR value on failure.
  */
-SQFS_API int sqfs_xattr_reader_load_locations(sqfs_xattr_reader_t *xr);
+SQFS_API int sqfs_xattr_reader_load(sqfs_xattr_reader_t *xr,
+				    const sqfs_super_t *super,
+				    sqfs_file_t *file, sqfs_compressor_t *cmp);
 
 /**
  * @brief Resolve an xattr index from an inode to an xattr description
