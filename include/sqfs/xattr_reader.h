@@ -105,7 +105,7 @@ SQFS_API sqfs_xattr_reader_t *sqfs_xattr_reader_create(sqfs_u32 flags);
  * @param cmp A pointer to a compressor used to uncompress the loaded meta data
  *            blocks.
  *
- * @return Zero on success, a negative @ref E_SQFS_ERROR value on failure.
+ * @return Zero on success, a negative @ref SQFS_ERROR value on failure.
  */
 SQFS_API int sqfs_xattr_reader_load(sqfs_xattr_reader_t *xr,
 				    const sqfs_super_t *super,
@@ -124,7 +124,7 @@ SQFS_API int sqfs_xattr_reader_load(sqfs_xattr_reader_t *xr,
  * @param idx The xattr index to resolve
  * @param desc Used to return the description
  *
- * @return Zero on success, a negative @ref E_SQFS_ERROR value on failure.
+ * @return Zero on success, a negative @ref SQFS_ERROR value on failure.
  */
 SQFS_API int sqfs_xattr_reader_get_desc(sqfs_xattr_reader_t *xr, sqfs_u32 idx,
 					sqfs_xattr_id_t *desc);
@@ -142,7 +142,7 @@ SQFS_API int sqfs_xattr_reader_get_desc(sqfs_xattr_reader_t *xr, sqfs_u32 idx,
  * @param xr A pointer to an xattr reader instance
  * @param desc The descriptor holding the location of the key-value pairs
  *
- * @return Zero on success, a negative @ref E_SQFS_ERROR value on failure.
+ * @return Zero on success, a negative @ref SQFS_ERROR value on failure.
  */
 SQFS_API int sqfs_xattr_reader_seek_kv(sqfs_xattr_reader_t *xr,
 				       const sqfs_xattr_id_t *desc);
@@ -162,7 +162,7 @@ SQFS_API int sqfs_xattr_reader_seek_kv(sqfs_xattr_reader_t *xr,
  * @param key_out Used to return the decoded key. The underlying memory can be
  *                released using a single free() call.
  *
- * @return Zero on success, a negative @ref E_SQFS_ERROR value on failure.
+ * @return Zero on success, a negative @ref SQFS_ERROR value on failure.
  */
 SQFS_API
 int sqfs_xattr_reader_read_key(sqfs_xattr_reader_t *xr,
@@ -183,7 +183,7 @@ int sqfs_xattr_reader_read_key(sqfs_xattr_reader_t *xr,
  * @param val_out Used to return the decoded value. The underlying memory can
  *                be released using a single free() call.
  *
- * @return Zero on success, a negative @ref E_SQFS_ERROR value on failure.
+ * @return Zero on success, a negative @ref SQFS_ERROR value on failure.
  */
 SQFS_API
 int sqfs_xattr_reader_read_value(sqfs_xattr_reader_t *xr,

@@ -83,7 +83,7 @@ SQFS_API sqfs_meta_reader_t *sqfs_meta_reader_create(sqfs_file_t *file,
  * @param block_start Absolute position where the block header can be found.
  * @param offset A byte offset into the uncompressed block.
  *
- * @return Zero on success, an @ref E_SQFS_ERROR value on failure.
+ * @return Zero on success, an @ref SQFS_ERROR value on failure.
  */
 SQFS_API int sqfs_meta_reader_seek(sqfs_meta_reader_t *m, sqfs_u64 block_start,
 				   size_t offset);
@@ -114,7 +114,7 @@ SQFS_API void sqfs_meta_reader_get_position(const sqfs_meta_reader_t *m,
  * @param data A pointer to copy the data to.
  * @param size The numbre of bytes to read.
  *
- * @return Zero on success, an @ref E_SQFS_ERROR value on failure.
+ * @return Zero on success, an @ref SQFS_ERROR value on failure.
  */
 SQFS_API int sqfs_meta_reader_read(sqfs_meta_reader_t *m, void *data,
 				   size_t size);
@@ -130,7 +130,7 @@ SQFS_API int sqfs_meta_reader_read(sqfs_meta_reader_t *m, void *data,
  * @param m A pointer to a meta data reader.
  * @param hdr A pointer to a directory header to fill.
  *
- * @return Zero on success, an @ref E_SQFS_ERROR value on failure.
+ * @return Zero on success, an @ref SQFS_ERROR value on failure.
  */
 SQFS_API int sqfs_meta_reader_read_dir_header(sqfs_meta_reader_t *m,
 					      sqfs_dir_header_t *hdr);
@@ -147,7 +147,7 @@ SQFS_API int sqfs_meta_reader_read_dir_header(sqfs_meta_reader_t *m,
  * @param ent Returns a pointer to a directory entry. Can be released with a
  *            single free() call.
  *
- * @return Zero on success, an @ref E_SQFS_ERROR value on failure.
+ * @return Zero on success, an @ref SQFS_ERROR value on failure.
  */
 SQFS_API int sqfs_meta_reader_read_dir_ent(sqfs_meta_reader_t *m,
 					   sqfs_dir_entry_t **ent);
@@ -169,7 +169,7 @@ SQFS_API int sqfs_meta_reader_read_dir_ent(sqfs_meta_reader_t *m,
  * @param out Returns a pointer to an inode. Can be released with a
  *            single free() call.
  *
- * @return Zero on success, an @ref E_SQFS_ERROR value on failure.
+ * @return Zero on success, an @ref SQFS_ERROR value on failure.
  */
 SQFS_API
 int sqfs_meta_reader_read_inode(sqfs_meta_reader_t *ir,

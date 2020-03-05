@@ -73,7 +73,7 @@ int sqfs_generic_read_options(sqfs_file_t *file, void *data, size_t size)
 	return 0;
 }
 
-bool sqfs_compressor_exists(E_SQFS_COMPRESSOR id)
+bool sqfs_compressor_exists(SQFS_COMPRESSOR id)
 {
 	if (id < SQFS_COMP_MIN || id > SQFS_COMP_MAX)
 		return false;
@@ -122,7 +122,7 @@ sqfs_compressor_t *sqfs_compressor_create(const sqfs_compressor_config_t *cfg)
 	return compressors[cfg->id](cfg);
 }
 
-const char *sqfs_compressor_name_from_id(E_SQFS_COMPRESSOR id)
+const char *sqfs_compressor_name_from_id(SQFS_COMPRESSOR id)
 {
 	if (id < 0 || (size_t)id >= sizeof(names) / sizeof(names[0]))
 		return NULL;
@@ -143,7 +143,7 @@ int sqfs_compressor_id_from_name(const char *name)
 }
 
 int sqfs_compressor_config_init(sqfs_compressor_config_t *cfg,
-				E_SQFS_COMPRESSOR id,
+				SQFS_COMPRESSOR id,
 				size_t block_size, sqfs_u16 flags)
 {
 	sqfs_u32 flag_mask = SQFS_COMP_FLAG_GENERIC_ALL;

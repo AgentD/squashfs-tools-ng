@@ -51,7 +51,7 @@
  */
 
 /**
- * @enum E_SQFS_META_WRITER_FLAGS
+ * @enum SQFS_META_WRITER_FLAGS
  *
  * @brief Possible flags for @ref sqfs_meta_writer_create.
  */
@@ -65,7 +65,7 @@ typedef enum {
 	SQFS_META_WRITER_KEEP_IN_MEMORY = 0x01,
 
 	SQFS_META_WRITER_ALL_FLAGS = 0x01,
-} E_SQFS_META_WRITER_FLAGS;
+} SQFS_META_WRITER_FLAGS;
 
 #ifdef __cplusplus
 extern "C" {
@@ -82,7 +82,7 @@ extern "C" {
  *
  * @param file An output file to write the data to.
  * @param cmp A compressor to use.
- * @param flags A combination of @ref E_SQFS_META_WRITER_FLAGS.
+ * @param flags A combination of @ref SQFS_META_WRITER_FLAGS.
  *
  * @return A pointer to a meta writer on success, NULL on allocation failure
  *         or if an unknown flag was set.
@@ -103,7 +103,7 @@ SQFS_API sqfs_meta_writer_t *sqfs_meta_writer_create(sqfs_file_t *file,
  *
  * @param m A pointer to a meta data writer.
  *
- * @return Zero on success, an @ref E_SQFS_ERROR value on failure.
+ * @return Zero on success, an @ref SQFS_ERROR value on failure.
  */
 SQFS_API int sqfs_meta_writer_flush(sqfs_meta_writer_t *m);
 
@@ -121,7 +121,7 @@ SQFS_API int sqfs_meta_writer_flush(sqfs_meta_writer_t *m);
  * @param data A pointer to a chunk of data to append to the writer.
  * @param size The number of data bytes to append.
  *
- * @return Zero on success, an @ref E_SQFS_ERROR value on failure.
+ * @return Zero on success, an @ref SQFS_ERROR value on failure.
  */
 SQFS_API int sqfs_meta_writer_append(sqfs_meta_writer_t *m, const void *data,
 				     size_t size);
@@ -167,7 +167,7 @@ SQFS_API void sqfs_meta_writer_reset(sqfs_meta_writer_t *m);
  * memory instead of writing them to disk, calling this function forces
  * the meta writer to write out all blocks it collected so far.
  *
- * @return Zero on success, an @ref E_SQFS_ERROR value on failure.
+ * @return Zero on success, an @ref SQFS_ERROR value on failure.
  */
 SQFS_API int sqfs_meta_write_write_to_file(sqfs_meta_writer_t *m);
 
@@ -184,7 +184,7 @@ SQFS_API int sqfs_meta_write_write_to_file(sqfs_meta_writer_t *m);
  * @param iw A pointer to a meta data writer.
  * @param n A pointer to an inode.
  *
- * @return Zero on success, an @ref E_SQFS_ERROR value on failure.
+ * @return Zero on success, an @ref SQFS_ERROR value on failure.
  */
 SQFS_API int sqfs_meta_writer_write_inode(sqfs_meta_writer_t *iw,
 					  const sqfs_inode_generic_t *n);

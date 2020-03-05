@@ -57,7 +57,7 @@ struct sqfs_fragment_t {
 };
 
 /**
- * @enum E_SQFS_BLK_FLAGS
+ * @enum SQFS_BLK_FLAGS
  *
  * @brief Generic flags that tell the processor what to do with a block and
  *        flags that the processor sets when it is done with a block.
@@ -136,6 +136,6 @@ typedef enum {
 	 * @brief The combination of all flags that are user settable.
 	 */
 	SQFS_BLK_USER_SETTABLE_FLAGS = 0x000F,
-} E_SQFS_BLK_FLAGS;
+} SQFS_BLK_FLAGS;
 
 #endif /* SQFS_BLOCK_H */

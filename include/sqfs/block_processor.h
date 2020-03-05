@@ -158,10 +158,10 @@ sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
  * @param inode A pointer to a pointer to an inode. The block processor creates
  *              a file inode and stores a pointer to it here and keeps updating
  *              the inode as the file grows.
- * @param flags A combination of @ref E_SQFS_BLK_FLAGS that can be used to
+ * @param flags A combination of @ref SQFS_BLK_FLAGS that can be used to
  *              micro manage how the data is processed.
  *
- * @return Zero on success, an @ref E_SQFS_ERROR value on failure.
+ * @return Zero on success, an @ref SQFS_ERROR value on failure.
  */
 SQFS_API int sqfs_block_processor_begin_file(sqfs_block_processor_t *proc,
 					     sqfs_inode_generic_t **inode,
@@ -179,7 +179,7 @@ SQFS_API int sqfs_block_processor_begin_file(sqfs_block_processor_t *proc,
  * @param size How many bytes should be copied out of the given
  *             buffer and written to disk.
  *
- * @return Zero on success, an @ref E_SQFS_ERROR value on failure.
+ * @return Zero on success, an @ref SQFS_ERROR value on failure.
  */
 SQFS_API int sqfs_block_processor_append(sqfs_block_processor_t *proc,
 					 const void *data, size_t size);
@@ -198,7 +198,7 @@ SQFS_API int sqfs_block_processor_append(sqfs_block_processor_t *proc,
  *
  * @param proc A pointer to a data writer object.
  *
- * @return Zero on success, an @ref E_SQFS_ERROR value on failure.
+ * @return Zero on success, an @ref SQFS_ERROR value on failure.
  */
 SQFS_API int sqfs_block_processor_end_file(sqfs_block_processor_t *proc);
 
@@ -209,7 +209,7 @@ SQFS_API int sqfs_block_processor_end_file(sqfs_block_processor_t *proc);
  *
  * @param proc A pointer to a block processor object.
  *
- * @return Zero on success, an @ref E_SQFS_ERROR value on failure. The failure
+ * @return Zero on success, an @ref SQFS_ERROR value on failure. The failure
  *         return value can either be an error encountered during enqueueing,
  *         processing or writing to disk.
  */
@@ -227,7 +227,7 @@ SQFS_API int sqfs_block_processor_sync(sqfs_block_processor_t *proc);
  *
  * @param proc A pointer to a block processor object.
  *
- * @return Zero on success, an @ref E_SQFS_ERROR value on failure. The failure
+ * @return Zero on success, an @ref SQFS_ERROR value on failure. The failure
  *         return value can either be an error encountered during enqueueing,
  *         processing or writing to disk.
  */

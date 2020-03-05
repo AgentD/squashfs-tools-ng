@@ -29,7 +29,7 @@
  */
 
 /**
- * @enum E_SQFS_XATTR_TYPE
+ * @enum SQFS_XATTR_TYPE
  *
  * Used by @ref sqfs_xattr_entry_t to encodes the xattr prefix.
  */
@@ -40,7 +40,7 @@ typedef enum {
 
 	SQFS_XATTR_FLAG_OOL = 0x100,
 	SQFS_XATTR_PREFIX_MASK = 0xFF,
-} E_SQFS_XATTR_TYPE;
+} SQFS_XATTR_TYPE;
 
 /**
  * @struct sqfs_xattr_entry_t
@@ -54,7 +54,7 @@ struct sqfs_xattr_entry_t {
 	/**
 	 * @brief Encodes the prefix of the key
 	 *
-	 * A @ref E_SQFS_XATTR_TYPE value. If the @ref SQFS_XATTR_FLAG_OOL is
+	 * A @ref SQFS_XATTR_TYPE value. If the @ref SQFS_XATTR_FLAG_OOL is
 	 * set, the value that follows is not actually a string but a 64 bit
 	 * reference to the location where the value is actually stored.
 	 */
@@ -158,11 +158,11 @@ extern "C" {
  * Like many file systems, SquashFS stores xattrs be cutting off the common
  * prefix of the key string and storing an enumerator instead to save memory.
  *
- * This function takes an @ref E_SQFS_XATTR_TYPE identifier and returns the
+ * This function takes an @ref SQFS_XATTR_TYPE identifier and returns the
  * coresponding prefix string, including the '.' at the end that separates
  * the prefix from the rest of the key.
  */
-SQFS_API const char *sqfs_get_xattr_prefix(E_SQFS_XATTR_TYPE id);
+SQFS_API const char *sqfs_get_xattr_prefix(SQFS_XATTR_TYPE id);
 
 /**
  * @brief Resolve an xattr prefix into an identifier
@@ -173,7 +173,7 @@ SQFS_API const char *sqfs_get_xattr_prefix(E_SQFS_XATTR_TYPE id);
  * This function takes a key and finds the enumerator value that represents
  * its prefix. An error value is returned if the given prefix isn't supported.
  *
- * @return On success an @ref E_SQFS_XATTR_TYPE. If not supported, the
+ * @return On success an @ref SQFS_XATTR_TYPE. If not supported, the
  *         @ref SQFS_ERROR_UNSUPPORTED error code.
  */
 SQFS_API int sqfs_get_xattr_prefix_id(const char *key);

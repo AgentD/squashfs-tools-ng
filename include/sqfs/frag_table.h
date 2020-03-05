@@ -62,7 +62,7 @@ SQFS_API sqfs_frag_table_t *sqfs_frag_table_create(sqfs_u32 flags);
  *              and size of the table.
  * @param cmp The compressor to use for uncompressing the table.
  *
- * @return Zero on success, an @ref E_SQFS_ERROR on failure.
+ * @return Zero on success, an @ref SQFS_ERROR on failure.
  */
 SQFS_API int sqfs_frag_table_read(sqfs_frag_table_t *tbl, sqfs_file_t *file,
 				  const sqfs_super_t *super,
@@ -83,7 +83,7 @@ SQFS_API int sqfs_frag_table_read(sqfs_frag_table_t *tbl, sqfs_file_t *file,
  *              and size of the table.
  * @param cmp The compressor to use for compressing the table.
  *
- * @return Zero on success, an @ref E_SQFS_ERROR on failure.
+ * @return Zero on success, an @ref SQFS_ERROR on failure.
  */
 SQFS_API int sqfs_frag_table_write(sqfs_frag_table_t *tbl, sqfs_file_t *file,
 				   sqfs_super_t *super, sqfs_compressor_t *cmp);
@@ -97,7 +97,7 @@ SQFS_API int sqfs_frag_table_write(sqfs_frag_table_t *tbl, sqfs_file_t *file,
  * @param index The index into the table.
  * @param out Returns the data from the table on success.
  *
- * @return Zero on success, an @ref E_SQFS_ERROR on failure (e.g. index is
+ * @return Zero on success, an @ref SQFS_ERROR on failure (e.g. index is
  *         out of bounds).
  */
 SQFS_API int sqfs_frag_table_lookup(sqfs_frag_table_t *tbl, sqfs_u32 index,
@@ -113,7 +113,7 @@ SQFS_API int sqfs_frag_table_lookup(sqfs_frag_table_t *tbl, sqfs_u32 index,
  * @param out The size of the block. Has bit 24 set if compressed.
  * @param index If not NULL, returns the allocated table index.
  *
- * @return Zero on success, an @ref E_SQFS_ERROR on failure (e.g. allocation
+ * @return Zero on success, an @ref SQFS_ERROR on failure (e.g. allocation
  *         failure).
  */
 SQFS_API int sqfs_frag_table_append(sqfs_frag_table_t *tbl, sqfs_u64 location,
@@ -129,7 +129,7 @@ SQFS_API int sqfs_frag_table_append(sqfs_frag_table_t *tbl, sqfs_u64 location,
  * @param location The absolute on-disk location of the fragment block.
  * @param out The size of the block. Has bit 24 set if compressed.
  *
- * @return Zero on success, an @ref E_SQFS_ERROR on
+ * @return Zero on success, an @ref SQFS_ERROR on
  *         failure (e.g. out of bounds).
  */
 SQFS_API int sqfs_frag_table_set(sqfs_frag_table_t *tbl, sqfs_u32 index,
@@ -162,7 +162,7 @@ SQFS_API size_t sqfs_frag_table_get_size(sqfs_frag_table_t *tbl);
  * @param size The size of the tail en inside the fragment block.
  * @param hash An arbitrary 32 bit data hash to memorize.
  *
- * @return Zero on success, an @ref E_SQFS_ERROR on faiure.
+ * @return Zero on success, an @ref SQFS_ERROR on faiure.
  */
 SQFS_API int sqfs_frag_table_add_tail_end(sqfs_frag_table_t *tbl,
 					  sqfs_u32 index, sqfs_u32 offset,

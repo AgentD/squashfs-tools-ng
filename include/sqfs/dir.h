@@ -85,7 +85,7 @@ struct sqfs_dir_entry_t {
 	sqfs_s16 inode_diff;
 
 	/**
-	 * @brief The @ref E_SQFS_INODE_TYPE value for the inode that this
+	 * @brief The @ref SQFS_INODE_TYPE value for the inode that this
 	 *        entry represents.
 	 */
 	sqfs_u16 type;

@@ -53,7 +53,7 @@
  */
 
 /**
- * @enum E_SQFS_TREE_FILTER_FLAGS
+ * @enum SQFS_TREE_FILTER_FLAGS
  *
  * @brief Filter flags for @ref sqfs_dir_reader_get_full_hierarchy
  */
@@ -103,7 +103,7 @@ typedef enum {
 	SQFS_TREE_STORE_PARENTS = 0x40,
 
 	SQFS_TREE_ALL_FLAGS = 0x7F,
-} E_SQFS_TREE_FILTER_FLAGS;
+} SQFS_TREE_FILTER_FLAGS;
 
 /**
  * @struct sqfs_tree_node_t
@@ -182,7 +182,7 @@ SQFS_API sqfs_dir_reader_t *sqfs_dir_reader_create(const sqfs_super_t *super,
  * @param rd A pointer to a directory reader.
  * @param inode An directory or extended directory inode.
  *
- * @return Zero on success, an @ref E_SQFS_ERROR value on failure.
+ * @return Zero on success, an @ref SQFS_ERROR value on failure.
  */
 SQFS_API int sqfs_dir_reader_open_dir(sqfs_dir_reader_t *rd,
 				      const sqfs_inode_generic_t *inode);
@@ -194,7 +194,7 @@ SQFS_API int sqfs_dir_reader_open_dir(sqfs_dir_reader_t *rd,
  *
  * @param rd A pointer to a directory reader.
  *
- * @return Zero on success, an @ref E_SQFS_ERROR value on failure.
+ * @return Zero on success, an @ref SQFS_ERROR value on failure.
  */
 SQFS_API int sqfs_dir_reader_rewind(sqfs_dir_reader_t *rd);
 
@@ -207,7 +207,7 @@ SQFS_API int sqfs_dir_reader_rewind(sqfs_dir_reader_t *rd);
  * @param rd A pointer to a directory reader.
  * @param name The name of the entry to find.
  *
- * @return Zero on success, an @ref E_SQFS_ERROR value on failure.
+ * @return Zero on success, an @ref SQFS_ERROR value on failure.
  */
 SQFS_API int sqfs_dir_reader_find(sqfs_dir_reader_t *rd, const char *name);
 
@@ -229,7 +229,7 @@ SQFS_API int sqfs_dir_reader_find(sqfs_dir_reader_t *rd, const char *name);
  * @param out Returns a pointer to a directory entry on success that can be
  *            freed with a single free call.
  *
- * @return Zero on success, an @ref E_SQFS_ERROR value on failure, a positive
+ * @return Zero on success, an @ref SQFS_ERROR value on failure, a positive
  *         number if the end of the current directory listing has been reached.
  */
 SQFS_API int sqfs_dir_reader_read(sqfs_dir_reader_t *rd,
@@ -244,7 +244,7 @@ SQFS_API int sqfs_dir_reader_read(sqfs_dir_reader_t *rd,
  * @param out Returns a pointer to a generic inode that can be freed with a
  *            single free call.
  *
- * @return Zero on success, an @ref E_SQFS_ERROR value on failure.
+ * @return Zero on success, an @ref SQFS_ERROR value on failure.
  */
 SQFS_API int sqfs_dir_reader_get_inode(sqfs_dir_reader_t *rd,
 				       sqfs_inode_generic_t **inode);
@@ -258,7 +258,7 @@ SQFS_API int sqfs_dir_reader_get_inode(sqfs_dir_reader_t *rd,
  * @param out Returns a pointer to a generic inode that can be freed with a
  *            single free call.
  *
- * @return Zero on success, an @ref E_SQFS_ERROR value on failure.
+ * @return Zero on success, an @ref SQFS_ERROR value on failure.
  */
 SQFS_API int sqfs_dir_reader_get_root_inode(sqfs_dir_reader_t *rd,
 					    sqfs_inode_generic_t **inode);
@@ -278,7 +278,7 @@ SQFS_API int sqfs_dir_reader_get_root_inode(sqfs_dir_reader_t *rd,
  * @param out Returns a pointer to a generic inode that can be freed with a
  *            single free call.
  *
- * @return Zero on success, an @ref E_SQFS_ERROR value on failure.
+ * @return Zero on success, an @ref SQFS_ERROR value on failure.
  */
 SQFS_API int sqfs_dir_reader_find_by_path(sqfs_dir_reader_t *rd,
 					  const sqfs_inode_generic_t *start,
@@ -299,10 +299,10 @@ SQFS_API int sqfs_dir_reader_find_by_path(sqfs_dir_reader_t *rd,
  * @param path A path to resolve into an inode. Forward or backward slashes can
  *             be used to separate path components. Resolving '.' or '..' is
  *             not supported. Can be set to NULL to get the root inode.
- * @param flags A combination of @ref E_SQFS_TREE_FILTER_FLAGS flags.
+ * @param flags A combination of @ref SQFS_TREE_FILTER_FLAGS flags.
  * @param out Returns the top most tree node.
  *
- * @return Zero on success, an @ref E_SQFS_ERROR value on failure.
+ * @return Zero on success, an @ref SQFS_ERROR value on failure.
  */
 SQFS_API int sqfs_dir_reader_get_full_hierarchy(sqfs_dir_reader_t *rd,
 						const sqfs_id_table_t *idtbl,

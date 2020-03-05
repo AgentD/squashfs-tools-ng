@@ -60,7 +60,7 @@ struct sqfs_compressor_t {
 	 * @param file A file to write to.
 	 *
 	 * @return The number of bytes written on success, 0 means default
-	 *         settings are used. A negative value is an @ref E_SQFS_ERROR
+	 *         settings are used. A negative value is an @ref SQFS_ERROR
 	 *         identifier.
 	 */
 	int (*write_options)(sqfs_compressor_t *cmp, sqfs_file_t *file);
@@ -71,7 +71,7 @@ struct sqfs_compressor_t {
 	 * @param cmp A pointer to a compressor object.
 	 * @param file A file to read from.
 	 *
-	 * @return Zero on success or an @ref E_SQFS_ERROR value.
+	 * @return Zero on success or an @ref SQFS_ERROR value.
 	 */
 	int (*read_options)(sqfs_compressor_t *cmp, sqfs_file_t *file);
 
@@ -85,7 +85,7 @@ struct sqfs_compressor_t {
 	 * @param outsize The available space in the destination buffer.
 	 *
 	 * @return The number of bytes written to the buffer, a negative
-	 *         value is an @ref E_SQFS_ERROR value. The value 0 means
+	 *         value is an @ref SQFS_ERROR value. The value 0 means
 	 *         the output buffer was too small when extracting or that
 	 *         the result is larger than the input when compressing.
 	 */
@@ -105,7 +105,7 @@ struct sqfs_compressor_t {
  */
 struct sqfs_compressor_config_t {
 	/**
-	 * @brief An @ref E_SQFS_COMPRESSOR identifier
+	 * @brief An @ref SQFS_COMPRESSOR identifier
 	 */
 	sqfs_u16 id;
 
@@ -331,22 +331,22 @@ extern "C" {
  * @param block_size The block size to set.
  * @param flags The compressor flags to set.
  *
- * @return Zero on success, an @ref E_SQFS_ERROR value if some of the options
+ * @return Zero on success, an @ref SQFS_ERROR value if some of the options
  *         don't make sense (e.g. unknown flags are used).
  */
 SQFS_API int sqfs_compressor_config_init(sqfs_compressor_config_t *cfg,
-					 E_SQFS_COMPRESSOR id,
+					 SQFS_COMPRESSOR id,
 					 size_t block_size, sqfs_u16 flags);
 
 /**
  * @brief Check if a specified compressor implementation is available.
  *
- * @param id An @ref E_SQFS_COMPRESSOR identifier.
+ * @param id An @ref SQFS_COMPRESSOR identifier.
  *
  * @return true if the implementation is available and can be instantiated
  *         through @ref sqfs_compressor_create.
  */
-SQFS_API bool sqfs_compressor_exists(E_SQFS_COMPRESSOR id);
+SQFS_API bool sqfs_compressor_exists(SQFS_COMPRESSOR id);
 
 /**
  * @brief Create an instance of a compressor implementation.
@@ -366,12 +366,12 @@ sqfs_compressor_t *sqfs_compressor_create(const sqfs_compressor_config_t *cfg);
  * use @ref sqfs_compressor_exists to check if a compressor is actually
  * available.
  *
- * @param id An @ref E_SQFS_COMPRESSOR identifier.
+ * @param id An @ref SQFS_COMPRESSOR identifier.
  *
  * @return A string holding the name of the compressor, NULL if the compressor
  *         ID is not known.
  */
-SQFS_API const char *sqfs_compressor_name_from_id(E_SQFS_COMPRESSOR id);
+SQFS_API const char *sqfs_compressor_name_from_id(SQFS_COMPRESSOR id);
 
 /**
  * @brief Get the compressor ID using just the name of the backend.
@@ -382,7 +382,7 @@ SQFS_API const char *sqfs_compressor_name_from_id(E_SQFS_COMPRESSOR id);
  *
  * @param name The name of the compressor backend.
  *
- * @return A positive, @ref E_SQFS_COMPRESSOR identifier on success
+ * @return A positive, @ref SQFS_COMPRESSOR identifier on success
  *         or @ref SQFS_ERROR_UNSUPPORTED if the backend is unknown.
  */
 SQFS_API int sqfs_compressor_id_from_name(const char *name);

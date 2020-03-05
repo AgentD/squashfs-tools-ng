@@ -59,7 +59,7 @@ typedef struct {
 	size_t num_jobs;
 
 	int outmode;
-	E_SQFS_COMPRESSOR comp_id;
+	SQFS_COMPRESSOR comp_id;
 
 	bool exportable;
 	bool no_xattr;
@@ -96,13 +96,13 @@ void sqfs_print_statistics(const sqfs_super_t *super,
 
 void compressor_print_available(void);
 
-E_SQFS_COMPRESSOR compressor_get_default(void);
+SQFS_COMPRESSOR compressor_get_default(void);
 
 int compressor_cfg_init_options(sqfs_compressor_config_t *cfg,
-				E_SQFS_COMPRESSOR id,
+				SQFS_COMPRESSOR id,
 				size_t block_size, char *options);
 
-void compressor_print_help(E_SQFS_COMPRESSOR id);
+void compressor_print_help(SQFS_COMPRESSOR id);
 
 int inode_stat(const sqfs_tree_node_t *node, struct stat *sb);
 

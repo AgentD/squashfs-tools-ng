@@ -23,11 +23,11 @@
 /**
  * @file error.h
  *
- * @brief Contains the @ref E_SQFS_ERROR enumerator.
+ * @brief Contains the @ref SQFS_ERROR enumerator.
  */
 
 /**
- * @enum E_SQFS_ERROR
+ * @enum SQFS_ERROR
  *
  * @brief Error codes that can be returned by various libsquashfs functions.
  */
@@ -145,6 +145,6 @@ typedef enum {
 	 * performed and the object can still be used.
 	 */
 	SQFS_ERROR_SEQUENCE = -17,
-} E_SQFS_ERROR;
+} SQFS_ERROR;
 
 #endif /* SQFS_ERROR_H */

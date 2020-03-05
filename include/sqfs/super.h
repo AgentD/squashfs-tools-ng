@@ -76,7 +76,7 @@ struct sqfs_super_t {
 	/**
 	 * @brief Identifies the compressor that has been used.
 	 *
-	 * Valid identifiers are in the @ref E_SQFS_COMPRESSOR enum.
+	 * Valid identifiers are in the @ref SQFS_COMPRESSOR enum.
 	 */
 	sqfs_u16 compression_id;
 
@@ -88,7 +88,7 @@ struct sqfs_super_t {
 	sqfs_u16 block_log;
 
 	/**
-	 * @brief A combination of @ref E_SQFS_SUPER_FLAGS flags
+	 * @brief A combination of @ref SQFS_SUPER_FLAGS flags
 	 *
 	 * Most of the flags that can be set here are informative only.
 	 */
@@ -181,7 +181,7 @@ struct sqfs_super_t {
 };
 
 /**
- * @enum E_SQFS_COMPRESSOR
+ * @enum SQFS_COMPRESSOR
  *
  * @brief Set in @ref sqfs_super_t to identify the compresser used by the
  *        filesystem.
@@ -198,10 +198,10 @@ typedef enum {
 
 	SQFS_COMP_MIN = 1,
 	SQFS_COMP_MAX = 6,
-} E_SQFS_COMPRESSOR;
+} SQFS_COMPRESSOR;
 
 /**
- * @enum E_SQFS_SUPER_FLAGS
+ * @enum SQFS_SUPER_FLAGS
  *
  * @brief Flags that can be set in @ref sqfs_super flags field.
  */
@@ -267,7 +267,7 @@ typedef enum {
 	 *        stored uncompressed.
 	 */
 	SQFS_FLAG_UNCOMPRESSED_IDS = 0x0800,
-} E_SQFS_SUPER_FLAGS;
+} SQFS_SUPER_FLAGS;
 
 #ifdef __cplusplus
 extern "C" {
@@ -283,12 +283,12 @@ extern "C" {
  * @param mtime The modification time stamp to set.
  * @param compressor The compressor ID to set.
  *
- * @return Zero on success, an @ref E_SQFS_ERROR value if one of the
+ * @return Zero on success, an @ref SQFS_ERROR value if one of the
  *         fields does not hold a valid value.
  */
 SQFS_API int sqfs_super_init(sqfs_super_t *super, size_t block_size,
 			     sqfs_u32 mtime,
-			     E_SQFS_COMPRESSOR compressor);
+			     SQFS_COMPRESSOR compressor);
 
 /**
  * @brief Encode and write a SquashFS super block to disk.
@@ -298,7 +298,7 @@ SQFS_API int sqfs_super_init(sqfs_super_t *super, size_t block_size,
  * @param super A pointer to the super block structure to write.
  * @param file A file object through which to access the filesystem image.
  *
- * @return Zero on success, an @ref E_SQFS_ERROR value if one of the
+ * @return Zero on success, an @ref SQFS_ERROR value if one of the
  *         fields does not hold a valid value.
  */
 SQFS_API int sqfs_super_write(const sqfs_super_t *super, sqfs_file_t *file);
@@ -311,7 +311,7 @@ SQFS_API int sqfs_super_write(const sqfs_super_t *super, sqfs_file_t *file);
  * @param super A pointer to the super block structure to fill.
  * @param file A file object through which to access the filesystem image.
  *
- * @return Zero on success, an @ref E_SQFS_ERROR value if one of the
+ * @return Zero on success, an @ref SQFS_ERROR value if one of the
  *         fields does not hold a valid value.
  */
 SQFS_API int sqfs_super_read(sqfs_super_t *super, sqfs_file_t *file);

@@ -13,7 +13,7 @@
 
 static const struct {
 	const char *prefix;
-	E_SQFS_XATTR_TYPE type;
+	SQFS_XATTR_TYPE type;
 } xattr_types[] = {
 	{ "user.", SQFS_XATTR_USER },
 	{ "trusted.", SQFS_XATTR_TRUSTED },
@@ -36,7 +36,7 @@ int sqfs_get_xattr_prefix_id(const char *key)
 	return SQFS_ERROR_UNSUPPORTED;
 }
 
-const char *sqfs_get_xattr_prefix(E_SQFS_XATTR_TYPE id)
+const char *sqfs_get_xattr_prefix(SQFS_XATTR_TYPE id)
 {
 	size_t i;
 

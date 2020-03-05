@@ -114,7 +114,7 @@ SQFS_API sqfs_dir_writer_t *sqfs_dir_writer_create(sqfs_meta_writer_t *dm,
  * @param writer A pointer to a directory writer object.
  * @param flags A currently unused flag field. Must be set to 0.
  *
- * @return Zero on success, a @ref E_SQFS_ERROR value on failure.
+ * @return Zero on success, a @ref SQFS_ERROR value on failure.
  */
 SQFS_API int sqfs_dir_writer_begin(sqfs_dir_writer_t *writer, sqfs_u32 flags);
 
@@ -132,7 +132,7 @@ SQFS_API int sqfs_dir_writer_begin(sqfs_dir_writer_t *writer, sqfs_u32 flags);
  * @param mode A file mode, i.e. type and permission bits from which the entry
  *             type is derived internally.
  *
- * @return Zero on success, a @ref E_SQFS_ERROR value on failure.
+ * @return Zero on success, a @ref SQFS_ERROR value on failure.
  */
 SQFS_API int sqfs_dir_writer_add_entry(sqfs_dir_writer_t *writer,
 				       const char *name,
@@ -147,7 +147,7 @@ SQFS_API int sqfs_dir_writer_add_entry(sqfs_dir_writer_t *writer,
  *
  * @param writer A pointer to a directory writer object.
  *
- * @return Zero on success, a @ref E_SQFS_ERROR value on failure.
+ * @return Zero on success, a @ref SQFS_ERROR value on failure.
  */
 SQFS_API int sqfs_dir_writer_end(sqfs_dir_writer_t *writer);
 
@@ -265,7 +265,7 @@ SQFS_API sqfs_inode_generic_t
  * @param super A pointer to the super block. Location of the export table and
  *              the exportable flag are set.
  *
- * @return Zero on success, a @ref E_SQFS_ERROR value on failure.
+ * @return Zero on success, a @ref SQFS_ERROR value on failure.
  */
 SQFS_API int sqfs_dir_writer_write_export_table(sqfs_dir_writer_t *writer,
 						sqfs_file_t *file,

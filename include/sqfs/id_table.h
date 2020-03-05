@@ -67,7 +67,7 @@ SQFS_API sqfs_id_table_t *sqfs_id_table_create(sqfs_u32 flags);
  * @param id The ID to resolve.
  * @param out Returns the unique table index.
  *
- * @return Zero on success, an @ref E_SQFS_ERROR on failure.
+ * @return Zero on success, an @ref SQFS_ERROR on failure.
  */
 SQFS_API int sqfs_id_table_id_to_index(sqfs_id_table_t *tbl, sqfs_u32 id,
 				       sqfs_u16 *out);
@@ -83,7 +83,7 @@ SQFS_API int sqfs_id_table_id_to_index(sqfs_id_table_t *tbl, sqfs_u32 id,
  *              start location.
  * @param cmp A compressor to use to compress the ID table.
  *
- * @return Zero on success, an @ref E_SQFS_ERROR on failure.
+ * @return Zero on success, an @ref SQFS_ERROR on failure.
  */
 SQFS_API int sqfs_id_table_write(sqfs_id_table_t *tbl, sqfs_file_t *file,
 				 sqfs_super_t *super, sqfs_compressor_t *cmp);
@@ -99,7 +99,7 @@ SQFS_API int sqfs_id_table_write(sqfs_id_table_t *tbl, sqfs_file_t *file,
  *              the ID table location.
  * @param cmp A compressor to use to extract compressed table blocks.
  *
- * @return Zero on success, an @ref E_SQFS_ERROR on failure.
+ * @return Zero on success, an @ref SQFS_ERROR on failure.
  */
 SQFS_API int sqfs_id_table_read(sqfs_id_table_t *tbl, sqfs_file_t *file,
 				const sqfs_super_t *super,
@@ -114,7 +114,7 @@ SQFS_API int sqfs_id_table_read(sqfs_id_table_t *tbl, sqfs_file_t *file,
  * @param index The table index to resolve.
  * @param out Returns the underlying 32 bit ID that the index maps to.
  *
- * @return Zero on success, an @ref E_SQFS_ERROR on failure.
+ * @return Zero on success, an @ref SQFS_ERROR on failure.
  */
 SQFS_API int sqfs_id_table_index_to_id(const sqfs_id_table_t *tbl,
 				       sqfs_u16 index, sqfs_u32 *out);

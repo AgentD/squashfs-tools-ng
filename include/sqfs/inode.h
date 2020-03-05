@@ -29,7 +29,7 @@
  */
 
 /**
- * @enum E_SQFS_INODE_TYPE
+ * @enum SQFS_INODE_TYPE
  *
  * @brief Used by @ref sqfs_inode_t to identify the inode type.
  */
@@ -48,10 +48,10 @@ typedef enum {
 	SQFS_INODE_EXT_CDEV = 12,
 	SQFS_INODE_EXT_FIFO = 13,
 	SQFS_INODE_EXT_SOCKET = 14,
-} E_SQFS_INODE_TYPE;
+} SQFS_INODE_TYPE;
 
 /**
- * @enum E_SQFS_INODE_MODE
+ * @enum SQFS_INODE_MODE
  *
  * @brief Mode bits for the @ref sqfs_inode_t mode field.
  *
@@ -120,7 +120,7 @@ typedef enum {
 	SQFS_INODE_MODE_LNK = 0120000,
 	SQFS_INODE_MODE_SOCK = 0140000,
 	SQFS_INODE_MODE_MASK = 0170000,
-} E_SQFS_INODE_MODE;
+} SQFS_INODE_MODE;
 
 /**
  * @struct sqfs_inode_t
@@ -132,7 +132,7 @@ typedef enum {
  */
 struct sqfs_inode_t {
 	/**
-	 * @brief An @ref E_SQFS_INODE_TYPE value.
+	 * @brief An @ref SQFS_INODE_TYPE value.
 	 */
 	sqfs_u16 type;
 
@@ -140,7 +140,7 @@ struct sqfs_inode_t {
 	 * @brief Mode filed holding permission bits only. The type is derived
 	 *        from the type field.
 	 *
-	 * This field holds a combination of @ref E_SQFS_INODE_MODE flags.
+	 * This field holds a combination of @ref SQFS_INODE_MODE flags.
 	 */
 	sqfs_u16 mode;
 

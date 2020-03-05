@@ -78,7 +78,7 @@ SQFS_API sqfs_data_reader_t *sqfs_data_reader_create(sqfs_file_t *file,
  * @param data A pointer to a data reader object.
  * @param super A pointer to the super block.
  *
- * @return Zero on succcess, an @ref E_SQFS_ERROR value on failure.
+ * @return Zero on succcess, an @ref SQFS_ERROR value on failure.
  */
 SQFS_API int sqfs_data_reader_load_fragment_table(sqfs_data_reader_t *data,
 						  const sqfs_super_t *super);
@@ -94,7 +94,7 @@ SQFS_API int sqfs_data_reader_load_fragment_table(sqfs_data_reader_t *data,
  * @param out Returns a pointer to the raw data that must be
  *            released using free.
  *
- * @return Zero on succcess, an @ref E_SQFS_ERROR value on failure.
+ * @return Zero on succcess, an @ref SQFS_ERROR value on failure.
  */
 SQFS_API int sqfs_data_reader_get_fragment(sqfs_data_reader_t *data,
 					   const sqfs_inode_generic_t *inode,
@@ -112,7 +112,7 @@ SQFS_API int sqfs_data_reader_get_fragment(sqfs_data_reader_t *data,
  * @param out Returns a pointer to the raw data that must be
  *            released using free.
  *
- * @return Zero on succcess, an @ref E_SQFS_ERROR value on failure.
+ * @return Zero on succcess, an @ref SQFS_ERROR value on failure.
  */
 SQFS_API int sqfs_data_reader_get_block(sqfs_data_reader_t *data,
 					const sqfs_inode_generic_t *inode,
@@ -135,7 +135,7 @@ SQFS_API int sqfs_data_reader_get_block(sqfs_data_reader_t *data,
  * @param size The number of uncompressed bytes to read from the given offset.
  *
  * @return The number of bytes read on succcess, zero if attempting to read
- *         past the end of the file and a negative @ref E_SQFS_ERROR value
+ *         past the end of the file and a negative @ref SQFS_ERROR value
  *         on failure.
  */
 SQFS_API sqfs_s32 sqfs_data_reader_read(sqfs_data_reader_t *data,

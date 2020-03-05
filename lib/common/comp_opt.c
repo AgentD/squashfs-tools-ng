@@ -89,7 +89,7 @@ static char *const token[] = {
 };
 
 int compressor_cfg_init_options(sqfs_compressor_config_t *cfg,
-				E_SQFS_COMPRESSOR id,
+				SQFS_COMPRESSOR id,
 				size_t block_size, char *options)
 {
 	size_t num_flags = 0, min_level = 0, max_level = 0, level, dict_size;
@@ -332,7 +332,7 @@ static const compressor_help_fun_t helpfuns[SQFS_COMP_MAX + 1] = {
 	[SQFS_COMP_ZSTD] = zstd_print_help,
 };
 
-void compressor_print_help(E_SQFS_COMPRESSOR id)
+void compressor_print_help(SQFS_COMPRESSOR id)
 {
 	if (id < SQFS_COMP_MIN || id > SQFS_COMP_MAX)
 		return;

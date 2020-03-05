@@ -75,7 +75,7 @@ SQFS_API sqfs_xattr_writer_t *sqfs_xattr_writer_create(void);
  *
  * @param xwr A pointer to an xattr writer instance.
  *
- * @return Zero on success, a negative @ref E_SQFS_ERROR value on failure.
+ * @return Zero on success, a negative @ref SQFS_ERROR value on failure.
  */
 SQFS_API int sqfs_xattr_writer_begin(sqfs_xattr_writer_t *xwr);
 
@@ -89,7 +89,7 @@ SQFS_API int sqfs_xattr_writer_begin(sqfs_xattr_writer_t *xwr);
  * @param value The associated value to store.
  * @param size The size of the value blob.
  *
- * @return Zero on success, a negative @ref E_SQFS_ERROR value on failure.
+ * @return Zero on success, a negative @ref SQFS_ERROR value on failure.
  */
 SQFS_API int sqfs_xattr_writer_add(sqfs_xattr_writer_t *xwr, const char *key,
 				   const void *value, size_t size);
@@ -108,7 +108,7 @@ SQFS_API int sqfs_xattr_writer_add(sqfs_xattr_writer_t *xwr, const char *key,
  * @param out Returns an ID that has to be set to the inode that the block of
  *            key-value pairs belongs to.
  *
- * @return Zero on success, a negative @ref E_SQFS_ERROR value on failure.
+ * @return Zero on success, a negative @ref SQFS_ERROR value on failure.
  */
 SQFS_API int sqfs_xattr_writer_end(sqfs_xattr_writer_t *xwr, sqfs_u32 *out);
 
@@ -127,7 +127,7 @@ SQFS_API int sqfs_xattr_writer_end(sqfs_xattr_writer_t *xwr, sqfs_u32 *out);
  * @param super The super block to update with the table locations and flags.
  * @param cmp The compressor to user to compress the tables.
  *
- * @return Zero on success, a negative @ref E_SQFS_ERROR value on failure.
+ * @return Zero on success, a negative @ref SQFS_ERROR value on failure.
  */
 SQFS_API int sqfs_xattr_writer_flush(sqfs_xattr_writer_t *xwr,
 				     sqfs_file_t *file, sqfs_super_t *super,

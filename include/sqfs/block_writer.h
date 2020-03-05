@@ -77,7 +77,7 @@ struct sqfs_block_hooks_t {
 	 * into account when padding the file.
 	 *
 	 * @param user A user pointer.
-	 * @param flags A pointer to a combination of @ref E_SQFS_BLK_FLAGS
+	 * @param flags A pointer to a combination of @ref SQFS_BLK_FLAGS
 	 *              describing the block. The callback can modify the
 	 *              user settable flags.
 	 * @param size The size of the block in bytes.
@@ -99,7 +99,7 @@ struct sqfs_block_hooks_t {
 	 * the file.
 	 *
 	 * @param user A user pointer.
-	 * @param flags A combination of @ref E_SQFS_BLK_FLAGS describing
+	 * @param flags A combination of @ref SQFS_BLK_FLAGS describing
 	 *              the block.
 	 * @param size The size of the block in bytes.
 	 * @param data A pointer to the raw block data.
@@ -187,7 +187,7 @@ SQFS_API sqfs_block_writer_t *sqfs_block_writer_create(sqfs_file_t *file,
  * @param user_ptr A user data pointer that should be passed to the callbacks.
  * @param hooks A structure holding various callbacks.
  *
- * @return Zero on success, an @ref E_SQFS_ERROR on failure.
+ * @return Zero on success, an @ref SQFS_ERROR on failure.
  */
 SQFS_API int sqfs_block_writer_set_hooks(sqfs_block_writer_t *wr,
 					 void *user_ptr,
@@ -215,7 +215,7 @@ SQFS_API int sqfs_block_writer_set_hooks(sqfs_block_writer_t *wr,
  *                 is performed and this returns the (new) location of the
  *                 first block instead.
  *
- * @return Zero on success, an @ref E_SQFS_ERROR error on failure.
+ * @return Zero on success, an @ref SQFS_ERROR error on failure.
  */
 SQFS_API int sqfs_block_writer_write(sqfs_block_writer_t *wr,
 				     sqfs_u32 size, sqfs_u32 checksum,

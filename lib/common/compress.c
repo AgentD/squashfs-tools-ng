@@ -6,7 +6,7 @@
  */
 #include "common.h"
 
-E_SQFS_COMPRESSOR compressor_get_default(void)
+SQFS_COMPRESSOR compressor_get_default(void)
 {
 	if (sqfs_compressor_exists(SQFS_COMP_XZ))
 		return SQFS_COMP_XZ;

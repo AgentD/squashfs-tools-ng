@@ -46,7 +46,7 @@ extern "C" {
  * @param table_size The size of the input array in bytes.
  * @param start Returns the absolute position of the location list.
  *
- * @return Zero on success, an @ref E_SQFS_ERROR value on failure.
+ * @return Zero on success, an @ref SQFS_ERROR value on failure.
  */
 SQFS_API int sqfs_write_table(sqfs_file_t *file, sqfs_compressor_t *cmp,
 			      const void *data, size_t table_size,
@@ -75,7 +75,7 @@ SQFS_API int sqfs_write_table(sqfs_file_t *file, sqfs_compressor_t *cmp,
  *                    out-of-bounds read.
  * @param out Returns a pointer to the table in memory.
  *
- * @return Zero on success, an @ref E_SQFS_ERROR value on failure.
+ * @return Zero on success, an @ref SQFS_ERROR value on failure.
  */
 SQFS_API int sqfs_read_table(sqfs_file_t *file, sqfs_compressor_t *cmp,
 			     size_t table_size, sqfs_u64 location,

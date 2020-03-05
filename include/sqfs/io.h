@@ -29,7 +29,7 @@
  */
 
 /**
- * @enum E_SQFS_FILE_OPEN_FLAGS
+ * @enum SQFS_FILE_OPEN_FLAGS
  *
  * @brief Flags for @ref sqfs_open_file
  */
@@ -55,7 +55,7 @@ typedef enum {
 	SQFS_FILE_OPEN_OVERWRITE = 0x02,
 
 	SQFS_FILE_OPEN_ALL_FLAGS = 0x03,
-} E_SQFS_FILE_OPEN_FLAGS;
+} SQFS_FILE_OPEN_FLAGS;
 
 /**
  * @interface sqfs_file_t
@@ -80,7 +80,7 @@ struct sqfs_file_t {
 	 * @param buffer A pointer to a buffer to copy the data to.
 	 * @param size The number of bytes to read from the file.
 	 *
-	 * @return Zero on success, an @ref E_SQFS_ERROR identifier on failure
+	 * @return Zero on success, an @ref SQFS_ERROR identifier on failure
 	 *         that the data structures in libsquashfs that use this return
 	 *         directly to the caller.
 	 */
@@ -95,7 +95,7 @@ struct sqfs_file_t {
 	 * @param buffer A pointer to a buffer to write to the file.
 	 * @param size The number of bytes to write from the buffer.
 	 *
-	 * @return Zero on success, an @ref E_SQFS_ERROR identifier on failure
+	 * @return Zero on success, an @ref SQFS_ERROR identifier on failure
 	 *         that the data structures in libsquashfs that use this return
 	 *         directly to the caller.
 	 */
@@ -115,7 +115,7 @@ struct sqfs_file_t {
 	 * @param file A pointer to the file object.
 	 * @param size The new capacity of the file in bytes.
 	 *
-	 * @return Zero on success, an @ref E_SQFS_ERROR identifier on failure
+	 * @return Zero on success, an @ref SQFS_ERROR identifier on failure
 	 *         that the data structures in libsquashfs that use this return
 	 *         directly to the caller.
 	 */
@@ -137,7 +137,7 @@ extern "C" {
  * preserves the value in errno indicating the underlying problem.
  *
  * @param filename The name of the file to open.
- * @param flags A set of @ref E_SQFS_FILE_OPEN_FLAGS.
+ * @param flags A set of @ref SQFS_FILE_OPEN_FLAGS.
  *
  * @return A pointer to a file object on success, NULL on allocation failure,
  *         failure to open the file or if an unknown flag was set.
