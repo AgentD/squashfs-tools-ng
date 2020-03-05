@@ -502,11 +502,6 @@ int main(int argc, char **argv)
 		goto out_fd;
 	}
 
-	if (!sqfs_compressor_exists(super.compression_id)) {
-		fprintf(stderr, "%s: unknown compressor used.\n", argv[1]);
-		goto out_fd;
-	}
-
 	sqfs_compressor_config_init(&cfg, super.compression_id,
 				    super.block_size,
 				    SQFS_COMP_FLAG_UNCOMPRESS);

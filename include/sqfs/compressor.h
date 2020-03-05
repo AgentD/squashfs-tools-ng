@@ -339,16 +339,6 @@ SQFS_API int sqfs_compressor_config_init(sqfs_compressor_config_t *cfg,
 					 size_t block_size, sqfs_u16 flags);
 
 /**
- * @brief Check if a specified compressor implementation is available.
- *
- * @param id An @ref SQFS_COMPRESSOR identifier.
- *
- * @return true if the implementation is available and can be instantiated
- *         through @ref sqfs_compressor_create.
- */
-SQFS_API bool sqfs_compressor_exists(SQFS_COMPRESSOR id);
-
-/**
  * @brief Create an instance of a compressor implementation.
  *
  * If this function returns @ref SQFS_ERROR_UNSUPPORTED, it can mean that
@@ -368,10 +358,6 @@ SQFS_API int sqfs_compressor_create(const sqfs_compressor_config_t *cfg,
 /**
  * @brief Get the name of a compressor backend from its ID.
  *
- * This function will even resolve compressor names that are not built in, so
- * use @ref sqfs_compressor_exists to check if a compressor is actually
- * available.
- *
  * @param id An @ref SQFS_COMPRESSOR identifier.
  *
  * @return A string holding the name of the compressor, NULL if the compressor
@@ -381,10 +367,6 @@ SQFS_API const char *sqfs_compressor_name_from_id(SQFS_COMPRESSOR id);
 
 /**
  * @brief Get the compressor ID using just the name of the backend.
- *
- * This function will even resolve compressor names that are not built in, so
- * use @ref sqfs_compressor_exists to check if a compressor is actually
- * available.
  *
  * @param name The name of the compressor backend.
  *

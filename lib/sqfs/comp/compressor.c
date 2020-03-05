@@ -73,14 +73,6 @@ int sqfs_generic_read_options(sqfs_file_t *file, void *data, size_t size)
 	return 0;
 }
 
-bool sqfs_compressor_exists(SQFS_COMPRESSOR id)
-{
-	if (id < SQFS_COMP_MIN || id > SQFS_COMP_MAX)
-		return false;
-
-	return (compressors[id] != NULL);
-}
-
 int sqfs_compressor_create(const sqfs_compressor_config_t *cfg,
 			   sqfs_compressor_t **out)
 {

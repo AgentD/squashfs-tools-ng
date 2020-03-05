@@ -22,19 +22,6 @@ static int open_sfqs(sqfs_state_t *state, const char *path)
 		goto fail_file;
 	}
 
-	ret = sqfs_compressor_exists(state->super.compression_id);
-
-#ifdef WITH_LZO
-	if (state->super.compression_id == SQFS_COMP_LZO)
-		ret = true;
-#endif
-
-	if (!ret) {
-		fprintf(stderr, "%s: unknown compressor used.\n",
-			path);
-		goto fail_file;
-	}
-
 	sqfs_compressor_config_init(&state->cfg, state->super.compression_id,
 				    state->super.block_size,
 				    SQFS_COMP_FLAG_UNCOMPRESS);
