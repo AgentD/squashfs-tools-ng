@@ -85,19 +85,19 @@ int sqfs_writer_init(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *wrcfg)
 	if (fstree_init(&sqfs->fs, wrcfg->fs_defaults))
 		goto fail_file;
 
-	sqfs->cmp = sqfs_compressor_create(&cfg);
+	ret = sqfs_compressor_create(&cfg, &sqfs->cmp);
 
 #ifdef WITH_LZO
 	if (cfg.id == SQFS_COMP_LZO) {
 		if (sqfs->cmp != NULL)
 			sqfs_destroy(sqfs->cmp);
 
-		sqfs->cmp = lzo_compressor_create(&cfg);
+		ret = lzo_compressor_create(&cfg, &sqfs->cmp);
 	}
 #endif
 
-	if (sqfs->cmp == NULL) {
-		fputs("Error creating compressor\n", stderr);
+	if (ret != 0) {
+		sqfs_perror(wrcfg->filename, "creating compressor", ret);
 		goto fail_fs;
 	}
 

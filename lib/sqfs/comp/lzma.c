@@ -171,18 +171,19 @@ static void lzma_destroy(sqfs_object_t *base)
 	free(base);
 }
 
-sqfs_compressor_t *lzma_compressor_create(const sqfs_compressor_config_t *cfg)
+int lzma_compressor_create(const sqfs_compressor_config_t *cfg,
+			   sqfs_compressor_t **out)
 {
 	sqfs_compressor_t *base;
 	lzma_compressor_t *lzma;
 
 	if (cfg->flags & ~SQFS_COMP_FLAG_GENERIC_ALL)
-		return NULL;
+		return SQFS_ERROR_UNSUPPORTED;
 
 	lzma = calloc(1, sizeof(*lzma));
 	base = (sqfs_compressor_t *)lzma;
 	if (lzma == NULL)
-		return NULL;
+		return SQFS_ERROR_ALLOC;
 
 	lzma->block_size = cfg->block_size;
 
@@ -196,5 +197,7 @@ sqfs_compressor_t *lzma_compressor_create(const sqfs_compressor_config_t *cfg)
 	base->read_options = lzma_read_options;
 	((sqfs_object_t *)base)->copy = lzma_create_copy;
 	((sqfs_object_t *)base)->destroy = lzma_destroy;
-	return base;
+
+	*out = base;
+	return 0;
 }

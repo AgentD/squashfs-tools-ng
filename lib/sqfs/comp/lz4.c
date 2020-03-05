@@ -132,20 +132,21 @@ static void lz4_destroy(sqfs_object_t *base)
 	free(base);
 }
 
-sqfs_compressor_t *lz4_compressor_create(const sqfs_compressor_config_t *cfg)
+int lz4_compressor_create(const sqfs_compressor_config_t *cfg,
+			  sqfs_compressor_t **out)
 {
 	sqfs_compressor_t *base;
 	lz4_compressor_t *lz4;
 
 	if (cfg->flags & ~(SQFS_COMP_FLAG_LZ4_ALL |
 			   SQFS_COMP_FLAG_GENERIC_ALL)) {
-		return NULL;
+		return SQFS_ERROR_UNSUPPORTED;
 	}
 
 	lz4 = calloc(1, sizeof(*lz4));
 	base = (sqfs_compressor_t *)lz4;
 	if (lz4 == NULL)
-		return NULL;
+		return SQFS_ERROR_ALLOC;
 
 	lz4->high_compression = (cfg->flags & SQFS_COMP_FLAG_LZ4_HC) != 0;
 	lz4->block_size = cfg->block_size;
@@ -157,5 +158,7 @@ sqfs_compressor_t *lz4_compressor_create(const sqfs_compressor_config_t *cfg)
 	base->read_options = lz4_read_options;
 	((sqfs_object_t *)base)->copy = lz4_create_copy;
 	((sqfs_object_t *)base)->destroy = lz4_destroy;
-	return base;
+
+	*out = base;
+	return 0;
 }

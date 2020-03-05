@@ -47,6 +47,7 @@ static void write_tree_dfs(const sqfs_tree_node_t *n)
 
 int main(int argc, char **argv)
 {
+	int ret, status = EXIT_FAILURE;
 	sqfs_compressor_config_t cfg;
 	sqfs_compressor_t *cmp;
 	sqfs_tree_node_t *root = NULL;
@@ -54,7 +55,6 @@ int main(int argc, char **argv)
 	sqfs_dir_reader_t *dr;
 	sqfs_file_t *file;
 	sqfs_super_t super;
-	int status = EXIT_FAILURE;
 
 	/* open the SquashFS file we want to read */
 	if (argc != 2) {
@@ -84,9 +84,10 @@ int main(int argc, char **argv)
 				    super.block_size,
 				    SQFS_COMP_FLAG_UNCOMPRESS);
 
-	cmp = sqfs_compressor_create(&cfg);
-	if (cmp == NULL) {
-		fprintf(stderr, "%s: error creating compressor.\n", argv[1]);
+	ret = sqfs_compressor_create(&cfg, &cmp);
+	if (ret != 0) {
+		fprintf(stderr, "%s: error creating compressor: %d.\n",
+			argv[1], ret);
 		goto out_fd;
 	}
 

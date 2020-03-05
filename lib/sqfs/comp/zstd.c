@@ -134,29 +134,30 @@ static void zstd_destroy(sqfs_object_t *base)
 	free(zstd);
 }
 
-sqfs_compressor_t *zstd_compressor_create(const sqfs_compressor_config_t *cfg)
+int zstd_compressor_create(const sqfs_compressor_config_t *cfg,
+			   sqfs_compressor_t **out)
 {
 	zstd_compressor_t *zstd;
 	sqfs_compressor_t *base;
 
 	if (cfg->flags & ~SQFS_COMP_FLAG_GENERIC_ALL)
-		return NULL;
+		return SQFS_ERROR_UNSUPPORTED;
 
 	if (cfg->opt.zstd.level < 1 ||
 	    cfg->opt.zstd.level > ZSTD_maxCLevel()) {
-		return NULL;
+		return SQFS_ERROR_UNSUPPORTED;
 	}
 
 	zstd = calloc(1, sizeof(*zstd));
 	base = (sqfs_compressor_t *)zstd;
 	if (zstd == NULL)
-		return NULL;
+		return SQFS_ERROR_ALLOC;
 
 	zstd->block_size = cfg->block_size;
 	zstd->zctx = ZSTD_createCCtx();
 	if (zstd->zctx == NULL) {
 		free(zstd);
-		return NULL;
+		return SQFS_ERROR_COMPRESSOR;
 	}
 
 	base->get_configuration = zstd_get_configuration;
@@ -166,5 +167,7 @@ sqfs_compressor_t *zstd_compressor_create(const sqfs_compressor_config_t *cfg)
 	base->read_options = zstd_read_options;
 	((sqfs_object_t *)base)->copy = zstd_create_copy;
 	((sqfs_object_t *)base)->destroy = zstd_destroy;
-	return base;
+
+	*out = base;
+	return 0;
 }

@@ -12,8 +12,8 @@
 
 #include "internal.h"
 
-typedef sqfs_compressor_t *(*compressor_fun_t)
-	(const sqfs_compressor_config_t *cfg);
+typedef int (*compressor_fun_t)(const sqfs_compressor_config_t *cfg,
+				sqfs_compressor_t **out);
 
 static compressor_fun_t compressors[SQFS_COMP_MAX + 1] = {
 #ifdef WITH_GZIP
@@ -81,17 +81,24 @@ bool sqfs_compressor_exists(SQFS_COMPRESSOR id)
 	return (compressors[id] != NULL);
 }
 
-sqfs_compressor_t *sqfs_compressor_create(const sqfs_compressor_config_t *cfg)
+int sqfs_compressor_create(const sqfs_compressor_config_t *cfg,
+			   sqfs_compressor_t **out)
 {
 	sqfs_u8 padd0[sizeof(cfg->opt)];
 	int ret;
 
-	if (cfg == NULL || cfg->id < SQFS_COMP_MIN || cfg->id > SQFS_COMP_MAX)
-		return NULL;
+	/* check compressor ID */
+	if (cfg == NULL)
+		return SQFS_ERROR_ARG_INVALID;
+
+	if (cfg->id < SQFS_COMP_MIN || cfg->id > SQFS_COMP_MAX)
+		return SQFS_ERROR_UNSUPPORTED;
 
 	if (compressors[cfg->id] == NULL)
-		return NULL;
+		return SQFS_ERROR_UNSUPPORTED;
 
+	/* make sure the padding bytes are cleared, so we could theoretically
+	   turn them into option fields in the future and remain compatible */
 	memset(padd0, 0, sizeof(padd0));
 
 	switch (cfg->id) {
@@ -117,9 +124,9 @@ sqfs_compressor_t *sqfs_compressor_create(const sqfs_compressor_config_t *cfg)
 	}
 
 	if (ret != 0)
-		return NULL;
+		return SQFS_ERROR_ARG_INVALID;
 
-	return compressors[cfg->id](cfg);
+	return compressors[cfg->id](cfg, out);
 }
 
 const char *sqfs_compressor_name_from_id(SQFS_COMPRESSOR id)

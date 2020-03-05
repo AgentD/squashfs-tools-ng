@@ -556,15 +556,15 @@ int main(int argc, char **argv)
 				    super.block_size,
 				    SQFS_COMP_FLAG_UNCOMPRESS);
 
-	cmp = sqfs_compressor_create(&cfg);
+	ret = sqfs_compressor_create(&cfg, &cmp);
 
 #ifdef WITH_LZO
-	if (super.compression_id == SQFS_COMP_LZO && cmp == NULL)
-		cmp = lzo_compressor_create(&cfg);
+	if (super.compression_id == SQFS_COMP_LZO && ret != 0)
+		ret = lzo_compressor_create(&cfg, &cmp);
 #endif
 
-	if (cmp == NULL) {
-		fputs("Error creating compressor.\n", stderr);
+	if (ret != 0) {
+		sqfs_perror(filename, "creating compressor", ret);
 		goto out_fd;
 	}
 

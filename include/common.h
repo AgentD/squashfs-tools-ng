@@ -148,7 +148,8 @@ void print_version(const char *progname);
 
   XXX: This must be in libcommon instead of libsquashfs for legal reasons.
  */
-sqfs_compressor_t *lzo_compressor_create(const sqfs_compressor_config_t *cfg);
+int lzo_compressor_create(const sqfs_compressor_config_t *cfg,
+			  sqfs_compressor_t **out);
 
 /*
   Parse a number optionally followed by a KMG suffix (case insensitive). Prints

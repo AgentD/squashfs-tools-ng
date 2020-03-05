@@ -247,7 +247,8 @@ static sqfs_object_t *gzip_create_copy(const sqfs_object_t *cmp)
 	return (sqfs_object_t *)gzip;
 }
 
-sqfs_compressor_t *gzip_compressor_create(const sqfs_compressor_config_t *cfg)
+int gzip_compressor_create(const sqfs_compressor_config_t *cfg,
+			   sqfs_compressor_t **out)
 {
 	gzip_compressor_t *gzip;
 	sqfs_compressor_t *base;
@@ -255,24 +256,24 @@ sqfs_compressor_t *gzip_compressor_create(const sqfs_compressor_config_t *cfg)
 
 	if (cfg->flags & ~(SQFS_COMP_FLAG_GZIP_ALL |
 			   SQFS_COMP_FLAG_GENERIC_ALL)) {
-		return NULL;
+		return SQFS_ERROR_UNSUPPORTED;
 	}
 
 	if (cfg->opt.gzip.level < SQFS_GZIP_MIN_LEVEL ||
 	    cfg->opt.gzip.level > SQFS_GZIP_MAX_LEVEL) {
-		return NULL;
+		return SQFS_ERROR_UNSUPPORTED;
 	}
 
 	if (cfg->opt.gzip.window_size < SQFS_GZIP_MIN_WINDOW ||
 	    cfg->opt.gzip.window_size > SQFS_GZIP_MAX_WINDOW) {
-		return NULL;
+		return SQFS_ERROR_UNSUPPORTED;
 	}
 
 	gzip = calloc(1, sizeof(*gzip));
 	base = (sqfs_compressor_t *)gzip;
 
 	if (gzip == NULL)
-		return NULL;
+		return SQFS_ERROR_ALLOC;
 
 	gzip->opt.level = cfg->opt.gzip.level;
 	gzip->opt.window = cfg->opt.gzip.window_size;
@@ -296,8 +297,9 @@ sqfs_compressor_t *gzip_compressor_create(const sqfs_compressor_config_t *cfg)
 
 	if (ret != Z_OK) {
 		free(gzip);
-		return NULL;
+		return SQFS_ERROR_COMPRESSOR;
 	}
 
-	return base;
+	*out = base;
+	return 0;
 }

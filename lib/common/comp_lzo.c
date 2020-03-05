@@ -217,25 +217,26 @@ static void lzo_destroy(sqfs_object_t *base)
 	free(base);
 }
 
-sqfs_compressor_t *lzo_compressor_create(const sqfs_compressor_config_t *cfg)
+int lzo_compressor_create(const sqfs_compressor_config_t *cfg,
+			  sqfs_compressor_t **out)
 {
 	sqfs_compressor_t *base;
 	lzo_compressor_t *lzo;
 	size_t scratch_size;
 
 	if (cfg->flags & ~SQFS_COMP_FLAG_GENERIC_ALL)
-		return NULL;
+		return SQFS_ERROR_UNSUPPORTED;
 
 	if (cfg->opt.lzo.algorithm >= LZO_NUM_ALGS ||
 	    lzo_algs[cfg->opt.lzo.algorithm].compress == NULL) {
-		return NULL;
+		return SQFS_ERROR_UNSUPPORTED;
 	}
 
 	if (cfg->opt.lzo.algorithm == SQFS_LZO1X_999) {
 		if (cfg->opt.lzo.level > SQFS_LZO_MAX_LEVEL)
-			return NULL;
+			return SQFS_ERROR_UNSUPPORTED;
 	} else if (cfg->opt.lzo.level != 0) {
-		return NULL;
+		return SQFS_ERROR_UNSUPPORTED;
 	}
 
 	/* XXX: liblzo does not do bounds checking internally,
@@ -257,7 +258,7 @@ sqfs_compressor_t *lzo_compressor_create(const sqfs_compressor_config_t *cfg)
 	base = (sqfs_compressor_t *)lzo;
 
 	if (lzo == NULL)
-		return NULL;
+		return SQFS_ERROR_ALLOC;
 
 	lzo->block_size = cfg->block_size;
 	lzo->algorithm = cfg->opt.lzo.algorithm;
@@ -272,5 +273,7 @@ sqfs_compressor_t *lzo_compressor_create(const sqfs_compressor_config_t *cfg)
 	base->read_options = lzo_read_options;
 	((sqfs_object_t *)base)->copy = lzo_create_copy;
 	((sqfs_object_t *)base)->destroy = lzo_destroy;
-	return base;
+
+	*out = base;
+	return 0;
 }

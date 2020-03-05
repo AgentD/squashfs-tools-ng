@@ -227,23 +227,24 @@ static void xz_destroy(sqfs_object_t *base)
 	free(base);
 }
 
-sqfs_compressor_t *xz_compressor_create(const sqfs_compressor_config_t *cfg)
+int xz_compressor_create(const sqfs_compressor_config_t *cfg,
+			 sqfs_compressor_t **out)
 {
 	sqfs_compressor_t *base;
 	xz_compressor_t *xz;
 
 	if (cfg->flags & ~(SQFS_COMP_FLAG_GENERIC_ALL |
 			   SQFS_COMP_FLAG_XZ_ALL)) {
-		return NULL;
+		return SQFS_ERROR_UNSUPPORTED;
 	}
 
 	if (!is_dict_size_valid(cfg->opt.xz.dict_size))
-		return NULL;
+		return SQFS_ERROR_UNSUPPORTED;
 
 	xz = calloc(1, sizeof(*xz));
 	base = (sqfs_compressor_t *)xz;
 	if (xz == NULL)
-		return NULL;
+		return SQFS_ERROR_ALLOC;
 
 	xz->flags = cfg->flags;
 	xz->dict_size = cfg->opt.xz.dict_size;
@@ -255,5 +256,7 @@ sqfs_compressor_t *xz_compressor_create(const sqfs_compressor_config_t *cfg)
 	base->read_options = xz_read_options;
 	((sqfs_object_t *)base)->copy = xz_create_copy;
 	((sqfs_object_t *)base)->destroy = xz_destroy;
-	return base;
+
+	*out = base;
+	return 0;
 }

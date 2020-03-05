@@ -50,10 +50,10 @@ static sqfs_inode_generic_t *create_file_inode(sqfs_id_table_t *idtbl,
 int main(void)
 {
 	sqfs_meta_writer_t *inode_m, *dir_m;
+	int ret, status = EXIT_FAILURE;
 	sqfs_compressor_config_t cfg;
 	sqfs_inode_generic_t *inode;
 	unsigned int i, inode_num;
-	int status = EXIT_FAILURE;
 	sqfs_dir_writer_t *dirwr;
 	sqfs_compressor_t *cmp;
 	sqfs_id_table_t *idtbl;
@@ -88,9 +88,9 @@ int main(void)
 	sqfs_compressor_config_init(&cfg, super.compression_id,
 				    super.block_size, 0);
 
-	cmp = sqfs_compressor_create(&cfg);
-	if (cmp == NULL) {
-		fputs("Error creating compressor.\n", stderr);
+	ret = sqfs_compressor_create(&cfg, &cmp);
+	if (ret != 0) {
+		fprintf(stderr, "Error creating compressor: %d.\n", ret);
 		goto out_file;
 	}
 

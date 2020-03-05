@@ -39,15 +39,15 @@ static int open_sfqs(sqfs_state_t *state, const char *path)
 				    state->super.block_size,
 				    SQFS_COMP_FLAG_UNCOMPRESS);
 
-	state->cmp = sqfs_compressor_create(&state->cfg);
+	ret = sqfs_compressor_create(&state->cfg, &state->cmp);
 
 #ifdef WITH_LZO
-	if (state->super.compression_id == SQFS_COMP_LZO && state->cmp == NULL)
-		state->cmp = lzo_compressor_create(&state->cfg);
+	if (state->super.compression_id == SQFS_COMP_LZO && ret != 0)
+		ret = lzo_compressor_create(&state->cfg, &state->cmp);
 #endif
 
-	if (state->cmp == NULL) {
-		fprintf(stderr, "%s: error creating compressor.\n", path);
+	if (ret != 0) {
+		sqfs_perror(path, "creating compressor", ret);
 		goto fail_file;
 	}
 

@@ -351,13 +351,19 @@ SQFS_API bool sqfs_compressor_exists(SQFS_COMPRESSOR id);
 /**
  * @brief Create an instance of a compressor implementation.
  *
- * @param cfg A pointer to a compressor configuration.
+ * If this function returns @ref SQFS_ERROR_UNSUPPORTED, it can mean that
+ * either the compressor is not supported at all by the version of libsquashfs
+ * you are using, or that the specific configuration that has been requested
+ * is not supported (e.g. unknown flags, or the local version can only
+ * uncompress, but not compress).
  *
- * @return A pointer to a compressor object on success, NULL on allocation
- *         failure or if initializing the compressor failed.
+ * @param cfg A pointer to a compressor configuration.
+ * @param out Returns a pointer to the compressor on success.
+ *
+ * @return Zero on success, an SQFS_ERROR code on failure.
  */
-SQFS_API
-sqfs_compressor_t *sqfs_compressor_create(const sqfs_compressor_config_t *cfg);
+SQFS_API int sqfs_compressor_create(const sqfs_compressor_config_t *cfg,
+				    sqfs_compressor_t **out);
 
 /**
  * @brief Get the name of a compressor backend from its ID.

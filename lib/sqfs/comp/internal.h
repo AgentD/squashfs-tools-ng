@@ -24,18 +24,23 @@ SQFS_INTERNAL
 int sqfs_generic_read_options(sqfs_file_t *file, void *data, size_t size);
 
 SQFS_INTERNAL
-sqfs_compressor_t *xz_compressor_create(const sqfs_compressor_config_t *cfg);
+int xz_compressor_create(const sqfs_compressor_config_t *cfg,
+			 sqfs_compressor_t **out);
 
 SQFS_INTERNAL
-sqfs_compressor_t *gzip_compressor_create(const sqfs_compressor_config_t *cfg);
+int gzip_compressor_create(const sqfs_compressor_config_t *cfg,
+			   sqfs_compressor_t **out);
 
 SQFS_INTERNAL
-sqfs_compressor_t *lz4_compressor_create(const sqfs_compressor_config_t *cfg);
+int lz4_compressor_create(const sqfs_compressor_config_t *cfg,
+			  sqfs_compressor_t **out);
 
 SQFS_INTERNAL
-sqfs_compressor_t *zstd_compressor_create(const sqfs_compressor_config_t *cfg);
+int zstd_compressor_create(const sqfs_compressor_config_t *cfg,
+			   sqfs_compressor_t **out);
 
 SQFS_INTERNAL
-sqfs_compressor_t *lzma_compressor_create(const sqfs_compressor_config_t *cfg);
+int lzma_compressor_create(const sqfs_compressor_config_t *cfg,
+			   sqfs_compressor_t **out);
 
 #endif /* INTERNAL_H */
