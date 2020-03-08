@@ -36,8 +36,8 @@
 #	define PRI_U32 "%I32u"
 #else
 #	include <inttypes.h>
-#	define PRI_U64 PRIu64
-#	define PRI_U32 PRIu32
+#	define PRI_U64 "%" PRIu64
+#	define PRI_U32 "%" PRIu32
 #endif
 
 #if SIZEOF_SIZE_T <= SIZEOF_INT
