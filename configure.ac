@@ -157,7 +157,7 @@ AS_IF([test "x$with_lz4" != "xno" -a "x$with_builtin_lz4" != "xyes"], [
 AS_IF([test "x$with_builtin_lz4" != "xno"], [with_lz4="yes"], [])
 
 AS_IF([test "x$with_zstd" != "xno"], [
-	PKG_CHECK_MODULES(ZSTD, [libzstd], [with_zstd="yes"],
+	PKG_CHECK_MODULES(ZSTD, [libzstd >= 1.3.1], [with_zstd="yes"],
 				[AS_IF([test "x$with_zstd" = "xyes"],
 				       [AC_MSG_ERROR([cannot find zstd])],
 				       [with_zstd="no"])])
