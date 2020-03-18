@@ -23,7 +23,6 @@ libsquashfs_la_SOURCES += lib/sqfs/inode.c
 libsquashfs_la_SOURCES += lib/sqfs/write_super.c lib/sqfs/data_reader.c
 libsquashfs_la_SOURCES += lib/sqfs/block_processor/internal.h
 libsquashfs_la_SOURCES += lib/sqfs/block_processor/common.c
-libsquashfs_la_SOURCES += lib/sqfs/block_processor/xxhash.c
 libsquashfs_la_SOURCES += lib/sqfs/frag_table.c include/sqfs/frag_table.h
 libsquashfs_la_SOURCES += lib/sqfs/block_writer.c include/sqfs/block_writer.h
 libsquashfs_la_CPPFLAGS = $(AM_CPPFLAGS)
@@ -36,6 +35,7 @@ libsquashfs_la_LIBADD += $(ZSTD_LIBS) $(PTHREAD_LIBS)
 
 # directly "import" stuff from libutil
 libsquashfs_la_SOURCES += lib/util/str_table.c lib/util/alloc.c
+libsquashfs_la_SOURCES += lib/util/xxhash.c
 
 if WINDOWS
 libsquashfs_la_SOURCES += lib/sqfs/win32/io_file.c

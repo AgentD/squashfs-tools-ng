@@ -5,9 +5,9 @@ The `libsquashfs` library is released under the terms and conditions of the
 all source code in the directories `lib/sqfs`, `lib/util` and `include/sqfs`
 with the following exceptions:
 
- - `lib/sqfs/block_processor/xxhash.c` contains a modified implementation of
-   the xxhash32 algorithm. See `licenses/xxhash.txt` for copyright and
-   licensing information (2 clause BSD license).
+ - `lib/util/xxhash.c` contains a modified implementation of the xxhash32
+   algorithm. See `licenses/xxhash.txt` for copyright and licensing
+   information (2 clause BSD license).
  - `lib/sqfs/comp/lz4` contains files extracted from the LZ4 compression
    library. See `lib/sqfs/comp/lz4/README` for details and `licenses/LZ4.txt`
    for copyright and licensing information (2 clause BSD license).

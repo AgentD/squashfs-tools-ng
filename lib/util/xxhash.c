@@ -34,8 +34,8 @@
  * - xxHash homepage: http://cyan4973.github.io/xxHash/
  * - xxHash source repository: https://github.com/Cyan4973/xxHash
  */
-#define SQFS_BUILDING_DLL
-#include "internal.h"
+#include "config.h"
+#include "util.h"
 
 #define xxh_rotl32(x, r) ((x << r) | (x >> (32 - r)))
 

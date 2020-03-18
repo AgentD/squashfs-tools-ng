@@ -28,4 +28,6 @@ void *alloc_flex(size_t base_size, size_t item_size, size_t nmemb);
 SQFS_INTERNAL
 void *alloc_array(size_t item_size, size_t nmemb);
 
+SQFS_INTERNAL sqfs_u32 xxh32(const void *input, const size_t len);
+
 #endif /* SQFS_UTIL_H */
