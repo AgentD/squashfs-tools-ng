@@ -1,0 +1,22 @@
+language: c
+
+os:
+  - linux
+
+compiler:
+  - gcc
+  - clang
+
+addons:
+  apt:
+    packages:
+      - libzstd-dev liblzo2-dev liblz4-dev lzma-dev zlib1g-dev
+
+env:
+  - CONFIG_OPTS="--enable-static --disable-shared --with-pthread"
+
+script:
+  - ./autogen.sh
+  - ./configure $CONFIG_OPTS
+  - make
+  - make check
