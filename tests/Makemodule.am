@@ -6,11 +6,15 @@ test_str_table_LDADD = libutil.a libcompat.a
 test_str_table_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(top_srcdir)/tests
 test_str_table_CPPFLAGS += -I$(top_srcdir)/lib/sqfs
 
+test_rbtree_SOURCES = tests/rbtree.c
+test_rbtree_LDADD = libutil.a libcompat.a
+test_rbtree_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/lib/sqfs
+
 test_abi_SOURCES = tests/abi.c
 test_abi_LDADD = libsquashfs.la
 
-check_PROGRAMS += test_canonicalize_name test_str_table test_abi
-TESTS += test_canonicalize_name test_str_table test_abi
+check_PROGRAMS += test_canonicalize_name test_str_table test_abi test_rbtree
+TESTS += test_canonicalize_name test_str_table test_abi test_rbtree
 
 if BUILD_TOOLS
 test_mknode_simple_SOURCES = tests/mknode_simple.c
