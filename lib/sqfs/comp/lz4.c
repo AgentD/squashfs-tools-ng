@@ -29,6 +29,11 @@ typedef struct {
 
 #define LZ4LEGACY 1
 
+/* old verions of liblz4 don't have this */
+#ifndef LZ4HC_CLEVEL_MAX
+#define LZ4HC_CLEVEL_MAX 12
+#endif
+
 static int lz4_write_options(sqfs_compressor_t *base, sqfs_file_t *file)
 {
 	lz4_compressor_t *lz4 = (lz4_compressor_t *)base;
