@@ -37,6 +37,8 @@
 #include "config.h"
 #include "util.h"
 
+#include <string.h>
+
 #define xxh_rotl32(x, r) ((x << r) | (x >> (32 - r)))
 
 static const sqfs_u32 PRIME32_1 = 2654435761U;
@@ -53,6 +55,13 @@ static sqfs_u32 xxh32_round(sqfs_u32 seed, sqfs_u32 input)
 	return seed;
 }
 
+static sqfs_u32 XXH_readLE32(const sqfs_u8 *ptr)
+{
+	sqfs_u32 value;
+	memcpy(&value, ptr, sizeof(value));
+	return le32toh(value);
+}
+
 sqfs_u32 xxh32(const void *input, const size_t len)
 {
 	const sqfs_u8 *p = (const sqfs_u8 *)input;
@@ -67,10 +76,10 @@ sqfs_u32 xxh32(const void *input, const size_t len)
 		sqfs_u32 v4 = PRIME32_1;
 
 		do {
-			v1 = xxh32_round(v1, ((sqfs_u32 *)p)[0]);
-			v2 = xxh32_round(v2, ((sqfs_u32 *)p)[1]);
-			v3 = xxh32_round(v3, ((sqfs_u32 *)p)[2]);
-			v4 = xxh32_round(v4, ((sqfs_u32 *)p)[3]);
+			v1 = xxh32_round(v1, XXH_readLE32(p     ));
+			v2 = xxh32_round(v2, XXH_readLE32(p +  4));
+			v3 = xxh32_round(v3, XXH_readLE32(p +  8));
+			v4 = xxh32_round(v4, XXH_readLE32(p + 12));
 			p += 16;
 		} while (p <= limit);
 
@@ -83,7 +92,7 @@ sqfs_u32 xxh32(const void *input, const size_t len)
 	h32 += (sqfs_u32)len;
 
 	while (p + 4 <= b_end) {
-		h32 += (*((sqfs_u32 *)p)) * PRIME32_3;
+		h32 += XXH_readLE32(p) * PRIME32_3;
 		h32 = xxh_rotl32(h32, 17) * PRIME32_4;
 		p += 4;
 	}
