@@ -54,6 +54,7 @@ void compressor_print_available(void)
 					    SQFS_DEFAULT_BLOCK_SIZE, 0);
 
 		ret = sqfs_compressor_create(&cfg, &temp);
+		have_compressor = false;
 
 		if (ret == 0) {
 			sqfs_destroy(temp);
