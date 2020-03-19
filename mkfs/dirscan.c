@@ -254,7 +254,7 @@ static int populate_dir(int dir_fd, fstree_t *fs, tree_node_t *root,
 		}
 
 		if (!(flags & DIR_SCAN_KEEP_TIME))
-			sb.st_mtim = fs->defaults.st_mtim;
+			sb.st_mtime = fs->defaults.st_mtime;
 
 		n = fstree_mknode(root, ent->d_name, strlen(ent->d_name),
 				  extra, &sb);
