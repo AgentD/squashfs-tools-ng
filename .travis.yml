@@ -1,22 +1,84 @@
 language: c
 
-os:
-  - linux
-
-compiler:
-  - gcc
-  - clang
-
 addons:
   apt:
     packages:
       - libzstd-dev liblzo2-dev liblz4-dev lzma-dev zlib1g-dev
-
-env:
-  - CONFIG_OPTS="--enable-static --disable-shared --with-pthread"
+  homebrew:
+    packages:
+      - zstd lzo lz4 xz zlib
 
 script:
   - ./autogen.sh
   - ./configure $CONFIG_OPTS
   - make
   - make check
+
+matrix:
+  include:
+    # gcc based builds for amd64, arm64, ppc64
+    - name: ubuntu-gcc-amd64
+      os: linux
+      arch: amd64
+      dist: bionic
+      compiler: gcc
+      env:
+        - CONFIG_OPTS="--with-pthread"
+
+    - name: ubuntu-gcc-arm64
+      os: linux
+      arch: arm64
+      dist: bionic
+      compiler: gcc
+      env:
+        - CONFIG_OPTS="--with-pthread"
+
+    - name: ubuntu-gcc-ppc64le
+      os: linux
+      arch: ppc64le
+      dist: bionic
+      compiler: gcc
+      env:
+        - CONFIG_OPTS="--with-pthread"
+
+    # clang based builds for amd64, arm64, ppc64
+    - name: ubuntu-clang-amd64
+      os: linux
+      arch: amd64
+      dist: bionic
+      compiler: clang
+      env:
+        - CONFIG_OPTS="--with-pthread"
+
+    - name: ubuntu-clang-arm64
+      os: linux
+      arch: arm64
+      dist: bionic
+      compiler: clang
+      env:
+        - CONFIG_OPTS="--with-pthread"
+
+    - name: ubuntu-clang-ppc64le
+      os: linux
+      arch: ppc64le
+      dist: bionic
+      compiler: clang
+      env:
+        - CONFIG_OPTS="--with-pthread"
+
+    # clang based build for macOS
+    - name: macOS
+      os: osx
+      env:
+        - CONFIG_OPTS="--with-pthread"
+
+    # special configurations
+    #   -> build on Xenial to test liblz4 fallback
+    #   -> try if building the serial block processor works
+    - name: ubuntu-gcc-amd64-nopthread
+      os: linux
+      arch: amd64
+      dist: xenial
+      compiler: gcc
+      env:
+        - CONFIG_OPTS="--without-pthread"
