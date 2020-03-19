@@ -117,8 +117,8 @@ int sqfs_xattr_reader_load(sqfs_xattr_reader_t *xr, const sqfs_super_t *super,
 	}
 
 	if (xr->kvrd != NULL) {
-		sqfs_destroy(xr->idrd);
-		xr->idrd = NULL;
+		sqfs_destroy(xr->kvrd);
+		xr->kvrd = NULL;
 	}
 
 	free(xr->id_block_starts);
