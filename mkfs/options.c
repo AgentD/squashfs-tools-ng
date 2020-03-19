@@ -30,6 +30,7 @@ static struct option long_opts[] = {
 #endif
 	{ "version", no_argument, NULL, 'V' },
 	{ "help", no_argument, NULL, 'h' },
+	{ NULL, 0, NULL, 0 },
 };
 
 static const char *short_opts = "F:D:X:c:b:B:d:j:Q:kxoefqThV"

@@ -25,6 +25,7 @@ static struct option long_opts[] = {
 	{ "no-hard-links", no_argument, NULL, 'L' },
 	{ "help", no_argument, NULL, 'h' },
 	{ "version", no_argument, NULL, 'V' },
+	{ NULL, 0, NULL, 0 },
 };
 
 static const char *short_opts = "d:kr:sXLhV";

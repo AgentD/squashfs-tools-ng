@@ -37,6 +37,7 @@ static struct option long_opts[] = {
 	{ "quiet", no_argument, NULL, 'q' },
 	{ "help", no_argument, NULL, 'h' },
 	{ "version", no_argument, NULL, 'V' },
+	{ NULL, 0, NULL, 0 },
 };
 
 static const char *short_opts = "r:c:b:B:d:X:j:Q:sxekfqThV";

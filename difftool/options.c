@@ -18,6 +18,7 @@ static struct option long_opts[] = {
 	{ "extract", required_argument, NULL, 'e' },
 	{ "help", no_argument, NULL, 'h' },
 	{ "version", no_argument, NULL, 'V' },
+	{ NULL, 0, NULL, 0 },
 };
 
 static const char *short_opts = "a:b:OPCTISe:hV";
