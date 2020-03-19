@@ -17,6 +17,11 @@
 #endif
 #ifdef HAVE_SYS_XATTR_H
 #include <sys/xattr.h>
+
+#if defined(__APPLE__) && defined(__MACH__)
+#define lsetxattr(path, name, value, size, flags) \
+	setxattr(path, name, value, size, 0, flags | XATTR_NOFOLLOW)
+#endif
 #endif
 #include <string.h>
 #include <stdlib.h>
