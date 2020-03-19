@@ -5,52 +5,40 @@ on embedded devices, live systems or simply as a compressed archive format.
 
 Think of it as a .tar.gz that you can mount (or XZ, LZO, LZ4, ZSTD).
 
-As the name suggests, this is not the original user space tooling for
-SquashFS, which is currently maintained in parallel elsewhere. After a
-long period of silence on the SourceForge site and mailing list, I
-attempted to fork the existing code base with the intention to
-restructure/clean it up and add many features I personally perceived to
-be missing, but I ultimately decided that it would be easier to start
-from scratch than to work with the existing code.
+This project originally started out as a fork of squashfs-tools 4.3, after
+encountering some short comings and realizing that there have been no updates
+on the SourceForge site or mailing list for a long time. Even before the first
+public release, the fork was replaced with a complete re-write after growing
+frustrated with the existing code base. For lack of a better name, and because
+the original appeared to be unmaintained at the time, the name squashfs-tools-ng
+was kept, although the published code base technically never had any connection
+to squashfs-tools.
 
-Here are some of the features that primarily distinguish this package from
-the squashfs-tools 4.3 (latest recent version at the time this project was
-started):
+Maintenance of the original squashfs-tools has since resumed, squashfs-tools
+version 4.4 was released and continues to be maintained in parallel. The
+utilities provided by squashfs-tools-ng offer alternative tooling and are
+intentionally named differently, so both packages can be installed side by
+side.
 
- - A shared library that encapsulates code for accessing SquashFS images,
-   usable by 3rd party applications.
- - Reproducible, deterministic SquashFS images.
- - Linux `gen_init_cpio` like file listing for micro managing the
-   file system contents, permissions, and ownership without having to replicate
-   the file system (and especially permissions) locally.
- - Support for SELinux contexts file (see selabel_file(5)) to generate
-   SELinux labels.
- - Structured and (hopefully) more readable source code that should be better
-   maintainable in the long run.
+The actual guts of squashfs-tools-ng are encapsulated in a library with a
+generic API designed to make SquashFS available to other applications as an
+embeddable, extensible archive format (or to simply read, write or manipulate
+SquashFS file systems).
 
-
-In addition to that, tools have been added to directly convert a tar archive
-into a SquashFS filesystem image and back. This allows for using existing
-tools can work on tar archives seamlessly on SquashFS images.
-
-
-The tools in this package have different names, so they can be installed
-together with the existing tools:
+The utility programs are largely command line wrappers around the library. The
+following tools are provided:
 
  - `gensquashfs` can be used to produce SquashFS images from `gen_init_cpio`
-   like file listings or simply pack an input directory.
+   like file listings or simply pack an input directory. Can use an SELinux
+   contexts file (see selabel_file(5)) to generate SELinux labels.
  - `rdsquashfs` can be used to inspect and unpack SquashFS images.
  - `sqfs2tar` can turn a SquashFS image into a tarball, written to stdout.
  - `tar2sqfs` can turn a tarball (read from stdin) into a SquashFS image.
  - `sqfsdiff` can compare the contents of two SquashFS images.
 
-
-Most of the actual logic of those tools is implemented in the `libsquashfs`
-library that (by default) gets installed on the system along with its header
-files, allowing 3rd party applications to use it (e.g. for embedding SquashFS
-inside a custom container format without having to implement the SquashFS
-part).
-
+The library and the tools that produce SquashFS images are designed to operate
+deterministically. Same input will produce byte-for-byte identical
+output. Failure to do so is treated as a critical bug.
 
 # Installing
 
@@ -76,6 +64,16 @@ download at the above location.
 The headers and import libraries to build applications that use libsquashfs are
 included. For convenience, the pre-compiled, 3rd party dependency libraries
 also come with headers and import libraries.
+
+# Copyright & License
+
+In short: libsquashfs is LGPLv3 licensed, the utility programs are GPLv3.
+
+Some 3rd party source code is included with more permissive licenses, some of
+which is actually compiled into libsquashfs. Copyright notices for those must
+be included when distributing either source or binaries of squashfs-tools-ng.
+
+See [COPYING.md](COPYING.md) for more detailed information.
 
 # Getting and Building the Source Code
 
@@ -195,13 +193,3 @@ found in the [documentation directory](doc/format.txt), which is based on
 an online version that can be found here:
 
 https://dr-emann.github.io/squashfs/
-
-# Copyright & License
-
-In short: libsquashfs.so is LGPLv3 licensed, the utility programs are GPLv3.
-
-Some 3rd party source code is included with more permissive licenses, some of
-which is actually compiled into libsquashfs. Copyright notices for those must
-be included when distributing either source or binaries of squashfs-tools-ng.
-
-See [COPYING.md](COPYING.md) for copyright and licensing information.
