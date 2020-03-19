@@ -172,6 +172,22 @@ This legal problem has been solved using the following technical measure:
 This way, the tools themselves *do* support LZO compression seamlessly, while
 the `libsquashfs` library does not.
 
+## Automated Testing and Analysis
+
+[![Build Status](https://travis-ci.org/AgentD/squashfs-tools-ng.svg?branch=master)](https://travis-ci.org/AgentD/squashfs-tools-ng)
+[![Coverity Status](https://scan.coverity.com/projects/18718/badge.svg)](https://scan.coverity.com/projects/squashfs-tools-ng)
+
+The GitHub project for squashfs-tools-ng is registered with Travis-CI and
+Coverity Scan.
+
+The [Travis-CI](https://travis-ci.org/github/AgentD/squashfs-tools-ng]) page
+shows the current build status for various system configurations for the
+latest commit on master, as well as pull requests on the GitHub project page.
+
+The [Coverity Scan](https://scan.coverity.com/projects/squashfs-tools-ng) page
+shows details for static analysis runs on the code, which are triggered
+manually and thus run less frequently.
+
 ## Further Information
 
 A documentation of the SquashFS on-disk format in plain text format can be
