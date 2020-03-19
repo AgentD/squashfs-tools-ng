@@ -14,6 +14,14 @@
 
 #ifdef HAVE_SYS_XATTR_H
 #include <sys/xattr.h>
+
+#if defined(__APPLE__) && defined(__MACH__)
+#define llistxattr(path, list, size) \
+	listxattr(path, list, size, XATTR_NOFOLLOW)
+
+#define lgetxattr(path, name, value, size) \
+	getxattr(path, name, value, size, 0, XATTR_NOFOLLOW)
+#endif
 #endif
 
 #ifdef WITH_SELINUX
