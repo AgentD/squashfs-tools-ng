@@ -34,7 +34,7 @@
 #	define UNLOCK(mtx) pthread_mutex_unlock(mtx)
 #	define AWAIT(cond, mtx) pthread_cond_wait(cond, mtx)
 #	define SIGNAL_ALL(cond) pthread_cond_broadcast(cond)
-#	define THREAD_JOIN(t) if (t > 0) { pthread_join(t, NULL); }
+#	define THREAD_JOIN(t) if (t != (pthread_t)0) { pthread_join(t, NULL); }
 #	define MUTEX_DESTROY(mtx) pthread_mutex_destroy(mtx)
 #	define CONDITION_DESTROY(cond) pthread_cond_destroy(cond)
 #	define THREAD_EXIT_SUCCESS NULL
