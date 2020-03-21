@@ -5,11 +5,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.9] - 2020-03-27
 ### Added
 - Support parsing [device] block size argument with SI suffix.
 - Add a write-up on the on-disk format.
 - A couple demo programs that make use of `libsquashfs`.
 - Add statistics counters to the block writer and processor.
+- A compressor interface function to retrieve its configuration.
 
 ### Changed
 - For better compatibility, sqfs2tar appends `/` to directory names. (#37)
@@ -21,6 +24,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - All abstract data types inhert from an sqfs_object_t with common
   functionality.
 - Lots of performance improvements.
+- Make block processor sync and flush seperate operations.
+- Combined the various payload size values in generic inode structure.
+- Change block processor API to manage creation/resizing of file inodes.
+- A "do not deduplicate flag" for the block processing pipeline.
+- Lots of API cleanups.
 
 ### Fixed
 - Include sys/sysmacros.h on any GNU libc platform.
@@ -28,6 +36,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Memory leak in hard link detection code.
 - Broken iteration over directory children in sqfsdiff.
 - Data reader returning -1 instead of an error code.
+- Size accounting for sparse files in tar parsing code.
+- Stricter verification of the compressor configuration.
+- Broken builds with older liblz4 and zstd versions (e.g. on Ubuntu Xenial).
+- Various build issues on MacOS.
 
 ### Removed
 - A number of hook callbacks from the block writer.
@@ -265,7 +277,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Insert abstraction layers and split generic code off into support libraries
 
-[Unreleased]: https://github.com/AgentD/squashfs-tools-ng/compare/v0.8...HEAD
+[Unreleased]: https://github.com/AgentD/squashfs-tools-ng/compare/v0.9...HEAD
+[0.9.0]: https://github.com/AgentD/squashfs-tools-ng/compare/v0.8...v0.9
 [0.8.0]: https://github.com/AgentD/squashfs-tools-ng/compare/v0.7...v0.8
 [0.7.0]: https://github.com/AgentD/squashfs-tools-ng/compare/v0.6.1...v0.7
 [0.6.1]: https://github.com/AgentD/squashfs-tools-ng/compare/v0.6...v0.6.1
