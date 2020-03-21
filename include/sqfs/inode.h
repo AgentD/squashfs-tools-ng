@@ -533,6 +533,8 @@ extern "C" {
 /**
  * @brief Get the number of file blocks in a regular file inode.
  *
+ * @memberof sqfs_inode_generic_t
+ *
  * @param inode A pointer to an inode.
  *
  * @return The number of blocks.
@@ -545,6 +547,8 @@ size_t sqfs_inode_get_file_block_count(const sqfs_inode_generic_t *inode)
 
 /**
  * @brief Get the extended attribute index of an inode
+ *
+ * @memberof sqfs_inode_generic_t
  *
  * For basic inodes, this returns the inode index 0xFFFFFFFF, i.e. the
  * sentinel value indicating that there are no xattrs.
@@ -560,6 +564,8 @@ SQFS_API int sqfs_inode_get_xattr_index(const sqfs_inode_generic_t *inode,
 
 /**
  * @brief Set the extended attribute index of an inode.
+ *
+ * @memberof sqfs_inode_generic_t
  *
  * For basic inodes, this function promes the inodes to extended inodes if the
  * index is not 0xFFFFFFFF. If the index is 0xFFFFFFFF, the function tries to
@@ -577,6 +583,8 @@ SQFS_API int sqfs_inode_set_xattr_index(sqfs_inode_generic_t *inode,
 /**
  * @brief Convert a basic inode to an extended inode.
  *
+ * @memberof sqfs_inode_generic_t
+ *
  * For inodes that already have an extended type, this is a no-op.
  *
  * @param inode A pointer to an inode.
@@ -588,6 +596,8 @@ SQFS_API int sqfs_inode_make_extended(sqfs_inode_generic_t *inode);
 
 /**
  * @brief Convert an extended inode to a basic inode if possible.
+ *
+ * @memberof sqfs_inode_generic_t
  *
  * For inodes that already have a basic type, this is a no-op. If the inode
  * has values set that the coresponding basic type doesn't support (e.g. it
@@ -603,6 +613,8 @@ SQFS_API int sqfs_inode_make_basic(sqfs_inode_generic_t *inode);
 
 /**
  * @brief Update the file size of a regular file inode.
+ *
+ * @memberof sqfs_inode_generic_t
  *
  * If the new size is wider than 32 bit, a basic file inode is transparently
  * promoted to an extended file inode. For extended inodes, if the new size
@@ -621,6 +633,8 @@ SQFS_API int sqfs_inode_set_file_size(sqfs_inode_generic_t *inode,
 /**
  * @brief Update the location of the first data block of a regular file inode.
  *
+ * @memberof sqfs_inode_generic_t
+ *
  * If the new location is wider than 32 bit, a basic file inode is
  * transparently promoted to an extended file inode. For extended inodes,
  * if the new size is small enough and was the only requirement for the
@@ -638,6 +652,8 @@ SQFS_API int sqfs_inode_set_file_block_start(sqfs_inode_generic_t *inode,
 /**
  * @brief Update the file fragment location of a regular file inode.
  *
+ * @memberof sqfs_inode_generic_t
+ *
  * @param inode A pointer to an inode.
  * @param index The new fragment index to set.
  * @param offset The new fragment offset to set.
@@ -651,6 +667,8 @@ SQFS_API int sqfs_inode_set_frag_location(sqfs_inode_generic_t *inode,
 /**
  * @brief Get the file size of a regular file inode.
  *
+ * @memberof sqfs_inode_generic_t
+ *
  * @param inode A pointer to an inode.
  * @param size Returns the file size.
  *
@@ -662,6 +680,8 @@ SQFS_API int sqfs_inode_get_file_size(const sqfs_inode_generic_t *inode,
 
 /**
  * @brief Get the file fragment location of a regular file inode.
+ *
+ * @memberof sqfs_inode_generic_t
  *
  * @param inode A pointer to an inode.
  * @param index Returns the fragment index.
@@ -676,6 +696,8 @@ SQFS_API int sqfs_inode_get_frag_location(const sqfs_inode_generic_t *inode,
 /**
  * @brief Get the location of the first data block of a regular file inode.
  *
+ * @memberof sqfs_inode_generic_t
+ *
  * @param inode A pointer to an inode.
  * @param location Returns the location.
  *
@@ -687,6 +709,8 @@ SQFS_API int sqfs_inode_get_file_block_start(const sqfs_inode_generic_t *inode,
 
 /**
  * @brief Unpack the a directory index structure from an inode.
+ *
+ * @memberof sqfs_inode_generic_t
  *
  * The generic inode contains in its payload the raw directory index (with
  * bytes swapped to host enian), but still with single byte alignment. This
