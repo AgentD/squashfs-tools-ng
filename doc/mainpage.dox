@@ -1,0 +1,19 @@
+/**
+ * @mainpage libsquashfs API reference
+ *
+ * @section intro Introduction
+ *
+ * The libsquashfs library attempts to encapsulate the actual core of the
+ * SquashFS reading and writing logic of the squashfs-tools-ng package,
+ * while trying to offer a generic API that should cover a broad variety of
+ * applications that might want to make use SquashFS.
+ *
+ * All disk I/O is abstracted away through the \ref sqfs_file_t interface. A
+ * reference implementation that uses native file I/O can be instatiated
+ * using @ref sqfs_open_file. Providing a custom implementation allows reading
+ * or writing SquashFS images to something other than regular files, embedding
+ * SquashFS in a custom container format or applying custom transformations on
+ * the raw byte level.
+ *
+ * @example list_files.c
+ */
