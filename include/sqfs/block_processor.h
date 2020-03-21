@@ -50,7 +50,8 @@
 /**
  * @struct sqfs_block_processor_stats_t
  *
- * @brief Used to store runtime statistics about the @ref sqf_block_processor_t.
+ * @brief Used to store runtime statistics about
+ *        the @ref sqfs_block_processor_t.
  */
 struct sqfs_block_processor_stats_t {
 	/**
