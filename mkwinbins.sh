@@ -2,8 +2,10 @@
 
 set -e
 
-W32_ZIP_NAME="squashfs-tools-ng-0.8-mingw32"
-W64_ZIP_NAME="squashfs-tools-ng-0.8-mingw64"
+VERSION=$(grep AC_INIT configure.ac | grep -o \\[[0-9.]*\\] | tr -d [])
+
+W32_ZIP_NAME="squashfs-tools-ng-${VERSION}-mingw32"
+W64_ZIP_NAME="squashfs-tools-ng-${VERSION}-mingw64"
 
 W32_DIR="$(pwd)/$W32_ZIP_NAME"
 W32_PREFIX="i686-w64-mingw32"
