@@ -6,7 +6,7 @@
 DOXYFILE_ENCODING      = UTF-8
 PROJECT_NAME           = @PACKAGE_NAME@
 PROJECT_NUMBER         = @PACKAGE_VERSION@
-PROJECT_BRIEF          = "@PROJECT_BRIEF@"
+PROJECT_BRIEF          = "A new set of tools and libraries for working with SquashFS images"
 PROJECT_LOGO           = 
 OUTPUT_DIRECTORY       = @DX_DOCDIR@
 CREATE_SUBDIRS         = NO
@@ -115,7 +115,7 @@ WARN_LOGFILE           =
 # Configuration options related to the input files
 #---------------------------------------------------------------------------
 
-INPUT                  = @top_srcdir@/include/sqfs/
+INPUT                  = @top_srcdir@/include/sqfs/ @top_srcdir@/doc
 INPUT_ENCODING         = UTF-8
 FILE_PATTERNS          = *.h *.dox
 RECURSIVE              = YES
@@ -123,7 +123,7 @@ EXCLUDE                =
 EXCLUDE_SYMLINKS       = NO
 EXCLUDE_PATTERNS       = 
 EXCLUDE_SYMBOLS        = 
-EXAMPLE_PATH           = 
+EXAMPLE_PATH           = @top_srcdir@/extras
 EXAMPLE_PATTERNS       = *.c
 EXAMPLE_RECURSIVE      = NO
 IMAGE_PATH             = 
