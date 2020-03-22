@@ -557,15 +557,6 @@ int main(int argc, char **argv)
 		goto out_fd;
 	}
 
-	if (super.flags & SQFS_FLAG_COMPRESSOR_OPTIONS) {
-		ret = cmp->read_options(cmp, file);
-		if (ret) {
-			sqfs_perror(filename, "reading compressor options",
-				    ret);
-			goto out_cmp;
-		}
-	}
-
 	idtbl = sqfs_id_table_create(0);
 
 	if (idtbl == NULL) {

@@ -51,15 +51,6 @@ int main(int argc, char **argv)
 		goto out_file;
 	}
 
-	if (super.flags & SQFS_FLAG_COMPRESSOR_OPTIONS) {
-		ret = cmp->read_options(cmp, file);
-		if (ret) {
-			sqfs_perror(opt.image_name, "reading compressor "
-				    "options", ret);
-			goto out_cmp;
-		}
-	}
-
 	if (!(super.flags & SQFS_FLAG_NO_XATTRS)) {
 		xattr = sqfs_xattr_reader_create(0);
 		if (xattr == NULL) {

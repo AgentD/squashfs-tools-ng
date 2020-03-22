@@ -513,15 +513,6 @@ int main(int argc, char **argv)
 		goto out_fd;
 	}
 
-	if (super.flags & SQFS_FLAG_COMPRESSOR_OPTIONS) {
-		if (cmp->read_options(cmp, file)) {
-			fprintf(stderr,
-				"%s: error reading compressor options.\n",
-				argv[1]);
-			goto out_cmp;
-		}
-	}
-
 	/* Create and read the UID/GID mapping table */
 	idtbl = sqfs_id_table_create(0);
 	if (idtbl == NULL) {
