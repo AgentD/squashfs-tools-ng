@@ -82,3 +82,27 @@ matrix:
       compiler: gcc
       env:
         - CONFIG_OPTS="--without-pthread"
+
+    # Try on an uncommon, big endian system
+    - name: ubuntu-gcc-s390x
+      os: linux
+      arch: s390x
+      dist: bionic
+      compiler: gcc
+      env:
+        - CONFIG_OPTS="--with-pthread"
+
+    # Try to run the mingw based Windows cross build
+    - name: ubuntu-mingw-amd64
+      os: linux
+      arch: amd64
+      dist: bionic
+      compiler: gcc
+      addons:
+        apt:
+          packages:
+            - libzstd-dev liblzo2-dev liblz4-dev lzma-dev zlib1g-dev
+            - binutils-mingw-w64-i686 binutils-mingw-w64-x86-64
+            - gcc-mingw-w64-i686 gcc-mingw-w64-x86-64
+      script:
+        - ./mkwinbins.sh
