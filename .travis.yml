@@ -91,19 +91,3 @@ matrix:
       compiler: gcc
       env:
         - CONFIG_OPTS="--with-pthread"
-
-    # Try to run the mingw based Windows cross build
-    - name: ubuntu-mingw-amd64
-      os: linux
-      arch: amd64
-      dist: bionic
-      compiler: gcc
-      addons:
-        apt:
-          packages:
-            - libzstd-dev liblzo2-dev liblz4-dev lzma-dev zlib1g-dev
-            - binutils-mingw-w64-i686 binutils-mingw-w64-x86-64
-            - gcc-mingw-w64-i686 gcc-mingw-w64-x86-64
-            - mingw-w64-x86-64-dev mingw-w64-common
-      script:
-        - ./mkwinbins.sh
