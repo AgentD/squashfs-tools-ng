@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.9] - 2020-03-27
+## [0.9.0] - 2020-03-30
 ### Added
 - Support parsing [device] block size argument with SI suffix.
 - Add a write-up on the on-disk format.
@@ -45,7 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A number of hook callbacks from the block writer.
 - sqfs_block_t from the public API.
 
-## [0.8] - 2019-12-30
+## [0.8.0] - 2019-12-30
 ### Added
 - Experimental Windows port using MinGW cross compilation toolchain.
 - Port to BSD systems.
@@ -89,7 +89,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A bug in parsing the GNU.sparse.name PAX attribute from tar files.
 - sqfsdiff: recurse into directories that are only in one image.
 
-## [0.7] - 2019-10-08
+## [0.7.0] - 2019-10-08
 ### Added
 - LGPLv3 licensed, shared library `libsquashfs.so` containing all the SquashFS
   related logic.
