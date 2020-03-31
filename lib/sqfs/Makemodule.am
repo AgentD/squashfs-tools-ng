@@ -108,3 +108,6 @@ sqfsinclude_HEADERS = $(LIBSQFS_HEARDS)
 lib_LTLIBRARIES += libsquashfs.la
 
 pkgconfig_DATA += lib/sqfs/libsquashfs1.pc
+
+EXTRA_DIST += lib/sqfs/libsqfs.vcxproj lib/sqfs/libsqfs.vcxproj.filters
+EXTRA_DIST += include/win32/config.h

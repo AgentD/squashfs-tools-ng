@@ -26,6 +26,10 @@
 #	else
 #		error Cannot determine maximum value of size_t
 #	endif
+#elif defined(_MSC_VER)
+#	include <intsafe.h>
+#	define SZ_ADD_OV SizeTAdd
+#	define SZ_MUL_OV SizeTMult
 #else
 static inline int _sz_add_overflow(size_t a, size_t b, size_t *res)
 {
@@ -51,7 +55,13 @@ static inline int _sz_mul_overflow(size_t a, size_t b, size_t *res)
 #	define PRI_U32 "%" PRIu32
 #endif
 
-#if SIZEOF_SIZE_T <= SIZEOF_INT
+#ifdef _MSC_VER
+#	ifdef _WIN64
+#		define PRI_SZ PRI_U64
+#	else
+#		define PRI_SZ PRI_U32
+#	endif
+#elif SIZEOF_SIZE_T <= SIZEOF_INT
 #	define PRI_SZ "%u"
 #elif SIZEOF_SIZE_T == SIZEOF_LONG
 #	define PRI_SZ "%lu"
@@ -84,8 +94,17 @@ static inline int _sz_mul_overflow(size_t a, size_t b, size_t *res)
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+
+#include <malloc.h>
+
+#ifdef _MSC_VER
+#	define alloca _alloca
+#endif
+
+#define strdup _strdup
 #else
 #include <endian.h>
+#include <alloca.h>
 #endif
 
 #if defined(_WIN32) || defined(__WINDOWS__)

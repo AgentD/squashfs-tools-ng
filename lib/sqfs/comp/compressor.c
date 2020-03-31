@@ -42,7 +42,7 @@ static const char *names[] = {
 
 int sqfs_generic_write_options(sqfs_file_t *file, const void *data, size_t size)
 {
-	sqfs_u8 buffer[size + 2];
+	sqfs_u8 *buffer = alloca(size + 2);
 	int ret;
 
 	*((sqfs_u16 *)buffer) = htole16(0x8000 | size);
@@ -58,7 +58,7 @@ int sqfs_generic_write_options(sqfs_file_t *file, const void *data, size_t size)
 
 int sqfs_generic_read_options(sqfs_file_t *file, void *data, size_t size)
 {
-	sqfs_u8 buffer[size + 2];
+	sqfs_u8 *buffer = alloca(size + 2);
 	int ret;
 
 	ret = file->read_at(file, sizeof(sqfs_super_t),
