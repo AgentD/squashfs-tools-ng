@@ -11,3 +11,5 @@ libfstree_a_CFLAGS = $(AM_CFLAGS)
 libfstree_a_CPPFLAGS = $(AM_CPPFLAGS)
 
 noinst_LIBRARIES += libfstree.a
+
+EXTRA_DIST += lib/fstree/libfstree.vcxproj lib/fstree/libfstree.vcxproj.filters

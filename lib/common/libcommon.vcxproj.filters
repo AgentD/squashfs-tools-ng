@@ -1,0 +1,74 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Headers">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Source">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="get_path.c">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="hardlink.c">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="inode_stat.c">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="io_stdin.c">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="comp_opt.c">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="compress.c">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="data_reader_dump.c">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="data_writer.c">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="print_size.c">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="print_version.c">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="serialize_fstree.c">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="statistics.c">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="writer.c">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="mkdir_p.c">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="parse_size.c">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="perror.c">
+      <Filter>Source</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\include\common.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\win32\config.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\compat.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

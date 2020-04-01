@@ -12,4 +12,7 @@
 #define WITH_GZIP 1
 #define WITH_LZ4 1
 
+#define PACKAGE_NAME "squashfs-tools-ng"
+#define PACKAGE_VERSION "0.9"
+
 #endif /* CONFIG_H */

@@ -9,3 +9,5 @@ libtar_a_CFLAGS = $(AM_CFLAGS)
 libtar_a_CPPFLAGS = $(AM_CPPFLAGS)
 
 noinst_LIBRARIES += libtar.a
+
+EXTRA_DIST += lib/tar/libtar.vcxproj lib/tar/libtar.vcxproj.filters

@@ -17,3 +17,5 @@ libcommon_a_SOURCES += lib/common/comp_lzo.c
 endif
 
 noinst_LIBRARIES += libcommon.a
+
+EXTRA_DIST += lib/common/libcommon.vcxproj lib/common/libcommon.vcxproj.filters

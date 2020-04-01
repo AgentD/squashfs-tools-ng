@@ -9,9 +9,13 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <getopt.h>
-#include <stdio.h>
 #include <ctype.h>
+
+#ifdef HAVE_GETSUBOPT
+#include <getopt.h>
+#else
+#include "compat.h"
+#endif
 
 typedef struct {
 	const char *name;

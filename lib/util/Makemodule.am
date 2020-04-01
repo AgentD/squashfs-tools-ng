@@ -31,3 +31,5 @@ libutil_a_SOURCES += lib/util/mempool.c include/mempool.h
 endif
 
 noinst_LIBRARIES += libutil.a
+
+EXTRA_DIST += lib/util/libutil.vcxproj lib/util/libutil.vcxproj.filters
