@@ -5,6 +5,7 @@
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
 #include "common.h"
+#include <assert.h>
 
 static int cmp_ids[] = {
 	SQFS_COMP_XZ,
