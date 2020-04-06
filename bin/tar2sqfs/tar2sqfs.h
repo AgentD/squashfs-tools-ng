@@ -13,10 +13,13 @@
 #include "tar.h"
 
 #include <stdlib.h>
-#include <getopt.h>
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
+
+#ifdef HAVE_GETOPT_LONG
+#include <getopt.h>
+#endif
 
 /* options.c */
 extern bool dont_skip;

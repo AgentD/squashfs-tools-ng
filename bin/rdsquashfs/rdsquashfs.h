@@ -23,9 +23,13 @@
 	setxattr(path, name, value, size, 0, flags | XATTR_NOFOLLOW)
 #endif
 #endif
+
+#ifdef HAVE_GETOPT_LONG
+#include <getopt.h>
+#endif
+
 #include <string.h>
 #include <stdlib.h>
-#include <getopt.h>
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>

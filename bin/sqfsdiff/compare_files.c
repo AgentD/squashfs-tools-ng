@@ -13,7 +13,7 @@ static int read_blob(const char *prefix, const char *path,
 		     sqfs_data_reader_t *rd, const sqfs_inode_generic_t *inode,
 		     void *buffer, sqfs_u64 offset, size_t size)
 {
-	ssize_t ret;
+	sqfs_s32 ret;
 
 	ret = sqfs_data_reader_read(rd, inode, offset, buffer, size);
 	ret = (ret < 0 || (size_t)ret < size) ? -1 : 0;

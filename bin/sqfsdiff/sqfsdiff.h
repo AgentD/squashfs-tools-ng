@@ -12,9 +12,12 @@
 #include "fstree.h"
 
 #include <stdlib.h>
-#include <getopt.h>
 #include <string.h>
 #include <errno.h>
+
+#ifdef HAVE_GETOPT_LONG
+#include <getopt.h>
+#endif
 
 #define MAX_WINDOW_SIZE (1024 * 1024 * 4)
 
