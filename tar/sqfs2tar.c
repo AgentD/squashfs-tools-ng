@@ -351,6 +351,8 @@ static int write_tree_dfs(const sqfs_tree_node_t *n)
 	size_t len;
 	int ret;
 
+	inode_stat(n, &sb);
+
 	if (n->parent == NULL) {
 		if (root_becomes == NULL)
 			goto skip_hdr;
@@ -394,12 +396,10 @@ static int write_tree_dfs(const sqfs_tree_node_t *n)
 			}
 		}
 
-		name = assemble_tar_path(name, n->children != NULL);
+		name = assemble_tar_path(name, S_ISDIR(sb.st_mode));
 		if (name == NULL)
 			return -1;
 	}
-
-	inode_stat(n, &sb);
 
 	if (lnk != NULL) {
 		ret = write_hard_link(out_file, &sb, name, lnk->target,
