@@ -35,6 +35,7 @@
 #include <stddef.h>
 
 typedef struct {
+	const char *filename;
 	sqfs_block_writer_t *blkwr;
 	sqfs_frag_table_t *fragtbl;
 	sqfs_block_processor_t *data;
@@ -125,7 +126,7 @@ int sqfs_writer_init(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *wrcfg);
 
 int sqfs_writer_finish(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *cfg);
 
-void sqfs_writer_cleanup(sqfs_writer_t *sqfs);
+void sqfs_writer_cleanup(sqfs_writer_t *sqfs, int status);
 
 void sqfs_perror(const char *file, const char *action, int error_code);
 

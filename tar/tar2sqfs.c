@@ -539,6 +539,6 @@ int main(int argc, char **argv)
 
 	status = EXIT_SUCCESS;
 out:
-	sqfs_writer_cleanup(&sqfs);
+	sqfs_writer_cleanup(&sqfs, status);
 	return status;
 }

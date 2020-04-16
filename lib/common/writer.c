@@ -70,6 +70,8 @@ int sqfs_writer_init(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *wrcfg)
 	sqfs_compressor_config_t cfg;
 	int ret, flags;
 
+	sqfs->filename = wrcfg->filename;
+
 	if (compressor_cfg_init_options(&cfg, wrcfg->comp_id,
 					wrcfg->block_size,
 					wrcfg->comp_extra)) {
@@ -296,7 +298,7 @@ int sqfs_writer_finish(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *cfg)
 	return 0;
 }
 
-void sqfs_writer_cleanup(sqfs_writer_t *sqfs)
+void sqfs_writer_cleanup(sqfs_writer_t *sqfs, int status)
 {
 	if (sqfs->xwr != NULL)
 		sqfs_destroy(sqfs->xwr);
@@ -311,4 +313,17 @@ void sqfs_writer_cleanup(sqfs_writer_t *sqfs)
 	sqfs_destroy(sqfs->cmp);
 	fstree_cleanup(&sqfs->fs);
 	sqfs_destroy(sqfs->outfile);
+
+	if (status != EXIT_SUCCESS) {
+#if defined(_WIN32) || defined(__WINDOWS__)
+		WCHAR *path = path_to_windows(sqfs->filename);
+
+		if (path != NULL)
+			DeleteFileW(path);
+
+		free(path);
+#else
+		unlink(sqfs->filename);
+#endif
+	}
 }
