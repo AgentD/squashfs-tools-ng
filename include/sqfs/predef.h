@@ -134,7 +134,7 @@ typedef struct sqfs_object_t {
  */
 static SQFS_INLINE void sqfs_destroy(void *obj)
 {
-	((sqfs_object_t *)obj)->destroy(obj);
+	((sqfs_object_t *)obj)->destroy((sqfs_object_t *)obj);
 }
 
 /**
@@ -150,7 +150,7 @@ static SQFS_INLINE void sqfs_destroy(void *obj)
 static SQFS_INLINE void *sqfs_copy(const void *obj)
 {
 	if (((sqfs_object_t *)obj)->copy != NULL)
-		return ((sqfs_object_t *)obj)->copy(obj);
+		return ((sqfs_object_t *)obj)->copy((sqfs_object_t *)obj);
 
 	return NULL;
 }
