@@ -65,4 +65,9 @@ size_t base64_decode(sqfs_u8 *out, const char *in, size_t len);
 
 void urldecode(char *str);
 
+char *record_to_memory(FILE *fp, sqfs_u64 size);
+
+int read_pax_header(FILE *fp, sqfs_u64 entsize, unsigned int *set_by_pax,
+		    tar_header_decoded_t *out);
+
 #endif /* INTERNAL_H */

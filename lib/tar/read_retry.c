@@ -6,10 +6,8 @@
  */
 #include "config.h"
 
-#include <errno.h>
-#include <stdio.h>
-
 #include "tar.h"
+#include "internal.h"
 
 int read_retry(const char *errstr, FILE *fp, void *buffer, size_t size)
 {
@@ -33,4 +31,27 @@ int read_retry(const char *errstr, FILE *fp, void *buffer, size_t size)
 	}
 
 	return 0;
+}
+
+char *record_to_memory(FILE *fp, sqfs_u64 size)
+{
+	char *buffer = malloc(size + 1);
+
+	if (buffer == NULL)
+		goto fail_errno;
+
+	if (read_retry("reading tar record", fp, buffer, size))
+		goto fail;
+
+	if (skip_padding(fp, size))
+		goto fail;
+
+	buffer[size] = '\0';
+	return buffer;
+fail_errno:
+	perror("reading tar record");
+	goto fail;
+fail:
+	free(buffer);
+	return NULL;
 }
