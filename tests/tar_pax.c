@@ -78,11 +78,13 @@ int main(void)
 	TEST_EQUAL_UI(hdr.sb.st_uid, 01750);
 	TEST_EQUAL_UI(hdr.sb.st_gid, 01750);
 	TEST_EQUAL_UI(hdr.sb.st_size, 5);
-#if SIZEOF_TIME_T < 8
-	TEST_EQUAL_UI(hdr.sb.st_mtime, INT32_MAX);
-#else
-	TEST_EQUAL_UI(hdr.sb.st_mtime, 8589934592L);
-#endif
+
+	if (sizeof(time_t) * CHAR_BIT < 64) {
+		TEST_EQUAL_UI(hdr.sb.st_mtime, INT32_MAX);
+	} else {
+		TEST_EQUAL_UI(hdr.sb.st_mtime, 8589934592L);
+	}
+
 	TEST_EQUAL_UI(hdr.mtime, 8589934592L);
 	TEST_STR_EQUAL(hdr.name, "input.txt");
 	TEST_ASSERT(!hdr.unknown_record);

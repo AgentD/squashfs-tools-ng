@@ -155,17 +155,17 @@ static int decode_header(const tar_header_t *hdr, unsigned int set_by_pax,
 		break;
 	}
 
-#if SIZEOF_TIME_T < 8
-	if (out->mtime > (sqfs_s64)INT32_MAX) {
-		out->sb.st_mtime = INT32_MAX;
-	} else if (out->mtime < (sqfs_s64)INT32_MIN) {
-		out->sb.st_mtime = INT32_MIN;
+	if (sizeof(time_t) * CHAR_BIT < 64) {
+		if (out->mtime > (sqfs_s64)INT32_MAX) {
+			out->sb.st_mtime = INT32_MAX;
+		} else if (out->mtime < (sqfs_s64)INT32_MIN) {
+			out->sb.st_mtime = INT32_MIN;
+		} else {
+			out->sb.st_mtime = out->mtime;
+		}
 	} else {
 		out->sb.st_mtime = out->mtime;
 	}
-#else
-	out->sb.st_mtime = out->mtime;
-#endif
 	return 0;
 }
 
