@@ -7,28 +7,12 @@
 #include "config.h"
 
 #include "tar.h"
-
-#include <assert.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
+#include "test.h"
 
 #define STR(x) #x
 #define STRVALUE(x) STR(x)
 
 #define TEST_PATH STRVALUE(TESTPATH)
-
-static FILE *open_read(const char *path)
-{
-	FILE *fp = fopen(path, "rb");
-
-	if (fp == NULL) {
-		perror(path);
-		exit(EXIT_FAILURE);
-	}
-
-	return fp;
-}
 
 int main(void)
 {
@@ -36,66 +20,66 @@ int main(void)
 	sparse_map_t *sparse;
 	FILE *fp;
 
-	assert(chdir(TEST_PATH) == 0);
+	TEST_ASSERT(chdir(TEST_PATH) == 0);
 
-	fp = open_read("sparse-files/pax-gnu0-0.tar");
-	assert(read_header(fp, &hdr) == 0);
-	assert(hdr.sb.st_mode == (S_IFREG | 0644));
-	assert(hdr.sb.st_uid == 01750);
-	assert(hdr.sb.st_gid == 01750);
-	assert(hdr.sb.st_size == 2097152);
-	assert(hdr.actual_size == 2097152);
-	assert(hdr.record_size == 32768);
-	assert(strcmp(hdr.name, "input.bin") == 0);
-	assert(!hdr.unknown_record);
+	fp = test_open_read("sparse-files/pax-gnu0-0.tar");
+	TEST_ASSERT(read_header(fp, &hdr) == 0);
+	TEST_EQUAL_UI(hdr.sb.st_mode, S_IFREG | 0644);
+	TEST_EQUAL_UI(hdr.sb.st_uid, 01750);
+	TEST_EQUAL_UI(hdr.sb.st_gid, 01750);
+	TEST_EQUAL_UI(hdr.sb.st_size, 2097152);
+	TEST_EQUAL_UI(hdr.actual_size, 2097152);
+	TEST_EQUAL_UI(hdr.record_size, 32768);
+	TEST_STR_EQUAL(hdr.name, "input.bin");
+	TEST_ASSERT(!hdr.unknown_record);
 
 	sparse = hdr.sparse;
-	assert(sparse != NULL);
-	assert(sparse->offset == 0);
-	assert(sparse->count == 4096);
+	TEST_NOT_NULL(sparse);
+	TEST_EQUAL_UI(sparse->offset, 0);
+	TEST_EQUAL_UI(sparse->count, 4096);
 
 	sparse = sparse->next;
-	assert(sparse != NULL);
-	assert(sparse->offset == 262144);
-	assert(sparse->count == 4096);
+	TEST_NOT_NULL(sparse);
+	TEST_EQUAL_UI(sparse->offset, 262144);
+	TEST_EQUAL_UI(sparse->count, 4096);
 
 	sparse = sparse->next;
-	assert(sparse != NULL);
-	assert(sparse->offset == 524288);
-	assert(sparse->count == 4096);
+	TEST_NOT_NULL(sparse);
+	TEST_EQUAL_UI(sparse->offset, 524288);
+	TEST_EQUAL_UI(sparse->count, 4096);
 
 	sparse = sparse->next;
-	assert(sparse != NULL);
-	assert(sparse->offset == 786432);
-	assert(sparse->count == 4096);
+	TEST_NOT_NULL(sparse);
+	TEST_EQUAL_UI(sparse->offset, 786432);
+	TEST_EQUAL_UI(sparse->count, 4096);
 
 	sparse = sparse->next;
-	assert(sparse != NULL);
-	assert(sparse->offset == 1048576);
-	assert(sparse->count == 4096);
+	TEST_NOT_NULL(sparse);
+	TEST_EQUAL_UI(sparse->offset, 1048576);
+	TEST_EQUAL_UI(sparse->count, 4096);
 
 	sparse = sparse->next;
-	assert(sparse != NULL);
-	assert(sparse->offset == 1310720);
-	assert(sparse->count == 4096);
+	TEST_NOT_NULL(sparse);
+	TEST_EQUAL_UI(sparse->offset, 1310720);
+	TEST_EQUAL_UI(sparse->count, 4096);
 
 	sparse = sparse->next;
-	assert(sparse != NULL);
-	assert(sparse->offset == 1572864);
-	assert(sparse->count == 4096);
+	TEST_NOT_NULL(sparse);
+	TEST_EQUAL_UI(sparse->offset, 1572864);
+	TEST_EQUAL_UI(sparse->count, 4096);
 
 	sparse = sparse->next;
-	assert(sparse != NULL);
-	assert(sparse->offset == 1835008);
-	assert(sparse->count == 4096);
+	TEST_NOT_NULL(sparse);
+	TEST_EQUAL_UI(sparse->offset, 1835008);
+	TEST_EQUAL_UI(sparse->count, 4096);
 
 	sparse = sparse->next;
-	assert(sparse != NULL);
-	assert(sparse->offset == 2097152);
-	assert(sparse->count == 0);
+	TEST_NOT_NULL(sparse);
+	TEST_EQUAL_UI(sparse->offset, 2097152);
+	TEST_EQUAL_UI(sparse->count, 0);
 
 	sparse = sparse->next;
-	assert(sparse == NULL);
+	TEST_NULL(sparse);
 
 	clear_header(&hdr);
 	fclose(fp);

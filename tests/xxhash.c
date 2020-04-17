@@ -6,11 +6,8 @@
  */
 #include "config.h"
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-
 #include "util.h"
+#include "test.h"
 
 static const struct {
 	const char *plaintext;

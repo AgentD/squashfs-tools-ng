@@ -7,10 +7,7 @@
 #include "config.h"
 
 #include "fstree.h"
-
-#include <stdlib.h>
-#include <assert.h>
-#include <string.h>
+#include "test.h"
 
 int main(void)
 {
@@ -27,15 +24,15 @@ int main(void)
 	sb.st_size = 1337;
 
 	node = fstree_mknode(NULL, "sockfile", 8, NULL, &sb);
-	assert((char *)node->name >= (char *)node->payload);
-	assert(strcmp(node->name, "sockfile") == 0);
-	assert(node->uid == sb.st_uid);
-	assert(node->gid == sb.st_gid);
-	assert(node->mode == sb.st_mode);
-	assert(node->link_count == 1);
-	assert(node->parent == NULL);
-	assert(node->data.target == NULL);
-	assert(node->data.devno == 0);
+	TEST_ASSERT((char *)node->name >= (char *)node->payload);
+	TEST_STR_EQUAL(node->name, "sockfile");
+	TEST_EQUAL_UI(node->uid, sb.st_uid);
+	TEST_EQUAL_UI(node->gid, sb.st_gid);
+	TEST_EQUAL_UI(node->mode, sb.st_mode);
+	TEST_EQUAL_UI(node->link_count, 1);
+	TEST_NULL(node->parent);
+	TEST_NULL(node->data.target);
+	TEST_EQUAL_UI(node->data.devno, 0);
 	free(node);
 
 	memset(&fs, 0, sizeof(fs));
@@ -47,15 +44,15 @@ int main(void)
 	sb.st_size = 1337;
 
 	node = fstree_mknode(NULL, "fifo", 4, NULL, &sb);
-	assert((char *)node->name >= (char *)node->payload);
-	assert(strcmp(node->name, "fifo") == 0);
-	assert(node->uid == sb.st_uid);
-	assert(node->gid == sb.st_gid);
-	assert(node->mode == sb.st_mode);
-	assert(node->link_count == 1);
-	assert(node->parent == NULL);
-	assert(node->data.target == NULL);
-	assert(node->data.devno == 0);
+	TEST_ASSERT((char *)node->name >= (char *)node->payload);
+	TEST_STR_EQUAL(node->name, "fifo");
+	TEST_EQUAL_UI(node->uid, sb.st_uid);
+	TEST_EQUAL_UI(node->gid, sb.st_gid);
+	TEST_EQUAL_UI(node->mode, sb.st_mode);
+	TEST_EQUAL_UI(node->link_count, 1);
+	TEST_NULL(node->parent);
+	TEST_NULL(node->data.target);
+	TEST_EQUAL_UI(node->data.devno, 0);
 	free(node);
 
 	memset(&fs, 0, sizeof(fs));
@@ -67,14 +64,14 @@ int main(void)
 	sb.st_size = 1337;
 
 	node = fstree_mknode(NULL, "blkdev", 6, NULL, &sb);
-	assert((char *)node->name >= (char *)node->payload);
-	assert(strcmp(node->name, "blkdev") == 0);
-	assert(node->uid == sb.st_uid);
-	assert(node->gid == sb.st_gid);
-	assert(node->mode == sb.st_mode);
-	assert(node->link_count == 1);
-	assert(node->data.devno == sb.st_rdev);
-	assert(node->parent == NULL);
+	TEST_ASSERT((char *)node->name >= (char *)node->payload);
+	TEST_STR_EQUAL(node->name, "blkdev");
+	TEST_EQUAL_UI(node->uid, sb.st_uid);
+	TEST_EQUAL_UI(node->gid, sb.st_gid);
+	TEST_EQUAL_UI(node->mode, sb.st_mode);
+	TEST_EQUAL_UI(node->link_count, 1);
+	TEST_EQUAL_UI(node->data.devno, sb.st_rdev);
+	TEST_NULL(node->parent);
 	free(node);
 
 	memset(&fs, 0, sizeof(fs));
@@ -86,14 +83,14 @@ int main(void)
 	sb.st_size = 1337;
 
 	node = fstree_mknode(NULL, "chardev", 7, NULL, &sb);
-	assert((char *)node->name >= (char *)node->payload);
-	assert(strcmp(node->name, "chardev") == 0);
-	assert(node->uid == sb.st_uid);
-	assert(node->gid == sb.st_gid);
-	assert(node->mode == sb.st_mode);
-	assert(node->link_count == 1);
-	assert(node->data.devno == sb.st_rdev);
-	assert(node->parent == NULL);
+	TEST_ASSERT((char *)node->name >= (char *)node->payload);
+	TEST_STR_EQUAL(node->name, "chardev");
+	TEST_EQUAL_UI(node->uid, sb.st_uid);
+	TEST_EQUAL_UI(node->gid, sb.st_gid);
+	TEST_EQUAL_UI(node->mode, sb.st_mode);
+	TEST_EQUAL_UI(node->link_count, 1);
+	TEST_EQUAL_UI(node->data.devno, sb.st_rdev);
+	TEST_NULL(node->parent);
 	free(node);
 
 	return EXIT_SUCCESS;

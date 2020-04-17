@@ -7,10 +7,7 @@
 #include "config.h"
 
 #include "fstree.h"
-
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
+#include "test.h"
 
 int main(void)
 {
@@ -19,7 +16,7 @@ int main(void)
 	fstree_t fs;
 	char *str;
 
-	assert(fstree_init(&fs, NULL) == 0);
+	TEST_ASSERT(fstree_init(&fs, NULL) == 0);
 
 	memset(&sb, 0, sizeof(sb));
 	sb.st_mode = S_IFDIR | 0750;
@@ -32,28 +29,28 @@ int main(void)
 	d = fstree_add_generic(&fs, "foo/bar/baz/dir", &sb, NULL);
 
 	str = fstree_get_path(fs.root);
-	assert(str != NULL);
-	assert(strcmp(str, "/") == 0);
+	TEST_NOT_NULL(str);
+	TEST_STR_EQUAL(str, "/");
 	free(str);
 
 	str = fstree_get_path(a);
-	assert(str != NULL);
-	assert(strcmp(str, "/foo") == 0);
+	TEST_NOT_NULL(str);
+	TEST_STR_EQUAL(str, "/foo");
 	free(str);
 
 	str = fstree_get_path(b);
-	assert(str != NULL);
-	assert(strcmp(str, "/foo/bar") == 0);
+	TEST_NOT_NULL(str);
+	TEST_STR_EQUAL(str, "/foo/bar");
 	free(str);
 
 	str = fstree_get_path(c);
-	assert(str != NULL);
-	assert(strcmp(str, "/foo/bar/baz") == 0);
+	TEST_NOT_NULL(str);
+	TEST_STR_EQUAL(str, "/foo/bar/baz");
 	free(str);
 
 	str = fstree_get_path(d);
-	assert(str != NULL);
-	assert(strcmp(str, "/foo/bar/baz/dir") == 0);
+	TEST_NOT_NULL(str);
+	TEST_STR_EQUAL(str, "/foo/bar/baz/dir");
 	free(str);
 
 	fstree_cleanup(&fs);

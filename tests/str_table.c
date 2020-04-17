@@ -6,13 +6,9 @@
  */
 #include "config.h"
 
-#include <stdlib.h>
-#include <assert.h>
-#include <string.h>
-#include <stdio.h>
-
 #include "str_table.h"
 #include "compat.h"
+#include "test.h"
 
 #define STR(x) #x
 #define STRVALUE(x) STR(x)
@@ -29,12 +25,7 @@ static int read_strings(void)
 	FILE *fp;
 	int i;
 
-	fp = fopen("words.txt", "r");
-
-	if (fp == NULL) {
-		perror("words.txt");
-		return -1;
-	}
+	fp = test_open_read("words.txt");
 
 	for (i = 0; i < 1000; ++i) {
 		line = NULL;
@@ -64,41 +55,39 @@ int main(void)
 	size_t i, j, idx;
 	const char *str;
 
-	assert(chdir(TEST_PATH) == 0);
+	TEST_ASSERT(chdir(TEST_PATH) == 0);
 
 	if (read_strings())
 		return EXIT_FAILURE;
 
-	assert(str_table_init(&table, 64) == 0);
+	TEST_ASSERT(str_table_init(&table, 64) == 0);
 
 	for (i = 0; i < 1000; ++i) {
-		assert(str_table_get_index(&table, strings[i], &idx) == 0);
+		TEST_ASSERT(str_table_get_index(&table, strings[i], &idx) == 0);
 
-		assert(idx == i);
+		TEST_EQUAL_UI(idx, i);
 
 		for (j = 0; j <= i; ++j) {
 			str = str_table_get_string(&table, j);
 
-			assert(str != NULL);
-			assert(str != strings[i]);
-			assert(strcmp(str, strings[j]) == 0);
+			TEST_NOT_NULL(str);
+			TEST_ASSERT(str != strings[i]);
+			TEST_STR_EQUAL(str, strings[j]);
 		}
 
-		for (; j < 1000; ++j) {
-			str = str_table_get_string(&table, j);
-			assert(str == NULL);
-		}
+		for (; j < 1000; ++j)
+			TEST_NULL(str_table_get_string(&table, j));
 	}
 
 	for (i = 0; i < 1000; ++i) {
-		assert(str_table_get_index(&table, strings[i], &idx) == 0);
-		assert(idx == i);
+		TEST_ASSERT(str_table_get_index(&table, strings[i], &idx) == 0);
+		TEST_EQUAL_UI(idx, i);
 
 		str = str_table_get_string(&table, i);
 
-		assert(str != NULL);
-		assert(str != strings[i]);
-		assert(strcmp(str, strings[i]) == 0);
+		TEST_NOT_NULL(str);
+		TEST_ASSERT(str != strings[i]);
+		TEST_STR_EQUAL(str, strings[i]);
 	}
 
 	str_table_cleanup(&table);

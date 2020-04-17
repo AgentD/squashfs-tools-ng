@@ -6,10 +6,7 @@
  */
 #include "config.h"
 #include "fstree.h"
-
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include "test.h"
 
 static const struct {
 	const char *in;

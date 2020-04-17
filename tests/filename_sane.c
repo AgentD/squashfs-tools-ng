@@ -6,11 +6,7 @@
  */
 #include "config.h"
 #include "fstree.h"
-
-#include <string.h>
-#include <stdlib.h>
-#include <assert.h>
-#include <stdio.h>
+#include "test.h"
 
 static const char *must_work[] = {
 	"foobar",
@@ -48,18 +44,48 @@ int main(void)
 	size_t i;
 
 	for (i = 0; must_work[i] != NULL; ++i) {
-		assert(is_filename_sane(must_work[i], false));
-		assert(is_filename_sane(must_work[i], true));
+		if (!is_filename_sane(must_work[i], false)) {
+			fprintf(stderr, "%s was rejected!\n", must_work[i]);
+			return EXIT_FAILURE;
+		}
+
+		if (!is_filename_sane(must_work[i], true)) {
+			fprintf(stderr,
+				"%s was rejected when testing for "
+				"OS specific stuff!\n", must_work[i]);
+			return EXIT_FAILURE;
+		}
 	}
 
 	for (i = 0; must_not_work[i] != NULL; ++i) {
-		assert(!is_filename_sane(must_not_work[i], false));
-		assert(!is_filename_sane(must_not_work[i], true));
+		if (is_filename_sane(must_not_work[i], false)) {
+			fprintf(stderr, "%s was accepted!\n",
+				must_not_work[i]);
+			return EXIT_FAILURE;
+		}
+
+		if (is_filename_sane(must_not_work[i], true)) {
+			fprintf(stderr,
+				"%s was accepted when testing for "
+				"OS specific stuff!\n", must_not_work[i]);
+			return EXIT_FAILURE;
+		}
 	}
 
 	for (i = 0; must_not_work_here[i] != NULL; ++i) {
-		assert( is_filename_sane(must_not_work_here[i], false));
-		assert(!is_filename_sane(must_not_work_here[i], true));
+		if (!is_filename_sane(must_not_work_here[i], false)) {
+			fprintf(stderr,
+				"%s was rejected in the generic test!\n",
+				must_not_work_here[i]);
+			return EXIT_FAILURE;
+		}
+
+		if (is_filename_sane(must_not_work_here[i], true)) {
+			fprintf(stderr,
+				"%s was accepted when testing for "
+				"OS specific stuff!\n", must_not_work_here[i]);
+			return EXIT_FAILURE;
+		}
 	}
 
 	return EXIT_SUCCESS;

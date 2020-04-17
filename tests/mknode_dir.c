@@ -7,10 +7,7 @@
 #include "config.h"
 
 #include "fstree.h"
-
-#include <stdlib.h>
-#include <assert.h>
-#include <string.h>
+#include "test.h"
 
 int main(void)
 {
@@ -27,36 +24,35 @@ int main(void)
 	sb.st_size = 4096;
 
 	root = fstree_mknode(NULL, "rootdir", 7, NULL, &sb);
-	assert(root->uid == sb.st_uid);
-	assert(root->gid == sb.st_gid);
-	assert(root->mode == sb.st_mode);
-	assert(root->link_count == 2);
-	assert((char *)root->name >= (char *)root->payload);
-	assert(root->name >= (char *)root->payload);
-	assert(strcmp(root->name, "rootdir") == 0);
-	assert(root->data.dir.children == NULL);
-	assert(root->parent == NULL);
-	assert(root->next == NULL);
+	TEST_EQUAL_UI(root->uid, sb.st_uid);
+	TEST_EQUAL_UI(root->gid, sb.st_gid);
+	TEST_EQUAL_UI(root->mode, sb.st_mode);
+	TEST_EQUAL_UI(root->link_count, 2);
+	TEST_ASSERT(root->name >= (char *)root->payload);
+	TEST_STR_EQUAL(root->name, "rootdir");
+	TEST_NULL(root->data.dir.children);
+	TEST_NULL(root->parent);
+	TEST_NULL(root->next);
 
 	a = fstree_mknode(root, "adir", 4, NULL, &sb);
-	assert(a->parent == root);
-	assert(a->next == NULL);
-	assert(a->link_count == 2);
-	assert(root->link_count == 3);
-	assert(root->data.dir.children == a);
-	assert(root->parent == NULL);
-	assert(root->next == NULL);
+	TEST_ASSERT(a->parent == root);
+	TEST_NULL(a->next);
+	TEST_EQUAL_UI(a->link_count, 2);
+	TEST_EQUAL_UI(root->link_count, 3);
+	TEST_ASSERT(root->data.dir.children == a);
+	TEST_NULL(root->parent);
+	TEST_NULL(root->next);
 
 	b = fstree_mknode(root, "bdir", 4, NULL, &sb);
-	assert(a->parent == root);
-	assert(b->parent == root);
-	assert(b->link_count == 2);
-	assert(root->data.dir.children == b);
-	assert(root->link_count == 4);
-	assert(b->next == a);
-	assert(a->next == NULL);
-	assert(root->parent == NULL);
-	assert(root->next == NULL);
+	TEST_ASSERT(a->parent == root);
+	TEST_ASSERT(b->parent == root);
+	TEST_EQUAL_UI(b->link_count, 2);
+	TEST_ASSERT(root->data.dir.children == b);
+	TEST_EQUAL_UI(root->link_count, 4);
+	TEST_ASSERT(b->next == a);
+	TEST_NULL(a->next);
+	TEST_NULL(root->parent);
+	TEST_NULL(root->next);
 
 	free(root);
 	free(a);

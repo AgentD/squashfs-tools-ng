@@ -6,12 +6,8 @@
  */
 #include "config.h"
 
-#include <stdlib.h>
-#include <assert.h>
-#include <string.h>
-#include <stdio.h>
-
 #include "rbtree.h"
+#include "test.h"
 
 static int key_compare(const void *a, const void *b)
 {
@@ -70,14 +66,14 @@ static void check_binary_tree_dfs(rbtree_node_t *n)
 
 	if (n->left != NULL) {
 		cmp = rbtree_node_key(n->left);
-		assert(key_compare(cmp, key) < 0);
+		TEST_ASSERT(key_compare(cmp, key) < 0);
 
 		check_binary_tree_dfs(n->left);
 	}
 
 	if (n->right != NULL) {
 		cmp = rbtree_node_key(n->right);
-		assert(key_compare(cmp, key) > 0);
+		TEST_ASSERT(key_compare(cmp, key) > 0);
 
 		check_binary_tree_dfs(n->right);
 	}
@@ -86,8 +82,8 @@ static void check_binary_tree_dfs(rbtree_node_t *n)
 static void check_colors_dfs(rbtree_node_t *n)
 {
 	if (n->is_red) {
-		assert(n->left == NULL || !n->left->is_red);
-		assert(n->right == NULL || !n->right->is_red);
+		TEST_ASSERT(n->left == NULL || !n->left->is_red);
+		TEST_ASSERT(n->right == NULL || !n->right->is_red);
 	}
 
 	if (n->left != NULL)
@@ -104,7 +100,7 @@ static void check_black_depth_dfs(rbtree_node_t *n, size_t ref,
 		counter += 1;
 
 	if (n->left == NULL || n->right == NULL)
-		assert(counter == ref);
+		TEST_EQUAL_UI(counter, ref);
 
 	if (n->left != NULL)
 		check_black_depth_dfs(n->left, ref, counter);
@@ -121,37 +117,37 @@ int main(void)
 	sqfs_u64 value;
 	rbtree_t rb;
 
-	assert(rbtree_init(&rb, sizeof(sqfs_s32),
-			   sizeof(sqfs_u64), key_compare) == 0);
+	TEST_ASSERT(rbtree_init(&rb, sizeof(sqfs_s32),
+				sizeof(sqfs_u64), key_compare) == 0);
 
 	count = 0;
 
 	for (key = -1000; key < 1000; ++key) {
 		/* lookup of current key must fail prior to insert */
-		assert(rbtree_lookup(&rb, &key) == NULL);
+		TEST_NULL(rbtree_lookup(&rb, &key));
 
 		/* previous key/value pairs must still be there */
 		for (key2 = -1000; key2 < key; ++key2) {
 			n = rbtree_lookup(&rb, &key2);
-			assert(n != NULL);
+			TEST_NOT_NULL(n);
 			value = *((sqfs_u64 *)rbtree_node_value(n));
-			assert((sqfs_u64)(key2 + 10000) == value);
+			TEST_EQUAL_UI((sqfs_u64)(key2 + 10000), value);
 		}
 
 		/* insert key value pair */
 		value = key + 10000;
-		assert(rbtree_insert(&rb, &key, &value) == 0);
+		TEST_ASSERT(rbtree_insert(&rb, &key, &value) == 0);
 		count += 1;
 
 		/* check if the tree has the right number of nodes */
-		assert(count_nodes_dfs(rb.root) == count);
+		TEST_EQUAL_UI(count_nodes_dfs(rb.root), count);
 
 		/* check if it is still a binary tree */
 		check_binary_tree_dfs(rb.root);
 
 		/* root node must be black. Every red node
 		   must have black children. */
-		assert(!rb.root->is_red);
+		TEST_ASSERT(!rb.root->is_red);
 		check_colors_dfs(rb.root);
 
 		/* every path from the root to a leave must have
@@ -163,13 +159,13 @@ int main(void)
 		   twice as long as the shortest. */
 		mind = min_depth(rb.root);
 		maxd = max_depth(rb.root);
-		assert(maxd <= mind * 2);
+		TEST_ASSERT(maxd <= mind * 2);
 
 		/* lookup of current key must work after insert */
 		n = rbtree_lookup(&rb, &key);
-		assert(n != NULL);
+		TEST_NOT_NULL(n);
 		value = *((sqfs_u64 *)rbtree_node_value(n));
-		assert((sqfs_u64)(key + 10000) == value);
+		TEST_EQUAL_UI((sqfs_u64)(key + 10000), value);
 	}
 
 	rbtree_cleanup(&rb);

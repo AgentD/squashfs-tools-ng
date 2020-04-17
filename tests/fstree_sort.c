@@ -8,10 +8,7 @@
 
 #include "fstree.h"
 #include "internal.h"
-
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
+#include "test.h"
 
 int main(void)
 {
@@ -28,41 +25,41 @@ int main(void)
 	b = fstree_mknode(NULL, "b", 1, NULL, &sb);
 	c = fstree_mknode(NULL, "c", 1, NULL, &sb);
 	d = fstree_mknode(NULL, "d", 1, NULL, &sb);
-	assert(a != NULL && b != NULL && c != NULL && d != NULL);
+	TEST_ASSERT(a != NULL && b != NULL && c != NULL && d != NULL);
 
 	/* empty list */
-	assert(tree_node_list_sort(NULL) == NULL);
+	TEST_NULL(tree_node_list_sort(NULL));
 
 	/* single element */
-	assert(tree_node_list_sort(a) == a);
-	assert(a->next == NULL);
+	TEST_ASSERT(tree_node_list_sort(a) == a);
+	TEST_NULL(a->next);
 
 	/* two elements, reverse order */
 	b->next = a;
-	assert(tree_node_list_sort(b) == a);
-	assert(a->next == b);
-	assert(b->next == NULL);
+	TEST_ASSERT(tree_node_list_sort(b) == a);
+	TEST_ASSERT(a->next == b);
+	TEST_NULL(b->next);
 
 	/* two elements, sorted order */
-	assert(tree_node_list_sort(a) == a);
-	assert(a->next == b);
-	assert(b->next == NULL);
+	TEST_ASSERT(tree_node_list_sort(a) == a);
+	TEST_ASSERT(a->next == b);
+	TEST_NULL(b->next);
 
 	/* three elements, reverse order */
 	c->next = b;
 	b->next = a;
 	a->next = NULL;
 
-	assert(tree_node_list_sort(c) == a);
-	assert(a->next == b);
-	assert(b->next == c);
-	assert(c->next == NULL);
+	TEST_ASSERT(tree_node_list_sort(c) == a);
+	TEST_ASSERT(a->next == b);
+	TEST_ASSERT(b->next == c);
+	TEST_NULL(c->next);
 
 	/* three elements, ordered */
-	assert(tree_node_list_sort(a) == a);
-	assert(a->next == b);
-	assert(b->next == c);
-	assert(c->next == NULL);
+	TEST_ASSERT(tree_node_list_sort(a) == a);
+	TEST_ASSERT(a->next == b);
+	TEST_ASSERT(b->next == c);
+	TEST_NULL(c->next);
 
 	/* four elements, reverse order */
 	d->next = c;
@@ -70,18 +67,18 @@ int main(void)
 	b->next = a;
 	a->next = NULL;
 
-	assert(tree_node_list_sort(d) == a);
-	assert(a->next == b);
-	assert(b->next == c);
-	assert(c->next == d);
-	assert(d->next == NULL);
+	TEST_ASSERT(tree_node_list_sort(d) == a);
+	TEST_ASSERT(a->next == b);
+	TEST_ASSERT(b->next == c);
+	TEST_ASSERT(c->next == d);
+	TEST_NULL(d->next);
 
 	/* four elements, sorted order */
-	assert(tree_node_list_sort(a) == a);
-	assert(a->next == b);
-	assert(b->next == c);
-	assert(c->next == d);
-	assert(d->next == NULL);
+	TEST_ASSERT(tree_node_list_sort(a) == a);
+	TEST_ASSERT(a->next == b);
+	TEST_ASSERT(b->next == c);
+	TEST_ASSERT(c->next == d);
+	TEST_NULL(d->next);
 
 	/* force merge sort to go through LRLR pattern */
 	b->next = a;
@@ -89,11 +86,11 @@ int main(void)
 	d->next = c;
 	c->next = NULL;
 
-	assert(tree_node_list_sort(b) == a);
-	assert(a->next == b);
-	assert(b->next == c);
-	assert(c->next == d);
-	assert(d->next == NULL);
+	TEST_ASSERT(tree_node_list_sort(b) == a);
+	TEST_ASSERT(a->next == b);
+	TEST_ASSERT(b->next == c);
+	TEST_ASSERT(c->next == d);
+	TEST_NULL(d->next);
 
 	/* cleanup and done */
 	free(a);

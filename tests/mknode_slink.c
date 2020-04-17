@@ -7,10 +7,7 @@
 #include "config.h"
 
 #include "fstree.h"
-
-#include <stdlib.h>
-#include <assert.h>
-#include <string.h>
+#include "test.h"
 
 int main(void)
 {
@@ -27,29 +24,29 @@ int main(void)
 	sb.st_size = 1337;
 
 	node = fstree_mknode(NULL, "symlink", 7, "target", &sb);
-	assert(node->uid == sb.st_uid);
-	assert(node->gid == sb.st_gid);
-	assert(node->mode == (S_IFLNK | 0777));
-	assert(node->link_count == 1);
-	assert(node->parent == NULL);
-	assert((char *)node->name >= (char *)node->payload);
-	assert(node->data.target >= (char *)node->payload);
-	assert(node->data.target >= node->name + 8);
-	assert(strcmp(node->name, "symlink") == 0);
-	assert(strcmp(node->data.target, "target") == 0);
+	TEST_EQUAL_UI(node->uid, sb.st_uid);
+	TEST_EQUAL_UI(node->gid, sb.st_gid);
+	TEST_EQUAL_UI(node->mode, S_IFLNK | 0777);
+	TEST_EQUAL_UI(node->link_count, 1);
+	TEST_NULL(node->parent);
+	TEST_ASSERT((char *)node->name >= (char *)node->payload);
+	TEST_ASSERT(node->data.target >= (char *)node->payload);
+	TEST_ASSERT(node->data.target >= node->name + 8);
+	TEST_STR_EQUAL(node->name, "symlink");
+	TEST_STR_EQUAL(node->data.target, "target");
 	free(node);
 
 	node = fstree_mknode(NULL, "symlink", 7, "", &sb);
-	assert(node->uid == sb.st_uid);
-	assert(node->gid == sb.st_gid);
-	assert(node->mode == (S_IFLNK | 0777));
-	assert(node->link_count == 1);
-	assert(node->parent == NULL);
-	assert((char *)node->name >= (char *)node->payload);
-	assert(node->data.target >= (char *)node->payload);
-	assert(node->data.target >= node->name + 8);
-	assert(strcmp(node->name, "symlink") == 0);
-	assert(node->data.target[0] == '\0');
+	TEST_EQUAL_UI(node->uid, sb.st_uid);
+	TEST_EQUAL_UI(node->gid, sb.st_gid);
+	TEST_EQUAL_UI(node->mode, S_IFLNK | 0777);
+	TEST_EQUAL_UI(node->link_count, 1);
+	TEST_NULL(node->parent);
+	TEST_ASSERT((char *)node->name >= (char *)node->payload);
+	TEST_ASSERT(node->data.target >= (char *)node->payload);
+	TEST_ASSERT(node->data.target >= node->name + 8);
+	TEST_STR_EQUAL(node->name, "symlink");
+	TEST_STR_EQUAL(node->data.target, "");
 	free(node);
 
 	return EXIT_SUCCESS;

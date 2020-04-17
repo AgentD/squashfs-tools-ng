@@ -7,10 +7,7 @@
 #include "config.h"
 
 #include "fstree.h"
-
-#include <stdlib.h>
-#include <assert.h>
-#include <string.h>
+#include "test.h"
 
 static tree_node_t *gen_node(tree_node_t *parent, const char *name)
 {
@@ -27,7 +24,7 @@ static void check_children_before_root(tree_node_t *root)
 	tree_node_t *n;
 
 	for (n = root->data.dir.children; n != NULL; n = n->next)
-		assert(n->inode_num < root->inode_num);
+		TEST_LESS_THAN_UI(n->inode_num, root->inode_num);
 
 	for (n = root->data.dir.children; n != NULL; n = n->next)
 		check_children_before_root(n);
@@ -39,7 +36,7 @@ static void check_children_continuous(tree_node_t *root)
 
 	for (n = root->data.dir.children; n != NULL; n = n->next) {
 		if (n->next != NULL) {
-			assert(n->next->inode_num == (n->inode_num + 1));
+			TEST_EQUAL_UI(n->next->inode_num, (n->inode_num + 1));
 		}
 	}
 
@@ -53,36 +50,36 @@ int main(void)
 	fstree_t fs;
 
 	// inode table for the empty tree
-	assert(fstree_init(&fs, NULL) == 0);
+	TEST_ASSERT(fstree_init(&fs, NULL) == 0);
 	fstree_post_process(&fs);
-	assert(fs.unique_inode_count == 1);
-	assert(fs.root->inode_num == 1);
+	TEST_EQUAL_UI(fs.unique_inode_count, 1);
+	TEST_EQUAL_UI(fs.root->inode_num, 1);
 	fstree_cleanup(&fs);
 
 	// tree with 2 levels under root, fan out 3
-	assert(fstree_init(&fs, NULL) == 0);
+	TEST_ASSERT(fstree_init(&fs, NULL) == 0);
 
 	a = gen_node(fs.root, "a");
 	b = gen_node(fs.root, "b");
 	c = gen_node(fs.root, "c");
-	assert(a != NULL);
-	assert(b != NULL);
-	assert(c != NULL);
+	TEST_NOT_NULL(a);
+	TEST_NOT_NULL(b);
+	TEST_NOT_NULL(c);
 
-	assert(gen_node(a, "a_a") != NULL);
-	assert(gen_node(a, "a_b") != NULL);
-	assert(gen_node(a, "a_c") != NULL);
+	TEST_NOT_NULL(gen_node(a, "a_a"));
+	TEST_NOT_NULL(gen_node(a, "a_b"));
+	TEST_NOT_NULL(gen_node(a, "a_c"));
 
-	assert(gen_node(b, "b_a") != NULL);
-	assert(gen_node(b, "b_b") != NULL);
-	assert(gen_node(b, "b_c") != NULL);
+	TEST_NOT_NULL(gen_node(b, "b_a"));
+	TEST_NOT_NULL(gen_node(b, "b_b"));
+	TEST_NOT_NULL(gen_node(b, "b_c"));
 
-	assert(gen_node(c, "c_a") != NULL);
-	assert(gen_node(c, "c_b") != NULL);
-	assert(gen_node(c, "c_c") != NULL);
+	TEST_NOT_NULL(gen_node(c, "c_a"));
+	TEST_NOT_NULL(gen_node(c, "c_b"));
+	TEST_NOT_NULL(gen_node(c, "c_c"));
 
 	fstree_post_process(&fs);
-	assert(fs.unique_inode_count == 13);
+	TEST_EQUAL_UI(fs.unique_inode_count, 13);
 
 	check_children_before_root(fs.root);
 	check_children_continuous(fs.root);

@@ -7,10 +7,7 @@
 #include "config.h"
 
 #include "fstree.h"
-
-#include <stdlib.h>
-#include <assert.h>
-#include <string.h>
+#include "test.h"
 
 int main(void)
 {
@@ -28,16 +25,16 @@ int main(void)
 	sb.st_size = 4096;
 
 	node = fstree_mknode(NULL, "filename", 8, "input", &sb);
-	assert(node->uid == sb.st_uid);
-	assert(node->gid == sb.st_gid);
-	assert(node->mode == sb.st_mode);
-	assert(node->parent == NULL);
-	assert(node->link_count == 1);
-	assert((char *)node->name >= (char *)node->payload);
-	assert(node->data.file.input_file >= (char *)node->payload);
-	assert(node->data.file.input_file >= node->name + 8);
-	assert(strcmp(node->name, "filename") == 0);
-	assert(strcmp(node->data.file.input_file, "input") == 0);
+	TEST_EQUAL_UI(node->uid, sb.st_uid);
+	TEST_EQUAL_UI(node->gid, sb.st_gid);
+	TEST_EQUAL_UI(node->mode, sb.st_mode);
+	TEST_NULL(node->parent);
+	TEST_EQUAL_UI(node->link_count, 1);
+	TEST_ASSERT((char *)node->name >= (char *)node->payload);
+	TEST_ASSERT(node->data.file.input_file >= (char *)node->payload);
+	TEST_ASSERT(node->data.file.input_file >= node->name + 8);
+	TEST_STR_EQUAL(node->name, "filename");
+	TEST_STR_EQUAL(node->data.file.input_file, "input");
 	free(node);
 
 	return EXIT_SUCCESS;

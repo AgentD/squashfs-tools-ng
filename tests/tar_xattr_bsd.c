@@ -7,28 +7,12 @@
 #include "config.h"
 
 #include "tar.h"
-
-#include <assert.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
+#include "test.h"
 
 #define STR(x) #x
 #define STRVALUE(x) STR(x)
 
 #define TEST_PATH STRVALUE(TESTPATH)
-
-static FILE *open_read(const char *path)
-{
-	FILE *fp = fopen(path, "rb");
-
-	if (fp == NULL) {
-		perror(path);
-		exit(EXIT_FAILURE);
-	}
-
-	return fp;
-}
 
 int main(void)
 {
@@ -36,27 +20,27 @@ int main(void)
 	char buffer[6];
 	FILE *fp;
 
-	assert(chdir(TEST_PATH) == 0);
+	TEST_ASSERT(chdir(TEST_PATH) == 0);
 
-	fp = open_read("xattr/xattr-libarchive.tar");
-	assert(read_header(fp, &hdr) == 0);
-	assert(hdr.sb.st_mode == (S_IFREG | 0644));
-	assert(hdr.sb.st_uid == 01750);
-	assert(hdr.sb.st_gid == 01750);
-	assert(hdr.sb.st_size == 5);
-	assert(hdr.sb.st_mtime == 1543094477);
-	assert(hdr.mtime == 1543094477);
-	assert(strcmp(hdr.name, "input.txt") == 0);
-	assert(!hdr.unknown_record);
-	assert(read_retry("data0", fp, buffer, 5) == 0);
+	fp = test_open_read("xattr/xattr-libarchive.tar");
+	TEST_ASSERT(read_header(fp, &hdr) == 0);
+	TEST_EQUAL_UI(hdr.sb.st_mode, S_IFREG | 0644);
+	TEST_EQUAL_UI(hdr.sb.st_uid, 01750);
+	TEST_EQUAL_UI(hdr.sb.st_gid, 01750);
+	TEST_EQUAL_UI(hdr.sb.st_size, 5);
+	TEST_EQUAL_UI(hdr.sb.st_mtime, 1543094477);
+	TEST_EQUAL_UI(hdr.mtime, 1543094477);
+	TEST_STR_EQUAL(hdr.name, "input.txt");
+	TEST_ASSERT(!hdr.unknown_record);
+	TEST_ASSERT(read_retry("data0", fp, buffer, 5) == 0);
 	buffer[5] = '\0';
-	assert(strcmp(buffer, "test\n") == 0);
+	TEST_STR_EQUAL(buffer, "test\n");
 
-	assert(hdr.xattr != NULL);
-	assert(strcmp(hdr.xattr->key, "user.mime_type") == 0);
-	assert(strcmp((const char *)hdr.xattr->value, "text/plain") == 0);
-	assert(hdr.xattr->value_len == 10);
-	assert(hdr.xattr->next == NULL);
+	TEST_NOT_NULL(hdr.xattr);
+	TEST_STR_EQUAL(hdr.xattr->key, "user.mime_type");
+	TEST_STR_EQUAL((const char *)hdr.xattr->value, "text/plain");
+	TEST_EQUAL_UI(hdr.xattr->value_len, 10);
+	TEST_NULL(hdr.xattr->next);
 
 	clear_header(&hdr);
 	fclose(fp);
