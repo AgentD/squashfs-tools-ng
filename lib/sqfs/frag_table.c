@@ -14,11 +14,10 @@
 #include "sqfs/block.h"
 #include "compat.h"
 
+#include "lib/util/hash_table.h"
+
 #include <stdlib.h>
 #include <string.h>
-
-
-#define NUM_BUCKETS (128)
 
 
 typedef struct chunk_info_t {
@@ -37,23 +36,32 @@ struct sqfs_frag_table_t {
 	size_t used;
 	sqfs_fragment_t *table;
 
-	chunk_info_t chunks[NUM_BUCKETS];
+	struct hash_table *ht;
 };
+
+static uint32_t chunk_info_hash(const void *key)
+{
+	const chunk_info_t *chunk = key;
+	return chunk->hash;
+}
+
+static bool chunk_info_equals(const void *a, const void *b)
+{
+	const chunk_info_t *a_ = a, *b_ = b;
+	return a_->size == b_->size &&
+	       a_->hash == b_->hash;
+}
+
+static void delete_function(struct hash_entry *entry)
+{
+	free(entry->data);
+}
 
 static void frag_table_destroy(sqfs_object_t *obj)
 {
 	sqfs_frag_table_t *tbl = (sqfs_frag_table_t *)obj;
-	chunk_info_t *info;
-	size_t i;
 
-	for (i = 0; i < NUM_BUCKETS; ++i) {
-		while (tbl->chunks[i].next != NULL) {
-			info = tbl->chunks[i].next;
-			tbl->chunks[i].next = info->next;
-			free(info);
-		}
-	}
-
+	hash_table_destroy(tbl->ht, delete_function);
 	free(tbl->table);
 	free(tbl);
 }
@@ -62,38 +70,15 @@ static sqfs_object_t *frag_table_copy(const sqfs_object_t *obj)
 {
 	const sqfs_frag_table_t *tbl = (const sqfs_frag_table_t *)obj;
 	sqfs_frag_table_t *copy;
-	const chunk_info_t *it;
-	chunk_info_t *last;
-	size_t i;
 
 	copy = malloc(sizeof(*copy));
 	if (copy == NULL)
 		return NULL;
 
 	memcpy(copy, tbl, sizeof(*tbl));
-	for (i = 0; i < NUM_BUCKETS; ++i)
-		copy->chunks[i].next = NULL;
 
-	for (i = 0; i < NUM_BUCKETS; ++i) {
-		last = &(copy->chunks[i]);
-		it = tbl->chunks[i].next;
-
-		while (it != NULL) {
-			last->next = malloc(sizeof(*it));
-			if (last->next == NULL)
-				goto fail;
-
-			memcpy(last->next, it, sizeof(*it));
-			last = last->next;
-			last->next = NULL;
-			it = it->next;
-		}
-	}
-
+	copy->ht = hash_table_clone(tbl->ht);
 	return (sqfs_object_t *)copy;
-fail:
-	frag_table_destroy((sqfs_object_t *)copy);
-	return NULL;
 }
 
 sqfs_frag_table_t *sqfs_frag_table_create(sqfs_u32 flags)
@@ -106,6 +91,8 @@ sqfs_frag_table_t *sqfs_frag_table_create(sqfs_u32 flags)
 	tbl = calloc(1, sizeof(*tbl));
 	if (tbl == NULL)
 		return NULL;
+
+	tbl->ht = hash_table_create(chunk_info_hash, chunk_info_equals);
 
 	((sqfs_object_t *)tbl)->copy = frag_table_copy;
 	((sqfs_object_t *)tbl)->destroy = frag_table_destroy;
@@ -267,30 +254,16 @@ int sqfs_frag_table_add_tail_end(sqfs_frag_table_t *tbl,
 				 sqfs_u32 index, sqfs_u32 offset,
 				 sqfs_u32 size, sqfs_u32 hash)
 {
-	size_t idx = hash % NUM_BUCKETS;
-	chunk_info_t *new, *it;
+	chunk_info_t *new = calloc(1, sizeof(*new));
+	if (new == NULL)
+		return SQFS_ERROR_ALLOC;
 
-	if (tbl->chunks[idx].size == 0 && tbl->chunks[idx].hash == 0) {
-		tbl->chunks[idx].index = index;
-		tbl->chunks[idx].offset = offset;
-		tbl->chunks[idx].size = size;
-		tbl->chunks[idx].hash = hash;
-	} else {
-		new = calloc(1, sizeof(*new));
-		if (new == NULL)
-			return SQFS_ERROR_ALLOC;
+	new->index = index;
+	new->offset = offset;
+	new->size = size;
+	new->hash = hash;
 
-		new->index = index;
-		new->offset = offset;
-		new->size = size;
-		new->hash = hash;
-
-		it = &tbl->chunks[idx];
-		while (it->next != NULL)
-			it = it->next;
-
-		it->next = new;
-	}
+	hash_table_insert_pre_hashed(tbl->ht, new->hash, new, new);
 
 	return 0;
 }
@@ -299,19 +272,18 @@ int sqfs_frag_table_find_tail_end(sqfs_frag_table_t *tbl,
 				  sqfs_u32 hash, sqfs_u32 size,
 				  sqfs_u32 *index, sqfs_u32 *offset)
 {
-	size_t idx = hash % NUM_BUCKETS;
-	chunk_info_t *it;
+	struct hash_entry *entry;
+	chunk_info_t *chunk, search;
 
-	if (tbl->chunks[idx].size == 0 && tbl->chunks[idx].hash == 0)
+	search.hash = hash;
+	search.size = size;
+
+	entry = hash_table_search_pre_hashed(tbl->ht, hash, &search);
+	if (!entry)
 		return SQFS_ERROR_NO_ENTRY;
 
-	for (it = &tbl->chunks[idx]; it != NULL; it = it->next) {
-		if (it->hash == hash && it->size == size) {
-			*index = it->index;
-			*offset = it->offset;
-			return 0;
-		}
-	}
-
-	return SQFS_ERROR_NO_ENTRY;
+	chunk = entry->data;
+	*index = chunk->index;
+	*offset = chunk->offset;
+	return 0;
 }

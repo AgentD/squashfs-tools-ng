@@ -14,6 +14,8 @@ with the following exceptions:
  - `lib/sqfs/comp/zlib` contains files that have been extracted from the the
    zlib compression library and modified. See `lib/sqfs/comp/zlib/README` for
    details and `licenses/zlib.txt` for details.
+ - `lib/util/hash_table.*` and `lib/util/fast_urem_by_const.h` contain a hash
+   table implementation (MIT license).
 
 The rest of squashfs-tools-ng is released under the terms and conditions of
 the **GNU General Public License version 3 or later**.
