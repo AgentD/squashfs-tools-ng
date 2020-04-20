@@ -35,7 +35,7 @@ nor derived from either of them.
 
 If this file is included in a binary release package, additional 3rd party
 libraries may be included, which are subject to the copyright of their
-respective authors and the terms and conditions of their respective liceses.
+respective authors and the terms and conditions of their respective licenses.
 
 The following may be included:
 
@@ -58,7 +58,7 @@ The following may be included:
    This is released under a BSD style license, included in `licenses/zstd.txt`.
 
 
-Independend of build configurations, the `libsquashfs` library contains
+Independent of build configurations, the `libsquashfs` library contains
 the following 3rd party source code, directly linked into the library:
 
  - A modified version of the xxhash32 hash function (Copyright Yann Collet).
