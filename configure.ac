@@ -76,6 +76,10 @@ AC_ARG_WITH([zstd],
 	[AS_HELP_STRING([--with-zstd], [Build with zstd compression support])],
 	[], [with_zstd="check"])
 
+AC_ARG_WITH([gzip],
+	[AS_HELP_STRING([--with-gzip], [Build with zlib compression support])],
+	[], [with_gzip="check"])
+
 AC_ARG_WITH([builtin-zlib],
 	[AS_HELP_STRING([--with-builtin-zlib], [Use a custom, static zlib])],
 	[], [with_builtin_zlib="no"])
