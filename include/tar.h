@@ -105,6 +105,7 @@ typedef struct {
 #define TAR_TYPE_GNU_SPARSE 'S'
 
 #define TAR_TYPE_PAX 'x'
+#define TAR_TYPE_PAX_GLOBAL 'g'
 
 #define TAR_MAGIC "ustar"
 #define TAR_VERSION "00"

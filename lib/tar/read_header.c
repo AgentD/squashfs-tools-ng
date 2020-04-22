@@ -222,6 +222,11 @@ int read_header(FILE *fp, tar_header_decoded_t *out)
 				goto fail;
 			set_by_pax |= PAX_NAME;
 			continue;
+		case TAR_TYPE_PAX_GLOBAL:
+			if (read_number(hdr.size, sizeof(hdr.size), &pax_size))
+				goto fail;
+			skip_entry(fp, pax_size);
+			continue;
 		case TAR_TYPE_PAX:
 			clear_header(out);
 			if (read_number(hdr.size, sizeof(hdr.size), &pax_size))
