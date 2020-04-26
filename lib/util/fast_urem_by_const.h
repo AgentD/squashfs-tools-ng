@@ -48,7 +48,7 @@
 static inline uint32_t
 _mul32by64_hi(uint32_t a, uint64_t b)
 {
-#ifdef HAVE_UINT128
+#if __SIZEOF_INT128__ == 16
    return ((__uint128_t) b * a) >> 64;
 #else
    /*
