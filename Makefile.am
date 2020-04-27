@@ -29,10 +29,7 @@ include lib/common/Makemodule.am
 include lib/tar/Makemodule.am
 include lib/compat/Makemodule.am
 include lib/util/Makemodule.am
-include tar/Makemodule.am
-include mkfs/Makemodule.am
-include unpack/Makemodule.am
-include difftool/Makemodule.am
+include bin/Makemodule.am
 endif
 
 include extras/Makemodule.am
