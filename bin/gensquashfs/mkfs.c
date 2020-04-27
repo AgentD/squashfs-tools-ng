@@ -171,6 +171,20 @@ static int read_fstree(fstree_t *fs, options_t *opt, sqfs_xattr_writer_t *xwr,
 	return ret;
 }
 
+static void override_owner_dfs(const options_t *opt, tree_node_t *n)
+{
+	if (opt->force_uid)
+		n->uid = opt->force_uid_value;
+
+	if (opt->force_gid)
+		n->gid = opt->force_gid_value;
+
+	if (S_ISDIR(n->mode)) {
+		for (n = n->data.dir.children; n != NULL; n = n->next)
+			override_owner_dfs(opt, n);
+	}
+}
+
 int main(int argc, char **argv)
 {
 	int status = EXIT_FAILURE;
@@ -194,6 +208,9 @@ int main(int argc, char **argv)
 			selinux_close_context_file(sehnd);
 		goto out;
 	}
+
+	if (opt.force_uid || opt.force_gid)
+		override_owner_dfs(&opt, sqfs.fs.root);
 
 	if (sehnd != NULL) {
 		selinux_close_context_file(sehnd);

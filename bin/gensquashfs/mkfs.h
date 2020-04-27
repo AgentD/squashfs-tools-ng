@@ -46,6 +46,11 @@ typedef struct {
 	const char *packdir;
 	const char *selinux;
 	bool no_tail_packing;
+
+	unsigned int force_uid_value;
+	unsigned int force_gid_value;
+	bool force_uid;
+	bool force_gid;
 } options_t;
 
 enum {

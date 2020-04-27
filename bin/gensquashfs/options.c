@@ -6,7 +6,14 @@
  */
 #include "mkfs.h"
 
+enum {
+	ALL_ROOT_OPTION = 1,
+};
+
 static struct option long_opts[] = {
+	{ "all-root", required_argument, NULL, ALL_ROOT_OPTION },
+	{ "set-uid", required_argument, NULL, 'u' },
+	{ "set-gid", required_argument, NULL, 'g' },
 	{ "compressor", required_argument, NULL, 'c' },
 	{ "block-size", required_argument, NULL, 'b' },
 	{ "dev-block-size", required_argument, NULL, 'B' },
@@ -33,7 +40,7 @@ static struct option long_opts[] = {
 	{ NULL, 0, NULL, 0 },
 };
 
-static const char *short_opts = "F:D:X:c:b:B:d:j:Q:kxoefqThV"
+static const char *short_opts = "F:D:X:c:b:B:d:u:g:j:Q:kxoefqThV"
 #ifdef WITH_SELINUX
 "s:"
 #endif
@@ -82,6 +89,14 @@ static const char *help_string =
 "                                 gid=<value>    0 if not set.\n"
 "                                 mode=<value>   0755 if not set.\n"
 "                                 mtime=<value>  0 if not set.\n"
+"\n"
+"  --set-uid, -u <number>      Force the owners user ID for ALL inodes to\n"
+"                              this value, no matter what the pack file or\n"
+"                              directory entries actually specify.\n"
+"  --set-gid, -g <number>      Force the owners group ID for ALL inodes to\n"
+"                              this value, no matter what the pack file or\n"
+"                              directory entries actually specify.\n"
+"  --all-root                  A short hand for `--set-uid 0 --set-gid 0`.\n"
 "\n"
 #ifdef WITH_SELINUX
 "  --selinux, -s <file>        Specify an SELinux label file to get context\n"
@@ -162,6 +177,20 @@ void process_command_line(options_t *opt, int argc, char **argv)
 			break;
 
 		switch (i) {
+		case ALL_ROOT_OPTION:
+			opt->force_uid_value = 0;
+			opt->force_gid_value = 0;
+			opt->force_uid = true;
+			opt->force_gid = true;
+			break;
+		case 'u':
+			opt->force_uid_value = strtol(optarg, NULL, 0);
+			opt->force_uid = true;
+			break;
+		case 'g':
+			opt->force_gid_value = strtol(optarg, NULL, 0);
+			opt->force_gid = true;
+			break;
 		case 'T':
 			opt->no_tail_packing = true;
 			break;

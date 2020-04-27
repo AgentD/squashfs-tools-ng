@@ -76,6 +76,17 @@ mtime=<value>;\fB$SOURCE\_DATE\_EPOCH\fR if set, 0 otherwise
 .TE
 .TP
 .TP
+\fB\-\-set\-uid\fR, \fB\-u\fR <number>
+Force the owners user ID for ALL inodes to this value, no matter what the pack
+file or directory entries actually specify.
+.TP
+\fB\-\-set\-gid\fR, \fB\-g\fR <number>
+Force the owners group ID for ALL inodes to this value, no matter what the pack
+file or directory entries actually specify.
+.TP
+\fB\-\-all\-root\fR
+A short hand for `\-\-set\-uid 0 \-\-set\-gid 0`.
+.TP
 \fB\-\-selinux\fR, \fB\-s\fR <file>
 If built with SELinux support, use the given SELinux label file to add context
 labels to the elements packed into the SquashFS image.
