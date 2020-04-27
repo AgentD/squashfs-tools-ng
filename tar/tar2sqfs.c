@@ -267,7 +267,7 @@ static int write_file(tar_header_decoded_t *hdr, file_info_t *fi,
 
 	ret = write_data_from_file(hdr->name, sqfs.data,
 				   (sqfs_inode_generic_t **)&fi->user_ptr,
-				   file, 0);
+				   file, flags);
 	sqfs_destroy(file);
 
 	if (ret)
