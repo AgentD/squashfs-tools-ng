@@ -15,7 +15,8 @@ with the following exceptions:
    zlib compression library and modified. See `lib/sqfs/comp/zlib/README` for
    details and `licenses/zlib.txt` for details.
  - `lib/util/hash_table.*` and `lib/util/fast_urem_by_const.h` contain a hash
-   table implementation (MIT license).
+   table implementation (MIT license). See `licenses/hash_table.txt` for
+   details.
 
 The rest of squashfs-tools-ng is released under the terms and conditions of
 the **GNU General Public License version 3 or later**.
@@ -66,3 +67,6 @@ the following 3rd party source code, directly linked into the library:
  - A modified version of the xxhash32 hash function (Copyright Yann Collet).
    This is released under a 2-Clause BSD License. See `licenses/xxhash.txt`
    for details.
+ - A hash table implementation liftet from the Mesa3D source code. This is
+   released under the MIT/X11 license. See `licenses/hash_table.txt` for
+   details.
