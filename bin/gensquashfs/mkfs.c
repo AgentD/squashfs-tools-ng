@@ -150,11 +150,6 @@ static int read_fstree(fstree_t *fs, options_t *opt, sqfs_xattr_writer_t *xwr,
 	FILE *fp;
 	int ret;
 
-	if (opt->infile == NULL) {
-		return fstree_from_dir(fs, opt->packdir, selinux_handle,
-				       xwr, opt->dirscan_flags);
-	}
-
 	fp = fopen(opt->infile, "rb");
 	if (fp == NULL) {
 		perror(opt->infile);
@@ -203,22 +198,26 @@ int main(int argc, char **argv)
 			goto out;
 	}
 
-	if (read_fstree(&sqfs.fs, &opt, sqfs.xwr, sehnd)) {
-		if (sehnd != NULL)
-			selinux_close_context_file(sehnd);
-		goto out;
+	if (opt.infile == NULL) {
+		if (fstree_from_dir(&sqfs.fs, opt.packdir, opt.dirscan_flags))
+			goto out;
+	} else {
+		if (read_fstree(&sqfs.fs, &opt, sqfs.xwr, sehnd))
+			goto out;
 	}
 
 	if (opt.force_uid || opt.force_gid)
 		override_owner_dfs(&opt, sqfs.fs.root);
 
-	if (sehnd != NULL) {
-		selinux_close_context_file(sehnd);
-		sehnd = NULL;
-	}
-
 	if (fstree_post_process(&sqfs.fs))
 		goto out;
+
+	if (opt.infile == NULL) {
+		if (xattrs_from_dir(&sqfs.fs, opt.packdir, sehnd,
+				    sqfs.xwr, opt.dirscan_flags)) {
+			goto out;
+		}
+	}
 
 	if (pack_files(sqfs.data, &sqfs.fs, &opt))
 		goto out;
@@ -229,5 +228,7 @@ int main(int argc, char **argv)
 	status = EXIT_SUCCESS;
 out:
 	sqfs_writer_cleanup(&sqfs, status);
+	if (sehnd != NULL)
+		selinux_close_context_file(sehnd);
 	return status;
 }

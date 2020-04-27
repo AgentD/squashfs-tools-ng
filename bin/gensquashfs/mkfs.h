@@ -63,9 +63,10 @@ enum {
 
 void process_command_line(options_t *opt, int argc, char **argv);
 
-int fstree_from_dir(fstree_t *fs, const char *path, void *selinux_handle,
-		    sqfs_xattr_writer_t *xwr, unsigned int flags);
+int fstree_from_dir(fstree_t *fs, const char *path, unsigned int flags);
 
+int xattrs_from_dir(fstree_t *fs, const char *path, void *selinux_handle,
+		    sqfs_xattr_writer_t *xwr, unsigned int flags);
 
 void *selinux_open_context_file(const char *filename);
 

@@ -28,7 +28,7 @@ sqfsdiff_LDADD += $(PTHREAD_LIBS)
 
 gensquashfs_SOURCES = bin/gensquashfs/mkfs.c bin/gensquashfs/mkfs.h
 gensquashfs_SOURCES += bin/gensquashfs/options.c bin/gensquashfs/selinux.c
-gensquashfs_SOURCES += bin/gensquashfs/dirscan.c
+gensquashfs_SOURCES += bin/gensquashfs/dirscan.c bin/gensquashfs/dirscan_xattr.c
 gensquashfs_LDADD = libcommon.a libsquashfs.la libfstree.a
 gensquashfs_LDADD += libcompat.a $(LIBSELINUX_LIBS) $(LZO_LIBS)
 gensquashfs_LDADD += $(PTHREAD_LIBS)
