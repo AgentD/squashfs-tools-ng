@@ -1,7 +1,8 @@
 libutil_a_SOURCES = include/util.h include/str_table.h
 libutil_a_SOURCES += lib/util/str_table.c lib/util/alloc.c
 libutil_a_SOURCES += lib/util/rbtree.c include/rbtree.h
-libutil_a_SOURCES += lib/util/xxhash.c
+libutil_a_SOURCES += lib/util/xxhash.c lib/util/hash_table.c
+libutil_a_SOURCES += lib/util/hash_table.h lib/util/fast_urem_by_const.h
 libutil_a_CFLAGS = $(AM_CFLAGS)
 libutil_a_CPPFLAGS = $(AM_CPPFLAGS)
 
