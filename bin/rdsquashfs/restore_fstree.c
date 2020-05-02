@@ -7,10 +7,11 @@
 #include "rdsquashfs.h"
 
 #ifdef _WIN32
-static int create_node(const sqfs_tree_node_t *n, const char *name)
+static int create_node(const sqfs_tree_node_t *n, const char *name, int flags)
 {
 	WCHAR *wpath;
 	HANDLE fh;
+	(void)flags;
 
 	wpath = path_to_windows(name);
 	if (wpath == NULL)
@@ -43,10 +44,10 @@ fail:
 	return -1;
 }
 #else
-static int create_node(const sqfs_tree_node_t *n, const char *name)
+static int create_node(const sqfs_tree_node_t *n, const char *name, int flags)
 {
 	sqfs_u32 devno;
-	int fd;
+	int fd, mode;
 
 	switch (n->inode->base.mode & S_IFMT) {
 	case S_IFDIR:
@@ -88,7 +89,13 @@ static int create_node(const sqfs_tree_node_t *n, const char *name)
 		}
 		break;
 	case S_IFREG:
-		fd = open(name, O_WRONLY | O_CREAT | O_EXCL, 0600);
+		if (flags & UNPACK_CHMOD) {
+			mode = (n->inode->base.mode & ~S_IFMT) | 0200;
+		} else {
+			mode = 0644;
+		}
+
+		fd = open(name, O_WRONLY | O_CREAT | O_EXCL, mode);
 
 		if (fd < 0) {
 			fprintf(stderr, "creating %s: %s\n",
@@ -131,7 +138,7 @@ static int create_node_dfs(const sqfs_tree_node_t *n, int flags)
 	if (!(flags & UNPACK_QUIET))
 		printf("creating %s\n", name);
 
-	ret = create_node(n, name);
+	ret = create_node(n, name, flags);
 	free(name);
 	if (ret)
 		return -1;

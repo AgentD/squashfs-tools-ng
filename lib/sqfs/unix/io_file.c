@@ -168,7 +168,7 @@ sqfs_file_t *sqfs_open_file(const char *filename, sqfs_u32 flags)
 		}
 	}
 
-	file->fd = open(filename, open_mode, 0600);
+	file->fd = open(filename, open_mode, 0644);
 	if (file->fd < 0) {
 		temp = errno;
 		free(file);
