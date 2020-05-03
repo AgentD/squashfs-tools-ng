@@ -7,6 +7,7 @@ AC_PROG_CC([cc gcc clang])
 LT_INIT([win32-dll])
 AC_PROG_CC_C99
 AC_PROG_INSTALL
+AC_PROG_SED
 AC_SYS_LARGEFILE
 AC_CANONICAL_HOST
 
@@ -247,6 +248,7 @@ AC_CONFIG_FILES([lib/sqfs/libsquashfs0.pc])
 AC_CONFIG_FILES([Doxyfile])
 AC_CONFIG_FILES([tests/cantrbry.sh], [chmod +x tests/cantrbry.sh])
 AC_CONFIG_FILES([tests/test_tar_sqfs.sh], [chmod +x tests/test_tar_sqfs.sh])
+AC_CONFIG_FILES([tests/pack_dir_root.sh], [chmod +x tests/pack_dir_root.sh])
 
 AC_OUTPUT([Makefile])
 

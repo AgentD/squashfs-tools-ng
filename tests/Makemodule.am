@@ -127,6 +127,9 @@ TESTS += test_tar_gnu test_tar_sparse_gnu test_tar_sparse_gnu1
 TESTS += test_tar_sparse_gnu2 test_tar_xattr_bsd test_tar_xattr_schily
 TESTS += test_tar_xattr_schily_bin
 
+check_SCRIPTS += tests/pack_dir_root.sh
+TESTS += tests/pack_dir_root.sh
+
 if CORPORA_TESTS
 check_SCRIPTS += tests/cantrbry.sh tests/test_tar_sqfs.sh
 TESTS += tests/cantrbry.sh tests/test_tar_sqfs.sh
@@ -137,3 +140,4 @@ EXTRA_DIST += $(top_srcdir)/tests/tar $(top_srcdir)/tests/words.txt
 EXTRA_DIST += $(top_srcdir)/tests/fstree1.txt
 EXTRA_DIST += $(top_srcdir)/tests/corpus/cantrbry.tar.xz
 EXTRA_DIST += $(top_srcdir)/tests/corpus/cantrbry.sha512
+EXTRA_DIST += $(top_srcdir)/tests/pack_dir_root.txt.ref

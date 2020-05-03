@@ -41,7 +41,7 @@ ltmain.sh
 m4/libtool.m4
 m4/lt*.m4
 Doxyfile
-tests/cantrbry.sh
+tests/*.sh
 /mknastyfs
 /mk42sqfs
 /list_files
