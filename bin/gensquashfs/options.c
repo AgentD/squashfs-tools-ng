@@ -11,7 +11,7 @@ enum {
 };
 
 static struct option long_opts[] = {
-	{ "all-root", required_argument, NULL, ALL_ROOT_OPTION },
+	{ "all-root", no_argument, NULL, ALL_ROOT_OPTION },
 	{ "set-uid", required_argument, NULL, 'u' },
 	{ "set-gid", required_argument, NULL, 'g' },
 	{ "compressor", required_argument, NULL, 'c' },
