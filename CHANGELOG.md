@@ -6,6 +6,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.1] - 2020-05-03
+### Added
+- Options to `gensquashfs` for overriding the ownership if packing a directory.
+
+### Changed
+- Various internal code and build system related cleanups.
+- Various performance improvements for `gensquashfs` and `tar2sqfs`.
+- Make `tar2sqfs` compeltely ignore PAX global headers,
+  even if `--no-skip` is set (#45).
+- Make `gensquashfs` fail if extra arguments are passed, similar to `tar2sqfs`.
+
+### Fixed
+- Missing assert header inclusion if built with `--without-lzo` (#41)
+- sqfs2tar: also emit trailing slashes for empty directories (#42)
+- Illegal implicit cast in public `libsquashfs` headers if used from C++.
+- If tar2sqfs or gensquashfs fails, delete the output file.
+- Make sure test cases also work if built with NDEBUG defined.
+- Add missing `--with-gzip` configure option.
+- In `tar2sqfs`, actually apply the `--no-tail-packing` if set.
+- Potential nondeterministic order of extended attributes
+  in `gensquashfs` if packing a directory.
+- Manpages lagging behind.
+
 ## [0.9.0] - 2020-03-30
 ### Added
 - Support parsing [device] block size argument with SI suffix.
