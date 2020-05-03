@@ -81,9 +81,14 @@ Official release tarballs can be obtained here:
 
 https://infraroot.at/pub/squashfs
 
-The official git tree is currently located here:
+The official git tree is available at the following locations:
 
 https://github.com/AgentD/squashfs-tools-ng
+
+https://git.infraroot.at/squashfs-tools-ng.git
+
+Those locations are kept in sync and the former is a GitHub project that also
+accepts and handles issues & pull requests.
 
 If you are working on an official release tarball, you can build the package
 like every autotools based package:
@@ -108,12 +113,13 @@ required dependencies:
 
 ## Structure of the Source Code
 
-The main functionality of the package is split up into a number libraries.
+The main functionality of the package is split up into a number of libraries.
 The actual tools are mainly wrappers around the libraries that combine their
 functionality in a useful way.
 
 The headers of all the libraries can be found in the `include` directory,
-whereas the source code is in a per-library sub-directory within `lib`.
+whereas the source code is in a per-library sub-directory within `lib`. The
+tools themselves are in sub-directories within `bin`.
 
 The `include` directory has a sub-directory `sqfs` which contains the public
 headers of `libsquashfs.so` which are installed along with the library. All
@@ -140,9 +146,6 @@ Optionally, `libsquashfs` can be compiled with builtin, custom versions of zlib
 and lz4. The configure options `--with-builtin-zlib` and `--with-builtin-lz4`
 can be used. The respective library sources are in `lib/sqfs/comp` in the
 squashfs-tools-ng source tree.
-
-The headers in `include` are stuffed with comments on functions an data
-structures.
 
 The `tests` sub-directory contains unit tests for the libraries.
 
