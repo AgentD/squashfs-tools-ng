@@ -311,6 +311,11 @@ void process_command_line(options_t *opt, int argc, char **argv)
 	}
 
 	opt->cfg.filename = argv[optind++];
+
+	if (optind < argc) {
+		fputs("Unknown extra arguments specified.\n", stderr);
+		goto fail_arg;
+	}
 	return;
 fail_arg:
 	fputs("Try `gensquashfs --help' for more information.\n", stderr);

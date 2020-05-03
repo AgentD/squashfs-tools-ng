@@ -239,7 +239,7 @@ static void process_args(int argc, char **argv)
 	cfg.filename = argv[optind++];
 
 	if (optind < argc) {
-		fputs("Unknown extra arguments\n", stderr);
+		fputs("Unknown extra arguments specified.\n", stderr);
 		goto fail_arg;
 	}
 	return;
