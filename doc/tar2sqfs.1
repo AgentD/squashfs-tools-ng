@@ -5,21 +5,15 @@ tar2sqfs \- create a SquashFS image from a tar archive
 .B tar2sqfs
 [\fI\,OPTIONS\/\fR...] \fI\,<sqfsfile>\/\fR
 .SH DESCRIPTION
-Read an uncompressed tar archive from stdin and turn it into a SquashFS
-filesystem image.
-
-The idea is to quickly and painlessly turn a tar ball into a SquashFS
-filesystem image, so existing tools that work with tar can be used for
-SquashFS.
+Quickly and painlessly turn a tar ball into a SquashFS filesystem image.
 .PP
 Possible options:
 .TP
 \fB\-\-root\-becomes\fR, \fB\-r\fR <dir>
-If set, only pack entries that are underneath the specified directory and the
-prefix is stripped. The meta data for the directory itself is copied to the
-root inode, i.e. the ownership, permissions, extended attributes (unless
-\f\-\-no\-xattr\R is set), and modification time
-(unless \fB\-\-no\-keep\-time\fR is set).
+If set, only pack entries that are underneath the specified directory. The
+prefix is stripped and the meta data for the directory itself is copied to the
+root inode (i.e. the ownership, permissions, extended attributes,
+modification time).
 
 If this option is not set, tar2sqfs implicitly treats \fB./\fR or absolute
 paths this way, i.e. if the archive contains an entry for \fB./\fR, it becomes
@@ -77,11 +71,11 @@ mtime=<value>;\fB$SOURCE\_DATE\_EPOCH\fR if set, 0 otherwise
 Replace the time stamps from the tar archive with default time stamps for all
 entries.
 
-The default behavior if not specified, is to preserve the time stamps from the
-archive to the extent possible (SquashFS has second resolution and 32 bit time
-stamps; tar can use extensions to specify much larger timestamps with arbitrary
-precision). The root inode and the modification time on the SquashFS image
-itself will always still be set to defaults.
+The default behavior is to preserve the time stamps from the archive to the
+extent possible (SquashFS has second resolution and 32 bit time stamps; tar can
+use extensions to specify much larger timestamps with arbitrary precision). The
+root inode (unless \fB\-\-root\-becomes\fR is used) and the modification time on
+the SquashFS image itself will still be set to defaults.
 .TP
 \fB\-\-no\-xattr\fR, \fB\-x\fR
 Do not copy extended attributes from archive. Default behaviour is to copy all
@@ -92,6 +86,10 @@ Abort if a tar record cannot be read instead of skipping it.
 .TP
 \fB\-\-exportable\fR, \fB\-e\fR
 Generate an export table for NFS support.
+.TP
+\fB\-\-no\-tail\-packing\fR, \fB\-T\fR
+Do not perform tail end packing on files that are larger than the
+specified block size.
 .TP
 \fB\-\-force\fR, \fB\-f\fR
 Overwrite the output file if it exists.
@@ -106,19 +104,18 @@ Print help text and exit.
 Print version information and exit.
 .SH COMPATIBILITY
 Currently the program can process v7 format, pre-POSIX ustar, POSIX tar and GNU
-tar archives. PAX extension headers are also supported.
+tar archives. PAX extension headers are also supported. Global PAX headers are
+ignored.
 
 The support for GNU tar is limited to commonly used subset (i.e. some legacy
 extensions that GNU tar itself no longer generates are not supported; neither
 are mutli volume archives).
 
-Hard links are currently not supported and silently converted to symlinks.
-
 Extended attributes are supported through the SCHILY.xattr PAX extension
 (favoured by GNU tar and star) or through the LIBARCHIVE.xattr PAX extension.
 
 If any unsupported section or extended attribute key is encountered in an
-archive a warning message is written to stderr. If the \fB\-\-no\-skip\fR
+archive, a warning message is written to stderr. If the \fB\-\-no\-skip\fR
 option is set, processing aborts. By default, unknown sections and unsupported
 extended attributes are simply skipped after issuing a warning.
 .SH ENVIRONMENT

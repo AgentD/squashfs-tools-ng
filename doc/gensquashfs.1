@@ -53,8 +53,8 @@ instead of setting defaults on all input paths. The root inode and the
 modification time on the SquashFS image itself will still be set to defaults.
 .TP
 \fB\-\-one\-file\-system\fR, \fB\-o\fR
-When using \fB\-\-pack\-dir\fR only, stay in local filesystem and do not cross
-mount points.
+When using \fB\-\-pack\-dir\fR only, stay in the local filesystem and do not
+cross mount points.
 .TP
 \fB\-\-defaults\fR, \fB\-d\fR <options>
 A comma separated list of default values for
@@ -93,6 +93,10 @@ labels to the elements packed into the SquashFS image.
 .TP
 \fB\-\-exportable\fR, \fB\-e\fR
 Generate an export table for NFS support.
+.TP
+\fB\-\-no\-tail\-packing\fR, \fB\-T\fR
+Do not perform tail end packing on files that are larger than the specified
+block size.
 .TP
 \fB\-\-force\fR, \fB\-f\fR
 Overwrite the output file if it exists.

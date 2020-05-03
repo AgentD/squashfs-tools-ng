@@ -42,7 +42,10 @@ detection is not performed and duplicate data records are generated
 instead.
 .TP
 \fB\-\-no\-skip\fR, \fB\-s\fR
-Abort if a file cannot be stored in a tar record instead of skipping it.
+Abort if a file cannot be stored in a tar archive. For instance, the tar format
+does not support socket files, but SquashFS does. The default behaviour of
+\fBsqfs2tar\fR is to emit a warning to stderr and skip the entry. If this flag
+is set, processing is aborted and \fBsqfs2tar\fR exits with an error status.
 .TP
 \fB\-\-help\fR, \fB\-h\fR
 Print help text and exit.
@@ -59,12 +62,13 @@ If any file or directory is encountered that cannot be converted, it is
 skipped and a warning is written to stderr. Unless the \fB\-\-no\-skip\fR
 option is set, which aborts processing if a file cannot be converted.
 
-This is mainly affects socket files which are supported by SquashFS but not by
+This mainly affects socket files which are supported by SquashFS but not by
 POSIX tar, GNU tar or PAX.
 
 Since the tar format contains a sequence of files with absolute names, it has
 no direct concept of a tree or an unnamed root node. Consequently, meta data
-from the SquashFS root inode is lost.
+from the SquashFS root inode is lost, unless the \fB\-\-root\-becomes\fR option
+is used.
 .SH EXAMPLES
 Turn a SquashFS image into a tar archive:
 .IP

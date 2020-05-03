@@ -46,13 +46,14 @@ Skip device special files when parsing the filesystem tree.
 Skip socket files when parsing the filesystem tree.
 .TP
 \fB\-\-no\-fifo\fR, \fB\-F\fR
-Skip named pipes files when parsing the filesystem tree.
+Skip named pipes when parsing the filesystem tree.
 .TP
 \fB\-\-no\-slink\fR, \fB\-L\fR
 Skip symbolic links when parsing the filesystem tree.
 .TP
 \fB\-\-no\-empty\-dir\fR, \fB\-E\fR
-Skip directories that would end up empty after applying the above rules.
+Skip empty directories, including ones that are empty after applying
+the above rules.
 .PP
 The following options are specific to unpacking files from a SquashFS image
 to disk:
@@ -70,7 +71,7 @@ from the SquashFS image.
 .TP
 \fB\-\-chmod\fR, \fB\-C\fR
 Change permission flags of unpacked files to
-those store in the SquashFS image.
+those stored in the SquashFS image.
 .TP
 \fB\-\-chown\fR, \fB\-O\fR
 Change ownership of unpacked files to the
