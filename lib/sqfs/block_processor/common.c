@@ -317,7 +317,7 @@ int sqfs_block_processor_end_file(sqfs_block_processor_t *proc)
 	if (!(proc->blk_flags & SQFS_BLK_FIRST_BLOCK)) {
 		if (proc->blk_current != NULL &&
 		    (proc->blk_flags & SQFS_BLK_DONT_FRAGMENT)) {
-			proc->blk_flags |= SQFS_BLK_LAST_BLOCK;
+			proc->blk_current->flags |= SQFS_BLK_LAST_BLOCK;
 		} else {
 			err = add_sentinel_block(proc);
 			if (err)
