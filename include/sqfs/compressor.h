@@ -199,7 +199,50 @@ struct sqfs_compressor_config_t {
 			 */
 			sqfs_u32 dict_size;
 
-			sqfs_u32 padd0[3];
+			/**
+			 * @brief Compression level. Maximum 9, default is 6.
+			 */
+			sqfs_u8 level;
+
+			/**
+			 * @brief Number of literal context bits.
+			 *
+			 * How many of the highest bits of the previous
+			 * uncompressed byte to take into account when
+			 * predicting the bits of the next byte.
+			 *
+			 * The sum lc + lp must be at MOST 4. Default value of
+			 * lc is 3.
+			 */
+			sqfs_u8 lc;
+
+			/**
+			 * @brief Number of literal position bits.
+			 *
+			 * lp affects what kind of alignment in the uncompressed
+			 * data is assumed when encoding bytes.
+			 * See pb below for more information about alignment.
+			 *
+			 * The sum lc + lp must be at MOST 4. Default value of
+			 * lp is 0.
+			 */
+			sqfs_u8 lp;
+
+			/**
+			 * @brief Number of position bits.
+			 *
+			 * This is the log2 of the assumed underlying alignment
+			 * of the input data, i.e. pb=0 means single byte
+			 * allignment, pb=1 means 16 bit, 2 means 32 bit.
+			 *
+			 * When the alignment is known, setting pb may reduce
+			 * the file size.
+			 *
+			 * The default value is 2, i.e. 32 bit alignment.
+			 */
+			sqfs_u8 pb;
+
+			sqfs_u32 padd0[2];
 		} xz;
 
 		sqfs_u64 padd0[2];
@@ -247,7 +290,13 @@ typedef enum {
 	 * @brief For LZMA, set this to select the Sparc BCJ filter.
 	 */
 	SQFS_COMP_FLAG_XZ_SPARC = 0x0020,
-	SQFS_COMP_FLAG_XZ_ALL = 0x003F,
+
+	/**
+	 * @brief Tell the LZMA compressor to try the "extreme" option.
+	 */
+	SQFS_COMP_FLAG_XZ_EXTREME = 0x0100,
+
+	SQFS_COMP_FLAG_XZ_ALL = 0x013F,
 
 	/**
 	 * @brief For zlib deflate, set this to try the default strategy.
@@ -315,6 +364,22 @@ typedef enum {
 
 #define SQFS_GZIP_MIN_WINDOW (8)
 #define SQFS_GZIP_MAX_WINDOW (15)
+
+#define SQFS_XZ_MIN_LEVEL (0)
+#define SQFS_XZ_MAX_LEVEL (9)
+#define SQFS_XZ_DEFAULT_LEVEL (6)
+
+#define SQFS_XZ_MIN_LC 0
+#define SQFS_XZ_MAX_LC 4
+#define SQFS_XZ_DEFAULT_LC 3
+
+#define SQFS_XZ_MIN_LP 0
+#define SQFS_XZ_MAX_LP 4
+#define SQFS_XZ_DEFAULT_LP 0
+
+#define SQFS_XZ_MIN_PB 0
+#define SQFS_XZ_MAX_PB 4
+#define SQFS_XZ_DEFAULT_PB 2
 
 #ifdef __cplusplus
 extern "C" {

@@ -18,6 +18,12 @@ typedef struct {
 	sqfs_compressor_t base;
 	size_t block_size;
 	size_t dict_size;
+
+	sqfs_u8 level;
+	sqfs_u8 lc;
+	sqfs_u8 lp;
+	sqfs_u8 pb;
+
 	int flags;
 } xz_compressor_t;
 
@@ -40,12 +46,16 @@ static int xz_write_options(sqfs_compressor_t *base, sqfs_file_t *file)
 {
 	xz_compressor_t *xz = (xz_compressor_t *)base;
 	xz_options_t opt;
+	sqfs_u32 flags;
 
 	if (xz->flags == 0 && xz->dict_size == xz->block_size)
 		return 0;
 
+	flags = xz->flags & SQFS_COMP_FLAG_XZ_ALL;
+	flags &= ~SQFS_COMP_FLAG_XZ_EXTREME;
+
 	opt.dict_size = htole32(xz->dict_size);
-	opt.flags = htole32(xz->flags);
+	opt.flags = htole32(flags);
 
 	return sqfs_generic_write_options(file, &opt, sizeof(opt));
 }
@@ -76,7 +86,8 @@ static int xz_read_options(sqfs_compressor_t *base, sqfs_file_t *file)
 
 static sqfs_s32 compress(xz_compressor_t *xz, lzma_vli filter,
 			 const sqfs_u8 *in, sqfs_u32 size,
-			 sqfs_u8 *out, sqfs_u32 outsize)
+			 sqfs_u8 *out, sqfs_u32 outsize,
+			 sqfs_u32 presets)
 {
 	lzma_filter filters[5];
 	lzma_options_lzma opt;
@@ -84,9 +95,12 @@ static sqfs_s32 compress(xz_compressor_t *xz, lzma_vli filter,
 	lzma_ret ret;
 	int i = 0;
 
-	if (lzma_lzma_preset(&opt, LZMA_PRESET_DEFAULT))
+	if (lzma_lzma_preset(&opt, presets))
 		return SQFS_ERROR_COMPRESSOR;
 
+	opt.lc = xz->lc;
+	opt.lp = xz->lp;
+	opt.pb = xz->pb;
 	opt.dict_size = xz->dict_size;
 
 	if (filter != LZMA_VLI_UNKNOWN) {
@@ -141,43 +155,66 @@ static sqfs_s32 xz_comp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
 	xz_compressor_t *xz = (xz_compressor_t *)base;
 	lzma_vli filter, selected = LZMA_VLI_UNKNOWN;
 	sqfs_s32 ret, smallest;
+	bool extreme;
 	size_t i;
 
 	if (size >= 0x7FFFFFFF)
 		return SQFS_ERROR_ARG_INVALID;
 
-	ret = compress(xz, LZMA_VLI_UNKNOWN, in, size, out, outsize);
+	ret = compress(xz, LZMA_VLI_UNKNOWN, in, size, out,
+		       outsize, xz->level);
 	if (ret < 0 || xz->flags == 0)
 		return ret;
 
 	smallest = ret;
+	extreme = false;
+
+	if (xz->flags & SQFS_COMP_FLAG_XZ_EXTREME) {
+		ret = compress(xz, LZMA_VLI_UNKNOWN, in, size, out, outsize,
+			       xz->level | LZMA_PRESET_EXTREME);
+
+		if (ret > 0 && (smallest == 0 || ret < smallest)) {
+			smallest = ret;
+			extreme = true;
+		}
+	}
 
 	for (i = 1; i & SQFS_COMP_FLAG_XZ_ALL; i <<= 1) {
-		if ((xz->flags & i) == 0)
+		if ((i & SQFS_COMP_FLAG_XZ_EXTREME) || (xz->flags & i) == 0)
 			continue;
 
 		filter = flag_to_vli(i);
 
-		ret = compress(xz, filter, in, size, out, outsize);
-		if (ret < 0)
-			return ret;
-
+		ret = compress(xz, filter, in, size, out, outsize, xz->level);
 		if (ret > 0 && (smallest == 0 || ret < smallest)) {
 			smallest = ret;
 			selected = filter;
+			extreme = false;
+		}
+
+		if (xz->flags & SQFS_COMP_FLAG_XZ_EXTREME) {
+			ret = compress(xz, filter, in, size, out, outsize,
+				       xz->level | LZMA_PRESET_EXTREME);
+
+			if (ret > 0 && (smallest == 0 || ret < smallest)) {
+				smallest = ret;
+				selected = filter;
+				extreme = true;
+			}
 		}
 	}
 
 	if (smallest == 0)
 		return 0;
 
-	return compress(xz, selected, in, size, out, outsize);
+	return compress(xz, selected, in, size, out, outsize,
+			xz->level | (extreme ? LZMA_PRESET_EXTREME : 0));
 }
 
 static sqfs_s32 xz_uncomp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
 				sqfs_u32 size, sqfs_u8 *out, sqfs_u32 outsize)
 {
-	sqfs_u64 memlimit = 32 * 1024 * 1024;
+	sqfs_u64 memlimit = 65 * 1024 * 1024;
 	size_t dest_pos = 0;
 	size_t src_pos = 0;
 	lzma_ret ret;
@@ -206,6 +243,10 @@ static void xz_get_configuration(const sqfs_compressor_t *base,
 	cfg->flags = xz->flags;
 	cfg->block_size = xz->block_size;
 	cfg->opt.xz.dict_size = xz->dict_size;
+	cfg->opt.xz.level = xz->level;
+	cfg->opt.xz.lc = xz->lc;
+	cfg->opt.xz.lp = xz->lp;
+	cfg->opt.xz.pb = xz->pb;
 
 	if (base->do_block == xz_uncomp_block)
 		cfg->flags |= SQFS_COMP_FLAG_UNCOMPRESS;
@@ -241,6 +282,15 @@ int xz_compressor_create(const sqfs_compressor_config_t *cfg,
 	if (!is_dict_size_valid(cfg->opt.xz.dict_size))
 		return SQFS_ERROR_UNSUPPORTED;
 
+	if (cfg->opt.xz.lc + cfg->opt.xz.lp > 4)
+		return SQFS_ERROR_UNSUPPORTED;
+
+	if (cfg->opt.xz.pb > SQFS_XZ_MAX_PB)
+		return SQFS_ERROR_UNSUPPORTED;
+
+	if (cfg->opt.xz.level > SQFS_XZ_MAX_LEVEL)
+		return SQFS_ERROR_UNSUPPORTED;
+
 	xz = calloc(1, sizeof(*xz));
 	base = (sqfs_compressor_t *)xz;
 	if (xz == NULL)
@@ -249,6 +299,10 @@ int xz_compressor_create(const sqfs_compressor_config_t *cfg,
 	xz->flags = cfg->flags;
 	xz->dict_size = cfg->opt.xz.dict_size;
 	xz->block_size = cfg->block_size;
+	xz->lc = cfg->opt.xz.lc;
+	xz->lp = cfg->opt.xz.lp;
+	xz->pb = cfg->opt.xz.pb;
+	xz->level = cfg->opt.xz.level;
 	base->get_configuration = xz_get_configuration;
 	base->do_block = (cfg->flags & SQFS_COMP_FLAG_UNCOMPRESS) ?
 		xz_uncomp_block : xz_comp_block;

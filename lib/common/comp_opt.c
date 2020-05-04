@@ -31,6 +31,7 @@ static const flag_t xz_flags[] = {
 	{ "arm", SQFS_COMP_FLAG_XZ_ARM },
 	{ "armthumb", SQFS_COMP_FLAG_XZ_ARMTHUMB },
 	{ "sparc", SQFS_COMP_FLAG_XZ_SPARC },
+	{ "extreme", SQFS_COMP_FLAG_XZ_EXTREME },
 };
 
 static const flag_t lz4_flags[] = {
@@ -79,12 +80,18 @@ enum {
 	OPT_LEVEL,
 	OPT_ALG,
 	OPT_DICT,
+	OPT_LC,
+	OPT_LP,
+	OPT_PB,
 };
 static char *const token[] = {
 	[OPT_WINDOW] = (char *)"window",
 	[OPT_LEVEL] = (char *)"level",
 	[OPT_ALG] = (char *)"algorithm",
 	[OPT_DICT] = (char *)"dictsize",
+	[OPT_LC] = (char *)"lc",
+	[OPT_LP] = (char *)"lp",
+	[OPT_PB] = (char *)"pb",
 	NULL
 };
 
@@ -119,6 +126,8 @@ int compressor_cfg_init_options(sqfs_compressor_config_t *cfg,
 		max_level = SQFS_ZSTD_MAX_LEVEL;
 		break;
 	case SQFS_COMP_XZ:
+		min_level = SQFS_XZ_MIN_LEVEL;
+		max_level = SQFS_XZ_MAX_LEVEL;
 		flags = xz_flags;
 		num_flags = sizeof(xz_flags) / sizeof(xz_flags[0]);
 		break;
@@ -180,6 +189,9 @@ int compressor_cfg_init_options(sqfs_compressor_config_t *cfg,
 			case SQFS_COMP_ZSTD:
 				cfg->opt.zstd.level = level;
 				break;
+			case SQFS_COMP_XZ:
+				cfg->opt.xz.level = level;
+				break;
 			default:
 				goto fail_opt;
 			}
@@ -208,6 +220,39 @@ int compressor_cfg_init_options(sqfs_compressor_config_t *cfg,
 
 			cfg->opt.xz.dict_size = dict_size;
 			break;
+		case OPT_LC:
+			if (cfg->id != SQFS_COMP_XZ)
+				goto fail_opt;
+
+			if (value == NULL)
+				goto fail_value;
+
+			cfg->opt.xz.lc = strtol(value, NULL, 10);
+			if (cfg->opt.xz.lc > SQFS_XZ_MAX_LC)
+				goto fail_lc;
+			break;
+		case OPT_LP:
+			if (cfg->id != SQFS_COMP_XZ)
+				goto fail_opt;
+
+			if (value == NULL)
+				goto fail_value;
+
+			cfg->opt.xz.lp = strtol(value, NULL, 10);
+			if (cfg->opt.xz.lp > SQFS_XZ_MAX_LP)
+				goto fail_lp;
+			break;
+		case OPT_PB:
+			if (cfg->id != SQFS_COMP_XZ)
+				goto fail_opt;
+
+			if (value == NULL)
+				goto fail_value;
+
+			cfg->opt.xz.pb = strtol(value, NULL, 10);
+			if (cfg->opt.xz.lp > SQFS_XZ_MAX_PB)
+				goto fail_pb;
+			break;
 		default:
 			if (set_flag(cfg, value, flags, num_flags))
 				goto fail_opt;
@@ -215,7 +260,26 @@ int compressor_cfg_init_options(sqfs_compressor_config_t *cfg,
 		}
 	}
 
+	if (cfg->id == SQFS_COMP_XZ && (cfg->opt.xz.lp + cfg->opt.xz.lc) > 4)
+		goto fail_sum_lp_lc;
+
 	return 0;
+fail_sum_lp_lc:
+	fputs("Sum of XZ lc + lp must not exceed 4.\n", stderr);
+	return -1;
+fail_lp:
+	fprintf(stderr,
+		"XZ literal position bits (lp) must be between %d and %d.\n",
+		SQFS_XZ_MIN_LP, SQFS_XZ_MAX_LP);
+	return -1;
+fail_lc:
+	fprintf(stderr, "XZ literal context (lc) must be between %d and %d.\n",
+		SQFS_XZ_MIN_LC, SQFS_XZ_MAX_LC);
+	return -1;
+fail_pb:
+	fprintf(stderr, "XZ position bits (bp) must be between %d and %d.\n",
+		SQFS_XZ_MIN_PB, SQFS_XZ_MAX_PB);
+	return -1;
 fail_lzo_alg:
 	fprintf(stderr, "Unknown lzo variant '%s'.\n", value);
 	return -1;
@@ -294,21 +358,42 @@ static void xz_print_help(void)
 {
 	size_t i;
 
-	fputs(
+	printf(
 "Available options for xz compressor:\n"
 "\n"
 "    dictsize=<value>  Dictionary size. Either a value in bytes or a\n"
-"                      percentage of the block size. Defaults to 100%.\n"
-"                      The suffix '%' indicates a percentage. 'K' and 'M'\n"
+"                      percentage of the block size. Defaults to 100%%.\n"
+"                      The suffix '%%' indicates a percentage. 'K' and 'M'\n"
 "                      can also be used for kibi and mebi bytes\n"
 "                      respecitively.\n"
+"    level=<value>     Compression level. Value from %d to %d.\n"
+"                      Defaults to %d.\n"
+"    lc=<value>        Number of literal context bits.\n"
+"                      How many of the highest bits of the previous\n"
+"                      uncompressed byte to take into account when\n"
+"                      predicting the bits of the next byte.\n"
+"                      Default is %d.\n"
+"    lp=<value>        Number of literal position bits.\n"
+"                      Affects what kind of alignment in the uncompressed\n"
+"                      data is assumed when encoding bytes.\n"
+"                      Default is %d.\n"
+"    pb=<value>        Number of position bits.\n"
+"                      This is the log2 of the assumed underlying alignment\n"
+"                      of the input data, i.e. pb=0 means single byte\n"
+"                      allignment, pb=1 means 16 bit, 2 means 32 bit.\n"
+"                      Default is %d.\n"
+"\n"
+"If values are set, the sum of lc + lp must not exceed 4.\n"
+"The maximum for pb is %d.\n"
 "\n"
 "In additon to the options, one or more bcj filters can be specified.\n"
 "If multiple filters are provided, the one yielding the best compression\n"
 "ratio will be used.\n"
 "\n"
 "The following filters are available:\n",
-	stdout);
+	SQFS_XZ_MIN_LEVEL, SQFS_XZ_MAX_LEVEL, SQFS_XZ_DEFAULT_LEVEL,
+	SQFS_XZ_DEFAULT_LC, SQFS_XZ_DEFAULT_LP, SQFS_XZ_DEFAULT_PB,
+	SQFS_XZ_MAX_PB);
 
 	for (i = 0; i < sizeof(xz_flags) / sizeof(xz_flags[0]); ++i)
 		printf("\t%s\n", xz_flags[i].name);

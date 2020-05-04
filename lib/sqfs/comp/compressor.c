@@ -165,6 +165,10 @@ int sqfs_compressor_config_init(sqfs_compressor_config_t *cfg,
 	case SQFS_COMP_XZ:
 		flag_mask |= SQFS_COMP_FLAG_XZ_ALL;
 		cfg->opt.xz.dict_size = block_size;
+		cfg->opt.xz.level = SQFS_XZ_DEFAULT_LEVEL;
+		cfg->opt.xz.lc = SQFS_XZ_DEFAULT_LC;
+		cfg->opt.xz.lp = SQFS_XZ_DEFAULT_LP;
+		cfg->opt.xz.pb = SQFS_XZ_DEFAULT_PB;
 		break;
 	case SQFS_COMP_LZMA:
 		break;
