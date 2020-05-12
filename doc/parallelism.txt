@@ -70,8 +70,8 @@
 
  When the main thread submits a block, it gives it an incremental "processing"
  sequence number and appends it to the "work queue". Thread pool workers take
- the first best block of the queue, process it and added it to the "done"
- queue, sorted by its processing sequence number.
+ the first best block of the queue, process it and add it to the "done" queue,
+ sorted by its processing sequence number.
 
  The main thread dequeues blocks from the done queue sorted by their processing
  sequence number, using a second counter to make sure blocks are dequeued in
@@ -98,13 +98,13 @@
  that fails, tries to dequeue from the "done queue". If that also fails, it
  uses signal/await to be woken up by a worker thread once it adds a block to
  the "done queue". Fragment post-processing and re-queueing of blocks is done
- inside the critical region, but the actual I/O is obviously done outside.
+ inside the critical region, but the actual I/O is done outside (for obvious
+ reasons).
 
 
  Profiling on small filesystems using perf shows that the outlined approach
  seems to perform quite well for CPU bound compressors like XZ, but doesn't
- add a lot for I/O bound compressors like zstd. Actual measurements still
- need to be done.
+ add a lot for I/O bound compressors like zstd.
 
  If you have a better idea how to do this, please let me know.
 
@@ -203,8 +203,8 @@
 
 
  The other compressors (XZ, lzma, gzip, lzo) are clearly CPU bound. Speedup
- increases linearly until about 8 cores, but with a factor k < 1, paralleled by
- efficiency decreasing down to 80% for 8 cores.
+ increases linearly until about 8 cores, but with a slope < 1, as evident by
+ efficiency linearly decreasing and reaching 80% for 8 cores.
 
  A reason for this sub-linear scaling may be the choke point introduced by the
  creation of fragment blocks, that *requires* a synchronization. To test this
@@ -235,6 +235,6 @@
  compressor, while being almost 50 times faster. The throughput of the zstd
  compressor is truly impressive, considering the compression ratio it achieves.
 
- Repeating the benchmark without tail-end-packing and wit fragments completely
+ Repeating the benchmark without tail-end-packing and with fragments completely
  disabled would also show the effectiveness of tail-end-packing and fragment
  packing as a side effect.

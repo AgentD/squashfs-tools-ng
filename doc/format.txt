@@ -46,7 +46,7 @@
 
  For fast random access, compressed files are split up in fixed size blocks
  that are compressed separately. The block size can be set between 4k and 1M
- (default is 128K).
+ (default for squashfs-tools and squashfs-tools-ng is 128K).
 
 
  This document attempts to specify the on-disk format in detail.
@@ -61,7 +61,11 @@
  2) Overview
  ***********
 
- SquashFS always stores integers in little endian format.
+ SquashFS always stores integers in little endian format. The data blocks that
+ make up the SquashFS archive are byte aligned, i.e. they typically do not care
+ for alignment. The implementation in the Linux kernel requires the archive
+ itself to be a multiple of either 1k or 4k in size (called the device block
+ size) and user space tools typically use 4k to be compatible with both.
 
  A SquashFS archive consists of a maximum of nine parts:
 
@@ -71,11 +75,11 @@
         |_______________|
         |               |
         |  Compression  |  If non-default compression options have been used,
-        |    options    |  then these are stored here.
+        |    options    |  they can optionally be are encoded here.
         |_______________|
         |               |
         |  Data blocks  |  The contents of the files in the archive,
-        |  & fragments  |  split into blocks.
+        |  & fragments  |  split into separately compressed blocks.
         |_______________|
         |               |  Metadata (ownership, permissions, etc) for
         |  Inode table	|  items in the archive.
@@ -104,14 +108,6 @@
  Although the super block details the exact positions of each section, most
  implementations, including the one in the Linux kernel, insist on this exact
  order.
-
- The archive is usually padded with null bytes to make the size a multiple of
- 1024 or 4096 bytes, called the "device block size". Some implementations
- insists on the size to be a multiple of the device block size (particularly
- the one in the Linux kernel where the device block size is a configure option).
-
- The individual parts don't have to be aligned and it is perfectly fine to
- cram them together at single byte alignment.
 
 
  2.1) Packing File Data
@@ -148,23 +144,36 @@
 
 
  To read a metadata block, seek to the indicated position and read the 16 bit
- header. Then read the size indicated by the lower 15 bit. If the highest bit
- of the header is set, uncompress the data you just read.
+ header. Sanity check that the lower 15 bit are less than 8KiB and proceed
+ to read that many bytes. If the highest bit of the header is cleared,
+ uncompress the data you just read into an 8KiB buffer that MUST NOT overflow.
 
 
  In the SquashFS archive format, metadata is often referenced using a 64 bit
- integer, consisting of the on-disk location of the metadata block, shifted
- left by 16, and OR-ed with a byte offset into the uncompressed block.
+ integer. The lower 16 bit of consisting of an offset into the uncompressed
+ block and the upper 48 bit pointing to the on-disk location of the possibly
+ compressed block.
 
- The location is relative to the type of metadata, i.e. for inodes it is an
- offset relative to the start of the inode table.
+ The on-disk location is relative to the type of metadata, i.e. for inodes
+ it is an offset relative to the start of the inode table and it always
+ points to the location of the 16 bit header.
 
- The location of a metadata block always points to the 16 bit header.
+
+ In some cases, metadata records can be written across block boundaries. This
+ results in two consecutive metadata blocks that both have to be decoded to
+ retrieve and re-combine the parts of the original record. There must not be
+ any gaps between the metadata blocks on-disk.
+
+ From the perspective of a SquashFS reader, metadata is accessed as a
+ continuous stream of records that can be seeked to using references. A lower
+ layer must transparently fetch and uncompress records from disk. If a metadata
+ block other than the last one contains less than 8KiB of data, the result is
+ undefined.
 
 
  2.3) Storing Lookup Tables
 
- Lookup tables are arrays (i.e. sequences of identical sized data) that are
+ Lookup tables are arrays (i.e. sequences of identical sized records) that are
  addressed by an index in constant time.
 
  Such tables are stored in the SquashFS format as metadata blocks, i.e. by
@@ -191,7 +200,7 @@
  When resolving a lookup table index, first work out the index of the
  metadata block:
 
-   meta_index = floor(index * entry_size / 8129)
+   meta_index = floor(index * entry_size / 8192)
 
  Using this index on the location list yields the on-disk location of
  the metadata block containing the entry.
@@ -203,7 +212,8 @@
 
 
  The location list can be cached in memory. Resolving an index requires at
- worst a single metadata block read (at most 8194 bytes).
+ worst a single metadata block read (at most 8194 bytes fetched from an
+ unaligned on-disk location).
 
 
  2.4) Supported Compressors
@@ -221,11 +231,9 @@
  it for both file data and metadata compression. Using one compressor for data
  and switching to a different compressor for e.g. inodes is not supported.
 
- A data or metadata block is only stored compressed, if compressing actually
- shrinks the input data. If not, the original uncompressed block is stored.
- So while it is technically not possible to pick a "null" compressor in the
- super block, an implementation can still deliberately write only uncompressed
- blocks to a SquashFS file.
+ While it is technically not possible to pick a "null" compressor in the super
+ block, an implementation can still deliberately write only uncompressed blocks
+ to a SquashFS file.
 
  If compatibility with the Linux implementation is desired, the lzma 2 aka xz
  compressor should only use CRC32 checksums. The decompressor in the kernel
@@ -272,7 +280,7 @@
  | u16  | block log     | The log2 of the block size. If the two fields do not|
  |      |               | agree, the archive is considered corrupted.         |
  +------+---------------+-----------------------------------------------------+
- | u16  | flags         | Bit wise or of the flag bits below.                 |
+ | u16  | flags         | Bit wise OR of the flag bits below.                 |
  |      |               |                                                     |
  |      |               +--------+--------------------------------------------+
  |      |               | Value  | Meaing                                     |
@@ -299,8 +307,8 @@
  +------+---------------+-----------------------------------------------------+
  | u64  | bytes used    | The number of bytes used by the archive. Because    |
  |      |               | SquashFS archives must be padded to a multiple of   |
- |      |               | the underlying device block size (1k or 4k, default |
- |      |               | is 4k), this can be less than the file size.        |
+ |      |               | the underlying device block size, this can be less  |
+ |      |               | than the actual file size.                          |
  +------+---------------+-----------------------------------------------------+
  | u64  | ID table      | The byte offset at which the id table starts.       |
  +------+---------------+-----------------------------------------------------+
@@ -326,6 +334,12 @@
  present" flag. In fact, this is the only flag that the Linux kernel
  implementation actually tests for.
 
+ Currently, the compressor options are equally useless and also serve mostly
+ informal purpose, as most compression libraries understand their own stream
+ format irregardless of the options used to compress and in fact don't provide
+ any options for the decompressor. In the Linux kernel, the XZ decompressor is
+ currently the only one that processes those options to pre-allocate the LZMA
+ dictionary if a non-default size was used.
 
 
  3.1) Compression Options
@@ -371,9 +385,9 @@
  |      |                   | 0x0010 | Fixed.                                 |
  +------+-------------------+--------+----------------------------------------+
 
- Note: If multiple strategies are selected, the SquashFS writer tries all of
+ Note: If strategies are selected, the SquashFS writer is free to try all of
  them (including not setting any and letting zlib work with defaults) and
- selects the resulting block that has the smallest size.
+ select the result with the smallest size.
 
 
  3.1.2) XZ
@@ -399,9 +413,21 @@
  |      |                   | 0x0020 | SPARC                                  |
  +------+-------------------+--------+----------------------------------------+
 
- Note: If multiple filters are selected, the SquashFS writer tries all of
- them (including not setting any and letting libxz work with defaults) and
- selects the resulting block that has the smallest size.
+ Note: If multiple filters are selected, the SquashFS writer is free to try all
+ of them (including not setting any and letting libxz work with defaults) and
+ select the resulting block that has the smallest size.
+
+ Also note that further options, such as XZ presets, are not included. The
+ compressor typically uses the libxz defaults, i.e. level 6 and not using the
+ extreme flag. Likewise for lc, lp and pb (defults are 3, 0 and 2
+ respectively).
+
+ If the encoder chooses to change those values, the decoder will for still be
+ able to read the data, but there is currently no way to convey that those
+ values were changed.
+
+ This is specifically problematic for the compression level, since increasing
+ the level can result in drastically increasing the decoders memory consuption.
 
 
  3.1.3) LZ4
@@ -427,6 +453,8 @@
  +======+===================+=================================================+
  | u32  | compression level | Should be in range 1 to 22 (inclusive). The real|
  |      |                   | maximum is the zstd defined ZSTD_maxCLevel().   |
+ |      |                   |                                                 |
+ |      |                   | The default value is 15.                        |
  +------+-------------------+-------------------------------------------------+
 
  3.1.5) LZO
@@ -446,7 +474,7 @@
  |      |                   | 4      | lzo1x_999 (default)                    |
  +------+-------------------+--------+----------------------------------------+
  | u32  | compression level | For lzo1x_999, this can be a value between 0    |
- |      |                   | and 9 inclusive (defaults to 8). Has to be 0    |
+ |      |                   | and 9 inclusive (defaults to 8). MUST be 0      |
  |      |                   | for all other algorithms.                       |
  +------+-------------------+-------------------------------------------------+
 
@@ -497,9 +525,12 @@
  than block size when uncompressed.
 
 
- There are no headers in front of data or fragment blocks. Additional meta
- information, stored in the inodes, is required to locate the blocks of a
- file.
+ There are no headers in front of data or fragment blocks and there MUST NOT be
+ any gaps between data blocks from a single file, but a SquashFS packer is free
+ to leave gaps between two different files or fragment blocks. The packer is
+ also free to decide how to arange fragments within a fragment block and what
+ fragments to pack together.
+
 
 
  To locate file data, the inodes store the following information:
@@ -520,22 +551,24 @@
 
       tail_end_size = file_size % block_size
 
-
- To access fragment blocks, a lookup table is built (see section 7) that stores
- the on-disk location and size of all fragment blocks. Inodes use an index into
- this table together with a byte offset into the uncompressed fragment block to
- access tail ends.
+ Since a fragment block will likely be refered to by multiple files, inodes
+ don't store the on-disk location directly, but instead use a 32 bit index
+ into a fragment block lookup table (see section 7).
 
 
- To support sparse files, an on-disk block size of 0 is used to indicate that
- no data was written to disk and the SquashFS reader should supply a single
- block filled with 0 bytes instead.
+ If a data block other than the last one unpacks to less than block size, the
+ rest of the buffer is filled with 0 bytes. This way, sparse files are
+ implemented. Specifically if a block has an on-disk size of 0 this translates
+ to an entire block filled with 0 bytes without having to retrieve any data
+ from disk.
 
 
- Typical SquashFS packers would also perform file deduplication. If the
- compressed blocks of a file are identical to blocks already written to disk,
- the already written blocks are reused. Similarly, the tail end can be
- deduplicated independently, by pointing to an existing tail end.
+ The on-disk locations of file blocks may overlap and different file inodes are
+ free to refere to the same fragment. Typical SquashFS packers would explicitly
+ use this to remove duplicate files. Doing so is NOT counted as a hard link.
+
+ If an inode references on-disk locations outside the data area, the result is
+ undefined.
 
 
  5) Inode Table
@@ -644,8 +677,11 @@
 
  Note that for historical reasons, the hard link count of a directory includes
  the number of entries in the directory and is initialized to 2 for an empty
- directory. I.e. an empty directory has a link count of 2, a directory with one
- entry has 3, a directory with two entries has 4 and so on.
+ directory. I.e. a directory with N entries has N + 2 link count.
+
+
+ If the "file size" is set to 0, the directory is empty and there is no
+ coresponding listing in the directory table.
 
 
  An extended directory can have a listing that is at most 4GiB in size, may
@@ -728,11 +764,6 @@
        location += block_sizes[i] & 0x00FFFFFF
 
 
- There is one corner case: if the on-disk block size is 0, the block does not
- exist on-disk. The reader has to substitute a single block full of 0 bytes
- instead.
-
-
  The tail end, if present, is accessed by resolving the fragment index through
  the fragment lookup table (see section 7), loading the fragment block and
  using the given 'block offset' into the fragment block.
@@ -750,8 +781,8 @@
  +------+--------------+------------------------------------------------------+
  | u64  | file size    | Same as above (but larger).                          |
  +------+--------------+------------------------------------------------------+
- | u64  | sparse       | The number of bytes saved by omitting blocks of zero |
- |      |              | bytes. Used in the kernel for sparse file accounting.|
+ | u64  | sparse       | The number of bytes saved by omitting zero bytes.    |
+ |      |              | Used in the kernel for sparse file accounting.       |
  +------+--------------+------------------------------------------------------+
  | u32  | link count   | The number of hard links to this node.               |
  +------+--------------+------------------------------------------------------+
@@ -876,8 +907,8 @@
  to the reference in the header cannot be encoded in 16 bits anymore, a new
  header is emitted.
 
- A header must not be followed by more than 256 entries. If there are more
- entries, a new header is emitted.
+ A header must be followed by AT MOST 256 entries. If there are more entries,
+ a new header MUST be emitted.
 
  Typically, inode allocation strategies would sort the children of a directory
  and then allocate inode numbers incrementally, to optimize directory entry
@@ -906,7 +937,7 @@
  The counter is stored off-by-one, i.e. a value of 0 indicates 1 entry follows.
  This also makes it impossible to encode a size of 0, which wouldn't make any
  sense. Empty directories simply have their size set to 0 in the inode instead,
- so no extra dummy header has to be store or looked up.
+ so no extra dummy header has to be stored or looked up.
 
 
  The header is followed by multiple entries that each have this structure:
@@ -995,7 +1026,7 @@
  +------+--------------+------------------------------------------------------+
 
 
- The table is stored on-disk, as described in section 2.3.
+ The table is stored on-disk as described in section 2.3.
 
  The fragment table location in the superblock points to an array of 64 bit
  integers that store the on-disk locations of the metadata blocks containing
@@ -1046,11 +1077,11 @@
  The key value pairs of all inodes are stored consecutively in a series of
  metadata blocks.
 
- The values can be either be stored inline, i.e. a key entry is directly
- followed by a value, or out-of-line to deduplicate identical values and
- use a reference instead. Typically, the first occurrence of a value is
- stored in line and every consecutive use of the same value uses an
- out-of-line reference back to the first one.
+ The values can either be stored inline, i.e. a key entry is directly followed
+ by a value, or out-of-line to deduplicate identical values and use a reference
+ instead. Typically, the first occurrence of a value is stored in line and
+ every consecutive use of the same value uses an out-of-line reference back to
+ the first one.
 
 
  The keys are stored using the following data structure:
