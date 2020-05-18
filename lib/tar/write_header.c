@@ -116,12 +116,24 @@ static size_t num_digits(size_t num)
 {
 	size_t i = 1;
 
-	while (num > 10) {
+	while (num >= 10) {
 		num /= 10;
 		++i;
 	}
 
 	return i;
+}
+
+static size_t prefix_digit_len(size_t len)
+{
+	size_t old_ndigit, ndigit = 0;
+
+	do {
+		old_ndigit = ndigit;
+		ndigit = num_digits(len + ndigit);
+	} while (old_ndigit != ndigit);
+
+	return ndigit;
 }
 
 static int write_schily_xattr(FILE *fp, const struct stat *orig,
@@ -133,9 +145,9 @@ static int write_schily_xattr(FILE *fp, const struct stat *orig,
 	struct stat sb;
 
 	for (it = xattr; it != NULL; it = it->next) {
-		len = strlen(prefix) + strlen(it->key) + it->value_len + 2;
+		len = strlen(prefix) + strlen(it->key) + it->value_len + 3;
 
-		total_size += num_digits(len) + 1 + len;
+		total_size += len + prefix_digit_len(len);
 	}
 
 	sb = *orig;
@@ -146,8 +158,8 @@ static int write_schily_xattr(FILE *fp, const struct stat *orig,
 		return -1;
 
 	for (it = xattr; it != NULL; it = it->next) {
-		len = strlen(prefix) + strlen(it->key) + it->value_len + 2;
-		len += num_digits(len) + 1;
+		len = strlen(prefix) + strlen(it->key) + it->value_len + 3;
+		len += prefix_digit_len(len);
 
 		fprintf(fp, PRI_SZ " %s%s=", len, prefix, it->key);
 		fwrite(it->value, 1, it->value_len, fp);
