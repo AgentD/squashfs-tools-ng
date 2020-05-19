@@ -14,7 +14,7 @@
 #include "sqfs/block.h"
 #include "compat.h"
 
-#include "lib/util/hash_table.h"
+#include "hash_table.h"
 
 #include <stdlib.h>
 #include <string.h>
