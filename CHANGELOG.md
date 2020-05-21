@@ -5,6 +5,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Expose more fine grained control values & flags on the XZ compressor
+
+### Fixed
+- Propperly set the last block flag if fragments are disabled
+- Compilation on GCC4 and below
+- libtar: size computation of PAX line length
+- Semantics of the super block deduplication
 
 ## [0.9.1] - 2020-05-03
 ### Added
