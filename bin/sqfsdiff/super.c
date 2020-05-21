@@ -15,7 +15,7 @@ static const struct {
 	{ SQFS_FLAG_UNCOMPRESSED_FRAGMENTS, "uncompressed fragments" },
 	{ SQFS_FLAG_NO_FRAGMENTS, "no fragments" },
 	{ SQFS_FLAG_ALWAYS_FRAGMENTS, "always fragments" },
-	{ SQFS_FLAG_DUPLICATES, "duplicates" },
+	{ SQFS_FLAG_NO_DUPLICATES, "no duplicates" },
 	{ SQFS_FLAG_EXPORTABLE, "exportable" },
 	{ SQFS_FLAG_UNCOMPRESSED_XATTRS, "uncompressed xattrs" },
 	{ SQFS_FLAG_NO_XATTRS, "no xattrs" },

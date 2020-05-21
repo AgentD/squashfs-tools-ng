@@ -29,6 +29,7 @@ int sqfs_super_init(sqfs_super_t *super, size_t block_size, sqfs_u32 mtime,
 	super->block_size = block_size;
 	super->compression_id = compressor;
 	super->flags = SQFS_FLAG_NO_FRAGMENTS | SQFS_FLAG_NO_XATTRS;
+	super->flags |= SQFS_FLAG_NO_DUPLICATES;
 	super->version_major = SQFS_VERSION_MAJOR;
 	super->version_minor = SQFS_VERSION_MINOR;
 	super->bytes_used = sizeof(*super);

@@ -237,7 +237,7 @@ typedef enum {
 	/**
 	 * @brief Set to indicate that data blocks have not been deduplicated.
 	 */
-	SQFS_FLAG_DUPLICATES = 0x0040,
+	SQFS_FLAG_NO_DUPLICATES = 0x0040,
 
 	/**
 	 * @brief Set to indicate that an NFS export table is present.
