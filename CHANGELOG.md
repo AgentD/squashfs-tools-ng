@@ -11,8 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Propperly set the last block flag if fragments are disabled
 - Compilation on GCC4 and below
-- libtar: size computation of PAX line length
+- libtar: size computation of PAX line length (#50)
 - Semantics of the super block deduplication
+- Actually set the ZSTD compression level to something greater than 0
 
 ## [0.9.1] - 2020-05-03
 ### Added
