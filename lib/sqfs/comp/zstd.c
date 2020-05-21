@@ -154,6 +154,7 @@ int zstd_compressor_create(const sqfs_compressor_config_t *cfg,
 		return SQFS_ERROR_ALLOC;
 
 	zstd->block_size = cfg->block_size;
+	zstd->level = cfg->opt.zstd.level;
 	zstd->zctx = ZSTD_createCCtx();
 	if (zstd->zctx == NULL) {
 		free(zstd);
