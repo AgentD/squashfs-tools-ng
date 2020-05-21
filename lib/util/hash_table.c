@@ -49,7 +49,7 @@
 
 #  define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
-static const uint32_t deleted_key_value;
+static const sqfs_u32 deleted_key_value;
 
 /**
  * From Knuth -- a good choice for hash/rehash values is p, p-2 where
@@ -57,8 +57,8 @@ static const uint32_t deleted_key_value;
  * free to avoid exponential performance degradation as the hash table fills
  */
 static const struct {
-   uint32_t max_entries, size, rehash;
-   uint64_t size_magic, rehash_magic;
+   sqfs_u32 max_entries, size, rehash;
+   sqfs_u64 size_magic, rehash_magic;
 } hash_sizes[] = {
 #define ENTRY(max_entries, size, rehash) \
    { max_entries, size, rehash, \
@@ -123,7 +123,7 @@ entry_is_present(const struct hash_table *ht, struct hash_entry *entry)
 
 static bool
 hash_table_init(struct hash_table *ht,
-                uint32_t (*key_hash_function)(const void *key),
+                sqfs_u32 (*key_hash_function)(const void *key),
                 bool (*key_equals_function)(const void *a,
                                             const void *b))
 {
@@ -144,7 +144,7 @@ hash_table_init(struct hash_table *ht,
 }
 
 struct hash_table *
-hash_table_create(uint32_t (*key_hash_function)(const void *key),
+hash_table_create(sqfs_u32 (*key_hash_function)(const void *key),
                   bool (*key_equals_function)(const void *a,
                                               const void *b))
 {
@@ -204,15 +204,15 @@ hash_table_destroy(struct hash_table *ht,
 }
 
 static struct hash_entry *
-hash_table_search(struct hash_table *ht, uint32_t hash, const void *key)
+hash_table_search(struct hash_table *ht, sqfs_u32 hash, const void *key)
 {
    assert(!key_pointer_is_reserved(ht, key));
 
-   uint32_t size = ht->size;
-   uint32_t start_hash_address = util_fast_urem32(hash, size, ht->size_magic);
-   uint32_t double_hash = 1 + util_fast_urem32(hash, ht->rehash,
+   sqfs_u32 size = ht->size;
+   sqfs_u32 start_hash_address = util_fast_urem32(hash, size, ht->size_magic);
+   sqfs_u32 double_hash = 1 + util_fast_urem32(hash, ht->rehash,
                                                ht->rehash_magic);
-   uint32_t hash_address = start_hash_address;
+   sqfs_u32 hash_address = start_hash_address;
 
    do {
       struct hash_entry *entry = ht->table + hash_address;
@@ -240,7 +240,7 @@ hash_table_search(struct hash_table *ht, uint32_t hash, const void *key)
  * modified by the user.
  */
 struct hash_entry *
-hash_table_search_pre_hashed(struct hash_table *ht, uint32_t hash,
+hash_table_search_pre_hashed(struct hash_table *ht, sqfs_u32 hash,
                              const void *key)
 {
    assert(ht->key_hash_function == NULL || hash == ht->key_hash_function(key));
@@ -248,14 +248,14 @@ hash_table_search_pre_hashed(struct hash_table *ht, uint32_t hash,
 }
 
 static void
-hash_table_insert_rehash(struct hash_table *ht, uint32_t hash,
+hash_table_insert_rehash(struct hash_table *ht, sqfs_u32 hash,
                          const void *key, void *data)
 {
-   uint32_t size = ht->size;
-   uint32_t start_hash_address = util_fast_urem32(hash, size, ht->size_magic);
-   uint32_t double_hash = 1 + util_fast_urem32(hash, ht->rehash,
+   sqfs_u32 size = ht->size;
+   sqfs_u32 start_hash_address = util_fast_urem32(hash, size, ht->size_magic);
+   sqfs_u32 double_hash = 1 + util_fast_urem32(hash, ht->rehash,
                                                ht->rehash_magic);
-   uint32_t hash_address = start_hash_address;
+   sqfs_u32 hash_address = start_hash_address;
    do {
       struct hash_entry *entry = ht->table + hash_address;
 
@@ -307,7 +307,7 @@ hash_table_rehash(struct hash_table *ht, unsigned new_size_index)
 }
 
 static struct hash_entry *
-hash_table_insert(struct hash_table *ht, uint32_t hash,
+hash_table_insert(struct hash_table *ht, sqfs_u32 hash,
                   const void *key, void *data)
 {
    struct hash_entry *available_entry = NULL;
@@ -320,11 +320,11 @@ hash_table_insert(struct hash_table *ht, uint32_t hash,
       hash_table_rehash(ht, ht->size_index);
    }
 
-   uint32_t size = ht->size;
-   uint32_t start_hash_address = util_fast_urem32(hash, size, ht->size_magic);
-   uint32_t double_hash = 1 + util_fast_urem32(hash, ht->rehash,
+   sqfs_u32 size = ht->size;
+   sqfs_u32 start_hash_address = util_fast_urem32(hash, size, ht->size_magic);
+   sqfs_u32 double_hash = 1 + util_fast_urem32(hash, ht->rehash,
                                                ht->rehash_magic);
-   uint32_t hash_address = start_hash_address;
+   sqfs_u32 hash_address = start_hash_address;
    do {
       struct hash_entry *entry = ht->table + hash_address;
 
@@ -383,7 +383,7 @@ hash_table_insert(struct hash_table *ht, uint32_t hash,
  * so previously found hash_entries are no longer valid after this function.
  */
 struct hash_entry *
-hash_table_insert_pre_hashed(struct hash_table *ht, uint32_t hash,
+hash_table_insert_pre_hashed(struct hash_table *ht, sqfs_u32 hash,
                              const void *key, void *data)
 {
    assert(ht->key_hash_function == NULL || hash == ht->key_hash_function(key));

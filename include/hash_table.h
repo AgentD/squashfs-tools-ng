@@ -32,46 +32,51 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
+#include "sqfs/predef.h"
+
 struct hash_entry {
-   uint32_t hash;
+   sqfs_u32 hash;
    const void *key;
    void *data;
 };
 
 struct hash_table {
    struct hash_entry *table;
-   uint32_t (*key_hash_function)(const void *key);
+   sqfs_u32 (*key_hash_function)(const void *key);
    bool (*key_equals_function)(const void *a, const void *b);
    const void *deleted_key;
-   uint32_t size;
-   uint32_t rehash;
-   uint64_t size_magic;
-   uint64_t rehash_magic;
-   uint32_t max_entries;
-   uint32_t size_index;
-   uint32_t entries;
-   uint32_t deleted_entries;
+   sqfs_u32 size;
+   sqfs_u32 rehash;
+   sqfs_u64 size_magic;
+   sqfs_u64 rehash_magic;
+   sqfs_u32 max_entries;
+   sqfs_u32 size_index;
+   sqfs_u32 entries;
+   sqfs_u32 deleted_entries;
 };
 
-struct hash_table *
-hash_table_create(uint32_t (*key_hash_function)(const void *key),
+SQFS_INTERNAL struct hash_table *
+hash_table_create(sqfs_u32 (*key_hash_function)(const void *key),
                   bool (*key_equals_function)(const void *a,
                                               const void *b));
 
-struct hash_table *
+SQFS_INTERNAL struct hash_table *
 hash_table_clone(struct hash_table *src);
-void hash_table_destroy(struct hash_table *ht,
-			void (*delete_function)(struct hash_entry *entry));
 
-struct hash_entry *
-hash_table_insert_pre_hashed(struct hash_table *ht, uint32_t hash,
+SQFS_INTERNAL void
+hash_table_destroy(struct hash_table *ht,
+		   void (*delete_function)(struct hash_entry *entry));
+
+SQFS_INTERNAL struct hash_entry *
+hash_table_insert_pre_hashed(struct hash_table *ht, sqfs_u32 hash,
                              const void *key, void *data);
-struct hash_entry *
-hash_table_search_pre_hashed(struct hash_table *ht, uint32_t hash,
+
+SQFS_INTERNAL struct hash_entry *
+hash_table_search_pre_hashed(struct hash_table *ht, sqfs_u32 hash,
                              const void *key);
 
-struct hash_entry *hash_table_next_entry(struct hash_table *ht,
-                                         struct hash_entry *entry);
+SQFS_INTERNAL struct hash_entry *hash_table_next_entry(struct hash_table *ht,
+						       struct hash_entry *entry);
 
 /**
  * This foreach function is safe against deletion (which just replaces

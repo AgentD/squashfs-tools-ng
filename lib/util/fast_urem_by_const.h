@@ -21,6 +21,8 @@
  * IN THE SOFTWARE.
  */
 
+#include "sqfs/predef.h"
+
 #include <assert.h>
 #include <stdint.h>
 
@@ -31,12 +33,12 @@
  *
  * util_fast_urem32(n, d, REMAINDER_MAGIC(d)) returns the same thing as
  * n % d for any unsigned n and d, however it compiles down to only a few
- * multiplications, so it should be faster than plain uint32_t modulo if the
+ * multiplications, so it should be faster than plain sqfs_u32 modulo if the
  * same divisor is used many times.
  */
 
 #define REMAINDER_MAGIC(divisor) \
-   ((uint64_t) ~0ull / (divisor) + 1)
+   ((sqfs_u64) ~0ull / (divisor) + 1)
 
 /*
  * Get bits 64-96 of a 32x64-bit multiply. If __int128_t is available, we use
@@ -45,8 +47,8 @@
  * 32x32->64 multiply, one 32x32->32 multiply, and one 64-bit add).
  */
 
-static inline uint32_t
-_mul32by64_hi(uint32_t a, uint64_t b)
+static inline sqfs_u32
+_mul32by64_hi(sqfs_u32 a, sqfs_u64 b)
 {
 #if __SIZEOF_INT128__ == 16
    return ((__uint128_t) b * a) >> 64;
@@ -58,17 +60,17 @@ _mul32by64_hi(uint32_t a, uint64_t b)
     * bits, we only have to add the high 64 bits of each term. Unfortunately,
     * we have to do the 64-bit addition in case the low 32 bits overflow.
     */
-   uint32_t b0 = (uint32_t) b;
-   uint32_t b1 = b >> 32;
-   return ((((uint64_t) a * b0) >> 32) + (uint64_t) a * b1) >> 32;
+   sqfs_u32 b0 = (sqfs_u32) b;
+   sqfs_u32 b1 = b >> 32;
+   return ((((sqfs_u64) a * b0) >> 32) + (sqfs_u64) a * b1) >> 32;
 #endif
 }
 
-static inline uint32_t
-util_fast_urem32(uint32_t n, uint32_t d, uint64_t magic)
+static inline sqfs_u32
+util_fast_urem32(sqfs_u32 n, sqfs_u32 d, sqfs_u64 magic)
 {
-   uint64_t lowbits = magic * n;
-   uint32_t result = _mul32by64_hi(d, lowbits);
+   sqfs_u64 lowbits = magic * n;
+   sqfs_u32 result = _mul32by64_hi(d, lowbits);
    assert(result == n % d);
    return result;
 }
