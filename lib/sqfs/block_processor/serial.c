@@ -13,19 +13,29 @@ typedef struct {
 	sqfs_u8 scratch[];
 } serial_block_processor_t;
 
+static void free_block_list(sqfs_block_t *list)
+{
+	sqfs_block_t *blk;
+
+	while (list != NULL) {
+		blk = list;
+		list = blk->next;
+		free(blk);
+	}
+}
+
 static void block_processor_destroy(sqfs_object_t *obj)
 {
 	sqfs_block_processor_t *proc = (sqfs_block_processor_t *)obj;
-	sqfs_block_t *blk;
 
-	while (proc->free_list != NULL) {
-		blk = proc->free_list;
-		proc->free_list = blk->next;
-		free(blk);
+	free_block_list(proc->free_list);
+
+	if (proc->frag_block != NULL) {
+		free_block_list(proc->frag_block->frag_list);
+		free(proc->frag_block);
 	}
 
 	free(proc->blk_current);
-	free(proc->frag_block);
 	free(proc);
 }
 
@@ -57,16 +67,14 @@ int append_to_work_queue(sqfs_block_processor_t *proc, sqfs_block_t *block)
 	serial_block_processor_t *sproc = (serial_block_processor_t *)proc;
 	sqfs_block_t *fragblk = NULL;
 
-	if (sproc->status != 0) {
-		free(block);
-		return sproc->status;
-	}
+	if (sproc->status != 0)
+		goto fail;
 
 	sproc->status = block_processor_do_block(block, proc->cmp,
 						 sproc->scratch,
 						 proc->max_block_size);
 	if (sproc->status != 0)
-		return sproc->status;
+		goto fail;
 
 	if (block->flags & SQFS_BLK_IS_FRAGMENT) {
 		sproc->status = process_completed_fragment(proc, block,
@@ -74,14 +82,19 @@ int append_to_work_queue(sqfs_block_processor_t *proc, sqfs_block_t *block)
 		if (fragblk == NULL)
 			return sproc->status;
 
-		sproc->status = block_processor_do_block(fragblk, proc->cmp,
+		block = fragblk;
+		sproc->status = block_processor_do_block(block, proc->cmp,
 							 sproc->scratch,
 							 proc->max_block_size);
 		if (sproc->status != 0)
-			return sproc->status;
+			goto fail;
 	}
 
 	sproc->status = process_completed_block(proc, block);
+	return sproc->status;
+fail:
+	free_block_list(block->frag_list);
+	free(block);
 	return sproc->status;
 }
 
@@ -104,9 +117,13 @@ int sqfs_block_processor_finish(sqfs_block_processor_t *proc)
 		goto fail;
 
 	sproc->status = process_completed_block(proc, proc->frag_block);
+	proc->frag_block = NULL;
 	return sproc->status;
 fail:
-	free(proc->frag_block);
-	proc->frag_block = NULL;
+	if (proc->frag_block != NULL) {
+		free_block_list(proc->frag_block->frag_list);
+		free(proc->frag_block);
+		proc->frag_block = NULL;
+	}
 	return sproc->status;
 }

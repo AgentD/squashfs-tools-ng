@@ -22,6 +22,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <assert.h>
 
 typedef struct sqfs_block_t {
 	struct sqfs_block_t *next;
@@ -33,8 +34,13 @@ typedef struct sqfs_block_t {
 	sqfs_u32 size;
 	sqfs_u32 checksum;
 
-	/* Data block index within the inode or fragment block index. */
+	/* For data blocks: index within the inode.
+	   For fragment fragment blocks: fragment table index. */
 	sqfs_u32 index;
+
+	/* For fragment blocks: list of fragments to
+	   consolidate in reverse order. */
+	struct sqfs_block_t *frag_list;
 
 	sqfs_u8 data[];
 } sqfs_block_t;
