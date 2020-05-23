@@ -163,18 +163,19 @@ int process_completed_fragment(sqfs_block_processor_t *proc, sqfs_block_t *frag,
 	}
 
 	if (proc->frag_block == NULL) {
-		size = sizeof(sqfs_block_t) + proc->max_block_size;
-
-		err= sqfs_frag_table_append(proc->frag_tbl, 0, 0, &index);
+		err = sqfs_frag_table_append(proc->frag_tbl, 0, 0, &index);
 		if (err)
 			goto fail;
 
-		proc->frag_block = calloc(1, size);
+		size = sizeof(sqfs_block_t) + proc->max_block_size;
+		proc->frag_block = malloc(size);
+
 		if (proc->frag_block == NULL) {
 			err = SQFS_ERROR_ALLOC;
 			goto fail;
 		}
 
+		memset(proc->frag_block, 0, sizeof(sqfs_block_t));
 		proc->frag_block->index = index;
 		proc->frag_block->flags = SQFS_BLK_FRAGMENT_BLOCK;
 		proc->stats.frag_block_count += 1;
@@ -268,10 +269,11 @@ int sqfs_block_processor_append(sqfs_block_processor_t *proc, const void *data,
 
 	while (size > 0) {
 		if (proc->blk_current == NULL) {
-			new = alloc_flex(sizeof(*new), 1, proc->max_block_size);
+			new = malloc(sizeof(*new) + proc->max_block_size);
 			if (new == NULL)
 				return SQFS_ERROR_ALLOC;
 
+			memset(new, 0, sizeof(*new));
 			proc->blk_current = new;
 			proc->blk_current->flags = proc->blk_flags;
 			proc->blk_current->inode = proc->inode;
