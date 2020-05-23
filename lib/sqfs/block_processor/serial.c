@@ -16,6 +16,13 @@ typedef struct {
 static void block_processor_destroy(sqfs_object_t *obj)
 {
 	sqfs_block_processor_t *proc = (sqfs_block_processor_t *)obj;
+	sqfs_block_t *blk;
+
+	while (proc->free_list != NULL) {
+		blk = proc->free_list;
+		proc->free_list = blk->next;
+		free(blk);
+	}
 
 	free(proc->blk_current);
 	free(proc->frag_block);
@@ -50,34 +57,31 @@ int append_to_work_queue(sqfs_block_processor_t *proc, sqfs_block_t *block)
 	serial_block_processor_t *sproc = (serial_block_processor_t *)proc;
 	sqfs_block_t *fragblk = NULL;
 
-	if (sproc->status != 0)
-		goto done;
+	if (sproc->status != 0) {
+		free(block);
+		return sproc->status;
+	}
 
 	sproc->status = block_processor_do_block(block, proc->cmp,
 						 sproc->scratch,
 						 proc->max_block_size);
 	if (sproc->status != 0)
-		goto done;
+		return sproc->status;
 
 	if (block->flags & SQFS_BLK_IS_FRAGMENT) {
 		sproc->status = process_completed_fragment(proc, block,
 							   &fragblk);
 		if (fragblk == NULL)
-			goto done;
+			return sproc->status;
 
-		free(block);
-		block = fragblk;
-
-		sproc->status = block_processor_do_block(block, proc->cmp,
+		sproc->status = block_processor_do_block(fragblk, proc->cmp,
 							 sproc->scratch,
 							 proc->max_block_size);
 		if (sproc->status != 0)
-			goto done;
+			return sproc->status;
 	}
 
 	sproc->status = process_completed_block(proc, block);
-done:
-	free(block);
 	return sproc->status;
 }
 
@@ -91,16 +95,17 @@ int sqfs_block_processor_finish(sqfs_block_processor_t *proc)
 	serial_block_processor_t *sproc = (serial_block_processor_t *)proc;
 
 	if (proc->frag_block == NULL || sproc->status != 0)
-		goto out;
+		goto fail;
 
 	sproc->status = block_processor_do_block(proc->frag_block, proc->cmp,
 						 sproc->scratch,
 						 proc->max_block_size);
 	if (sproc->status != 0)
-		goto out;
+		goto fail;
 
 	sproc->status = process_completed_block(proc, proc->frag_block);
-out:
+	return sproc->status;
+fail:
 	free(proc->frag_block);
 	proc->frag_block = NULL;
 	return sproc->status;

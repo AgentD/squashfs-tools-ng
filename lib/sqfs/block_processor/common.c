@@ -44,6 +44,29 @@ static int set_block_size(sqfs_inode_generic_t **inode,
 	return 0;
 }
 
+static sqfs_block_t *get_new_block(sqfs_block_processor_t *proc)
+{
+	sqfs_block_t *blk;
+
+	if (proc->free_list != NULL) {
+		blk = proc->free_list;
+		proc->free_list = blk->next;
+	} else {
+		blk = malloc(sizeof(*blk) + proc->max_block_size);
+	}
+
+	if (blk != NULL)
+		memset(blk, 0, sizeof(*blk));
+
+	return blk;
+}
+
+static void release_old_block(sqfs_block_processor_t *proc, sqfs_block_t *blk)
+{
+	blk->next = proc->free_list;
+	proc->free_list = blk;
+}
+
 int process_completed_block(sqfs_block_processor_t *proc, sqfs_block_t *blk)
 {
 	sqfs_u64 location;
@@ -53,7 +76,7 @@ int process_completed_block(sqfs_block_processor_t *proc, sqfs_block_t *blk)
 	err = sqfs_block_writer_write(proc->wr, blk->size, blk->checksum,
 				      blk->flags, blk->data, &location);
 	if (err)
-		return err;
+		goto out;
 
 	if (blk->flags & SQFS_BLK_IS_SPARSE) {
 		sqfs_inode_make_extended(*(blk->inode));
@@ -61,7 +84,7 @@ int process_completed_block(sqfs_block_processor_t *proc, sqfs_block_t *blk)
 
 		err = set_block_size(blk->inode, blk->index, 0);
 		if (err)
-			return err;
+			goto out;
 
 		proc->stats.sparse_block_count += 1;
 	} else if (blk->size != 0) {
@@ -73,19 +96,20 @@ int process_completed_block(sqfs_block_processor_t *proc, sqfs_block_t *blk)
 			err = sqfs_frag_table_set(proc->frag_tbl, blk->index,
 						  location, size);
 			if (err)
-				return err;
+				goto out;
 		} else {
 			err = set_block_size(blk->inode, blk->index, size);
 			if (err)
-				return err;
+				goto out;
 			proc->stats.data_block_count += 1;
 		}
 	}
 
 	if (blk->flags & SQFS_BLK_LAST_BLOCK)
 		sqfs_inode_set_file_block_start(*(blk->inode), location);
-
-	return 0;
+out:
+	release_old_block(proc, blk);
+	return err;
 }
 
 static bool is_zero_block(unsigned char *ptr, size_t size)
@@ -137,6 +161,7 @@ int process_completed_fragment(sqfs_block_processor_t *proc, sqfs_block_t *frag,
 		(*(frag->inode))->data.file_ext.sparse += frag->size;
 
 		proc->stats.sparse_block_count += 1;
+		release_old_block(proc, frag);
 		return 0;
 	}
 
@@ -149,6 +174,7 @@ int process_completed_fragment(sqfs_block_processor_t *proc, sqfs_block_t *frag,
 		if (err == 0) {
 			sqfs_inode_set_frag_location(*(frag->inode),
 						     index, offset);
+			release_old_block(proc, frag);
 			return 0;
 		}
 	}
@@ -167,15 +193,12 @@ int process_completed_fragment(sqfs_block_processor_t *proc, sqfs_block_t *frag,
 		if (err)
 			goto fail;
 
-		size = sizeof(sqfs_block_t) + proc->max_block_size;
-		proc->frag_block = malloc(size);
-
+		proc->frag_block = get_new_block(proc);
 		if (proc->frag_block == NULL) {
 			err = SQFS_ERROR_ALLOC;
 			goto fail;
 		}
 
-		memset(proc->frag_block, 0, sizeof(sqfs_block_t));
 		proc->frag_block->index = index;
 		proc->frag_block->flags = SQFS_BLK_FRAGMENT_BLOCK;
 		proc->stats.frag_block_count += 1;
@@ -197,16 +220,21 @@ int process_completed_fragment(sqfs_block_processor_t *proc, sqfs_block_t *frag,
 	proc->frag_block->flags |= (frag->flags & SQFS_BLK_DONT_COMPRESS);
 	proc->frag_block->size += frag->size;
 	proc->stats.actual_frag_count += 1;
+
+	release_old_block(proc, frag);
 	return 0;
 fail:
-	free(*blk_out);
-	*blk_out = NULL;
+	release_old_block(proc, frag);
+	if (*blk_out != NULL) {
+		release_old_block(proc, *blk_out);
+		*blk_out = NULL;
+	}
 	return err;
 }
 
 static int add_sentinel_block(sqfs_block_processor_t *proc)
 {
-	sqfs_block_t *blk = calloc(1, sizeof(*blk));
+	sqfs_block_t *blk = get_new_block(proc);
 
 	if (blk == NULL)
 		return SQFS_ERROR_ALLOC;
@@ -269,11 +297,10 @@ int sqfs_block_processor_append(sqfs_block_processor_t *proc, const void *data,
 
 	while (size > 0) {
 		if (proc->blk_current == NULL) {
-			new = malloc(sizeof(*new) + proc->max_block_size);
+			new = get_new_block(proc);
 			if (new == NULL)
 				return SQFS_ERROR_ALLOC;
 
-			memset(new, 0, sizeof(*new));
 			proc->blk_current = new;
 			proc->blk_current->flags = proc->blk_flags;
 			proc->blk_current->inode = proc->inode;

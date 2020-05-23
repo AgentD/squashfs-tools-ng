@@ -192,6 +192,7 @@ static void block_processor_destroy(sqfs_object_t *obj)
 	free_blk_list(proc->proc_queue);
 	free_blk_list(proc->io_queue);
 	free_blk_list(proc->done);
+	free_blk_list(proc->base.free_list);
 	free(proc->base.blk_current);
 	free(proc->base.frag_block);
 	free(proc);
@@ -390,12 +391,13 @@ static void append_block(thread_pool_processor_t *proc, sqfs_block_t *block)
 
 static int handle_io_queue(thread_pool_processor_t *proc, sqfs_block_t *list)
 {
-	sqfs_block_t *it = list;
+	sqfs_block_t *it;
 	int status = 0;
 
-	while (status == 0 && it != NULL) {
+	while (status == 0 && list != NULL) {
+		it = list;
+		list = list->next;
 		status = process_completed_block(&proc->base, it);
-		it = it->next;
 
 		if (status != 0) {
 			LOCK(&proc->mtx);
@@ -413,7 +415,7 @@ int append_to_work_queue(sqfs_block_processor_t *proc, sqfs_block_t *block)
 {
 	thread_pool_processor_t *thproc = (thread_pool_processor_t *)proc;
 	sqfs_block_t *io_list = NULL, *io_list_last = NULL;
-	sqfs_block_t *blk, *fragblk, *free_list = NULL;
+	sqfs_block_t *blk, *fragblk;
 	int status;
 
 	LOCK(&thproc->mtx);
@@ -454,8 +456,6 @@ int append_to_work_queue(sqfs_block_processor_t *proc, sqfs_block_t *block)
 			fragblk = NULL;
 			thproc->status = process_completed_fragment(proc, blk,
 								    &fragblk);
-			blk->next = free_list;
-			free_list = blk;
 
 			if (fragblk != NULL) {
 				fragblk->io_seq_num = thproc->io_enq_id++;
@@ -472,11 +472,12 @@ int append_to_work_queue(sqfs_block_processor_t *proc, sqfs_block_t *block)
 	UNLOCK(&thproc->mtx);
 	free(block);
 
-	if (status == 0)
+	if (status == 0) {
 		status = handle_io_queue(thproc, io_list);
+	} else {
+		free_blk_list(io_list);
+	}
 
-	free_blk_list(io_list);
-	free_blk_list(free_list);
 	return status;
 }
 
@@ -504,7 +505,6 @@ int sqfs_block_processor_finish(sqfs_block_processor_t *proc)
 
 		if (status == 0)
 			status = handle_io_queue(thproc, blk);
-		free(blk);
 
 		if (status != 0) {
 			LOCK(&thproc->mtx);

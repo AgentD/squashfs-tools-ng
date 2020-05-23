@@ -54,6 +54,8 @@ struct sqfs_block_processor_t {
 	sqfs_u32 blk_flags;
 	sqfs_u32 blk_index;
 
+	sqfs_block_t *free_list;
+
 	size_t max_block_size;
 };
 
