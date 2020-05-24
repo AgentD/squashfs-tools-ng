@@ -153,6 +153,9 @@ int block_processor_do_block(sqfs_block_t *block, sqfs_compressor_t *cmp,
 			sqfs_inode_set_frag_location(*(it->inode),
 						     block->index, offset);
 		}
+
+		/* XXX: the block itself got promoted from a fragment */
+		sqfs_inode_set_frag_location(*(block->inode), block->index, 0);
 	}
 
 	if (is_zero_block(block->data, block->size)) {
@@ -223,32 +226,33 @@ int process_completed_fragment(sqfs_block_processor_t *proc, sqfs_block_t *frag,
 		if (err)
 			goto fail;
 
-		proc->frag_block = get_new_block(proc);
-		if (proc->frag_block == NULL) {
-			err = SQFS_ERROR_ALLOC;
-			goto fail;
-		}
-
+		offset = 0;
+		proc->frag_block = frag;
 		proc->frag_block->index = index;
-		proc->frag_block->flags = SQFS_BLK_FRAGMENT_BLOCK;
+		proc->frag_block->flags &= SQFS_BLK_DONT_COMPRESS;
+		proc->frag_block->flags |= SQFS_BLK_FRAGMENT_BLOCK;
+		proc->frag_block->frag_list = NULL;
 		proc->stats.frag_block_count += 1;
+	} else {
+		index = proc->frag_block->index;
+		offset = proc->frag_block->size;
+
+		frag->next = proc->frag_block->frag_list;
+		proc->frag_block->frag_list = frag;
+
+		proc->frag_block->size += frag->size;
 	}
 
-	err = sqfs_frag_table_add_tail_end(proc->frag_tbl,
-					   proc->frag_block->index,
-					   proc->frag_block->size,
+	err = sqfs_frag_table_add_tail_end(proc->frag_tbl, index, offset,
 					   frag->size, frag->checksum);
 	if (err)
-		goto fail;
+		goto fail_outblk;
 
-	frag->next = proc->frag_block->frag_list;
-	proc->frag_block->frag_list = frag;
-
-	proc->frag_block->size += frag->size;
 	proc->stats.actual_frag_count += 1;
 	return 0;
 fail:
 	release_old_block(proc, frag);
+fail_outblk:
 	if (*blk_out != NULL) {
 		release_old_block(proc, *blk_out);
 		*blk_out = NULL;
