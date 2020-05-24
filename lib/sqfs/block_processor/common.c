@@ -92,6 +92,7 @@ int process_completed_block(sqfs_block_processor_t *proc, sqfs_block_t *blk)
 						  location, size);
 			if (err)
 				goto out;
+			proc->stats.frag_block_count += 1;
 		} else {
 			err = set_block_size(blk->inode, blk->index, size);
 			if (err)
@@ -132,13 +133,7 @@ int block_processor_do_block(sqfs_block_t *block, sqfs_compressor_t *cmp,
 			memcpy(block->data + offset, it->data, it->size);
 
 			block->flags |= (it->flags & SQFS_BLK_DONT_COMPRESS);
-
-			sqfs_inode_set_frag_location(*(it->inode),
-						     block->index, offset);
 		}
-
-		/* XXX: the block itself got promoted from a fragment */
-		sqfs_inode_set_frag_location(*(block->inode), block->index, 0);
 	}
 
 	if (is_zero_block(block->data, block->size)) {
@@ -215,7 +210,6 @@ int process_completed_fragment(sqfs_block_processor_t *proc, sqfs_block_t *frag,
 		proc->frag_block->flags &= SQFS_BLK_DONT_COMPRESS;
 		proc->frag_block->flags |= SQFS_BLK_FRAGMENT_BLOCK;
 		proc->frag_block->frag_list = NULL;
-		proc->stats.frag_block_count += 1;
 	} else {
 		index = proc->frag_block->index;
 		offset = proc->frag_block->size;
@@ -231,6 +225,7 @@ int process_completed_fragment(sqfs_block_processor_t *proc, sqfs_block_t *frag,
 	if (err)
 		goto fail_outblk;
 
+	sqfs_inode_set_frag_location(*(frag->inode), index, offset);
 	proc->stats.actual_frag_count += 1;
 	return 0;
 fail:
