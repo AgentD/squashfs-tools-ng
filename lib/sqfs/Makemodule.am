@@ -23,6 +23,7 @@ libsquashfs_la_SOURCES += lib/sqfs/inode.c
 libsquashfs_la_SOURCES += lib/sqfs/write_super.c lib/sqfs/data_reader.c
 libsquashfs_la_SOURCES += lib/sqfs/block_processor/internal.h
 libsquashfs_la_SOURCES += lib/sqfs/block_processor/common.c
+libsquashfs_la_SOURCES += lib/sqfs/block_processor/frontend.c
 libsquashfs_la_SOURCES += lib/sqfs/frag_table.c include/sqfs/frag_table.h
 libsquashfs_la_SOURCES += lib/sqfs/block_writer.c include/sqfs/block_writer.h
 libsquashfs_la_CPPFLAGS = $(AM_CPPFLAGS)
