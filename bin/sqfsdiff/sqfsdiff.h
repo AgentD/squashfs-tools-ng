@@ -27,6 +27,9 @@ typedef struct {
 	sqfs_dir_reader_t *dr;
 	sqfs_tree_node_t *root;
 	sqfs_data_reader_t *data;
+
+	sqfs_compressor_config_t options;
+	bool have_options;
 } sqfs_state_t;
 
 typedef struct {

@@ -40,10 +40,17 @@ static int open_sfqs(sqfs_state_t *state, const char *path)
 
 	if (state->super.flags & SQFS_FLAG_COMPRESSOR_OPTIONS) {
 		ret = state->cmp->read_options(state->cmp, state->file);
-		if (ret) {
+
+		if (ret == 0) {
+			state->cmp->get_configuration(state->cmp,
+						      &state->options);
+			state->have_options = true;
+		} else {
 			sqfs_perror(path, "reading compressor options", ret);
-			goto fail_cmp;
+			state->have_options = false;
 		}
+	} else {
+		state->have_options = false;
 	}
 
 	state->idtbl = sqfs_id_table_create(0);
