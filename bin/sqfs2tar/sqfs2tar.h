@@ -42,6 +42,10 @@ extern FILE *out_file;
 
 char *assemble_tar_path(char *name, bool is_dir);
 
+/* xattr.c */
+int get_xattrs(const char *name, const sqfs_inode_generic_t *inode,
+	       tar_xattr_t **out);
+
 /* write_tree.c */
 int write_tree_dfs(const sqfs_tree_node_t *n);
 

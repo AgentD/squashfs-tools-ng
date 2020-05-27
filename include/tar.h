@@ -137,6 +137,8 @@ int skip_entry(FILE *fp, sqfs_u64 size);
 
 int read_header(FILE *fp, tar_header_decoded_t *out);
 
+void free_xattr_list(tar_xattr_t *list);
+
 void clear_header(tar_header_decoded_t *hdr);
 
 /*

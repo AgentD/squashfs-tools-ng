@@ -60,8 +60,6 @@ sparse_map_t *read_gnu_old_sparse(FILE *fp, tar_header_t *hdr);
 
 void free_sparse_list(sparse_map_t *sparse);
 
-void free_xattr_list(tar_xattr_t *list);
-
 size_t base64_decode(sqfs_u8 *out, const char *in, size_t len);
 
 void urldecode(char *str);

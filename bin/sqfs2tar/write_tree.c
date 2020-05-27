@@ -8,89 +8,25 @@
 
 static unsigned int record_counter;
 
-static int get_xattrs(const char *name, const sqfs_inode_generic_t *inode,
-		      tar_xattr_t **out)
+static sqfs_hard_link_t *find_hard_link(const char *name, sqfs_u32 inum)
 {
-	tar_xattr_t *list = NULL, *ent;
-	sqfs_xattr_value_t *value;
-	sqfs_xattr_entry_t *key;
-	sqfs_xattr_id_t desc;
-	sqfs_u32 index;
-	size_t i;
-	int ret;
+	sqfs_hard_link_t *lnk = NULL;
 
-	if (xr == NULL)
-		return 0;
-
-	sqfs_inode_get_xattr_index(inode, &index);
-
-	if (index == 0xFFFFFFFF)
-		return 0;
-
-	ret = sqfs_xattr_reader_get_desc(xr, index, &desc);
-	if (ret) {
-		sqfs_perror(name, "resolving xattr index", ret);
-		return -1;
-	}
-
-	ret = sqfs_xattr_reader_seek_kv(xr, &desc);
-	if (ret) {
-		sqfs_perror(name, "locating xattr key-value pairs", ret);
-		return -1;
-	}
-
-	for (i = 0; i < desc.count; ++i) {
-		ret = sqfs_xattr_reader_read_key(xr, &key);
-		if (ret) {
-			sqfs_perror(name, "reading xattr key", ret);
-			goto fail;
+	for (lnk = links; lnk != NULL; lnk = lnk->next) {
+		if (lnk->inode_number == inum) {
+			if (strcmp(name, lnk->target) == 0)
+				lnk = NULL;
+			break;
 		}
-
-		ret = sqfs_xattr_reader_read_value(xr, key, &value);
-		if (ret) {
-			sqfs_perror(name, "reading xattr value", ret);
-			free(key);
-			goto fail;
-		}
-
-		ent = calloc(1, sizeof(*ent) + strlen((const char *)key->key) +
-			     value->size + 2);
-		if (ent == NULL) {
-			perror("creating xattr entry");
-			free(key);
-			free(value);
-			goto fail;
-		}
-
-		ent->key = ent->data;
-		strcpy(ent->key, (const char *)key->key);
-
-		ent->value = (sqfs_u8 *)ent->key + strlen(ent->key) + 1;
-		memcpy(ent->value, value->value, value->size + 1);
-
-		ent->value_len = value->size;
-		ent->next = list;
-		list = ent;
-
-		free(key);
-		free(value);
 	}
 
-	*out = list;
-	return 0;
-fail:
-	while (list != NULL) {
-		ent = list;
-		list = list->next;
-		free(ent);
-	}
-	return -1;
+	return lnk;
 }
 
 int write_tree_dfs(const sqfs_tree_node_t *n)
 {
-	tar_xattr_t *xattr = NULL, *xit;
 	sqfs_hard_link_t *lnk = NULL;
+	tar_xattr_t *xattr = NULL;
 	char *name, *target;
 	struct stat sb;
 	size_t len;
@@ -133,24 +69,17 @@ int write_tree_dfs(const sqfs_tree_node_t *n)
 		if (canonicalize_name(name))
 			goto out_skip;
 
-		for (lnk = links; lnk != NULL; lnk = lnk->next) {
-			if (lnk->inode_number == n->inode->base.inode_number) {
-				if (strcmp(name, lnk->target) == 0)
-					lnk = NULL;
-				break;
-			}
-		}
-
 		name = assemble_tar_path(name, S_ISDIR(sb.st_mode));
 		if (name == NULL)
 			return -1;
-	}
 
-	if (lnk != NULL) {
-		ret = write_hard_link(out_file, &sb, name, lnk->target,
-				      record_counter++);
-		free(name);
-		return ret;
+		lnk = find_hard_link(name, n->inode->base.inode_number);
+		if (lnk != NULL) {
+			ret = write_hard_link(out_file, &sb, name, lnk->target,
+					      record_counter++);
+			free(name);
+			return ret;
+		}
 	}
 
 	if (!no_xattr) {
@@ -163,12 +92,7 @@ int write_tree_dfs(const sqfs_tree_node_t *n)
 	target = S_ISLNK(sb.st_mode) ? (char *)n->inode->extra : NULL;
 	ret = write_tar_header(out_file, &sb, name, target, xattr,
 			       record_counter++);
-
-	while (xattr != NULL) {
-		xit = xattr;
-		xattr = xattr->next;
-		free(xit);
-	}
+	free_xattr_list(xattr);
 
 	if (ret > 0)
 		goto out_skip;
