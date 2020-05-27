@@ -9,7 +9,6 @@
 sqfs_xattr_reader_t *xr;
 sqfs_data_reader_t *data;
 sqfs_super_t super;
-sqfs_hard_link_t *links = NULL;
 FILE *out_file = NULL;
 
 static sqfs_file_t *file;
@@ -115,7 +114,6 @@ int main(int argc, char **argv)
 	sqfs_compressor_t *cmp;
 	sqfs_id_table_t *idtbl;
 	sqfs_dir_reader_t *dr;
-	sqfs_hard_link_t *lnk;
 	size_t i;
 
 	process_args(argc, argv);
@@ -240,18 +238,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (!no_links) {
-		if (sqfs_tree_find_hard_links(root, &links))
-			goto out_tree;
-
-		for (lnk = links; lnk != NULL; lnk = lnk->next) {
-			lnk->target = assemble_tar_path(lnk->target, false);
-			if (lnk->target == NULL)
-				goto out;
-		}
-	}
-
-	if (write_tree_dfs(root))
+	if (write_tree(root))
 		goto out;
 
 	if (terminate_archive())
@@ -260,13 +247,6 @@ int main(int argc, char **argv)
 	status = EXIT_SUCCESS;
 	fflush(out_file);
 out:
-	while (links != NULL) {
-		lnk = links;
-		links = links->next;
-		free(lnk->target);
-		free(lnk);
-	}
-out_tree:
 	if (root != NULL)
 		sqfs_dir_tree_destroy(root);
 out_xr:

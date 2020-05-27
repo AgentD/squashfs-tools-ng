@@ -37,7 +37,6 @@ void process_args(int argc, char **argv);
 extern sqfs_xattr_reader_t *xr;
 extern sqfs_data_reader_t *data;
 extern sqfs_super_t super;
-extern sqfs_hard_link_t *links;
 extern FILE *out_file;
 
 char *assemble_tar_path(char *name, bool is_dir);
@@ -47,6 +46,6 @@ int get_xattrs(const char *name, const sqfs_inode_generic_t *inode,
 	       tar_xattr_t **out);
 
 /* write_tree.c */
-int write_tree_dfs(const sqfs_tree_node_t *n);
+int write_tree(const sqfs_tree_node_t *n);
 
 #endif /* SQFS2TAR_H */

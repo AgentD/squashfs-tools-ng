@@ -6,6 +6,7 @@
  */
 #include "sqfs2tar.h"
 
+static sqfs_hard_link_t *links = NULL;
 static unsigned int record_counter;
 
 static sqfs_hard_link_t *find_hard_link(const char *name, sqfs_u32 inum)
@@ -23,7 +24,7 @@ static sqfs_hard_link_t *find_hard_link(const char *name, sqfs_u32 inum)
 	return lnk;
 }
 
-int write_tree_dfs(const sqfs_tree_node_t *n)
+static int write_tree_dfs(const sqfs_tree_node_t *n)
 {
 	sqfs_hard_link_t *lnk = NULL;
 	tar_xattr_t *xattr = NULL;
@@ -132,4 +133,32 @@ out_skip:
 	}
 	free(name);
 	return ret;
+}
+
+int write_tree(const sqfs_tree_node_t *n)
+{
+	sqfs_hard_link_t *lnk;
+	int status = -1;
+
+	if (!no_links) {
+		if (sqfs_tree_find_hard_links(n, &links))
+			return -1;
+
+		for (lnk = links; lnk != NULL; lnk = lnk->next) {
+			lnk->target = assemble_tar_path(lnk->target, false);
+
+			if (lnk->target == NULL)
+				goto out_links;
+		}
+	}
+
+	status = write_tree_dfs(n);
+out_links:
+	while (links != NULL) {
+		lnk = links;
+		links = links->next;
+		free(lnk->target);
+		free(lnk);
+	}
+	return status;
 }
