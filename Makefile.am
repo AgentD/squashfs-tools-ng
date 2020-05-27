@@ -18,18 +18,22 @@ check_SCRIPTS =
 pkgconfig_DATA =
 
 EXTRA_DIST = autogen.sh README.md CHANGELOG.md COPYING.md mkwinbins.sh licenses
+EXTRA_DIST += doc
 TESTS =
 
 include lib/sqfs/Makemodule.am
 
 if BUILD_TOOLS
-include doc/Makemodule.am
 include lib/fstree/Makemodule.am
 include lib/common/Makemodule.am
 include lib/tar/Makemodule.am
 include lib/compat/Makemodule.am
 include lib/util/Makemodule.am
-include bin/Makemodule.am
+include bin/gensquashfs/Makemodule.am
+include bin/rdsquashfs/Makemodule.am
+include bin/sqfs2tar/Makemodule.am
+include bin/sqfsdiff/Makemodule.am
+include bin/tar2sqfs/Makemodule.am
 endif
 
 include extras/Makemodule.am
