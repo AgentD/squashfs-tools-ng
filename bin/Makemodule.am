@@ -41,4 +41,8 @@ if WITH_SELINUX
 gensquashfs_CPPFLAGS += -DWITH_SELINUX
 endif
 
+dist_man1_MANS += bin/gensquashfs/gensquashfs.1 bin/rdsquashfs/rdsquashfs.1
+dist_man1_MANS += bin/sqfs2tar/sqfs2tar.1 bin/tar2sqfs/tar2sqfs.1
+dist_man1_MANS += bin/sqfsdiff/sqfsdiff.1
+
 bin_PROGRAMS += sqfs2tar tar2sqfs gensquashfs rdsquashfs sqfsdiff
