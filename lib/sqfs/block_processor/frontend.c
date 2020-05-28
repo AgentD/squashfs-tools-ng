@@ -57,19 +57,22 @@ static int flush_block(sqfs_block_processor_t *proc)
 int sqfs_block_processor_begin_file(sqfs_block_processor_t *proc,
 				    sqfs_inode_generic_t **inode, sqfs_u32 flags)
 {
-	if (proc->inode != NULL)
+	if (proc->begin_called)
 		return SQFS_ERROR_SEQUENCE;
 
 	if (flags & ~SQFS_BLK_USER_SETTABLE_FLAGS)
 		return SQFS_ERROR_UNSUPPORTED;
 
-	(*inode) = calloc(1, sizeof(sqfs_inode_generic_t));
-	if ((*inode) == NULL)
-		return SQFS_ERROR_ALLOC;
+	if (inode != NULL) {
+		(*inode) = calloc(1, sizeof(sqfs_inode_generic_t));
+		if ((*inode) == NULL)
+			return SQFS_ERROR_ALLOC;
 
-	(*inode)->base.type = SQFS_INODE_FILE;
-	sqfs_inode_set_frag_location(*inode, 0xFFFFFFFF, 0xFFFFFFFF);
+		(*inode)->base.type = SQFS_INODE_FILE;
+		sqfs_inode_set_frag_location(*inode, 0xFFFFFFFF, 0xFFFFFFFF);
+	}
 
+	proc->begin_called = true;
 	proc->inode = inode;
 	proc->blk_flags = flags | SQFS_BLK_FIRST_BLOCK;
 	proc->blk_index = 0;
@@ -84,8 +87,13 @@ int sqfs_block_processor_append(sqfs_block_processor_t *proc, const void *data,
 	size_t diff;
 	int err;
 
-	sqfs_inode_get_file_size(*(proc->inode), &filesize);
-	sqfs_inode_set_file_size(*(proc->inode), filesize + size);
+	if (!proc->begin_called)
+		return SQFS_ERROR_SEQUENCE;
+
+	if (proc->inode != NULL) {
+		sqfs_inode_get_file_size(*(proc->inode), &filesize);
+		sqfs_inode_set_file_size(*(proc->inode), filesize + size);
+	}
 
 	while (size > 0) {
 		if (proc->blk_current == NULL) {
@@ -132,7 +140,7 @@ int sqfs_block_processor_end_file(sqfs_block_processor_t *proc)
 {
 	int err;
 
-	if (proc->inode == NULL)
+	if (!proc->begin_called)
 		return SQFS_ERROR_SEQUENCE;
 
 	if (!(proc->blk_flags & SQFS_BLK_FIRST_BLOCK)) {
@@ -152,6 +160,7 @@ int sqfs_block_processor_end_file(sqfs_block_processor_t *proc)
 			return err;
 	}
 
+	proc->begin_called = false;
 	proc->inode = NULL;
 	proc->blk_flags = 0;
 	return 0;

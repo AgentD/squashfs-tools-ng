@@ -76,13 +76,14 @@ int process_completed_block(sqfs_block_processor_t *proc, sqfs_block_t *blk)
 	proc->stats.output_bytes_generated += blk->size;
 
 	if (blk->flags & SQFS_BLK_IS_SPARSE) {
-		sqfs_inode_make_extended(*(blk->inode));
-		(*(blk->inode))->data.file_ext.sparse += blk->size;
+		if (blk->inode != NULL) {
+			sqfs_inode_make_extended(*(blk->inode));
+			(*(blk->inode))->data.file_ext.sparse += blk->size;
 
-		err = set_block_size(blk->inode, blk->index, 0);
-		if (err)
-			goto out;
-
+			err = set_block_size(blk->inode, blk->index, 0);
+			if (err)
+				goto out;
+		}
 		proc->stats.sparse_block_count += 1;
 	} else if (blk->size != 0) {
 		size = blk->size;
@@ -96,14 +97,17 @@ int process_completed_block(sqfs_block_processor_t *proc, sqfs_block_t *blk)
 				goto out;
 			proc->stats.frag_block_count += 1;
 		} else {
-			err = set_block_size(blk->inode, blk->index, size);
-			if (err)
-				goto out;
+			if (blk->inode != NULL) {
+				err = set_block_size(blk->inode, blk->index,
+						     size);
+				if (err)
+					goto out;
+			}
 			proc->stats.data_block_count += 1;
 		}
 	}
 
-	if (blk->flags & SQFS_BLK_LAST_BLOCK)
+	if (blk->flags & SQFS_BLK_LAST_BLOCK && blk->inode != NULL)
 		sqfs_inode_set_file_block_start(*(blk->inode), location);
 out:
 	release_old_block(proc, blk);
@@ -169,10 +173,11 @@ int process_completed_fragment(sqfs_block_processor_t *proc, sqfs_block_t *frag,
 	int err;
 
 	if (frag->flags & SQFS_BLK_IS_SPARSE) {
-		sqfs_inode_make_extended(*(frag->inode));
-		set_block_size(frag->inode, frag->index, 0);
-		(*(frag->inode))->data.file_ext.sparse += frag->size;
-
+		if (frag->inode != NULL) {
+			sqfs_inode_make_extended(*(frag->inode));
+			set_block_size(frag->inode, frag->index, 0);
+			(*(frag->inode))->data.file_ext.sparse += frag->size;
+		}
 		proc->stats.sparse_block_count += 1;
 		release_old_block(proc, frag);
 		return 0;
@@ -185,8 +190,10 @@ int process_completed_fragment(sqfs_block_processor_t *proc, sqfs_block_t *frag,
 						    frag->checksum, frag->size,
 						    &index, &offset);
 		if (err == 0) {
-			sqfs_inode_set_frag_location(*(frag->inode),
-						     index, offset);
+			if (frag->inode != NULL) {
+				sqfs_inode_set_frag_location(*(frag->inode),
+							     index, offset);
+			}
 			release_old_block(proc, frag);
 			return 0;
 		}
@@ -227,7 +234,8 @@ int process_completed_fragment(sqfs_block_processor_t *proc, sqfs_block_t *frag,
 	if (err)
 		goto fail_outblk;
 
-	sqfs_inode_set_frag_location(*(frag->inode), index, offset);
+	if (frag->inode != NULL)
+		sqfs_inode_set_frag_location(*(frag->inode), index, offset);
 	proc->stats.actual_frag_count += 1;
 	return 0;
 fail:

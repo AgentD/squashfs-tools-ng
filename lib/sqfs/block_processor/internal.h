@@ -63,6 +63,8 @@ struct sqfs_block_processor_t {
 	sqfs_block_t *free_list;
 
 	size_t max_block_size;
+
+	bool begin_called;
 };
 
 SQFS_INTERNAL int process_completed_block(sqfs_block_processor_t *proc,

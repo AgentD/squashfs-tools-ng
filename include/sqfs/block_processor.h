@@ -165,9 +165,9 @@ sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
  * returned.
  *
  * @param proc A pointer to a data writer object.
- * @param inode A pointer to a pointer to an inode. The block processor creates
- *              a file inode and stores a pointer to it here and keeps updating
- *              the inode as the file grows.
+ * @param inode An optional pointer to a pointer to an inode. If not NULL, the
+ *              block processor creates a file inode and stores a pointer to
+ *              it here and keeps updating the inode as the file grows.
  * @param flags A combination of @ref SQFS_BLK_FLAGS that can be used to
  *              micro manage how the data is processed.
  *
