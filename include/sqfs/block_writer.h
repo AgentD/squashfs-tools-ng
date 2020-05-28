@@ -29,21 +29,69 @@
  */
 
 /**
- * @struct sqfs_block_writer_t
+ * @interface sqfs_block_writer_t
  *
  * @implements sqfs_object_t
  *
  * @brief Abstracts writing and deduplicating of data and fragment blocks.
  *
- * This object is not copyable, i.e. @ref sqfs_copy will always return NULL.
+ * A default reference implementation can be obtaiend
+ * through @ref sqfs_block_writer_create. The default implementation is not
+ * copyable, i.e. @ref sqfs_copy will always return NULL.
  */
+struct sqfs_block_writer_t {
+	sqfs_object_t base;
+
+	/**
+	 * @brief Submit a data block to a block writer.
+	 *
+	 * @memberof sqfs_block_writer_t
+	 *
+	 * If the @ref SQFS_BLK_FIRST_BLOCK flag is set, the data block writer
+	 * memorizes the starting location and block index of the block. If the
+	 * @ref SQFS_BLK_LAST_BLOCK flag is set, it uses those stored locations
+	 * to do block deduplication.
+	 *
+	 * If the flag @ref SQFS_BLK_ALIGN is set in combination with the
+	 * @ref SQFS_BLK_FIRST_BLOCK, the file size is padded to a multiple of
+	 * the device block size before writing. If it is set together with the
+	 * @ref SQFS_BLK_LAST_BLOCK flag, the padding is added afterwards.
+	 *
+	 * @param wr A pointer to a block writer.
+	 * @param size The size of the block to write.
+	 * @param checksum A 32 bit checksum of the block data.
+	 * @param flags A combination of @ref SQFS_BLK_FLAGS flag bits
+	 *              describing the block.
+	 * @arapm data A pointer to the data to write.
+	 * @param location Returns the location where the block has been
+	 *        written. If the @ref SQFS_BLK_LAST_BLOCK flag was set,
+	 *        deduplication is performed and this returns the (new) location
+	 *        of the first block instead.
+	 *
+	 * @return Zero on success, an @ref SQFS_ERROR error on failure.
+	 */
+	int (*write_data_block)(sqfs_block_writer_t *wr, sqfs_u32 size,
+				sqfs_u32 checksum, sqfs_u32 flags,
+				const sqfs_u8 *data, sqfs_u64 *location);
+
+	/**
+	 * @brief Get the number of blocks actually written to disk.
+	 *
+	 * @memberof sqfs_block_writer_t
+	 *
+	 * @param wr A pointer to a block writer.
+	 *
+	 * @return The number of blocks written, excluding deduplicated blocks.
+	 */
+	sqfs_u64 (*get_block_count)(const sqfs_block_writer_t *wr);
+};
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /**
- * @brief Create a block writer object.
+ * @brief Create an instance of a default block writer implementation.
  *
  * @memberof sqfs_block_writer_t
  *
@@ -57,47 +105,6 @@ extern "C" {
 SQFS_API sqfs_block_writer_t *sqfs_block_writer_create(sqfs_file_t *file,
 						       size_t devblksz,
 						       sqfs_u32 flags);
-
-/**
- * @brief Submit a data block to a blokc writer.
- *
- * @memberof sqfs_block_writer_t
- *
- * If the @ref SQFS_BLK_FIRST_BLOCK flag is set, the data block writer
- * memorizes the starting location and block index of the block. If the
- * @ref SQFS_BLK_LAST_BLOCK flag is set, it uses those stored locations
- * to do block deduplication.
- *
- * If the flag @ref SQFS_BLK_ALIGN is set in combination with the
- * @ref SQFS_BLK_FIRST_BLOCK, the file size is padded to a multiple of the
- * device block size before writing. If it is set together with the
- * @ref SQFS_BLK_LAST_BLOCK flag, the padding is added afterwards.
- *
- * @param wr A pointer to a block writer.
- * @param block The block to write to disk next.
- * @param location Returns the location where the block has been written.
- *                 If the @ref SQFS_BLK_LAST_BLOCK flag was set, deduplication
- *                 is performed and this returns the (new) location of the
- *                 first block instead.
- *
- * @return Zero on success, an @ref SQFS_ERROR error on failure.
- */
-SQFS_API int sqfs_block_writer_write(sqfs_block_writer_t *wr,
-				     sqfs_u32 size, sqfs_u32 checksum,
-				     sqfs_u32 flags, const sqfs_u8 *data,
-				     sqfs_u64 *location);
-
-/**
- * @brief Get the number of blocks actually written to disk.
- *
- * @memberof sqfs_block_writer_t
- *
- * @param wr A pointer to a block writer.
- *
- * @return The number of blocks written, excluding deduplicated blocks.
- */
-SQFS_API
-sqfs_u64 sqfs_block_writer_get_block_count(const sqfs_block_writer_t *wr);
 
 #ifdef __cplusplus
 }

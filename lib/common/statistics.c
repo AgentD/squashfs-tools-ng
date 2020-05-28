@@ -18,7 +18,7 @@ void sqfs_print_statistics(const sqfs_super_t *super,
 	size_t ratio;
 
 	proc_stats = sqfs_block_processor_get_stats(blk);
-	blocks_written = sqfs_block_writer_get_block_count(wr);
+	blocks_written = wr->get_block_count(wr);
 
 	bytes_written = super->inode_table_start - sizeof(*super);
 
