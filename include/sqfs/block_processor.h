@@ -69,6 +69,15 @@ struct sqfs_block_processor_stats_t {
 	sqfs_u64 input_bytes_read;
 
 	/**
+	 * @brief Total number of bytes sent down to the block processor.
+	 *
+	 * This is the sum of generated, compressed blocks, including blocks
+	 * that were possibly deduplicated by the block writer and not
+	 * counting padding that the block writer may have added.
+	 */
+	sqfs_u64 output_bytes_generated;
+
+	/**
 	 * @brief Total number of data blocks produced.
 	 */
 	sqfs_u64 data_block_count;

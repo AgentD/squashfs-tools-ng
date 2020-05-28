@@ -73,6 +73,8 @@ int process_completed_block(sqfs_block_processor_t *proc, sqfs_block_t *blk)
 	if (err)
 		goto out;
 
+	proc->stats.output_bytes_generated += blk->size;
+
 	if (blk->flags & SQFS_BLK_IS_SPARSE) {
 		sqfs_inode_make_extended(*(blk->inode));
 		(*(blk->inode))->data.file_ext.sparse += blk->size;

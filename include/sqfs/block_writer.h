@@ -38,46 +38,6 @@
  * This object is not copyable, i.e. @ref sqfs_copy will always return NULL.
  */
 
-/**
- * @struct sqfs_block_writer_stats_t
- *
- * @brief Collects run time statistics of the @ref sqfs_block_writer_t
- */
-struct sqfs_block_writer_stats_t {
-	/**
-	 * @brief Holds the size of the structure.
-	 *
-	 * If a later version of libsquashfs expands this structure, the value
-	 * of this field can be used to check at runtime whether the newer
-	 * fields are avaialable or not.
-	 */
-	size_t size;
-
-	/**
-	 * @brief Total number of bytes submitted, including blocks that were
-	 *        removed by deduplication and not counting any padding.
-	 */
-	sqfs_u64 bytes_submitted;
-
-	/**
-	 * @brief Actual number of bytes written to disk, excluding deduplicated
-	 *        blocks and including padding.
-	 */
-	sqfs_u64 bytes_written;
-
-	/**
-	 * @brief Total number of submitted blocks, including ones later
-	 *        removed by deduplication.
-	 */
-	sqfs_u64 blocks_submitted;
-
-	/**
-	 * @brief Total number of blocks actually written, excluding
-	 *        deduplicated blocks.
-	 */
-	sqfs_u64 blocks_written;
-};
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -128,16 +88,16 @@ SQFS_API int sqfs_block_writer_write(sqfs_block_writer_t *wr,
 				     sqfs_u64 *location);
 
 /**
- * @brief Get access to a block writers run time statistics.
+ * @brief Get the number of blocks actually written to disk.
  *
  * @memberof sqfs_block_writer_t
  *
  * @param wr A pointer to a block writer.
  *
- * @return A pointer to the internal statistics counters.
+ * @return The number of blocks written, excluding deduplicated blocks.
  */
-SQFS_API const sqfs_block_writer_stats_t
-*sqfs_block_writer_get_stats(const sqfs_block_writer_t *wr);
+SQFS_API
+sqfs_u64 sqfs_block_writer_get_block_count(const sqfs_block_writer_t *wr);
 
 #ifdef __cplusplus
 }
