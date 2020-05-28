@@ -36,9 +36,6 @@ struct sqfs_block_writer_t {
 
 	sqfs_block_writer_stats_t stats;
 
-	const sqfs_block_hooks_t *hooks;
-	void *user_ptr;
-
 	sqfs_u64 data_area_start;
 
 	sqfs_u64 start;
@@ -105,9 +102,6 @@ static int align_file(sqfs_block_writer_t *wr)
 	if (padding == 0)
 		return SQFS_ERROR_ALLOC;
 
-	if (wr->hooks != NULL && wr->hooks->prepare_padding != NULL)
-		wr->hooks->prepare_padding(wr->user_ptr, padding, diff);
-
 	ret = wr->file->write_at(wr->file, size, padding, diff);
 	free(padding);
 	if (ret)
@@ -150,17 +144,6 @@ sqfs_block_writer_t *sqfs_block_writer_create(sqfs_file_t *file,
 	return wr;
 }
 
-int sqfs_block_writer_set_hooks(sqfs_block_writer_t *wr, void *user_ptr,
-				const sqfs_block_hooks_t *hooks)
-{
-	if (hooks->size != sizeof(*hooks))
-		return SQFS_ERROR_UNSUPPORTED;
-
-	wr->hooks = hooks;
-	wr->user_ptr = user_ptr;
-	return 0;
-}
-
 int sqfs_block_writer_write(sqfs_block_writer_t *wr, sqfs_u32 size,
 			    sqfs_u32 checksum, sqfs_u32 flags,
 			    const sqfs_u8 *data, sqfs_u64 *location)
@@ -169,16 +152,6 @@ int sqfs_block_writer_write(sqfs_block_writer_t *wr, sqfs_u32 size,
 	sqfs_u64 offset;
 	sqfs_u32 out;
 	int err;
-
-	if (wr->hooks != NULL && wr->hooks->pre_block_write != NULL) {
-		out = flags;
-		flags &= ~SQFS_BLK_USER_SETTABLE_FLAGS;
-
-		wr->hooks->pre_block_write(wr->user_ptr, &out, size,
-					   data, wr->file);
-
-		flags |= out & SQFS_BLK_USER_SETTABLE_FLAGS;
-	}
 
 	if (flags & SQFS_BLK_FIRST_BLOCK) {
 		wr->start = wr->file->get_size(wr->file);
@@ -211,11 +184,6 @@ int sqfs_block_writer_write(sqfs_block_writer_t *wr, sqfs_u32 size,
 		wr->stats.blocks_submitted += 1;
 		wr->stats.blocks_written = wr->num_blocks;
 		wr->stats.bytes_written = offset + size - wr->data_area_start;
-	}
-
-	if (wr->hooks != NULL && wr->hooks->post_block_write != NULL) {
-		wr->hooks->post_block_write(wr->user_ptr, flags, size, data,
-					    wr->file);
 	}
 
 	if (flags & SQFS_BLK_LAST_BLOCK) {
