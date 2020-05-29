@@ -94,10 +94,13 @@ static int process_completed_block(sqfs_block_processor_t *proc,
 			size |= 1 << 24;
 
 		if (blk->flags & SQFS_BLK_FRAGMENT_BLOCK) {
-			err = sqfs_frag_table_set(proc->frag_tbl, blk->index,
-						  location, size);
-			if (err)
-				goto out;
+			if (proc->frag_tbl != NULL) {
+				err = sqfs_frag_table_set(proc->frag_tbl,
+							  blk->index, location,
+							  size);
+				if (err)
+					goto out;
+			}
 			proc->stats.frag_block_count += 1;
 		} else {
 			if (blk->inode != NULL) {
@@ -194,7 +197,8 @@ static int process_completed_fragment(sqfs_block_processor_t *proc,
 
 	proc->stats.total_frag_count += 1;
 
-	if (!(frag->flags & SQFS_BLK_DONT_DEDUPLICATE)) {
+	if (!(frag->flags & SQFS_BLK_DONT_DEDUPLICATE) &&
+	    proc->frag_tbl != NULL) {
 		err = sqfs_frag_table_find_tail_end(proc->frag_tbl,
 						    frag->checksum, frag->size,
 						    &index, &offset);
@@ -218,9 +222,14 @@ static int process_completed_fragment(sqfs_block_processor_t *proc,
 	}
 
 	if (proc->frag_block == NULL) {
-		err = sqfs_frag_table_append(proc->frag_tbl, 0, 0, &index);
-		if (err)
-			goto fail;
+		if (proc->frag_tbl == NULL) {
+			index = 0;
+		} else {
+			err = sqfs_frag_table_append(proc->frag_tbl,
+						     0, 0, &index);
+			if (err)
+				goto fail;
+		}
 
 		offset = 0;
 		proc->frag_block = frag;
@@ -238,13 +247,17 @@ static int process_completed_fragment(sqfs_block_processor_t *proc,
 		proc->frag_block->size += frag->size;
 	}
 
-	err = sqfs_frag_table_add_tail_end(proc->frag_tbl, index, offset,
-					   frag->size, frag->checksum);
-	if (err)
-		goto fail_outblk;
+	if (proc->frag_tbl != NULL) {
+		err = sqfs_frag_table_add_tail_end(proc->frag_tbl,
+						   index, offset,
+						   frag->size, frag->checksum);
+		if (err)
+			goto fail_outblk;
+	}
 
 	if (frag->inode != NULL)
 		sqfs_inode_set_frag_location(*(frag->inode), index, offset);
+
 	proc->stats.actual_frag_count += 1;
 	return 0;
 fail:
