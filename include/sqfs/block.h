@@ -149,6 +149,8 @@ typedef enum {
 	 * @brief The combination of all flags that are user settable.
 	 */
 	SQFS_BLK_USER_SETTABLE_FLAGS = 0x003F,
+
+	SQFS_BLK_FLAGS_ALL = 0xFC3F,
 } SQFS_BLK_FLAGS;
 
 #endif /* SQFS_BLOCK_H */

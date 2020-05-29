@@ -170,6 +170,33 @@ int sqfs_block_processor_end_file(sqfs_block_processor_t *proc)
 	return 0;
 }
 
+int sqfs_block_processor_submit_block(sqfs_block_processor_t *proc, void *user,
+				      sqfs_u32 flags, const void *data,
+				      size_t size)
+{
+	sqfs_block_t *blk;
+
+	if (proc->begin_called)
+		return SQFS_ERROR_SEQUENCE;
+
+	if (size > proc->max_block_size)
+		return SQFS_ERROR_OVERFLOW;
+
+	if (flags & ~SQFS_BLK_FLAGS_ALL)
+		return SQFS_ERROR_UNSUPPORTED;
+
+	blk = get_new_block(proc);
+	if (blk == NULL)
+		return SQFS_ERROR_ALLOC;
+
+	blk->flags = flags | BLK_FLAG_MANUAL_SUBMISSION;
+	blk->user = user;
+	blk->size = size;
+	memcpy(blk->data, data, size);
+
+	return proc->append_to_work_queue(proc, blk);
+}
+
 const sqfs_block_processor_stats_t
 *sqfs_block_processor_get_stats(const sqfs_block_processor_t *proc)
 {

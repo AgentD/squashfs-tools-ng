@@ -215,6 +215,36 @@ SQFS_API int sqfs_block_processor_append(sqfs_block_processor_t *proc,
 SQFS_API int sqfs_block_processor_end_file(sqfs_block_processor_t *proc);
 
 /**
+ * @brief Submit a raw block for processing.
+ *
+ * @memberof sqfs_block_processor_t
+ *
+ * This function provides an alternative to the simple file front end to submit
+ * raw data blocks to the processor. It will throw an error if called in between
+ * @ref sqfs_block_processor_begin_file and @ref sqfs_block_processor_end_file.
+ *
+ * The flags aren't sanity checked (besides being a subset
+ * of @ref SQFS_BLK_FLAGS_ALL), so in contrast to the simple file API, you can
+ * shoot yourself in the foot as hard as you want.
+ *
+ * If not specified otherwise through flags, the fragment block/deduplication
+ * and fragment consolidation are still in effect and sparse blocks are
+ * discarded.
+ *
+ * @param proc A pointer to a block processor object.
+ * @param user An optional user data pointer stored with the block and passed on
+ *             to the underlying @ref sqfs_block_writer_t.
+ * @param flags A combination of @ref SQFS_BLK_FLAGS that can be used to
+ *              micro manage how the data is processed.
+ * @param data The data to write to the block.
+ *
+ * @return Zero on success, an @ref SQFS_ERROR value on failure.
+ */
+SQFS_API int sqfs_block_processor_submit_block(sqfs_block_processor_t *proc,
+					       void *user, sqfs_u32 flags,
+					       const void *data, size_t size);
+
+/**
  * @brief Wait for the in-flight data blocks to finish.
  *
  * @memberof sqfs_block_processor_t

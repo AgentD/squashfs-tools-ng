@@ -24,6 +24,11 @@
 #include <stdlib.h>
 #include <assert.h>
 
+enum {
+	BLK_FLAG_MANUAL_SUBMISSION = 0x10000000,
+	BLK_FLAG_INTERNAL = 0x10000000,
+};
+
 typedef struct sqfs_block_t {
 	struct sqfs_block_t *next;
 	sqfs_inode_generic_t **inode;

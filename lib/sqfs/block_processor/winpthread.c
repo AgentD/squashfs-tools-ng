@@ -344,7 +344,8 @@ static int append_to_work_queue(sqfs_block_processor_t *proc,
 				SIGNAL_ALL(&thproc->queue_cond);
 			}
 		} else {
-			if (!(blk->flags & SQFS_BLK_FRAGMENT_BLOCK))
+			if (!(blk->flags & SQFS_BLK_FRAGMENT_BLOCK) ||
+			    blk->flags & BLK_FLAG_MANUAL_SUBMISSION)
 				blk->io_seq_num = thproc->io_enq_id++;
 			store_io_block(thproc, blk);
 		}
