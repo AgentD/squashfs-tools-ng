@@ -115,8 +115,8 @@ static void block_writer_destroy(sqfs_object_t *wr)
 	free(wr);
 }
 
-static int write_data_block(sqfs_block_writer_t *base, sqfs_u32 size,
-			    sqfs_u32 checksum, sqfs_u32 flags,
+static int write_data_block(sqfs_block_writer_t *base, void *user,
+			    sqfs_u32 size, sqfs_u32 checksum, sqfs_u32 flags,
 			    const sqfs_u8 *data, sqfs_u64 *location)
 {
 	block_writer_default_t *wr = (block_writer_default_t *)base;
@@ -124,6 +124,7 @@ static int write_data_block(sqfs_block_writer_t *base, sqfs_u32 size,
 	sqfs_u64 offset;
 	sqfs_u32 out;
 	int err;
+	(void)user;
 
 	if (flags & SQFS_BLK_FIRST_BLOCK) {
 		wr->start = wr->file->get_size(wr->file);

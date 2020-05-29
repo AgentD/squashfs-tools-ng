@@ -42,6 +42,9 @@ typedef struct sqfs_block_t {
 	   consolidate in reverse order. */
 	struct sqfs_block_t *frag_list;
 
+	/* User data pointer */
+	void *user;
+
 	sqfs_u8 data[];
 } sqfs_block_t;
 
@@ -59,6 +62,7 @@ struct sqfs_block_processor_t {
 	sqfs_block_t *blk_current;
 	sqfs_u32 blk_flags;
 	sqfs_u32 blk_index;
+	void *user;
 
 	sqfs_block_t *free_list;
 

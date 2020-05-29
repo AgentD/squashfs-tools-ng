@@ -58,6 +58,9 @@ struct sqfs_block_writer_t {
 	 * @ref SQFS_BLK_LAST_BLOCK flag, the padding is added afterwards.
 	 *
 	 * @param wr A pointer to a block writer.
+	 * @param user An optional user data pointer.
+	 *             The @ref sqfs_block_processor_t can be told to pass this
+	 *             on to the block writer for each block.
 	 * @param size The size of the block to write.
 	 * @param checksum A 32 bit checksum of the block data.
 	 * @param flags A combination of @ref SQFS_BLK_FLAGS flag bits
@@ -70,9 +73,10 @@ struct sqfs_block_writer_t {
 	 *
 	 * @return Zero on success, an @ref SQFS_ERROR error on failure.
 	 */
-	int (*write_data_block)(sqfs_block_writer_t *wr, sqfs_u32 size,
-				sqfs_u32 checksum, sqfs_u32 flags,
-				const sqfs_u8 *data, sqfs_u64 *location);
+	int (*write_data_block)(sqfs_block_writer_t *wr, void *user,
+				sqfs_u32 size, sqfs_u32 checksum,
+				sqfs_u32 flags, const sqfs_u8 *data,
+				sqfs_u64 *location);
 
 	/**
 	 * @brief Get the number of blocks actually written to disk.

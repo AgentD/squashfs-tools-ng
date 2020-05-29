@@ -16,7 +16,7 @@ int write_data_from_file(const char *filename, sqfs_block_processor_t *data,
 	size_t diff;
 	int ret;
 
-	ret = sqfs_block_processor_begin_file(data, inode, flags);
+	ret = sqfs_block_processor_begin_file(data, inode, NULL, flags);
 	if (ret) {
 		sqfs_perror(filename, "beginning file data blocks", ret);
 		return -1;

@@ -69,8 +69,9 @@ static int process_completed_block(sqfs_block_processor_t *proc,
 	sqfs_u32 size;
 	int err;
 
-	err = proc->wr->write_data_block(proc->wr, blk->size, blk->checksum,
-					 blk->flags, blk->data, &location);
+	err = proc->wr->write_data_block(proc->wr, blk->user, blk->size,
+					 blk->checksum, blk->flags,
+					 blk->data, &location);
 	if (err)
 		goto out;
 

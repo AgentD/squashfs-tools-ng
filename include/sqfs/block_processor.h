@@ -168,6 +168,8 @@ sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
  * @param inode An optional pointer to a pointer to an inode. If not NULL, the
  *              block processor creates a file inode and stores a pointer to
  *              it here and keeps updating the inode as the file grows.
+ * @param user An optional user data pointer that is passed to the
+ *             the @ref sqfs_block_writer_t for each file data block.
  * @param flags A combination of @ref SQFS_BLK_FLAGS that can be used to
  *              micro manage how the data is processed.
  *
@@ -175,7 +177,7 @@ sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
  */
 SQFS_API int sqfs_block_processor_begin_file(sqfs_block_processor_t *proc,
 					     sqfs_inode_generic_t **inode,
-					     sqfs_u32 flags);
+					     void *user, sqfs_u32 flags);
 
 /**
  * @brief Append data to the current file.

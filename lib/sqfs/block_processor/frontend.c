@@ -55,7 +55,8 @@ static int flush_block(sqfs_block_processor_t *proc)
 }
 
 int sqfs_block_processor_begin_file(sqfs_block_processor_t *proc,
-				    sqfs_inode_generic_t **inode, sqfs_u32 flags)
+				    sqfs_inode_generic_t **inode,
+				    void *user, sqfs_u32 flags)
 {
 	if (proc->begin_called)
 		return SQFS_ERROR_SEQUENCE;
@@ -76,6 +77,7 @@ int sqfs_block_processor_begin_file(sqfs_block_processor_t *proc,
 	proc->inode = inode;
 	proc->blk_flags = flags | SQFS_BLK_FIRST_BLOCK;
 	proc->blk_index = 0;
+	proc->user = user;
 	return 0;
 }
 
@@ -104,6 +106,7 @@ int sqfs_block_processor_append(sqfs_block_processor_t *proc, const void *data,
 			proc->blk_current = new;
 			proc->blk_current->flags = proc->blk_flags;
 			proc->blk_current->inode = proc->inode;
+			proc->blk_current->user = proc->user;
 		}
 
 		diff = proc->max_block_size - proc->blk_current->size;
@@ -162,6 +165,7 @@ int sqfs_block_processor_end_file(sqfs_block_processor_t *proc)
 
 	proc->begin_called = false;
 	proc->inode = NULL;
+	proc->user = NULL;
 	proc->blk_flags = 0;
 	return 0;
 }
