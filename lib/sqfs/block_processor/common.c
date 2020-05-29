@@ -62,7 +62,8 @@ static void release_old_block(sqfs_block_processor_t *proc, sqfs_block_t *blk)
 	proc->free_list = blk;
 }
 
-int process_completed_block(sqfs_block_processor_t *proc, sqfs_block_t *blk)
+static int process_completed_block(sqfs_block_processor_t *proc,
+				   sqfs_block_t *blk)
 {
 	sqfs_u64 location;
 	sqfs_u32 size;
@@ -119,8 +120,8 @@ static bool is_zero_block(unsigned char *ptr, size_t size)
 	return ptr[0] == 0 && memcmp(ptr, ptr + 1, size - 1) == 0;
 }
 
-int block_processor_do_block(sqfs_block_t *block, sqfs_compressor_t *cmp,
-			     sqfs_u8 *scratch, size_t scratch_size)
+static int process_block(sqfs_block_t *block, sqfs_compressor_t *cmp,
+			 sqfs_u8 *scratch, size_t scratch_size)
 {
 	sqfs_block_t *it;
 	size_t offset;
@@ -165,8 +166,9 @@ int block_processor_do_block(sqfs_block_t *block, sqfs_compressor_t *cmp,
 	return 0;
 }
 
-int process_completed_fragment(sqfs_block_processor_t *proc, sqfs_block_t *frag,
-			       sqfs_block_t **blk_out)
+static int process_completed_fragment(sqfs_block_processor_t *proc,
+				      sqfs_block_t *frag,
+				      sqfs_block_t **blk_out)
 {
 	sqfs_u32 index, offset;
 	size_t size;
@@ -246,4 +248,19 @@ fail_outblk:
 		*blk_out = NULL;
 	}
 	return err;
+}
+
+int block_processor_init(sqfs_block_processor_t *base, size_t max_block_size,
+			 sqfs_compressor_t *cmp, sqfs_block_writer_t *wr,
+			 sqfs_frag_table_t *tbl)
+{
+	base->process_completed_block = process_completed_block;
+	base->process_completed_fragment = process_completed_fragment;
+	base->process_block = process_block;
+	base->max_block_size = max_block_size;
+	base->cmp = cmp;
+	base->frag_tbl = tbl;
+	base->wr = wr;
+	base->stats.size = sizeof(base->stats);
+	return 0;
 }

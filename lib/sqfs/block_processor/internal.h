@@ -65,20 +65,25 @@ struct sqfs_block_processor_t {
 	size_t max_block_size;
 
 	bool begin_called;
-};
 
-SQFS_INTERNAL int process_completed_block(sqfs_block_processor_t *proc,
-					  sqfs_block_t *block);
+	int (*process_completed_block)(sqfs_block_processor_t *proc,
+				       sqfs_block_t *block);
 
-SQFS_INTERNAL
-int process_completed_fragment(sqfs_block_processor_t *proc, sqfs_block_t *frag,
-			       sqfs_block_t **blk_out);
+	int (*process_completed_fragment)(sqfs_block_processor_t *proc,
+					  sqfs_block_t *frag,
+					  sqfs_block_t **blk_out);
 
-SQFS_INTERNAL
-int block_processor_do_block(sqfs_block_t *block, sqfs_compressor_t *cmp,
+	int (*process_block)(sqfs_block_t *block, sqfs_compressor_t *cmp,
 			     sqfs_u8 *scratch, size_t scratch_size);
 
-SQFS_INTERNAL
-int append_to_work_queue(sqfs_block_processor_t *proc, sqfs_block_t *block);
+	int (*append_to_work_queue)(sqfs_block_processor_t *proc,
+				    sqfs_block_t *block);
+};
+
+SQFS_INTERNAL int block_processor_init(sqfs_block_processor_t *base,
+				       size_t max_block_size,
+				       sqfs_compressor_t *cmp,
+				       sqfs_block_writer_t *wr,
+				       sqfs_frag_table_t *tbl);
 
 #endif /* INTERNAL_H */

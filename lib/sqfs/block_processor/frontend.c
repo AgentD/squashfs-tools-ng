@@ -34,7 +34,7 @@ static int add_sentinel_block(sqfs_block_processor_t *proc)
 	blk->inode = proc->inode;
 	blk->flags = proc->blk_flags | SQFS_BLK_LAST_BLOCK;
 
-	return append_to_work_queue(proc, blk);
+	return proc->append_to_work_queue(proc, blk);
 }
 
 static int flush_block(sqfs_block_processor_t *proc)
@@ -51,7 +51,7 @@ static int flush_block(sqfs_block_processor_t *proc)
 	}
 
 	block->index = proc->blk_index++;
-	return append_to_work_queue(proc, block);
+	return proc->append_to_work_queue(proc, block);
 }
 
 int sqfs_block_processor_begin_file(sqfs_block_processor_t *proc,
