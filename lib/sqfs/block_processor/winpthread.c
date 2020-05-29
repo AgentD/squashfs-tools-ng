@@ -363,6 +363,11 @@ static int append_to_work_queue(sqfs_block_processor_t *proc,
 	return status;
 }
 
+static int block_processor_sync(sqfs_block_processor_t *proc)
+{
+	return append_to_work_queue(proc, NULL);
+}
+
 static thread_pool_processor_t *block_processor_create(size_t max_block_size,
 						       sqfs_compressor_t *cmp,
 						       unsigned int num_workers,
@@ -386,6 +391,7 @@ static thread_pool_processor_t *block_processor_create(size_t max_block_size,
 		return NULL;
 	}
 
+	proc->base.sync = block_processor_sync;
 	proc->base.append_to_work_queue = append_to_work_queue;
 	proc->num_workers = num_workers;
 	proc->max_backlog = max_backlog;
@@ -409,43 +415,6 @@ static thread_pool_processor_t *block_processor_create(size_t max_block_size,
 fail:
 	block_processor_destroy((sqfs_object_t *)proc);
 	return NULL;
-}
-
-int sqfs_block_processor_sync(sqfs_block_processor_t *proc)
-{
-	return append_to_work_queue(proc, NULL);
-}
-
-int sqfs_block_processor_finish(sqfs_block_processor_t *proc)
-{
-	thread_pool_processor_t *thproc = (thread_pool_processor_t *)proc;
-	sqfs_block_t *blk;
-	int status;
-
-	status = sqfs_block_processor_sync(proc);
-
-	if (status == 0 && proc->frag_block != NULL) {
-		blk = proc->frag_block;
-		blk->next = NULL;
-		proc->frag_block = NULL;
-
-		status = proc->process_block(blk, proc->cmp,
-					     thproc->workers[0]->scratch,
-					     proc->max_block_size);
-
-		if (status == 0)
-			status = handle_io_queue(thproc, blk);
-
-		if (status != 0) {
-			LOCK(&thproc->mtx);
-			if (thproc->status == 0)
-				thproc->status = status;
-			SIGNAL_ALL(&thproc->queue_cond);
-			UNLOCK(&thproc->mtx);
-		}
-	}
-
-	return status;
 }
 
 #if defined(_WIN32) || defined(__WINDOWS__)

@@ -87,6 +87,8 @@ struct sqfs_block_processor_t {
 
 	int (*append_to_work_queue)(sqfs_block_processor_t *proc,
 				    sqfs_block_t *block);
+
+	int (*sync)(sqfs_block_processor_t *proc);
 };
 
 SQFS_INTERNAL int block_processor_init(sqfs_block_processor_t *base,

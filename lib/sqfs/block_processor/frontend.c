@@ -197,6 +197,33 @@ int sqfs_block_processor_submit_block(sqfs_block_processor_t *proc, void *user,
 	return proc->append_to_work_queue(proc, blk);
 }
 
+int sqfs_block_processor_sync(sqfs_block_processor_t *proc)
+{
+	return proc->sync(proc);
+}
+
+int sqfs_block_processor_finish(sqfs_block_processor_t *proc)
+{
+	sqfs_block_t *blk;
+	int status;
+
+	status = proc->sync(proc);
+
+	if (status == 0 && proc->frag_block != NULL) {
+		blk = proc->frag_block;
+		blk->next = NULL;
+		blk->flags |= BLK_FLAG_MANUAL_SUBMISSION;
+		proc->frag_block = NULL;
+
+		status = proc->append_to_work_queue(proc, blk);
+
+		if (status == 0)
+			status = proc->sync(proc);
+	}
+
+	return status;
+}
+
 const sqfs_block_processor_stats_t
 *sqfs_block_processor_get_stats(const sqfs_block_processor_t *proc)
 {

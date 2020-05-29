@@ -75,6 +75,11 @@ fail:
 	return sproc->status;
 }
 
+static int block_processor_sync(sqfs_block_processor_t *proc)
+{
+	return ((serial_block_processor_t *)proc)->status;
+}
+
 sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
 						    sqfs_compressor_t *cmp,
 						    unsigned int num_workers,
@@ -94,37 +99,8 @@ sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
 		return NULL;
 	}
 
+	proc->base.sync = block_processor_sync;
 	proc->base.append_to_work_queue = append_to_work_queue;
 	((sqfs_object_t *)proc)->destroy = block_processor_destroy;
 	return (sqfs_block_processor_t *)proc;
-}
-
-int sqfs_block_processor_sync(sqfs_block_processor_t *proc)
-{
-	return ((serial_block_processor_t *)proc)->status;
-}
-
-int sqfs_block_processor_finish(sqfs_block_processor_t *proc)
-{
-	serial_block_processor_t *sproc = (serial_block_processor_t *)proc;
-
-	if (proc->frag_block == NULL || sproc->status != 0)
-		goto fail;
-
-	sproc->status = proc->process_block(proc->frag_block, proc->cmp,
-					    sproc->scratch,
-					    proc->max_block_size);
-	if (sproc->status != 0)
-		goto fail;
-
-	sproc->status = proc->process_completed_block(proc, proc->frag_block);
-	proc->frag_block = NULL;
-	return sproc->status;
-fail:
-	if (proc->frag_block != NULL) {
-		free_block_list(proc->frag_block->frag_list);
-		free(proc->frag_block);
-		proc->frag_block = NULL;
-	}
-	return sproc->status;
 }
