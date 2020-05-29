@@ -144,12 +144,17 @@ static int process_block(sqfs_block_t *block, sqfs_compressor_t *cmp,
 		}
 	}
 
-	if (is_zero_block(block->data, block->size)) {
+	if (!(block->flags & SQFS_BLK_IGNORE_SPARSE) &&
+	    is_zero_block(block->data, block->size)) {
 		block->flags |= SQFS_BLK_IS_SPARSE;
 		return 0;
 	}
 
-	block->checksum = xxh32(block->data, block->size);
+	if (block->flags & SQFS_BLK_DONT_HASH) {
+		block->checksum = 0;
+	} else {
+		block->checksum = xxh32(block->data, block->size);
+	}
 
 	if (block->flags & (SQFS_BLK_IS_FRAGMENT | SQFS_BLK_DONT_COMPRESS))
 		return 0;

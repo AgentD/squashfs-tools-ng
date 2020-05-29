@@ -97,6 +97,19 @@ typedef enum {
 	SQFS_BLK_DONT_DEDUPLICATE = 0x0008,
 
 	/**
+	 * @brief Supress sparse block detection.
+	 *
+	 * If set, sparse blocks are no longer checked and flagged as such and
+	 * are instead processed like normal blocks.
+	 */
+	SQFS_BLK_IGNORE_SPARSE = 0x0010,
+
+	/**
+	 * @brief Don't compute block data checksums.
+	 */
+	SQFS_BLK_DONT_HASH = 0x0020,
+
+	/**
 	 * @brief Set by the @ref sqfs_block_processor_t if it determines a
 	 *        block of a file to be sparse, i.e. only zero bytes.
 	 */
@@ -135,7 +148,7 @@ typedef enum {
 	/**
 	 * @brief The combination of all flags that are user settable.
 	 */
-	SQFS_BLK_USER_SETTABLE_FLAGS = 0x000F,
+	SQFS_BLK_USER_SETTABLE_FLAGS = 0x003F,
 } SQFS_BLK_FLAGS;
 
 #endif /* SQFS_BLOCK_H */
