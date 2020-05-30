@@ -10,17 +10,19 @@
 #include "sqfs/predef.h"
 #include "config.h"
 
+#include <limits.h>
+
 #if defined(__GNUC__) && __GNUC__ >= 5
 #	define SZ_ADD_OV __builtin_add_overflow
 #	define SZ_MUL_OV __builtin_mul_overflow
 #elif defined(__clang__) && defined(__GNUC__) && __GNUC__ < 5
-#	if SIZEOF_SIZE_T <= SIZEOF_INT
+#	if SIZE_MAX <= UINT_MAX
 #		define SZ_ADD_OV __builtin_uadd_overflow
 #		define SZ_MUL_OV __builtin_umul_overflow
-#	elif SIZEOF_SIZE_T == SIZEOF_LONG
+#	elif SIZE_MAX == ULONG_MAX
 #		define SZ_ADD_OV __builtin_uaddl_overflow
 #		define SZ_MUL_OV __builtin_umull_overflow
-#	elif SIZEOF_SIZE_T == SIZEOF_LONG_LONG
+#	elif SIZE_MAX == ULLONG_MAX
 #		define SZ_ADD_OV __builtin_uaddll_overflow
 #		define SZ_MUL_OV __builtin_umulll_overflow
 #	else
@@ -51,11 +53,11 @@ static inline int _sz_mul_overflow(size_t a, size_t b, size_t *res)
 #	define PRI_U32 "%" PRIu32
 #endif
 
-#if SIZEOF_SIZE_T <= SIZEOF_INT
+#if SIZE_MAX <= UINT_MAX
 #	define PRI_SZ "%u"
-#elif SIZEOF_SIZE_T == SIZEOF_LONG
+#elif SIZE_MAX == ULONG_MAX
 #	define PRI_SZ "%lu"
-#elif defined(_WIN32) && SIZEOF_SIZE_T == 8
+#elif defined(_WIN32) && SIZE_MAX == UINT64_MAX
 #	define PRI_SZ "%I64u"
 #else
 #	error Cannot figure out propper printf specifier for size_t

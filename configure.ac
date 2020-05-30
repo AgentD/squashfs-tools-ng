@@ -260,11 +260,6 @@ PKG_CHECK_MODULES(READLINE, [readline], [have_readline="yes"],
 AM_CONDITIONAL([WITH_READLINE], [test "x$have_readline" = "xyes"])
 
 ##### additional checks #####
-AX_COMPILE_CHECK_SIZEOF(size_t)
-AX_COMPILE_CHECK_SIZEOF(int)
-AX_COMPILE_CHECK_SIZEOF(long)
-AX_COMPILE_CHECK_SIZEOF(long long)
-
 AC_CHECK_HEADERS([sys/xattr.h], [], [])
 AC_CHECK_HEADERS([sys/sysinfo.h], [], [])
 AC_CHECK_HEADERS([alloca.h], [], [])
