@@ -2,13 +2,14 @@ gensquashfs_SOURCES = bin/gensquashfs/mkfs.c bin/gensquashfs/mkfs.h
 gensquashfs_SOURCES += bin/gensquashfs/options.c bin/gensquashfs/selinux.c
 gensquashfs_SOURCES += bin/gensquashfs/dirscan.c bin/gensquashfs/dirscan_xattr.c
 gensquashfs_LDADD = libcommon.a libsquashfs.la libfstree.a
-gensquashfs_LDADD += libcompat.a $(LIBSELINUX_LIBS) $(LZO_LIBS)
-gensquashfs_LDADD += $(PTHREAD_LIBS)
+gensquashfs_LDADD += libcompat.a $(LZO_LIBS) $(PTHREAD_LIBS)
 gensquashfs_CPPFLAGS = $(AM_CPPFLAGS)
-gensquashfs_CFLAGS = $(AM_CFLAGS) $(LIBSELINUX_CFLAGS) $(PTHREAD_CFLAGS)
+gensquashfs_CFLAGS = $(AM_CFLAGS) $(PTHREAD_CFLAGS)
 
 if WITH_SELINUX
 gensquashfs_CPPFLAGS += -DWITH_SELINUX
+gensquashfs_CFLAGS += $(LIBSELINUX_CFLAGS)
+gensquashfs_LDADD += $(LIBSELINUX_LIBS)
 endif
 
 dist_man1_MANS += bin/gensquashfs/gensquashfs.1
