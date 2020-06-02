@@ -262,37 +262,37 @@ typedef enum {
 	SQFS_COMP_FLAG_LZ4_ALL = 0x0001,
 
 	/**
-	 * @brief For LZMA, set this to select the x86 BCJ filter.
+	 * @brief For XZ, set this to select the x86 BCJ filter.
 	 */
 	SQFS_COMP_FLAG_XZ_X86 = 0x0001,
 
 	/**
-	 * @brief For LZMA, set this to select the PowerPC BCJ filter.
+	 * @brief For XZ, set this to select the PowerPC BCJ filter.
 	 */
 	SQFS_COMP_FLAG_XZ_POWERPC = 0x0002,
 
 	/**
-	 * @brief For LZMA, set this to select the Itanium BCJ filter.
+	 * @brief For XZ, set this to select the Itanium BCJ filter.
 	 */
 	SQFS_COMP_FLAG_XZ_IA64 = 0x0004,
 
 	/**
-	 * @brief For LZMA, set this to select the ARM BCJ filter.
+	 * @brief For XZ, set this to select the ARM BCJ filter.
 	 */
 	SQFS_COMP_FLAG_XZ_ARM = 0x0008,
 
 	/**
-	 * @brief For LZMA, set this to select the ARM Thumb BCJ filter.
+	 * @brief For XZ, set this to select the ARM Thumb BCJ filter.
 	 */
 	SQFS_COMP_FLAG_XZ_ARMTHUMB = 0x0010,
 
 	/**
-	 * @brief For LZMA, set this to select the Sparc BCJ filter.
+	 * @brief For XZ, set this to select the Sparc BCJ filter.
 	 */
 	SQFS_COMP_FLAG_XZ_SPARC = 0x0020,
 
 	/**
-	 * @brief Tell the LZMA compressor to try the "extreme" option.
+	 * @brief Tell the XZ compressor to try the "extreme" option.
 	 */
 	SQFS_COMP_FLAG_XZ_EXTREME = 0x0100,
 
