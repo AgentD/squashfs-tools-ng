@@ -54,7 +54,10 @@ int sqfs_super_read(sqfs_super_t *super, sqfs_file_t *file)
 	if ((temp.block_size - 1) & temp.block_size)
 		return SQFS_ERROR_SUPER_BLOCK_SIZE;
 
-	if (temp.block_size < 4096 || temp.block_size > (1 << 20))
+	if (temp.block_size < SQFS_MIN_BLOCK_SIZE)
+		return SQFS_ERROR_SUPER_BLOCK_SIZE;
+
+	if (temp.block_size > SQFS_MAX_BLOCK_SIZE)
 		return SQFS_ERROR_SUPER_BLOCK_SIZE;
 
 	if (temp.block_log < 12 || temp.block_log > 20)

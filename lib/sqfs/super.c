@@ -20,7 +20,10 @@ int sqfs_super_init(sqfs_super_t *super, size_t block_size, sqfs_u32 mtime,
 	if (block_size & (block_size - 1))
 		return SQFS_ERROR_SUPER_BLOCK_SIZE;
 
-	if (block_size < 4096 || block_size > (1 << 20))
+	if (block_size < SQFS_MIN_BLOCK_SIZE)
+		return SQFS_ERROR_SUPER_BLOCK_SIZE;
+
+	if (block_size > SQFS_MAX_BLOCK_SIZE)
 		return SQFS_ERROR_SUPER_BLOCK_SIZE;
 
 	memset(super, 0, sizeof(*super));
