@@ -120,6 +120,13 @@ struct sqfs_compressor_config_t {
 	sqfs_u32 block_size;
 
 	/**
+	 * @brief Compression level.
+	 *
+	 * Valid range and default value depend on the selected compressor.
+	 */
+	sqfs_u32 level;
+
+	/**
 	 * @brief Backend specific options for fine tuing.
 	 */
 	union {
@@ -128,35 +135,14 @@ struct sqfs_compressor_config_t {
 		 */
 		struct {
 			/**
-			 * @brief Compression level. Value between 1 and 9.
-			 *
-			 * Default is 9, i.e. best compression.
-			 */
-			sqfs_u16 level;
-
-			/**
 			 * @brief Deflate window size. Value between 8 and 15.
 			 *
 			 * Default is 15, i.e. 32k window.
 			 */
 			sqfs_u16 window_size;
 
-			sqfs_u32 padd0[3];
+			sqfs_u8 padd0[14];
 		} gzip;
-
-		/**
-		 * @brief Options for the zstd compressor.
-		 */
-		struct {
-			/**
-			 * @brief Compression level. Value between 1 and 22.
-			 *
-			 * Default is 15.
-			 */
-			sqfs_u16 level;
-
-			sqfs_u16 padd0[7];
-		} zstd;
 
 		/**
 		 * @brief Options for the lzo compressor.
@@ -170,18 +156,7 @@ struct sqfs_compressor_config_t {
 			 */
 			sqfs_u16 algorithm;
 
-			/**
-			 * @brief Compression level for @ref SQFS_LZO1X_999.
-			 *
-			 * If the selected algorithm is @ref SQFS_LZO1X_999,
-			 * this can be a value between 0 and 9. For all other
-			 * algorithms it has to be 0.
-			 *
-			 * Defaults to 9, i.e. best compression.
-			 */
-			sqfs_u16 level;
-
-			sqfs_u32 padd0[3];
+			sqfs_u8 padd0[14];
 		} lzo;
 
 		/**
@@ -198,13 +173,6 @@ struct sqfs_compressor_config_t {
 			 * block size.
 			 */
 			sqfs_u32 dict_size;
-
-			/**
-			 * @brief Compression level. Maximum 9.
-			 *
-			 * For LZMA, the default is 5, for XZ the default is 6.
-			 */
-			sqfs_u8 level;
 
 			/**
 			 * @brief Number of literal context bits.
@@ -244,7 +212,7 @@ struct sqfs_compressor_config_t {
 			 */
 			sqfs_u8 pb;
 
-			sqfs_u32 padd0[2];
+			sqfs_u8 padd0[9];
 		} xz, lzma;
 
 		sqfs_u64 padd0[2];

@@ -242,8 +242,8 @@ static void xz_get_configuration(const sqfs_compressor_t *base,
 	cfg->id = SQFS_COMP_XZ;
 	cfg->flags = xz->flags;
 	cfg->block_size = xz->block_size;
+	cfg->level = xz->level;
 	cfg->opt.xz.dict_size = xz->dict_size;
-	cfg->opt.xz.level = xz->level;
 	cfg->opt.xz.lc = xz->lc;
 	cfg->opt.xz.lp = xz->lp;
 	cfg->opt.xz.pb = xz->pb;
@@ -288,7 +288,7 @@ int xz_compressor_create(const sqfs_compressor_config_t *cfg,
 	if (cfg->opt.xz.pb > SQFS_XZ_MAX_PB)
 		return SQFS_ERROR_UNSUPPORTED;
 
-	if (cfg->opt.xz.level > SQFS_XZ_MAX_LEVEL)
+	if (cfg->level > SQFS_XZ_MAX_LEVEL)
 		return SQFS_ERROR_UNSUPPORTED;
 
 	if (cfg->opt.xz.dict_size < SQFS_XZ_MIN_DICT_SIZE)
@@ -308,7 +308,7 @@ int xz_compressor_create(const sqfs_compressor_config_t *cfg,
 	xz->lc = cfg->opt.xz.lc;
 	xz->lp = cfg->opt.xz.lp;
 	xz->pb = cfg->opt.xz.pb;
-	xz->level = cfg->opt.xz.level;
+	xz->level = cfg->level;
 	base->get_configuration = xz_get_configuration;
 	base->do_block = (cfg->flags & SQFS_COMP_FLAG_UNCOMPRESS) ?
 		xz_uncomp_block : xz_comp_block;

@@ -185,29 +185,10 @@ int compressor_cfg_init_options(sqfs_compressor_config_t *cfg,
 				goto fail_level;
 
 			level = atoi(value);
-
 			if (level < min_level || level > max_level)
 				goto fail_level;
 
-			switch (cfg->id) {
-			case SQFS_COMP_GZIP:
-				cfg->opt.gzip.level = level;
-				break;
-			case SQFS_COMP_LZO:
-				cfg->opt.lzo.level = level;
-				break;
-			case SQFS_COMP_ZSTD:
-				cfg->opt.zstd.level = level;
-				break;
-			case SQFS_COMP_XZ:
-				cfg->opt.xz.level = level;
-				break;
-			case SQFS_COMP_LZMA:
-				cfg->opt.lzma.level = level;
-				break;
-			default:
-				goto fail_opt;
-			}
+			cfg->level = level;
 			break;
 		case OPT_ALG:
 			if (cfg->id != SQFS_COMP_LZO)

@@ -53,7 +53,7 @@ static void gzip_get_configuration(const sqfs_compressor_t *base,
 	cfg->id = SQFS_COMP_GZIP;
 	cfg->flags = gzip->opt.strategies;
 	cfg->block_size = gzip->block_size;
-	cfg->opt.gzip.level = gzip->opt.level;
+	cfg->level = gzip->opt.level;
 	cfg->opt.gzip.window_size = gzip->opt.window;
 
 	if (!gzip->compress)
@@ -259,8 +259,8 @@ int gzip_compressor_create(const sqfs_compressor_config_t *cfg,
 		return SQFS_ERROR_UNSUPPORTED;
 	}
 
-	if (cfg->opt.gzip.level < SQFS_GZIP_MIN_LEVEL ||
-	    cfg->opt.gzip.level > SQFS_GZIP_MAX_LEVEL) {
+	if (cfg->level < SQFS_GZIP_MIN_LEVEL ||
+	    cfg->level > SQFS_GZIP_MAX_LEVEL) {
 		return SQFS_ERROR_UNSUPPORTED;
 	}
 
@@ -275,7 +275,7 @@ int gzip_compressor_create(const sqfs_compressor_config_t *cfg,
 	if (gzip == NULL)
 		return SQFS_ERROR_ALLOC;
 
-	gzip->opt.level = cfg->opt.gzip.level;
+	gzip->opt.level = cfg->level;
 	gzip->opt.window = cfg->opt.gzip.window_size;
 	gzip->opt.strategies = cfg->flags & SQFS_COMP_FLAG_GZIP_ALL;
 	gzip->compress = (cfg->flags & SQFS_COMP_FLAG_UNCOMPRESS) == 0;
@@ -288,7 +288,7 @@ int gzip_compressor_create(const sqfs_compressor_config_t *cfg,
 	((sqfs_object_t *)base)->destroy = gzip_destroy;
 
 	if (gzip->compress) {
-		ret = deflateInit2(&gzip->strm, cfg->opt.gzip.level,
+		ret = deflateInit2(&gzip->strm, cfg->level,
 				   Z_DEFLATED, cfg->opt.gzip.window_size, 8,
 				   Z_DEFAULT_STRATEGY);
 	} else {

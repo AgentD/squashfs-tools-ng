@@ -185,8 +185,8 @@ static void lzma_get_configuration(const sqfs_compressor_t *base,
 	cfg->id = SQFS_COMP_LZMA;
 	cfg->block_size = lzma->block_size;
 	cfg->flags = lzma->flags;
+	cfg->level = lzma->level;
 	cfg->opt.lzma.dict_size = lzma->dict_size;
-	cfg->opt.lzma.level = lzma->level;
 	cfg->opt.lzma.lc = lzma->lc;
 	cfg->opt.lzma.lp = lzma->lp;
 	cfg->opt.lzma.pb = lzma->pb;
@@ -220,7 +220,7 @@ int lzma_compressor_create(const sqfs_compressor_config_t *cfg,
 		return SQFS_ERROR_UNSUPPORTED;
 
 	/* XXX: values are unsigned and minimum is 0 */
-	if (cfg->opt.lzma.level > SQFS_LZMA_MAX_LEVEL)
+	if (cfg->level > SQFS_LZMA_MAX_LEVEL)
 		return SQFS_ERROR_UNSUPPORTED;
 
 	if (cfg->opt.lzma.lc > SQFS_LZMA_MAX_LC)
@@ -262,8 +262,8 @@ int lzma_compressor_create(const sqfs_compressor_config_t *cfg,
 
 	lzma->block_size = cfg->block_size;
 	lzma->flags = cfg->flags;
+	lzma->level = cfg->level;
 	lzma->dict_size = cfg->opt.lzma.dict_size;
-	lzma->level = cfg->opt.lzma.level;
 	lzma->lc = cfg->opt.lzma.lc;
 	lzma->lp = cfg->opt.lzma.lp;
 	lzma->pb = cfg->opt.lzma.pb;

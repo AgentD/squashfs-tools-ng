@@ -148,6 +148,9 @@ int lz4_compressor_create(const sqfs_compressor_config_t *cfg,
 		return SQFS_ERROR_UNSUPPORTED;
 	}
 
+	if (cfg->level != 0)
+		return SQFS_ERROR_UNSUPPORTED;
+
 	lz4 = calloc(1, sizeof(*lz4));
 	base = (sqfs_compressor_t *)lz4;
 	if (lz4 == NULL)

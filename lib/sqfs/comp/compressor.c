@@ -106,10 +106,6 @@ int sqfs_compressor_create(const sqfs_compressor_config_t *cfg,
 		ret = memcmp(cfg->opt.lzo.padd0, padd0,
 			     sizeof(cfg->opt.lzo.padd0));
 		break;
-	case SQFS_COMP_ZSTD:
-		ret = memcmp(cfg->opt.zstd.padd0, padd0,
-			     sizeof(cfg->opt.zstd.padd0));
-		break;
 	case SQFS_COMP_GZIP:
 		ret = memcmp(cfg->opt.gzip.padd0, padd0,
 			     sizeof(cfg->opt.gzip.padd0));
@@ -156,20 +152,20 @@ int sqfs_compressor_config_init(sqfs_compressor_config_t *cfg,
 	switch (id) {
 	case SQFS_COMP_GZIP:
 		flag_mask |= SQFS_COMP_FLAG_GZIP_ALL;
-		cfg->opt.gzip.level = SQFS_GZIP_DEFAULT_LEVEL;
+		cfg->level = SQFS_GZIP_DEFAULT_LEVEL;
 		cfg->opt.gzip.window_size = SQFS_GZIP_DEFAULT_WINDOW;
 		break;
 	case SQFS_COMP_LZO:
 		cfg->opt.lzo.algorithm = SQFS_LZO_DEFAULT_ALG;
-		cfg->opt.lzo.level = SQFS_LZO_DEFAULT_LEVEL;
+		cfg->level = SQFS_LZO_DEFAULT_LEVEL;
 		break;
 	case SQFS_COMP_ZSTD:
-		cfg->opt.zstd.level = SQFS_ZSTD_DEFAULT_LEVEL;
+		cfg->level = SQFS_ZSTD_DEFAULT_LEVEL;
 		break;
 	case SQFS_COMP_XZ:
 		flag_mask |= SQFS_COMP_FLAG_XZ_ALL;
+		cfg->level = SQFS_XZ_DEFAULT_LEVEL;
 		cfg->opt.xz.dict_size = block_size;
-		cfg->opt.xz.level = SQFS_XZ_DEFAULT_LEVEL;
 		cfg->opt.xz.lc = SQFS_XZ_DEFAULT_LC;
 		cfg->opt.xz.lp = SQFS_XZ_DEFAULT_LP;
 		cfg->opt.xz.pb = SQFS_XZ_DEFAULT_PB;
@@ -179,8 +175,8 @@ int sqfs_compressor_config_init(sqfs_compressor_config_t *cfg,
 		break;
 	case SQFS_COMP_LZMA:
 		flag_mask |= SQFS_COMP_FLAG_LZMA_ALL;
+		cfg->level = SQFS_LZMA_DEFAULT_LEVEL;
 		cfg->opt.lzma.dict_size = block_size;
-		cfg->opt.lzma.level = SQFS_LZMA_DEFAULT_LEVEL;
 		cfg->opt.lzma.lc = SQFS_LZMA_DEFAULT_LC;
 		cfg->opt.lzma.lp = SQFS_LZMA_DEFAULT_LP;
 		cfg->opt.lzma.pb = SQFS_LZMA_DEFAULT_PB;

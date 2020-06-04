@@ -193,7 +193,7 @@ static void lzo_get_configuration(const sqfs_compressor_t *base,
 	cfg->block_size = lzo->block_size;
 
 	cfg->opt.lzo.algorithm = lzo->algorithm;
-	cfg->opt.lzo.level = lzo->level;
+	cfg->level = lzo->level;
 
 	if (base->do_block == lzo_uncomp_block)
 		cfg->flags |= SQFS_COMP_FLAG_UNCOMPRESS;
@@ -233,9 +233,9 @@ int lzo_compressor_create(const sqfs_compressor_config_t *cfg,
 	}
 
 	if (cfg->opt.lzo.algorithm == SQFS_LZO1X_999) {
-		if (cfg->opt.lzo.level > SQFS_LZO_MAX_LEVEL)
+		if (cfg->level > SQFS_LZO_MAX_LEVEL)
 			return SQFS_ERROR_UNSUPPORTED;
-	} else if (cfg->opt.lzo.level != 0) {
+	} else if (cfg->level != 0) {
 		return SQFS_ERROR_UNSUPPORTED;
 	}
 
@@ -262,7 +262,7 @@ int lzo_compressor_create(const sqfs_compressor_config_t *cfg,
 
 	lzo->block_size = cfg->block_size;
 	lzo->algorithm = cfg->opt.lzo.algorithm;
-	lzo->level = cfg->opt.lzo.level;
+	lzo->level = cfg->level;
 	lzo->buf_size = scratch_size;
 	lzo->work_size = lzo_algs[cfg->opt.lzo.algorithm].bufsize;
 

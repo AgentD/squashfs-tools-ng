@@ -101,7 +101,7 @@ static void zstd_get_configuration(const sqfs_compressor_t *base,
 	cfg->id = SQFS_COMP_ZSTD;
 
 	cfg->block_size = zstd->block_size;
-	cfg->opt.zstd.level = zstd->level;
+	cfg->level = zstd->level;
 
 	if (base->do_block == zstd_uncomp_block)
 		cfg->flags |= SQFS_COMP_FLAG_UNCOMPRESS;
@@ -143,10 +143,8 @@ int zstd_compressor_create(const sqfs_compressor_config_t *cfg,
 	if (cfg->flags & ~SQFS_COMP_FLAG_GENERIC_ALL)
 		return SQFS_ERROR_UNSUPPORTED;
 
-	if (cfg->opt.zstd.level < 1 ||
-	    cfg->opt.zstd.level > ZSTD_maxCLevel()) {
+	if (cfg->level < 1 || cfg->level > (unsigned int)ZSTD_maxCLevel())
 		return SQFS_ERROR_UNSUPPORTED;
-	}
 
 	zstd = calloc(1, sizeof(*zstd));
 	base = (sqfs_compressor_t *)zstd;
@@ -154,7 +152,7 @@ int zstd_compressor_create(const sqfs_compressor_config_t *cfg,
 		return SQFS_ERROR_ALLOC;
 
 	zstd->block_size = cfg->block_size;
-	zstd->level = cfg->opt.zstd.level;
+	zstd->level = cfg->level;
 	zstd->zctx = ZSTD_createCCtx();
 	if (zstd->zctx == NULL) {
 		free(zstd);
