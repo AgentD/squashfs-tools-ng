@@ -291,6 +291,12 @@ int xz_compressor_create(const sqfs_compressor_config_t *cfg,
 	if (cfg->opt.xz.level > SQFS_XZ_MAX_LEVEL)
 		return SQFS_ERROR_UNSUPPORTED;
 
+	if (cfg->opt.xz.dict_size < SQFS_XZ_MIN_DICT_SIZE)
+		return SQFS_ERROR_UNSUPPORTED;
+
+	if (cfg->opt.xz.dict_size > SQFS_XZ_MAX_DICT_SIZE)
+		return SQFS_ERROR_UNSUPPORTED;
+
 	xz = calloc(1, sizeof(*xz));
 	base = (sqfs_compressor_t *)xz;
 	if (xz == NULL)

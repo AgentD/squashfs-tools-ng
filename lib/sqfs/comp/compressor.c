@@ -173,6 +173,9 @@ int sqfs_compressor_config_init(sqfs_compressor_config_t *cfg,
 		cfg->opt.xz.lc = SQFS_XZ_DEFAULT_LC;
 		cfg->opt.xz.lp = SQFS_XZ_DEFAULT_LP;
 		cfg->opt.xz.pb = SQFS_XZ_DEFAULT_PB;
+
+		if (block_size < SQFS_XZ_MIN_DICT_SIZE)
+			cfg->opt.xz.dict_size = SQFS_XZ_MIN_DICT_SIZE;
 		break;
 	case SQFS_COMP_LZMA:
 		flag_mask |= SQFS_COMP_FLAG_LZMA_ALL;
@@ -181,6 +184,9 @@ int sqfs_compressor_config_init(sqfs_compressor_config_t *cfg,
 		cfg->opt.lzma.lc = SQFS_LZMA_DEFAULT_LC;
 		cfg->opt.lzma.lp = SQFS_LZMA_DEFAULT_LP;
 		cfg->opt.lzma.pb = SQFS_LZMA_DEFAULT_PB;
+
+		if (block_size < SQFS_LZMA_MIN_DICT_SIZE)
+			cfg->opt.lzma.dict_size = SQFS_LZMA_MIN_DICT_SIZE;
 		break;
 	case SQFS_COMP_LZ4:
 		flag_mask |= SQFS_COMP_FLAG_LZ4_ALL;
