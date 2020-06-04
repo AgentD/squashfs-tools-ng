@@ -14,7 +14,6 @@ int main(void)
 	sqfs_compressor_config_t cfg;
 
 	TEST_EQUAL_UI(sizeof(cfg.opt.gzip), sizeof(cfg.opt));
-	TEST_EQUAL_UI(sizeof(cfg.opt.zstd), sizeof(cfg.opt));
 	TEST_EQUAL_UI(sizeof(cfg.opt.lzo), sizeof(cfg.opt));
 	TEST_EQUAL_UI(sizeof(cfg.opt.xz), sizeof(cfg.opt));
 	TEST_EQUAL_UI(sizeof(cfg.opt.padd0), sizeof(cfg.opt));
