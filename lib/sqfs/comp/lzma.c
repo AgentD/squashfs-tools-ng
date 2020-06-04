@@ -18,13 +18,18 @@
 #define LZMA_SIZE_BYTES (8)
 #define LZMA_HEADER_SIZE (13)
 
-#define LZMA_DEFAULT_LEVEL (5)
-#define MEMLIMIT (32 * 1024 * 1024)
+#define MEMLIMIT (64 * 1024 * 1024)
 
 typedef struct {
 	sqfs_compressor_t base;
 	size_t block_size;
+	size_t dict_size;
+
 	sqfs_u32 flags;
+	sqfs_u8 level;
+	sqfs_u8 lc;
+	sqfs_u8 lp;
+	sqfs_u8 pb;
 } lzma_compressor_t;
 
 static int lzma_write_options(sqfs_compressor_t *base, sqfs_file_t *file)
@@ -50,6 +55,9 @@ static sqfs_s32 try_compress(lzma_compressor_t *lzma, sqfs_u32 preset,
 
 	lzma_lzma_preset(&opt, preset);
 	opt.dict_size = lzma->block_size;
+	opt.lc = lzma->lc;
+	opt.lp = lzma->lp;
+	opt.pb = lzma->pb;
 
 	if (lzma_alone_encoder(&strm, &opt) != LZMA_OK) {
 		lzma_end(&strm);
@@ -91,7 +99,7 @@ static sqfs_s32 lzma_comp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
 	if (outsize < LZMA_HEADER_SIZE || size >= 0x7FFFFFFF)
 		return SQFS_ERROR_ARG_INVALID;
 
-	preset = LZMA_DEFAULT_LEVEL;
+	preset = lzma->level;
 	ret = try_compress(lzma, preset, in, size, out, outsize);
 	if (ret < 0 || !(lzma->flags & SQFS_COMP_FLAG_LZMA_EXTREME))
 		return ret;
@@ -177,6 +185,11 @@ static void lzma_get_configuration(const sqfs_compressor_t *base,
 	cfg->id = SQFS_COMP_LZMA;
 	cfg->block_size = lzma->block_size;
 	cfg->flags = lzma->flags;
+	cfg->opt.lzma.dict_size = lzma->dict_size;
+	cfg->opt.lzma.level = lzma->level;
+	cfg->opt.lzma.lc = lzma->lc;
+	cfg->opt.lzma.lp = lzma->lp;
+	cfg->opt.lzma.pb = lzma->pb;
 }
 
 static sqfs_object_t *lzma_create_copy(const sqfs_object_t *cmp)
@@ -206,6 +219,36 @@ int lzma_compressor_create(const sqfs_compressor_config_t *cfg,
 	if (cfg->flags & ~mask)
 		return SQFS_ERROR_UNSUPPORTED;
 
+	/* XXX: values are unsigned and minimum is 0 */
+	if (cfg->opt.lzma.level > SQFS_LZMA_MAX_LEVEL)
+		return SQFS_ERROR_UNSUPPORTED;
+
+	if (cfg->opt.lzma.lc > SQFS_LZMA_MAX_LC)
+		return SQFS_ERROR_UNSUPPORTED;
+
+	if (cfg->opt.lzma.lp > SQFS_LZMA_MAX_LP)
+		return SQFS_ERROR_UNSUPPORTED;
+
+	if (cfg->opt.lzma.pb > SQFS_LZMA_MAX_PB)
+		return SQFS_ERROR_UNSUPPORTED;
+
+	if (cfg->opt.lzma.lc + cfg->opt.lzma.lp > 4)
+		return SQFS_ERROR_UNSUPPORTED;
+
+	if (cfg->opt.lzma.dict_size == 0)
+		return SQFS_ERROR_UNSUPPORTED;
+
+	mask = cfg->opt.lzma.dict_size;
+	mask &= mask - 1;
+
+	if (mask != 0) {
+		if ((mask & (mask - 1)) != 0)
+			return SQFS_ERROR_UNSUPPORTED;
+
+		if (cfg->opt.lzma.dict_size != (mask | mask >> 1))
+			return SQFS_ERROR_UNSUPPORTED;
+	}
+
 	lzma = calloc(1, sizeof(*lzma));
 	base = (sqfs_compressor_t *)lzma;
 	if (lzma == NULL)
@@ -213,9 +256,14 @@ int lzma_compressor_create(const sqfs_compressor_config_t *cfg,
 
 	lzma->block_size = cfg->block_size;
 	lzma->flags = cfg->flags;
+	lzma->dict_size = cfg->opt.lzma.dict_size;
+	lzma->level = cfg->opt.lzma.level;
+	lzma->lc = cfg->opt.lzma.lc;
+	lzma->lp = cfg->opt.lzma.lp;
+	lzma->pb = cfg->opt.lzma.pb;
 
-	if (lzma->block_size < SQFS_META_BLOCK_SIZE)
-		lzma->block_size = SQFS_META_BLOCK_SIZE;
+	if (lzma->dict_size < SQFS_META_BLOCK_SIZE)
+		lzma->dict_size = SQFS_META_BLOCK_SIZE;
 
 	base->get_configuration = lzma_get_configuration;
 	base->do_block = (cfg->flags & SQFS_COMP_FLAG_UNCOMPRESS) ?

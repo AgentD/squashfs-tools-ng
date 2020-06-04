@@ -185,13 +185,13 @@ struct sqfs_compressor_config_t {
 		} lzo;
 
 		/**
-		 * @brief Options for the xz compressor.
+		 * @brief Options for the LZMA and XZ (LZMA v2) compressors.
 		 */
 		struct {
 			/**
 			 * @brief LZMA dictionary size.
 			 *
-			 * This value must either be a power of two or the sumo
+			 * This value must either be a power of two or the sum
 			 * of two consecutive powers of two.
 			 *
 			 * Default is setting this to the same as the
@@ -200,7 +200,9 @@ struct sqfs_compressor_config_t {
 			sqfs_u32 dict_size;
 
 			/**
-			 * @brief Compression level. Maximum 9, default is 6.
+			 * @brief Compression level. Maximum 9.
+			 *
+			 * For LZMA, the default is 5, for XZ the default is 6.
 			 */
 			sqfs_u8 level;
 
@@ -243,7 +245,7 @@ struct sqfs_compressor_config_t {
 			sqfs_u8 pb;
 
 			sqfs_u32 padd0[2];
-		} xz;
+		} xz, lzma;
 
 		sqfs_u64 padd0[2];
 	} opt;
@@ -391,6 +393,22 @@ typedef enum {
 #define SQFS_XZ_MIN_PB 0
 #define SQFS_XZ_MAX_PB 4
 #define SQFS_XZ_DEFAULT_PB 2
+
+#define SQFS_LZMA_MIN_LEVEL (0)
+#define SQFS_LZMA_MAX_LEVEL (9)
+#define SQFS_LZMA_DEFAULT_LEVEL (5)
+
+#define SQFS_LZMA_MIN_LC 0
+#define SQFS_LZMA_MAX_LC 4
+#define SQFS_LZMA_DEFAULT_LC 3
+
+#define SQFS_LZMA_MIN_LP 0
+#define SQFS_LZMA_MAX_LP 4
+#define SQFS_LZMA_DEFAULT_LP 0
+
+#define SQFS_LZMA_MIN_PB 0
+#define SQFS_LZMA_MAX_PB 4
+#define SQFS_LZMA_DEFAULT_PB 2
 
 #ifdef __cplusplus
 extern "C" {

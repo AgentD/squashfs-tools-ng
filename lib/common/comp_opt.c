@@ -136,6 +136,8 @@ int compressor_cfg_init_options(sqfs_compressor_config_t *cfg,
 		num_flags = sizeof(xz_flags) / sizeof(xz_flags[0]);
 		break;
 	case SQFS_COMP_LZMA:
+		min_level = SQFS_LZMA_MIN_LEVEL;
+		max_level = SQFS_LZMA_MAX_LEVEL;
 		flags = lzma_flags;
 		num_flags = sizeof(lzma_flags) / sizeof(lzma_flags[0]);
 		break;
@@ -200,6 +202,9 @@ int compressor_cfg_init_options(sqfs_compressor_config_t *cfg,
 			case SQFS_COMP_XZ:
 				cfg->opt.xz.level = level;
 				break;
+			case SQFS_COMP_LZMA:
+				cfg->opt.lzma.level = level;
+				break;
 			default:
 				goto fail_opt;
 			}
@@ -215,13 +220,15 @@ int compressor_cfg_init_options(sqfs_compressor_config_t *cfg,
 				goto fail_lzo_alg;
 			break;
 		case OPT_DICT:
-			if (cfg->id != SQFS_COMP_XZ)
+			if (cfg->id != SQFS_COMP_XZ &&
+			    cfg->id != SQFS_COMP_LZMA) {
 				goto fail_opt;
+			}
 
 			if (value == NULL)
 				goto fail_value;
 
-			if (parse_size("Parsing XZ dictionary size",
+			if (parse_size("Parsing LZMA dictionary size",
 				       &dict_size, value, cfg->block_size)) {
 				return -1;
 			}
@@ -229,8 +236,10 @@ int compressor_cfg_init_options(sqfs_compressor_config_t *cfg,
 			cfg->opt.xz.dict_size = dict_size;
 			break;
 		case OPT_LC:
-			if (cfg->id != SQFS_COMP_XZ)
+			if (cfg->id != SQFS_COMP_XZ &&
+			    cfg->id != SQFS_COMP_LZMA) {
 				goto fail_opt;
+			}
 
 			if (value == NULL)
 				goto fail_value;
@@ -240,8 +249,10 @@ int compressor_cfg_init_options(sqfs_compressor_config_t *cfg,
 				goto fail_lc;
 			break;
 		case OPT_LP:
-			if (cfg->id != SQFS_COMP_XZ)
+			if (cfg->id != SQFS_COMP_XZ &&
+			    cfg->id != SQFS_COMP_LZMA) {
 				goto fail_opt;
+			}
 
 			if (value == NULL)
 				goto fail_value;
@@ -251,8 +262,10 @@ int compressor_cfg_init_options(sqfs_compressor_config_t *cfg,
 				goto fail_lp;
 			break;
 		case OPT_PB:
-			if (cfg->id != SQFS_COMP_XZ)
+			if (cfg->id != SQFS_COMP_XZ &&
+			    cfg->id != SQFS_COMP_LZMA) {
 				goto fail_opt;
+			}
 
 			if (value == NULL)
 				goto fail_value;
@@ -268,8 +281,10 @@ int compressor_cfg_init_options(sqfs_compressor_config_t *cfg,
 		}
 	}
 
-	if (cfg->id == SQFS_COMP_XZ && (cfg->opt.xz.lp + cfg->opt.xz.lc) > 4)
-		goto fail_sum_lp_lc;
+	if (cfg->id == SQFS_COMP_XZ || cfg->id == SQFS_COMP_LZMA) {
+		if ((cfg->opt.xz.lp + cfg->opt.xz.lc) > 4)
+			goto fail_sum_lp_lc;
+	}
 
 	return 0;
 fail_sum_lp_lc:
@@ -362,12 +377,12 @@ static void lzo_print_help(void)
 		printf("\t%s\n", lzo_algs[i]);
 }
 
-static void xz_print_help(void)
+static void xz_lzma_print_help(void)
 {
 	size_t i;
 
 	printf(
-"Available options for xz compressor:\n"
+"Available options for LZMA and XZ (LZMA v2) compressors:\n"
 "\n"
 "    dictsize=<value>  Dictionary size. Either a value in bytes or a\n"
 "                      percentage of the block size. Defaults to 100%%.\n"
@@ -375,7 +390,7 @@ static void xz_print_help(void)
 "                      can also be used for kibi and mebi bytes\n"
 "                      respecitively.\n"
 "    level=<value>     Compression level. Value from %d to %d.\n"
-"                      Defaults to %d.\n"
+"                      For XZ, defaults to %d, for LZMA defaults to %d.\n"
 "    lc=<value>        Number of literal context bits.\n"
 "                      How many of the highest bits of the previous\n"
 "                      uncompressed byte to take into account when\n"
@@ -390,16 +405,21 @@ static void xz_print_help(void)
 "                      of the input data, i.e. pb=0 means single byte\n"
 "                      allignment, pb=1 means 16 bit, 2 means 32 bit.\n"
 "                      Default is %d.\n"
+"    extreme           If this flag is set, try to crunch the data extra hard\n"
+"                      without increasing the decompressors memory\n"
+"                      requirements."
 "\n"
 "If values are set, the sum of lc + lp must not exceed 4.\n"
 "The maximum for pb is %d.\n"
 "\n"
-"In additon to the options, one or more bcj filters can be specified.\n"
+"In additon to the options, for the XZ compressor, one or more bcj filters\n"
+"can be specified.\n"
 "If multiple filters are provided, the one yielding the best compression\n"
 "ratio will be used.\n"
 "\n"
 "The following filters are available:\n",
-	SQFS_XZ_MIN_LEVEL, SQFS_XZ_MAX_LEVEL, SQFS_XZ_DEFAULT_LEVEL,
+	SQFS_XZ_MIN_LEVEL, SQFS_XZ_MAX_LEVEL,
+	SQFS_XZ_DEFAULT_LEVEL, SQFS_LZMA_DEFAULT_LEVEL,
 	SQFS_XZ_DEFAULT_LC, SQFS_XZ_DEFAULT_LP, SQFS_XZ_DEFAULT_PB,
 	SQFS_XZ_MAX_PB);
 
@@ -419,7 +439,8 @@ static void zstd_print_help(void)
 
 static const compressor_help_fun_t helpfuns[SQFS_COMP_MAX + 1] = {
 	[SQFS_COMP_GZIP] = gzip_print_help,
-	[SQFS_COMP_XZ] = xz_print_help,
+	[SQFS_COMP_XZ] = xz_lzma_print_help,
+	[SQFS_COMP_LZMA] = xz_lzma_print_help,
 	[SQFS_COMP_LZO] = lzo_print_help,
 	[SQFS_COMP_LZ4] = lz4_print_help,
 	[SQFS_COMP_ZSTD] = zstd_print_help,

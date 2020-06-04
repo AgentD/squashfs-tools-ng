@@ -98,6 +98,10 @@ int sqfs_compressor_create(const sqfs_compressor_config_t *cfg,
 		ret = memcmp(cfg->opt.xz.padd0, padd0,
 			     sizeof(cfg->opt.xz.padd0));
 		break;
+	case SQFS_COMP_LZMA:
+		ret = memcmp(cfg->opt.lzma.padd0, padd0,
+			     sizeof(cfg->opt.lzma.padd0));
+		break;
 	case SQFS_COMP_LZO:
 		ret = memcmp(cfg->opt.lzo.padd0, padd0,
 			     sizeof(cfg->opt.lzo.padd0));
@@ -172,6 +176,11 @@ int sqfs_compressor_config_init(sqfs_compressor_config_t *cfg,
 		break;
 	case SQFS_COMP_LZMA:
 		flag_mask |= SQFS_COMP_FLAG_LZMA_ALL;
+		cfg->opt.lzma.dict_size = block_size;
+		cfg->opt.lzma.level = SQFS_LZMA_DEFAULT_LEVEL;
+		cfg->opt.lzma.lc = SQFS_LZMA_DEFAULT_LC;
+		cfg->opt.lzma.lp = SQFS_LZMA_DEFAULT_LP;
+		cfg->opt.lzma.pb = SQFS_LZMA_DEFAULT_PB;
 		break;
 	case SQFS_COMP_LZ4:
 		flag_mask |= SQFS_COMP_FLAG_LZ4_ALL;
