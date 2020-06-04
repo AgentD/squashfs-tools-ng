@@ -262,6 +262,17 @@ typedef enum {
 	SQFS_COMP_FLAG_LZ4_ALL = 0x0001,
 
 	/**
+	 * @brief Tell the LZMAv1 compressor to try the "extreme" option.
+	 *
+	 * The "extreme" option means that the compressor should try some
+	 * strategies that it normally wouldn't, that may drastically increase
+	 * compression time, but will not increase the decompressors memory
+	 * consumption.
+	 */
+	SQFS_COMP_FLAG_LZMA_EXTREME = 0x0001,
+	SQFS_COMP_FLAG_LZMA_ALL = 0x0001,
+
+	/**
 	 * @brief For XZ, set this to select the x86 BCJ filter.
 	 */
 	SQFS_COMP_FLAG_XZ_X86 = 0x0001,

@@ -34,6 +34,10 @@ static const flag_t xz_flags[] = {
 	{ "extreme", SQFS_COMP_FLAG_XZ_EXTREME },
 };
 
+static const flag_t lzma_flags[] = {
+	{ "extreme", SQFS_COMP_FLAG_LZMA_EXTREME },
+};
+
 static const flag_t lz4_flags[] = {
 	{ "hc", SQFS_COMP_FLAG_LZ4_HC },
 };
@@ -130,6 +134,10 @@ int compressor_cfg_init_options(sqfs_compressor_config_t *cfg,
 		max_level = SQFS_XZ_MAX_LEVEL;
 		flags = xz_flags;
 		num_flags = sizeof(xz_flags) / sizeof(xz_flags[0]);
+		break;
+	case SQFS_COMP_LZMA:
+		flags = lzma_flags;
+		num_flags = sizeof(lzma_flags) / sizeof(lzma_flags[0]);
 		break;
 	case SQFS_COMP_LZ4:
 		flags = lz4_flags;

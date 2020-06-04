@@ -24,6 +24,7 @@
 typedef struct {
 	sqfs_compressor_t base;
 	size_t block_size;
+	sqfs_u32 flags;
 } lzma_compressor_t;
 
 static int lzma_write_options(sqfs_compressor_t *base, sqfs_file_t *file)
@@ -39,18 +40,15 @@ static int lzma_read_options(sqfs_compressor_t *base, sqfs_file_t *file)
 	return SQFS_ERROR_UNSUPPORTED;
 }
 
-static sqfs_s32 lzma_comp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
-				sqfs_u32 size, sqfs_u8 *out, sqfs_u32 outsize)
+static sqfs_s32 try_compress(lzma_compressor_t *lzma, sqfs_u32 preset,
+			     const sqfs_u8 *in, size_t size,
+			     sqfs_u8 *out, size_t outsize)
 {
-	lzma_compressor_t *lzma = (lzma_compressor_t *)base;
 	lzma_stream strm = LZMA_STREAM_INIT;
 	lzma_options_lzma opt;
 	int ret;
 
-	if (outsize < LZMA_HEADER_SIZE || size >= 0x7FFFFFFF)
-		return SQFS_ERROR_ARG_INVALID;
-
-	lzma_lzma_preset(&opt, LZMA_DEFAULT_LEVEL);
+	lzma_lzma_preset(&opt, preset);
 	opt.dict_size = lzma->block_size;
 
 	if (lzma_alone_encoder(&strm, &opt) != LZMA_OK) {
@@ -81,6 +79,33 @@ static sqfs_s32 lzma_comp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
 	out[LZMA_SIZE_OFFSET + 6] = 0;
 	out[LZMA_SIZE_OFFSET + 7] = 0;
 	return strm.total_out;
+}
+
+static sqfs_s32 lzma_comp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
+				sqfs_u32 size, sqfs_u8 *out, sqfs_u32 outsize)
+{
+	lzma_compressor_t *lzma = (lzma_compressor_t *)base;
+	sqfs_s32 ret, smallest;
+	sqfs_u32 preset;
+
+	if (outsize < LZMA_HEADER_SIZE || size >= 0x7FFFFFFF)
+		return SQFS_ERROR_ARG_INVALID;
+
+	preset = LZMA_DEFAULT_LEVEL;
+	ret = try_compress(lzma, preset, in, size, out, outsize);
+	if (ret < 0 || !(lzma->flags & SQFS_COMP_FLAG_LZMA_EXTREME))
+		return ret;
+
+	preset |= LZMA_PRESET_EXTREME;
+	smallest = ret;
+
+	ret = try_compress(lzma, preset, in, size, out, outsize);
+	if (ret < 0 || (ret > 0 && (smallest == 0 || ret < smallest)))
+		return ret;
+
+	preset &= ~LZMA_PRESET_EXTREME;
+	return smallest == 0 ? 0 :
+		try_compress(lzma, preset, in, size, out, outsize);
 }
 
 static sqfs_s32 lzma_uncomp_block(sqfs_compressor_t *base, const sqfs_u8 *in,
@@ -151,9 +176,7 @@ static void lzma_get_configuration(const sqfs_compressor_t *base,
 	memset(cfg, 0, sizeof(*cfg));
 	cfg->id = SQFS_COMP_LZMA;
 	cfg->block_size = lzma->block_size;
-
-	if (base->do_block == lzma_uncomp_block)
-		cfg->flags |= SQFS_COMP_FLAG_UNCOMPRESS;
+	cfg->flags = lzma->flags;
 }
 
 static sqfs_object_t *lzma_create_copy(const sqfs_object_t *cmp)
@@ -176,8 +199,11 @@ int lzma_compressor_create(const sqfs_compressor_config_t *cfg,
 {
 	sqfs_compressor_t *base;
 	lzma_compressor_t *lzma;
+	sqfs_u32 mask;
 
-	if (cfg->flags & ~SQFS_COMP_FLAG_GENERIC_ALL)
+	mask = SQFS_COMP_FLAG_GENERIC_ALL | SQFS_COMP_FLAG_LZMA_ALL;
+
+	if (cfg->flags & ~mask)
 		return SQFS_ERROR_UNSUPPORTED;
 
 	lzma = calloc(1, sizeof(*lzma));
@@ -186,6 +212,7 @@ int lzma_compressor_create(const sqfs_compressor_config_t *cfg,
 		return SQFS_ERROR_ALLOC;
 
 	lzma->block_size = cfg->block_size;
+	lzma->flags = cfg->flags;
 
 	if (lzma->block_size < SQFS_META_BLOCK_SIZE)
 		lzma->block_size = SQFS_META_BLOCK_SIZE;

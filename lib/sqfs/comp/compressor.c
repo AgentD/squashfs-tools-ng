@@ -171,6 +171,7 @@ int sqfs_compressor_config_init(sqfs_compressor_config_t *cfg,
 		cfg->opt.xz.pb = SQFS_XZ_DEFAULT_PB;
 		break;
 	case SQFS_COMP_LZMA:
+		flag_mask |= SQFS_COMP_FLAG_LZMA_ALL;
 		break;
 	case SQFS_COMP_LZ4:
 		flag_mask |= SQFS_COMP_FLAG_LZ4_ALL;
