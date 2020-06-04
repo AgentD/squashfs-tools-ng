@@ -42,6 +42,16 @@ static const flag_t lz4_flags[] = {
 	{ "hc", SQFS_COMP_FLAG_LZ4_HC },
 };
 
+static const struct {
+	const flag_t *flags;
+	size_t count;
+} comp_flags[SQFS_COMP_MAX + 1] = {
+	[SQFS_COMP_GZIP] = { gzip_flags, sizeof(gzip_flags) / sizeof(flag_t) },
+	[SQFS_COMP_XZ] = { xz_flags, sizeof(xz_flags) / sizeof(flag_t) },
+	[SQFS_COMP_LZMA] = { lzma_flags, sizeof(lzma_flags) / sizeof(flag_t) },
+	[SQFS_COMP_LZ4] = { lz4_flags, sizeof(lz4_flags) / sizeof(flag_t) },
+};
+
 static const char *lzo_algs[] = {
 	[SQFS_LZO1X_1] = "lzo1x_1",
 	[SQFS_LZO1X_1_11] = "lzo1x_1_11",
@@ -50,10 +60,10 @@ static const char *lzo_algs[] = {
 	[SQFS_LZO1X_999] = "lzo1x_999",
 };
 
-static int set_flag(sqfs_compressor_config_t *cfg, const char *name,
-		    const flag_t *flags, size_t num_flags)
+static int set_flag(sqfs_compressor_config_t *cfg, const char *name)
 {
-	size_t i;
+	const flag_t *flags = comp_flags[cfg->id].flags;
+	size_t i, num_flags = comp_flags[cfg->id].count;
 
 	for (i = 0; i < num_flags; ++i) {
 		if (strcmp(flags[i].name, name) == 0) {
@@ -87,6 +97,7 @@ enum {
 	OPT_LC,
 	OPT_LP,
 	OPT_PB,
+	OPT_COUNT,
 };
 static char *const token[] = {
 	[OPT_WINDOW] = (char *)"window",
@@ -99,14 +110,54 @@ static char *const token[] = {
 	NULL
 };
 
+static int opt_available[SQFS_COMP_MAX + 1] = {
+	[SQFS_COMP_GZIP] = (1 << OPT_WINDOW) | (1 << OPT_LEVEL),
+	[SQFS_COMP_XZ] = (1 << OPT_LEVEL) | (1 << OPT_DICT) | (1 << OPT_LC) |
+	                 (1 << OPT_LP) | (1 << OPT_PB),
+	[SQFS_COMP_LZMA] = (1 << OPT_LEVEL) | (1 << OPT_DICT) | (1 << OPT_LC) |
+	                   (1 << OPT_LP) | (1 << OPT_PB),
+	[SQFS_COMP_ZSTD] = (1 << OPT_LEVEL),
+	[SQFS_COMP_LZO] = (1 << OPT_LEVEL) | (1 << OPT_ALG),
+};
+
+static const struct {
+	int min;
+	int max;
+} value_range[SQFS_COMP_MAX + 1][OPT_COUNT] = {
+	[SQFS_COMP_GZIP] = {
+		[OPT_LEVEL] = { SQFS_GZIP_MIN_LEVEL, SQFS_GZIP_MAX_LEVEL },
+		[OPT_WINDOW] = { SQFS_GZIP_MIN_WINDOW, SQFS_GZIP_MAX_WINDOW },
+	},
+	[SQFS_COMP_XZ] = {
+		[OPT_LEVEL] = { SQFS_XZ_MIN_LEVEL, SQFS_XZ_MAX_LEVEL },
+		[OPT_DICT] = { SQFS_XZ_MIN_DICT_SIZE, SQFS_XZ_MAX_DICT_SIZE },
+		[OPT_LC] = { SQFS_XZ_MIN_LC, SQFS_XZ_MAX_LC },
+		[OPT_LP] = { SQFS_XZ_MIN_LP, SQFS_XZ_MAX_LP },
+		[OPT_PB] = { SQFS_XZ_MIN_PB, SQFS_XZ_MAX_PB },
+	},
+	[SQFS_COMP_LZMA] = {
+		[OPT_LEVEL] = { SQFS_LZMA_MIN_LEVEL, SQFS_LZMA_MAX_LEVEL },
+		[OPT_DICT] = { SQFS_LZMA_MIN_DICT_SIZE,
+			       SQFS_LZMA_MAX_DICT_SIZE },
+		[OPT_LC] = { SQFS_LZMA_MIN_LC, SQFS_LZMA_MAX_LC },
+		[OPT_LP] = { SQFS_LZMA_MIN_LP, SQFS_LZMA_MAX_LP },
+		[OPT_PB] = { SQFS_LZMA_MIN_PB, SQFS_LZMA_MAX_PB },
+	},
+	[SQFS_COMP_ZSTD] = {
+		[OPT_LEVEL] = { SQFS_ZSTD_MIN_LEVEL, SQFS_ZSTD_MAX_LEVEL },
+	},
+	[SQFS_COMP_LZO] = {
+		[OPT_LEVEL] = { SQFS_LZO_MIN_LEVEL, SQFS_LZO_MAX_LEVEL },
+	},
+};
+
 int compressor_cfg_init_options(sqfs_compressor_config_t *cfg,
 				SQFS_COMPRESSOR id,
 				size_t block_size, char *options)
 {
-	size_t num_flags = 0, min_level = 0, max_level = 0, level, dict_size;
-	const flag_t *flags = NULL;
 	char *subopts, *value;
-	int i, opt;
+	int opt, ival;
+	size_t szval;
 
 	if (sqfs_compressor_config_init(cfg, id, block_size, 0))
 		return -1;
@@ -114,151 +165,51 @@ int compressor_cfg_init_options(sqfs_compressor_config_t *cfg,
 	if (options == NULL)
 		return 0;
 
-	switch (cfg->id) {
-	case SQFS_COMP_GZIP:
-		min_level = SQFS_GZIP_MIN_LEVEL;
-		max_level = SQFS_GZIP_MAX_LEVEL;
-		flags = gzip_flags;
-		num_flags = sizeof(gzip_flags) / sizeof(gzip_flags[0]);
-		break;
-	case SQFS_COMP_LZO:
-		min_level = SQFS_LZO_MIN_LEVEL;
-		max_level = SQFS_LZO_MAX_LEVEL;
-		break;
-	case SQFS_COMP_ZSTD:
-		min_level = SQFS_ZSTD_MIN_LEVEL;
-		max_level = SQFS_ZSTD_MAX_LEVEL;
-		break;
-	case SQFS_COMP_XZ:
-		min_level = SQFS_XZ_MIN_LEVEL;
-		max_level = SQFS_XZ_MAX_LEVEL;
-		flags = xz_flags;
-		num_flags = sizeof(xz_flags) / sizeof(xz_flags[0]);
-		break;
-	case SQFS_COMP_LZMA:
-		min_level = SQFS_LZMA_MIN_LEVEL;
-		max_level = SQFS_LZMA_MAX_LEVEL;
-		flags = lzma_flags;
-		num_flags = sizeof(lzma_flags) / sizeof(lzma_flags[0]);
-		break;
-	case SQFS_COMP_LZ4:
-		flags = lz4_flags;
-		num_flags = sizeof(lz4_flags) / sizeof(lz4_flags[0]);
-		break;
-	default:
-		break;
-	}
-
 	subopts = options;
 
 	while (*subopts != '\0') {
 		opt = getsubopt(&subopts, token, &value);
 
-		switch (opt) {
-		case OPT_WINDOW:
-			if (cfg->id != SQFS_COMP_GZIP)
+		if (opt < 0) {
+			if (set_flag(cfg, value))
 				goto fail_opt;
+			continue;
+		}
 
-			if (value == NULL)
-				goto fail_value;
+		if (!(opt_available[cfg->id] & (1 << opt)))
+			goto fail_opt;
 
-			for (i = 0; isdigit(value[i]); ++i)
-				;
+		if (value == NULL)
+			goto fail_value;
 
-			if (i < 1 || i > 3 || value[i] != '\0')
-				goto fail_window;
-
-			cfg->opt.gzip.window_size = atoi(value);
-
-			if (cfg->opt.gzip.window_size < SQFS_GZIP_MIN_WINDOW ||
-			    cfg->opt.gzip.window_size > SQFS_GZIP_MAX_WINDOW)
-				goto fail_window;
-			break;
-		case OPT_LEVEL:
-			if (value == NULL)
-				goto fail_value;
-
-			for (i = 0; isdigit(value[i]) && i < 3; ++i)
-				;
-
-			if (i < 1 || i > 3 || value[i] != '\0')
-				goto fail_level;
-
-			level = atoi(value);
-			if (level < min_level || level > max_level)
-				goto fail_level;
-
-			cfg->level = level;
-			break;
-		case OPT_ALG:
-			if (cfg->id != SQFS_COMP_LZO)
-				goto fail_opt;
-
-			if (value == NULL)
-				goto fail_value;
-
+		if (opt == OPT_ALG) {
 			if (find_lzo_alg(cfg, value))
 				goto fail_lzo_alg;
-			break;
-		case OPT_DICT:
-			if (cfg->id != SQFS_COMP_XZ &&
-			    cfg->id != SQFS_COMP_LZMA) {
-				goto fail_opt;
-			}
+			continue;
+		}
 
-			if (value == NULL)
-				goto fail_value;
-
+		if (opt == OPT_DICT) {
 			if (parse_size("Parsing LZMA dictionary size",
-				       &dict_size, value, cfg->block_size)) {
+				       &szval, value, cfg->block_size)) {
 				return -1;
 			}
+			ival = szval;
+		} else {
+			ival = strtol(value, NULL, 10);
+		}
 
-			cfg->opt.xz.dict_size = dict_size;
-			break;
-		case OPT_LC:
-			if (cfg->id != SQFS_COMP_XZ &&
-			    cfg->id != SQFS_COMP_LZMA) {
-				goto fail_opt;
-			}
+		if (ival < value_range[cfg->id][opt].min)
+			goto fail_range;
+		if (ival > value_range[cfg->id][opt].max)
+			goto fail_range;
 
-			if (value == NULL)
-				goto fail_value;
-
-			cfg->opt.xz.lc = strtol(value, NULL, 10);
-			if (cfg->opt.xz.lc > SQFS_XZ_MAX_LC)
-				goto fail_lc;
-			break;
-		case OPT_LP:
-			if (cfg->id != SQFS_COMP_XZ &&
-			    cfg->id != SQFS_COMP_LZMA) {
-				goto fail_opt;
-			}
-
-			if (value == NULL)
-				goto fail_value;
-
-			cfg->opt.xz.lp = strtol(value, NULL, 10);
-			if (cfg->opt.xz.lp > SQFS_XZ_MAX_LP)
-				goto fail_lp;
-			break;
-		case OPT_PB:
-			if (cfg->id != SQFS_COMP_XZ &&
-			    cfg->id != SQFS_COMP_LZMA) {
-				goto fail_opt;
-			}
-
-			if (value == NULL)
-				goto fail_value;
-
-			cfg->opt.xz.pb = strtol(value, NULL, 10);
-			if (cfg->opt.xz.lp > SQFS_XZ_MAX_PB)
-				goto fail_pb;
-			break;
-		default:
-			if (set_flag(cfg, value, flags, num_flags))
-				goto fail_opt;
-			break;
+		switch (opt) {
+		case OPT_LEVEL: cfg->level = ival; break;
+		case OPT_LC: cfg->opt.xz.lc = ival; break;
+		case OPT_LP: cfg->opt.xz.lp = ival; break;
+		case OPT_PB: cfg->opt.xz.pb = ival; break;
+		case OPT_WINDOW: cfg->opt.gzip.window_size = ival; break;
+		case OPT_DICT: cfg->opt.xz.dict_size = ival; break;
 		}
 	}
 
@@ -271,29 +222,13 @@ int compressor_cfg_init_options(sqfs_compressor_config_t *cfg,
 fail_sum_lp_lc:
 	fputs("Sum of XZ lc + lp must not exceed 4.\n", stderr);
 	return -1;
-fail_lp:
-	fprintf(stderr,
-		"XZ literal position bits (lp) must be between %d and %d.\n",
-		SQFS_XZ_MIN_LP, SQFS_XZ_MAX_LP);
-	return -1;
-fail_lc:
-	fprintf(stderr, "XZ literal context (lc) must be between %d and %d.\n",
-		SQFS_XZ_MIN_LC, SQFS_XZ_MAX_LC);
-	return -1;
-fail_pb:
-	fprintf(stderr, "XZ position bits (bp) must be between %d and %d.\n",
-		SQFS_XZ_MIN_PB, SQFS_XZ_MAX_PB);
-	return -1;
 fail_lzo_alg:
 	fprintf(stderr, "Unknown lzo variant '%s'.\n", value);
 	return -1;
-fail_window:
-	fputs("Window size must be a number between 8 and 15.\n", stderr);
-	return -1;
-fail_level:
-	fprintf(stderr,
-		"Compression level must be a number between " PRI_SZ " and "
-		PRI_SZ ".\n", min_level, max_level);
+fail_range:
+	fprintf(stderr, "`%s` must be a number between %d and %d.\n",
+		token[opt], value_range[cfg->id][opt].min,
+		value_range[cfg->id][opt].max);
 	return -1;
 fail_opt:
 	fprintf(stderr, "Unknown compressor option '%s'.\n", value);
