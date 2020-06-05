@@ -270,6 +270,22 @@ fail_outblk:
 	return err;
 }
 
+void block_processor_cleanup(sqfs_block_processor_t *base)
+{
+	sqfs_block_t *it;
+
+	if (base->frag_block != NULL)
+		release_old_block(base, base->frag_block);
+
+	free(base->blk_current);
+
+	while (base->free_list != NULL) {
+		it = base->free_list;
+		base->free_list = it->next;
+		free(it);
+	}
+}
+
 int block_processor_init(sqfs_block_processor_t *base, size_t max_block_size,
 			 sqfs_compressor_t *cmp, sqfs_block_writer_t *wr,
 			 sqfs_frag_table_t *tbl)

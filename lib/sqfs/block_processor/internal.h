@@ -91,6 +91,8 @@ struct sqfs_block_processor_t {
 	int (*sync)(sqfs_block_processor_t *proc);
 };
 
+SQFS_INTERNAL void block_processor_cleanup(sqfs_block_processor_t *base);
+
 SQFS_INTERNAL int block_processor_init(sqfs_block_processor_t *base,
 				       size_t max_block_size,
 				       sqfs_compressor_t *cmp,

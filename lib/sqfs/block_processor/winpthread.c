@@ -219,9 +219,7 @@ static void block_processor_destroy(sqfs_object_t *obj)
 	free_blk_list(proc->proc_queue);
 	free_blk_list(proc->io_queue);
 	free_blk_list(proc->done);
-	free_blk_list(proc->base.free_list);
-	free(proc->base.blk_current);
-	free(proc->base.frag_block);
+	block_processor_cleanup(&proc->base);
 	free(proc);
 }
 

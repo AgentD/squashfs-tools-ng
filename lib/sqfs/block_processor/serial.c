@@ -28,14 +28,7 @@ static void block_processor_destroy(sqfs_object_t *obj)
 {
 	sqfs_block_processor_t *proc = (sqfs_block_processor_t *)obj;
 
-	free_block_list(proc->free_list);
-
-	if (proc->frag_block != NULL) {
-		free_block_list(proc->frag_block->frag_list);
-		free(proc->frag_block);
-	}
-
-	free(proc->blk_current);
+	block_processor_cleanup(proc);
 	free(proc);
 }
 
