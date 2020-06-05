@@ -180,6 +180,8 @@ static int process_completed_fragment(sqfs_block_processor_t *proc,
 				      sqfs_block_t *frag,
 				      sqfs_block_t **blk_out)
 {
+	chunk_info_t *chunk, search;
+	struct hash_entry *entry;
 	sqfs_u32 index, offset;
 	size_t size;
 	int err;
@@ -197,15 +199,18 @@ static int process_completed_fragment(sqfs_block_processor_t *proc,
 
 	proc->stats.total_frag_count += 1;
 
-	if (!(frag->flags & SQFS_BLK_DONT_DEDUPLICATE) &&
-	    proc->frag_tbl != NULL) {
-		err = sqfs_frag_table_find_tail_end(proc->frag_tbl,
-						    frag->checksum, frag->size,
-						    &index, &offset);
-		if (err == 0) {
+	if (!(frag->flags & SQFS_BLK_DONT_DEDUPLICATE)) {
+		search.hash = frag->checksum;
+		search.size = frag->size;
+
+		entry = hash_table_search_pre_hashed(proc->frag_ht,
+						     search.hash, &search);
+		if (entry != NULL) {
 			if (frag->inode != NULL) {
+				chunk = entry->data;
 				sqfs_inode_set_frag_location(*(frag->inode),
-							     index, offset);
+							     chunk->index,
+							     chunk->offset);
 			}
 			release_old_block(proc, frag);
 			return 0;
@@ -248,11 +253,21 @@ static int process_completed_fragment(sqfs_block_processor_t *proc,
 	}
 
 	if (proc->frag_tbl != NULL) {
-		err = sqfs_frag_table_add_tail_end(proc->frag_tbl,
-						   index, offset,
-						   frag->size, frag->checksum);
-		if (err)
+		chunk = calloc(1, sizeof(*chunk));
+		if (chunk == NULL)
 			goto fail_outblk;
+
+		chunk->index = index;
+		chunk->offset = offset;
+		chunk->size = frag->size;
+		chunk->hash = frag->checksum;
+
+		entry = hash_table_insert_pre_hashed(proc->frag_ht, chunk->hash,
+						     chunk, chunk);
+		if (entry == NULL) {
+			free(chunk);
+			goto fail_outblk;
+		}
 	}
 
 	if (frag->inode != NULL)
@@ -270,6 +285,24 @@ fail_outblk:
 	return err;
 }
 
+static uint32_t chunk_info_hash(const void *key)
+{
+	const chunk_info_t *chunk = key;
+	return chunk->hash;
+}
+
+static bool chunk_info_equals(const void *a, const void *b)
+{
+	const chunk_info_t *a_ = a, *b_ = b;
+	return a_->size == b_->size &&
+	       a_->hash == b_->hash;
+}
+
+static void ht_delete_function(struct hash_entry *entry)
+{
+	free(entry->data);
+}
+
 void block_processor_cleanup(sqfs_block_processor_t *base)
 {
 	sqfs_block_t *it;
@@ -284,6 +317,8 @@ void block_processor_cleanup(sqfs_block_processor_t *base)
 		base->free_list = it->next;
 		free(it);
 	}
+
+	hash_table_destroy(base->frag_ht, ht_delete_function);
 }
 
 int block_processor_init(sqfs_block_processor_t *base, size_t max_block_size,
@@ -298,5 +333,10 @@ int block_processor_init(sqfs_block_processor_t *base, size_t max_block_size,
 	base->frag_tbl = tbl;
 	base->wr = wr;
 	base->stats.size = sizeof(base->stats);
+
+	base->frag_ht = hash_table_create(chunk_info_hash, chunk_info_equals);
+	if (base->frag_ht == NULL)
+		return -1;
+
 	return 0;
 }

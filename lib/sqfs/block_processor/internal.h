@@ -18,11 +18,21 @@
 #include "sqfs/error.h"
 #include "sqfs/block.h"
 #include "sqfs/io.h"
+
+#include "hash_table.h"
 #include "util.h"
 
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
+
+typedef struct chunk_info_t {
+	struct chunk_info_t *next;
+	sqfs_u32 index;
+	sqfs_u32 offset;
+	sqfs_u32 size;
+	sqfs_u32 hash;
+} chunk_info_t;
 
 enum {
 	BLK_FLAG_MANUAL_SUBMISSION = 0x10000000,
@@ -69,6 +79,7 @@ struct sqfs_block_processor_t {
 	sqfs_u32 blk_index;
 	void *user;
 
+	struct hash_table *frag_ht;
 	sqfs_block_t *free_list;
 
 	size_t max_block_size;
