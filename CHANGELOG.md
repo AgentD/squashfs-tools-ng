@@ -6,7 +6,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
-- Expose more fine grained control values & flags on the XZ compressor
+- Expose more fine grained control values & flags on the XZ and LZMA compressors
+- A flag for the `libsquashfs` block processor to micro manage block hashing and
+  sparse block detection.
+- A raw block submission function.
+- A user pointer that can be forwarded to the block writer.
+
+### Changed
+- `sqfsdiff` doesn't abort if it fails to read the compressor options
+- in `libsquashfs`, turn the block writer into an interface with a default
+  implementation and remove the statistics and hooks.
+- Block processor can function without fragment table and without inode pointer
+- Strictly enfore min/max dictionary size in XZ & LZMA compressors
+- Make compression level a generic compression option in `libsquashfs`
+- More `libsquashfs` API and internal cleanups
 
 ### Fixed
 - Propperly set the last block flag if fragments are disabled
@@ -14,6 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - libtar: size computation of PAX line length (#50)
 - Semantics of the super block deduplication
 - Actually set the ZSTD compression level to something greater than 0
+- Only add Selinux compile flags if WITH_SELINUX is set. Fixes Mingw cross build
+  on Fedora.
 
 ## [0.9.1] - 2020-05-03
 ### Added
@@ -309,7 +324,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Insert abstraction layers and split generic code off into support libraries
 
-[Unreleased]: https://github.com/AgentD/squashfs-tools-ng/compare/v0.9...HEAD
+[Unreleased]: https://github.com/AgentD/squashfs-tools-ng/compare/v0.9.1...HEAD
+[0.9.1]: https://github.com/AgentD/squashfs-tools-ng/compare/v0.9...v0.9.1
 [0.9.0]: https://github.com/AgentD/squashfs-tools-ng/compare/v0.8...v0.9
 [0.8.0]: https://github.com/AgentD/squashfs-tools-ng/compare/v0.7...v0.8
 [0.7.0]: https://github.com/AgentD/squashfs-tools-ng/compare/v0.6.1...v0.7
