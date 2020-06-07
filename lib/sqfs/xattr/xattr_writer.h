@@ -1,0 +1,63 @@
+/* SPDX-License-Identifier: LGPL-3.0-or-later */
+/*
+ * xattr_writer.h
+ *
+ * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
+ */
+#ifndef XATTR_WRITER_H
+#define XATTR_WRITER_H
+
+#define SQFS_BUILDING_DLL
+#include "config.h"
+
+#include "sqfs/xattr_writer.h"
+#include "sqfs/meta_writer.h"
+#include "sqfs/super.h"
+#include "sqfs/xattr.h"
+#include "sqfs/error.h"
+#include "sqfs/block.h"
+#include "sqfs/io.h"
+
+#include "str_table.h"
+#include "util.h"
+
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+
+
+#define XATTR_KEY_BUCKETS 31
+#define XATTR_VALUE_BUCKETS 511
+#define XATTR_INITIAL_PAIR_CAP 128
+
+#define MK_PAIR(key, value) (((sqfs_u64)(key) << 32UL) | (sqfs_u64)(value))
+#define GET_KEY(pair) ((pair >> 32UL) & 0x0FFFFFFFFUL)
+#define GET_VALUE(pair) (pair & 0x0FFFFFFFFUL)
+
+
+typedef struct kv_block_desc_t {
+	struct kv_block_desc_t *next;
+	size_t start;
+	size_t count;
+
+	sqfs_u64 start_ref;
+	size_t size_bytes;
+} kv_block_desc_t;
+
+struct sqfs_xattr_writer_t {
+	sqfs_object_t base;
+
+	str_table_t keys;
+	str_table_t values;
+
+	sqfs_u64 *kv_pairs;
+	size_t max_pairs;
+	size_t num_pairs;
+
+	size_t kv_start;
+
+	kv_block_desc_t *kv_blocks;
+	size_t num_blocks;
+};
+
+#endif /* XATTR_WRITER_H */

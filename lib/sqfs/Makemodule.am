@@ -11,15 +11,18 @@ LIBSQFS_HEARDS = include/sqfs/meta_writer.h \
 		include/sqfs/frag_table.h include/sqfs/block_writer.h
 
 libsquashfs_la_SOURCES = $(LIBSQFS_HEARDS) lib/sqfs/id_table.c lib/sqfs/super.c
-libsquashfs_la_SOURCES += lib/sqfs/readdir.c lib/sqfs/xattr.c
+libsquashfs_la_SOURCES += lib/sqfs/readdir.c lib/sqfs/xattr/xattr.c
 libsquashfs_la_SOURCES += lib/sqfs/write_table.c lib/sqfs/meta_writer.c
 libsquashfs_la_SOURCES += lib/sqfs/read_super.c lib/sqfs/meta_reader.c
 libsquashfs_la_SOURCES += lib/sqfs/read_inode.c lib/sqfs/write_inode.c
-libsquashfs_la_SOURCES += lib/sqfs/dir_writer.c lib/sqfs/xattr_reader.c
+libsquashfs_la_SOURCES += lib/sqfs/dir_writer.c lib/sqfs/xattr/xattr_reader.c
 libsquashfs_la_SOURCES += lib/sqfs/read_table.c lib/sqfs/comp/compressor.c
-libsquashfs_la_SOURCES += lib/sqfs/comp/internal.h lib/sqfs/xattr_writer.c
+libsquashfs_la_SOURCES += lib/sqfs/comp/internal.h
 libsquashfs_la_SOURCES += lib/sqfs/dir_reader.c lib/sqfs/read_tree.c
-libsquashfs_la_SOURCES += lib/sqfs/inode.c
+libsquashfs_la_SOURCES += lib/sqfs/inode.c lib/sqfs/xattr/xattr_writer.c
+libsquashfs_la_SOURCES += lib/sqfs/xattr/xattr_writer_flush.c
+libsquashfs_la_SOURCES += lib/sqfs/xattr/xattr_writer_record.c
+libsquashfs_la_SOURCES += lib/sqfs/xattr/xattr_writer.h
 libsquashfs_la_SOURCES += lib/sqfs/write_super.c lib/sqfs/data_reader.c
 libsquashfs_la_SOURCES += lib/sqfs/block_processor/internal.h
 libsquashfs_la_SOURCES += lib/sqfs/block_processor/common.c
