@@ -253,6 +253,7 @@ static int process_completed_fragment(sqfs_block_processor_t *proc,
 	}
 
 	if (proc->frag_tbl != NULL) {
+		err = SQFS_ERROR_ALLOC;
 		chunk = calloc(1, sizeof(*chunk));
 		if (chunk == NULL)
 			goto fail_outblk;
