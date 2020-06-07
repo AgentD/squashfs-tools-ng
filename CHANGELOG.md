@@ -29,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Actually set the ZSTD compression level to something greater than 0
 - Only add Selinux compile flags if WITH_SELINUX is set. Fixes Mingw cross build
   on Fedora.
+- Make `rdsquashfs` describe mode terminate with an error message if an illegal
+  filename is encountered.
 
 ## [0.9.1] - 2020-05-03
 ### Added

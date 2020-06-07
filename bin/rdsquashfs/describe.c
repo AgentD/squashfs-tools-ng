@@ -9,15 +9,17 @@
 static int print_name(const sqfs_tree_node_t *n)
 {
 	char *start, *ptr, *name = sqfs_tree_node_get_path(n);
-	int ret;
 
 	if (name == NULL) {
 		perror("Recovering file path of tree node");
 		return -1;
 	}
 
-	ret = canonicalize_name(name);
-	assert(ret == 0);
+	if (canonicalize_name(name) != 0) {
+		fprintf(stderr, "Error sanitizing file path '%s'\n", name);
+		free(name);
+		return -1;
+	}
 
 	if (strchr(name, ' ') == NULL && strchr(name, '"') == NULL) {
 		fputs(name, stdout);
@@ -69,6 +71,12 @@ static int print_simple(const char *type, const sqfs_tree_node_t *n,
 int describe_tree(const sqfs_tree_node_t *root, const char *unpack_root)
 {
 	const sqfs_tree_node_t *n;
+
+	if (!is_filename_sane((const char *)root->name, false)) {
+		fprintf(stderr, "Encountered illegal file name '%s'\n",
+			root->name);
+		return -1;
+	}
 
 	switch (root->inode->base.mode & S_IFMT) {
 	case S_IFSOCK:
