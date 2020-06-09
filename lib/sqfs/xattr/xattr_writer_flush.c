@@ -140,8 +140,10 @@ static bool should_store_ool(const char *val_str, size_t refcount)
 	return (strlen(val_str) / 2) > sizeof(sqfs_u64);
 }
 
-static int write_block_pairs(sqfs_xattr_writer_t *xwr, sqfs_meta_writer_t *mw,
-			     kv_block_desc_t *blk, sqfs_u64 *ool_locations)
+static int write_block_pairs(const sqfs_xattr_writer_t *xwr,
+			     sqfs_meta_writer_t *mw,
+			     const kv_block_desc_t *blk,
+			     sqfs_u64 *ool_locations)
 {
 	sqfs_u32 key_idx, val_idx;
 	const char *key_str, *value_str;
@@ -188,7 +190,8 @@ static int write_block_pairs(sqfs_xattr_writer_t *xwr, sqfs_meta_writer_t *mw,
 	return total;
 }
 
-static int write_kv_pairs(sqfs_xattr_writer_t *xwr, sqfs_meta_writer_t *mw)
+static int write_kv_pairs(const sqfs_xattr_writer_t *xwr,
+			  sqfs_meta_writer_t *mw)
 {
 	sqfs_u64 block, *ool_locations;
 	kv_block_desc_t *blk;
@@ -221,7 +224,8 @@ static int write_kv_pairs(sqfs_xattr_writer_t *xwr, sqfs_meta_writer_t *mw)
 	return sqfs_meta_writer_flush(mw);
 }
 
-static int write_id_table(sqfs_xattr_writer_t *xwr, sqfs_meta_writer_t *mw,
+static int write_id_table(const sqfs_xattr_writer_t *xwr,
+			  sqfs_meta_writer_t *mw,
 			  sqfs_u64 *locations)
 {
 	sqfs_xattr_id_t id_ent;
@@ -251,9 +255,10 @@ static int write_id_table(sqfs_xattr_writer_t *xwr, sqfs_meta_writer_t *mw,
 	return sqfs_meta_writer_flush(mw);
 }
 
-static int write_location_table(sqfs_xattr_writer_t *xwr, sqfs_u64 kv_start,
-				sqfs_file_t *file, const sqfs_super_t *super,
-				sqfs_u64 *locations, size_t loc_count)
+static int write_location_table(const sqfs_xattr_writer_t *xwr,
+				sqfs_u64 kv_start, sqfs_file_t *file,
+				const sqfs_super_t *super, sqfs_u64 *locations,
+				size_t loc_count)
 {
 	sqfs_xattr_id_table_t idtbl;
 	int err;
@@ -271,8 +276,8 @@ static int write_location_table(sqfs_xattr_writer_t *xwr, sqfs_u64 kv_start,
 			      locations, sizeof(locations[0]) * loc_count);
 }
 
-static int alloc_location_table(sqfs_xattr_writer_t *xwr, sqfs_u64 **tbl_out,
-				size_t *szout)
+static int alloc_location_table(const sqfs_xattr_writer_t *xwr,
+				sqfs_u64 **tbl_out, size_t *szout)
 {
 	sqfs_u64 *locations;
 	size_t size, count;
@@ -293,7 +298,7 @@ static int alloc_location_table(sqfs_xattr_writer_t *xwr, sqfs_u64 **tbl_out,
 	return 0;
 }
 
-int sqfs_xattr_writer_flush(sqfs_xattr_writer_t *xwr, sqfs_file_t *file,
+int sqfs_xattr_writer_flush(const sqfs_xattr_writer_t *xwr, sqfs_file_t *file,
 			    sqfs_super_t *super, sqfs_compressor_t *cmp)
 {
 	sqfs_u64 *locations = NULL, kv_start, id_start;

@@ -42,12 +42,13 @@ int str_table_get_index(str_table_t *table, const char *str, size_t *idx);
 /* Resolve a unique ID to the string it represents.
    Returns NULL if the ID is unknown, i.e. out of bounds. */
 SQFS_INTERNAL
-const char *str_table_get_string(str_table_t *table, size_t index);
+const char *str_table_get_string(const str_table_t *table, size_t index);
 
 SQFS_INTERNAL void str_table_add_ref(str_table_t *table, size_t index);
 
 SQFS_INTERNAL void str_table_del_ref(str_table_t *table, size_t index);
 
-SQFS_INTERNAL size_t str_table_get_ref_count(str_table_t *table, size_t index);
+SQFS_INTERNAL
+size_t str_table_get_ref_count(const str_table_t *table, size_t index);
 
 #endif /* STR_TABLE_H */

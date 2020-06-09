@@ -129,7 +129,7 @@ SQFS_API int sqfs_xattr_writer_end(sqfs_xattr_writer_t *xwr, sqfs_u32 *out);
  *
  * @return Zero on success, a negative @ref SQFS_ERROR value on failure.
  */
-SQFS_API int sqfs_xattr_writer_flush(sqfs_xattr_writer_t *xwr,
+SQFS_API int sqfs_xattr_writer_flush(const sqfs_xattr_writer_t *xwr,
 				     sqfs_file_t *file, sqfs_super_t *super,
 				     sqfs_compressor_t *cmp);
 

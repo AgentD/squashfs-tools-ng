@@ -189,7 +189,7 @@ fail_oom:
 	return SQFS_ERROR_ALLOC;
 }
 
-const char *str_table_get_string(str_table_t *table, size_t index)
+const char *str_table_get_string(const str_table_t *table, size_t index)
 {
 	if (index >= table->num_strings)
 		return NULL;
@@ -197,7 +197,7 @@ const char *str_table_get_string(str_table_t *table, size_t index)
 	return table->strings[index];
 }
 
-static str_bucket_t *bucket_by_index(str_table_t *table, size_t index)
+static str_bucket_t *bucket_by_index(const str_table_t *table, size_t index)
 {
 	str_bucket_t *bucket = NULL;
 	sqfs_u32 hash;
@@ -229,7 +229,7 @@ void str_table_del_ref(str_table_t *table, size_t index)
 		bucket->refcount -= 1;
 }
 
-size_t str_table_get_ref_count(str_table_t *table, size_t index)
+size_t str_table_get_ref_count(const str_table_t *table, size_t index)
 {
 	str_bucket_t *bucket = bucket_by_index(table, index);
 
