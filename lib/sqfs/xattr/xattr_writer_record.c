@@ -112,8 +112,8 @@ int sqfs_xattr_writer_add(sqfs_xattr_writer_t *xwr, const char *key,
 int sqfs_xattr_writer_end(sqfs_xattr_writer_t *xwr, sqfs_u32 *out)
 {
 	kv_block_desc_t *blk, *blk_prev;
-	size_t i, count, value_idx;
 	sqfs_u32 index;
+	size_t count;
 	int ret;
 
 	count = xwr->num_pairs - xwr->kv_start;
@@ -148,14 +148,6 @@ int sqfs_xattr_writer_end(sqfs_xattr_writer_t *xwr, sqfs_u32 *out)
 	}
 
 	if (blk != NULL) {
-		for (i = 0; i < count; ++i) {
-			value_idx = GET_VALUE(xwr->kv_pairs[xwr->kv_start + i]);
-			str_table_del_ref(&xwr->values, value_idx);
-
-			value_idx = GET_VALUE(xwr->kv_pairs[blk->start + i]);
-			str_table_add_ref(&xwr->values, value_idx);
-		}
-
 		xwr->num_pairs = xwr->kv_start;
 	} else {
 		blk = calloc(1, sizeof(*blk));
