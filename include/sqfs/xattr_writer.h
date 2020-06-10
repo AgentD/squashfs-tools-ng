@@ -61,9 +61,11 @@ extern "C" {
  *
  * @memberof sqfs_xattr_writer_t
  *
+ * @param flags Currently must be zero or the function fails.
+ *
  * @return A pointer to a new xattr writer, NULL on allocation failure.
  */
-SQFS_API sqfs_xattr_writer_t *sqfs_xattr_writer_create(void);
+SQFS_API sqfs_xattr_writer_t *sqfs_xattr_writer_create(sqfs_u32 flags);
 
 /**
  * @brief Begin recording a block of key-value pairs.
@@ -74,10 +76,11 @@ SQFS_API sqfs_xattr_writer_t *sqfs_xattr_writer_create(void);
  * @ref sqfs_xattr_writer_end when you are done.
  *
  * @param xwr A pointer to an xattr writer instance.
+ * @param flags Currently must be zero, or the function will fail.
  *
  * @return Zero on success, a negative @ref SQFS_ERROR value on failure.
  */
-SQFS_API int sqfs_xattr_writer_begin(sqfs_xattr_writer_t *xwr);
+SQFS_API int sqfs_xattr_writer_begin(sqfs_xattr_writer_t *xwr, sqfs_u32 flags);
 
 /**
  * @brief Add a key-value pair to the current block.

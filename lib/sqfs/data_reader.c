@@ -184,10 +184,15 @@ fail_ftbl:
 
 sqfs_data_reader_t *sqfs_data_reader_create(sqfs_file_t *file,
 					    size_t block_size,
-					    sqfs_compressor_t *cmp)
+					    sqfs_compressor_t *cmp,
+					    sqfs_u32 flags)
 {
-	sqfs_data_reader_t *data = alloc_flex(sizeof(*data), 1, block_size);
+	sqfs_data_reader_t *data;
 
+	if (flags != 0)
+		return NULL;
+
+	data = alloc_flex(sizeof(*data), 1, block_size);
 	if (data == NULL)
 		return NULL;
 

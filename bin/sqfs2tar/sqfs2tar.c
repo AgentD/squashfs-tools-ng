@@ -171,7 +171,7 @@ int main(int argc, char **argv)
 		goto out_id;
 	}
 
-	data = sqfs_data_reader_create(file, super.block_size, cmp);
+	data = sqfs_data_reader_create(file, super.block_size, cmp, 0);
 	if (data == NULL) {
 		sqfs_perror(filename, "creating data reader",
 			    SQFS_ERROR_ALLOC);
@@ -184,7 +184,7 @@ int main(int argc, char **argv)
 		goto out_data;
 	}
 
-	dr = sqfs_dir_reader_create(&super, cmp, file);
+	dr = sqfs_dir_reader_create(&super, cmp, file, 0);
 	if (dr == NULL) {
 		sqfs_perror(filename, "creating dir reader",
 			    SQFS_ERROR_ALLOC);

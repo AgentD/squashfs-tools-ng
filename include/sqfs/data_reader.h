@@ -62,13 +62,15 @@ extern "C" {
  *             underlying filesystem image.
  * @param block_size The data block size from the super block.
  * @param cmp A compressor to use for uncompressing blocks read from disk.
+ * @param flags Currently must be 0 or the function will fail.
  *
  * @return A pointer to a new data reader object. NULL means
  *         allocation failure.
  */
 SQFS_API sqfs_data_reader_t *sqfs_data_reader_create(sqfs_file_t *file,
 						     size_t block_size,
-						     sqfs_compressor_t *cmp);
+						     sqfs_compressor_t *cmp,
+						     sqfs_u32 flags);
 
 /**
  * @brief Read and decode the fragment table from disk.

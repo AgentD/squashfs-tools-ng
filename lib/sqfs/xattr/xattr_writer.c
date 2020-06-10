@@ -81,10 +81,14 @@ static void xattr_writer_destroy(sqfs_object_t *obj)
 	free(xwr);
 }
 
-sqfs_xattr_writer_t *sqfs_xattr_writer_create(void)
+sqfs_xattr_writer_t *sqfs_xattr_writer_create(sqfs_u32 flags)
 {
-	sqfs_xattr_writer_t *xwr = calloc(1, sizeof(*xwr));
+	sqfs_xattr_writer_t *xwr;
 
+	if (flags != 0)
+		return NULL;
+
+	xwr = calloc(1, sizeof(*xwr));
 	if (str_table_init(&xwr->keys, XATTR_KEY_BUCKETS))
 		goto fail_keys;
 

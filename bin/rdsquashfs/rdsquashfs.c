@@ -80,14 +80,14 @@ int main(int argc, char **argv)
 		goto out_id;
 	}
 
-	dirrd = sqfs_dir_reader_create(&super, cmp, file);
+	dirrd = sqfs_dir_reader_create(&super, cmp, file, 0);
 	if (dirrd == NULL) {
 		sqfs_perror(opt.image_name, "creating dir reader",
 			    SQFS_ERROR_ALLOC);
 		goto out_id;
 	}
 
-	data = sqfs_data_reader_create(file, super.block_size, cmp);
+	data = sqfs_data_reader_create(file, super.block_size, cmp, 0);
 	if (data == NULL) {
 		sqfs_perror(opt.image_name, "creating data reader",
 			    SQFS_ERROR_ALLOC);

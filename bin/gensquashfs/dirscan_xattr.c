@@ -128,7 +128,7 @@ static int xattr_xcan_dfs(const char *path_prefix, void *selinux_handle,
 	char *path;
 	int ret;
 
-	ret = sqfs_xattr_writer_begin(xwr);
+	ret = sqfs_xattr_writer_begin(xwr, 0);
 	if (ret) {
 		sqfs_perror(node->name, "recoding xattr key-value pairs\n",
 			    ret);

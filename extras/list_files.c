@@ -99,7 +99,7 @@ int main(int argc, char **argv)
 	}
 
 	/* create a directory reader and scan the entire directory hiearchy */
-	dr = sqfs_dir_reader_create(&super, cmp, file);
+	dr = sqfs_dir_reader_create(&super, cmp, file, 0);
 	if (dr == NULL) {
 		fprintf(stderr, "%s: error creating directory reader.\n",
 			argv[1]);

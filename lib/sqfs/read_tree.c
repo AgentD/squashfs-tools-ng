@@ -124,7 +124,7 @@ static int fill_dir(sqfs_dir_reader_t *dr, sqfs_tree_node_t *root,
 		if (n->inode->base.type == SQFS_INODE_DIR ||
 		    n->inode->base.type == SQFS_INODE_EXT_DIR) {
 			if (!(flags & SQFS_TREE_NO_RECURSE)) {
-				err = sqfs_dir_reader_open_dir(dr, n->inode);
+				err = sqfs_dir_reader_open_dir(dr, n->inode, 0);
 				if (err)
 					return err;
 
@@ -220,7 +220,7 @@ int sqfs_dir_reader_get_full_hierarchy(sqfs_dir_reader_t *rd,
 			continue;
 		}
 
-		ret = sqfs_dir_reader_open_dir(rd, tail->inode);
+		ret = sqfs_dir_reader_open_dir(rd, tail->inode, 0);
 		if (ret)
 			goto fail;
 
@@ -280,7 +280,7 @@ int sqfs_dir_reader_get_full_hierarchy(sqfs_dir_reader_t *rd,
 
 	if (tail->inode->base.type == SQFS_INODE_DIR ||
 	    tail->inode->base.type == SQFS_INODE_EXT_DIR) {
-		ret = sqfs_dir_reader_open_dir(rd, tail->inode);
+		ret = sqfs_dir_reader_open_dir(rd, tail->inode, 0);
 		if (ret)
 			goto fail;
 

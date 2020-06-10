@@ -67,7 +67,7 @@ static int open_sfqs(sqfs_state_t *state, const char *path)
 	}
 
 	state->dr = sqfs_dir_reader_create(&state->super, state->cmp,
-					   state->file);
+					   state->file, 0);
 	if (state->dr == NULL) {
 		sqfs_perror(path, "creating directory reader",
 			    SQFS_ERROR_ALLOC);
@@ -83,7 +83,7 @@ static int open_sfqs(sqfs_state_t *state, const char *path)
 
 	state->data = sqfs_data_reader_create(state->file,
 					      state->super.block_size,
-					      state->cmp);
+					      state->cmp, 0);
 	if (state->data == NULL) {
 		sqfs_perror(path, "creating data reader", SQFS_ERROR_ALLOC);
 		goto fail_tree;

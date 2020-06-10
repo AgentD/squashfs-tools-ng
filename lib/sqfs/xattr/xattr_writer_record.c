@@ -37,8 +37,11 @@ static int compare_u64(const void *a, const void *b)
 	return (lhs < rhs ? -1 : (lhs > rhs ? 1 : 0));
 }
 
-int sqfs_xattr_writer_begin(sqfs_xattr_writer_t *xwr)
+int sqfs_xattr_writer_begin(sqfs_xattr_writer_t *xwr, sqfs_u32 flags)
 {
+	if (flags != 0)
+		return SQFS_ERROR_UNSUPPORTED;
+
 	xwr->kv_start = xwr->num_pairs;
 	return 0;
 }

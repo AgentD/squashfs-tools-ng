@@ -42,7 +42,7 @@ static int copy_xattr(sqfs_writer_t *sqfs, tree_node_t *node,
 	tar_xattr_t *xattr;
 	int ret;
 
-	ret = sqfs_xattr_writer_begin(sqfs->xwr);
+	ret = sqfs_xattr_writer_begin(sqfs->xwr, 0);
 	if (ret) {
 		sqfs_perror(hdr->name, "beginning xattr block", ret);
 		return -1;

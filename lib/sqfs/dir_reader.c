@@ -73,11 +73,16 @@ fail_mino:
 
 sqfs_dir_reader_t *sqfs_dir_reader_create(const sqfs_super_t *super,
 					  sqfs_compressor_t *cmp,
-					  sqfs_file_t *file)
+					  sqfs_file_t *file,
+					  sqfs_u32 flags)
 {
-	sqfs_dir_reader_t *rd = calloc(1, sizeof(*rd));
+	sqfs_dir_reader_t *rd;
 	sqfs_u64 start, limit;
 
+	if (flags != 0)
+		return NULL;
+
+	rd = calloc(1, sizeof(*rd));
 	if (rd == NULL)
 		return NULL;
 
@@ -115,10 +120,14 @@ sqfs_dir_reader_t *sqfs_dir_reader_create(const sqfs_super_t *super,
 }
 
 int sqfs_dir_reader_open_dir(sqfs_dir_reader_t *rd,
-			     const sqfs_inode_generic_t *inode)
+			     const sqfs_inode_generic_t *inode,
+			     sqfs_u32 flags)
 {
 	sqfs_u64 block_start;
 	size_t size, offset;
+
+	if (flags != 0)
+		return SQFS_ERROR_UNSUPPORTED;
 
 	if (inode->base.type == SQFS_INODE_DIR) {
 		size = inode->data.dir.size;
@@ -274,7 +283,7 @@ int sqfs_dir_reader_find_by_path(sqfs_dir_reader_t *rd,
 			continue;
 		}
 
-		ret = sqfs_dir_reader_open_dir(rd, inode);
+		ret = sqfs_dir_reader_open_dir(rd, inode, 0);
 		free(inode);
 		if (ret)
 			return ret;

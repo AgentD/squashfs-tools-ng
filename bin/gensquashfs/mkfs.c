@@ -114,7 +114,7 @@ static int relabel_tree_dfs(const char *filename, sqfs_xattr_writer_t *xwr,
 		return -1;
 	}
 
-	ret = sqfs_xattr_writer_begin(xwr);
+	ret = sqfs_xattr_writer_begin(xwr, 0);
 	if (ret) {
 		sqfs_perror(filename, "recording xattr key-value pairs", ret);
 		return -1;

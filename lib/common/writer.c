@@ -155,7 +155,7 @@ int sqfs_writer_init(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *wrcfg)
 	}
 
 	if (!wrcfg->no_xattr) {
-		sqfs->xwr = sqfs_xattr_writer_create();
+		sqfs->xwr = sqfs_xattr_writer_create(0);
 
 		if (sqfs->xwr == NULL) {
 			sqfs_perror(wrcfg->filename, "creating xattr writer",

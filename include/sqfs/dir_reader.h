@@ -161,12 +161,14 @@ extern "C" {
  *              resolving table positions.
  * @param cmp A compressor to use for unpacking meta data blocks.
  * @param file The input file to read from.
+ * @param flags Currently must be zero or the function fails.
  *
  * @return A new directory reader on success, NULL on allocation failure.
  */
 SQFS_API sqfs_dir_reader_t *sqfs_dir_reader_create(const sqfs_super_t *super,
 						   sqfs_compressor_t *cmp,
-						   sqfs_file_t *file);
+						   sqfs_file_t *file,
+						   sqfs_u32 flags);
 
 /**
  * @brief Navigate a directory reader to the location of a directory
@@ -181,11 +183,13 @@ SQFS_API sqfs_dir_reader_t *sqfs_dir_reader_create(const sqfs_super_t *super,
  *
  * @param rd A pointer to a directory reader.
  * @param inode An directory or extended directory inode.
+ * @param flags Currently must be zero or the function fails.
  *
  * @return Zero on success, an @ref SQFS_ERROR value on failure.
  */
 SQFS_API int sqfs_dir_reader_open_dir(sqfs_dir_reader_t *rd,
-				      const sqfs_inode_generic_t *inode);
+				      const sqfs_inode_generic_t *inode,
+				      sqfs_u32 flags);
 
 /**
  * @brief Reset a directory reader back to the beginning of the listing.
