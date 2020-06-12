@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [1.0.0] - 2020-06-13
 ### Added
 - Expose more fine grained control values & flags on the XZ and LZMA compressors
 - A flag for the `libsquashfs` block processor to micro manage block hashing and
@@ -20,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Strictly enfore min/max dictionary size in XZ & LZMA compressors
 - Make compression level a generic compression option in `libsquashfs`
 - More `libsquashfs` API and internal cleanups
+- Bump the major version number of libsquashfs
 
 ### Fixed
 - Propperly set the last block flag if fragments are disabled
@@ -30,7 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Only add Selinux compile flags if WITH_SELINUX is set. Fixes Mingw cross build
   on Fedora.
 - Make `rdsquashfs` describe mode terminate with an error message if an illegal
-  filename is encountered.
+  filename is encountered (#52).
 
 ## [0.9.1] - 2020-05-03
 ### Added
@@ -326,7 +329,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Insert abstraction layers and split generic code off into support libraries
 
-[Unreleased]: https://github.com/AgentD/squashfs-tools-ng/compare/v0.9.1...HEAD
+[Unreleased]: https://github.com/AgentD/squashfs-tools-ng/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/AgentD/squashfs-tools-ng/compare/v0.9.1...v1.0.0
 [0.9.1]: https://github.com/AgentD/squashfs-tools-ng/compare/v0.9...v0.9.1
 [0.9.0]: https://github.com/AgentD/squashfs-tools-ng/compare/v0.8...v0.9
 [0.8.0]: https://github.com/AgentD/squashfs-tools-ng/compare/v0.7...v0.8
