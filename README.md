@@ -196,3 +196,14 @@ found in the [documentation directory](doc/format.txt), which is based on
 an online version that can be found here:
 
 https://dr-emann.github.io/squashfs/
+
+
+The closest thing to an official web site can be found here:
+
+https://infraroot.at/projects/squashfs-tools-ng/index.html
+
+This location also hosts the Doxygen reference manual for the latest release.
+
+There is currently no official mailing list. So far I used the squashfs-tools
+mailing list on SourceForge for announcments and I will continue to do so
+until I am booted off.

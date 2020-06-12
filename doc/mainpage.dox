@@ -15,5 +15,18 @@
  * SquashFS in a custom container format or applying custom transformations on
  * the raw byte level.
  *
+ * If want to get started with reading SquashFS images, a good starting point
+ * would be the @ref sqfs_data_reader_t and @ref sqfs_dir_reader_t that
+ * provide an interface for browsing a SquashFS directory tree and reading
+ * data contained within.
+ *
+ * A few helper structures are need for that tough, specifically the SquashFS
+ * super block (see @ref sqfs_super_t) that can be read from a
+ * @ref sqfs_file_t using @ref sqfs_super_read.
+ *
+ * A decompressor (see @ref sqfs_compressor_t) is also needed, which can be
+ * created using @ref sqfs_compressor_config_init and
+ * @ref sqfs_compressor_create.
+ *
  * @example list_files.c
  */
