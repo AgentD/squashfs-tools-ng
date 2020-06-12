@@ -102,12 +102,12 @@ AC_ARG_WITH([tools],
 			[Only build libsquashfs, do not build the tools.])],
 	[], [with_tools="yes"])
 
-AC_ARG_ENABLE([copora-tests],
-	[AS_HELP_STRING([--enable-copora-tests],
-			[Perform coprora based reproducability tests.])],
-	[], [enable_copora_tests="no"])
+AC_ARG_ENABLE([corpora-tests],
+	[AS_HELP_STRING([--enable-corpora-tests],
+			[Perform corpora based reproducability tests.])],
+	[], [enable_corpora_tests="no"])
 
-AM_CONDITIONAL([CORPORA_TESTS], [test "x$enable_copora_tests" = "xyes"])
+AM_CONDITIONAL([CORPORA_TESTS], [test "x$enable_corpora_tests" = "xyes"])
 
 AS_IF([test "x$build_windows" = "xyes"], [with_pthread="no"], [])
 AS_IF([test "x$with_tools" != "xyes"], [with_selinux="no"], [])
