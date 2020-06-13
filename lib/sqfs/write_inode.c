@@ -14,13 +14,14 @@
 #include "compat.h"
 
 #include <string.h>
+#include <stdlib.h>
 
 #if defined(_WIN32) || defined(__WINDOWS__)
 #	include <malloc.h>
 #	ifdef _MSC_VER
 #		define alloca _alloca
 #	endif
-#else
+#elif defined(HAVE_ALLOCA_H)
 #	include <alloca.h>
 #endif
 

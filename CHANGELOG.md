@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   on Fedora.
 - Make `rdsquashfs` describe mode terminate with an error message if an illegal
   filename is encountered (#52).
+- Don't include alloca.h on systems that don't provide that header.
 
 ## [0.9.1] - 2020-05-03
 ### Added
