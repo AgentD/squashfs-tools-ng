@@ -115,6 +115,6 @@ sqfsinclude_HEADERS = $(LIBSQFS_HEARDS)
 
 lib_LTLIBRARIES += libsquashfs.la
 
-pkgconfig_DATA += lib/sqfs/libsquashfs0.pc
+pkgconfig_DATA += lib/sqfs/libsquashfs1.pc
 
 EXTRA_DIST += lib/sqfs/comp/lz4/README lib/sqfs/comp/zlib/README

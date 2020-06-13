@@ -11,7 +11,7 @@ AC_PROG_SED
 AC_SYS_LARGEFILE
 AC_CANONICAL_HOST
 
-AC_SUBST([LIBSQUASHFS_SO_VERSION], [0:0:0])
+AC_SUBST([LIBSQUASHFS_SO_VERSION], [1:0:0])
 
 m4_ifndef([PKG_PROG_PKG_CONFIG],
   [m4_fatal([Could not locate the pkg-config autoconf
@@ -246,7 +246,7 @@ AC_CHECK_FUNCS([strndup getline getsubopt])
 ##### generate output #####
 
 AC_CONFIG_HEADERS([config.h])
-AC_CONFIG_FILES([lib/sqfs/libsquashfs0.pc])
+AC_CONFIG_FILES([lib/sqfs/libsquashfs1.pc])
 AC_CONFIG_FILES([Doxyfile])
 AC_CONFIG_FILES([tests/cantrbry.sh], [chmod +x tests/cantrbry.sh])
 AC_CONFIG_FILES([tests/test_tar_sqfs.sh], [chmod +x tests/test_tar_sqfs.sh])
