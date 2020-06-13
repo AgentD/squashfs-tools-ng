@@ -63,7 +63,7 @@ static void list_directory(const char *dirname)
 
 	/* Get the directory inode we want to dump and open the directory */
 	if (dirname == NULL) {
-		ret = sqfs_dir_reader_open_dir(dr, working_dir);
+		ret = sqfs_dir_reader_open_dir(dr, working_dir, 0);
 		if (ret)
 			goto fail_open;
 	} else if (*dirname == '/') {
@@ -74,7 +74,7 @@ static void list_directory(const char *dirname)
 		if (ret)
 			goto fail_resolve;
 
-		ret = sqfs_dir_reader_open_dir(dr, inode);
+		ret = sqfs_dir_reader_open_dir(dr, inode, 0);
 		free(inode);
 		if (ret)
 			goto fail_open;
@@ -84,7 +84,7 @@ static void list_directory(const char *dirname)
 		if (ret)
 			goto fail_resolve;
 
-		ret = sqfs_dir_reader_open_dir(dr, inode);
+		ret = sqfs_dir_reader_open_dir(dr, inode, 0);
 		free(inode);
 		if (ret)
 			goto fail_open;
@@ -526,7 +526,7 @@ int main(int argc, char **argv)
 	}
 
 	/* create a directory reader and get the root inode */
-	dr = sqfs_dir_reader_create(&super, cmp, file);
+	dr = sqfs_dir_reader_create(&super, cmp, file, 0);
 	if (dr == NULL) {
 		fprintf(stderr, "%s: error creating directory reader.\n",
 			argv[1]);
@@ -539,7 +539,7 @@ int main(int argc, char **argv)
 	}
 
 	/* create a data reader */
-	data = sqfs_data_reader_create(file, super.block_size, cmp);
+	data = sqfs_data_reader_create(file, super.block_size, cmp, 0);
 
 	if (data == NULL) {
 		fprintf(stderr, "%s: error creating data reader.\n",
