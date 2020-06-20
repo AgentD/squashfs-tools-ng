@@ -308,22 +308,23 @@ sqfs_s32 sqfs_data_reader_read(sqfs_data_reader_t *data,
 	sqfs_inode_get_file_block_start(inode, &off);
 	block_count = sqfs_inode_get_file_block_count(inode);
 
+	if (offset >= filesz)
+		return 0;
+
+	if ((filesz - offset) < (sqfs_u64)size)
+		size = filesz - offset;
+
+	if (size == 0)
+		return 0;
+
 	/* find location of the first block */
-	i = 0;
-
-	while (offset > data->block_size && i < block_count) {
-		off += SQFS_ON_DISK_BLOCK_SIZE(inode->extra[i++]);
+	for (i = 0; offset > data->block_size && i < block_count; ++i) {
+		off += SQFS_ON_DISK_BLOCK_SIZE(inode->extra[i]);
 		offset -= data->block_size;
-
-		if (filesz >= data->block_size) {
-			filesz -= data->block_size;
-		} else {
-			filesz = 0;
-		}
 	}
 
 	/* copy data from blocks */
-	while (i < block_count && size > 0 && filesz > 0) {
+	while (i < block_count && size > 0) {
 		diff = data->block_size - offset;
 		if (size < diff)
 			diff = size;
@@ -339,12 +340,6 @@ sqfs_s32 sqfs_data_reader_read(sqfs_data_reader_t *data,
 			off += SQFS_ON_DISK_BLOCK_SIZE(inode->extra[i]);
 		}
 
-		if (filesz >= data->block_size) {
-			filesz -= data->block_size;
-		} else {
-			filesz = 0;
-		}
-
 		++i;
 		offset = 0;
 		size -= diff;
@@ -353,22 +348,16 @@ sqfs_s32 sqfs_data_reader_read(sqfs_data_reader_t *data,
 	}
 
 	/* copy from fragment */
-	if (i == block_count && size > 0 && filesz > 0) {
+	if (size > 0) {
 		err = precache_fragment_block(data, frag_idx);
 		if (err)
 			return err;
 
-		if (frag_off + filesz > data->block_size)
+		if ((frag_off + offset) >= data->frag_blk_size)
 			return SQFS_ERROR_OUT_OF_BOUNDS;
 
-		if (offset >= filesz)
-			return total;
-
-		if (offset + size > filesz)
-			size = filesz - offset;
-
-		if (size == 0)
-			return total;
+		if ((data->frag_blk_size - (frag_off + offset)) < size)
+			return SQFS_ERROR_OUT_OF_BOUNDS;
 
 		ptr = (char *)data->frag_block + frag_off + offset;
 		memcpy(buffer, ptr, size);
