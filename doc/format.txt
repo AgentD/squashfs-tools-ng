@@ -966,6 +966,11 @@
  Also note, that the inode type is stored in the entry, but always as a basic
  type!
 
+ While the field is technically 16 bits, the kernel implementation currently
+ imposes an arbitrary limit of 255 on the name size field. Since the field is
+ off-by-one, this means that a file name in SquashFS can be at most 256
+ characters long.
+
 
  6.1) Directory Index
 
