@@ -144,8 +144,7 @@ The following components exist:
 
 Optionally, `libsquashfs` can be compiled with builtin, custom versions of zlib
 and lz4. The configure options `--with-builtin-zlib` and `--with-builtin-lz4`
-can be used. The respective library sources are in `lib/sqfs/comp` in the
-squashfs-tools-ng source tree.
+can be used. The respective library sources are also in the `lib` directory.
 
 The `tests` sub-directory contains unit tests for the libraries.
 

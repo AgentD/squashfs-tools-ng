@@ -8,12 +8,12 @@ with the following exceptions:
  - `lib/util/xxhash.c` contains a modified implementation of the xxhash32
    algorithm. See `licenses/xxhash.txt` for copyright and licensing
    information (2 clause BSD license).
- - `lib/sqfs/comp/lz4` contains files extracted from the LZ4 compression
-   library. See `lib/sqfs/comp/lz4/README` for details and `licenses/LZ4.txt`
-   for copyright and licensing information (2 clause BSD license).
- - `lib/sqfs/comp/zlib` contains files that have been extracted from the the
-   zlib compression library and modified. See `lib/sqfs/comp/zlib/README` for
-   details and `licenses/zlib.txt` for details.
+ - `lib/lz4` contains files extracted from the LZ4 compression library.
+   See `lib/lz4/README` for details and `licenses/LZ4.txt` for copyright and
+   licensing information (2 clause BSD license).
+ - `lib/zlib` contains files that have been extracted from the the zlib
+   compression library and modified. See `lib/zlib/README` for details
+   and `licenses/zlib.txt` for details.
  - `lib/util/hash_table.c`, `include/hash_table.h` and
    `lib/util/fast_urem_by_const.h` contain a hash table implementation (MIT
    license). See `licenses/hash_table.txt` for details.
