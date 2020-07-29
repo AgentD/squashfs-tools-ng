@@ -256,6 +256,10 @@ int sqfs_xattr_reader_read_value(sqfs_xattr_reader_t *xr,
 		ret = sqfs_meta_reader_seek(xr->kvrd, new_start, new_offset);
 		if (ret)
 			return ret;
+
+		ret = sqfs_meta_reader_read(xr->kvrd, &value, sizeof(value));
+		if (ret)
+			return ret;
 	}
 
 	value.size = le32toh(value.size);
