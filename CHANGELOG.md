@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] - 2020-08-03
+### Fixed
+- Xattr reader: re-read the header after seaking to an OOL value (#60)
+- Documentation: mention the file name limit imposed by the kernel
+- Documentation: fix wrong magic value and stray tabs in format.txt (#61)
+- Fix block bounds checking in libsquashfs data reader (#58)
+- Fix build issue caused by demo code that didn't have (#57, #59)
+
 ## [1.0.0] - 2020-06-13
 ### Added
 - Expose more fine grained control values & flags on the XZ and LZMA compressors
@@ -330,7 +338,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Insert abstraction layers and split generic code off into support libraries
 
-[Unreleased]: https://github.com/AgentD/squashfs-tools-ng/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/AgentD/squashfs-tools-ng/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/AgentD/squashfs-tools-ng/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/AgentD/squashfs-tools-ng/compare/v0.9.1...v1.0.0
 [0.9.1]: https://github.com/AgentD/squashfs-tools-ng/compare/v0.9...v0.9.1
 [0.9.0]: https://github.com/AgentD/squashfs-tools-ng/compare/v0.8...v0.9
