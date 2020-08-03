@@ -71,7 +71,7 @@
 
          _______________
         |               |  Important information about the archive, including
-        |  Superblock 	|  locations of other sections.
+        |  Superblock   |  locations of other sections.
         |_______________|
         |               |
         |  Compression  |  If non-default compression options have been used,
@@ -82,26 +82,26 @@
         |  & fragments  |  split into separately compressed blocks.
         |_______________|
         |               |  Metadata (ownership, permissions, etc) for
-        |  Inode table	|  items in the archive.
+        |  Inode table  |  items in the archive.
         |_______________|
         |               |
-        |   Directory	|  Directory listings, including file names, and
+        |   Directory   |  Directory listings, including file names, and
         |     table     |  references to inodes.
         |_______________|
         |               |
-        |   Fragment	|  Description of fragment locations within the
+        |   Fragment    |  Description of fragment locations within the
         |    table      |  Datablocks & Fragments section.
         |_______________|
         |               |  A mapping from inode numbers to disk locations,
         | Export table  |  required for NFS export.
         |_______________|
         |               |
-        |    UID/GID	|  A list of unique UID/GIDs. Inodes use an index into
+        |    UID/GID    |  A list of unique UID/GIDs. Inodes use an index into
         |  lookup table	|  this table to save memory.
         |_______________|
         |               |
         |     Xattr     |  Extended attributes for items in the archive.
-        |     table	|
+        |     table     |
         |_______________|
 
 
@@ -250,7 +250,7 @@
  +======+===============+=====================================================+
  | Type | Name          | Description                                         |
  +======+===============+=====================================================+
- | u32  | magic         | Must be set to 0x73717368 ("HSQS" on disk).         |
+ | u32  | magic         | Must be set to 0x73717368 ("hsqs" on disk).         |
  +------+---------------+-----------------------------------------------------+
  | u32  | inode count   | The number of inodes stored in the archive.         |
  +------+---------------+-----------------------------------------------------+
