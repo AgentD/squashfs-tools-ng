@@ -29,6 +29,11 @@ simply specify /.
 \fB\-\-describe\fR, \fB\-d\fR
 Produce a file listing from the image compatible with the format consumed by
 gensquashfs.
+.TP
+\fB\-\-stat\fR, \fB\-s\fR <path>
+Dump all available information about the inode that the path refers to,
+including SquashFS specific internals such as the on-disk layout of a file
+or the fast lookup index stored in an extended directory inode.
 .PP
 The following options can be used to control the behaviour of the specified
 operation:

@@ -30,6 +30,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
+#include <time.h>
 
 enum UNPACK_FLAGS {
 	UNPACK_CHMOD = 0x01,
@@ -47,6 +48,7 @@ enum {
 	OP_UNPACK,
 	OP_DESCRIBE,
 	OP_RDATTR,
+	OP_STAT,
 };
 
 typedef struct {
@@ -59,6 +61,8 @@ typedef struct {
 } options_t;
 
 void list_files(const sqfs_tree_node_t *node);
+
+int stat_file(const sqfs_tree_node_t *node);
 
 int restore_fstree(sqfs_tree_node_t *root, int flags);
 

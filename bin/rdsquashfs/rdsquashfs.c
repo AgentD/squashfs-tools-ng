@@ -111,6 +111,10 @@ int main(int argc, char **argv)
 	case OP_LS:
 		list_files(n);
 		break;
+	case OP_STAT:
+		if (stat_file(n))
+			goto out;
+		break;
 	case OP_CAT:
 		if (!S_ISREG(n->inode->base.mode)) {
 			fprintf(stderr, "/%s: not a regular file\n",

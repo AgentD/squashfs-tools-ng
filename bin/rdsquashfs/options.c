@@ -10,6 +10,7 @@ static struct option long_opts[] = {
 	{ "list", required_argument, NULL, 'l' },
 	{ "cat", required_argument, NULL, 'c' },
 	{ "xattr", required_argument, NULL, 'x' },
+	{ "stat", required_argument, NULL, 's' },
 	{ "unpack-root", required_argument, NULL, 'p' },
 	{ "unpack-path", required_argument, NULL, 'u' },
 	{ "no-dev", no_argument, NULL, 'D' },
@@ -32,7 +33,7 @@ static struct option long_opts[] = {
 };
 
 static const char *short_opts =
-	"l:c:u:p:x:DSFLCOEZTj:dqhV"
+	"l:c:u:p:x:s:DSFLCOEZTj:dqhV"
 #ifdef HAVE_SYS_XATTR_H
 	"X"
 #endif
@@ -53,6 +54,9 @@ static const char *help_string =
 "                            an inode that the given path resolves to.\n"
 "  --unpack-path, -u <path>  Unpack this sub directory from the image. To\n"
 "                            unpack everything, simply specify /.\n"
+"  --stat, -s <path>         Dump all information that can be extracted from\n"
+"                            the inode coresponding to a path, including\n"
+"                            SquashFS specific internals.\n"
 "  --describe, -d            Produce a file listing from the image.\n"
 "\n"
 "  --unpack-root, -p <path>  If used with --unpack-path, this is where the\n"
@@ -167,6 +171,10 @@ void process_command_line(options_t *opt, int argc, char **argv)
 			opt->op = OP_RDATTR;
 			opt->cmdpath = get_path(opt->cmdpath, optarg);
 			break;
+		case 's':
+			opt->op = OP_STAT;
+			opt->cmdpath = get_path(opt->cmdpath, optarg);
+			break;
 		case 'l':
 			opt->op = OP_LS;
 			opt->cmdpath = get_path(opt->cmdpath, optarg);
@@ -199,7 +207,8 @@ void process_command_line(options_t *opt, int argc, char **argv)
 		goto fail_arg;
 	}
 
-	if (opt->op == OP_LS || opt->op == OP_CAT || opt->op == OP_RDATTR) {
+	if (opt->op == OP_LS || opt->op == OP_CAT || opt->op == OP_RDATTR ||
+	    opt->op == OP_STAT) {
 		opt->rdtree_flags |= SQFS_TREE_NO_RECURSE;
 	}
 
