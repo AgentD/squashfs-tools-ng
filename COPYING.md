@@ -34,6 +34,23 @@ Although the existing squashfs-tools and the Linux kernel implementation have
 been used for testing, the source code in this package is neither based on,
 nor derived from either of them.
 
+## Documentation and the Build System
+
+The auto-tools based build system has in large parts been hacked together by
+copy & pasting from various tutorials and other projects (mostly util-linux,
+and mtd-utils), overhauled many times since 2015.
+
+The m4 macros in the `m4` directory were copied verbatim and have explicit
+licenses. Please respect those. As for everything else, feel free to copy and
+paste it as you wish.
+
+The `doc` directory contains measurement data, pseudo lab reports and an RFC
+style write-up of the SquashFS format. You may do with those as you please.
+
+If you use those as a basis for writing about SquashFS or this package, please
+cite your sources and mark verbatim quotations as such. I won't be angry if you
+don't, but a thesis supervisor, reviewer or fellow Wikipedian might be.
+
 # Binary Packages with 3rd Party Libraries
 
 If this file is included in a binary release package, additional 3rd party
