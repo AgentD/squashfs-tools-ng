@@ -43,14 +43,6 @@ static int flush_block(sqfs_block_processor_t *proc)
 
 	proc->blk_current = NULL;
 
-	if (block->size < proc->max_block_size &&
-	    !(block->flags & SQFS_BLK_DONT_FRAGMENT)) {
-		block->flags |= SQFS_BLK_IS_FRAGMENT;
-	} else {
-		proc->blk_flags &= ~SQFS_BLK_FIRST_BLOCK;
-	}
-
-	block->index = proc->blk_index++;
 	return proc->append_to_work_queue(proc, block);
 }
 
@@ -107,6 +99,8 @@ int sqfs_block_processor_append(sqfs_block_processor_t *proc, const void *data,
 			proc->blk_current->flags = proc->blk_flags;
 			proc->blk_current->inode = proc->inode;
 			proc->blk_current->user = proc->user;
+			proc->blk_current->index = proc->blk_index++;
+			proc->blk_flags &= ~SQFS_BLK_FIRST_BLOCK;
 		}
 
 		diff = proc->max_block_size - proc->blk_current->size;
@@ -146,18 +140,26 @@ int sqfs_block_processor_end_file(sqfs_block_processor_t *proc)
 	if (!proc->begin_called)
 		return SQFS_ERROR_SEQUENCE;
 
-	if (!(proc->blk_flags & SQFS_BLK_FIRST_BLOCK)) {
-		if (proc->blk_current != NULL &&
-		    (proc->blk_flags & SQFS_BLK_DONT_FRAGMENT)) {
-			proc->blk_current->flags |= SQFS_BLK_LAST_BLOCK;
-		} else {
+	if (proc->blk_current == NULL) {
+		if (!(proc->blk_flags & SQFS_BLK_FIRST_BLOCK)) {
 			err = add_sentinel_block(proc);
 			if (err)
 				return err;
 		}
-	}
+	} else {
+		if (proc->blk_flags & SQFS_BLK_DONT_FRAGMENT) {
+			proc->blk_current->flags |= SQFS_BLK_LAST_BLOCK;
+		} else {
+			if (!(proc->blk_current->flags &
+			      SQFS_BLK_FIRST_BLOCK)) {
+				err = add_sentinel_block(proc);
+				if (err)
+					return err;
+			}
 
-	if (proc->blk_current != NULL) {
+			proc->blk_current->flags |= SQFS_BLK_IS_FRAGMENT;
+		}
+
 		err = flush_block(proc);
 		if (err)
 			return err;
