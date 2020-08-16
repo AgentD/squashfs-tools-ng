@@ -116,7 +116,8 @@ static int decode_header(const tar_header_t *hdr, unsigned int set_by_pax,
 	if (hdr->typeflag == TAR_TYPE_LINK ||
 	    hdr->typeflag == TAR_TYPE_SLINK) {
 		if (!(set_by_pax & PAX_SLINK_TARGET)) {
-			out->link_target = strdup(hdr->linkname);
+			out->link_target = strndup(hdr->linkname,
+						   sizeof(hdr->linkname));
 			if (out->link_target == NULL) {
 				perror("decoding symlink target");
 				return -1;
