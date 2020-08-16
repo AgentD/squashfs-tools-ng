@@ -28,3 +28,7 @@ The following addtional files have been added:
  - xattr/xattr-shily-binary.tar
      Created from xattr/xattr-shily.tar by manually patching in a capability
      xattr key/value pair.
+ - tar/format-acceptance/link_filled.tar
+     Contributed in GitHub issue #64. A tar ball that contains a hard link
+     where the 100 byte target field is completely filled without containing
+     a null-terminator.

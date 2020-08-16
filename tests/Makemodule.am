@@ -73,6 +73,11 @@ test_tar_ustar_SOURCES = tests/tar_ustar.c tests/test.h
 test_tar_ustar_LDADD = libtar.a libcompat.a
 test_tar_ustar_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(top_srcdir)/tests/tar
 
+test_tar_target_filled_SOURCES = tests/tar_target_filled.c tests/test.h
+test_tar_target_filled_LDADD = libtar.a libcompat.a
+test_tar_target_filled_CPPFLAGS = $(AM_CPPFLAGS)
+test_tar_target_filled_CPPFLAGS += -DTESTPATH=$(top_srcdir)/tests/tar
+
 test_tar_sparse_gnu_SOURCES = tests/tar_sparse_gnu.c tests/test.h
 test_tar_sparse_gnu_LDADD = libtar.a libcompat.a
 test_tar_sparse_gnu_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(top_srcdir)/tests/tar
@@ -114,7 +119,7 @@ check_PROGRAMS += test_fstree_init test_filename_sane test_filename_sane_w32
 check_PROGRAMS += test_tar_ustar test_tar_pax test_tar_gnu
 check_PROGRAMS += test_tar_sparse_gnu test_tar_sparse_gnu1 test_tar_sparse_gnu2
 check_PROGRAMS += test_tar_xattr_bsd test_tar_xattr_schily
-check_PROGRAMS += test_tar_xattr_schily_bin
+check_PROGRAMS += test_tar_xattr_schily_bin test_tar_target_filled
 
 noinst_PROGRAMS += fstree_fuzz tar_fuzz
 
@@ -125,7 +130,7 @@ TESTS += test_fstree_init test_filename_sane test_filename_sane_w32
 TESTS += test_tar_ustar test_tar_pax
 TESTS += test_tar_gnu test_tar_sparse_gnu test_tar_sparse_gnu1
 TESTS += test_tar_sparse_gnu2 test_tar_xattr_bsd test_tar_xattr_schily
-TESTS += test_tar_xattr_schily_bin
+TESTS += test_tar_xattr_schily_bin test_tar_target_filled
 
 if CORPORA_TESTS
 check_SCRIPTS += tests/cantrbry.sh tests/test_tar_sqfs.sh tests/pack_dir_root.sh
