@@ -15,8 +15,12 @@ char *sqfs_tree_node_get_path(const sqfs_tree_node_t *node)
 	char *str, *ptr;
 	size_t len = 0;
 
-	if (node->parent == NULL)
+	if (node->parent == NULL) {
+		if (node->name[0] != '\0')
+			return strdup((const char *)node->name);
+
 		return strdup("/");
+	}
 
 	for (it = node; it != NULL && it->parent != NULL; it = it->parent) {
 		len += strlen((const char *)it->name) + 1;
