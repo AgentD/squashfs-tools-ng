@@ -19,8 +19,10 @@ static int create_node(const sqfs_tree_node_t *n, const char *name, int flags)
 
 	switch (n->inode->base.mode & S_IFMT) {
 	case S_IFDIR:
-		if (!CreateDirectoryW(wpath, NULL))
-			goto fail;
+		if (!CreateDirectoryW(wpath, NULL)) {
+			if (GetLastError() != ERROR_ALREADY_EXISTS)
+				goto fail;
+		}
 		break;
 	case S_IFREG:
 		fh = CreateFileW(wpath, GENERIC_READ,
