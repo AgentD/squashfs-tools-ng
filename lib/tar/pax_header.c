@@ -110,6 +110,13 @@ int read_pax_header(FILE *fp, sqfs_u64 entsize, unsigned int *set_by_pax,
 			if (pax_read_decimal(ptr + 16, &out->actual_size))
 				goto fail;
 			*set_by_pax |= PAX_SPARSE_SIZE;
+		} else if (!strncmp(ptr, "GNU.sparse.realsize=", 20)) {
+			if (pax_read_decimal(ptr + 20, &out->actual_size))
+				goto fail;
+			*set_by_pax |= PAX_SPARSE_SIZE;
+		} else if (!strncmp(ptr, "GNU.sparse.major=", 17) ||
+			   !strncmp(ptr, "GNU.sparse.minor=", 17)) {
+			*set_by_pax |= PAX_SPARSE_GNU_1_X;
 		} else if (!strncmp(ptr, "GNU.sparse.offset=", 18)) {
 			if (pax_read_decimal(ptr + 18, &offset))
 				goto fail;

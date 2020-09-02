@@ -27,6 +27,8 @@ enum {
 	PAX_SLINK_TARGET = 0x040,
 	PAX_MTIME = 0x100,
 	PAX_SPARSE_SIZE = 0x400,
+
+	PAX_SPARSE_GNU_1_X = 0x800,
 };
 
 enum {
@@ -57,6 +59,8 @@ bool is_checksum_valid(const tar_header_t *hdr);
 sparse_map_t *read_sparse_map(const char *line);
 
 sparse_map_t *read_gnu_old_sparse(FILE *fp, tar_header_t *hdr);
+
+sparse_map_t *read_gnu_new_sparse(FILE *fp, tar_header_decoded_t *out);
 
 void free_sparse_list(sparse_map_t *sparse);
 

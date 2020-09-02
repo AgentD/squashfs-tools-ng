@@ -255,6 +255,13 @@ int read_header(FILE *fp, tar_header_decoded_t *out)
 	if (decode_header(&hdr, set_by_pax, out, version))
 		goto fail;
 
+	if (set_by_pax & PAX_SPARSE_GNU_1_X) {
+		free_sparse_list(out->sparse);
+		out->sparse = read_gnu_new_sparse(fp, out);
+		if (out->sparse == NULL)
+			goto fail;
+	}
+
 	if (out->sparse != NULL) {
 		out->sb.st_size = out->actual_size;
 	} else {

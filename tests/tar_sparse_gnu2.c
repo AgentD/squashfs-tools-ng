@@ -44,7 +44,7 @@ int main(void)
 	TEST_EQUAL_UI(sparse->count, 4096);
 
 	sparse = sparse->next;
-	TSET_NOT_NULL(sparse);
+	TEST_NOT_NULL(sparse);
 	TEST_EQUAL_UI(sparse->offset, 524288);
 	TEST_EQUAL_UI(sparse->count, 4096);
 
@@ -74,7 +74,7 @@ int main(void)
 	TEST_EQUAL_UI(sparse->count, 4096);
 
 	sparse = sparse->next;
-	TEST_NOT_NULL(sparse != NULL);
+	TEST_NOT_NULL(sparse);
 	TEST_EQUAL_UI(sparse->offset, 2097152);
 	TEST_EQUAL_UI(sparse->count, 0);
 
