@@ -15,9 +15,10 @@ static int decode(const char *str, size_t len, size_t *out)
 	*out = 0;
 
 	while (count < len && isdigit(*str)) {
-		if (*out > 0xFFFFFFFFFFFFFFFFUL / 10)
+		if (SZ_MUL_OV(*out, 10, out))
 			return -1;
-		*out = (*out) * 10 + (*(str++) - '0');
+		if (SZ_ADD_OV(*out, (*(str++) - '0'), out))
+			return -1;
 		++count;
 	}
 
@@ -34,6 +35,9 @@ sparse_map_t *read_gnu_new_sparse(FILE *fp, tar_header_decoded_t *out)
 	char buffer[1024];
 	int diff, ret;
 
+	if (out->record_size < 512)
+		goto fail_format;
+
 	if (read_retry("reading GNU sparse map", fp, buffer, 512))
 		return NULL;
 
@@ -43,6 +47,9 @@ sparse_map_t *read_gnu_new_sparse(FILE *fp, tar_header_decoded_t *out)
 
 	out->record_size -= 512;
 
+	if (count == 0 || count > TAR_MAX_SPARSE_ENT)
+		goto fail_format;
+
 	for (i = 0; i < (count * 2); ++i) {
 		ret = decode(buffer + diff, 512 - diff, &value);
 		if (ret < 0)
@@ -51,6 +58,9 @@ sparse_map_t *read_gnu_new_sparse(FILE *fp, tar_header_decoded_t *out)
 		if (ret > 0) {
 			diff += ret;
 		} else {
+			if (out->record_size < 512)
+				goto fail_format;
+
 			if (read_retry("reading GNU sparse map", fp,
 				       buffer + 512, 512)) {
 				return NULL;

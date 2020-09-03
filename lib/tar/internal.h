@@ -42,6 +42,7 @@ enum {
 #define TAR_MAX_SYMLINK_LEN (65536)
 #define TAR_MAX_PATH_LEN (65536)
 #define TAR_MAX_PAX_LEN (65536)
+#define TAR_MAX_SPARSE_ENT (65536)
 
 
 int read_octal(const char *str, int digits, sqfs_u64 *out);
