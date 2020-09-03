@@ -4,7 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.0.2] - 2020-09-03
+### Fixed
+- Fix block processor single block with don't fragment flag bug (#63)
+- Fix libtar treatment of link targets that fill the header field (#64)
+- Fix tree node path generation for detached sub trees (#66)
+- Fix rdsquashfs unpack under Windows if a directory exists
+- Clarify copyright status of documentation & build system
+
+### Added
+- Support for GNU tar sparse format 1.0.
+- A spec file to build RPM packages (#65).
+- A `--stat` option to rdsquashfs
 
 ## [1.0.1] - 2020-08-03
 ### Fixed
@@ -338,7 +349,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Insert abstraction layers and split generic code off into support libraries
 
-[Unreleased]: https://github.com/AgentD/squashfs-tools-ng/compare/v1.0.1...HEAD
+[1.0.2]: https://github.com/AgentD/squashfs-tools-ng/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/AgentD/squashfs-tools-ng/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/AgentD/squashfs-tools-ng/compare/v0.9.1...v1.0.0
 [0.9.1]: https://github.com/AgentD/squashfs-tools-ng/compare/v0.9...v0.9.1
