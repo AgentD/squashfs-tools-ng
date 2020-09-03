@@ -61,47 +61,53 @@ test_filename_sane_w32_SOURCES = tests/filename_sane.c
 test_filename_sane_w32_SOURCES += lib/fstree/filename_sane.c
 test_filename_sane_w32_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_WIN32=1
 
-test_tar_gnu_SOURCES = tests/tar_gnu.c tests/test.h
+test_tar_gnu_SOURCES = tests/tar_gnu.c tests/test.h tests/test_tar.h
 test_tar_gnu_LDADD = libtar.a libcompat.a
 test_tar_gnu_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(top_srcdir)/tests/tar
 
-test_tar_pax_SOURCES = tests/tar_pax.c tests/test.h
+test_tar_pax_SOURCES = tests/tar_pax.c tests/test.h tests/test_tar.h
 test_tar_pax_LDADD = libtar.a libcompat.a
 test_tar_pax_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(top_srcdir)/tests/tar
 
-test_tar_ustar_SOURCES = tests/tar_ustar.c tests/test.h
+test_tar_ustar_SOURCES = tests/tar_ustar.c tests/test.h tests/test_tar.h
 test_tar_ustar_LDADD = libtar.a libcompat.a
 test_tar_ustar_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(top_srcdir)/tests/tar
 
 test_tar_target_filled_SOURCES = tests/tar_target_filled.c tests/test.h
+test_tar_target_filled_SOURCES += tests/test_tar.h
 test_tar_target_filled_LDADD = libtar.a libcompat.a
 test_tar_target_filled_CPPFLAGS = $(AM_CPPFLAGS)
 test_tar_target_filled_CPPFLAGS += -DTESTPATH=$(top_srcdir)/tests/tar
 
 test_tar_sparse_gnu_SOURCES = tests/tar_sparse_gnu.c tests/test.h
+test_tar_sparse_gnu_SOURCES += tests/test_tar.h
 test_tar_sparse_gnu_LDADD = libtar.a libcompat.a
 test_tar_sparse_gnu_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(top_srcdir)/tests/tar
 
 test_tar_sparse_gnu1_SOURCES = tests/tar_sparse_gnu1.c tests/test.h
+test_tar_sparse_gnu1_SOURCES += tests/test_tar.h
 test_tar_sparse_gnu1_LDADD = libtar.a libcompat.a
 test_tar_sparse_gnu1_CPPFLAGS = $(AM_CPPFLAGS)
 test_tar_sparse_gnu1_CPPFLAGS += -DTESTPATH=$(top_srcdir)/tests/tar
 
 test_tar_sparse_gnu2_SOURCES = tests/tar_sparse_gnu2.c tests/test.h
+test_tar_sparse_gnu2_SOURCES += tests/test_tar.h
 test_tar_sparse_gnu2_LDADD = libtar.a libcompat.a
 test_tar_sparse_gnu2_CPPFLAGS = $(AM_CPPFLAGS)
 test_tar_sparse_gnu2_CPPFLAGS += -DTESTPATH=$(top_srcdir)/tests/tar
 
-test_tar_xattr_bsd_SOURCES = tests/tar_xattr_bsd.c tests/test.h
+test_tar_xattr_bsd_SOURCES = tests/tar_xattr_bsd.c tests/test.h tests/test_tar.h
 test_tar_xattr_bsd_LDADD = libtar.a libcompat.a
 test_tar_xattr_bsd_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(top_srcdir)/tests/tar
 
 test_tar_xattr_schily_SOURCES = tests/tar_xattr_schily.c tests/test.h
+test_tar_xattr_schily_SOURCES += tests/test_tar.h
 test_tar_xattr_schily_LDADD = libtar.a libcompat.a
 test_tar_xattr_schily_CPPFLAGS = $(AM_CPPFLAGS)
 test_tar_xattr_schily_CPPFLAGS += -DTESTPATH=$(top_srcdir)/tests/tar
 
 test_tar_xattr_schily_bin_SOURCES = tests/tar_xattr_schily_bin.c tests/test.h
+test_tar_xattr_schily_bin_SOURCES += tests/test_tar.h
 test_tar_xattr_schily_bin_LDADD = libtar.a libcompat.a
 test_tar_xattr_schily_bin_CPPFLAGS = $(AM_CPPFLAGS)
 test_tar_xattr_schily_bin_CPPFLAGS += -DTESTPATH=$(top_srcdir)/tests/tar
