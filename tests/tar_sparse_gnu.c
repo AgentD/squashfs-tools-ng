@@ -44,7 +44,5 @@ int main(void)
 
 	clear_header(&hdr);
 	fclose(fp);
-
-	test_case_sparse("sparse-files/gnu.tar");
 	return EXIT_SUCCESS;
 }
