@@ -28,6 +28,7 @@ extern bool no_links;
 extern char *root_becomes;
 extern char **subdirs;
 extern size_t num_subdirs;
+extern int compressor;
 
 extern const char *filename;
 

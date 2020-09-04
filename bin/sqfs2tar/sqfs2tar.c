@@ -123,6 +123,12 @@ int main(int argc, char **argv)
 		goto out_dirs;
 	}
 
+	if (compressor > 0) {
+		out_file = ostream_compressor_create(out_file, compressor);
+		if (out_file == NULL)
+			goto out_dirs;
+	}
+
 	file = sqfs_open_file(filename, SQFS_FILE_OPEN_READ_ONLY);
 	if (file == NULL) {
 		perror(filename);

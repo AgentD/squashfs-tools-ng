@@ -7,6 +7,7 @@
 #include "sqfs2tar.h"
 
 static struct option long_opts[] = {
+	{ "compressor", required_argument, NULL, 'c' },
 	{ "subdir", required_argument, NULL, 'd' },
 	{ "keep-as-dir", no_argument, NULL, 'k' },
 	{ "root-becomes", required_argument, NULL, 'r' },
@@ -18,7 +19,7 @@ static struct option long_opts[] = {
 	{ NULL, 0, NULL, 0 },
 };
 
-static const char *short_opts = "d:kr:sXLhV";
+static const char *short_opts = "c:d:kr:sXLhV";
 
 static const char *usagestr =
 "Usage: sqfs2tar [OPTIONS...] <sqfsfile>\n"
@@ -27,6 +28,9 @@ static const char *usagestr =
 "to stdout.\n"
 "\n"
 "Possible options:\n"
+"\n"
+"  --compressor, -c <name>   If set, stream compress the resulting tarball.\n"
+"                            By default, the tarball is uncompressed.\n"
 "\n"
 "  --subdir, -d <dir>        Unpack the given sub directory instead of the\n"
 "                            filesystem root. Can be specified more than\n"
@@ -63,7 +67,8 @@ static const char *usagestr =
 "\tsqfs2tar rootfs.sqfs > rootfs.tar\n"
 "\tsqfs2tar rootfs.sqfs | gzip > rootfs.tar.gz\n"
 "\tsqfs2tar rootfs.sqfs | xz > rootfs.tar.xz\n"
-"\n";
+"\n"
+"Available compressors:\n";
 
 bool dont_skip = false;
 bool keep_as_dir = false;
@@ -74,12 +79,14 @@ char *root_becomes = NULL;
 char **subdirs = NULL;
 size_t num_subdirs = 0;
 static size_t max_subdirs = 0;
+int compressor = 0;
 
 const char *filename = NULL;
 
 void process_args(int argc, char **argv)
 {
 	size_t idx, new_count;
+	const char *name;
 	int i, ret;
 	void *new;
 
@@ -89,6 +96,21 @@ void process_args(int argc, char **argv)
 			break;
 
 		switch (i) {
+		case 'c':
+			compressor = fstream_compressor_id_from_name(optarg);
+			if (compressor <= 0) {
+				fprintf(stderr, "unknown compressor '%s'.\n",
+					optarg);
+				goto fail;
+			}
+
+			if (!fstream_compressor_exists(compressor)) {
+				fprintf(stderr,
+					"%s compressor is not supported.\n",
+					optarg);
+				goto fail;
+			}
+			break;
 		case 'd':
 			if (num_subdirs == max_subdirs) {
 				new_count = max_subdirs ? max_subdirs * 2 : 16;
@@ -146,6 +168,17 @@ void process_args(int argc, char **argv)
 			break;
 		case 'h':
 			fputs(usagestr, stdout);
+
+			i = FSTREAM_COMPRESSOR_MIN;
+
+			while (i <= FSTREAM_COMPRESSOR_MAX) {
+				name = fstream_compressor_name_from_id(i);
+				if (fstream_compressor_exists(i))
+					printf("\t%s\n", name);
+				++i;
+			}
+
+			fputc('\n', stdout);
 			goto out_success;
 		case 'V':
 			print_version("sqfs2tar");
