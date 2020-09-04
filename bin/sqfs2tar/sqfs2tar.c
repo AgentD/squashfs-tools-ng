@@ -9,7 +9,7 @@
 sqfs_xattr_reader_t *xr;
 sqfs_data_reader_t *data;
 sqfs_super_t super;
-FILE *out_file = NULL;
+ostream_t *out_file = NULL;
 
 static sqfs_file_t *file;
 
@@ -63,8 +63,7 @@ static int terminate_archive(void)
 
 	memset(buffer, '\0', sizeof(buffer));
 
-	return write_retry("adding archive terminator", out_file,
-			   buffer, sizeof(buffer));
+	return ostream_append(out_file, buffer, sizeof(buffer));
 }
 
 static sqfs_tree_node_t *tree_merge(sqfs_tree_node_t *lhs,
@@ -118,13 +117,7 @@ int main(int argc, char **argv)
 
 	process_args(argc, argv);
 
-#ifdef _WIN32
-	_setmode(_fileno(stdout), _O_BINARY);
-	out_file = stdout;
-#else
-	out_file = freopen(NULL, "wb", stdout);
-#endif
-
+	out_file = ostream_open_stdout();
 	if (out_file == NULL) {
 		perror("changing stdout to binary mode");
 		goto out_dirs;
@@ -133,7 +126,7 @@ int main(int argc, char **argv)
 	file = sqfs_open_file(filename, SQFS_FILE_OPEN_READ_ONLY);
 	if (file == NULL) {
 		perror(filename);
-		goto out_dirs;
+		goto out_ostrm;
 	}
 
 	ret = sqfs_super_read(&super, file);
@@ -244,8 +237,10 @@ int main(int argc, char **argv)
 	if (terminate_archive())
 		goto out;
 
+	if (ostream_flush(out_file))
+		goto out;
+
 	status = EXIT_SUCCESS;
-	fflush(out_file);
 out:
 	if (root != NULL)
 		sqfs_dir_tree_destroy(root);
@@ -262,6 +257,8 @@ out_cmp:
 	sqfs_destroy(cmp);
 out_fd:
 	sqfs_destroy(file);
+out_ostrm:
+	sqfs_destroy(out_file);
 out_dirs:
 	for (i = 0; i < num_subdirs; ++i)
 		free(subdirs[i]);

@@ -9,6 +9,7 @@
 
 #include "config.h"
 #include "compat.h"
+#include "fstream.h"
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -122,11 +123,11 @@ typedef struct {
   The counter is an incremental record counter used if additional
   headers need to be generated.
 */
-int write_tar_header(FILE *fp, const struct stat *sb, const char *name,
+int write_tar_header(ostream_t *fp, const struct stat *sb, const char *name,
 		     const char *slink_target, const tar_xattr_t *xattr,
 		     unsigned int counter);
 
-int write_hard_link(FILE *fp, const struct stat *sb, const char *name,
+int write_hard_link(ostream_t *fp, const struct stat *sb, const char *name,
 		    const char *target, unsigned int counter);
 
 /* calcuate and skip the zero padding */
@@ -145,7 +146,7 @@ void clear_header(tar_header_decoded_t *hdr);
   Write zero bytes to an output file to padd it to the tar record size.
   Returns 0 on success. On failure, prints error message to stderr.
 */
-int padd_file(FILE *fp, sqfs_u64 size);
+int padd_file(ostream_t *fp, sqfs_u64 size);
 
 
 /*
@@ -155,13 +156,5 @@ int padd_file(FILE *fp, sqfs_u64 size);
   error prefix.
 */
 int read_retry(const char *errstr, FILE *fp, void *buffer, size_t size);
-
-/*
-  A wrapper around the write() system call. It retries the write if it is
-  interrupted by a signal or only part of the data was written. Returns 0
-  on success. Writes to stderr on failure using 'errstr' as a perror style
-  error prefix.
-*/
-int write_retry(const char *errstr, FILE *fp, const void *data, size_t size);
 
 #endif /* TAR_H */

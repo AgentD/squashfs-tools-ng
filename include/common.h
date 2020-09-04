@@ -28,6 +28,7 @@
 #include "sqfs/dir.h"
 #include "sqfs/io.h"
 
+#include "fstream.h"
 #include "compat.h"
 #include "fstree.h"
 #include "tar.h"
@@ -111,7 +112,7 @@ char *sqfs_tree_node_get_path(const sqfs_tree_node_t *node);
 
 int sqfs_data_reader_dump(const char *name, sqfs_data_reader_t *data,
 			  const sqfs_inode_generic_t *inode,
-			  FILE *fp, size_t block_size, bool allow_sparse);
+			  ostream_t *fp, size_t block_size);
 
 sqfs_file_t *sqfs_get_stdin_file(FILE *fp, const sparse_map_t *map,
 				 sqfs_u64 size);

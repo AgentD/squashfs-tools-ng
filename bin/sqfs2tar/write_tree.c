@@ -105,7 +105,7 @@ static int write_tree_dfs(const sqfs_tree_node_t *n)
 
 	if (S_ISREG(sb.st_mode)) {
 		if (sqfs_data_reader_dump(name, data, n->inode, out_file,
-					  super.block_size, false)) {
+					  super.block_size)) {
 			free(name);
 			return -1;
 		}

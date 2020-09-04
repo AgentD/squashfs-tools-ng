@@ -4,8 +4,8 @@ sqfsdiff_SOURCES += bin/sqfsdiff/compare_dir.c bin/sqfsdiff/node_compare.c
 sqfsdiff_SOURCES += bin/sqfsdiff/compare_files.c bin/sqfsdiff/super.c
 sqfsdiff_SOURCES += bin/sqfsdiff/extract.c
 sqfsdiff_CFLAGS = $(AM_CFLAGS) $(PTHREAD_CFLAGS)
-sqfsdiff_LDADD = libcommon.a libsquashfs.la libcompat.a $(LZO_LIBS) libfstree.a
-sqfsdiff_LDADD += $(PTHREAD_LIBS)
+sqfsdiff_LDADD = libcommon.a libsquashfs.la libfstream.a libcompat.a
+sqfsdiff_LDADD += $(LZO_LIBS) libfstree.a $(PTHREAD_LIBS)
 
 dist_man1_MANS += bin/sqfsdiff/sqfsdiff.1
 bin_PROGRAMS += sqfsdiff

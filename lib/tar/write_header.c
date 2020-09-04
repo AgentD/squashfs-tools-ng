@@ -53,7 +53,7 @@ static void write_number_signed(char *dst, sqfs_s64 value, int digits)
 	}
 }
 
-static int write_header(FILE *fp, const struct stat *sb, const char *name,
+static int write_header(ostream_t *fp, const struct stat *sb, const char *name,
 			const char *slink_target, int type)
 {
 	int maj = 0, min = 0;
@@ -88,10 +88,10 @@ static int write_header(FILE *fp, const struct stat *sb, const char *name,
 
 	update_checksum(&hdr);
 
-	return write_retry("writing tar header record", fp, &hdr, sizeof(hdr));
+	return ostream_append(fp, &hdr, sizeof(hdr));
 }
 
-static int write_gnu_header(FILE *fp, const struct stat *orig,
+static int write_gnu_header(ostream_t *fp, const struct stat *orig,
 			    const char *payload, size_t payload_len,
 			    int type, const char *name)
 {
@@ -104,10 +104,8 @@ static int write_gnu_header(FILE *fp, const struct stat *orig,
 	if (write_header(fp, &sb, name, NULL, type))
 		return -1;
 
-	if (write_retry("writing GNU extension header",
-			fp, payload, payload_len)) {
+	if (ostream_append(fp, payload, payload_len))
 		return -1;
-	}
 
 	return padd_file(fp, payload_len);
 }
@@ -136,7 +134,7 @@ static size_t prefix_digit_len(size_t len)
 	return ndigit;
 }
 
-static int write_schily_xattr(FILE *fp, const struct stat *orig,
+static int write_schily_xattr(ostream_t *fp, const struct stat *orig,
 			      const char *name, const tar_xattr_t *xattr)
 {
 	static const char *prefix = "SCHILY.xattr.";
@@ -161,15 +159,20 @@ static int write_schily_xattr(FILE *fp, const struct stat *orig,
 		len = strlen(prefix) + strlen(it->key) + it->value_len + 3;
 		len += prefix_digit_len(len);
 
-		fprintf(fp, PRI_SZ " %s%s=", len, prefix, it->key);
-		fwrite(it->value, 1, it->value_len, fp);
-		fputc('\n', fp);
+		if (ostream_printf(fp, PRI_SZ " %s%s=",
+				   len, prefix, it->key) < 0) {
+			return -1;
+		}
+		if (ostream_append(fp, it->value, it->value_len))
+			return -1;
+		if (ostream_append(fp, "\n", 1))
+			return -1;
 	}
 
 	return padd_file(fp, total_size);
 }
 
-int write_tar_header(FILE *fp, const struct stat *sb, const char *name,
+int write_tar_header(ostream_t *fp, const struct stat *sb, const char *name,
 		     const char *slink_target, const tar_xattr_t *xattr,
 		     unsigned int counter)
 {
@@ -228,7 +231,7 @@ out_skip:
 	return 1;
 }
 
-int write_hard_link(FILE *fp, const struct stat *sb, const char *name,
+int write_hard_link(ostream_t *fp, const struct stat *sb, const char *name,
 		    const char *target, unsigned int counter)
 {
 	tar_header_t hdr;
@@ -274,6 +277,5 @@ int write_hard_link(FILE *fp, const struct stat *sb, const char *name,
 	write_number(hdr.devminor, 0, sizeof(hdr.devminor));
 
 	update_checksum(&hdr);
-	return write_retry("writing tar hard link record",
-			   fp, &hdr, sizeof(hdr));
+	return ostream_append(fp, &hdr, sizeof(hdr));
 }

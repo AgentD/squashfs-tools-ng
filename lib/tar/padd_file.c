@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-int padd_file(FILE *fp, sqfs_u64 size)
+int padd_file(ostream_t *fp, sqfs_u64 size)
 {
 	size_t padd_sz = size % TAR_RECORD_SIZE;
 	int status = -1;
@@ -25,10 +25,8 @@ int padd_file(FILE *fp, sqfs_u64 size)
 	if (buffer == NULL)
 		goto fail_errno;
 
-	if (write_retry("padding output file to block size",
-			fp, buffer, padd_sz)) {
+	if (ostream_append(fp, buffer, padd_sz))
 		goto out;
-	}
 
 	status = 0;
 out:

@@ -115,18 +115,28 @@ int main(int argc, char **argv)
 		if (stat_file(n))
 			goto out;
 		break;
-	case OP_CAT:
+	case OP_CAT: {
+		ostream_t *fp;
+
 		if (!S_ISREG(n->inode->base.mode)) {
 			fprintf(stderr, "/%s: not a regular file\n",
 				opt.cmdpath);
 			goto out;
 		}
 
+		fp = ostream_open_stdout();
+		if (fp == NULL)
+			goto out;
+
 		if (sqfs_data_reader_dump(opt.cmdpath, data, n->inode,
-					  stdout, super.block_size, false)) {
+					  fp, super.block_size)) {
+			sqfs_destroy(fp);
 			goto out;
 		}
+
+		sqfs_destroy(fp);
 		break;
+	}
 	case OP_UNPACK:
 		if (opt.unpack_root != NULL) {
 			if (mkdir_p(opt.unpack_root))

@@ -135,29 +135,31 @@ static int gen_file_list_dfs(const sqfs_tree_node_t *n)
 
 static int fill_files(sqfs_data_reader_t *data, int flags)
 {
+	int ret, openflags;
+	ostream_t *fp;
 	size_t i;
-	FILE *fp;
+
+	openflags = OSTREAM_OPEN_OVERWRITE;
+
+	if (flags & UNPACK_NO_SPARSE)
+		openflags |= OSTREAM_OPEN_SPARSE;
 
 	for (i = 0; i < num_files; ++i) {
-		fp = fopen(files[i].path, "wb");
-		if (fp == NULL) {
-			fprintf(stderr, "unpacking %s: %s\n",
-				files[i].path, strerror(errno));
+		fp = ostream_open_file(files[i].path, openflags);
+		if (fp == NULL)
 			return -1;
-		}
 
 		if (!(flags & UNPACK_QUIET))
 			printf("unpacking %s\n", files[i].path);
 
-		if (sqfs_data_reader_dump(files[i].path, data, files[i].inode,
-					  fp, block_size,
-					  (flags & UNPACK_NO_SPARSE) == 0)) {
-			fclose(fp);
-			return -1;
-		}
+		ret = sqfs_data_reader_dump(files[i].path, data, files[i].inode,
+					    fp, block_size);
+		if (ret == 0)
+			ret = ostream_flush(fp);
 
-		fflush(fp);
-		fclose(fp);
+		sqfs_destroy(fp);
+		if (ret)
+			return -1;
 	}
 
 	return 0;

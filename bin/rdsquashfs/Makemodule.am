@@ -4,7 +4,7 @@ rdsquashfs_SOURCES += bin/rdsquashfs/restore_fstree.c bin/rdsquashfs/describe.c
 rdsquashfs_SOURCES += bin/rdsquashfs/fill_files.c bin/rdsquashfs/dump_xattrs.c
 rdsquashfs_SOURCES += bin/rdsquashfs/stat.c
 rdsquashfs_CFLAGS = $(AM_CFLAGS) $(PTHREAD_CFLAGS)
-rdsquashfs_LDADD = libcommon.a libcompat.a libsquashfs.la
+rdsquashfs_LDADD = libcommon.a libfstream.a libcompat.a libsquashfs.la
 rdsquashfs_LDADD += libfstree.a $(LZO_LIBS) $(PTHREAD_LIBS)
 
 dist_man1_MANS += bin/rdsquashfs/rdsquashfs.1
