@@ -26,6 +26,7 @@ include lib/lz4/Makemodule.am
 include lib/sqfs/Makemodule.am
 
 if BUILD_TOOLS
+include lib/fstream/Makemodule.am
 include lib/fstree/Makemodule.am
 include lib/common/Makemodule.am
 include lib/tar/Makemodule.am

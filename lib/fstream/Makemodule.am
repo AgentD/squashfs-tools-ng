@@ -1,0 +1,17 @@
+libfstream_a_SOURCES = include/fstream.h
+libfstream_a_SOURCES += lib/fstream/internal.h
+libfstream_a_SOURCES += lib/fstream/ostream.c lib/fstream/printf.c
+libfstream_a_SOURCES += lib/fstream/istream.c
+libfstream_a_CFLAGS = $(AM_CFLAGS) $(ZLIB_CFLAGS) $(XZ_CFLAGS)
+libfstream_a_CPPFLAGS = $(AM_CPPFLAGS)
+
+if WINDOWS
+libfstream_a_SOURCES += lib/fstream/win32/ostream.c
+libfstream_a_SOURCES += lib/fstream/win32/istream.c
+libfstream_a_CFLAGS += -DWINVER=0x0600 -D_WIN32_WINNT=0x0600
+else
+libfstream_a_SOURCES += lib/fstream/unix/ostream.c
+libfstream_a_SOURCES += lib/fstream/unix/istream.c
+endif
+
+noinst_LIBRARIES += libfstream.a

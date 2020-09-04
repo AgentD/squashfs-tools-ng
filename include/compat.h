@@ -163,6 +163,8 @@ int fchownat(int dirfd, const char *path, int uid, int gid, int flags);
 int fchmodat(int dirfd, const char *path, int mode, int flags);
 
 int chdir(const char *path);
+
+void w32_perror(const char *str);
 #else
 #include <sys/types.h>
 #include <sys/stat.h>
