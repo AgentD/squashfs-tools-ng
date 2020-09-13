@@ -166,4 +166,9 @@ int parse_size(const char *what, size_t *out, const char *str,
 
 void print_size(sqfs_u64 size, char *buffer, bool round_to_int);
 
+ostream_t *data_writer_ostream_create(const char *filename,
+				      sqfs_block_processor_t *proc,
+				      sqfs_inode_generic_t **inode,
+				      int flags);
+
 #endif /* COMMON_H */
