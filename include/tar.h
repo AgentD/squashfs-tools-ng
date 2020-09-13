@@ -131,12 +131,12 @@ int write_hard_link(ostream_t *fp, const struct stat *sb, const char *name,
 		    const char *target, unsigned int counter);
 
 /* calcuate and skip the zero padding */
-int skip_padding(FILE *fp, sqfs_u64 size);
+int skip_padding(istream_t *fp, sqfs_u64 size);
 
 /* round up to block size and skip the entire entry */
-int skip_entry(FILE *fp, sqfs_u64 size);
+int skip_entry(istream_t *fp, sqfs_u64 size);
 
-int read_header(FILE *fp, tar_header_decoded_t *out);
+int read_header(istream_t *fp, tar_header_decoded_t *out);
 
 void free_xattr_list(tar_xattr_t *list);
 
@@ -147,14 +147,5 @@ void clear_header(tar_header_decoded_t *hdr);
   Returns 0 on success. On failure, prints error message to stderr.
 */
 int padd_file(ostream_t *fp, sqfs_u64 size);
-
-
-/*
-  A wrapper around the read() system call. It retries the read if it is
-  interrupted by a signal or less than the desired size was read. Returns 0
-  on success. Writes to stderr on failure using 'errstr' as a perror style
-  error prefix.
-*/
-int read_retry(const char *errstr, FILE *fp, void *buffer, size_t size);
 
 #endif /* TAR_H */

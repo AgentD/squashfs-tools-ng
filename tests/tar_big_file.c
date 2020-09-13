@@ -9,9 +9,10 @@
 int main(void)
 {
 	tar_header_decoded_t hdr;
-	FILE *fp;
+	istream_t *fp;
 
-	fp = test_open_read(STRVALUE(TESTPATH) "/" STRVALUE(TESTFILE));
+	fp = istream_open_file(STRVALUE(TESTPATH) "/" STRVALUE(TESTFILE));
+	TEST_NOT_NULL(fp);
 	TEST_ASSERT(read_header(fp, &hdr) == 0);
 	TEST_EQUAL_UI(hdr.sb.st_mode, S_IFREG | 0644);
 	TEST_EQUAL_UI(hdr.sb.st_uid, 01750);
@@ -22,6 +23,6 @@ int main(void)
 	TEST_STR_EQUAL(hdr.name, "big-file.bin");
 	TEST_ASSERT(!hdr.unknown_record);
 	clear_header(&hdr);
-	fclose(fp);
+	sqfs_destroy(fp);
 	return EXIT_SUCCESS;
 }

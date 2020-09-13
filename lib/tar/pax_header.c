@@ -25,7 +25,7 @@ static tar_xattr_t *mkxattr(const char *key, size_t keylen,
 	return xattr;
 }
 
-int read_pax_header(FILE *fp, sqfs_u64 entsize, unsigned int *set_by_pax,
+int read_pax_header(istream_t *fp, sqfs_u64 entsize, unsigned int *set_by_pax,
 		    tar_header_decoded_t *out)
 {
 	char *buffer, *line, *key, *ptr, *value, *end;

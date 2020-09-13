@@ -10,11 +10,12 @@ int main(void)
 {
 	tar_header_decoded_t hdr;
 	char buffer[16];
-	FILE *fp;
+	istream_t *fp;
 
 	TEST_ASSERT(chdir(TEST_PATH) == 0);
 
-	fp = test_open_read("format-acceptance/link_filled.tar");
+	fp = istream_open_file("format-acceptance/link_filled.tar");
+	TEST_NOT_NULL(fp);
 
 	/* "deep" directory hierarchy containg 2 files */
 	TEST_ASSERT(read_header(fp, &hdr) == 0);
@@ -45,7 +46,7 @@ int main(void)
 		       "20_characters_here03/20_characters_here04/"
 		       "errored_file_tst");
 	TEST_EQUAL_UI(hdr.sb.st_size, 5);
-	TEST_ASSERT(read_retry("data0", fp, buffer, 5) == 0);
+	TEST_ASSERT(istream_read(fp, buffer, 5) == 5);
 	buffer[5] = '\0';
 	TEST_STR_EQUAL(buffer, "test\n");
 	TEST_ASSERT(skip_padding(fp, 5) == 0);
@@ -57,7 +58,7 @@ int main(void)
 		       "20_characters_here03/20_characters_here04/"
 		       "some_test_file");
 	TEST_EQUAL_UI(hdr.sb.st_size, 5);
-	TEST_ASSERT(read_retry("data1", fp, buffer, 5) == 0);
+	TEST_ASSERT(istream_read(fp, buffer, 5) == 5);
 	buffer[5] = '\0';
 	TEST_STR_EQUAL(buffer, "test\n");
 	TEST_ASSERT(skip_padding(fp, 5) == 0);
@@ -99,7 +100,7 @@ int main(void)
 
 	/* end of file */
 	TEST_ASSERT(read_header(fp, &hdr) > 0);
-	fclose(fp);
+	sqfs_destroy(fp);
 
 	return EXIT_SUCCESS;
 }

@@ -10,9 +10,10 @@ static void test_case_sparse(const char *path)
 {
 	tar_header_decoded_t hdr;
 	sparse_map_t *sparse;
-	FILE *fp;
+	istream_t *fp;
 
-	fp = test_open_read(path);
+	fp = istream_open_file(path);
+	TEST_NOT_NULL(fp);
 	TEST_ASSERT(read_header(fp, &hdr) == 0);
 	TEST_EQUAL_UI(hdr.sb.st_mode, S_IFREG | 0644);
 	TEST_EQUAL_UI(hdr.sb.st_uid, 01750);
@@ -72,7 +73,7 @@ static void test_case_sparse(const char *path)
 	TEST_NULL(sparse);
 
 	clear_header(&hdr);
-	fclose(fp);
+	sqfs_destroy(fp);
 }
 
 int main(void)

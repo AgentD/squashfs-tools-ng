@@ -18,9 +18,10 @@ int main(void)
 {
 	tar_header_decoded_t hdr;
 	char buffer[6];
-	FILE *fp;
+	istream_t *fp;
 
-	fp = test_open_read(STRVALUE(TESTPATH) "/" STRVALUE(TESTFILE));
+	fp = istream_open_file(STRVALUE(TESTPATH) "/" STRVALUE(TESTFILE));
+	TEST_NOT_NULL(fp);
 	TEST_ASSERT(read_header(fp, &hdr) == 0);
 	TEST_EQUAL_UI(hdr.sb.st_mode, S_IFREG | 0644);
 	TEST_EQUAL_UI(hdr.sb.st_uid, 01750);
@@ -30,7 +31,7 @@ int main(void)
 	TEST_EQUAL_UI(hdr.mtime, 1543094477);
 	TEST_STR_EQUAL(hdr.name, "input.txt");
 	TEST_ASSERT(!hdr.unknown_record);
-	TEST_ASSERT(read_retry("data0", fp, buffer, 5) == 0);
+	TEST_ASSERT(istream_read(fp, buffer, 5) == 5);
 	buffer[5] = '\0';
 	TEST_STR_EQUAL(buffer, "test\n");
 
@@ -41,6 +42,6 @@ int main(void)
 	TEST_NULL(hdr.xattr->next);
 
 	clear_header(&hdr);
-	fclose(fp);
+	sqfs_destroy(fp);
 	return EXIT_SUCCESS;
 }

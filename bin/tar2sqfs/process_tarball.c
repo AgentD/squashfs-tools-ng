@@ -6,28 +6,74 @@
  */
 #include "tar2sqfs.h"
 
-static int write_file(FILE *input_file, sqfs_writer_t *sqfs,
+static int write_file(istream_t *input_file, sqfs_writer_t *sqfs,
 		      const tar_header_decoded_t *hdr,
 		      file_info_t *fi, sqfs_u64 filesize)
 {
-	sqfs_file_t *file;
-	int flags;
-	int ret;
+	const sparse_map_t *list;
+	int flags = 0, ret = 0;
+	sqfs_u64 offset, diff;
+	bool sparse_region;
+	ostream_t *out;
 
-	file = sqfs_get_stdin_file(input_file, hdr->sparse, filesize);
-	if (file == NULL) {
-		perror("packing files");
-		return -1;
-	}
-
-	flags = 0;
 	if (no_tail_pack && filesize > cfg.block_size)
 		flags |= SQFS_BLK_DONT_FRAGMENT;
 
-	ret = write_data_from_file(hdr->name, sqfs->data,
-				   (sqfs_inode_generic_t **)&fi->user_ptr,
-				   file, flags);
-	sqfs_destroy(file);
+	out = data_writer_ostream_create(hdr->name, sqfs->data,
+					 (sqfs_inode_generic_t **)&fi->user_ptr,
+					 flags);
+
+	if (out == NULL)
+		return -1;
+
+	list = hdr->sparse;
+
+	for (offset = 0; offset < filesize; offset += diff) {
+		if (hdr->sparse != NULL) {
+			if (list == NULL) {
+				sparse_region = true;
+				diff = filesize - offset;
+			} else if (offset < list->offset) {
+				sparse_region = true;
+				diff = list->offset - offset;
+			} else if (offset - list->offset >= list->count) {
+				list = list->next;
+				diff = 0;
+				continue;
+			} else {
+				sparse_region = false;
+				diff = list->count - (offset - list->offset);
+			}
+		} else {
+			sparse_region = false;
+			diff = filesize - offset;
+		}
+
+		if (sizeof(diff) > sizeof(size_t) && diff > 0x7FFFFFFFUL)
+			diff = 0x7FFFFFFFUL;
+
+		if (sparse_region) {
+			ret = ostream_append_sparse(out, diff);
+		} else {
+			ret = ostream_append_from_istream(out, input_file,
+							  diff);
+
+			if (ret == 0) {
+				fprintf(stderr, "%s: unexpected end-of-file\n",
+					hdr->name);
+				ret = -1;
+			} else if (ret > 0) {
+				diff = ret;
+				ret = 0;
+			}
+		}
+
+		if (ret < 0)
+			break;
+	}
+
+	ostream_flush(out);
+	sqfs_destroy(out);
 
 	if (ret)
 		return -1;
@@ -78,7 +124,8 @@ static int copy_xattr(sqfs_writer_t *sqfs, tree_node_t *node,
 	return 0;
 }
 
-static int create_node_and_repack_data(FILE *input_file, sqfs_writer_t *sqfs,
+static int create_node_and_repack_data(istream_t *input_file,
+				       sqfs_writer_t *sqfs,
 				       tar_header_decoded_t *hdr)
 {
 	tree_node_t *node;
@@ -149,7 +196,7 @@ static int set_root_attribs(sqfs_writer_t *sqfs,
 	return 0;
 }
 
-int process_tarball(FILE *input_file, sqfs_writer_t *sqfs)
+int process_tarball(istream_t *input_file, sqfs_writer_t *sqfs)
 {
 	bool skip, is_root, is_prefixed;
 	tar_header_decoded_t hdr;

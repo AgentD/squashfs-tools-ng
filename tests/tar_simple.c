@@ -36,9 +36,10 @@ int main(void)
 	tar_header_decoded_t hdr;
 	char buffer[6];
 	sqfs_s64 ts;
-	FILE *fp;
+	istream_t *fp;
 
-	fp = test_open_read(STRVALUE(TESTPATH) "/" STRVALUE(TESTFILE));
+	fp = istream_open_file(STRVALUE(TESTPATH) "/" STRVALUE(TESTFILE));
+	TEST_NOT_NULL(fp);
 	TEST_ASSERT(read_header(fp, &hdr) == 0);
 	TEST_EQUAL_UI(hdr.sb.st_mode, S_IFREG | 0644);
 	TEST_EQUAL_UI(hdr.sb.st_uid, TESTUID);
@@ -57,10 +58,10 @@ int main(void)
 	TEST_STR_EQUAL(hdr.name, fname);
 	TEST_ASSERT(!hdr.unknown_record);
 
-	TEST_ASSERT(read_retry("tar data", fp, buffer, 5) == 0);
+	TEST_ASSERT(istream_read(fp, buffer, 5) == 5);
 	buffer[5] = '\0';
 	TEST_STR_EQUAL(buffer, "test\n");
 	clear_header(&hdr);
-	fclose(fp);
+	sqfs_destroy(fp);
 	return EXIT_SUCCESS;
 }

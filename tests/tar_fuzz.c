@@ -14,7 +14,7 @@
 int main(int argc, char **argv)
 {
 	tar_header_decoded_t hdr;
-	FILE *fp;
+	istream_t *fp;
 	int ret;
 
 	if (argc != 2) {
@@ -22,11 +22,9 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	fp = fopen(argv[1], "rb");
-	if (fp == NULL) {
-		perror(argv[1]);
+	fp = istream_open_file(argv[1]);
+	if (fp == NULL)
 		return EXIT_FAILURE;
-	}
 
 	for (;;) {
 		ret = read_header(fp, &hdr);
@@ -35,16 +33,16 @@ int main(int argc, char **argv)
 		if (ret < 0)
 			goto fail;
 
-		ret = fseek(fp, hdr.sb.st_size, SEEK_CUR);
+		ret = istream_skip(fp, hdr.sb.st_size);
 
 		clear_header(&hdr);
 		if (ret < 0)
 			goto fail;
 	}
 
-	fclose(fp);
+	sqfs_destroy(fp);
 	return EXIT_SUCCESS;
 fail:
-	fclose(fp);
+	sqfs_destroy(fp);
 	return EXIT_FAILURE;
 }

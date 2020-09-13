@@ -28,7 +28,7 @@ static int decode(const char *str, size_t len, size_t *out)
 	return (*str == '\n') ? ((int)count + 1) : -1;
 }
 
-sparse_map_t *read_gnu_new_sparse(FILE *fp, tar_header_decoded_t *out)
+sparse_map_t *read_gnu_new_sparse(istream_t *fp, tar_header_decoded_t *out)
 {
 	sparse_map_t *last = NULL, *list = NULL, *ent = NULL;
 	size_t i, count, value;
@@ -38,8 +38,12 @@ sparse_map_t *read_gnu_new_sparse(FILE *fp, tar_header_decoded_t *out)
 	if (out->record_size < 512)
 		goto fail_format;
 
-	if (read_retry("reading GNU sparse map", fp, buffer, 512))
-		return NULL;
+	ret = istream_read(fp, buffer, 512);
+	if (ret < 0)
+		goto fail;
+
+	if (ret < 512)
+		goto fail_format;
 
 	diff = decode(buffer, 512, &count);
 	if (diff <= 0)
@@ -61,10 +65,12 @@ sparse_map_t *read_gnu_new_sparse(FILE *fp, tar_header_decoded_t *out)
 			if (out->record_size < 512)
 				goto fail_format;
 
-			if (read_retry("reading GNU sparse map", fp,
-				       buffer + 512, 512)) {
-				return NULL;
-			}
+			ret = istream_read(fp, buffer + 512, 512);
+			if (ret < 0)
+				goto fail;
+
+			if (ret < 512)
+				goto fail_format;
 
 			ret = decode(buffer + diff, 1024 - diff, &value);
 			if (ret <= 0)

@@ -170,19 +170,23 @@ static int decode_header(const tar_header_t *hdr, unsigned int set_by_pax,
 	return 0;
 }
 
-int read_header(FILE *fp, tar_header_decoded_t *out)
+int read_header(istream_t *fp, tar_header_decoded_t *out)
 {
 	unsigned int set_by_pax = 0;
 	bool prev_was_zero = false;
 	sqfs_u64 pax_size;
 	tar_header_t hdr;
-	int version;
+	int version, ret;
 
 	memset(out, 0, sizeof(*out));
 
 	for (;;) {
-		if (read_retry("reading tar header", fp, &hdr, sizeof(hdr)))
+		ret = istream_read(fp, &hdr, sizeof(hdr));
+		if (ret < 0)
 			goto fail;
+
+		if ((size_t)ret < sizeof(hdr))
+			goto out_eof;
 
 		if (is_zero_block(&hdr)) {
 			if (prev_was_zero)
@@ -293,4 +297,18 @@ fail_chksum:
 fail:
 	clear_header(out);
 	return -1;
+}
+
+int skip_padding(istream_t *fp, sqfs_u64 size)
+{
+	size_t tail = size % 512;
+
+	return tail ? istream_skip(fp, 512 - tail) : 0;
+}
+
+int skip_entry(istream_t *fp, sqfs_u64 size)
+{
+	size_t tail = size % 512;
+
+	return istream_skip(fp, tail ? (size + 512 - tail) : size);
 }

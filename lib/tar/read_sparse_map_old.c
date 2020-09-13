@@ -8,12 +8,12 @@
 
 #include "internal.h"
 
-sparse_map_t *read_gnu_old_sparse(FILE *fp, tar_header_t *hdr)
+sparse_map_t *read_gnu_old_sparse(istream_t *fp, tar_header_t *hdr)
 {
 	sparse_map_t *list = NULL, *end = NULL, *node;
 	gnu_sparse_t sph;
 	sqfs_u64 off, sz;
-	int i;
+	int i, ret;
 
 	for (i = 0; i < 4; ++i) {
 		if (!isdigit(hdr->tail.gnu.sparse[i].offset[0]))
@@ -47,8 +47,14 @@ sparse_map_t *read_gnu_old_sparse(FILE *fp, tar_header_t *hdr)
 		return list;
 
 	do {
-		if (read_retry("reading GNU sparse header",
-			       fp, &sph, sizeof(sph))) {
+		ret = istream_read(fp, &sph, sizeof(sph));
+		if (ret < 0)
+			goto fail;
+
+		if ((size_t)ret < sizeof(sph)) {
+			fputs("reading GNU sparse header: "
+			      "unexpected end-of-file\n",
+			      stderr);
 			goto fail;
 		}
 
