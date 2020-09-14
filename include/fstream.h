@@ -55,6 +55,21 @@ enum {
 	OSTREAM_OPEN_SPARSE = 0x02,
 };
 
+enum {
+	/**
+	 * @brief Deflate compressor with gzip headers.
+	 *
+	 * This actually creates a gzip compatible file, including a
+	 * gzip header and trailer.
+	 */
+	FSTREAM_COMPRESSOR_GZIP = 1,
+
+	FSTREAM_COMPRESSOR_XZ = 2,
+
+	FSTREAM_COMPRESSOR_MIN = 1,
+	FSTREAM_COMPRESSOR_MAX = 2,
+};
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -107,6 +122,27 @@ SQFS_INTERNAL istream_t *istream_open_file(const char *path);
  * @return A pointer to an input stream on success, NULL on failure.
  */
 SQFS_INTERNAL istream_t *istream_open_stdin(void);
+
+/**
+ * @brief Create an output stream that transparently compresses data.
+ *
+ * @memberof ostream_t
+ *
+ * This function creates an output stream that transparently compresses all
+ * data appended to it and writes the compressed data to an underlying, wrapped
+ * output stream.
+ *
+ * The new stream takes ownership of the wrapped stream and destroys it when
+ * the compressor stream is destroyed. If this function fails, the wrapped
+ * stream is also destroyed.
+ *
+ * @param strm A pointer to another stream that should be wrapped.
+ * @param comp_id An identifier describing the compressor to use.
+ *
+ * @return A pointer to an output stream on success, NULL on failure.
+ */
+SQFS_INTERNAL ostream_t *ostream_compressor_create(ostream_t *strm,
+						   int comp_id);
 
 /**
  * @brief Append a block of data to an output stream.
@@ -244,6 +280,33 @@ SQFS_INTERNAL int istream_skip(istream_t *strm, sqfs_u64 size);
 SQFS_INTERNAL sqfs_s32 ostream_append_from_istream(ostream_t *out,
 						   istream_t *in,
 						   sqfs_u32 size);
+
+/**
+ * @brief Resolve a compressor name to an ID.
+ *
+ * @param name A compressor name.
+ *
+ * @return A compressor ID on success, -1 on failure.
+ */
+SQFS_INTERNAL int fstream_compressor_id_from_name(const char *name);
+
+/**
+ * @brief Resolve a id to a  compressor name.
+ *
+ * @param id A compressor ID.
+ *
+ * @return A compressor name on success, NULL on failure.
+ */
+SQFS_INTERNAL const char *fstream_compressor_name_from_id(int id);
+
+/**
+ * @brief Check if support for a given compressor has been built in.
+ *
+ * @param id A compressor ID.
+ *
+ * @return True if the compressor is supported, false if not.
+ */
+SQFS_INTERNAL bool fstream_compressor_exists(int id);
 
 #ifdef __cplusplus
 }
