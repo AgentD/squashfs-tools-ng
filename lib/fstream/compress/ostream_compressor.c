@@ -77,6 +77,11 @@ ostream_t *ostream_compressor_create(ostream_t *strm, int comp_id)
 		comp = ostream_xz_create(strm->get_filename(strm));
 #endif
 		break;
+	case FSTREAM_COMPRESSOR_ZSTD:
+#ifdef WITH_ZSTD
+		comp = ostream_zstd_create(strm->get_filename(strm));
+#endif
+		break;
 	default:
 		break;
 	}

@@ -29,4 +29,10 @@ libfstream_a_SOURCES += lib/fstream/uncompress/gzip.c
 libfstream_a_CPPFLAGS += -DWITH_GZIP
 endif
 
+if WITH_ZSTD
+libfstream_a_SOURCES += lib/fstream/compress/zstd.c
+libfstream_a_SOURCES += lib/fstream/uncompress/zstd.c
+libfstream_a_CPPFLAGS += -DWITH_ZSTD
+endif
+
 noinst_LIBRARIES += libfstream.a

@@ -13,6 +13,7 @@ static const struct {
 } magic[] = {
 	{ FSTREAM_COMPRESSOR_GZIP, (const sqfs_u8 *)"\x1F\x8B\x08", 3 },
 	{ FSTREAM_COMPRESSOR_XZ, (const sqfs_u8 *)("\xFD" "7zXZ"), 6 },
+	{ FSTREAM_COMPRESSOR_ZSTD, (const sqfs_u8 *)"\x28\xB5\x2F\xFD", 4 },
 };
 
 int istream_detect_compressor(istream_t *strm,
