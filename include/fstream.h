@@ -145,6 +145,46 @@ SQFS_INTERNAL ostream_t *ostream_compressor_create(ostream_t *strm,
 						   int comp_id);
 
 /**
+ * @brief Create an input stream that transparently uncompresses data.
+ *
+ * @memberof istream_t
+ *
+ * This function creates an input stream that wraps an underlying input stream
+ * that is compressed and transparently uncompresses the data when reading
+ * from it.
+ *
+ * The new stream takes ownership of the wrapped stream and destroys it when
+ * the compressor stream is destroyed. If this function fails, the wrapped
+ * stream is also destroyed.
+ *
+ * @param strm A pointer to another stream that should be wrapped.
+ * @param comp_id An identifier describing the compressor to use.
+ *
+ * @return A pointer to an input stream on success, NULL on failure.
+ */
+SQFS_INTERNAL istream_t *istream_compressor_create(istream_t *strm,
+						   int comp_id);
+
+/**
+ * @brief Probe the buffered data in an istream to check if it is compressed.
+ *
+ * @memberof istream_t
+ *
+ * This function peeks into the internal buffer of an input stream to check
+ * for magic signatures of various compressors.
+ *
+ * @param strm A pointer to an input stream to check
+ * @param probe A callback used to check if raw/decoded data matches an
+ *              expected format. Returns 0 if not, -1 on failure and +1
+ *              on success.
+ *
+ * @return A compressor ID on success, 0 if no match was found, -1 on failure.
+ */
+SQFS_INTERNAL int istream_detect_compressor(istream_t *strm,
+					    int (*probe)(const sqfs_u8 *data,
+							 size_t size));
+
+/**
  * @brief Append a block of data to an output stream.
  *
  * @memberof ostream_t

@@ -37,6 +37,18 @@ typedef struct ostream_comp_t {
 	void (*cleanup)(struct ostream_comp_t *ostrm);
 } ostream_comp_t;
 
+typedef struct istream_comp_t {
+	istream_t base;
+
+	istream_t *wrapped;
+
+	sqfs_u8 uncompressed[BUFSZ];
+
+	bool eof;
+
+	void (*cleanup)(struct istream_comp_t *strm);
+} istream_comp_t;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -44,6 +56,10 @@ extern "C" {
 SQFS_INTERNAL ostream_comp_t *ostream_gzip_create(const char *filename);
 
 SQFS_INTERNAL ostream_comp_t *ostream_xz_create(const char *filename);
+
+SQFS_INTERNAL istream_comp_t *istream_gzip_create(const char *filename);
+
+SQFS_INTERNAL istream_comp_t *istream_xz_create(const char *filename);
 
 #ifdef __cplusplus
 }
