@@ -17,6 +17,9 @@ int fstream_compressor_id_from_name(const char *name)
 	if (strcmp(name, "zstd") == 0)
 		return FSTREAM_COMPRESSOR_ZSTD;
 
+	if (strcmp(name, "bzip2") == 0)
+		return FSTREAM_COMPRESSOR_BZIP2;
+
 	return -1;
 }
 
@@ -30,6 +33,9 @@ const char *fstream_compressor_name_from_id(int id)
 
 	if (id == FSTREAM_COMPRESSOR_ZSTD)
 		return "zstd";
+
+	if (id == FSTREAM_COMPRESSOR_BZIP2)
+		return "bzip2";
 
 	return NULL;
 }
@@ -47,6 +53,10 @@ bool fstream_compressor_exists(int id)
 #endif
 #ifdef WITH_ZSTD
 	case FSTREAM_COMPRESSOR_ZSTD:
+		return true;
+#endif
+#ifdef WITH_BZIP2
+	case FSTREAM_COMPRESSOR_BZIP2:
 		return true;
 #endif
 	default:

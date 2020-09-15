@@ -59,11 +59,15 @@ SQFS_INTERNAL ostream_comp_t *ostream_xz_create(const char *filename);
 
 SQFS_INTERNAL ostream_comp_t *ostream_zstd_create(const char *filename);
 
+SQFS_INTERNAL ostream_comp_t *ostream_bzip2_create(const char *filename);
+
 SQFS_INTERNAL istream_comp_t *istream_gzip_create(const char *filename);
 
 SQFS_INTERNAL istream_comp_t *istream_xz_create(const char *filename);
 
 SQFS_INTERNAL istream_comp_t *istream_zstd_create(const char *filename);
+
+SQFS_INTERNAL istream_comp_t *istream_bzip2_create(const char *filename);
 
 #ifdef __cplusplus
 }

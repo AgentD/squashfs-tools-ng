@@ -59,6 +59,11 @@ AM_CONDITIONAL([WINDOWS], [test "x$build_windows" = "xyes"])
 
 ##### config options #####
 
+AC_ARG_WITH([bzip2],
+	[AS_HELP_STRING([--with-bzip2],
+			[Build with bzip2 compression support])],
+	[], [with_bzip2="check"])
+
 AC_ARG_WITH([xz],
 	[AS_HELP_STRING([--with-xz], [Build with xz compression support])],
 	[], [with_xz="check"])
@@ -138,6 +143,13 @@ fi
 
 ##### search for dependencies #####
 
+AS_IF([test "x$with_bzip2" != "xno"], [
+	PKG_CHECK_MODULES(BZIP2, [bzip2], [with_bzip2="yes"],
+			      [AS_IF([test "x$with_bzip2" != "xcheck"],
+				     [AC_MSG_ERROR([cannot Bzip2 libs])],
+				     [with_bzip2="no"])])
+], [])
+
 AS_IF([test "x$with_gzip" != "xno" -a "x$with_builtin_zlib" != "xyes"], [
 	PKG_CHECK_MODULES(ZLIB, [zlib], [with_gzip="yes"],
 				[AS_IF([test "x$with_gzip" != "xcheck"],
@@ -206,6 +218,7 @@ AS_IF([test "x$with_pthread" != "xno"], [
 			  [with_pthread="no"])])
 ], [])
 
+AM_CONDITIONAL([WITH_BZIP2], [test "x$with_bzip2" = "xyes"])
 AM_CONDITIONAL([WITH_GZIP], [test "x$with_gzip" = "xyes"])
 AM_CONDITIONAL([WITH_XZ], [test "x$with_xz" = "xyes"])
 AM_CONDITIONAL([WITH_LZ4], [test "x$with_lz4" = "xyes"])
@@ -276,6 +289,7 @@ AC_MSG_RESULT([
 	LZO support:       ${with_lzo}
 	LZ4 support:       ${with_lz4}
 	ZSTD support:      ${with_zstd}
+	BZIP2 support:     ${with_bzip2}
 
 	SELinux support:   ${with_selinux}
 	Using pthreads:    ${with_pthread}

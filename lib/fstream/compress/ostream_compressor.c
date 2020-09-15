@@ -82,6 +82,11 @@ ostream_t *ostream_compressor_create(ostream_t *strm, int comp_id)
 		comp = ostream_zstd_create(strm->get_filename(strm));
 #endif
 		break;
+	case FSTREAM_COMPRESSOR_BZIP2:
+#ifdef WITH_BZIP2
+		comp = ostream_bzip2_create(strm->get_filename(strm));
+#endif
+		break;
 	default:
 		break;
 	}
