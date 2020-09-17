@@ -7,6 +7,7 @@ libfstream_a_SOURCES += lib/fstream/compress/ostream_compressor.c
 libfstream_a_SOURCES += lib/fstream/uncompress/istream_compressor.c
 libfstream_a_SOURCES += lib/fstream/uncompress/autodetect.c
 libfstream_a_CFLAGS = $(AM_CFLAGS) $(ZLIB_CFLAGS) $(XZ_CFLAGS)
+libfstream_a_CFLAGS += $(ZSTD_CFLAGS) $(BZIP2_CFLAGS)
 libfstream_a_CPPFLAGS = $(AM_CPPFLAGS)
 
 if WINDOWS

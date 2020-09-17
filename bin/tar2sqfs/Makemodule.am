@@ -3,7 +3,8 @@ tar2sqfs_SOURCES += bin/tar2sqfs/options.c bin/tar2sqfs/process_tarball.c
 tar2sqfs_CFLAGS = $(AM_CFLAGS) $(PTHREAD_CFLAGS)
 tar2sqfs_LDADD = libcommon.a libsquashfs.la libtar.a libfstream.a
 tar2sqfs_LDADD += libfstree.a libcompat.a libfstree.a $(LZO_LIBS)
-tar2sqfs_LDADD += $(ZLIB_LIBS) $(XZ_LIBS) $(BZIP2_LIBS) $(PTHREAD_LIBS)
+tar2sqfs_LDADD += $(ZLIB_LIBS) $(XZ_LIBS) $(ZSTD_LIBS) $(BZIP2_LIBS)
+tar2sqfs_LDADD += $(PTHREAD_LIBS)
 
 if WITH_OWN_ZLIB
 tar2sqfs_LDADD += libz.la
