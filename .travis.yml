@@ -3,10 +3,10 @@ language: c
 addons:
   apt:
     packages:
-      - libzstd-dev liblzo2-dev liblz4-dev lzma-dev zlib1g-dev libreadline-dev
+      - libzstd-dev liblzo2-dev liblz4-dev lzma-dev zlib1g-dev libreadline-dev libbz2-dev
   homebrew:
     packages:
-      - zstd lzo lz4 xz zlib readline
+      - zstd lzo lz4 xz zlib bzip2 readline
 
 script:
   - ./autogen.sh
