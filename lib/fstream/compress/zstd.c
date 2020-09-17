@@ -8,6 +8,7 @@
 
 #include <zstd.h>
 
+#ifdef HAVE_ZSTD_STREAM
 typedef struct {
 	ostream_comp_t base;
 
@@ -90,3 +91,4 @@ ostream_comp_t *ostream_zstd_create(const char *filename)
 	base->cleanup = cleanup;
 	return base;
 }
+#endif /* HAVE_ZSTD_STREAM */

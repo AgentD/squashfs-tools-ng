@@ -51,7 +51,7 @@ bool fstream_compressor_exists(int id)
 	case FSTREAM_COMPRESSOR_XZ:
 		return true;
 #endif
-#ifdef WITH_ZSTD
+#if defined(WITH_ZSTD) && defined(HAVE_ZSTD_STREAM)
 	case FSTREAM_COMPRESSOR_ZSTD:
 		return true;
 #endif

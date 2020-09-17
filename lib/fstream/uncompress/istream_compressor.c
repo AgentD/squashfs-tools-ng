@@ -40,7 +40,7 @@ istream_t *istream_compressor_create(istream_t *strm, int comp_id)
 #endif
 		break;
 	case FSTREAM_COMPRESSOR_ZSTD:
-#ifdef WITH_ZSTD
+#if defined(WITH_ZSTD) && defined(HAVE_ZSTD_STREAM)
 		comp = istream_zstd_create(strm->get_filename(strm));
 #endif
 		break;
