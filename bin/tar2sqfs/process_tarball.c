@@ -209,6 +209,8 @@ int process_tarball(FILE *input_file, sqfs_writer_t *sqfs)
 		}
 
 		if (!is_prefixed) {
+			if (skip_entry(input_file, hdr.sb.st_size))
+				goto fail;
 			clear_header(&hdr);
 			continue;
 		}
