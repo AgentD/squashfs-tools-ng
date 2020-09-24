@@ -7,6 +7,9 @@ tar2sqfs \- create a SquashFS image from a tar archive
 .SH DESCRIPTION
 Quickly and painlessly turn a tar ball into a SquashFS filesystem image.
 .PP
+By default, the program reads the archive from standard input. Compressed
+archives are supported.
+.PP
 Possible options:
 .TP
 \fB\-\-root\-becomes\fR, \fB\-r\fR <dir>
@@ -107,12 +110,17 @@ Currently the program can process v7 format, pre-POSIX ustar, POSIX tar and GNU
 tar archives. PAX extension headers are also supported. Global PAX headers are
 ignored.
 
-The support for GNU tar is limited to commonly used subset (i.e. some legacy
+The support for GNU tar is limited to a commonly used subset (i.e. some legacy
 extensions that GNU tar itself no longer generates are not supported; neither
-are mutli volume archives).
+are multi volume archives).
 
-Extended attributes are supported through the SCHILY.xattr PAX extension
-(favoured by GNU tar and star) or through the LIBARCHIVE.xattr PAX extension.
+The input tar file can either be uncompressed, or stream compressed using
+\fBgzip\fR, \fBxz\fR, \fBzstd\fR or \fBbzip2\fR. The program transparently
+auto-detects and unpacks any stream compressed archive. The exact list of
+supported compressors depends on the compile configuration.
+
+Extended attributes are supported through the \fBSCHILY.xattr\fR extension
+(favoured by GNU tar and star) or through the \fBLIBARCHIVE.xattr\fR extension.
 
 If any unsupported section or extended attribute key is encountered in an
 archive, a warning message is written to stderr. If the \fB\-\-no\-skip\fR
@@ -133,15 +141,7 @@ environment variables.
 .TP
 Turn an uncompressed tar archive into a SquashFS image:
 .IP
-tar2sqfs rootfs.sqfs < rootfs.tar
-.TP
-Turn a gzip'ed tar archive into a SquashFS image:
-.IP
-zcat rootfs.tar.gz | tar2sqfs rootfs.sqfs
-.TP
-Turn an LZMA2 compressed tar archive into a SquashFS image:
-.IP
-xzcat rootfs.tar.xz | tar2sqfs rootfs.sqfs
+tar2sqfs rootfs.sqfs < rootfs.tar.gz
 .SH SEE ALSO
 gensquashfs(1), rdsquashfs(1), sqfs2tar(1)
 .SH AUTHOR

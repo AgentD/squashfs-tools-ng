@@ -46,9 +46,12 @@ void compressor_print_available(void)
 	sqfs_compressor_config_t cfg;
 	sqfs_compressor_t *temp;
 	bool have_compressor;
-	int i, ret;
+	int i, ret, defcomp;
+	const char *name;
 
-	fputs("Available compressors:\n", stdout);
+	defcomp = compressor_get_default();
+
+	fputs("Available SquashFS block compressors:\n", stdout);
 
 	for (i = SQFS_COMP_MIN; i <= SQFS_COMP_MAX; ++i) {
 		sqfs_compressor_config_init(&cfg, i,
@@ -67,10 +70,16 @@ void compressor_print_available(void)
 #endif
 		}
 
-		if (have_compressor)
-			printf("\t%s\n", sqfs_compressor_name_from_id(i));
+		if (have_compressor) {
+			name = sqfs_compressor_name_from_id(i);
+
+			if (defcomp == i) {
+				printf("\t%s (default)\n", name);
+			} else {
+				printf("\t%s\n", name);
+			}
+		}
 	}
 
-	printf("\nDefault compressor: %s\n",
-	       sqfs_compressor_name_from_id(compressor_get_default()));
+	fputc('\n', stdout);
 }

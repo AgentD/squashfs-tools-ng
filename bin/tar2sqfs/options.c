@@ -32,8 +32,7 @@ static const char *short_opts = "r:c:b:B:d:X:j:Q:sxekfqThV";
 static const char *usagestr =
 "Usage: tar2sqfs [OPTIONS...] <sqfsfile>\n"
 "\n"
-"Read an uncompressed tar archive from stdin and turn it into a squashfs\n"
-"filesystem image.\n"
+"Read a tar archive from stdin and turn it into a squashfs filesystem image.\n"
 "\n"
 "Possible options:\n"
 "\n"
@@ -79,12 +78,6 @@ static const char *usagestr =
 "  --quiet, -q                 Do not print out progress reports.\n"
 "  --help, -h                  Print help text and exit.\n"
 "  --version, -V               Print version information and exit.\n"
-"\n"
-"Examples:\n"
-"\n"
-"\ttar2sqfs rootfs.sqfs < rootfs.tar\n"
-"\tzcat rootfs.tar.gz | tar2sqfs rootfs.sqfs\n"
-"\txzcat rootfs.tar.xz | tar2sqfs rootfs.sqfs\n"
 "\n";
 
 bool dont_skip = false;
@@ -92,6 +85,26 @@ bool keep_time = true;
 bool no_tail_pack = false;
 sqfs_writer_cfg_t cfg;
 char *root_becomes = NULL;
+
+static void input_compressor_print_available(void)
+{
+	int i = FSTREAM_COMPRESSOR_MIN;
+	const char *name;
+
+	fputs("\nSupported tar compression formats:\n", stdout);
+
+	while (i <= FSTREAM_COMPRESSOR_MAX) {
+		name = fstream_compressor_name_from_id(i);
+
+		if (fstream_compressor_exists(i))
+			printf("\t%s\n", name);
+
+		++i;
+	}
+
+	fputs("\tuncompressed\n", stdout);
+	fputc('\n', stdout);
+}
 
 void process_args(int argc, char **argv)
 {
@@ -196,6 +209,7 @@ void process_args(int argc, char **argv)
 			printf(usagestr, SQFS_DEFAULT_BLOCK_SIZE,
 			       SQFS_DEVBLK_SIZE);
 			compressor_print_available();
+			input_compressor_print_available();
 			exit(EXIT_SUCCESS);
 		case 'V':
 			print_version("tar2sqfs");

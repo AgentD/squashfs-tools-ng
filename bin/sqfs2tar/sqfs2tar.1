@@ -11,6 +11,13 @@ archives. The resulting archive is written to stdout.
 .PP
 Possible options:
 .TP
+\fB\-\-compressor\fR, \fB\-c\fR <name>
+By default the result is a raw, uncompressed tar ball. Using this option
+it is possible to select a stream compression format (such as \fBgzip\fR,
+\fBxz\fR, \fBzstd\fR or \fBbzip2\fR) to use for the output archive.
+
+Run \fBsqfs2tar \-\-help\fR to get a list of all available compressors.
+.TP
 \fB\-\-root\-becomes\fR, \fB\-r\fR <dir>
 Prefix all paths in the tarball with the given directory name and add an
 entry for this directory that receives all meta data (permissions, ownership,
@@ -69,18 +76,24 @@ Since the tar format contains a sequence of files with absolute names, it has
 no direct concept of a tree or an unnamed root node. Consequently, meta data
 from the SquashFS root inode is lost, unless the \fB\-\-root\-becomes\fR option
 is used.
+
+The output archive can optionally be compressed. Default settings are used for
+the supported compressors and there is currently no intention to expose finer
+grained control over them. To set custom compressor flags, create an
+uncompressed archive and pipe it into a dedicated compressor process.
+
 .SH EXAMPLES
 Turn a SquashFS image into a tar archive:
 .IP
 sqfs2tar rootfs.sqfs > rootfs.tar
 .TP
-Turn a SquashFS image into a gzip'ed tar archive:
+Creating a compressed archive with gzip headers:
 .IP
-sqfs2tar rootfs.sqfs | gzip > rootfs.tar.gz
+sqfs2tar --compressor gzip rootfs.sqfs > rootfs.tar.gz
 .TP
-Turn a SquashFS image into an LZMA2 compressed tar archive:
+Compressing the output archive, but using custom compressor flags:
 .IP
-sqfs2tar rootfs.sqfs | xz > rootfs.tar.xz
+sqfs2tar rootfs.sqfs | xz -9e > rootfs.tar.xz
 .SH SEE ALSO
 rdsquashfs(1), tar2sqfs(1)
 .SH AUTHOR

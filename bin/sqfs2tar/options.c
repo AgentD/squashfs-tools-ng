@@ -62,13 +62,7 @@ static const char *usagestr =
 "  --help, -h                Print help text and exit.\n"
 "  --version, -V             Print version information and exit.\n"
 "\n"
-"Examples:\n"
-"\n"
-"\tsqfs2tar rootfs.sqfs > rootfs.tar\n"
-"\tsqfs2tar rootfs.sqfs | gzip > rootfs.tar.gz\n"
-"\tsqfs2tar rootfs.sqfs | xz > rootfs.tar.xz\n"
-"\n"
-"Available compressors:\n";
+"Supported tar compression formats:\n";
 
 bool dont_skip = false;
 bool keep_as_dir = false;
