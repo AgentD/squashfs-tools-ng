@@ -230,9 +230,7 @@ int process_tarball(istream_t *input_file, sqfs_writer_t *sqfs)
 			fprintf(stderr, "skipping '%s' (invalid name)\n",
 				hdr.name);
 			skip = true;
-		}
-
-		if (root_becomes != NULL) {
+		} else if (root_becomes != NULL) {
 			if (strncmp(hdr.name, root_becomes, rootlen) == 0) {
 				if (hdr.name[rootlen] == '\0') {
 					is_root = true;
