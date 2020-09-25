@@ -230,6 +230,11 @@ fstree_fuzz_LDADD = libfstree.a libcompat.a
 tar_fuzz_SOURCES = tests/tar_fuzz.c
 tar_fuzz_LDADD = libtar.a libfstream.a libcompat.a
 
+test_get_line_SOURCES = tests/get_line.c tests/test.h
+test_get_line_LDADD = libfstream.a libcompat.a
+test_get_line_CPPFLAGS = $(AM_CPPFLAGS)
+test_get_line_CPPFLAGS += -DTESTFILE=$(top_srcdir)/tests/get_line.txt
+
 check_PROGRAMS += test_mknode_simple test_mknode_slink test_mknode_reg
 check_PROGRAMS += test_mknode_dir test_gen_inode_numbers test_add_by_path
 check_PROGRAMS += test_get_path test_fstree_sort test_fstree_from_file
@@ -245,6 +250,7 @@ check_PROGRAMS += test_tar_sparse_gnu test_tar_sparse_gnu0 test_tar_sparse_gnu1
 check_PROGRAMS += test_tar_sparse_gnu2 test_tar_sparse_gnu3
 check_PROGRAMS += test_tar_xattr_bsd test_tar_xattr_schily
 check_PROGRAMS += test_tar_xattr_schily_bin test_tar_target_filled
+check_PROGRAMS += test_get_line
 
 noinst_PROGRAMS += fstree_fuzz tar_fuzz
 
@@ -261,7 +267,7 @@ TESTS += test_tar_pax5
 TESTS += test_tar_sparse_gnu test_tar_sparse_gnu0
 TESTS += test_tar_sparse_gnu1 test_tar_sparse_gnu2 test_tar_sparse_gnu3
 TESTS += test_tar_xattr_bsd test_tar_xattr_schily
-TESTS += test_tar_xattr_schily_bin test_tar_target_filled
+TESTS += test_tar_xattr_schily_bin test_tar_target_filled test_get_line
 
 if CORPORA_TESTS
 check_SCRIPTS += tests/cantrbry.sh tests/test_tar_sqfs.sh tests/pack_dir_root.sh
@@ -274,3 +280,4 @@ EXTRA_DIST += $(top_srcdir)/tests/fstree1.txt
 EXTRA_DIST += $(top_srcdir)/tests/corpus/cantrbry.tar.xz
 EXTRA_DIST += $(top_srcdir)/tests/corpus/cantrbry.sha512
 EXTRA_DIST += $(top_srcdir)/tests/pack_dir_root.txt.ref
+EXTRA_DIST += $(top_srcdir)/tests/get_line.txt

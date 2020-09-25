@@ -13,6 +13,11 @@
 #include <stdio.h>
 #include <errno.h>
 
+#define STR(x) #x
+#define STRVALUE(x) STR(x)
+
+#define TEST_PATH STRVALUE(TESTPATH)
+
 #if defined(__GNUC__) || defined(__clang__)
 #	define ATTRIB_UNUSED __attribute__ ((unused))
 #else

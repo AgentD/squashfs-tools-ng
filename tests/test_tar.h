@@ -11,9 +11,4 @@
 #include "tar.h"
 #include "test.h"
 
-#define STR(x) #x
-#define STRVALUE(x) STR(x)
-
-#define TEST_PATH STRVALUE(TESTPATH)
-
 #endif /* TEST_TAR_H */

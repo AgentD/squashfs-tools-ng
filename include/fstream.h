@@ -56,6 +56,12 @@ enum {
 };
 
 enum {
+	ISTREAM_LINE_LTRIM = 0x01,
+	ISTREAM_LINE_RTRIM = 0x02,
+	ISTREAM_LINE_SKIP_EMPTY = 0x04,
+};
+
+enum {
 	/**
 	 * @brief Deflate compressor with gzip headers.
 	 *
@@ -256,6 +262,35 @@ SQFS_INTERNAL const char *ostream_get_filename(ostream_t *strm);
  * @return The number of characters written on success, -1 on failure.
  */
 SQFS_INTERNAL int ostream_printf(ostream_t *strm, const char *fmt, ...);
+
+/**
+ * @brief Read a line of text from an input stream
+ *
+ * @memberof istream_t
+ *
+ * The line returned is allocated using malloc and must subsequently be
+ * freed when it is no longer needed. The line itself is always null-terminated
+ * and never includes the line break characters (LF or CR-LF).
+ *
+ * If the flag @ref ISTREAM_LINE_LTRIM is set, leading white space characters
+ * are removed. If the flag @ref ISTREAM_LINE_RTRIM is set, trailing white space
+ * characters are remvoed.
+ *
+ * If the flag @ref ISTREAM_LINE_SKIP_EMPTY is set and a line is discovered to
+ * be empty (after the optional trimming), the function discards the empty line
+ * and retries. The given line_num pointer is used to increment the line
+ * number.
+ *
+ * @param strm A pointer to an input stream.
+ * @param out Returns a pointer to a line on success.
+ * @param line_num This is incremented if lines are skipped.
+ * @param flags A combination of flags controling the functions behaviour.
+ *
+ * @return Zero on success, a negative value on error, a positive value if
+ *         end-of-file was reached without reading any data.
+ */
+SQFS_INTERNAL int istream_get_line(istream_t *strm, char **out,
+				   size_t *line_num, int flags);
 
 /**
  * @brief Read data from an input stream

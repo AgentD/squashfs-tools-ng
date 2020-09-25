@@ -1,7 +1,7 @@
 libfstream_a_SOURCES = include/fstream.h
 libfstream_a_SOURCES += lib/fstream/internal.h
 libfstream_a_SOURCES += lib/fstream/ostream.c lib/fstream/printf.c
-libfstream_a_SOURCES += lib/fstream/istream.c
+libfstream_a_SOURCES += lib/fstream/istream.c lib/fstream/get_line.c
 libfstream_a_SOURCES += lib/fstream/compressor.c
 libfstream_a_SOURCES += lib/fstream/compress/ostream_compressor.c
 libfstream_a_SOURCES += lib/fstream/uncompress/istream_compressor.c
