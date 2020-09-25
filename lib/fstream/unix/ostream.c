@@ -10,12 +10,25 @@ typedef struct {
 	ostream_t base;
 	char *path;
 	int fd;
+
+	off_t sparse_count;
+	off_t size;
 } file_ostream_t;
 
 static int file_append(ostream_t *strm, const void *data, size_t size)
 {
 	file_ostream_t *file = (file_ostream_t *)strm;
 	ssize_t ret;
+
+	if (size == 0)
+		return 0;
+
+	if (file->sparse_count > 0) {
+		if (lseek(file->fd, file->sparse_count, SEEK_CUR) == (off_t)-1)
+			goto fail_errno;
+
+		file->sparse_count = 0;
+	}
 
 	while (size > 0) {
 		ret = write(file->fd, data, size);
@@ -29,27 +42,26 @@ static int file_append(ostream_t *strm, const void *data, size_t size)
 		if (ret < 0) {
 			if (errno == EINTR)
 				continue;
-
-			perror(file->path);
-			return -1;
+			goto fail_errno;
 		}
 
+		file->size += ret;
 		size -= ret;
 		data = (const char *)data + ret;
 	}
 
 	return 0;
+fail_errno:
+	perror(file->path);
+	return -1;
 }
 
 static int file_append_sparse(ostream_t *strm, size_t size)
 {
 	file_ostream_t *file = (file_ostream_t *)strm;
 
-	if (lseek(file->fd, size, SEEK_CUR) == (off_t)-1) {
-		perror(file->path);
-		return -1;
-	}
-
+	file->sparse_count += size;
+	file->size += size;
 	return 0;
 }
 
@@ -57,12 +69,18 @@ static int file_flush(ostream_t *strm)
 {
 	file_ostream_t *file = (file_ostream_t *)strm;
 
-	if (fsync(file->fd) != 0) {
-		perror(file->path);
-		return -1;
+	if (file->sparse_count > 0) {
+		if (ftruncate(file->fd, file->size) != 0)
+			goto fail;
 	}
 
+	if (fsync(file->fd) != 0)
+		goto fail;
+
 	return 0;
+fail:
+	perror(file->path);
+	return -1;
 }
 
 static void file_destroy(sqfs_object_t *obj)
