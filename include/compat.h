@@ -176,12 +176,6 @@ void w32_perror(const char *str);
 #endif
 #endif
 
-#ifndef HAVE_GETLINE
-#include <stdio.h>
-
-ssize_t getline(char **line, size_t *n, FILE *fp);
-#endif
-
 #ifndef HAVE_STRNDUP
 char *strndup(const char *str, size_t max_len);
 #endif

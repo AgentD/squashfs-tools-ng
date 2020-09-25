@@ -147,17 +147,9 @@ static int relabel_tree_dfs(const char *filename, sqfs_xattr_writer_t *xwr,
 static int read_fstree(fstree_t *fs, options_t *opt, sqfs_xattr_writer_t *xwr,
 		       void *selinux_handle)
 {
-	FILE *fp;
 	int ret;
 
-	fp = fopen(opt->infile, "rb");
-	if (fp == NULL) {
-		perror(opt->infile);
-		return -1;
-	}
-
-	ret = fstree_from_file(fs, opt->infile, fp);
-	fclose(fp);
+	ret = fstree_from_file(fs, opt->infile);
 
 	if (ret == 0 && selinux_handle != NULL)
 		ret = relabel_tree_dfs(opt->cfg.filename, xwr,

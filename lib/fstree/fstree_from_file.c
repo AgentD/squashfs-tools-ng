@@ -7,12 +7,12 @@
 #include "config.h"
 
 #include "fstree.h"
+#include "fstream.h"
 
 #include <stdlib.h>
-#include <stdint.h>
 #include <string.h>
-#include <ctype.h>
 #include <errno.h>
+#include <ctype.h>
 
 static int add_generic(fstree_t *fs, const char *filename, size_t line_num,
 		       const char *path, struct stat *sb, const char *extra)
@@ -92,28 +92,6 @@ static const struct {
 };
 
 #define NUM_HOOKS (sizeof(file_list_hooks) / sizeof(file_list_hooks[0]))
-
-static void trim_line(char *line)
-{
-	size_t i;
-
-	for (i = 0; isspace(line[i]); ++i)
-		;
-
-	if (line[i] == '#') {
-		line[0] = '\0';
-		return;
-	}
-
-	if (i > 0)
-		memmove(line, line + i, strlen(line + i) + 1);
-
-	i = strlen(line);
-	while (i > 0 && isspace(line[i - 1]))
-		--i;
-
-	line[i] = '\0';
-}
 
 static int handle_line(fstree_t *fs, const char *filename,
 		       size_t line_num, char *line)
@@ -279,44 +257,38 @@ out_desc:
 	return -1;
 }
 
-int fstree_from_file(fstree_t *fs, const char *filename, FILE *fp)
+int fstree_from_file(fstree_t *fs, const char *filename)
 {
-	size_t n, line_num = 0;
-	ssize_t ret;
+	size_t line_num = 1;
+	istream_t *fp;
 	char *line;
+	int ret;
+
+	fp = istream_open_file(filename);
+	if (fp == NULL)
+		return -1;
 
 	for (;;) {
-		line = NULL;
-		n = 0;
-		errno = 0;
+		ret = istream_get_line(fp, &line, &line_num,
+				       ISTREAM_LINE_LTRIM | ISTREAM_LINE_SKIP_EMPTY);
+		if (ret < 0)
+			return -1;
+		if (ret > 0)
+			break;
 
-		ret = getline(&line, &n, fp);
-		++line_num;
-
-		if (ret < 0) {
-			if (errno == 0) {
-				free(line);
-				break;
-			}
-
-			perror(filename);
-			goto fail_line;
+		if (line[0] != '#') {
+			if (handle_line(fs, filename, line_num, line))
+				goto fail_line;
 		}
-
-		trim_line(line);
-
-		if (line[0] == '\0') {
-			free(line);
-			continue;
-		}
-
-		if (handle_line(fs, filename, line_num, line))
-			goto fail_line;
 
 		free(line);
+		++line_num;
 	}
+
+	sqfs_destroy(fp);
 	return 0;
 fail_line:
 	free(line);
+	sqfs_destroy(fp);
 	return -1;
 }

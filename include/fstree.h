@@ -153,15 +153,12 @@ tree_node_t *fstree_add_generic(fstree_t *fs, const char *path,
   tree from it. File input paths are interpreted as relative to the current
   working directory.
 
-  Data is read from the given file pointer. The filename is only used for
-  producing error messages.
-
   On failure, an error report with filename and line number is written
   to stderr.
 
   Returns 0 on success.
  */
-int fstree_from_file(fstree_t *fs, const char *filename, FILE *fp);
+int fstree_from_file(fstree_t *fs, const char *filename);
 
 /*
   This function performs all the necessary post processing steps on the file

@@ -9,21 +9,13 @@
 #include "fstree.h"
 #include "test.h"
 
-#define STR(x) #x
-#define STRVALUE(x) STR(x)
-
-#define TEST_PATH STRVALUE(TESTPATH)
-
 int main(void)
 {
 	tree_node_t *n;
 	fstree_t fs;
-	FILE *fp;
-
-	fp = test_open_read(TEST_PATH);
 
 	TEST_ASSERT(fstree_init(&fs, NULL) == 0);
-	TEST_ASSERT(fstree_from_file(&fs, "testfile", fp) == 0);
+	TEST_ASSERT(fstree_from_file(&fs, TEST_PATH) == 0);
 
 	fstree_post_process(&fs);
 	n = fs.root->data.dir.children;
@@ -92,7 +84,6 @@ int main(void)
 	TEST_STR_EQUAL(n->name, "sock");
 	TEST_NULL(n->next);
 
-	fclose(fp);
 	fstree_cleanup(&fs);
 	return EXIT_SUCCESS;
 }

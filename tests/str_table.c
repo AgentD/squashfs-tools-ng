@@ -7,46 +7,31 @@
 #include "config.h"
 
 #include "str_table.h"
+#include "fstream.h"
 #include "compat.h"
 #include "test.h"
-
-#define STR(x) #x
-#define STRVALUE(x) STR(x)
-
-#define TEST_PATH STRVALUE(TESTPATH)
 
 static char *strings[1000];
 
 static int read_strings(void)
 {
+	istream_t *fp;
 	ssize_t ret;
 	char *line;
-	size_t n;
-	FILE *fp;
 	int i;
 
-	fp = test_open_read("words.txt");
+	fp = istream_open_file("words.txt");
+	TEST_NOT_NULL(fp);
 
 	for (i = 0; i < 1000; ++i) {
-		line = NULL;
-		n = 0;
-
-		ret = getline(&line, &n, fp);
-		if (ret < 0) {
-			perror("reading words");
-			goto fail;
-		}
+		ret = istream_get_line(fp, &line, NULL, 0);
+		TEST_EQUAL_I(ret, 0);
 
 		strings[i] = line;
 	}
 
-	fclose(fp);
+	sqfs_destroy(fp);
 	return 0;
-fail:
-	for (i = 0; i < 1000; ++i)
-		free(strings[i]);
-	fclose(fp);
-	return -1;
 }
 
 int main(void)
