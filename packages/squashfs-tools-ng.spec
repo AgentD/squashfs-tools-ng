@@ -2,18 +2,32 @@
 ##
 ## Install following packages:
 ##   - yum install -y rpm-build spectool
+##   - rpmdev-setuptree
 ##   - spectool -g -R squashfs-tools-ng.spec
 ##   - rpmspec --parse squashfs-tools-ng.spec | grep BuildRequires | cut -d' ' -f2  | xargs sudo yum install -y
 ##
 ## Note: tools like yum-builddep does not seem to work when installing
 ## build requirements.
 ##
+## On OpenSUSE:
+##
+##  * spectool des not exists. Too retrieve the source package:
+##
+##       rpmspec --parse squashfs-tools-ng.spec | grep Source0 | awk '{print $2}' | xargs  wget -N -P $(rpm --eval '%{_sourcedir}')
+##
+##  * yum command should also be replaced by zypper.
+##
 ## Run:
 ##   - rpmbuild --clean -ba squashfs-tools-ng.spec
 ##
 
+# OpenSUSE has no dist macro
+%if 0%{suse_version} > 0
+%global dist .sles%{suse_version}
+%endif
+
 Name: squashfs-tools-ng
-Version: 1.0.1
+Version: 1.0.2
 Release: 1%{?dist}
 License: GPLv3+
 URL: https://github.com/AgentD/squashfs-tools-ng
@@ -44,9 +58,11 @@ this package from the original:
    SELinux labels.
 
 
-%if 0%{?el} > 7
+%if 0%{?el} > 7 || 0%{?fedora} >= 32 || 0%{?suse_version} >= 1500
 %global use_zstd 1
 %endif
+
+
 
 # rpm-build / rpmdevtools
 BuildRequires: gcc
@@ -58,7 +74,15 @@ BuildRequires: zlib-devel
 BuildRequires: xz-devel
 BuildRequires: lzo-devel
 BuildRequires: libattr-devel
+# Need to be explicitly declared on Fedora
+BuildRequires: make
+
+# OpenSUSE has a different lz4 devel package name
+%if 0%{?suse_version} > 0
+BuildRequires: liblz4-devel
+%else
 BuildRequires: lz4-devel
+%endif
 
 %if 0%{?use_zstd}
 BuildRequires: libzstd-devel
@@ -136,6 +160,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Thu Oct 01 2020 Sébastien Gross <seb•ɑƬ•chezwam•ɖɵʈ•org> - 1.0.2-1
+- Add Fedora support.
+- Add OpenSUSE support.
+- Bump to version 1.0.2.
 * Thu Aug 20 2020 Sébastien Gross <seb•ɑƬ•chezwam•ɖɵʈ•org> - 1.0.1-1
 - First package release.
-
