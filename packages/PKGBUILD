@@ -1,17 +1,5 @@
 # -*- sh -*-
 
-# Build squashfs-tools-ng for Archlinux.
-#
-# How to build package for Archlinux:
-#
-#   sudo pacman -S --noconfirm fakeroot binutils
-#   makepkg --noconfirm -Cfsir PKGBUILD
-#
-# Check result with
-#
-#   namcap -i squashfs-tools-*.pkg.tar.zst  PKGBUILD
-#
-
 # Maintainer: Sébastien Gross <seb•ɑƬ•chezwam•ɖɵʈ•org>
 # Contributor:
 
