@@ -26,6 +26,28 @@ abuild-keygen -nai
 abuild -r
 ```
 
+# DEB
+
+The [debian]() directory contains all definitions to build Debian and
+Ubuntu packages.
+
+Package building for Debian like distibutions is a bit tricky. In this
+case we want to add the codename to the version number in order to
+differentiate builds.
+
+```
+apt-get install devscripts build-essential libdistro-info-perl
+source /etc/os-release
+wget https://github.com/AgentD/squashfs-tools-ng/archive/v1.0.2/squashfs-tools-ng-1.0.2.tar.gz -O squashfs-tools-ng_1.0.2+$VERSION_CODENAME.orig.tar.gz
+tar xfz squashfs-tools-ng_1.0.2+$VERSION_CODENAME.orig.tar.gz
+cd squashfs-tools-ng-1.0.2
+ln -s packages/debian
+DEBFULLNAME="$USER" DEBEMAIL="$USER@localhost" dch -v 1.0.2+$VERSION_CODENAME-1 -D $VERSION_CODENAME "Build 1.0.2 for $VERSION_CODENAME."
+debuild
+debuild -- clean
+```
+
+
 # PKG
 
 [PKGBUILD]() contains all definition to build Archlinux packages.
