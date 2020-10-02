@@ -1,25 +1,4 @@
 ## Spec file to build squashf-tools-ng RPM package.
-##
-## Install following packages:
-##   - yum install -y rpm-build spectool
-##   - rpmdev-setuptree
-##   - spectool -g -R squashfs-tools-ng.spec
-##   - rpmspec --parse squashfs-tools-ng.spec | grep BuildRequires | cut -d' ' -f2  | xargs sudo yum install -y
-##
-## Note: tools like yum-builddep does not seem to work when installing
-## build requirements.
-##
-## On OpenSUSE:
-##
-##  * spectool des not exists. Too retrieve the source package:
-##
-##       rpmspec --parse squashfs-tools-ng.spec | grep Source0 | awk '{print $2}' | xargs  wget -N -P $(rpm --eval '%{_sourcedir}')
-##
-##  * yum command should also be replaced by zypper.
-##
-## Run:
-##   - rpmbuild --clean -ba squashfs-tools-ng.spec
-##
 
 # OpenSUSE has no dist macro
 %if 0%{suse_version} > 0
