@@ -1,0 +1,4 @@
+usr/include/
+usr/lib/*/libsquashfs.a
+usr/lib/*/libsquashfs.so
+usr/lib/*/pkgconfig/

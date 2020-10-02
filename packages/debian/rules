@@ -1,0 +1,15 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+override_dh_auto_install:
+	dh_auto_install
+	# remove libtool .la files
+	find $(CURDIR)/debian/tmp/ -name '*.la' -delete
+
+%:
+	dh ${@}
+
+.PHONY: override_dh_auto_install

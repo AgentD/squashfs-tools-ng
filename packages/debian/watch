@@ -1,0 +1,2 @@
+version=4
+https://github.com/AgentD/squashfs-tools-ng/tags .*/v?(\d\S+)\.(?:tar\.xz|txz|tar\.bz2|tbz2|tar\.gz|tgz)
