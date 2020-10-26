@@ -19,6 +19,7 @@ makedepends=(
     'automake'
     'autogen'
     'libtool'
+    'pkgconf'
     'm4'
     'make'
     'gcc'
