@@ -1,0 +1,148 @@
+#!/bin/sh
+
+# This script builds squashfs-tools-ng packages inside a Docker
+# instance.
+#
+# It can build packages for:
+#
+#  * alpine
+#  * archlinux
+#  * centos
+#  * fedora
+#  * debian
+#  * ubuntu
+#  * opensuse
+#
+# Currently it can only build package from a release (tag from github).
+#
+# TODO: Find a way to build packages from git checkout sources
+
+# Path to the source directory mounted in the Docker instance.
+ROOT_RO=/source-ro
+
+# Path to which packages will be copied after a successful build.
+OUTPUT=/output
+
+. /etc/os-release
+
+build_alpine() {
+    cp -r $ROOT_RO/packages/APKBUILD .
+
+    abuild-keygen -nai
+    abuild -r
+
+    cp ~/packages/*/x86_64/*.apk $OUTPUT
+}
+
+
+
+build_archlinux() {
+    cp -r $ROOT_RO/packages/PKGBUILD .
+    makepkg --noconfirm -Cfsir PKGBUILD
+
+    cp ~/*.tar.zst $OUTPUT
+}
+
+
+# This part is a ugly hack.
+# TODO: Find a better way to build deb packages.
+build_deb() {
+    # Fetch sources
+    wget \
+	https://github.com/AgentD/squashfs-tools-ng/archive/v$version/squashfs-tools-ng-$version.tar.gz \
+	-O squashfs-tools-ng_$version+$VERSION_CODENAME.orig.tar.gz
+
+    tar xfz squashfs-tools-ng_$version+$VERSION_CODENAME.orig.tar.gz
+    cd squashfs-tools-ng-$version
+    cp -r $ROOT_RO/packages/debian .
+
+    #ln -s packages/debian
+    DEBFULLNAME="$USER" DEBEMAIL="$USER@localhost" \
+	       dch -v $version+$VERSION_CODENAME-1 \
+	       -D $VERSION_CODENAME "Build $version for $VERSION_CODENAME."
+
+    # See https://packages.debian.org/search?searchon=sourcenames&keywords=debhelper
+    # https://packages.ubuntu.com/search?keywords=debhelper&searchon=names&suite=all&section=all
+    case "$VERSION_CODENAME" in
+	jessie|xenial) dhv=9 ;;
+	stretch) dhv=10 ;;
+	bionic) dhv=11 ;;
+	buster|focal) dhv=12 ;;
+	bookworm|bullseye|groovy) dhv=13 ;;
+	sid) dhv=13 ;;
+    esac
+
+    sed -i -e "s/@DEBHELPER_VERSION@/$dhv/" debian/control
+    echo $dhv > debian/compat
+
+    sudo mk-build-deps --install \
+	 --tool='apt-get --no-install-recommends --yes' debian/control
+    sudo rm -f *-build-deps_*
+    
+    debuild
+    debuild -- clean
+    
+    cat /tmp/squashfs-tools-ng*
+    cp ../*.deb $OUTPUT
+}
+
+
+build_rpm() {
+    case "$ID" in
+	centos)
+	    if test $VERSION_ID -ge 8; then
+		# install doxygen
+		sudo sed -i 's/^enabled=.*/enabled=1/' \
+		     /etc/yum.repos.d/CentOS-PowerTools.repo
+		cat /etc/yum.repos.d/CentOS-PowerTools.repo
+	    fi
+	    ;;
+    esac
+
+    cp -r $ROOT_RO/packages/squashfs-tools-ng.spec .
+    rpmdev-setuptree
+    spectool -g -R squashfs-tools-ng.spec
+    rpmspec --parse squashfs-tools-ng.spec \
+	| grep BuildRequires | cut -d' ' -f2  \
+	| xargs sudo yum install -y
+    rpmbuild --clean -ba squashfs-tools-ng.spec
+    cp ~/rpmbuild/RPMS/x86_64/*.rpm $OUTPUT
+
+}
+
+
+build_opensuse() {
+    cp -r $ROOT_RO/packages/squashfs-tools-ng.spec .
+
+    # Fetch source
+    rpmspec --parse squashfs-tools-ng.spec | grep Source0 \
+	| awk '{print $2}' \
+	| xargs  wget -N -P $(rpm --eval '%{_sourcedir}')
+
+    # Install build requirements
+    rpmspec --parse squashfs-tools-ng.spec | grep BuildRequires \
+	| cut -d' ' -f2  \
+	| xargs sudo zypper install -y
+    
+    rpmbuild --clean -ba squashfs-tools-ng.spec
+    cp ~/rpmbuild/RPMS/x86_64/*.rpm $OUTPUT
+}
+
+
+
+
+
+
+
+case "$ID" in
+    alpine) build_alpine ;;
+    archlinux|arch) build_archlinux ;;
+    centos|fedora) build_rpm;;
+    debian|ubuntu) build_deb;;
+    opensuse|opensuse-leap) build_opensuse;;
+    *) cat <<EOF >&2
+Unsupported distro "$ID"
+EOF
+       exit 1
+       ;;
+esac

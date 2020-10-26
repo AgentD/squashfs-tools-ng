@@ -3,7 +3,23 @@
 This directory contains files to build packages for several Linux
 distributions.
 
-# APK
+## Build using Docker images
+
+Packages for a specific release can be built using Docker. Use the
+`build` script for that:
+
+```
+./build VENDOR RELEASE
+```
+
+If you want to build all supported vendors and releases, you can use
+the `build_all` script.
+
+Packages will be output in `_out` directory.
+
+## Manual build
+
+### APK
 
 [APKBUILD]() containts all definition to build APK packages for Alpine
 linux.
@@ -26,7 +42,7 @@ abuild-keygen -nai
 abuild -r
 ```
 
-# DEB
+### DEB
 
 The [debian]() directory contains all definitions to build Debian and
 Ubuntu packages.
@@ -52,7 +68,7 @@ debuild -- clean
 ```
 
 
-# PKG
+### PKG
 
 [PKGBUILD]() contains all definition to build Archlinux packages.
 
@@ -69,12 +85,12 @@ You can check the packages using `namcap`:
 namcap -i squashfs-tools-*.pkg.tar.zst  PKGBUILD
 ```
 
-# RPM
+### RPM
 
 [squashfs-tools-ng.spec]() contains all definitions to build RPM
 packages.
 
-## CentOS, Fedora
+#### CentOS, Fedora
 
 Run following commands:
 
@@ -86,7 +102,7 @@ rpmspec --parse squashfs-tools-ng.spec | grep BuildRequires | cut -d' ' -f2  | x
 rpmbuild --clean -ba squashfs-tools-ng.spec
 ```
 
-## OpenSUSE
+### OpenSUSE
 
 Run following commands:
 
