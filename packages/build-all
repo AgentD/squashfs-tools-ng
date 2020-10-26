@@ -1,0 +1,22 @@
+#!/bin/bash
+
+vendors='alpine archlinux centos debian fedora opensuse ubuntu'
+
+alpine_versions='3.11 3.12'
+archlinux_versions='latest'
+centos_versions='7 8'
+debian_versions='bookworm bullseye buster strech'
+fedora_versions='32'
+opensuse_versions='15.0 15.1 15.2'
+ubuntu_versions='bionic focal groovy'
+
+source_dir=$(git rev-parse --show-toplevel)
+
+
+for v in $vendors; do
+    versions="${v}_versions"
+    for ver in ${!versions}; do
+	$source_dir/packages/build $v $ver
+    done
+done
+	 
