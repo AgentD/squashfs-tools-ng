@@ -1,7 +1,7 @@
 ## Spec file to build squashf-tools-ng RPM package.
 
 # OpenSUSE has no dist macro
-%if 0%{suse_version} > 0
+%if 0%{?suse_version} > 0
 %global dist .sles%{suse_version}
 %endif
 
@@ -37,7 +37,7 @@ this package from the original:
    SELinux labels.
 
 
-%if 0%{?el} > 7 || 0%{?fedora} >= 32 || 0%{?suse_version} >= 1500
+%if 0%{?centos} > 7 || 0%{?fedora} >= 32 || 0%{?suse_version} >= 1500
 %global use_zstd 1
 %endif
 
@@ -49,6 +49,7 @@ BuildRequires: automake
 BuildRequires: autoconf
 BuildRequires: libtool
 BuildRequires: doxygen
+BuildRequires: libselinux-devel
 BuildRequires: zlib-devel
 BuildRequires: xz-devel
 BuildRequires: lzo-devel
@@ -74,6 +75,7 @@ Requires: xz
 Requires: lzo
 Requires: libattr
 Requires: lz4
+Requires: libselinux
 
 #Recommends: squashfs-tools
    
