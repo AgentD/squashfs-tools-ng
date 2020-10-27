@@ -135,3 +135,73 @@
  Repeating the benchmark without tail-end-packing and with fragments completely
  disabled would also show the effectiveness of tail-end-packing and fragment
  packing as a side effect.
+
+
+ 2) Reference Decompression Benchmark
+ ************************************
+
+ 2.1) How was the Benchmark Performed?
+
+ An optimized build of squashfs-tools-ng was compiled and installed to a tmpfs:
+
+  $ mkdir /dev/shm/temp
+  $ ln -s /dev/shm/temp out
+  $ ./autogen.sh
+  $ ./configure CFLAGS="-O3 -Ofast -march=native -mtune=native" \
+                LDFLAGS="-O3 -Ofast" --prefix=$(pwd)/out
+  $ make -j install
+  $ cd out
+
+ A SquashFS image to be tested was repacked with a desired compressor in
+ this directory:
+
+  $ ./bin/sqfs2tar <IMAGE> | ./bin/tar2sqfs -c <COMPRESSOR> test.sqfs
+
+ And then unpacked as follows:
+
+  $ time ./bin/sqfs2tar test.sqfs > /dev/null
+
+
+ Out of 4 runs, the worst wall-clock time ("real") was used for comparison.
+
+
+ 2.2) What Image was Tested?
+
+ A Debian image extracted from the Debian 10.2 LiveDVD for AMD64 with XFCE
+ was used.
+
+ The input size and resulting output sizes turned out to be as follows:
+
+  - As LZ4 compressed SquashFS image:  ~3.1GiB (3,381,751,808)
+  - As LZO compressed SquashFS image:  ~2.5GiB (2,732,015,616)
+  - As zstd compressed SquashFS image: ~2.1GiB (2,295,017,472)
+  - As gzip compressed SquashFS image: ~2.3GiB (2,471,276,544)
+  - As lzma compressed SquashFS image: ~2.0GiB (2,102,169,600)
+  - As XZ compressed SquashFS image:   ~2.0GiB (2,098,466,816)
+  - As uncompressed tarball:           ~6.5GiB (7,008,118,272)
+
+
+ The Debian image is expected to contain realistic input data for a Linux
+ file system and also provide enough data for an interesting benchmark.
+
+
+ 2.3) What Test System was used?
+
+  AMD Ryzen 7 3700X
+  32GiB DDR4 RAM
+  Fedora 32
+
+
+ 2.4) What software version was used?
+
+ squashfs-tools-ng commit cc1141984a03da003e15ff229d3b417f8e5a24ad
+
+
+ 2.5) Results
+
+ gzip    20.466s
+ lz4      2.519s
+ lzma  1m58.455s
+ lzo     10.521s
+ xz    1m59.451s
+ zstd     7.833s
