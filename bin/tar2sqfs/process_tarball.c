@@ -203,6 +203,7 @@ int process_tarball(istream_t *input_file, sqfs_writer_t *sqfs)
 	sqfs_u64 offset, count;
 	sparse_map_t *m;
 	size_t rootlen;
+	char *target;
 	int ret;
 
 	rootlen = root_becomes == NULL ? 0 : strlen(root_becomes);
@@ -250,6 +251,26 @@ int process_tarball(istream_t *input_file, sqfs_writer_t *sqfs)
 				fputs("skipping entry with empty name\n",
 				      stderr);
 				skip = true;
+			}
+
+			if (hdr.link_target != NULL &&
+			    (hdr.is_hard_link || !no_symlink_retarget)) {
+				target = strdup(hdr.link_target);
+				if (target == NULL) {
+					fprintf(stderr, "packing '%s': %s\n",
+						hdr.name, strerror(errno));
+					goto fail;
+				}
+
+				if (canonicalize_name(target) == 0 &&
+				    !strncmp(target, root_becomes, rootlen) &&
+				    target[rootlen] == '/') {
+					memmove(hdr.link_target,
+						target + rootlen,
+						strlen(target + rootlen) + 1);
+				}
+
+				free(target);
 			}
 		} else if (hdr.name[0] == '\0') {
 			is_root = true;

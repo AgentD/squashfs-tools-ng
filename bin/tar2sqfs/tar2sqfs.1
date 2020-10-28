@@ -23,6 +23,16 @@ paths this way, i.e. if the archive contains an entry for \fB./\fR, it becomes
 the root node and the prefix is stripped from all paths (and similar for
 absolute paths and \fB/\fR).
 .TP
+\fB\-\-no\-symlink\-retarget\fR, \fB\-S\fR
+If \-\-root\-becomes is used, link targets are adjusted if they are prefixed by
+the root path. By default, this is also done on symbolic links, that have a
+target that is prefixed by the root path and they are converted to aboluste
+paths with the prefix removed. However, because symlinks can point across mount
+points, this may actually be intended for some use cases.
+
+This flag allows changing the default behaviour, so only hard links are
+retargeted.
+.TP
 \fB\-\-compressor\fR, \fB\-c\fR <name>
 Select the compressor to use.
 Run \fBtar2sqfs \-\-help\fR to get a list of all available compressors

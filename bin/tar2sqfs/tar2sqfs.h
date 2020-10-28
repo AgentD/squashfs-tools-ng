@@ -16,11 +16,13 @@
 #include <getopt.h>
 #include <string.h>
 #include <stdio.h>
+#include <errno.h>
 
 /* options.c */
 extern bool dont_skip;
 extern bool keep_time;
 extern bool no_tail_pack;
+extern bool no_symlink_retarget;
 extern sqfs_writer_cfg_t cfg;
 extern char *root_becomes;
 
