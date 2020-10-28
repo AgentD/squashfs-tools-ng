@@ -1,8 +1,13 @@
 
- 1) Parallel Compression Benchmark
- *********************************
+ 1) Test Setup
+ *************
 
- 1.1) How was the Benchmark Performed?
+ The tests were performed an a system with the following specifications:
+
+  AMD Ryzen 7 3700X
+  32GiB DDR4 RAM
+  Fedora 32
+
 
  An optimized build of squashfs-tools-ng was compiled and installed to a tmpfs:
 
@@ -14,57 +19,99 @@
   $ make -j install
   $ cd out
 
- A SquashFS image to be tested was unpacked in this directory:
 
-  $ ./bin/sqfs2tar <IMAGE> > test.tar
-
- And then repacked as follows:
-
-  $ time ./bin/tar2sqfs -j <NUM_CPU> -c <COMPRESSOR> -f test.sqfs < test.tar
+ This was done to eliminate any influence of I/O performance and I/O caching
+ side effects to the extend possible and only measure the actual processing
+ time.
 
 
- Out of 4 runs, the worst wall-clock time ("real") was used for comparison.
-
-
- For the serial reference version, configure was re-run with the option
- --without-pthread, the tools re-compiled and re-installed.
-
-
- 1.2) What Image was Tested?
-
- A Debian image extracted from the Debian 10.2 LiveDVD for AMD64 with XFCE
- was used.
-
- The input size and resulting output sizes turned out to be as follows:
-
-  - As uncompressed tarball:           ~6.5GiB (7,008,118,272)
-  - As LZ4 compressed SquashFS image:  ~3.1GiB (3,381,751,808)
-  - As LZO compressed SquashFS image:  ~2.5GiB (2,732,015,616)
-  - As zstd compressed SquashFS image: ~2.1GiB (2,295,017,472)
-  - As gzip compressed SquashFS image: ~2.3GiB (2,471,276,544)
-  - As lzma compressed SquashFS image: ~2.0GiB (2,102,169,600)
-  - As XZ compressed SquashFS image:   ~2.0GiB (2,098,466,816)
-
+ For all benchmark tests, a Debian image extracted from the Debian 10.2 LiveDVD
+ for AMD64 with XFCE was used.
 
  The Debian image is expected to contain realistic input data for a Linux
  file system and also provide enough data for an interesting benchmark.
 
 
- 1.3) What Test System was used?
-
-  AMD Ryzen 7 3700X
-  32GiB DDR4 RAM
-  Fedora 31
+ For all performed benchmarks, graphical representations of the results and
+ derived values can be seen in "benchmark.ods".
 
 
- 1.4) What software version was used?
+ 1) Parallel Compression Benchmark
+ *********************************
+
+ 1.1) What was measured?
+
+ The Debian image was first converted to a tarball:
+
+  $ ./bin/sqfs2tar debian.sqfs > test.tar
+
+ The tarball was then repacked and time was measured as follows:
+
+  $ time ./bin/tar2sqfs -j <NUM_CPU> -c <COMPRESSOR> -f test.sqfs < test.tar
+
+
+ The repacking was repeated 4 times and the worst wall-clock time ("real") was
+ used for comparison.
+
+ Altough not relevant for this benchmark, the resulting image sizes where
+ for a specific compressor, so that the compression ratio could be estimated:
+
+  $ stat test.tar
+  $ stat test.sqfs
+
+
+
+ The <NUM_CPU> was varied from 1 to 16 and for <COMPRESSOR>, all available
+ compressors were used. All possible combinations <NUM_CPU> and <COMPRESSOR>
+ were measured.
+
+ In addition, a serial reference version was compiled by running configure
+ with the additional option --without-pthread and re-running the tests for
+ all compressors without the <NUM_CPU> option.
+
+
+ 1.2) What was computed from the results?
+
+ The relative and absolute speedup were determined as follows:
+
+                                     runtime_parallel(compressor, num_cpu)
+   spedup_rel(compressor, num_cpu) = -------------------------------------
+                                        runtime_parallel(compressor, 1)
+
+                                     runtime_parallel(compressor, num_cpu)
+   spedup_abs(compressor, num_cpu) = -------------------------------------
+                                           runtime_serial(compressor)
+
+
+ In addition, relative and absolute efficiency of the parellel implementation
+ was determined:
+
+                                         speedup_rel(compressor, num_cpu)
+   efficiency_rel(compressor, num_cpu) = --------------------------------
+                                                      num_cpu
+
+                                         speedup_abs(compressor, num_cpu)
+   efficiency_abs(compressor, num_cpu) = --------------------------------
+                                                      num_cpu
+
+
+ Furthermore, altough not relevant for this specific benchmark, having the
+ converted tarballs available, the compression ratio was computed as follows:
+
+                                    file_size(tarball)
+   compression_ratio(compressor) = ---------------------
+                                   file_size(compressor)
+
+
+ 1.3) What software versions were used?
 
  squashfs-tools-ng v0.9
 
- TODO: update data and write the *exact* commit hash here.
+ TODO: update data and write the *exact* commit hash here, as well as gcc and
+ Linux versions.
 
 
- 1.5) Results
+ 1.4) Results
 
  The raw timing results are as follows:
 
@@ -87,11 +134,20 @@
      15   1m58.298s   1m45.079s     58.348s   1m21.445s  10.192s  1m12.134s
      16   1m55.940s   1m42.176s     56.615s   1m19.030s  10.964s  1m11.049s
 
- The file "benchmark.ods" contains those values, values derived from this and
- charts depicting the results.
+
+ The sizes of the tarball and the resulting images:
+
+  - LZ4 compressed SquashFS image:  ~3.1GiB (3,381,751,808)
+  - LZO compressed SquashFS image:  ~2.5GiB (2,732,015,616)
+  - zstd compressed SquashFS image: ~2.1GiB (2,295,017,472)
+  - gzip compressed SquashFS image: ~2.3GiB (2,471,276,544)
+  - lzma compressed SquashFS image: ~2.0GiB (2,102,169,600)
+  - XZ compressed SquashFS image:   ~2.0GiB (2,098,466,816)
+  - raw tarball:                    ~6.5GiB (7,008,118,272)
 
 
- 1.6) Discussion
+
+ 1.5) Discussion
 
  Most obviously, the results indicate that LZ4, unlike the other compressors,
  is clearly I/O bound and not CPU bound and doesn't benefit from parallelization
@@ -140,64 +196,30 @@
  2) Reference Decompression Benchmark
  ************************************
 
- 2.1) How was the Benchmark Performed?
+ 1.1) What was measured?
 
- An optimized build of squashfs-tools-ng was compiled and installed to a tmpfs:
+ A SquashFS image was generated for each supported compressor:
 
-  $ mkdir /dev/shm/temp
-  $ ln -s /dev/shm/temp out
-  $ ./autogen.sh
-  $ ./configure CFLAGS="-O3 -Ofast -march=native -mtune=native" \
-                LDFLAGS="-O3 -Ofast" --prefix=$(pwd)/out
-  $ make -j install
-  $ cd out
+  $ ./bin/sqfs2tar debian.sqfs | ./bin/tar2sqfs -c <COMPRESSOR> test.sqfs
 
- A SquashFS image to be tested was repacked with a desired compressor in
- this directory:
-
-  $ ./bin/sqfs2tar <IMAGE> | ./bin/tar2sqfs -c <COMPRESSOR> test.sqfs
-
- And then unpacked as follows:
+ And then, for each compressor, the unpacking time was measured:
 
   $ time ./bin/sqfs2tar test.sqfs > /dev/null
 
 
- Out of 4 runs, the worst wall-clock time ("real") was used for comparison.
+ The unpacking step was repeated 4 times and the worst wall-clock time ("real")
+ was used for comparison.
 
 
- 2.2) What Image was Tested?
-
- A Debian image extracted from the Debian 10.2 LiveDVD for AMD64 with XFCE
- was used.
-
- The input size and resulting output sizes turned out to be as follows:
-
-  - As LZ4 compressed SquashFS image:  ~3.1GiB (3,381,751,808)
-  - As LZO compressed SquashFS image:  ~2.5GiB (2,732,015,616)
-  - As zstd compressed SquashFS image: ~2.1GiB (2,295,017,472)
-  - As gzip compressed SquashFS image: ~2.3GiB (2,471,276,544)
-  - As lzma compressed SquashFS image: ~2.0GiB (2,102,169,600)
-  - As XZ compressed SquashFS image:   ~2.0GiB (2,098,466,816)
-  - As uncompressed tarball:           ~6.5GiB (7,008,118,272)
-
-
- The Debian image is expected to contain realistic input data for a Linux
- file system and also provide enough data for an interesting benchmark.
-
-
- 2.3) What Test System was used?
-
-  AMD Ryzen 7 3700X
-  32GiB DDR4 RAM
-  Fedora 32
-
-
- 2.4) What software version was used?
+ 2.2) What software version was used?
 
  squashfs-tools-ng commit cc1141984a03da003e15ff229d3b417f8e5a24ad
 
+ gcc version: 10.2.1 20201016 (Red Hat 10.2.1-6)
+ Linux version: 5.8.16-200.fc32.x86_64
 
- 2.5) Results
+
+ 2.3) Results
 
  gzip    20.466s
  lz4      2.519s
@@ -205,3 +227,51 @@
  lzo     10.521s
  xz    1m59.451s
  zstd     7.833s
+
+
+ 2.4) Discussion
+
+ From the measurement, it becomes obvious that LZ4 and zstd are the two fastest
+ decompressors. Zstd is particularly noteworth here, because it is not far
+ behind LZ4 in speed, but also achievs a substantially better compression ratio
+ that is somewhere between gzip and lzma. LZ4, despite being the fastest in
+ decompression and beating the others in compression speed by orders of
+ magnitudes, has by far the worst compression ratio.
+
+ It should be noted that the actual number of actually compressed blocks has not
+ been determined. A worse compression ratio can lead to more blocks being stored
+ uncompressed, reducing the workload and thus affecting decompression time.
+
+ However, since zstd has a better compression ratio than gzip, takes only 30% of
+ the time to decompress, and in the serial compression benchmark only takes 2%
+ of the time to compress, we cane safely say that in this benchmark, zstd beats
+ gzip by every metric.
+
+ Furthermore, while XZ stands out as the compressor with the best compression
+ ratio, zstd only takes ~6% of the time to decompress the entire image, while
+ being ~17% bigger than XZ. Shaving off 17% is definitely signifficant,
+ especially considering that in absolute numbers it is in the 100MB range, but
+ it clearly comes at a substential performance cost.
+
+
+ Also interesting are the results for the LZO compressor. Its compression speed
+ is between gzip and LZMA, decompression speed is about 50% of gzip, and only a
+ little bit worse than zstd, but its compression ratio is the second worst only
+ after LZ4, which beats it by a factor of 5 in decompression speed and by ~60
+ in compression speed.
+
+
+ Concluding, for applications where a good compression ratio is most imporant,
+ XZ is obviously the best choice, but if speed is favoured, zstd is probably a
+ very good option to go with. LZ4 is much faster, but has a lot worse
+ compression ratio. It is probably best suited as transparent compression for a
+ read/write file system or network protocols.
+
+
+ Finally, it should be noted, that this serial decompression benchmark is not
+ representative of a real-life workload where only a small set of files are
+ accessed in a random access fashion. In that case, a caching layer can largely
+ mitigate the decompression cost, translating it into an initial or only
+ occasionally occouring cache miss latency. But this benchmark should in theory
+ give an approximate idea how those cache miss latencies are expected to
+ compare between the different compressors.
