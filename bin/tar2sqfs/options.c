@@ -19,6 +19,7 @@ static struct option long_opts[] = {
 	{ "no-xattr", no_argument, NULL, 'x' },
 	{ "no-keep-time", no_argument, NULL, 'k' },
 	{ "exportable", no_argument, NULL, 'e' },
+	{ "no-symlink-retarget", no_argument, NULL, 'S' },
 	{ "no-tail-packing", no_argument, NULL, 'T' },
 	{ "force", no_argument, NULL, 'f' },
 	{ "quiet", no_argument, NULL, 'q' },
@@ -27,7 +28,7 @@ static struct option long_opts[] = {
 	{ NULL, 0, NULL, 0 },
 };
 
-static const char *short_opts = "r:c:b:B:d:X:j:Q:sxekfqThV";
+static const char *short_opts = "r:c:b:B:d:X:j:Q:sxekfqSThV";
 
 static const char *usagestr =
 "Usage: tar2sqfs [OPTIONS...] <sqfsfile>\n"
@@ -43,6 +44,10 @@ static const char *usagestr =
 "                              xattrs, ...) are stored in the root inode.\n"
 "                              If not set and a tarbal has an entry for './'\n"
 "                              or '/', it becomes the root instead.\n"
+"  --no-symlink-retarget, -S   If --root-becomes is used, link targets are\n"
+"                              adjusted if they are prefixed by the root\n"
+"                              path. If this flag is set, symlinks are left\n"
+"                              untouched and only hard links are changed.\n"
 "\n"
 "  --compressor, -c <name>     Select the compressor to use.\n"
 "                              A list of available compressors is below.\n"
@@ -90,6 +95,7 @@ static const char *usagestr =
 bool dont_skip = false;
 bool keep_time = true;
 bool no_tail_pack = false;
+bool no_symlink_retarget = false;
 sqfs_writer_cfg_t cfg;
 char *root_becomes = NULL;
 
@@ -106,6 +112,9 @@ void process_args(int argc, char **argv)
 			break;
 
 		switch (i) {
+		case 'S':
+			no_symlink_retarget = true;
+			break;
 		case 'T':
 			no_tail_pack = true;
 			break;

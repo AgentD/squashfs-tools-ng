@@ -17,6 +17,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <fcntl.h>
+#include <errno.h>
 
 #ifdef _WIN32
 #include <io.h>
@@ -26,6 +27,7 @@
 extern bool dont_skip;
 extern bool keep_time;
 extern bool no_tail_pack;
+extern bool no_symlink_retarget;
 extern sqfs_writer_cfg_t cfg;
 extern char *root_becomes;
 
