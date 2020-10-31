@@ -276,6 +276,7 @@ endif
 endif
 
 EXTRA_DIST += $(top_srcdir)/tests/tar $(top_srcdir)/tests/words.txt
+EXTRA_DIST += $(top_srcdir)/tests/tar2sqfs
 EXTRA_DIST += $(top_srcdir)/tests/fstree1.txt
 EXTRA_DIST += $(top_srcdir)/tests/corpus/cantrbry.tar.xz
 EXTRA_DIST += $(top_srcdir)/tests/corpus/cantrbry.sha512
