@@ -4,7 +4,9 @@
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
-#include "test_tar.h"
+#include "config.h"
+#include "tar.h"
+#include "test.h"
 
 static void test_case_sparse(const char *path)
 {

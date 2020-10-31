@@ -10,11 +10,6 @@
 #include "compat.h"
 #include "test.h"
 
-#define STR(x) #x
-#define STRVALUE(x) STR(x)
-
-#define TEST_PATH STRVALUE(TESTPATH)
-
 static char *strings[1000];
 
 static int read_strings(void)

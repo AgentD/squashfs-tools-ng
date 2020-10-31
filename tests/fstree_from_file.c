@@ -9,11 +9,6 @@
 #include "fstree.h"
 #include "test.h"
 
-#define STR(x) #x
-#define STRVALUE(x) STR(x)
-
-#define TEST_PATH STRVALUE(TESTPATH)
-
 int main(void)
 {
 	tree_node_t *n;
