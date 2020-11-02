@@ -1,0 +1,57 @@
+#!/bin/bash
+
+# Build a package for a specific distribution using a Docker image.
+#
+# ./build DISTRO RELEASE 
+#
+# From a given DISTRO:RELEASE it create a new local Docker image named
+# DISTRO-builder:RELEASE and installs tools required to build a
+# package (it does not install package build depends).
+#
+# It also creates a builder user to prevent from building packages as
+# root.
+#
+# Once the image is setup, it starts a docker image and run
+# build-helper to build the packages. The packages files are stored in
+# _OUT/DISTRO/RELEASE.
+#
+
+
+vendor="$1"
+release="$2"
+
+if test -z "$vendor" -o -z "$release"; then
+    cat<<EOF >&2
+$0 VENDOR RELEASE
+EOF
+    exit 1
+fi
+
+source_dir=$(git rev-parse --show-toplevel)
+output_dir=$source_dir/_out
+empty_dir=$output__dir/_empty
+
+if test "$vendor" = "opensuse"; then
+    vendor=opensuse/leap
+    pkg_dir=$output_dir/$vendor-$release
+else
+    pkg_dir=$output_dir/$vendor/$release
+fi
+
+image=$vendor-builder:$release
+
+mkdir -p $pkg_dir
+mkdir -p $output_dir/_empty
+
+# Build docker image
+docker build -t $image -f packages/Dockerfile \
+       --build-arg vendor="$vendor" \
+       --build-arg release="$release" \
+       .
+
+docker_args="-v $source_dir:/source-ro:ro -v $empty_dir:/source-ro/_out:ro"
+docker_args="$docker_args -v $pkg_dir:/output:rw"
+docker_args="$docker_args -v $source_dir/packages/build-helper:/build-helper"
+docker_args="$docker_args --rm"
+
+docker run -it $docker_args $image /build-helper

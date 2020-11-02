@@ -1,0 +1,87 @@
+Source: squashfs-tools-ng
+Section: kernel
+Priority: optional
+Maintainer: Laszlo Boszormenyi (GCS) <gcs@debian.org>
+Build-Depends: debhelper-compat (= 12), pkg-config, libselinux1-dev [linux-any], liblzma-dev, liblz4-dev, zlib1g-dev, libzstd-dev, liblzo2-dev, doxygen
+Standards-Version: 4.5.0
+Homepage: https://github.com/AgentD/squashfs-tools-ng
+
+Package: squashfs-tools-ng
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Description: New set of tools for working with SquashFS images
+ SquashFS is a highly compressed read-only filesystem for Linux, optimized
+ for small size and high packing density. It is widely used in embedded
+ systems and bootable live media.
+ .
+ SquashFS supports many different compression formats, such as zstd, xz,
+ zlib or lzo for both data and metadata compression. It has many features
+ expected from popular filesystems, such as extended attributes and support
+ for NFS export.
+ .
+ As the name suggests, this is not the original user space tooling for
+ SquashFS. Here are some of the features that primarily distinguish this
+ package from the original:
+   - reproducible SquashFS images, i.e. deterministic packing without
+     any local time stamps,
+   - Linux `gen_init_cpio` like file listing for micro managing the
+     file system contents, permissions, and ownership without having to
+     replicate the file system (and especially permissions) locally,
+   - support for SELinux contexts file (see selabel_file(5)) to generate
+     SELinux labels.
+
+Package: libsquashfs1
+Architecture: any
+Section: libs
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Description: New set of tools for working with SquashFS images - shared library
+ SquashFS is a highly compressed read-only filesystem for Linux, optimized
+ for small size and high packing density. It is widely used in embedded
+ systems and bootable live media.
+ .
+ SquashFS supports many different compression formats, such as zstd, xz,
+ zlib or lzo for both data and metadata compression. It has many features
+ expected from popular filesystems, such as extended attributes and support
+ for NFS export.
+ .
+ As the name suggests, this is not the original user space tooling for
+ SquashFS. Here are some of the features that primarily distinguish this
+ package from the original:
+   - reproducible SquashFS images, i.e. deterministic packing without
+     any local time stamps,
+   - Linux `gen_init_cpio` like file listing for micro managing the
+     file system contents, permissions, and ownership without having to
+     replicate the file system (and especially permissions) locally,
+   - support for SELinux contexts file (see selabel_file(5)) to generate
+     SELinux labels.
+ .
+ This package contains the C libraries needed to run executables that use
+ the squashfs-tools-ng library.
+
+Package: libsquashfs-dev
+Architecture: any
+Section: libdevel
+Depends: ${misc:Depends}, libsquashfs1 (= ${binary:Version}), libselinux1-dev [linux-any], liblzma-dev, liblz4-dev, zlib1g-dev, libzstd-dev, liblzo2-dev
+Description: New set of tools for working with SquashFS images - development
+ SquashFS is a highly compressed read-only filesystem for Linux, optimized
+ for small size and high packing density. It is widely used in embedded
+ systems and bootable live media.
+ .
+ SquashFS supports many different compression formats, such as zstd, xz,
+ zlib or lzo for both data and metadata compression. It has many features
+ expected from popular filesystems, such as extended attributes and support
+ for NFS export.
+ .
+ As the name suggests, this is not the original user space tooling for
+ SquashFS. Here are some of the features that primarily distinguish this
+ package from the original:
+   - reproducible SquashFS images, i.e. deterministic packing without
+     any local time stamps,
+   - Linux `gen_init_cpio` like file listing for micro managing the
+     file system contents, permissions, and ownership without having to
+     replicate the file system (and especially permissions) locally,
+   - support for SELinux contexts file (see selabel_file(5)) to generate
+     SELinux labels.
+ .
+ This package contains the C development headers and library files needed to
+ compile programs using the squashfs-tools-ng library.

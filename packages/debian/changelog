@@ -1,0 +1,63 @@
+squashfs-tools-ng (1.0.2-1) unstable; urgency=medium
+
+  * New upstream release.
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Sat, 05 Sep 2020 18:55:05 +0200
+
+squashfs-tools-ng (1.0.1-1) unstable; urgency=medium
+
+  * New upstream release.
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Wed, 05 Aug 2020 19:35:46 +0200
+
+squashfs-tools-ng (1.0.0-2) unstable; urgency=medium
+
+  * Correct package sections (closes: #963155).
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Sat, 20 Jun 2020 11:51:59 +0200
+
+squashfs-tools-ng (1.0.0-1) unstable; urgency=medium
+
+  * New upstream release.
+  * Library transition from libsquashfs0 to libsquashfs1 .
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Sat, 13 Jun 2020 19:24:26 +0200
+
+squashfs-tools-ng (0.9.1-1) unstable; urgency=medium
+
+  * New upstream release.
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Sat, 16 May 2020 08:35:00 +0000
+
+squashfs-tools-ng (0.9-1) unstable; urgency=medium
+
+  * New upstream release.
+  * Build with LZO compression support.
+  * Backport upstream fix for missing header without LZO.
+  * Update Standards-Version to 4.5.0 .
+
+  [ Pino Toscano <pino@debian.org> ]
+  * Enable the build on Hurd (closes: #947830).
+  * Don't ship .la files (closes: #947831).
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Sat, 04 Apr 2020 15:45:30 +0000
+
+squashfs-tools-ng (0.8-1) unstable; urgency=medium
+
+  * New upstream release.
+  * Update Standards-Version to 4.4.1 .
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Tue, 31 Dec 2019 08:31:34 +0000
+
+squashfs-tools-ng (0.7-1) unstable; urgency=medium
+
+  * New upstream release.
+  * Backport upstream fix for fstree_init test.
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Tue, 22 Oct 2019 18:40:57 +0000
+
+squashfs-tools-ng (0.5-1) unstable; urgency=medium
+
+  * Initial release (closes: #932971).
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Tue, 30 Jul 2019 11:44:14 +0000
