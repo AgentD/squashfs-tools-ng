@@ -4,10 +4,10 @@ libz_la_SOURCES += lib/zlib/deflate.c lib/zlib/deflate.h lib/zlib/inffast.c
 libz_la_SOURCES += lib/zlib/inffast.h lib/zlib/inflate.c lib/zlib/inflate.h
 libz_la_SOURCES += lib/zlib/inftrees.c lib/zlib/inftrees.h lib/zlib/trees.c
 libz_la_SOURCES += lib/zlib/zlib.h lib/zlib/trees.h lib/zlib/zutil.c
-libz_la_SOURCES += lib/zlib/zutil.h
+libz_la_SOURCES += lib/zlib/zutil.h lib/zlib/crc32.c lib/zlib/crc32.h
 
 libz_la_CPPFLAGS = -I$(top_srcdir)/lib/zlib -DZLIB_CONST=1
-libz_la_CPPFLAGS += -DNO_GZCOMPRESS=1 -DNO_GZIP=1 -DHAVE_MEMCPY=1
+libz_la_CPPFLAGS += -DNO_GZCOMPRESS=1 -DHAVE_MEMCPY=1
 
 noinst_LTLIBRARIES += libz.la
 endif

@@ -11,8 +11,7 @@ Changes made for inclusion in libsquashfs:
   October 16, 2017.
 
   An attempt has been made at removing the entire build system, samples,
-  tests, documentation, 3rd party contributions, gzip support and various
-  utility functions.
+  tests, documentation, 3rd party contributions and various utility functions.
 
   The following sub-directories were removed with all there contents:
     amiga/
@@ -38,8 +37,6 @@ Changes made for inclusion in libsquashfs:
     compress.c
     uncompr.c
     infback.c
-    crc32.c
-    crc32.h
 
   The following source files were modified (modifications marked with a
   comment in the source):
