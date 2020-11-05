@@ -6,7 +6,7 @@
 %endif
 
 Name: squashfs-tools-ng
-Version: 1.0.2
+Version: 1.0.3
 Release: 1%{?dist}
 License: GPLv3+
 URL: https://github.com/AgentD/squashfs-tools-ng
@@ -141,6 +141,8 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Wed Nov 05 2020 David Oberhollenzer <goliath@infraroot.at> - 1.0.3-1
+- Bump to version 1.0.3.
 * Thu Oct 01 2020 Sébastien Gross <seb•ɑƬ•chezwam•ɖɵʈ•org> - 1.0.2-1
 - Add Fedora support.
 - Add OpenSUSE support.

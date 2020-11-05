@@ -12,13 +12,13 @@
 
 ARG vendor
 ARG release
-ARG version=1.0.2
+ARG version=1.0.3
 
 FROM $vendor:$release
 # Args are not globaly scoped
 ARG vendor
 ARG release
-ARG version=1.0.2
+ARG version=1.0.3
 
 # Install tools required to build a package for several distributions.
 #

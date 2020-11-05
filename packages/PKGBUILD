@@ -4,7 +4,7 @@
 # Contributor:
 
 pkgname=('squashfs-tools-ng' 'squashfs-tools-ng-doc')
-pkgver=1.0.2
+pkgver=1.0.3
 pkgrel=1
 epoch=
 pkgdesc="New set of tools for working with SquashFS images."
@@ -39,13 +39,13 @@ source=("https://github.com/AgentD/squashfs-tools-ng/archive/v$pkgver/$pkgname-$
 noextract=()
 
 ## Generated using: makepkg -g PKGBUILD
-md5sums=('7e78c57513d58e374afc60c000032fa7')
-sha1sums=('a50a7d2aa31b71b22de4297e23e5f68e5fc8c0e1')
-sha224sums=('43abdd9552b3872380387b5dadfd44e8e7dbd8cab1772bef83dea7b7')
-sha256sums=('5eb0e3faaba6cef92e0c03b13b9965e744d8eb5291db5b118970d4c34eeaec8c')
-sha384sums=('47f589f7b6c82d39c404e67888045beca5062b595766b294d337ea0c8e026d063b58b7b4e83fd81cea0ea48fec1c2545')
-sha512sums=('409cec3c932ad0653958746b07371ce19979cd53f9f38482243bc425a08ca62c79c5560a03c0c7d0560bb04234dab7a94a60bbe1a1ed7497f3afcec744e2fda6')
-b2sums=('c2a48909dd9cac89a45cc468735b24f842a8466629ad75f523c1db736fe51036c96bcb46a2b351aa24753028a88ea5efa56aab3ca87efdd339e6d58a0b92abd9')
+md5sums=('ffa870d5204ea1dbadc943e1a45a6ef9')
+sha1sums=('c0fe57ebb25bd25bccfec99773f21f8f3f9e25d7')
+sha224sums=('c0a931a23f859745d264fab80ea084ab80d6d9822f211d5d2a0082b8')
+sha256sums=('7b1f198d6b1f49f253954e6108ab3e86a6a763b4dbf97758c31ff176bf694362')
+sha384sums=('fd466e2f2969d9c07e1a3059f9124b4f3be9068307e341eb7c8993dd305eff7756c8e34ff9e1a513c52632b6b1911f01')
+sha512sums=('3d9a160421bd093daf6fa8a6730137d2c1fee8b8969176e540fa21e9f85ac936546a2011d6b469e7408fabad75627225ba747ca1173272eada8331b0735a93fd')
+b2sums=('61706a71e918086794cc5edf5763a62789b8120897db97051a7205d1e65a2ef1c2337dac2f8cbf892f759717a5c2fcec85563e556177eb8d18c4bce978ddcb5e')
 
 validpgpkeys=()
 
