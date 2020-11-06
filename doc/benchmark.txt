@@ -53,8 +53,9 @@
  The repacking was repeated 4 times and the worst wall-clock time ("real") was
  used for comparison.
 
- Altough not relevant for this benchmark, the resulting image sizes where
- for a specific compressor, so that the compression ratio could be estimated:
+ Altough not relevant for this benchmark, the resulting image sizes were
+ measured once for each compressor, so that the compression ratio could
+ be estimated:
 
   $ stat test.tar
   $ stat test.sqfs
@@ -84,7 +85,7 @@
 
 
  In addition, relative and absolute efficiency of the parellel implementation
- was determined:
+ were determined:
 
                                          speedup_rel(compressor, num_cpu)
    efficiency_rel(compressor, num_cpu) = --------------------------------
@@ -238,8 +239,8 @@
  decompression and beating the others in compression speed by orders of
  magnitudes, has by far the worst compression ratio.
 
- It should be noted that the actual number of actually compressed blocks has not
- been determined. A worse compression ratio can lead to more blocks being stored
+ It should be noted that the number of actually compressed blocks has not been
+ determined. A worse compression ratio can lead to more blocks being stored
  uncompressed, reducing the workload and thus affecting decompression time.
 
  However, since zstd has a better compression ratio than gzip, takes only 30% of
