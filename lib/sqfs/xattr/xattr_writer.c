@@ -89,6 +89,9 @@ sqfs_xattr_writer_t *sqfs_xattr_writer_create(sqfs_u32 flags)
 		return NULL;
 
 	xwr = calloc(1, sizeof(*xwr));
+	if (xwr == NULL)
+		return NULL;
+
 	if (str_table_init(&xwr->keys, XATTR_KEY_BUCKETS))
 		goto fail_keys;
 
