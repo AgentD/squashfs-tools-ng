@@ -1,12 +1,15 @@
-libcommon_a_SOURCES = lib/common/serialize_fstree.c lib/common/statistics.c
-libcommon_a_SOURCES += lib/common/inode_stat.c lib/common/hardlink.c
+libcommon_a_SOURCES = lib/common/inode_stat.c lib/common/hardlink.c
 libcommon_a_SOURCES += lib/common/print_version.c lib/common/data_reader_dump.c
 libcommon_a_SOURCES += lib/common/compress.c lib/common/comp_opt.c
 libcommon_a_SOURCES += lib/common/data_writer.c include/common.h
 libcommon_a_SOURCES += lib/common/get_path.c lib/common/data_writer_ostream.c
-libcommon_a_SOURCES += lib/common/writer.c lib/common/perror.c
+libcommon_a_SOURCES += lib/common/perror.c
 libcommon_a_SOURCES += lib/common/mkdir_p.c lib/common/parse_size.c
-libcommon_a_SOURCES += lib/common/print_size.c
+libcommon_a_SOURCES += lib/common/print_size.c include/simple_writer.h
+libcommon_a_SOURCES += include/compress_cli.h
+libcommon_a_SOURCES += lib/common/writer/init.c lib/common/writer/cleanup.c
+libcommon_a_SOURCES += lib/common/writer/serialize_fstree.c
+libcommon_a_SOURCES += lib/common/writer/finish.c
 libcommon_a_CFLAGS = $(AM_CFLAGS) $(LZO_CFLAGS)
 
 if WITH_LZO

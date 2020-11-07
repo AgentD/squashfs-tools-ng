@@ -4,8 +4,11 @@
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
-#include "common.h"
+#include "config.h"
+#include "compress_cli.h"
+
 #include <assert.h>
+#include <stdio.h>
 
 static int cmp_ids[] = {
 	SQFS_COMP_XZ,

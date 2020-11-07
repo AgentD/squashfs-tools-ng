@@ -4,11 +4,13 @@
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
+#include "config.h"
 #include "common.h"
 
 #include <string.h>
 #include <stdlib.h>
 #include <getopt.h>
+#include <stdio.h>
 #include <ctype.h>
 
 typedef struct {
