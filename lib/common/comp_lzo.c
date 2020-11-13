@@ -6,6 +6,7 @@
  */
 #include "config.h"
 #include "compress_cli.h"
+#include "compat.h"
 
 #include <stdbool.h>
 #include <stdlib.h>
