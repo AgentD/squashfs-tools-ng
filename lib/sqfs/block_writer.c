@@ -14,11 +14,15 @@
 #include "util.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 #define MK_BLK_HASH(chksum, size) \
 	(((sqfs_u64)(size) << 32) | (sqfs_u64)(chksum))
 
+#define SIZE_FROM_HASH(hash) ((hash >> 32) & ((1 << 24) - 1))
+
 #define INIT_BLOCK_COUNT (128)
+#define SCRATCH_SIZE (8192)
 
 typedef struct {
 	sqfs_u64 offset;
@@ -39,6 +43,10 @@ typedef struct {
 
 	sqfs_u64 start;
 	size_t file_start;
+
+	sqfs_u32 flags;
+
+	sqfs_u8 scratch[];
 } block_writer_default_t;
 
 static int store_block_location(block_writer_default_t *wr, sqfs_u64 offset,
@@ -64,9 +72,42 @@ static int store_block_location(block_writer_default_t *wr, sqfs_u64 offset,
 	return 0;
 }
 
-static size_t deduplicate_blocks(block_writer_default_t *wr, size_t count)
+static int compare_blocks(block_writer_default_t *wr, sqfs_u64 loc_a,
+			  sqfs_u64 loc_b, size_t size)
 {
-	size_t i, j;
+	sqfs_u8 *ptr_a = wr->scratch, *ptr_b = ptr_a + SCRATCH_SIZE / 2;
+	size_t diff;
+	int ret;
+
+	while (size > 0) {
+		diff = SCRATCH_SIZE / 2;
+		diff = diff > size ? size : diff;
+
+		ret = wr->file->read_at(wr->file, loc_a, ptr_a, diff);
+		if (ret != 0)
+			return ret;
+
+		ret = wr->file->read_at(wr->file, loc_b, ptr_b, diff);
+		if (ret != 0)
+			return ret;
+
+		if (memcmp(ptr_a, ptr_b, diff) != 0)
+			return 1;
+
+		size -= diff;
+		loc_a += diff;
+		loc_b += diff;
+	}
+
+	return 0;
+}
+
+static int deduplicate_blocks(block_writer_default_t *wr, size_t count,
+			      size_t *out)
+{
+	sqfs_u64 loc_a, loc_b;
+	size_t i, j, sz;
+	int ret;
 
 	for (i = 0; i < wr->file_start; ++i) {
 		for (j = 0; j < count; ++j) {
@@ -78,11 +119,31 @@ static size_t deduplicate_blocks(block_writer_default_t *wr, size_t count)
 				break;
 		}
 
+		if (j != count)
+			continue;
+
+		if (wr->flags & SQFS_BLOCK_WRITER_HASH_COMPARE_ONLY)
+			break;
+
+		for (j = 0; j < count; ++j) {
+			sz = SIZE_FROM_HASH(wr->blocks[i + j].hash);
+
+			loc_a = wr->blocks[i + j].offset;
+			loc_b = wr->blocks[wr->file_start + j].offset;
+
+			ret = compare_blocks(wr, loc_a, loc_b, sz);
+			if (ret < 0)
+				return ret;
+			if (ret > 0)
+				break;
+		}
+
 		if (j == count)
 			break;
 	}
 
-	return i;
+	*out = i;
+	return 0;
 }
 
 static int align_file(block_writer_default_t *wr)
@@ -168,7 +229,10 @@ static int write_data_block(sqfs_block_writer_t *base, void *user,
 		if (count == 0) {
 			*location = 0;
 		} else if (!(flags & SQFS_BLK_DONT_DEDUPLICATE)) {
-			start = deduplicate_blocks(wr, count);
+			err = deduplicate_blocks(wr, count, &start);
+			if (err)
+				return err;
+
 			offset = wr->blocks[start].offset;
 
 			*location = offset;
@@ -204,16 +268,22 @@ sqfs_block_writer_t *sqfs_block_writer_create(sqfs_file_t *file,
 {
 	block_writer_default_t *wr;
 
-	if (flags != 0)
+	if (flags & ~SQFS_BLOCK_WRITER_ALL_FLAGS)
 		return NULL;
 
-	wr = calloc(1, sizeof(*wr));
+	if (flags & SQFS_BLOCK_WRITER_HASH_COMPARE_ONLY) {
+		wr = calloc(1, sizeof(*wr));
+	} else {
+		wr = alloc_flex(sizeof(*wr), 1, SCRATCH_SIZE);
+	}
+
 	if (wr == NULL)
 		return NULL;
 
 	((sqfs_block_writer_t *)wr)->write_data_block = write_data_block;
 	((sqfs_block_writer_t *)wr)->get_block_count = get_block_count;
 	((sqfs_object_t *)wr)->destroy = block_writer_destroy;
+	wr->flags = flags;
 	wr->file = file;
 	wr->devblksz = devblksz;
 	wr->max_blocks = INIT_BLOCK_COUNT;
