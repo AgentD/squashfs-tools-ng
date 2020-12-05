@@ -90,6 +90,32 @@ struct sqfs_block_writer_t {
 	sqfs_u64 (*get_block_count)(const sqfs_block_writer_t *wr);
 };
 
+/**
+ * @enum SQFS_BLOCK_WRITER_FLAGS
+ *
+ * @brief Flags that can be passed to @ref sqfs_block_writer_create
+ */
+typedef enum {
+	/**
+	 * @brief If set, only compare checksums when deduplicating blocks.
+	 *
+	 * Since squashfs-tools-ng version 1.1, the default for the block
+	 * writer is to compare checksum & size for blocks during deduplication
+	 * and then read the potential match back from disk and do a byte for
+	 * byte comparison to make absolutely sure they match.
+	 *
+	 * If this flag is set, the hash & size check is treated as being
+	 * sufficient for block deduplication, which does increase performance,
+	 * but risks data loss or corruption if a hash collision occours.
+	 */
+	SQFS_BLOCK_WRITER_HASH_COMPARE_ONLY = 0x01,
+
+	/**
+	 * @brief A combination of all valid flags.
+	 */
+	SQFS_BLOCK_WRITER_ALL_FLAGS = 0x01
+} SQFS_BLOCK_WRITER_FLAGS;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -102,7 +128,8 @@ extern "C" {
  * @param file A pointer to a file object that data should be appended to.
  * @param devblksz The underlying device block size if output data
  *                 should be aligned.
- * @param flags Currently must be set to 0 or creation will fail.
+ * @param flags A combination of @ref SQFS_BLOCK_WRITER_FLAGS values. If an
+ *              unknown flag is set, creation will fail.
  *
  * @return A pointer to a new block writer on success, NULL on failure.
  */
