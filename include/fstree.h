@@ -17,6 +17,12 @@
 #include "sqfs/predef.h"
 #include "compat.h"
 
+enum {
+	DIR_SCAN_KEEP_TIME = 0x01,
+
+	DIR_SCAN_ONE_FILESYSTEM = 0x02,
+};
+
 #define FSTREE_MODE_HARD_LINK (0)
 #define FSTREE_MODE_HARD_LINK_RESOLVED (1)
 
@@ -229,5 +235,12 @@ tree_node_t *fstree_add_hard_link(fstree_t *fs, const char *path,
   Returns 0 on success. On failure, errno is set.
  */
 int fstree_resolve_hard_link(fstree_t *fs, tree_node_t *node);
+
+/*
+  Recursively scan a directory to build a file system tree.
+
+  Returns 0 on success, prints to stderr on failure.
+ */
+int fstree_from_dir(fstree_t *fs, const char *path, unsigned int flags);
 
 #endif /* FSTREE_H */

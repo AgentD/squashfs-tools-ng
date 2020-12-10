@@ -1,10 +1,16 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 /*
- * dirscan.c
+ * fstree_from_dir.c
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
-#include "mkfs.h"
+#include "config.h"
+#include "fstree.h"
+
+#include <dirent.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
 
 #ifdef _WIN32
 int fstree_from_dir(fstree_t *fs, const char *path, unsigned int flags)

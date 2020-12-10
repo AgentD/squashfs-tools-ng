@@ -122,7 +122,7 @@ fail:
 #endif
 
 static int xattr_xcan_dfs(const char *path_prefix, void *selinux_handle,
-			  sqfs_xattr_writer_t *xwr, unsigned int flags,
+			  sqfs_xattr_writer_t *xwr, bool scan_xattr,
 			  tree_node_t *node)
 {
 	char *path;
@@ -136,7 +136,7 @@ static int xattr_xcan_dfs(const char *path_prefix, void *selinux_handle,
 	}
 
 #ifdef HAVE_SYS_XATTR_H
-	if (flags & DIR_SCAN_READ_XATTR) {
+	if (scan_xattr) {
 		path = get_full_path(path_prefix, node);
 		if (path == NULL)
 			return -1;
@@ -176,7 +176,7 @@ static int xattr_xcan_dfs(const char *path_prefix, void *selinux_handle,
 
 		while (node != NULL) {
 			if (xattr_xcan_dfs(path_prefix, selinux_handle, xwr,
-					   flags, node)) {
+					   scan_xattr, node)) {
 				return -1;
 			}
 
@@ -188,13 +188,13 @@ static int xattr_xcan_dfs(const char *path_prefix, void *selinux_handle,
 }
 
 int xattrs_from_dir(fstree_t *fs, const char *path, void *selinux_handle,
-		    sqfs_xattr_writer_t *xwr, unsigned int flags)
+		    sqfs_xattr_writer_t *xwr, bool scan_xattr)
 {
 	if (xwr == NULL)
 		return 0;
 
-	if (selinux_handle == NULL && !(flags & DIR_SCAN_READ_XATTR))
+	if (selinux_handle == NULL && !scan_xattr)
 		return 0;
 
-	return xattr_xcan_dfs(path, selinux_handle, xwr, flags, fs->root);
+	return xattr_xcan_dfs(path, selinux_handle, xwr, scan_xattr, fs->root);
 }

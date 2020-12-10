@@ -206,7 +206,7 @@ int main(int argc, char **argv)
 
 	if (opt.infile == NULL) {
 		if (xattrs_from_dir(&sqfs.fs, opt.packdir, sehnd,
-				    sqfs.xwr, opt.dirscan_flags)) {
+				    sqfs.xwr, opt.scan_xattr)) {
 			goto out;
 		}
 	}

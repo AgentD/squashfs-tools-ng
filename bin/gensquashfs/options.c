@@ -245,7 +245,7 @@ void process_command_line(options_t *opt, int argc, char **argv)
 			break;
 #ifdef HAVE_SYS_XATTR_H
 		case 'x':
-			opt->dirscan_flags |= DIR_SCAN_READ_XATTR;
+			opt->scan_xattr = true;
 			break;
 #endif
 		case 'o':
