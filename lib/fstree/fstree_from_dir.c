@@ -13,9 +13,10 @@
 #include <errno.h>
 
 #ifdef _WIN32
-int fstree_from_dir(fstree_t *fs, const char *path, unsigned int flags)
+int fstree_from_dir(fstree_t *fs, tree_node_t *root,
+		    const char *path, unsigned int flags)
 {
-	(void)fs; (void)path; (void)flags;
+	(void)fs; (void)root; (void)path; (void)flags;
 	fputs("Packing a directory is not supported on Windows.\n", stderr);
 	return -1;
 }
@@ -90,7 +91,7 @@ static int populate_dir(int dir_fd, fstree_t *fs, tree_node_t *root,
 		free(extra);
 		extra = NULL;
 
-		if (S_ISDIR(n->mode)) {
+		if (S_ISDIR(n->mode) && !(flags & DIR_SCAN_NO_RECURSION)) {
 			childfd = openat(dir_fd, n->name, O_DIRECTORY |
 					 O_RDONLY | O_CLOEXEC);
 			if (childfd < 0) {
@@ -113,10 +114,18 @@ fail:
 	return -1;
 }
 
-int fstree_from_dir(fstree_t *fs, const char *path, unsigned int flags)
+int fstree_from_dir(fstree_t *fs, tree_node_t *root,
+		    const char *path, unsigned int flags)
 {
 	struct stat sb;
 	int fd;
+
+	if (!S_ISDIR(root->mode)) {
+		fprintf(stderr,
+			"scanning %s into %s: target is not a directory\n",
+			path, root->name);
+		return -1;
+	}
 
 	fd = open(path, O_DIRECTORY | O_RDONLY | O_CLOEXEC);
 	if (fd < 0) {
@@ -130,6 +139,6 @@ int fstree_from_dir(fstree_t *fs, const char *path, unsigned int flags)
 		return -1;
 	}
 
-	return populate_dir(fd, fs, fs->root, sb.st_dev, flags);
+	return populate_dir(fd, fs, root, sb.st_dev, flags);
 }
 #endif

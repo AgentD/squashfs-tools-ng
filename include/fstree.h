@@ -21,6 +21,8 @@ enum {
 	DIR_SCAN_KEEP_TIME = 0x01,
 
 	DIR_SCAN_ONE_FILESYSTEM = 0x02,
+
+	DIR_SCAN_NO_RECURSION = 0x04,
 };
 
 #define FSTREE_MODE_HARD_LINK (0)
@@ -241,6 +243,7 @@ int fstree_resolve_hard_link(fstree_t *fs, tree_node_t *node);
 
   Returns 0 on success, prints to stderr on failure.
  */
-int fstree_from_dir(fstree_t *fs, const char *path, unsigned int flags);
+int fstree_from_dir(fstree_t *fs, tree_node_t *root,
+		    const char *path, unsigned int flags);
 
 #endif /* FSTREE_H */

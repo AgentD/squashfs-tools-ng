@@ -191,8 +191,10 @@ int main(int argc, char **argv)
 	}
 
 	if (opt.infile == NULL) {
-		if (fstree_from_dir(&sqfs.fs, opt.packdir, opt.dirscan_flags))
+		if (fstree_from_dir(&sqfs.fs, sqfs.fs.root,
+				    opt.packdir, opt.dirscan_flags)) {
 			goto out;
+		}
 	} else {
 		if (read_fstree(&sqfs.fs, &opt, sqfs.xwr, sehnd))
 			goto out;
