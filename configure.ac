@@ -143,12 +143,19 @@ fi
 
 ##### search for dependencies #####
 
-AS_IF([test "x$with_bzip2" != "xno"], [
-	PKG_CHECK_MODULES(BZIP2, [bzip2], [with_bzip2="yes"],
-			      [AS_IF([test "x$with_bzip2" != "xcheck"],
-				     [AC_MSG_ERROR([cannot Bzip2 libs])],
-				     [with_bzip2="no"])])
+AC_ARG_VAR([BZIP2_CFLAGS], [C compiler flags for lib bzip2])
+AC_ARG_VAR([BZIP2_LIBS], [linker flags for lib bzip2])
+
+AS_IF([test -z "$BZIP2_LIBS" -a "x$with_bzip2" != "xno"], [
+	AC_CHECK_LIB([bz2], [BZ2_bzCompress],
+		     [AC_CHECK_HEADERS([bzlib.h], [BZIP2_LIBS="-lbz2"], [])],
+		     [])
 ], [])
+
+AS_IF([test -z "$BZIP2_LIBS"], [AS_IF([test "x$with_bzip2" = "xyes"],
+				    [AC_MSG_ERROR([cannot find Bzip2 libs])],
+				    [with_bzip2="no"])],
+			       [with_bzip2="yes"])
 
 AS_IF([test "x$with_gzip" != "xno" -a "x$with_builtin_zlib" != "xyes"], [
 	PKG_CHECK_MODULES(ZLIB, [zlib], [with_gzip="yes"],
