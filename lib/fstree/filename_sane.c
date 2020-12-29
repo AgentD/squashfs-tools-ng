@@ -57,7 +57,7 @@ bool is_filename_sane(const char *name, bool check_os_specific)
 		return false;
 
 	while (*name != '\0') {
-		if (*name == '/' || *name == '\\')
+		if (*name == '/')
 			return false;
 
 #if defined(_WIN32) || defined(__WINDOWS__) || defined(TEST_WIN32)
@@ -66,7 +66,7 @@ bool is_filename_sane(const char *name, bool check_os_specific)
 				return false;
 			if (*name == '"' || *name == '|' || *name == '?')
 				return false;
-			if (*name == '*' || *name <= 31)
+			if (*name == '*' || *name == '\\' || *name <= 31)
 				return false;
 		}
 #endif

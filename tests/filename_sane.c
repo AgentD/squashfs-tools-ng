@@ -11,6 +11,9 @@
 static const char *must_work[] = {
 	"foobar",
 	"test.txt",
+#if !defined(_WIN32) && !defined(__WINDOWS__) && !defined(TEST_WIN32)
+	"\\foo", "foo\\", "foo\\bar",
+#endif
 	NULL,
 };
 
@@ -18,16 +21,14 @@ static const char *must_not_work[] = {
 	".",
 	"..",
 	"/foo",
-	"\\foo",
 	"foo/",
-	"foo\\",
 	"foo/bar",
-	"foo\\bar",
 	NULL,
 };
 
 static const char *must_not_work_here[] = {
 #if defined(_WIN32) || defined(__WINDOWS__) || defined(TEST_WIN32)
+	"\\foo", "foo\\", "foo\\bar",
 	"fo<o", "fo>o", "fo:o", "fo\"o",
 	"fo|o", "fo?o", "fo*o", "fo\ro",
 	"CON", "PRN", "AUX", "NUL",
