@@ -11,12 +11,12 @@ static void normalize_slashes(char *filename)
 {
 	char *dst = filename, *src = filename;
 
-	while (*src == '/' || *src == '\\')
+	while (*src == '/')
 		++src;
 
 	while (*src != '\0') {
-		if (*src == '/' || *src == '\\') {
-			while (*src == '/' || *src == '\\')
+		if (*src == '/') {
+			while (*src == '/')
 				++src;
 			if (*src == '\0')
 				break;
