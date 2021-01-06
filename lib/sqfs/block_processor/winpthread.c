@@ -393,35 +393,34 @@ static int block_processor_sync(sqfs_block_processor_t *proc)
 	return append_to_work_queue(proc, NULL);
 }
 
-sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
-						    sqfs_compressor_t *cmp,
-						    unsigned int num_workers,
-						    size_t max_backlog,
-						    sqfs_block_writer_t *wr,
-						    sqfs_frag_table_t *tbl)
+int sqfs_block_processor_create_ex(const sqfs_block_processor_desc_t *desc,
+				   sqfs_block_processor_t **out)
 {
 	thread_pool_processor_t *proc;
+	unsigned int i, num_workers;
 	sigset_t oldset;
-	unsigned int i;
 	int ret;
 
-	if (num_workers < 1)
-		num_workers = 1;
+	if (desc->size != sizeof(sqfs_block_processor_desc_t))
+		return SQFS_ERROR_ARG_INVALID;
+
+	num_workers = desc->num_workers < 1 ? 1 : desc->num_workers;
 
 	proc = alloc_flex(sizeof(*proc),
 			  sizeof(proc->workers[0]), num_workers);
 	if (proc == NULL)
-		return NULL;
+		return SQFS_ERROR_ALLOC;
 
-	if (block_processor_init(&proc->base, max_block_size, cmp, wr, tbl)) {
+	ret = block_processor_init(&proc->base, desc);
+	if (ret != 0) {
 		free(proc);
-		return NULL;
+		return ret;
 	}
 
 	proc->base.sync = block_processor_sync;
 	proc->base.append_to_work_queue = append_to_work_queue;
 	proc->num_workers = num_workers;
-	proc->max_backlog = max_backlog;
+	proc->max_backlog = desc->max_backlog;
 	((sqfs_object_t *)proc)->destroy = block_processor_destroy;
 
 	MUTEX_INIT(&proc->mtx);
@@ -432,27 +431,34 @@ sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
 
 	for (i = 0; i < num_workers; ++i) {
 		proc->workers[i] = alloc_flex(sizeof(compress_worker_t),
-					      1, max_block_size);
+					      1, desc->max_block_size);
 
-		if (proc->workers[i] == NULL)
+		if (proc->workers[i] == NULL) {
+			ret = SQFS_ERROR_ALLOC;
 			goto fail;
+		}
 
 		proc->workers[i]->shared = proc;
-		proc->workers[i]->cmp = sqfs_copy(cmp);
+		proc->workers[i]->cmp = sqfs_copy(desc->cmp);
 
-		if (proc->workers[i]->cmp == NULL)
+		if (proc->workers[i]->cmp == NULL) {
+			ret = SQFS_ERROR_ALLOC;
 			goto fail;
+		}
 
 		ret = THREAD_CREATE(&proc->workers[i]->thread,
 				    worker_proc, proc->workers[i]);
-		if (ret != 0)
+		if (ret != 0) {
+			ret = SQFS_ERROR_INTERNAL;
 			goto fail;
+		}
 	}
 
 	SIGNAL_ENABLE(&oldset);
-	return (sqfs_block_processor_t *)proc;
+	*out = (sqfs_block_processor_t *)proc;
+	return 0;
 fail:
 	SIGNAL_ENABLE(&oldset);
 	block_processor_destroy((sqfs_object_t *)proc);
-	return NULL;
+	return ret;
 }

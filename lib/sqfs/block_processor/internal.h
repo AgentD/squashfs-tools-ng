@@ -81,6 +81,9 @@ struct sqfs_block_processor_t {
 
 	bool begin_called;
 
+	sqfs_file_t *file;
+	sqfs_compressor_t *uncmp;
+
 	int (*process_completed_block)(sqfs_block_processor_t *proc,
 				       sqfs_block_t *block);
 
@@ -100,9 +103,6 @@ struct sqfs_block_processor_t {
 SQFS_INTERNAL void block_processor_cleanup(sqfs_block_processor_t *base);
 
 SQFS_INTERNAL int block_processor_init(sqfs_block_processor_t *base,
-				       size_t max_block_size,
-				       sqfs_compressor_t *cmp,
-				       sqfs_block_writer_t *wr,
-				       sqfs_frag_table_t *tbl);
+				       const sqfs_block_processor_desc_t *desc);
 
 #endif /* INTERNAL_H */

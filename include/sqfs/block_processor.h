@@ -110,12 +110,90 @@ struct sqfs_block_processor_stats_t {
 	sqfs_u64 actual_frag_count;
 };
 
+/**
+ * @struct sqfs_block_processor_desc_t
+ *
+ * @brief Encapsulates a description for an @ref sqfs_block_processor_t
+ *
+ * An instance of this struct is used by @ref sqfs_block_processor_create_ex to
+ * instantiate block processor objects.
+ */
+struct sqfs_block_processor_desc_t {
+	/**
+	 * @brief Holds the size of the structure.
+	 *
+	 * If a later version of libsquashfs expands this structure, the value
+	 * of this field can be used to check at runtime whether the newer
+	 * fields are avaialable or not.
+	 *
+	 * If @ref sqfs_block_processor_create_ex is given a struct whose size
+	 * it does not recognize, it returns @ref SQFS_ERROR_ARG_INVALID.
+	 */
+	sqfs_u32 size;
+
+	/**
+	 * @brief The maximum size of a data block.
+	 */
+	sqfs_u32 max_block_size;
+
+	/**
+	 * @brief The number of worker threads to create.
+	 */
+	sqfs_u32 num_workers;
+
+	/**
+	 * @brief The maximum number of blocks currently in flight.
+	 *
+	 * When trying to add more, enqueueing blocks until the
+	 * in-flight block count drops below the threshold.
+	 */
+	sqfs_u32 max_backlog;
+
+	/**
+	 * @brief A pointer to a compressor.
+	 *
+	 * If multiple worker threads are used, the deep copy function of the
+	 * compressor is used to create several instances that don't interfere
+	 * with each other. This means, the compressor implementation must be
+	 * able to create copies of itself that can be used independendly and
+	 * concurrently.
+	 */
+	sqfs_compressor_t *cmp;
+
+	/**
+	 * @brief A block writer to send to finished blocks to.
+	 */
+	sqfs_block_writer_t *wr;
+
+	/**
+	 * @brief A fragment table to use for storing block locations.
+	 */
+	sqfs_frag_table_t *tbl;
+
+	/**
+	 * @brief Pointer to a file to read back fragment blocks from.
+	 *
+	 * If file and uncmp are not NULL, the file is used to read back
+	 * fragment blocks during fragment deduplication and verify possible
+	 * matches. If either of them are NULL, the deduplication relies on
+	 * fragment size and hash alone.
+	 */
+	sqfs_file_t *file;
+
+	/**
+	 * @brief A pointer to a compressor the decompresses data.
+	 *
+	 * @copydoc file
+	 */
+	sqfs_compressor_t *uncmp;
+};
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /**
- * @brief Create a data block writer.
+ * @brief Create a data block processor.
  *
  * @memberof sqfs_block_processor_t
  *
@@ -132,7 +210,7 @@ extern "C" {
  * @param tbl A fragment table to use for storing fragment and fragment block
  *            locations.
  *
- * @return A pointer to a data writer object on success, NULL on allocation
+ * @return A pointer to a block processor object on success, NULL on allocation
  *         failure or on failure to create and initialize the worker threads.
  */
 SQFS_API
@@ -142,6 +220,22 @@ sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
 						    size_t max_backlog,
 						    sqfs_block_writer_t *wr,
 						    sqfs_frag_table_t *tbl);
+
+/**
+ * @brief Create a data block processor.
+ *
+ * @memberof sqfs_block_processor_t
+ *
+ * @param desc A pointer to an extensible structure that holds the description
+ *             of the block processor.
+ * @param out On success, returns the pointer to the newly created block
+ *            processor object.
+ *
+ * @return Zero on success, an @ref SQFS_ERROR value on failure.
+ */
+SQFS_API
+int sqfs_block_processor_create_ex(const sqfs_block_processor_desc_t *desc,
+				   sqfs_block_processor_t **out);
 
 /**
  * @brief Start writing a file.

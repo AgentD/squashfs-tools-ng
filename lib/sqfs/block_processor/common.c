@@ -297,22 +297,48 @@ void block_processor_cleanup(sqfs_block_processor_t *base)
 	hash_table_destroy(base->frag_ht, ht_delete_function);
 }
 
-int block_processor_init(sqfs_block_processor_t *base, size_t max_block_size,
-			 sqfs_compressor_t *cmp, sqfs_block_writer_t *wr,
-			 sqfs_frag_table_t *tbl)
+int block_processor_init(sqfs_block_processor_t *base,
+			 const sqfs_block_processor_desc_t *desc)
 {
 	base->process_completed_block = process_completed_block;
 	base->process_completed_fragment = process_completed_fragment;
 	base->process_block = process_block;
-	base->max_block_size = max_block_size;
-	base->cmp = cmp;
-	base->frag_tbl = tbl;
-	base->wr = wr;
+	base->max_block_size = desc->max_block_size;
+	base->cmp = desc->cmp;
+	base->frag_tbl = desc->tbl;
+	base->wr = desc->wr;
+	base->file = desc->file;
+	base->uncmp = desc->uncmp;
 	base->stats.size = sizeof(base->stats);
 
 	base->frag_ht = hash_table_create(chunk_info_hash, chunk_info_equals);
 	if (base->frag_ht == NULL)
-		return -1;
+		return SQFS_ERROR_ALLOC;
 
 	return 0;
+}
+
+sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
+						    sqfs_compressor_t *cmp,
+						    unsigned int num_workers,
+						    size_t max_backlog,
+						    sqfs_block_writer_t *wr,
+						    sqfs_frag_table_t *tbl)
+{
+	sqfs_block_processor_desc_t desc;
+	sqfs_block_processor_t *out;
+
+	memset(&desc, 0, sizeof(desc));
+	desc.size = sizeof(desc);
+	desc.max_block_size = max_block_size;
+	desc.num_workers = num_workers;
+	desc.max_backlog = max_backlog;
+	desc.cmp = cmp;
+	desc.wr = wr;
+	desc.tbl = tbl;
+
+	if (sqfs_block_processor_create_ex(&desc, &out) != 0)
+		return NULL;
+
+	return out;
 }
