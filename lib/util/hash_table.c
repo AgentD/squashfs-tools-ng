@@ -123,8 +123,8 @@ entry_is_present(const struct hash_table *ht, struct hash_entry *entry)
 
 static bool
 hash_table_init(struct hash_table *ht,
-                sqfs_u32 (*key_hash_function)(const void *key),
-                bool (*key_equals_function)(const void *a,
+                sqfs_u32 (*key_hash_function)(void *user, const void *key),
+                bool (*key_equals_function)(void *user, const void *a,
                                             const void *b))
 {
    ht->size_index = 0;
@@ -144,8 +144,8 @@ hash_table_init(struct hash_table *ht,
 }
 
 struct hash_table *
-hash_table_create(sqfs_u32 (*key_hash_function)(const void *key),
-                  bool (*key_equals_function)(const void *a,
+hash_table_create(sqfs_u32 (*key_hash_function)(void *user, const void *key),
+                  bool (*key_equals_function)(void *user, const void *a,
                                               const void *b))
 {
    struct hash_table *ht;
@@ -220,7 +220,7 @@ hash_table_search(struct hash_table *ht, sqfs_u32 hash, const void *key)
       if (entry_is_free(entry)) {
          return NULL;
       } else if (entry_is_present(ht, entry) && entry->hash == hash) {
-         if (ht->key_equals_function(key, entry->key)) {
+         if (ht->key_equals_function(ht->user, key, entry->key)) {
             return entry;
          }
       }
@@ -243,7 +243,8 @@ struct hash_entry *
 hash_table_search_pre_hashed(struct hash_table *ht, sqfs_u32 hash,
                              const void *key)
 {
-   assert(ht->key_hash_function == NULL || hash == ht->key_hash_function(key));
+   assert(ht->key_hash_function == NULL ||
+          hash == ht->key_hash_function(ht->user, key));
    return hash_table_search(ht, hash, key);
 }
 
@@ -349,7 +350,7 @@ hash_table_insert(struct hash_table *ht, sqfs_u32 hash,
        */
       if (!entry_is_deleted(ht, entry) &&
           entry->hash == hash &&
-          ht->key_equals_function(key, entry->key)) {
+          ht->key_equals_function(ht->user, key, entry->key)) {
          entry->key = key;
          entry->data = data;
          return entry;
@@ -386,7 +387,8 @@ struct hash_entry *
 hash_table_insert_pre_hashed(struct hash_table *ht, sqfs_u32 hash,
                              const void *key, void *data)
 {
-   assert(ht->key_hash_function == NULL || hash == ht->key_hash_function(key));
+   assert(ht->key_hash_function == NULL ||
+          hash == ht->key_hash_function(ht->user, key));
    return hash_table_insert(ht, hash, key, data);
 }
 

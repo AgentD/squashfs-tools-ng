@@ -261,15 +261,17 @@ fail_outblk:
 	return err;
 }
 
-static uint32_t chunk_info_hash(const void *key)
+static uint32_t chunk_info_hash(void *user, const void *key)
 {
 	const chunk_info_t *chunk = key;
+	(void)user;
 	return chunk->hash;
 }
 
-static bool chunk_info_equals(const void *a, const void *b)
+static bool chunk_info_equals(void *user, const void *a, const void *b)
 {
 	const chunk_info_t *a_ = a, *b_ = b;
+	(void)user;
 	return a_->size == b_->size &&
 	       a_->hash == b_->hash;
 }

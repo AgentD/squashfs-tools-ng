@@ -42,9 +42,10 @@ struct hash_entry {
 
 struct hash_table {
    struct hash_entry *table;
-   sqfs_u32 (*key_hash_function)(const void *key);
-   bool (*key_equals_function)(const void *a, const void *b);
+   sqfs_u32 (*key_hash_function)(void *user, const void *key);
+   bool (*key_equals_function)(void *user, const void *a, const void *b);
    const void *deleted_key;
+   void *user;
    sqfs_u32 size;
    sqfs_u32 rehash;
    sqfs_u64 size_magic;
@@ -56,8 +57,8 @@ struct hash_table {
 };
 
 SQFS_INTERNAL struct hash_table *
-hash_table_create(sqfs_u32 (*key_hash_function)(const void *key),
-                  bool (*key_equals_function)(const void *a,
+hash_table_create(sqfs_u32 (*key_hash_function)(void *user, const void *key),
+                  bool (*key_equals_function)(void *user, const void *a,
                                               const void *b));
 
 SQFS_INTERNAL struct hash_table *
