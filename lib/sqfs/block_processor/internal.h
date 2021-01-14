@@ -53,10 +53,6 @@ typedef struct sqfs_block_t {
 	   For fragment fragment blocks: fragment table index. */
 	sqfs_u32 index;
 
-	/* For fragment blocks: list of fragments to
-	   consolidate in reverse order. */
-	struct sqfs_block_t *frag_list;
-
 	/* User data pointer */
 	void *user;
 

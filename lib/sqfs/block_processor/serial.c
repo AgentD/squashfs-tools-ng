@@ -13,17 +13,6 @@ typedef struct {
 	sqfs_u8 scratch[];
 } serial_block_processor_t;
 
-static void free_block_list(sqfs_block_t *list)
-{
-	sqfs_block_t *blk;
-
-	while (list != NULL) {
-		blk = list;
-		list = blk->next;
-		free(blk);
-	}
-}
-
 static void block_processor_destroy(sqfs_object_t *obj)
 {
 	sqfs_block_processor_t *proc = (sqfs_block_processor_t *)obj;
@@ -63,7 +52,6 @@ static int append_to_work_queue(sqfs_block_processor_t *proc,
 	sproc->status = proc->process_completed_block(proc, block);
 	return sproc->status;
 fail:
-	free_block_list(block->frag_list);
 	free(block);
 	return sproc->status;
 }
