@@ -214,8 +214,8 @@ int sqfs_dir_reader_get_full_hierarchy(sqfs_dir_reader_t *rd,
 	inode = NULL;
 
 	while (path != NULL && *path != '\0') {
-		if (*path == '/' || *path == '\\') {
-			while (*path == '/' || *path == '\\')
+		if (*path == '/') {
+			while (*path == '/')
 				++path;
 			continue;
 		}
@@ -226,7 +226,6 @@ int sqfs_dir_reader_get_full_hierarchy(sqfs_dir_reader_t *rd,
 
 		ptr = strchr(path, '/');
 		if (ptr == NULL) {
-			ptr = strchr(path, '\\');
 
 			if (ptr == NULL) {
 				for (ptr = path; *ptr != '\0'; ++ptr)
