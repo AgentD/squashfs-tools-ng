@@ -46,18 +46,6 @@ static int set_block_size(sqfs_inode_generic_t **inode,
 
 static void release_old_block(sqfs_block_processor_t *proc, sqfs_block_t *blk)
 {
-	sqfs_block_t *it;
-
-	if (blk->flags & SQFS_BLK_FRAGMENT_BLOCK && blk->frag_list != NULL) {
-		it = blk->frag_list;
-
-		while (it->next != NULL)
-			it = it->next;
-
-		it->next = proc->free_list;
-		proc->free_list = blk->frag_list;
-	}
-
 	blk->next = proc->free_list;
 	proc->free_list = blk;
 }
@@ -128,25 +116,10 @@ static bool is_zero_block(unsigned char *ptr, size_t size)
 static int process_block(sqfs_block_t *block, sqfs_compressor_t *cmp,
 			 sqfs_u8 *scratch, size_t scratch_size)
 {
-	sqfs_block_t *it;
-	size_t offset;
 	sqfs_s32 ret;
 
 	if (block->size == 0)
 		return 0;
-
-	if (block->flags & SQFS_BLK_FRAGMENT_BLOCK) {
-		offset = block->size;
-
-		for (it = block->frag_list; it != NULL; it = it->next) {
-			assert(offset >= it->size);
-			offset -= it->size;
-
-			memcpy(block->data + offset, it->data, it->size);
-
-			block->flags |= (it->flags & SQFS_BLK_DONT_COMPRESS);
-		}
-	}
 
 	if (!(block->flags & SQFS_BLK_IGNORE_SPARSE) &&
 	    is_zero_block(block->data, block->size)) {
@@ -241,15 +214,17 @@ static int process_completed_fragment(sqfs_block_processor_t *proc,
 		proc->frag_block->index = index;
 		proc->frag_block->flags &= SQFS_BLK_DONT_COMPRESS;
 		proc->frag_block->flags |= SQFS_BLK_FRAGMENT_BLOCK;
-		proc->frag_block->frag_list = NULL;
 	} else {
 		index = proc->frag_block->index;
 		offset = proc->frag_block->size;
 
-		frag->next = proc->frag_block->frag_list;
-		proc->frag_block->frag_list = frag;
+		memcpy(proc->frag_block->data + proc->frag_block->size,
+		       frag->data, frag->size);
 
 		proc->frag_block->size += frag->size;
+		proc->frag_block->flags |=
+			(frag->flags & SQFS_BLK_DONT_COMPRESS);
+		release_old_block(proc, frag);
 	}
 
 	if (proc->frag_tbl != NULL) {
