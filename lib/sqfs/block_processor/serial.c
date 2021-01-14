@@ -61,27 +61,46 @@ static int block_processor_sync(sqfs_block_processor_t *proc)
 	return ((serial_block_processor_t *)proc)->status;
 }
 
-sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
-						    sqfs_compressor_t *cmp,
-						    unsigned int num_workers,
-						    size_t max_backlog,
-						    sqfs_block_writer_t *wr,
-						    sqfs_frag_table_t *tbl)
+static int compare_frag_in_flight(sqfs_block_processor_t *proc,
+				  sqfs_block_t *frag, sqfs_u32 index,
+				  sqfs_u32 offset)
+{
+	if (proc->frag_block == NULL || index != proc->frag_block->index)
+		return -1;
+
+	if (offset >= proc->frag_block->size)
+		return -1;
+
+	if (frag->size > (proc->frag_block->size - offset))
+		return -1;
+
+	return memcmp(proc->frag_block->data + offset, frag->data, frag->size);
+}
+
+int sqfs_block_processor_create_ex(const sqfs_block_processor_desc_t *desc,
+				   sqfs_block_processor_t **out)
 {
 	serial_block_processor_t *proc;
-	(void)num_workers; (void)max_backlog;
+	int ret;
 
-	proc = alloc_flex(sizeof(*proc), 1, max_block_size);
+	if (desc->size != sizeof(sqfs_block_processor_desc_t))
+		return SQFS_ERROR_ARG_INVALID;
+
+	proc = alloc_flex(sizeof(*proc), 1, desc->max_block_size);
 	if (proc == NULL)
-		return NULL;
+		return SQFS_ERROR_ALLOC;
 
-	if (block_processor_init(&proc->base, max_block_size, cmp, wr, tbl)) {
+	ret = block_processor_init(&proc->base, desc);
+	if (ret != 0) {
 		free(proc);
-		return NULL;
+		return ret;
 	}
 
 	proc->base.sync = block_processor_sync;
 	proc->base.append_to_work_queue = append_to_work_queue;
+	proc->base.compare_frag_in_flight = compare_frag_in_flight;
 	((sqfs_object_t *)proc)->destroy = block_processor_destroy;
-	return (sqfs_block_processor_t *)proc;
+
+	*out = (sqfs_block_processor_t *)proc;
+	return 0;
 }

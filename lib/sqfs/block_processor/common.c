@@ -176,8 +176,11 @@ static int process_completed_fragment(sqfs_block_processor_t *proc,
 		search.hash = frag->checksum;
 		search.size = frag->size;
 
+		proc->frag_cmp_current = frag;
 		entry = hash_table_search_pre_hashed(proc->frag_ht,
 						     search.hash, &search);
+		proc->frag_cmp_current = NULL;
+
 		if (entry != NULL) {
 			if (frag->inode != NULL) {
 				chunk = entry->data;
@@ -238,8 +241,11 @@ static int process_completed_fragment(sqfs_block_processor_t *proc,
 		chunk->size = frag->size;
 		chunk->hash = frag->checksum;
 
+		proc->frag_cmp_current = frag;
 		entry = hash_table_insert_pre_hashed(proc->frag_ht, chunk->hash,
 						     chunk, chunk);
+		proc->frag_cmp_current = NULL;
+
 		if (entry == NULL) {
 			free(chunk);
 			goto fail_outblk;
@@ -261,17 +267,76 @@ fail_outblk:
 	return err;
 }
 
-static uint32_t chunk_info_hash(const void *key)
+static uint32_t chunk_info_hash(void *user, const void *key)
 {
 	const chunk_info_t *chunk = key;
+	(void)user;
 	return chunk->hash;
 }
 
-static bool chunk_info_equals(const void *a, const void *b)
+static bool chunk_info_equals(void *user, const void *k, const void *c)
 {
-	const chunk_info_t *a_ = a, *b_ = b;
-	return a_->size == b_->size &&
-	       a_->hash == b_->hash;
+	const chunk_info_t *key = k, *cmp = c;
+	sqfs_block_processor_t *proc = user;
+	sqfs_fragment_t frag;
+	unsigned char *temp;
+	size_t size;
+	int ret;
+
+	if (key->size != cmp->size || key->hash != cmp->hash)
+		return false;
+
+	if (proc->file == NULL || proc->uncmp == NULL)
+		return true;
+
+	ret = proc->compare_frag_in_flight(proc, proc->frag_cmp_current,
+					   cmp->index, cmp->offset);
+	if (ret == 0)
+		return true;
+
+	if (proc->buffered_index != cmp->index ||
+	    proc->buffered_blk_size == 0) {
+		if (sqfs_frag_table_lookup(proc->frag_tbl, cmp->index, &frag))
+			return false;
+
+		proc->buffered_index = 0xFFFFFFFF;
+		size = SQFS_ON_DISK_BLOCK_SIZE(frag.size);
+
+		if (SQFS_IS_BLOCK_COMPRESSED(frag.size)) {
+			temp = proc->frag_buffer + proc->max_block_size;
+
+			ret = proc->file->read_at(proc->file, frag.start_offset,
+						  temp, size);
+			if (ret != 0)
+				return false;
+
+			ret = proc->uncmp->do_block(proc->uncmp, temp, size,
+						    proc->frag_buffer,
+						    proc->max_block_size);
+			if (ret <= 0)
+				return false;
+
+			size = ret;
+		} else {
+			ret = proc->file->read_at(proc->file, frag.start_offset,
+						  proc->frag_buffer, size);
+			if (ret != 0)
+				return false;
+		}
+
+		proc->buffered_index = cmp->index;
+		proc->buffered_blk_size = size;
+	}
+
+	if (cmp->offset >= proc->buffered_blk_size)
+		return false;
+
+	if (cmp->size > (proc->buffered_blk_size - cmp->offset))
+		return false;
+
+	return memcmp(proc->frag_buffer + cmp->offset,
+		      proc->frag_cmp_current->data,
+		      cmp->size) == 0;
 }
 
 static void ht_delete_function(struct hash_entry *entry)
@@ -287,6 +352,7 @@ void block_processor_cleanup(sqfs_block_processor_t *base)
 		release_old_block(base, base->frag_block);
 
 	free(base->blk_current);
+	free(base->frag_buffer);
 
 	while (base->free_list != NULL) {
 		it = base->free_list;
@@ -297,22 +363,58 @@ void block_processor_cleanup(sqfs_block_processor_t *base)
 	hash_table_destroy(base->frag_ht, ht_delete_function);
 }
 
-int block_processor_init(sqfs_block_processor_t *base, size_t max_block_size,
-			 sqfs_compressor_t *cmp, sqfs_block_writer_t *wr,
-			 sqfs_frag_table_t *tbl)
+int block_processor_init(sqfs_block_processor_t *base,
+			 const sqfs_block_processor_desc_t *desc)
 {
 	base->process_completed_block = process_completed_block;
 	base->process_completed_fragment = process_completed_fragment;
 	base->process_block = process_block;
-	base->max_block_size = max_block_size;
-	base->cmp = cmp;
-	base->frag_tbl = tbl;
-	base->wr = wr;
+	base->max_block_size = desc->max_block_size;
+	base->cmp = desc->cmp;
+	base->frag_tbl = desc->tbl;
+	base->wr = desc->wr;
+	base->file = desc->file;
+	base->uncmp = desc->uncmp;
+	base->buffered_index = 0xFFFFFFFF;
 	base->stats.size = sizeof(base->stats);
 
-	base->frag_ht = hash_table_create(chunk_info_hash, chunk_info_equals);
-	if (base->frag_ht == NULL)
-		return -1;
+	if (desc->file != NULL && desc->uncmp != NULL && desc->tbl != NULL) {
+		base->frag_buffer = malloc(2 * desc->max_block_size);
+		if (base->frag_buffer == NULL)
+			return SQFS_ERROR_ALLOC;
+	}
 
+	base->frag_ht = hash_table_create(chunk_info_hash, chunk_info_equals);
+	if (base->frag_ht == NULL) {
+		free(base->frag_buffer);
+		return SQFS_ERROR_ALLOC;
+	}
+
+	base->frag_ht->user = base;
 	return 0;
+}
+
+sqfs_block_processor_t *sqfs_block_processor_create(size_t max_block_size,
+						    sqfs_compressor_t *cmp,
+						    unsigned int num_workers,
+						    size_t max_backlog,
+						    sqfs_block_writer_t *wr,
+						    sqfs_frag_table_t *tbl)
+{
+	sqfs_block_processor_desc_t desc;
+	sqfs_block_processor_t *out;
+
+	memset(&desc, 0, sizeof(desc));
+	desc.size = sizeof(desc);
+	desc.max_block_size = max_block_size;
+	desc.num_workers = num_workers;
+	desc.max_backlog = max_backlog;
+	desc.cmp = cmp;
+	desc.wr = wr;
+	desc.tbl = tbl;
+
+	if (sqfs_block_processor_create_ex(&desc, &out) != 0)
+		return NULL;
+
+	return out;
 }

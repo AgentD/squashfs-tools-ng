@@ -26,8 +26,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-typedef struct chunk_info_t {
-	struct chunk_info_t *next;
+typedef struct {
 	sqfs_u32 index;
 	sqfs_u32 offset;
 	sqfs_u32 size;
@@ -82,6 +81,13 @@ struct sqfs_block_processor_t {
 
 	bool begin_called;
 
+	sqfs_file_t *file;
+	sqfs_compressor_t *uncmp;
+	sqfs_block_t *frag_cmp_current;
+	sqfs_u8 *frag_buffer;
+	sqfs_u32 buffered_index;
+	sqfs_u32 buffered_blk_size;
+
 	int (*process_completed_block)(sqfs_block_processor_t *proc,
 				       sqfs_block_t *block);
 
@@ -92,6 +98,10 @@ struct sqfs_block_processor_t {
 	int (*process_block)(sqfs_block_t *block, sqfs_compressor_t *cmp,
 			     sqfs_u8 *scratch, size_t scratch_size);
 
+	int (*compare_frag_in_flight)(sqfs_block_processor_t *proc,
+				      sqfs_block_t *frag, sqfs_u32 index,
+				      sqfs_u32 offset);
+
 	int (*append_to_work_queue)(sqfs_block_processor_t *proc,
 				    sqfs_block_t *block);
 
@@ -101,9 +111,6 @@ struct sqfs_block_processor_t {
 SQFS_INTERNAL void block_processor_cleanup(sqfs_block_processor_t *base);
 
 SQFS_INTERNAL int block_processor_init(sqfs_block_processor_t *base,
-				       size_t max_block_size,
-				       sqfs_compressor_t *cmp,
-				       sqfs_block_writer_t *wr,
-				       sqfs_frag_table_t *tbl);
+				       const sqfs_block_processor_desc_t *desc);
 
 #endif /* INTERNAL_H */
