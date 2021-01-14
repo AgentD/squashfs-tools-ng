@@ -26,8 +26,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-typedef struct chunk_info_t {
-	struct chunk_info_t *next;
+typedef struct {
 	sqfs_u32 index;
 	sqfs_u32 offset;
 	sqfs_u32 size;
