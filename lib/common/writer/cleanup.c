@@ -21,6 +21,7 @@ void sqfs_writer_cleanup(sqfs_writer_t *sqfs, int status)
 	sqfs_destroy(sqfs->blkwr);
 	sqfs_destroy(sqfs->fragtbl);
 	sqfs_destroy(sqfs->cmp);
+	sqfs_destroy(sqfs->uncmp);
 	fstree_cleanup(&sqfs->fs);
 	sqfs_destroy(sqfs->outfile);
 

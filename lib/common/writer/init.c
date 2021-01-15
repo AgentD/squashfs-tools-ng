@@ -40,6 +40,7 @@ void sqfs_writer_cfg_init(sqfs_writer_cfg_t *cfg)
 
 int sqfs_writer_init(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *wrcfg)
 {
+	sqfs_block_processor_desc_t blkdesc;
 	sqfs_compressor_config_t cfg;
 	int ret, flags;
 
@@ -76,23 +77,40 @@ int sqfs_writer_init(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *wrcfg)
 		goto fail_fs;
 	}
 
+	cfg.flags |= SQFS_COMP_FLAG_UNCOMPRESS;
+	ret = sqfs_compressor_create(&cfg, &sqfs->uncmp);
+
+#ifdef WITH_LZO
+	if (cfg.id == SQFS_COMP_LZO) {
+		if (ret == 0 && sqfs->uncmp != NULL)
+			sqfs_destroy(sqfs->uncmp);
+
+		ret = lzo_compressor_create(&cfg, &sqfs->uncmp);
+	}
+#endif
+
+	if (ret != 0) {
+		sqfs_perror(wrcfg->filename, "creating uncompressor", ret);
+		goto fail_cmp;
+	}
+
 	ret = sqfs_super_init(&sqfs->super, wrcfg->block_size,
 			      sqfs->fs.defaults.st_mtime, wrcfg->comp_id);
 	if (ret) {
 		sqfs_perror(wrcfg->filename, "initializing super block", ret);
-		goto fail_cmp;
+		goto fail_uncmp;
 	}
 
 	ret = sqfs_super_write(&sqfs->super, sqfs->outfile);
 	if (ret) {
 		sqfs_perror(wrcfg->filename, "writing super block", ret);
-		goto fail_cmp;
+		goto fail_uncmp;
 	}
 
 	ret = sqfs->cmp->write_options(sqfs->cmp, sqfs->outfile);
 	if (ret < 0) {
 		sqfs_perror(wrcfg->filename, "writing compressor options", ret);
-		goto fail_cmp;
+		goto fail_uncmp;
 	}
 
 	if (ret > 0)
@@ -102,7 +120,7 @@ int sqfs_writer_init(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *wrcfg)
 					       wrcfg->devblksize, 0);
 	if (sqfs->blkwr == NULL) {
 		perror("creating block writer");
-		goto fail_cmp;
+		goto fail_uncmp;
 	}
 
 	sqfs->fragtbl = sqfs_frag_table_create(0);
@@ -111,12 +129,21 @@ int sqfs_writer_init(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *wrcfg)
 		goto fail_blkwr;
 	}
 
-	sqfs->data = sqfs_block_processor_create(sqfs->super.block_size,
-						 sqfs->cmp, wrcfg->num_jobs,
-						 wrcfg->max_backlog,
-						 sqfs->blkwr, sqfs->fragtbl);
-	if (sqfs->data == NULL) {
-		perror("creating data block processor");
+	memset(&blkdesc, 0, sizeof(blkdesc));
+	blkdesc.size = sizeof(blkdesc);
+	blkdesc.max_block_size = wrcfg->block_size;
+	blkdesc.num_workers = wrcfg->num_jobs;
+	blkdesc.max_backlog = wrcfg->max_backlog;
+	blkdesc.cmp = sqfs->cmp;
+	blkdesc.wr = sqfs->blkwr;
+	blkdesc.tbl = sqfs->fragtbl;
+	blkdesc.file = sqfs->outfile;
+	blkdesc.uncmp = sqfs->uncmp;
+
+	ret = sqfs_block_processor_create_ex(&blkdesc, &sqfs->data);
+	if (ret != 0) {
+		sqfs_perror(wrcfg->filename, "creating data block processor",
+			    ret);
 		goto fail_fragtbl;
 	}
 
@@ -176,6 +203,8 @@ fail_fragtbl:
 	sqfs_destroy(sqfs->fragtbl);
 fail_blkwr:
 	sqfs_destroy(sqfs->blkwr);
+fail_uncmp:
+	sqfs_destroy(sqfs->uncmp);
 fail_cmp:
 	sqfs_destroy(sqfs->cmp);
 fail_fs:

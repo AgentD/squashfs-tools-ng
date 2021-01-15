@@ -31,6 +31,7 @@ typedef struct {
 	sqfs_meta_writer_t *dm;
 	sqfs_meta_writer_t *im;
 	sqfs_compressor_t *cmp;
+	sqfs_compressor_t *uncmp;
 	sqfs_id_table_t *idtbl;
 	sqfs_file_t *outfile;
 	sqfs_super_t super;
