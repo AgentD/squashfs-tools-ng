@@ -67,6 +67,7 @@ void sqfs_writer_cfg_init(sqfs_writer_cfg_t *cfg)
 
 int sqfs_writer_init(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *wrcfg)
 {
+	sqfs_block_processor_desc_t blkdesc;
 	sqfs_compressor_config_t cfg;
 	int ret, flags;
 
@@ -101,6 +102,23 @@ int sqfs_writer_init(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *wrcfg)
 	if (ret != 0) {
 		sqfs_perror(wrcfg->filename, "creating compressor", ret);
 		goto fail_fs;
+	}
+
+	cfg.flags |= SQFS_COMP_FLAG_UNCOMPRESS;
+	ret = sqfs_compressor_create(&cfg, &sqfs->uncmp);
+
+#ifdef WITH_LZO
+	if (cfg.id == SQFS_COMP_LZO) {
+		if (ret == 0 && sqfs->uncmp != NULL)
+			sqfs_destroy(sqfs->uncmp);
+
+		ret = lzo_compressor_create(&cfg, &sqfs->uncmp);
+	}
+#endif
+
+	if (ret != 0) {
+		sqfs_perror(wrcfg->filename, "creating uncompressor", ret);
+		goto fail_cmp1;
 	}
 
 	ret = sqfs_super_init(&sqfs->super, wrcfg->block_size,
@@ -138,12 +156,21 @@ int sqfs_writer_init(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *wrcfg)
 		goto fail_blkwr;
 	}
 
-	sqfs->data = sqfs_block_processor_create(sqfs->super.block_size,
-						 sqfs->cmp, wrcfg->num_jobs,
-						 wrcfg->max_backlog,
-						 sqfs->blkwr, sqfs->fragtbl);
-	if (sqfs->data == NULL) {
-		perror("creating data block processor");
+	memset(&blkdesc, 0, sizeof(blkdesc));
+	blkdesc.size = sizeof(blkdesc);
+	blkdesc.max_block_size = wrcfg->block_size;
+	blkdesc.num_workers = wrcfg->num_jobs;
+	blkdesc.max_backlog = wrcfg->max_backlog;
+	blkdesc.cmp = sqfs->cmp;
+	blkdesc.wr = sqfs->blkwr;
+	blkdesc.tbl = sqfs->fragtbl;
+	blkdesc.file = sqfs->outfile;
+	blkdesc.uncmp = sqfs->uncmp;
+
+	ret = sqfs_block_processor_create_ex(&blkdesc, &sqfs->data);
+	if (ret != 0) {
+		sqfs_perror(wrcfg->filename, "creating data block processor",
+			    ret);
 		goto fail_fragtbl;
 	}
 
@@ -204,6 +231,8 @@ fail_fragtbl:
 fail_blkwr:
 	sqfs_destroy(sqfs->blkwr);
 fail_cmp:
+	sqfs_destroy(sqfs->uncmp);
+fail_cmp1:
 	sqfs_destroy(sqfs->cmp);
 fail_fs:
 	fstree_cleanup(&sqfs->fs);
@@ -311,6 +340,7 @@ void sqfs_writer_cleanup(sqfs_writer_t *sqfs, int status)
 	sqfs_destroy(sqfs->blkwr);
 	sqfs_destroy(sqfs->fragtbl);
 	sqfs_destroy(sqfs->cmp);
+	sqfs_destroy(sqfs->uncmp);
 	fstree_cleanup(&sqfs->fs);
 	sqfs_destroy(sqfs->outfile);
 
