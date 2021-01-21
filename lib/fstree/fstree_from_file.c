@@ -75,7 +75,7 @@ static int add_hard_link(fstree_t *fs, const char *filename, size_t line_num,
 	return 0;
 }
 
-static const struct {
+static const struct callback_t {
 	const char *keyword;
 	unsigned int mode;
 	bool need_extra;
@@ -93,159 +93,143 @@ static const struct {
 
 #define NUM_HOOKS (sizeof(file_list_hooks) / sizeof(file_list_hooks[0]))
 
+static char *skip_space(char *str)
+{
+	if (!isspace(*str))
+		return NULL;
+	while (isspace(*str))
+		++str;
+	return str;
+}
+
+static char *read_u32(char *str, sqfs_u32 *out, sqfs_u32 base)
+{
+	*out = 0;
+
+	if (!isdigit(*str))
+		return NULL;
+
+	while (isdigit(*str)) {
+		sqfs_u32 x = *(str++) - '0';
+
+		if (x >= base || (*out) > (0xFFFFFFFF - x) / base)
+			return NULL;
+
+		(*out) = (*out) * base + x;
+	}
+
+	return str;
+}
+
+static char *read_str(char *str, char **out)
+{
+	*out = str;
+
+	if (*str == '"') {
+		char *ptr = str++;
+
+		while (*str != '\0' && *str != '"') {
+			if (str[0] == '\\' &&
+			    (str[1] == '"' || str[1] == '\\')) {
+				*(ptr++) = str[1];
+				str += 2;
+			} else {
+				*(ptr++) = *(str++);
+			}
+		}
+
+		if (str[0] != '"' || !isspace(str[1]))
+			return NULL;
+
+		*ptr = '\0';
+		++str;
+	} else {
+		while (*str != '\0' && !isspace(*str))
+			++str;
+
+		if (!isspace(*str))
+			return NULL;
+
+		*(str++) = '\0';
+	}
+
+	while (isspace(*str))
+		++str;
+
+	return str;
+}
+
 static int handle_line(fstree_t *fs, const char *filename,
 		       size_t line_num, char *line)
 {
 	const char *extra = NULL, *msg = NULL;
-	char keyword[16], *path, *ptr;
-	unsigned int x;
+	const struct callback_t *cb = NULL;
+	sqfs_u32 uid, gid, mode;
 	struct stat sb;
-	size_t i;
+	char *path;
 
-	memset(&sb, 0, sizeof(sb));
-	sb.st_mtime = fs->defaults.st_mtime;
+	for (size_t i = 0; i < NUM_HOOKS; ++i) {
+		size_t len = strlen(file_list_hooks[i].keyword);
+		if (strncmp(file_list_hooks[i].keyword, line, len) != 0)
+			continue;
 
-	/* isolate keyword */
-	for (i = 0; isalpha(line[i]); ++i)
-		;
-
-	if (i >= sizeof(keyword) || i == 0 || !isspace(line[i]))
-		goto fail_ent;
-
-	memcpy(keyword, line, i);
-	keyword[i] = '\0';
-
-	while (isspace(line[i]))
-		++i;
-
-	/* isolate path */
-	path = line + i;
-
-	if (*path == '"') {
-		ptr = path;
-		++i;
-
-		while (line[i] != '\0' && line[i] != '"') {
-			if (line[i] == '\\' &&
-			    (line[i + 1] == '"' || line[i + 1] == '\\')) {
-				*(ptr++) = line[i + 1];
-				i += 2;
-			} else {
-				*(ptr++) = line[i++];
-			}
+		if (isspace(line[len])) {
+			cb = file_list_hooks + i;
+			line = skip_space(line + len);
+			break;
 		}
-
-		if (line[i] != '"' || !isspace(line[i + 1]))
-			goto fail_ent;
-
-		*ptr = '\0';
-		++i;
-	} else {
-		while (line[i] != '\0' && !isspace(line[i]))
-			++i;
-
-		if (!isspace(line[i]))
-			goto fail_ent;
-
-		line[i++] = '\0';
 	}
 
-	while (isspace(line[i]))
-		++i;
+	if (cb == NULL)
+		goto fail_kw;
+
+	if ((line = read_str(line, &path)) == NULL)
+		goto fail_ent;
 
 	if (canonicalize_name(path) || *path == '\0')
 		goto fail_ent;
 
-	/* mode */
-	if (!isdigit(line[i]))
+	if ((line = read_u32(line, &mode, 8)) == NULL || mode > 07777)
 		goto fail_mode;
 
-	for (; isdigit(line[i]); ++i) {
-		if (line[i] > '7')
-			goto fail_mode;
-
-		sb.st_mode = (sb.st_mode << 3) | (line[i] - '0');
-
-		if (sb.st_mode > 07777)
-			goto fail_mode_bits;
-	}
-
-	if (!isspace(line[i]))
+	if ((line = skip_space(line)) == NULL)
 		goto fail_ent;
 
-	while (isspace(line[i]))
-		++i;
-
-	/* uid */
-	if (!isdigit(line[i]))
+	if ((line = read_u32(line, &uid, 10)) == NULL)
 		goto fail_uid_gid;
 
-	for (; isdigit(line[i]); ++i) {
-		x = line[i] - '0';
-
-		if (sb.st_uid > (0xFFFFFFFF - x) / 10)
-			goto fail_ent;
-
-		sb.st_uid = sb.st_uid * 10 + x;
-	}
-
-	if (!isspace(line[i]))
+	if ((line = skip_space(line)) == NULL)
 		goto fail_ent;
 
-	while (isspace(line[i]))
-		++i;
-
-	/* gid */
-	if (!isdigit(line[i]))
+	if ((line = read_u32(line, &gid, 10)) == NULL)
 		goto fail_uid_gid;
 
-	for (; isdigit(line[i]); ++i) {
-		x = line[i] - '0';
+	if ((line = skip_space(line)) != NULL && *line != '\0')
+		extra = line;
 
-		if (sb.st_gid > (0xFFFFFFFF - x) / 10)
-			goto fail_ent;
-
-		sb.st_gid = sb.st_gid * 10 + x;
-	}
-
-	/* extra */
-	if (isspace(line[i])) {
-		while (isspace(line[i]))
-			++i;
-
-		if (line[i] != '\0')
-			extra = line + i;
-	}
+	if (cb->need_extra && extra == NULL)
+		goto fail_no_extra;
 
 	/* forward to callback */
-	for (i = 0; i < NUM_HOOKS; ++i) {
-		if (strcmp(file_list_hooks[i].keyword, keyword) == 0) {
-			if (file_list_hooks[i].need_extra && extra == NULL)
-				goto fail_no_extra;
+	memset(&sb, 0, sizeof(sb));
+	sb.st_mtime = fs->defaults.st_mtime;
+	sb.st_mode = mode | cb->mode;
+	sb.st_uid = uid;
+	sb.st_gid = gid;
 
-			sb.st_mode |= file_list_hooks[i].mode;
-
-			return file_list_hooks[i].callback(fs, filename,
-							   line_num, path,
-							   &sb, extra);
-		}
-	}
-
-	fprintf(stderr, "%s: " PRI_SZ ": unknown entry type '%s'.\n", filename,
-		line_num, keyword);
-	return -1;
+	return cb->callback(fs, filename, line_num, path, &sb, extra);
 fail_no_extra:
 	fprintf(stderr, "%s: " PRI_SZ ": missing argument for %s.\n",
-		filename, line_num, keyword);
+		filename, line_num, cb->keyword);
 	return -1;
 fail_uid_gid:
-	msg = "uid & gid must be decimal numbers";
+	msg = "uid & gid must be decimal numbers < 2^32";
 	goto out_desc;
 fail_mode:
-	msg = "mode must be an octal number";
+	msg = "mode must be an octal number <= 07777";
 	goto out_desc;
-fail_mode_bits:
-	msg = "you can only set the permission bits in the mode";
+fail_kw:
+	msg = "unknown entry type";
 	goto out_desc;
 fail_ent:
 	msg = "error in entry description";
