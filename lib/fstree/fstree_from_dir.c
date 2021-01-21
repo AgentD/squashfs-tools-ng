@@ -62,6 +62,35 @@ static int populate_dir(int dir_fd, fstree_t *fs, tree_node_t *root,
 			goto fail;
 		}
 
+		switch (sb.st_mode & S_IFMT) {
+		case S_IFSOCK:
+			if (flags & DIR_SCAN_NO_SOCK)
+				continue;
+			break;
+		case S_IFLNK:
+			if (flags & DIR_SCAN_NO_SLINK)
+				continue;
+			break;
+		case S_IFREG:
+			if (flags & DIR_SCAN_NO_FILE)
+				continue;
+			break;
+		case S_IFBLK:
+			if (flags & DIR_SCAN_NO_BLK)
+				continue;
+			break;
+		case S_IFCHR:
+			if (flags & DIR_SCAN_NO_CHR)
+				continue;
+			break;
+		case S_IFIFO:
+			if (flags & DIR_SCAN_NO_FIFO)
+				continue;
+			break;
+		default:
+			break;
+		}
+
 		if ((flags & DIR_SCAN_ONE_FILESYSTEM) && sb.st_dev != devstart)
 			continue;
 
@@ -81,11 +110,18 @@ static int populate_dir(int dir_fd, fstree_t *fs, tree_node_t *root,
 		if (!(flags & DIR_SCAN_KEEP_TIME))
 			sb.st_mtime = fs->defaults.st_mtime;
 
-		n = fstree_mknode(root, ent->d_name, strlen(ent->d_name),
-				  extra, &sb);
-		if (n == NULL) {
-			perror("creating tree node");
-			goto fail;
+		if (S_ISDIR(sb.st_mode) && (flags & DIR_SCAN_NO_DIR)) {
+			n = fstree_get_node_by_path(fs, root, ent->d_name,
+						    false, false);
+			if (n == NULL)
+				continue;
+		} else {
+			n = fstree_mknode(root, ent->d_name,
+					  strlen(ent->d_name), extra, &sb);
+			if (n == NULL) {
+				perror("creating tree node");
+				goto fail;
+			}
 		}
 
 		free(extra);
