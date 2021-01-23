@@ -1,3 +1,16 @@
+squashfs-tools-ng (1.0.3-2) unstable; urgency=medium
+
+  * Backport upstream fix for normalization of slashes in filenames
+    (closes: #979595).
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Fri, 08 Jan 2021 20:57:22 +0100
+
+squashfs-tools-ng (1.0.3-1) unstable; urgency=medium
+
+  * New upstream release.
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Thu, 12 Nov 2020 22:19:55 +0100
+
 squashfs-tools-ng (1.0.2-1) unstable; urgency=medium
 
   * New upstream release.

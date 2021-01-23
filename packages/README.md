@@ -51,16 +51,16 @@ Package building for Debian like distibutions is a bit tricky. In this
 case we want to add the codename to the version number in order to
 differentiate builds.
 
-To build package for version 1.0.2, run following commands:
+To build package for version 1.0.4, run following commands:
 
 ```
 apt-get install devscripts build-essential wget
 source /etc/os-release
-wget https://github.com/AgentD/squashfs-tools-ng/archive/v1.0.2/squashfs-tools-ng-1.0.2.tar.gz -O squashfs-tools-ng_1.0.2+$VERSION_CODENAME.orig.tar.gz
-tar xfz squashfs-tools-ng_1.0.2+$VERSION_CODENAME.orig.tar.gz
-cd squashfs-tools-ng-1.0.2
+wget https://github.com/AgentD/squashfs-tools-ng/archive/v1.0.4/squashfs-tools-ng-1.0.4.tar.gz -O squashfs-tools-ng_1.0.4+$VERSION_CODENAME.orig.tar.gz
+tar xfz squashfs-tools-ng_1.0.4+$VERSION_CODENAME.orig.tar.gz
+cd squashfs-tools-ng-1.0.4
 ln -s packages/debian
-DEBFULLNAME="$USER" DEBEMAIL="$USER@localhost" dch -v 1.0.2+$VERSION_CODENAME-1 -D $VERSION_CODENAME "Build 1.0.2 for $VERSION_CODENAME."
+DEBFULLNAME="$USER" DEBEMAIL="$USER@localhost" dch -v 1.0.4+$VERSION_CODENAME-1 -D $VERSION_CODENAME "Build 1.0.4 for $VERSION_CODENAME."
 mk-build-deps --install --tool='apt-get --no-install-recommends --yes' debian/control
 rm *.deb
 debuild

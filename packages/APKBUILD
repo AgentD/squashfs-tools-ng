@@ -4,7 +4,7 @@
 # Maintainer: Sébastien Gross <invalid@invalid.tld>
 
 pkgname=squashfs-tools-ng
-pkgver=1.0.3
+pkgver=1.0.4
 pkgrel=0
 pkgdesc="New set of tools for working with SquashFS images."
 url="https://github.com/AgentD/squashfs-tools-ng"
@@ -43,4 +43,4 @@ doc() {
 
 }
 
-sha512sums="3d9a160421bd093daf6fa8a6730137d2c1fee8b8969176e540fa21e9f85ac936546a2011d6b469e7408fabad75627225ba747ca1173272eada8331b0735a93fd  squashfs-tools-ng-1.0.3.tar.gz"
+sha512sums="3c9f3bea73becaf026bfe22fdc5da28de05d7b5fa7e17230a74f7cc9d08efefda59c004113b6d1aaa59d0e586fc379bc6d0f6e178ddab794bfe9c5966602204c  squashfs-tools-ng-1.0.4.tar.gz"
