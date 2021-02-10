@@ -227,10 +227,9 @@ static int read_inode_dir_ext(sqfs_meta_reader_t *ir, sqfs_inode_t *base,
 			      sqfs_inode_generic_t **result)
 {
 	size_t i, new_sz, index_max, index_used;
-	sqfs_inode_generic_t *out;
+	sqfs_inode_generic_t *out, *new;
 	sqfs_inode_dir_ext_t dir;
 	sqfs_dir_index_t ent;
-	void *new;
 	int err;
 
 	err = sqfs_meta_reader_read(ir, &dir, sizeof(dir));

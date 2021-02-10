@@ -12,8 +12,8 @@ static int set_block_size(sqfs_inode_generic_t **inode,
 {
 	size_t min_size = (index + 1) * sizeof(sqfs_u32);
 	size_t avail = (*inode)->payload_bytes_available;
+	sqfs_inode_generic_t *new;
 	size_t newsz;
-	void *new;
 
 	if (avail < min_size) {
 		newsz = avail ? avail : (sizeof(sqfs_u32) * 4);

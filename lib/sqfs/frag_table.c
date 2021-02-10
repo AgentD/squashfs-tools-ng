@@ -169,8 +169,8 @@ int sqfs_frag_table_lookup(sqfs_frag_table_t *tbl, sqfs_u32 index,
 int sqfs_frag_table_append(sqfs_frag_table_t *tbl, sqfs_u64 location,
 			   sqfs_u32 size, sqfs_u32 *index)
 {
+	sqfs_fragment_t *new;
 	size_t new_sz, total;
-	void *new;
 
 	if (tbl->used == tbl->capacity) {
 		new_sz = tbl->capacity ? tbl->capacity * 2 : 128;

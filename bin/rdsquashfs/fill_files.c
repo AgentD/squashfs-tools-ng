@@ -64,9 +64,9 @@ order_by_start:
 
 static int add_file(const sqfs_tree_node_t *node)
 {
+	struct file_ent *new;
 	size_t new_sz;
 	char *path;
-	void *new;
 
 	if (num_files == max_files) {
 		new_sz = max_files ? max_files * 2 : 256;

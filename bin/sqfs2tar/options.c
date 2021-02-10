@@ -82,7 +82,7 @@ void process_args(int argc, char **argv)
 	size_t idx, new_count;
 	const char *name;
 	int i, ret;
-	void *new;
+	char **new;
 
 	for (;;) {
 		i = getopt_long(argc, argv, short_opts, long_opts, NULL);

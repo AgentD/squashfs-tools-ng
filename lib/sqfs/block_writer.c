@@ -52,8 +52,8 @@ typedef struct {
 static int store_block_location(block_writer_default_t *wr, sqfs_u64 offset,
 				sqfs_u32 size, sqfs_u32 chksum)
 {
+	blk_info_t *new;
 	size_t new_sz;
-	void *new;
 
 	if (wr->num_blocks == wr->max_blocks) {
 		new_sz = wr->max_blocks * 2;

@@ -75,8 +75,8 @@ sqfs_id_table_t *sqfs_id_table_create(sqfs_u32 flags)
 
 int sqfs_id_table_id_to_index(sqfs_id_table_t *tbl, sqfs_u32 id, sqfs_u16 *out)
 {
+	sqfs_u32 *ptr;
 	size_t i, sz;
-	void *ptr;
 
 	for (i = 0; i < tbl->num_ids; ++i) {
 		if (tbl->ids[i] == id) {
