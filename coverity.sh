@@ -1,6 +1,6 @@
 #!/bin/sh
 
-COVERITY_PATH="$HOME/Downloads/cov-analysis-linux64-2019.03"
+COVERITY_PATH="$HOME/Downloads/cov-analysis-linux64-2020.09"
 TOKEN=$(cat "$HOME/.coverity/squashfs-tools-ng")
 EMAIL=$(git log --follow --pretty=format:"%ae" -- coverity.sh | head -n 1)
 
