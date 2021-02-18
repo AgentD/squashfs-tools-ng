@@ -321,7 +321,8 @@ int main(void)
 
 	/* recursively scan into root */
 	TEST_ASSERT(fstree_init(&fs, NULL) == 0);
-	TEST_ASSERT(fstree_from_dir(&fs, fs.root, TEST_PATH, 0) == 0);
+	TEST_ASSERT(fstree_from_dir(&fs, fs.root, TEST_PATH,
+				    NULL, NULL, 0) == 0);
 
 	fstree_post_process(&fs);
 	check_hierarchy(fs.root, true);
@@ -329,8 +330,8 @@ int main(void)
 
 	/* non-recursively scan into root */
 	TEST_ASSERT(fstree_init(&fs, NULL) == 0);
-	TEST_ASSERT(fstree_from_dir(&fs, fs.root,
-				    TEST_PATH, DIR_SCAN_NO_RECURSION) == 0);
+	TEST_ASSERT(fstree_from_dir(&fs, fs.root, TEST_PATH, NULL, NULL,
+				    DIR_SCAN_NO_RECURSION) == 0);
 
 	fstree_post_process(&fs);
 	check_hierarchy(fs.root, false);
@@ -346,7 +347,7 @@ int main(void)
 	TEST_NOT_NULL(n);
 	fs.root->data.dir.children = n;
 
-	TEST_ASSERT(fstree_from_dir(&fs, n, TEST_PATH, 0) == 0);
+	TEST_ASSERT(fstree_from_dir(&fs, n, TEST_PATH, NULL, NULL, 0) == 0);
 
 	TEST_ASSERT(fs.root->data.dir.children == n);
 	TEST_NULL(n->next);
@@ -365,8 +366,8 @@ int main(void)
 	TEST_NOT_NULL(n);
 	fs.root->data.dir.children = n;
 
-	TEST_ASSERT(fstree_from_dir(&fs, n,
-				    TEST_PATH, DIR_SCAN_NO_RECURSION) == 0);
+	TEST_ASSERT(fstree_from_dir(&fs, n, TEST_PATH, NULL, NULL,
+				    DIR_SCAN_NO_RECURSION) == 0);
 
 	TEST_ASSERT(fs.root->data.dir.children == n);
 	TEST_NULL(n->next);

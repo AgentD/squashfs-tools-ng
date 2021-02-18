@@ -183,7 +183,8 @@ tree_node_t *fstree_add_generic(fstree_t *fs, const char *path,
 
   Returns 0 on success.
  */
-int fstree_from_file(fstree_t *fs, const char *filename);
+int fstree_from_file(fstree_t *fs, const char *filename,
+		     const char *basepath);
 
 /*
   This function performs all the necessary post processing steps on the file

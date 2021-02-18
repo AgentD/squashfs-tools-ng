@@ -14,9 +14,43 @@
 #include <errno.h>
 #include <ctype.h>
 
+struct glob_context {
+	struct stat *basic;
+	unsigned int glob_flags;
+};
+
+enum {
+	GLOB_MODE_FROM_SRC = 0x01,
+	GLOB_UID_FROM_SRC = 0x02,
+	GLOB_GID_FROM_SRC = 0x04,
+};
+
+static const struct {
+	const char *name;
+	unsigned int clear_flag;
+	unsigned int set_flag;
+} glob_scan_flags[] = {
+	{ "-type b", DIR_SCAN_NO_BLK, 0 },
+	{ "-type c", DIR_SCAN_NO_CHR, 0 },
+	{ "-type d", DIR_SCAN_NO_DIR, 0 },
+	{ "-type p", DIR_SCAN_NO_FIFO, 0 },
+	{ "-type f", DIR_SCAN_NO_FILE, 0 },
+	{ "-type l", DIR_SCAN_NO_SLINK, 0 },
+	{ "-type s", DIR_SCAN_NO_SOCK, 0 },
+	{ "-xdev", 0, DIR_SCAN_ONE_FILESYSTEM },
+	{ "-mount", 0, DIR_SCAN_ONE_FILESYSTEM },
+	{ "-keeptime", 0, DIR_SCAN_KEEP_TIME },
+	{ "-nonrecursive", 0, DIR_SCAN_NO_RECURSION },
+};
+
 static int add_generic(fstree_t *fs, const char *filename, size_t line_num,
-		       const char *path, struct stat *sb, const char *extra)
+		       const char *path, struct stat *sb,
+		       const char *basepath, unsigned int glob_flags,
+		       const char *extra)
 {
+	(void)basepath;
+	(void)glob_flags;
+
 	if (fstree_add_generic(fs, path, sb, extra) == NULL) {
 		fprintf(stderr, "%s: " PRI_SZ ": %s: %s\n",
 			filename, line_num, path, strerror(errno));
@@ -27,7 +61,8 @@ static int add_generic(fstree_t *fs, const char *filename, size_t line_num,
 }
 
 static int add_device(fstree_t *fs, const char *filename, size_t line_num,
-		      const char *path, struct stat *sb, const char *extra)
+		      const char *path, struct stat *sb, const char *basepath,
+		      unsigned int glob_flags, const char *extra)
 {
 	unsigned int maj, min;
 	char c;
@@ -50,21 +85,28 @@ static int add_device(fstree_t *fs, const char *filename, size_t line_num,
 	}
 
 	sb->st_rdev = makedev(maj, min);
-	return add_generic(fs, filename, line_num, path, sb, NULL);
+	return add_generic(fs, filename, line_num, path, sb, basepath,
+			   glob_flags, NULL);
 }
 
 static int add_file(fstree_t *fs, const char *filename, size_t line_num,
-		    const char *path, struct stat *basic, const char *extra)
+		    const char *path, struct stat *basic, const char *basepath,
+		    unsigned int glob_flags, const char *extra)
 {
 	if (extra == NULL || *extra == '\0')
 		extra = path;
 
-	return add_generic(fs, filename, line_num, path, basic, extra);
+	return add_generic(fs, filename, line_num, path, basic,
+			   basepath, glob_flags, extra);
 }
 
 static int add_hard_link(fstree_t *fs, const char *filename, size_t line_num,
-			 const char *path, struct stat *basic, const char *extra)
+			 const char *path, struct stat *basic,
+			 const char *basepath, unsigned int glob_flags,
+			 const char *extra)
 {
+	(void)basepath;
+	(void)glob_flags;
 	(void)basic;
 
 	if (fstree_add_hard_link(fs, path, extra) == NULL) {
@@ -75,20 +117,123 @@ static int add_hard_link(fstree_t *fs, const char *filename, size_t line_num,
 	return 0;
 }
 
+static int glob_node_callback(void *user, fstree_t *fs, tree_node_t *node)
+{
+	struct glob_context *ctx = user;
+	(void)fs;
+
+	if (!(ctx->glob_flags & GLOB_MODE_FROM_SRC)) {
+		node->mode &= ~(07777);
+		node->mode |= ctx->basic->st_mode & 07777;
+	}
+
+	if (!(ctx->glob_flags & GLOB_UID_FROM_SRC))
+		node->uid = ctx->basic->st_uid;
+
+	if (!(ctx->glob_flags & GLOB_GID_FROM_SRC))
+		node->gid = ctx->basic->st_gid;
+
+	return 0;
+}
+
+static int glob_files(fstree_t *fs, const char *filename, size_t line_num,
+		      const char *path, struct stat *basic,
+		      const char *basepath, unsigned int glob_flags,
+		      const char *extra)
+{
+	unsigned int scan_flags = 0, all_flags;
+	struct glob_context ctx;
+	bool first_clear_flag;
+	size_t i, count, len;
+	tree_node_t *root;
+	int ret;
+
+	memset(&ctx, 0, sizeof(ctx));
+	ctx.basic = basic;
+	ctx.glob_flags = glob_flags;
+
+	/* fetch the actual target node */
+	root = fstree_get_node_by_path(fs, fs->root, path, true, false);
+	if (root == NULL) {
+		fprintf(stderr, "%s: " PRI_SZ ": %s: %s\n",
+			filename, line_num, path, strerror(errno));
+		return -1;
+	}
+
+	/* process options */
+	first_clear_flag = true;
+
+	all_flags = DIR_SCAN_NO_BLK | DIR_SCAN_NO_CHR | DIR_SCAN_NO_DIR |
+		DIR_SCAN_NO_FIFO | DIR_SCAN_NO_FILE | DIR_SCAN_NO_SLINK |
+		DIR_SCAN_NO_SOCK;
+
+	while (*extra != '\0') {
+		count = sizeof(glob_scan_flags) / sizeof(glob_scan_flags[0]);
+
+		for (i = 0; i < count; ++i) {
+			len = strlen(glob_scan_flags[i].name);
+			if (strncmp(extra, glob_scan_flags[i].name, len) != 0)
+				continue;
+
+			if (isspace(extra[len])) {
+				extra += len;
+				while (isspace(*extra))
+					++extra;
+				break;
+			}
+		}
+
+		if (i < count) {
+			if (glob_scan_flags[i].clear_flag != 0 &&
+			    first_clear_flag) {
+				scan_flags |= all_flags;
+				first_clear_flag = false;
+			}
+
+			scan_flags &= ~(glob_scan_flags[i].clear_flag);
+			scan_flags |= glob_scan_flags[i].set_flag;
+			continue;
+		}
+		break;
+	}
+
+	if (*extra == '\0') {
+		fprintf(stderr, "%s: " PRI_SZ ": glob path missing.\n",
+			filename, line_num);
+		return -1;
+	}
+
+	/* do the scan */
+	if (basepath == NULL) {
+		ret = fstree_from_dir(fs, root, extra, glob_node_callback,
+				      &ctx, scan_flags);
+	} else {
+		ret = fstree_from_subdir(fs, root, basepath, extra,
+					 glob_node_callback, &ctx,
+					 scan_flags);
+	}
+
+	return ret;
+}
+
 static const struct callback_t {
 	const char *keyword;
 	unsigned int mode;
 	bool need_extra;
+	bool is_glob;
 	int (*callback)(fstree_t *fs, const char *filename, size_t line_num,
-			const char *path, struct stat *sb, const char *extra);
+			const char *path, struct stat *sb,
+			const char *basepath, unsigned int glob_flags,
+			const char *extra);
 } file_list_hooks[] = {
-	{ "dir", S_IFDIR, false, add_generic },
-	{ "slink", S_IFLNK, true, add_generic },
-	{ "link", 0, true, add_hard_link },
-	{ "nod", 0, true, add_device },
-	{ "pipe", S_IFIFO, false, add_generic },
-	{ "sock", S_IFSOCK, false, add_generic },
-	{ "file", S_IFREG, false, add_file },
+	{ "dir", S_IFDIR, false, false, add_generic },
+	{ "slink", S_IFLNK, true, false, add_generic },
+	{ "link", 0, true, false, add_hard_link },
+	{ "nod", 0, true, false, add_device },
+	{ "pipe", S_IFIFO, false, false, add_generic },
+	{ "sock", S_IFSOCK, false, false, add_generic },
+	{ "file", S_IFREG, false, false, add_file },
+	{ "glob", 0, true, true, glob_files },
 };
 
 #define NUM_HOOKS (sizeof(file_list_hooks) / sizeof(file_list_hooks[0]))
@@ -160,10 +305,12 @@ static char *read_str(char *str, char **out)
 }
 
 static int handle_line(fstree_t *fs, const char *filename,
-		       size_t line_num, char *line)
+		       size_t line_num, char *line,
+		       const char *basepath)
 {
 	const char *extra = NULL, *msg = NULL;
 	const struct callback_t *cb = NULL;
+	unsigned int glob_flags = 0;
 	sqfs_u32 uid, gid, mode;
 	struct stat sb;
 	char *path;
@@ -189,20 +336,38 @@ static int handle_line(fstree_t *fs, const char *filename,
 	if (canonicalize_name(path) || *path == '\0')
 		goto fail_ent;
 
-	if ((line = read_u32(line, &mode, 8)) == NULL || mode > 07777)
-		goto fail_mode;
+	if (cb->is_glob && *line == '*') {
+		++line;
+		mode = 0;
+		glob_flags |= GLOB_MODE_FROM_SRC;
+	} else {
+		if ((line = read_u32(line, &mode, 8)) == NULL || mode > 07777)
+			goto fail_mode;
+	}
 
 	if ((line = skip_space(line)) == NULL)
 		goto fail_ent;
 
-	if ((line = read_u32(line, &uid, 10)) == NULL)
-		goto fail_uid_gid;
+	if (cb->is_glob && *line == '*') {
+		++line;
+		uid = 0;
+		glob_flags |= GLOB_UID_FROM_SRC;
+	} else {
+		if ((line = read_u32(line, &uid, 10)) == NULL)
+			goto fail_uid_gid;
+	}
 
 	if ((line = skip_space(line)) == NULL)
 		goto fail_ent;
 
-	if ((line = read_u32(line, &gid, 10)) == NULL)
-		goto fail_uid_gid;
+	if (cb->is_glob && *line == '*') {
+		++line;
+		gid = 0;
+		glob_flags |= GLOB_GID_FROM_SRC;
+	} else {
+		if ((line = read_u32(line, &gid, 10)) == NULL)
+			goto fail_uid_gid;
+	}
 
 	if ((line = skip_space(line)) != NULL && *line != '\0')
 		extra = line;
@@ -217,7 +382,8 @@ static int handle_line(fstree_t *fs, const char *filename,
 	sb.st_uid = uid;
 	sb.st_gid = gid;
 
-	return cb->callback(fs, filename, line_num, path, &sb, extra);
+	return cb->callback(fs, filename, line_num, path,
+			    &sb, basepath, glob_flags, extra);
 fail_no_extra:
 	fprintf(stderr, "%s: " PRI_SZ ": missing argument for %s.\n",
 		filename, line_num, cb->keyword);
@@ -241,7 +407,7 @@ out_desc:
 	return -1;
 }
 
-int fstree_from_file(fstree_t *fs, const char *filename)
+int fstree_from_file(fstree_t *fs, const char *filename, const char *basepath)
 {
 	size_t line_num = 1;
 	istream_t *fp;
@@ -261,8 +427,10 @@ int fstree_from_file(fstree_t *fs, const char *filename)
 			break;
 
 		if (line[0] != '#') {
-			if (handle_line(fs, filename, line_num, line))
+			if (handle_line(fs, filename, line_num,
+					line, basepath)) {
 				goto fail_line;
+			}
 		}
 
 		free(line);

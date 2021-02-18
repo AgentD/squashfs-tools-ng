@@ -118,7 +118,7 @@ static int read_fstree(fstree_t *fs, options_t *opt, sqfs_xattr_writer_t *xwr,
 {
 	int ret;
 
-	ret = fstree_from_file(fs, opt->infile);
+	ret = fstree_from_file(fs, opt->infile, opt->packdir);
 
 	if (ret == 0 && selinux_handle != NULL)
 		ret = relabel_tree_dfs(opt->cfg.filename, xwr,
