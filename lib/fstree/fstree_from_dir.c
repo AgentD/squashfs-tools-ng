@@ -13,12 +13,19 @@
 #include <errno.h>
 
 #ifdef _WIN32
+int fstree_from_subdir(fstree_t *fs, tree_node_t *root,
+		       const char *path, const char *subdir,
+		       unsigned int flags)
+{
+	(void)fs; (void)root; (void)path; (void)subdir; (void)flags;
+	fputs("Packing a directory is not supported on Windows.\n", stderr);
+	return -1;
+}
+
 int fstree_from_dir(fstree_t *fs, tree_node_t *root,
 		    const char *path, unsigned int flags)
 {
-	(void)fs; (void)root; (void)path; (void)flags;
-	fputs("Packing a directory is not supported on Windows.\n", stderr);
-	return -1;
+	return fstree_from_subdir(fs, root, path, NULL, flags);
 }
 #else
 static int populate_dir(int dir_fd, fstree_t *fs, tree_node_t *root,
@@ -150,16 +157,17 @@ fail:
 	return -1;
 }
 
-int fstree_from_dir(fstree_t *fs, tree_node_t *root,
-		    const char *path, unsigned int flags)
+int fstree_from_subdir(fstree_t *fs, tree_node_t *root,
+		       const char *path, const char *subdir,
+		       unsigned int flags)
 {
 	struct stat sb;
-	int fd;
+	int fd, subfd;
 
 	if (!S_ISDIR(root->mode)) {
 		fprintf(stderr,
-			"scanning %s into %s: target is not a directory\n",
-			path, root->name);
+			"scanning %s/%s into %s: target is not a directory\n",
+			path, subdir == NULL ? "" : subdir, root->name);
 		return -1;
 	}
 
@@ -169,12 +177,34 @@ int fstree_from_dir(fstree_t *fs, tree_node_t *root,
 		return -1;
 	}
 
+	if (subdir != NULL) {
+		subfd = openat(fd, subdir, O_DIRECTORY | O_RDONLY | O_CLOEXEC);
+
+		if (subfd < 0) {
+			fprintf(stderr, "%s/%s: %s\n", path, subdir,
+				strerror(errno));
+			close(fd);
+			return -1;
+		}
+
+		close(fd);
+		fd = subfd;
+	}
+
 	if (fstat(fd, &sb)) {
-		perror(path);
+		fprintf(stderr, "%s/%s: %s\n", path,
+			subdir == NULL ? "" : subdir,
+			strerror(errno));
 		close(fd);
 		return -1;
 	}
 
 	return populate_dir(fd, fs, root, sb.st_dev, flags);
+}
+
+int fstree_from_dir(fstree_t *fs, tree_node_t *root,
+		    const char *path, unsigned int flags)
+{
+	return fstree_from_subdir(fs, root, path, NULL, flags);
 }
 #endif

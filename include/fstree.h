@@ -254,4 +254,13 @@ int fstree_resolve_hard_link(fstree_t *fs, tree_node_t *node);
 int fstree_from_dir(fstree_t *fs, tree_node_t *root,
 		    const char *path, unsigned int flags);
 
+/*
+  Same as fstree_from_dir, but scans a sub-directory inside the specified path.
+
+  Returns 0 on success, prints to stderr on failure.
+ */
+int fstree_from_subdir(fstree_t *fs, tree_node_t *root,
+		       const char *path, const char *subdir,
+		       unsigned int flags);
+
 #endif /* FSTREE_H */
