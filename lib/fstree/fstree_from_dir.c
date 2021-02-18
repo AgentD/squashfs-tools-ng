@@ -12,30 +12,53 @@
 #include <string.h>
 #include <errno.h>
 
+static void discard_node(tree_node_t *root, tree_node_t *n)
+{
+	tree_node_t *it;
+
+	if (n == root->data.dir.children) {
+		root->data.dir.children = n->next;
+	} else {
+		it = root->data.dir.children;
+
+		while (it != NULL && it->next != n)
+			it = it->next;
+
+		if (it != NULL)
+			it->next = n->next;
+	}
+
+	free(n);
+}
+
 #ifdef _WIN32
 int fstree_from_subdir(fstree_t *fs, tree_node_t *root,
 		       const char *path, const char *subdir,
+		       scan_node_callback cb, void *user,
 		       unsigned int flags)
 {
 	(void)fs; (void)root; (void)path; (void)subdir; (void)flags;
+	(void)cb; (void)user;
 	fputs("Packing a directory is not supported on Windows.\n", stderr);
 	return -1;
 }
 
 int fstree_from_dir(fstree_t *fs, tree_node_t *root,
-		    const char *path, unsigned int flags)
+		    const char *path, scan_node_callback cb,
+		    void *user, unsigned int flags)
 {
-	return fstree_from_subdir(fs, root, path, NULL, flags);
+	return fstree_from_subdir(fs, root, path, NULL, cb, user, flags);
 }
 #else
 static int populate_dir(int dir_fd, fstree_t *fs, tree_node_t *root,
-			dev_t devstart, unsigned int flags)
+			dev_t devstart, scan_node_callback cb,
+			void *user, unsigned int flags)
 {
 	char *extra = NULL;
 	struct dirent *ent;
+	int ret, childfd;
 	struct stat sb;
 	tree_node_t *n;
-	int childfd;
 	DIR *dir;
 
 	dir = fdopendir(dir_fd);
@@ -122,6 +145,8 @@ static int populate_dir(int dir_fd, fstree_t *fs, tree_node_t *root,
 						    false, false);
 			if (n == NULL)
 				continue;
+
+			ret = 0;
 		} else {
 			n = fstree_mknode(root, ent->d_name,
 					  strlen(ent->d_name), extra, &sb);
@@ -129,10 +154,20 @@ static int populate_dir(int dir_fd, fstree_t *fs, tree_node_t *root,
 				perror("creating tree node");
 				goto fail;
 			}
+
+			ret = (cb == NULL) ? 0 : cb(user, fs, n);
 		}
 
 		free(extra);
 		extra = NULL;
+
+		if (ret < 0)
+			goto fail;
+
+		if (ret > 0) {
+			discard_node(root, n);
+			continue;
+		}
 
 		if (S_ISDIR(n->mode) && !(flags & DIR_SCAN_NO_RECURSION)) {
 			childfd = openat(dir_fd, n->name, O_DIRECTORY |
@@ -142,8 +177,10 @@ static int populate_dir(int dir_fd, fstree_t *fs, tree_node_t *root,
 				goto fail;
 			}
 
-			if (populate_dir(childfd, fs, n, devstart, flags))
+			if (populate_dir(childfd, fs, n, devstart,
+					 cb, user, flags)) {
 				goto fail;
+			}
 		}
 	}
 
@@ -159,6 +196,7 @@ fail:
 
 int fstree_from_subdir(fstree_t *fs, tree_node_t *root,
 		       const char *path, const char *subdir,
+		       scan_node_callback cb, void *user,
 		       unsigned int flags)
 {
 	struct stat sb;
@@ -199,12 +237,13 @@ int fstree_from_subdir(fstree_t *fs, tree_node_t *root,
 		return -1;
 	}
 
-	return populate_dir(fd, fs, root, sb.st_dev, flags);
+	return populate_dir(fd, fs, root, sb.st_dev, cb, user, flags);
 }
 
 int fstree_from_dir(fstree_t *fs, tree_node_t *root,
-		    const char *path, unsigned int flags)
+		    const char *path, scan_node_callback cb,
+		    void *user, unsigned int flags)
 {
-	return fstree_from_subdir(fs, root, path, NULL, flags);
+	return fstree_from_subdir(fs, root, path, NULL, cb, user, flags);
 }
 #endif

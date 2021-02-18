@@ -15,7 +15,7 @@ int main(void)
 	fstree_t fs;
 
 	TEST_ASSERT(fstree_init(&fs, NULL) == 0);
-	TEST_ASSERT(fstree_from_file(&fs, TEST_PATH) == 0);
+	TEST_ASSERT(fstree_from_file(&fs, TEST_PATH, NULL) == 0);
 
 	fstree_post_process(&fs);
 	n = fs.root->data.dir.children;

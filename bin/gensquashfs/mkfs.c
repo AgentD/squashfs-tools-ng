@@ -160,8 +160,8 @@ int main(int argc, char **argv)
 	}
 
 	if (opt.infile == NULL) {
-		if (fstree_from_dir(&sqfs.fs, sqfs.fs.root,
-				    opt.packdir, opt.dirscan_flags)) {
+		if (fstree_from_dir(&sqfs.fs, sqfs.fs.root, opt.packdir,
+				    NULL, NULL, opt.dirscan_flags)) {
 			goto out;
 		}
 	} else {

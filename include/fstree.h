@@ -41,6 +41,15 @@ typedef struct file_info_t file_info_t;
 typedef struct dir_info_t dir_info_t;
 typedef struct fstree_t fstree_t;
 
+/*
+  Optionally used by fstree_from_dir and fstree_from_subdir to
+  execute custom actions for each discovered node.
+
+  If it returns a value > 0, the new node is discarded, if < 0, scanning is
+  aborted and returns a failure status.
+ */
+typedef int (*scan_node_callback)(void *user, fstree_t *fs, tree_node_t *node);
+
 /* Additional meta data stored in a tree_node_t for regular files. */
 struct file_info_t {
 	/* Linked list pointer for files in fstree_t */
@@ -252,7 +261,8 @@ int fstree_resolve_hard_link(fstree_t *fs, tree_node_t *node);
   Returns 0 on success, prints to stderr on failure.
  */
 int fstree_from_dir(fstree_t *fs, tree_node_t *root,
-		    const char *path, unsigned int flags);
+		    const char *path, scan_node_callback cb, void *user,
+		    unsigned int flags);
 
 /*
   Same as fstree_from_dir, but scans a sub-directory inside the specified path.
@@ -261,6 +271,6 @@ int fstree_from_dir(fstree_t *fs, tree_node_t *root,
  */
 int fstree_from_subdir(fstree_t *fs, tree_node_t *root,
 		       const char *path, const char *subdir,
-		       unsigned int flags);
+		       scan_node_callback cb, void *user, unsigned int flags);
 
 #endif /* FSTREE_H */
