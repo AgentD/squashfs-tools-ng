@@ -6,39 +6,6 @@
  */
 #include "mkfs.h"
 
-static int set_working_dir(options_t *opt)
-{
-	const char *ptr;
-	char *path;
-
-	if (opt->packdir != NULL) {
-		if (chdir(opt->packdir)) {
-			perror(opt->packdir);
-			return -1;
-		}
-		return 0;
-	}
-
-	ptr = strrchr(opt->infile, '/');
-	if (ptr == NULL)
-		return 0;
-
-	path = strndup(opt->infile, ptr - opt->infile);
-	if (path == NULL) {
-		perror("constructing input directory path");
-		return -1;
-	}
-
-	if (chdir(path)) {
-		perror(path);
-		free(path);
-		return -1;
-	}
-
-	free(path);
-	return 0;
-}
-
 static int pack_files(sqfs_block_processor_t *data, fstree_t *fs,
 		      options_t *opt)
 {
@@ -52,8 +19,10 @@ static int pack_files(sqfs_block_processor_t *data, fstree_t *fs,
 	int flags;
 	int ret;
 
-	if (set_working_dir(opt))
+	if (opt->packdir != NULL && chdir(opt->packdir) != 0) {
+		perror(opt->packdir);
 		return -1;
+	}
 
 	for (fi = fs->files; fi != NULL; fi = fi->next) {
 		if (fi->input_file == NULL) {
@@ -224,5 +193,6 @@ out:
 	sqfs_writer_cleanup(&sqfs, status);
 	if (sehnd != NULL)
 		selinux_close_context_file(sehnd);
+	free(opt.packdir);
 	return status;
 }

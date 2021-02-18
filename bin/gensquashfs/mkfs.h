@@ -42,9 +42,12 @@ typedef struct {
 	sqfs_writer_cfg_t cfg;
 	unsigned int dirscan_flags;
 	const char *infile;
-	const char *packdir;
 	const char *selinux;
 	bool no_tail_packing;
+
+	/* copied from command line or constructed from infile argument
+	   if not specified. Must be free'd. */
+	char *packdir;
 
 	unsigned int force_uid_value;
 	unsigned int force_gid_value;

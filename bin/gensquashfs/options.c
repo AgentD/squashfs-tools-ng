@@ -267,7 +267,12 @@ void process_command_line(options_t *opt, int argc, char **argv)
 			opt->infile = optarg;
 			break;
 		case 'D':
-			opt->packdir = optarg;
+			free(opt->packdir);
+			opt->packdir = strdup(optarg);
+			if (opt->packdir == NULL) {
+				perror(optarg);
+				exit(EXIT_FAILURE);
+			}
 			break;
 #ifdef WITH_SELINUX
 		case 's':
@@ -316,8 +321,24 @@ void process_command_line(options_t *opt, int argc, char **argv)
 		fputs("Unknown extra arguments specified.\n", stderr);
 		goto fail_arg;
 	}
+
+	/* construct packdir if not specified */
+	if (opt->packdir == NULL && opt->infile != NULL) {
+		const char *split = strrchr(opt->infile, '/');
+
+		if (split != NULL) {
+			opt->packdir = strndup(opt->infile,
+					       split - opt->infile);
+
+			if (opt->packdir == NULL) {
+				perror("constructing input directory path");
+				exit(EXIT_FAILURE);
+			}
+		}
+	}
 	return;
 fail_arg:
 	fputs("Try `gensquashfs --help' for more information.\n", stderr);
+	free(opt->packdir);
 	exit(EXIT_FAILURE);
 }
