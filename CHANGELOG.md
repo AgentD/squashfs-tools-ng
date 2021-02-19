@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - tar2sqfs: support transparently reading stream compressed archives
 - sqfs2tar: support creating stream compressed archives
+- gensquashfs: support file globbing/filtering in the description file
 - Support bzip2 compression for tar
 - Updated benchmarks, including benchmarks for decompression
 

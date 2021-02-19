@@ -131,6 +131,7 @@ const char *help_details =
 "link <path> <dummy> <dummy> <dummy> <target>\n"
 "pipe <path> <mode> <uid> <gid>\n"
 "sock <path> <mode> <uid> <gid>\n"
+"glob <path> <mode|*> <uid|*> <gid|*> [OPTIONS...] <location>\n"
 "\n"
 "<path>       Absolute path of the entry in the image. Can be put in quotes\n"
 "             if some components contain spaces.\n"
@@ -161,6 +162,11 @@ const char *help_details =
 "    \n"
 "    # file name with a space in it.\n"
 "    file \"/opt/my app/\\\"special\\\"/data\" 0600 0 0\n"
+"    \n"
+"    # collect the contents of ./lib and put it under /usr/lib\n"
+"    glob /usr/lib 0755 0 0 -type d ./lib\n"
+"    glob /usr/lib 0755 0 0 -type f -name \"*.so.*\" ./lib\n"
+"    glob /usr/lib 0777 0 0 -type l -name \"*.so.*\" ./lib\n"
 "\n\n";
 
 void process_command_line(options_t *opt, int argc, char **argv)

@@ -1,4 +1,4 @@
-.TH GENSQUASHFS "1" "June 2019" "generate squashfs images" "User Commands"
+.TH GENSQUASHFS "1" "March 2021" "generate squashfs images" "User Commands"
 .SH NAME
 gensquashfs \- generate squashfs images
 .SH SYNOPSIS
@@ -123,6 +123,7 @@ slink <path> <mode> <uid> <gid> <target>
 link <path> <dummy> <dummy> <dummy> <target>
 pipe <path> <mode> <uid> <gid>
 sock <path> <mode> <uid> <gid>
+glob <path> <mode|*> <uid|*> <gid|*> [OPTIONS...] <location>
 .fi
 .in
 
@@ -156,10 +157,79 @@ T}
 <min>;Minor number of a device special file.
 .TE
 
+.SS File Globbing
+The \fBglob\fR command requires an \fIinput location\fR which is interpreted
+relative to the pack directory (or the input file if no directory was
+specified). This location is scanned recursively and the contents are added
+to the specified virtual path.
+
+The specified \fImode\fR, \fIuid\fR and \fIgid\fR are applied to all new
+entries added by the glob. They can alternatively be set to the special
+value \fB*\fR to use the value from the input directory.
+
+In front of the source location, several additional options can be specified to
+control the behavior of the glob command:
+
+.TS
+tab(;) allbox;
+l l
+l l
+l l
+l l
+l l
+l l
+l l
+l l
+rd.
+\fBOption\fR;\fBDescription\fR
+\-type;T{
+Followed by a single space and a single, lowercase character describing
+the inode type to accept. Works similar to the \fB\-type\fR option of the
+\fBfind\fR command.
+
+Possible values are \fBb\fR (block devices), \fBc\fR  (character devices),
+\fBd\fR (directories), \fBp\fR (named pipes), \fBf\fR (regular files),
+\fBl\fR (symlinks) and \fBs\fR (sockets).
+
+If \fB\-type\fR is not used, all are accepted. The first use clamps the
+selection down to a single type and subsequent uses allow additional
+types.
+T}
+\-xdev;Do not cross mount points during a recursive glob.
+\-mount;An alias for \fB\-xdev\fR
+\-keeptime;Use the time stamps from the scanned files.
+\-nonrecursive;T{
+Do not descend into directories.
+
+Even if the type argument does not include directories, it is still possible to
+recursively scan a hierarchy. In that case, the scanning will not add \fInew\fR
+directory nodes, but still recurse into a directory if a coresponding node
+already exist in the virtual filesystem tree.
+
+So a typicall use case might be to first scan only the
+directories, and then do several narrower globs to fill them.
+T}
+\-name <pattern>;T{
+Only add entries if their name matches a shell glob pattern.
+
+If the pattern is supposed to contain spaces, it can be wrapped in
+quotation marks ("..." or '...').
+T}
+\-path <pattern>;T{
+Only add entries if their full resulting path in the SquashFS image
+matches a shell glob pattern. Slashes in the path are only matched
+against slashes in the pattern and will never match a wild card
+character or a bracket expression containing a slash.
+
+The path is normalized, so it won't have a leading or trailing slash.
+T}
+.TE
 .PP
-Example:
+Any other, unknown string starting with \- will be rejected as unknown option.
+If the input path starts with \-, the sequence \-\- can be used to stop
+argument parsing, similar to many command line tools.
+.SS Example
 .PP
-.in +4n
 .nf
 # A simple squashfs image
 dir /dev 0755 0 0
@@ -176,8 +246,14 @@ file /bin/bash 0755 0 0
 
 # file name with a space in it and a "special" name
 file "/opt/my app/\\"special\\"/data" 0600 0 0
+
+# collect the contents of ./lib and put it under /usr/lib
+# mode and uid/gid are explictly set. First we collect the directory tree,
+# then all so files, then all symlinks that don't end in ".so"
+glob /usr/lib 0755 0 0 -type d ./lib
+glob /usr/lib 0755 0 0 -type f -name "*.so.*" ./lib
+glob /usr/lib 0777 0 0 -type l -name "*.so.*" ./lib
 .fi
-.in
 .SH ENVIRONMENT
 If the command line switch \fB\-\-defaults\fR is not used or no default mtime
 is specified, the value of the environment variable \fBSOURCE\_DATE\_EPOCH\fR
