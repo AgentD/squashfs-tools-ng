@@ -9,20 +9,27 @@
 #include "fstree.h"
 #include "fstream.h"
 
+#include <fnmatch.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include <ctype.h>
 
 struct glob_context {
+	const char *filename;
+	size_t line_num;
+
 	struct stat *basic;
 	unsigned int glob_flags;
+
+	char *name_pattern;
 };
 
 enum {
 	GLOB_MODE_FROM_SRC = 0x01,
 	GLOB_UID_FROM_SRC = 0x02,
 	GLOB_GID_FROM_SRC = 0x04,
+	GLOB_FLAG_PATH = 0x08,
 };
 
 static const struct {
@@ -120,6 +127,8 @@ static int add_hard_link(fstree_t *fs, const char *filename, size_t line_num,
 static int glob_node_callback(void *user, fstree_t *fs, tree_node_t *node)
 {
 	struct glob_context *ctx = user;
+	char *path;
+	int ret;
 	(void)fs;
 
 	if (!(ctx->glob_flags & GLOB_MODE_FROM_SRC)) {
@@ -133,7 +142,63 @@ static int glob_node_callback(void *user, fstree_t *fs, tree_node_t *node)
 	if (!(ctx->glob_flags & GLOB_GID_FROM_SRC))
 		node->gid = ctx->basic->st_gid;
 
+	if (ctx->name_pattern != NULL) {
+		if (ctx->glob_flags & GLOB_FLAG_PATH) {
+			path = fstree_get_path(node);
+			if (path == NULL) {
+				fprintf(stderr, "%s: " PRI_SZ ": %s\n",
+					ctx->filename, ctx->line_num,
+					strerror(errno));
+				return -1;
+			}
+
+			ret = fnmatch(ctx->name_pattern, path, FNM_PATHNAME);
+			free(path);
+		} else {
+			ret = fnmatch(ctx->name_pattern, node->name, 0);
+		}
+
+		if (ret != 0)
+			return 1;
+	}
+
 	return 0;
+}
+
+static size_t name_string_length(const char *str)
+{
+	size_t len = 0;
+	int start;
+
+	if (*str == '"' || *str == '\'') {
+		start = *str;
+		++len;
+
+		while (str[len] != '\0' && str[len] != start)
+			++len;
+
+		if (str[len] == start)
+			++len;
+	} else {
+		while (str[len] != '\0' && !isspace(str[len]))
+			++len;
+	}
+
+	return len;
+}
+
+static void quote_remove(char *str)
+{
+	char *dst = str;
+	int start = *(str++);
+
+	if (start != '\'' && start != '"')
+		return;
+
+	while (*str != start && *str != '\0')
+		*(dst++) = *(str++);
+
+	*(dst++) = '\0';
 }
 
 static int glob_files(fstree_t *fs, const char *filename, size_t line_num,
@@ -149,6 +214,8 @@ static int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 	int ret;
 
 	memset(&ctx, 0, sizeof(ctx));
+	ctx.filename = filename;
+	ctx.line_num = line_num;
 	ctx.basic = basic;
 	ctx.glob_flags = glob_flags;
 
@@ -194,12 +261,49 @@ static int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 			scan_flags |= glob_scan_flags[i].set_flag;
 			continue;
 		}
+
+		if (strncmp(extra, "-name", 5) == 0 && isspace(extra[5])) {
+			for (extra += 5; isspace(*extra); ++extra)
+				;
+
+			len = name_string_length(extra);
+
+			free(ctx.name_pattern);
+			ctx.name_pattern = strndup(extra, len);
+			extra += len;
+
+			while (isspace(*extra))
+				++extra;
+
+			quote_remove(ctx.name_pattern);
+			continue;
+		}
+
+		if (strncmp(extra, "-path", 5) == 0 && isspace(extra[5])) {
+			for (extra += 5; isspace(*extra); ++extra)
+				;
+
+			len = name_string_length(extra);
+
+			free(ctx.name_pattern);
+			ctx.name_pattern = strndup(extra, len);
+			extra += len;
+
+			while (isspace(*extra))
+				++extra;
+
+			quote_remove(ctx.name_pattern);
+			ctx.glob_flags |= GLOB_FLAG_PATH;
+			continue;
+		}
+
 		break;
 	}
 
 	if (*extra == '\0') {
 		fprintf(stderr, "%s: " PRI_SZ ": glob path missing.\n",
 			filename, line_num);
+		free(ctx.name_pattern);
 		return -1;
 	}
 
@@ -213,6 +317,7 @@ static int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 					 scan_flags);
 	}
 
+	free(ctx.name_pattern);
 	return ret;
 }
 
