@@ -297,7 +297,21 @@ static int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 			continue;
 		}
 
-		break;
+		if (extra[0] == '-') {
+			if (extra[1] == '-' && isspace(extra[2])) {
+				extra += 2;
+				while (isspace(*extra))
+					++extra;
+				break;
+			}
+
+			fprintf(stderr, "%s: " PRI_SZ ": unknown option.\n",
+				filename, line_num);
+			free(ctx.name_pattern);
+			return -1;
+		} else {
+			break;
+		}
 	}
 
 	if (*extra == '\0') {
