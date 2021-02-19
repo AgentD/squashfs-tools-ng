@@ -152,6 +152,8 @@ static int glob_node_callback(void *user, fstree_t *fs, tree_node_t *node)
 				return -1;
 			}
 
+			canonicalize_name(path);
+
 			ret = fnmatch(ctx->name_pattern, path, FNM_PATHNAME);
 			free(path);
 		} else {
