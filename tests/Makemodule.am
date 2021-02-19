@@ -51,6 +51,10 @@ test_fstree_from_file_SOURCES = tests/fstree_from_file.c tests/test.h
 test_fstree_from_file_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(top_srcdir)/tests/fstree1.txt
 test_fstree_from_file_LDADD = libfstree.a libfstream.a libcompat.a
 
+test_fstree_glob1_SOURCES = tests/fstree_glob1.c tests/test.h
+test_fstree_glob1_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(top_srcdir)/tests
+test_fstree_glob1_LDADD = libfstree.a libfstream.a libcompat.a
+
 test_fstree_from_dir_SOURCES = tests/fstree_from_dir.c tests/test.h
 test_fstree_from_dir_CPPFLAGS = $(AM_CPPFLAGS)
 test_fstree_from_dir_CPPFLAGS += -DTESTPATH=$(top_srcdir)/tests/tar
@@ -241,7 +245,7 @@ check_PROGRAMS += test_mknode_simple test_mknode_slink test_mknode_reg
 check_PROGRAMS += test_mknode_dir test_gen_inode_numbers test_add_by_path
 check_PROGRAMS += test_get_path test_fstree_sort test_fstree_from_file
 check_PROGRAMS += test_fstree_init test_filename_sane test_filename_sane_w32
-check_PROGRAMS += test_fstree_from_dir
+check_PROGRAMS += test_fstree_from_dir test_fstree_glob1
 check_PROGRAMS += test_tar_ustar0 test_tar_ustar1 test_tar_ustar2
 check_PROGRAMS += test_tar_ustar3 test_tar_ustar4 test_tar_ustar5
 check_PROGRAMS += test_tar_ustar6
@@ -261,7 +265,7 @@ TESTS += test_mknode_simple test_mknode_slink
 TESTS += test_mknode_reg test_mknode_dir test_gen_inode_numbers
 TESTS += test_add_by_path test_get_path test_fstree_sort test_fstree_from_file
 TESTS += test_fstree_init test_filename_sane test_filename_sane_w32
-TESTS += test_fstree_from_dir
+TESTS += test_fstree_from_dir test_fstree_glob1
 TESTS += test_tar_ustar0 test_tar_ustar1 test_tar_ustar2 test_tar_ustar3
 TESTS += test_tar_ustar4 test_tar_ustar5 test_tar_ustar6
 TESTS += test_tar_gnu0 test_tar_gnu1 test_tar_gnu2 test_tar_gnu3 test_tar_gnu4
@@ -282,6 +286,8 @@ endif
 EXTRA_DIST += $(top_srcdir)/tests/tar $(top_srcdir)/tests/words.txt
 EXTRA_DIST += $(top_srcdir)/tests/tar2sqfs
 EXTRA_DIST += $(top_srcdir)/tests/fstree1.txt
+EXTRA_DIST += $(top_srcdir)/tests/fstree_glob1.txt
+EXTRA_DIST += $(top_srcdir)/tests/fstree_glob2.txt
 EXTRA_DIST += $(top_srcdir)/tests/corpus/cantrbry.tar.xz
 EXTRA_DIST += $(top_srcdir)/tests/corpus/cantrbry.sha512
 EXTRA_DIST += $(top_srcdir)/tests/pack_dir_root.txt.ref
