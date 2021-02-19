@@ -12,6 +12,7 @@
 #include <fnmatch.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #include <errno.h>
 #include <ctype.h>
 
@@ -152,7 +153,8 @@ static int glob_node_callback(void *user, fstree_t *fs, tree_node_t *node)
 				return -1;
 			}
 
-			canonicalize_name(path);
+			ret = canonicalize_name(path);
+			assert(ret == 0);
 
 			ret = fnmatch(ctx->name_pattern, path, FNM_PATHNAME);
 			free(path);
