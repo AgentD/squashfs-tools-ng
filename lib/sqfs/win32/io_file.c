@@ -151,7 +151,7 @@ static int stdio_truncate(sqfs_file_t *base, sqfs_u64 size)
 
 sqfs_file_t *sqfs_open_file(const char *filename, sqfs_u32 flags)
 {
-	int access_flags, creation_mode;
+	int access_flags, creation_mode, share_mode;
 	sqfs_file_stdio_t *file;
 	LARGE_INTEGER size;
 	sqfs_file_t *base;
@@ -168,9 +168,11 @@ sqfs_file_t *sqfs_open_file(const char *filename, sqfs_u32 flags)
 		file->readonly = true;
 		access_flags = GENERIC_READ;
 		creation_mode = OPEN_EXISTING;
+		share_mode = FILE_SHARE_READ;
 	} else {
 		file->readonly = false;
 		access_flags = GENERIC_READ | GENERIC_WRITE;
+		share_mode = 0;
 
 		if (flags & SQFS_FILE_OPEN_OVERWRITE) {
 			creation_mode = CREATE_ALWAYS;
@@ -179,7 +181,7 @@ sqfs_file_t *sqfs_open_file(const char *filename, sqfs_u32 flags)
 		}
 	}
 
-	file->fd = CreateFile(filename, access_flags, 0, NULL, creation_mode,
+	file->fd = CreateFile(filename, access_flags, share_mode, NULL, creation_mode,
 			      FILE_ATTRIBUTE_NORMAL, NULL);
 
 	if (file->fd == INVALID_HANDLE_VALUE) {
