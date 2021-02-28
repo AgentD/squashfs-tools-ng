@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Internal cleanups & restructuring, trying to improve maintainabillity and
   testabillity of the code.
 
+### Fixed
+- libsquashfs: Allow shared read access to generated images on Windows (#79)
+
 ## [1.0.4] - 2021-01-23
 ### Fixed
 - typos in documentation
