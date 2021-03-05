@@ -9,7 +9,6 @@
 static int pack_files(sqfs_block_processor_t *data, fstree_t *fs,
 		      options_t *opt)
 {
-	sqfs_inode_generic_t **inode_ptr;
 	sqfs_u64 filesize;
 	sqfs_file_t *file;
 	tree_node_t *node;
@@ -59,9 +58,7 @@ static int pack_files(sqfs_block_processor_t *data, fstree_t *fs,
 		if (opt->no_tail_packing && filesize > opt->cfg.block_size)
 			flags |= SQFS_BLK_DONT_FRAGMENT;
 
-		inode_ptr = (sqfs_inode_generic_t **)&fi->user_ptr;
-
-		ret = write_data_from_file(path, data, inode_ptr, file, flags);
+		ret = write_data_from_file(path, data, &fi->inode, file, flags);
 		sqfs_destroy(file);
 		free(node_path);
 

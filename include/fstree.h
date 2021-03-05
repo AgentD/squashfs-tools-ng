@@ -58,7 +58,7 @@ struct file_info_t {
 	/* Path to the input file. */
 	char *input_file;
 
-	void *user_ptr;
+	sqfs_inode_generic_t *inode;
 };
 
 /* Additional meta data stored in a tree_node_t for directories */

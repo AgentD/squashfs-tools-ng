@@ -120,8 +120,8 @@ static int serialize_tree_node(const char *filename, sqfs_writer_t *wr,
 		inode = write_dir_entries(filename, wr->dirwr, n);
 		ret = SQFS_ERROR_INTERNAL;
 	} else if (S_ISREG(n->mode)) {
-		inode = n->data.file.user_ptr;
-		n->data.file.user_ptr = NULL;
+		inode = n->data.file.inode;
+		n->data.file.inode = NULL;
 		ret = SQFS_ERROR_INTERNAL;
 
 		if (inode->base.type == SQFS_INODE_FILE && n->link_count > 1) {

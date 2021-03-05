@@ -19,8 +19,7 @@ static int write_file(istream_t *input_file, sqfs_writer_t *sqfs,
 	if (no_tail_pack && filesize > cfg.block_size)
 		flags |= SQFS_BLK_DONT_FRAGMENT;
 
-	out = data_writer_ostream_create(hdr->name, sqfs->data,
-					 (sqfs_inode_generic_t **)&fi->user_ptr,
+	out = data_writer_ostream_create(hdr->name, sqfs->data, &fi->inode,
 					 flags);
 
 	if (out == NULL)
