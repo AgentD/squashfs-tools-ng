@@ -109,13 +109,55 @@ static void check_black_depth_dfs(rbtree_node_t *n, size_t ref,
 		check_black_depth_dfs(n->right, ref, counter);
 }
 
+static int check_subtrees_equal(const rbtree_node_t *lhs,
+				const rbtree_node_t *rhs,
+				size_t datasize)
+{
+	if (lhs == rhs)
+		return -1;
+
+	if (lhs->value_offset != rhs->value_offset)
+		return -1;
+
+	if ((lhs->is_red && !rhs->is_red) || (!lhs->is_red && rhs->is_red))
+		return -1;
+
+	if (memcmp(lhs->data, rhs->data, datasize) != 0)
+		return -1;
+
+	if (lhs->left == NULL) {
+		if (rhs->left != NULL)
+			return -1;
+	} else {
+		if (rhs->left == NULL)
+			return -1;
+
+		if (check_subtrees_equal(lhs->left, rhs->left, datasize))
+			return -1;
+	}
+
+	if (lhs->right == NULL) {
+		if (rhs->right != NULL)
+			return -1;
+	} else {
+		if (rhs->right == NULL)
+			return -1;
+
+		if (check_subtrees_equal(lhs->right, rhs->right, datasize))
+			return -1;
+	}
+
+	return 0;
+}
+
 int main(void)
 {
 	size_t count, blkdepth, mind, maxd;
 	sqfs_s32 key, key2;
+	rbtree_t rb, copy;
 	rbtree_node_t *n;
 	sqfs_u64 value;
-	rbtree_t rb;
+	int ret;
 
 	TEST_ASSERT(rbtree_init(&rb, sizeof(sqfs_s32),
 				sizeof(sqfs_u64), key_compare) == 0);
@@ -168,6 +210,22 @@ int main(void)
 		TEST_EQUAL_UI((sqfs_u64)(key + 10000), value);
 	}
 
+	/* test if copy works */
+	ret = rbtree_copy(&rb, &copy);
+	TEST_EQUAL_I(ret, 0);
+
+	TEST_EQUAL_UI(rb.key_size, copy.key_size);
+	TEST_EQUAL_UI(rb.key_size_padded, copy.key_size_padded);
+	TEST_EQUAL_UI(rb.value_size, copy.value_size);
+	TEST_ASSERT(rb.key_compare == copy.key_compare);
+	TEST_ASSERT(rb.root != copy.root);
+
+	ret = check_subtrees_equal(rb.root, copy.root,
+				   rb.key_size_padded + rb.value_size);
+	TEST_EQUAL_I(ret, 0);
+
+	/* cleanup */
 	rbtree_cleanup(&rb);
+	rbtree_cleanup(&copy);
 	return EXIT_SUCCESS;
 }

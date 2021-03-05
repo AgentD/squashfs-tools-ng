@@ -49,6 +49,8 @@ SQFS_INTERNAL int rbtree_init(rbtree_t *tree, size_t keysize, size_t valuesize,
 
 SQFS_INTERNAL void rbtree_cleanup(rbtree_t *tree);
 
+SQFS_INTERNAL int rbtree_copy(const rbtree_t *tree, rbtree_t *out);
+
 SQFS_INTERNAL int rbtree_insert(rbtree_t *tree, const void *key,
 				const void *value);
 

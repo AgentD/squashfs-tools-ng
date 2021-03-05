@@ -105,6 +105,39 @@ static rbtree_node_t *mknode(const rbtree_t *t, const void *key, const void *val
 	return node;
 }
 
+static rbtree_node_t *copy_node(const rbtree_t *t, const rbtree_node_t *n)
+{
+	rbtree_node_t *out;
+
+	out = calloc(1, sizeof(*out) + t->key_size_padded + t->value_size);
+	if (out == NULL)
+		return NULL;
+
+	memcpy(out, n, sizeof(*n) + t->key_size_padded + t->value_size);
+	out->left = NULL;
+	out->right = NULL;
+
+	if (n->left != NULL) {
+		out->left = copy_node(t, n->left);
+
+		if (out->left == NULL) {
+			destroy_nodes_dfs(out);
+			return NULL;
+		}
+	}
+
+	if (n->right != NULL) {
+		out->right = copy_node(t, n->right);
+
+		if (out->right == NULL) {
+			destroy_nodes_dfs(out);
+			return NULL;
+		}
+	}
+
+	return out;
+}
+
 int rbtree_init(rbtree_t *tree, size_t keysize, size_t valuesize,
 		int(*key_compare)(const void *, const void *))
 {
@@ -142,6 +175,23 @@ int rbtree_init(rbtree_t *tree, size_t keysize, size_t valuesize,
 
 	if (SZ_ADD_OV(size, tree->value_size, &size))
 		return SQFS_ERROR_OVERFLOW;
+
+	return 0;
+}
+
+int rbtree_copy(const rbtree_t *tree, rbtree_t *out)
+{
+	memcpy(out, tree, sizeof(*out));
+	out->root = NULL;
+
+	if (tree->root != NULL) {
+		out->root = copy_node(tree, tree->root);
+
+		if (out->root == NULL) {
+			memset(out, 0, sizeof(*out));
+			return SQFS_ERROR_ALLOC;
+		}
+	}
 
 	return 0;
 }
