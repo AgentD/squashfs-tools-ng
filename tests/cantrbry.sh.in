@@ -12,7 +12,7 @@ fi
 
 COMPRESSORS=$("$TAR2SQFS" --help | grep $'\t' | sed 's/ (default)//' | \
 	      tr -d '\011' | sort | uniq | sed '/uncompressed/d' | \
-	      sed '/bzip2/d')
+	      sed '/bzip2/d' | sed '/zstd/d' | sed '/lz4/d')
 
 for size in 4k 8k 16k 32k 64k 128k 256k 512k 1M; do
 	for cmp in $COMPRESSORS; do
