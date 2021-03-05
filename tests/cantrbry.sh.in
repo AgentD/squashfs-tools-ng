@@ -11,7 +11,8 @@ if [ ! -f "$TAR2SQFS" -a -f "${TAR2SQFS}.exe" ]; then
 fi
 
 COMPRESSORS=$("$TAR2SQFS" --help | tr -d '\015' |\
-	      awk '/Available compressors:/,EOF' | sed -n '/\t/p')
+	      awk '/Available compressors:/,EOF' | sed -n '/\t/p' |\
+	      sed '/zstd/d' | sed '/lz4/d')
 
 for size in 4k 8k 16k 32k 64k 128k 256k 512k 1M; do
 	for cmp in $COMPRESSORS; do
