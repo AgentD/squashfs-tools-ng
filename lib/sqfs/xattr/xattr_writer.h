@@ -19,6 +19,7 @@
 #include "sqfs/io.h"
 
 #include "str_table.h"
+#include "rbtree.h"
 #include "util.h"
 
 #include <stdlib.h>
@@ -56,7 +57,9 @@ struct sqfs_xattr_writer_t {
 
 	size_t kv_start;
 
-	kv_block_desc_t *kv_blocks;
+	rbtree_t kv_block_tree;
+	kv_block_desc_t *kv_block_first;
+	kv_block_desc_t *kv_block_last;
 	size_t num_blocks;
 };
 

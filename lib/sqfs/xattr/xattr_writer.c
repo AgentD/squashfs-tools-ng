@@ -9,8 +9,8 @@
 static sqfs_object_t *xattr_writer_copy(const sqfs_object_t *obj)
 {
 	const sqfs_xattr_writer_t *xwr = (const sqfs_xattr_writer_t *)obj;
-	kv_block_desc_t *blk, *it, **next;
 	sqfs_xattr_writer_t *copy;
+	kv_block_desc_t *it;
 
 	copy = calloc(1, sizeof(*copy));
 	if (copy == NULL)
@@ -34,27 +34,26 @@ static sqfs_object_t *xattr_writer_copy(const sqfs_object_t *obj)
 	memcpy(copy->kv_pairs, xwr->kv_pairs,
 	       sizeof(copy->kv_pairs[0]) * xwr->num_pairs);
 
-	next = &(copy->kv_blocks);
+	if (rbtree_copy(&xwr->kv_block_tree, &copy->kv_block_tree) != 0)
+		goto fail_tree;
 
-	for (it = xwr->kv_blocks; it != NULL; it = it->next) {
-		blk = malloc(sizeof(*blk));
-		if (blk == NULL)
-			goto fail_blk;
+	for (it = xwr->kv_block_first; it != NULL; it = it->next) {
+		rbtree_node_t *n = rbtree_lookup(&copy->kv_block_tree, it);
 
-		memcpy(blk, it, sizeof(*it));
-		blk->next = NULL;
+		if (copy->kv_block_last == NULL) {
+			copy->kv_block_first = rbtree_node_key(n);
+			copy->kv_block_last = copy->kv_block_first;
+		} else {
+			copy->kv_block_last->next = rbtree_node_key(n);
+			copy->kv_block_last = copy->kv_block_last->next;
+		}
 
-		*next = blk;
-		next = &(blk->next);
+		copy->kv_block_last->next = NULL;
 	}
 
 	return (sqfs_object_t *)copy;
-fail_blk:
-	while (copy->kv_blocks != NULL) {
-		blk = copy->kv_blocks;
-		copy->kv_blocks = copy->kv_blocks->next;
-		free(blk);
-	}
+fail_tree:
+	free(copy->kv_pairs);
 fail_pairs:
 	str_table_cleanup(&copy->values);
 fail_values:
@@ -67,18 +66,29 @@ fail_keys:
 static void xattr_writer_destroy(sqfs_object_t *obj)
 {
 	sqfs_xattr_writer_t *xwr = (sqfs_xattr_writer_t *)obj;
-	kv_block_desc_t *blk;
 
-	while (xwr->kv_blocks != NULL) {
-		blk = xwr->kv_blocks;
-		xwr->kv_blocks = xwr->kv_blocks->next;
-		free(blk);
-	}
-
+	rbtree_cleanup(&xwr->kv_block_tree);
 	free(xwr->kv_pairs);
 	str_table_cleanup(&xwr->values);
 	str_table_cleanup(&xwr->keys);
 	free(xwr);
+}
+
+static int block_compare(const void *context,
+			 const void *lhs, const void *rhs)
+{
+	const sqfs_xattr_writer_t *xwr = context;
+	const kv_block_desc_t *l = lhs, *r = rhs;
+
+	if (l->count != r->count)
+		return l->count < r->count ? -1 : 1;
+
+	if (l->start == r->start)
+		return 0;
+
+	return memcmp(xwr->kv_pairs + l->start,
+		      xwr->kv_pairs + r->start,
+		      l->count * sizeof(xwr->kv_pairs[0]));
 }
 
 sqfs_xattr_writer_t *sqfs_xattr_writer_create(sqfs_u32 flags)
@@ -104,9 +114,18 @@ sqfs_xattr_writer_t *sqfs_xattr_writer_create(sqfs_u32 flags)
 	if (xwr->kv_pairs == NULL)
 		goto fail_pairs;
 
+	if (rbtree_init(&xwr->kv_block_tree, sizeof(kv_block_desc_t),
+			sizeof(sqfs_u32), block_compare)) {
+		goto fail_tree;
+	}
+
+	xwr->kv_block_tree.key_context = xwr;
+
 	((sqfs_object_t *)xwr)->copy = xattr_writer_copy;
 	((sqfs_object_t *)xwr)->destroy = xattr_writer_destroy;
 	return xwr;
+fail_tree:
+	free(xwr->kv_pairs);
 fail_pairs:
 	str_table_cleanup(&xwr->values);
 fail_values:

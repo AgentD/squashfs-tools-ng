@@ -207,7 +207,7 @@ static int write_kv_pairs(const sqfs_xattr_writer_t *xwr,
 	for (i = 0; i < xwr->values.num_strings; ++i)
 		ool_locations[i] = 0xFFFFFFFFFFFFFFFFUL;
 
-	for (blk = xwr->kv_blocks; blk != NULL; blk = blk->next) {
+	for (blk = xwr->kv_block_first; blk != NULL; blk = blk->next) {
 		sqfs_meta_writer_get_position(mw, &block, &offset);
 		blk->start_ref = (block << 16) | (offset & 0xFFFF);
 
@@ -237,7 +237,7 @@ static int write_id_table(const sqfs_xattr_writer_t *xwr,
 
 	locations[i++] = 0;
 
-	for (blk = xwr->kv_blocks; blk != NULL; blk = blk->next) {
+	for (blk = xwr->kv_block_first; blk != NULL; blk = blk->next) {
 		memset(&id_ent, 0, sizeof(id_ent));
 		id_ent.xattr = htole64(blk->start_ref);
 		id_ent.count = htole32(blk->count);

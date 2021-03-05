@@ -114,59 +114,45 @@ int sqfs_xattr_writer_add(sqfs_xattr_writer_t *xwr, const char *key,
 
 int sqfs_xattr_writer_end(sqfs_xattr_writer_t *xwr, sqfs_u32 *out)
 {
-	kv_block_desc_t *blk, *blk_prev;
+	kv_block_desc_t blk;
+	rbtree_node_t *n;
 	sqfs_u32 index;
-	size_t count;
 	int ret;
 
-	count = xwr->num_pairs - xwr->kv_start;
-	if (count == 0) {
+	memset(&blk, 0, sizeof(blk));
+	blk.start = xwr->kv_start;
+	blk.count = xwr->num_pairs - xwr->kv_start;
+
+	if (blk.count == 0) {
 		*out = 0xFFFFFFFF;
 		return 0;
 	}
 
-	qsort(xwr->kv_pairs + xwr->kv_start, count,
+	qsort(xwr->kv_pairs + blk.start, blk.count,
 	      sizeof(xwr->kv_pairs[0]), compare_u64);
 
-	blk_prev = NULL;
-	blk = xwr->kv_blocks;
-	index = 0;
+	n = rbtree_lookup(&xwr->kv_block_tree, &blk);
 
-	while (blk != NULL) {
-		if (blk->count == count) {
-			ret = memcmp(xwr->kv_pairs + blk->start,
-				     xwr->kv_pairs + xwr->kv_start,
-				     sizeof(xwr->kv_pairs[0]) * count);
-
-			if (ret == 0)
-				break;
-		}
-
-		if (index == 0xFFFFFFFF)
-			return SQFS_ERROR_OVERFLOW;
-
-		++index;
-		blk_prev = blk;
-		blk = blk->next;
-	}
-
-	if (blk != NULL) {
+	if (n != NULL) {
+		index = *((sqfs_u32 *)rbtree_node_value(n));
 		xwr->num_pairs = xwr->kv_start;
 	} else {
-		blk = calloc(1, sizeof(*blk));
-		if (blk == NULL)
-			return SQFS_ERROR_ALLOC;
+		index = xwr->num_blocks;
 
-		blk->start = xwr->kv_start;
-		blk->count = count;
-
-		if (blk_prev == NULL) {
-			xwr->kv_blocks = blk;
-		} else {
-			blk_prev->next = blk;
-		}
+		ret = rbtree_insert(&xwr->kv_block_tree, &blk, &index);
+		if (ret != 0)
+			return ret;
 
 		xwr->num_blocks += 1;
+		n = rbtree_lookup(&xwr->kv_block_tree, &blk);
+
+		if (xwr->kv_block_last == NULL) {
+			xwr->kv_block_first = rbtree_node_key(n);
+			xwr->kv_block_last = xwr->kv_block_first;
+		} else {
+			xwr->kv_block_last->next = rbtree_node_key(n);
+			xwr->kv_block_last = xwr->kv_block_last->next;
+		}
 	}
 
 	*out = index;
