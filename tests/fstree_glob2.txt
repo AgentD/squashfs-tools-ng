@@ -1,3 +1,0 @@
-dir /tarcorpus 0755 0 0
-glob /tarcorpus 0755 0 0 -type d tar
-glob /tarcorpus 0644 0 0 -type f -name "*gnu*.tar" -- tar

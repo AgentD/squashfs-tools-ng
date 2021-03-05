@@ -1,0 +1,16 @@
+test_str_table_SOURCES = tests/libutil/str_table.c tests/test.h
+test_str_table_LDADD = libutil.a libfstream.a libcompat.a
+test_str_table_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(top_srcdir)/tests/libutil
+
+test_rbtree_SOURCES = tests/libutil/rbtree.c tests/test.h
+test_rbtree_LDADD = libutil.a libcompat.a
+
+test_xxhash_SOURCES = tests/libutil/xxhash.c
+test_xxhash_LDADD = libutil.a libcompat.a
+
+LIBUTIL_TESTS = \
+	test_str_table test_rbtree test_xxhash
+
+check_PROGRAMS += $(LIBUTIL_TESTS)
+TESTS += $(LIBUTIL_TESTS)
+EXTRA_DIST += $(top_srcdir)/tests/libutil/words.txt

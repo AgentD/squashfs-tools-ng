@@ -1,0 +1,11 @@
+test_get_line_SOURCES = tests/libfstream/get_line.c tests/test.h
+test_get_line_LDADD = libfstream.a libcompat.a
+test_get_line_CPPFLAGS = $(AM_CPPFLAGS)
+test_get_line_CPPFLAGS += -DTESTFILE=$(top_srcdir)/tests/libfstream/get_line.txt
+
+if BUILD_TOOLS
+check_PROGRAMS += test_get_line
+TESTS += test_get_line
+endif
+
+EXTRA_DIST += $(top_srcdir)/tests/libfstream/get_line.txt

@@ -1,0 +1,178 @@
+TARDATADIR=$(top_srcdir)/tests/libtar/data
+
+test_tar_gnu0_SOURCES = tests/libtar/tar_simple.c tests/test.h
+test_tar_gnu0_LDADD = libtar.a libfstream.a libcompat.a
+test_tar_gnu0_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(TARDATADIR)
+test_tar_gnu0_CPPFLAGS += -DTESTFILE=format-acceptance/gnu.tar
+
+test_tar_gnu1_SOURCES = tests/libtar/tar_simple.c tests/test.h
+test_tar_gnu1_LDADD = libtar.a libfstream.a libcompat.a
+test_tar_gnu1_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(TARDATADIR)
+test_tar_gnu1_CPPFLAGS += -DTESTFILE=format-acceptance/gnu-g.tar
+
+test_tar_gnu2_SOURCES = tests/libtar/tar_simple.c tests/test.h
+test_tar_gnu2_LDADD = libtar.a libfstream.a libcompat.a
+test_tar_gnu2_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(TARDATADIR)
+test_tar_gnu2_CPPFLAGS += -DTESTFILE=user-group-largenum/gnu.tar
+test_tar_gnu2_CPPFLAGS += -DTESTUID=0x80000000  -DTESTGID=0x80000000
+test_tar_gnu2_CPPFLAGS += -DTESTTS=1542995392
+
+test_tar_gnu3_SOURCES = tests/libtar/tar_simple.c tests/test.h
+test_tar_gnu3_LDADD = libtar.a libfstream.a libcompat.a
+test_tar_gnu3_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(TARDATADIR)
+test_tar_gnu3_CPPFLAGS += -DTESTFILE=negative-mtime/gnu.tar -DTESTTS=-315622800
+
+test_tar_gnu4_SOURCES = tests/libtar/tar_simple.c tests/test.h
+test_tar_gnu4_LDADD = libtar.a libfstream.a libcompat.a
+test_tar_gnu4_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(TARDATADIR)
+test_tar_gnu4_CPPFLAGS += -DTESTFILE=long-paths/gnu.tar -DLONG_NAME_TEST
+test_tar_gnu4_CPPFLAGS += -DTESTTS=1542909670
+
+test_tar_gnu5_SOURCES = tests/libtar/tar_simple.c tests/test.h
+test_tar_gnu5_LDADD = libtar.a libfstream.a libcompat.a
+test_tar_gnu5_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(TARDATADIR)
+test_tar_gnu5_CPPFLAGS += -DTESTFILE=large-mtime/gnu.tar -DTESTTS=8589934592L
+
+test_tar_gnu6_SOURCES = tests/libtar/tar_big_file.c tests/test.h
+test_tar_gnu6_LDADD = libtar.a libfstream.a libcompat.a
+test_tar_gnu6_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(TARDATADIR)
+test_tar_gnu6_CPPFLAGS += -DTESTFILE=file-size/gnu.tar
+
+test_tar_pax0_SOURCES = tests/libtar/tar_simple.c tests/test.h
+test_tar_pax0_LDADD = libtar.a libfstream.a libcompat.a
+test_tar_pax0_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(TARDATADIR)
+test_tar_pax0_CPPFLAGS += -DTESTFILE=format-acceptance/pax.tar
+
+test_tar_pax1_SOURCES = tests/libtar/tar_simple.c tests/test.h
+test_tar_pax1_LDADD = libtar.a libfstream.a libcompat.a
+test_tar_pax1_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(TARDATADIR)
+test_tar_pax1_CPPFLAGS += -DTESTFILE=user-group-largenum/pax.tar
+test_tar_pax1_CPPFLAGS += -DTESTUID=2147483648UL -DTESTGID=2147483648UL
+test_tar_pax1_CPPFLAGS += -DTESTTS=1542995392
+
+test_tar_pax2_SOURCES = tests/libtar/tar_simple.c tests/test.h
+test_tar_pax2_LDADD = libtar.a libfstream.a libcompat.a
+test_tar_pax2_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(TARDATADIR)
+test_tar_pax2_CPPFLAGS += -DTESTFILE=large-mtime/pax.tar -DTESTTS=8589934592L
+
+test_tar_pax3_SOURCES = tests/libtar/tar_simple.c tests/test.h
+test_tar_pax3_LDADD = libtar.a libfstream.a libcompat.a
+test_tar_pax3_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(TARDATADIR)
+test_tar_pax3_CPPFLAGS += -DTESTFILE=negative-mtime/pax.tar -DTESTTS=-315622800
+
+test_tar_pax4_SOURCES = tests/libtar/tar_simple.c tests/test.h
+test_tar_pax4_LDADD = libtar.a libfstream.a libcompat.a
+test_tar_pax4_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(TARDATADIR)
+test_tar_pax4_CPPFLAGS += -DTESTFILE=long-paths/pax.tar
+test_tar_pax4_CPPFLAGS += -DLONG_NAME_TEST -DTESTTS=1542909670
+
+test_tar_pax5_SOURCES = tests/libtar/tar_big_file.c tests/test.h
+test_tar_pax5_LDADD = libtar.a libfstream.a libcompat.a
+test_tar_pax5_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(TARDATADIR)
+test_tar_pax5_CPPFLAGS += -DTESTFILE=file-size/pax.tar
+
+test_tar_ustar0_SOURCES = tests/libtar/tar_simple.c tests/test.h
+test_tar_ustar0_LDADD = libtar.a libfstream.a libcompat.a
+test_tar_ustar0_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(TARDATADIR)
+test_tar_ustar0_CPPFLAGS += -DTESTFILE=format-acceptance/ustar.tar
+
+test_tar_ustar1_SOURCES = tests/libtar/tar_simple.c tests/test.h
+test_tar_ustar1_LDADD = libtar.a libfstream.a libcompat.a
+test_tar_ustar1_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(TARDATADIR)
+test_tar_ustar1_CPPFLAGS += -DTESTFILE=format-acceptance/ustar-pre-posix.tar
+
+test_tar_ustar2_SOURCES = tests/libtar/tar_simple.c tests/test.h
+test_tar_ustar2_LDADD = libtar.a libfstream.a libcompat.a
+test_tar_ustar2_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(TARDATADIR)
+test_tar_ustar2_CPPFLAGS += -DTESTFILE=format-acceptance/v7.tar
+
+test_tar_ustar3_SOURCES = tests/libtar/tar_simple.c tests/test.h
+test_tar_ustar3_LDADD = libtar.a libfstream.a libcompat.a
+test_tar_ustar3_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(TARDATADIR)
+test_tar_ustar3_CPPFLAGS += -DTESTFILE=user-group-largenum/8-digit.tar
+test_tar_ustar3_CPPFLAGS += -DTESTUID=8388608 -DTESTGID=8388608
+test_tar_ustar3_CPPFLAGS += -DTESTTS=1542995392
+
+test_tar_ustar4_SOURCES = tests/libtar/tar_simple.c tests/test.h
+test_tar_ustar4_LDADD = libtar.a libfstream.a libcompat.a
+test_tar_ustar4_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(TARDATADIR)
+test_tar_ustar4_CPPFLAGS += -DTESTFILE=large-mtime/12-digit.tar
+test_tar_ustar4_CPPFLAGS += -DTESTTS=8589934592L
+
+test_tar_ustar5_SOURCES = tests/libtar/tar_simple.c tests/test.h
+test_tar_ustar5_LDADD = libtar.a libfstream.a libcompat.a
+test_tar_ustar5_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(TARDATADIR)
+test_tar_ustar5_CPPFLAGS += -DTESTFILE=long-paths/ustar.tar
+test_tar_ustar5_CPPFLAGS += -DLONG_NAME_TEST -DTESTTS=1542909670
+
+test_tar_ustar6_SOURCES = tests/libtar/tar_big_file.c tests/test.h
+test_tar_ustar6_LDADD = libtar.a libfstream.a libcompat.a
+test_tar_ustar6_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(TARDATADIR)
+test_tar_ustar6_CPPFLAGS += -DTESTFILE=file-size/12-digit.tar
+
+test_tar_target_filled_SOURCES = tests/libtar/tar_target_filled.c tests/test.h
+test_tar_target_filled_LDADD = libtar.a libfstream.a libcompat.a
+test_tar_target_filled_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(TARDATADIR)
+
+test_tar_sparse_gnu_SOURCES = tests/libtar/tar_sparse_gnu.c tests/test.h
+test_tar_sparse_gnu_LDADD = libtar.a libfstream.a libcompat.a
+test_tar_sparse_gnu_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(TARDATADIR)
+
+test_tar_sparse_gnu0_SOURCES = tests/libtar/tar_sparse.c tests/test.h
+test_tar_sparse_gnu0_LDADD = libtar.a libfstream.a libcompat.a
+test_tar_sparse_gnu0_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(TARDATADIR)
+test_tar_sparse_gnu0_CPPFLAGS += -DTESTFILE=sparse-files/pax-gnu0-0.tar
+
+test_tar_sparse_gnu1_SOURCES = tests/libtar/tar_sparse.c tests/test.h
+test_tar_sparse_gnu1_LDADD = libtar.a libfstream.a libcompat.a
+test_tar_sparse_gnu1_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(TARDATADIR)
+test_tar_sparse_gnu1_CPPFLAGS += -DTESTFILE=sparse-files/pax-gnu0-1.tar
+
+test_tar_sparse_gnu2_SOURCES = tests/libtar/tar_sparse.c tests/test.h
+test_tar_sparse_gnu2_LDADD = libtar.a libfstream.a libcompat.a
+test_tar_sparse_gnu2_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(TARDATADIR)
+test_tar_sparse_gnu2_CPPFLAGS += -DTESTFILE=sparse-files/pax-gnu1-0.tar
+
+test_tar_sparse_gnu3_SOURCES = tests/libtar/tar_sparse.c tests/test.h
+test_tar_sparse_gnu3_LDADD = libtar.a libfstream.a libcompat.a
+test_tar_sparse_gnu3_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(TARDATADIR)
+test_tar_sparse_gnu3_CPPFLAGS += -DTESTFILE=sparse-files/gnu.tar
+
+test_tar_xattr_bsd_SOURCES = tests/libtar/tar_xattr.c tests/test.h
+test_tar_xattr_bsd_LDADD = libtar.a libfstream.a libcompat.a
+test_tar_xattr_bsd_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(TARDATADIR)
+test_tar_xattr_bsd_CPPFLAGS += -DTESTFILE=xattr/xattr-libarchive.tar
+
+test_tar_xattr_schily_SOURCES = tests/libtar/tar_xattr.c tests/test.h
+test_tar_xattr_schily_LDADD = libtar.a libfstream.a libcompat.a
+test_tar_xattr_schily_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(TARDATADIR)
+test_tar_xattr_schily_CPPFLAGS += -DTESTFILE=xattr/xattr-schily.tar
+
+test_tar_xattr_schily_bin_SOURCES = tests/libtar/tar_xattr_bin.c tests/test.h
+test_tar_xattr_schily_bin_LDADD = libtar.a libfstream.a libcompat.a
+test_tar_xattr_schily_bin_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(TARDATADIR)
+test_tar_xattr_schily_bin_CPPFLAGS += -DTESTFILE=xattr/xattr-schily-binary.tar
+
+tar_fuzz_SOURCES = tests/libtar/tar_fuzz.c
+tar_fuzz_LDADD = libtar.a libfstream.a libcompat.a
+
+LIBTAR_TESTS = \
+	test_tar_ustar0 test_tar_ustar1 test_tar_ustar2 test_tar_ustar3 \
+	test_tar_ustar4 test_tar_ustar5 test_tar_ustar6 \
+	test_tar_pax0 test_tar_pax1 test_tar_pax2 test_tar_pax3 test_tar_pax4 \
+	test_tar_pax5 \
+	test_tar_gnu0 test_tar_gnu1 test_tar_gnu2 test_tar_gnu3 test_tar_gnu4 \
+	test_tar_gnu5 test_tar_gnu6 \
+	test_tar_sparse_gnu test_tar_sparse_gnu0 test_tar_sparse_gnu1 \
+	test_tar_sparse_gnu2 test_tar_sparse_gnu3 \
+	test_tar_xattr_bsd test_tar_xattr_schily test_tar_xattr_schily_bin \
+	test_tar_target_filled
+
+if BUILD_TOOLS
+check_PROGRAMS += $(LIBTAR_TESTS)
+TESTS += $(LIBTAR_TESTS)
+
+noinst_PROGRAMS += tar_fuzz
+endif
+
+EXTRA_DIST += $(TARDATADIR)

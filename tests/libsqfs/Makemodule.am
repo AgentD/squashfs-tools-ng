@@ -1,0 +1,5 @@
+test_abi_SOURCES = tests/libsqfs/abi.c tests/test.h
+test_abi_LDADD = libsquashfs.la
+
+check_PROGRAMS += test_abi
+TESTS += test_abi
