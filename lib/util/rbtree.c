@@ -80,7 +80,7 @@ static rbtree_node_t *subtree_insert(rbtree_t *tree, rbtree_node_t *root,
 	if (root == NULL)
 		return new;
 
-	if (tree->key_compare(new->data, root->data) < 0) {
+	if (tree->key_compare(tree->key_context, new->data, root->data) < 0) {
 		root->left = subtree_insert(tree, root->left, new);
 	} else {
 		root->right = subtree_insert(tree, root->right, new);
@@ -139,7 +139,7 @@ static rbtree_node_t *copy_node(const rbtree_t *t, const rbtree_node_t *n)
 }
 
 int rbtree_init(rbtree_t *tree, size_t keysize, size_t valuesize,
-		int(*key_compare)(const void *, const void *))
+		int(*key_compare)(const void *, const void *, const void *))
 {
 	size_t diff, size;
 
@@ -220,7 +220,7 @@ rbtree_node_t *rbtree_lookup(const rbtree_t *tree, const void *key)
 	int ret;
 
 	while (node != NULL) {
-		ret = tree->key_compare(key, node->data);
+		ret = tree->key_compare(tree->key_context, key, node->data);
 		if (ret == 0)
 			break;
 

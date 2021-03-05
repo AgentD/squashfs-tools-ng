@@ -9,8 +9,9 @@
 #include "rbtree.h"
 #include "../test.h"
 
-static int key_compare(const void *a, const void *b)
+static int key_compare(const void *ctx, const void *a, const void *b)
 {
+	(void)ctx;
 	return *((sqfs_s32 *)a) - *((sqfs_s32 *)b);
 }
 
@@ -66,14 +67,14 @@ static void check_binary_tree_dfs(rbtree_node_t *n)
 
 	if (n->left != NULL) {
 		cmp = rbtree_node_key(n->left);
-		TEST_ASSERT(key_compare(cmp, key) < 0);
+		TEST_ASSERT(key_compare(NULL, cmp, key) < 0);
 
 		check_binary_tree_dfs(n->left);
 	}
 
 	if (n->right != NULL) {
 		cmp = rbtree_node_key(n->right);
-		TEST_ASSERT(key_compare(cmp, key) > 0);
+		TEST_ASSERT(key_compare(NULL, cmp, key) > 0);
 
 		check_binary_tree_dfs(n->right);
 	}

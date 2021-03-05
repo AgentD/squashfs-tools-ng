@@ -71,9 +71,10 @@ fail_insert:
 	return -1;
 }
 
-static int compare_inum(const void *lhs, const void *rhs)
+static int compare_inum(const void *ctx, const void *lhs, const void *rhs)
 {
 	sqfs_u32 l = *((sqfs_u32 *)lhs), r = *((sqfs_u32 *)rhs);
+	(void)ctx;
 
 	return l < r ? -1 : (l > r ? 1 : 0);
 }

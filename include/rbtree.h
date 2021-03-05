@@ -26,12 +26,15 @@ typedef struct rbtree_node_t {
 typedef struct rbtree_t {
 	rbtree_node_t *root;
 
-	int (*key_compare)(const void *lhs, const void *hrs);
+	int (*key_compare)(const void *ctx,
+			   const void *lhs, const void *hrs);
 
 	size_t key_size;
 	size_t key_size_padded;
 
 	size_t value_size;
+
+	void *key_context;
 } rbtree_t;
 
 static SQFS_INLINE void *rbtree_node_key(rbtree_node_t *n)
@@ -45,7 +48,8 @@ static SQFS_INLINE void *rbtree_node_value(rbtree_node_t *n)
 }
 
 SQFS_INTERNAL int rbtree_init(rbtree_t *tree, size_t keysize, size_t valuesize,
-			      int(*key_compare)(const void *, const void *));
+			      int(*key_compare)(const void *, const void *,
+						const void *));
 
 SQFS_INTERNAL void rbtree_cleanup(rbtree_t *tree);
 
