@@ -5,6 +5,7 @@
  * Copyright (C) 2021 David Oberhollenzer <goliath@infraroot.at>
  */
 #include "config.h"
+#include "compat.h"
 #include "../test.h"
 
 #include "sqfs/xattr_writer.h"
