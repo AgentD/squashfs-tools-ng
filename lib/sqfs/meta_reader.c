@@ -76,6 +76,7 @@ sqfs_meta_reader_t *sqfs_meta_reader_create(sqfs_file_t *file,
 
 	((sqfs_object_t *)m)->copy = meta_reader_copy;
 	((sqfs_object_t *)m)->destroy = meta_reader_destroy;
+	m->block_offset = 0xFFFFFFFFFFFFFFFFUL;
 	m->start = start;
 	m->limit = limit;
 	m->file = file;
