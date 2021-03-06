@@ -12,6 +12,7 @@
 #include "sqfs/table.h"
 #include "sqfs/error.h"
 #include "compat.h"
+#include "array.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -19,40 +20,30 @@
 struct sqfs_id_table_t {
 	sqfs_object_t base;
 
-	sqfs_u32 *ids;
-	size_t num_ids;
-	size_t max_ids;
+	array_t ids;
 };
 
 static void id_table_destroy(sqfs_object_t *obj)
 {
 	sqfs_id_table_t *tbl = (sqfs_id_table_t *)obj;
 
-	free(tbl->ids);
+	array_cleanup(&tbl->ids);
 	free(tbl);
 }
 
 static sqfs_object_t *id_table_copy(const sqfs_object_t *obj)
 {
 	const sqfs_id_table_t *tbl = (const sqfs_id_table_t *)obj;
-	sqfs_id_table_t *copy;
+	sqfs_id_table_t *copy = calloc(1, sizeof(*copy));
 
-	copy = malloc(sizeof(*copy));
 	if (copy == NULL)
 		return NULL;
 
-	memcpy(copy, tbl, sizeof(*tbl));
-
-	copy->num_ids = tbl->num_ids;
-	copy->max_ids = tbl->num_ids;
-	copy->ids = malloc(tbl->num_ids * sizeof(tbl->ids[0]));
-
-	if (copy->ids == NULL) {
+	if (array_init_copy(&copy->ids, &tbl->ids) != 0) {
 		free(copy);
 		return NULL;
 	}
 
-	memcpy(copy->ids, tbl->ids, tbl->num_ids * sizeof(tbl->ids[0]));
 	return (sqfs_object_t *)copy;
 }
 
@@ -66,6 +57,8 @@ sqfs_id_table_t *sqfs_id_table_create(sqfs_u32 flags)
 	tbl = calloc(1, sizeof(sqfs_id_table_t));
 
 	if (tbl != NULL) {
+		array_init(&tbl->ids, sizeof(sqfs_u32), 0);
+
 		((sqfs_object_t *)tbl)->destroy = id_table_destroy;
 		((sqfs_object_t *)tbl)->copy = id_table_copy;
 	}
@@ -75,42 +68,29 @@ sqfs_id_table_t *sqfs_id_table_create(sqfs_u32 flags)
 
 int sqfs_id_table_id_to_index(sqfs_id_table_t *tbl, sqfs_u32 id, sqfs_u16 *out)
 {
-	sqfs_u32 *ptr;
-	size_t i, sz;
+	size_t i;
 
-	for (i = 0; i < tbl->num_ids; ++i) {
-		if (tbl->ids[i] == id) {
+	for (i = 0; i < tbl->ids.used; ++i) {
+		if (((sqfs_u32 *)tbl->ids.data)[i] == id) {
 			*out = i;
 			return 0;
 		}
 	}
 
-	if (tbl->num_ids == 0x10000)
+	if (tbl->ids.used == 0x10000)
 		return SQFS_ERROR_OVERFLOW;
 
-	if (tbl->num_ids == tbl->max_ids) {
-		sz = (tbl->max_ids ? tbl->max_ids * 2 : 16);
-		ptr = realloc(tbl->ids, sizeof(tbl->ids[0]) * sz);
-
-		if (ptr == NULL)
-			return SQFS_ERROR_ALLOC;
-
-		tbl->ids = ptr;
-		tbl->max_ids = sz;
-	}
-
-	*out = tbl->num_ids;
-	tbl->ids[tbl->num_ids++] = id;
-	return 0;
+	*out = tbl->ids.used;
+	return array_append(&tbl->ids, &id);
 }
 
 int sqfs_id_table_index_to_id(const sqfs_id_table_t *tbl, sqfs_u16 index,
 			      sqfs_u32 *out)
 {
-	if (index >= tbl->num_ids)
+	if (index >= tbl->ids.used)
 		return SQFS_ERROR_OUT_OF_BOUNDS;
 
-	*out = tbl->ids[index];
+	*out = ((sqfs_u32 *)tbl->ids.data)[index];
 	return 0;
 }
 
@@ -121,13 +101,6 @@ int sqfs_id_table_read(sqfs_id_table_t *tbl, sqfs_file_t *file,
 	void *raw_ids;
 	size_t i;
 	int ret;
-
-	if (tbl->ids != NULL) {
-		free(tbl->ids);
-		tbl->num_ids = 0;
-		tbl->max_ids = 0;
-		tbl->ids = NULL;
-	}
 
 	if (!super->id_count || super->id_table_start >= super->bytes_used)
 		return SQFS_ERROR_CORRUPTED;
@@ -145,19 +118,21 @@ int sqfs_id_table_read(sqfs_id_table_t *tbl, sqfs_file_t *file,
 		lower_limit = super->export_table_start;
 	}
 
-	tbl->num_ids = super->id_count;
-	tbl->max_ids = super->id_count;
-	ret = sqfs_read_table(file, cmp, tbl->num_ids * sizeof(sqfs_u32),
+	array_cleanup(&tbl->ids);
+	tbl->ids.size = sizeof(sqfs_u32);
+
+	ret = sqfs_read_table(file, cmp, super->id_count * sizeof(sqfs_u32),
 			      super->id_table_start, lower_limit,
 			      upper_limit, &raw_ids);
 	if (ret)
 		return ret;
 
-	tbl->ids = raw_ids;
+	for (i = 0; i < super->id_count; ++i)
+		((sqfs_u32 *)raw_ids)[i] = le32toh(((sqfs_u32 *)raw_ids)[i]);
 
-	for (i = 0; i < tbl->num_ids; ++i)
-		tbl->ids[i] = le32toh(tbl->ids[i]);
-
+	tbl->ids.data = raw_ids;
+	tbl->ids.used = super->id_count;
+	tbl->ids.count = super->id_count;
 	return 0;
 }
 
@@ -168,18 +143,22 @@ int sqfs_id_table_write(sqfs_id_table_t *tbl, sqfs_file_t *file,
 	size_t i;
 	int ret;
 
-	for (i = 0; i < tbl->num_ids; ++i)
-		tbl->ids[i] = htole32(tbl->ids[i]);
+	for (i = 0; i < tbl->ids.used; ++i) {
+		((sqfs_u32 *)tbl->ids.data)[i] =
+			htole32(((sqfs_u32 *)tbl->ids.data)[i]);
+	}
 
-	super->id_count = tbl->num_ids;
+	super->id_count = tbl->ids.used;
 
-	ret = sqfs_write_table(file, cmp, tbl->ids,
-			       sizeof(tbl->ids[0]) * tbl->num_ids, &start);
+	ret = sqfs_write_table(file, cmp, tbl->ids.data,
+			       sizeof(sqfs_u32) * tbl->ids.used, &start);
 
 	super->id_table_start = start;
 
-	for (i = 0; i < tbl->num_ids; ++i)
-		tbl->ids[i] = le32toh(tbl->ids[i]);
+	for (i = 0; i < tbl->ids.used; ++i) {
+		((sqfs_u32 *)tbl->ids.data)[i] =
+			le32toh(((sqfs_u32 *)tbl->ids.data)[i]);
+	}
 
 	return ret;
 }
