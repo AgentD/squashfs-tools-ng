@@ -15,6 +15,7 @@
 #include "sqfs/error.h"
 #include "sqfs/block.h"
 #include "sqfs/dir.h"
+#include "array.h"
 #include "util.h"
 
 #include <stdlib.h>
@@ -50,9 +51,7 @@ struct sqfs_dir_writer_t {
 	size_t ent_count;
 	sqfs_meta_writer_t *dm;
 
-	sqfs_u64 *export_tbl;
-	size_t export_tbl_max;
-	size_t export_tbl_count;
+	array_t export_tbl;
 };
 
 static int get_type(sqfs_u16 mode)
@@ -97,44 +96,29 @@ static void writer_reset(sqfs_dir_writer_t *writer)
 static int add_export_table_entry(sqfs_dir_writer_t *writer,
 				  sqfs_u32 inum, sqfs_u64 iref)
 {
-	size_t i, new_max;
-	sqfs_u64 *new;
+	sqfs_u64 *ptr;
+	int ret;
 
-	if (writer->export_tbl == NULL)
+	if (writer->export_tbl.data == NULL)
 		return 0;
 
 	if (inum < 1)
 		return SQFS_ERROR_ARG_INVALID;
 
-	new_max = writer->export_tbl_max;
+	ret = array_set_capacity(&writer->export_tbl, inum);
+	if (ret != 0)
+		return ret;
 
-	while ((inum - 1) >= new_max) {
-		if (SZ_MUL_OV(new_max, 2, &new_max))
-			return SQFS_ERROR_ALLOC;
+	ptr = (sqfs_u64 *)writer->export_tbl.data;
+
+	if ((inum - 1) >= writer->export_tbl.used) {
+		memset(ptr + writer->export_tbl.used, 0xFF,
+		       (inum - writer->export_tbl.used) * sizeof(*ptr));
+
+		writer->export_tbl.used = inum;
 	}
 
-	if (new_max > writer->export_tbl_max) {
-		if (SZ_MUL_OV(new_max, sizeof(writer->export_tbl[0]), &new_max))
-			return SQFS_ERROR_ALLOC;
-
-		new = realloc(writer->export_tbl, new_max);
-		if (new == NULL)
-			return SQFS_ERROR_ALLOC;
-
-		new_max /= sizeof(writer->export_tbl[0]);
-
-		for (i = writer->export_tbl_max; i < new_max; ++i)
-			new[i] = 0xFFFFFFFFFFFFFFFFUL;
-
-		writer->export_tbl = new;
-		writer->export_tbl_max = new_max;
-	}
-
-	writer->export_tbl[inum - 1] = iref;
-
-	if ((inum - 1) >= writer->export_tbl_count)
-		writer->export_tbl_count = inum;
-
+	ptr[inum - 1] = iref;
 	return 0;
 }
 
@@ -143,7 +127,7 @@ static void dir_writer_destroy(sqfs_object_t *obj)
 	sqfs_dir_writer_t *writer = (sqfs_dir_writer_t *)obj;
 
 	writer_reset(writer);
-	free(writer->export_tbl);
+	array_cleanup(&writer->export_tbl);
 	free(writer);
 }
 
@@ -160,17 +144,13 @@ sqfs_dir_writer_t *sqfs_dir_writer_create(sqfs_meta_writer_t *dm,
 		return NULL;
 
 	if (flags & SQFS_DIR_WRITER_CREATE_EXPORT_TABLE) {
-		writer->export_tbl_max = 512;
-
-		writer->export_tbl = calloc(sizeof(writer->export_tbl[0]),
-					    writer->export_tbl_max);
-		if (writer->export_tbl == NULL) {
+		if (array_init(&writer->export_tbl, sizeof(sqfs_u64), 512)) {
 			free(writer);
 			return NULL;
 		}
 
-		memset(writer->export_tbl, 0xFF,
-		       sizeof(writer->export_tbl[0]) * writer->export_tbl_max);
+		memset(writer->export_tbl.data, 0xFF,
+		       writer->export_tbl.size * writer->export_tbl.count);
 	}
 
 	((sqfs_object_t *)writer)->destroy = dir_writer_destroy;
@@ -455,12 +435,13 @@ int sqfs_dir_writer_write_export_table(sqfs_dir_writer_t *writer,
 	if (ret)
 		return 0;
 
-	if (writer->export_tbl_count == 0)
+	if (writer->export_tbl.data == NULL)
 		return 0;
 
-	size = sizeof(writer->export_tbl[0]) * writer->export_tbl_count;
+	size = writer->export_tbl.size * writer->export_tbl.used;
 
-	ret = sqfs_write_table(file, cmp, writer->export_tbl, size, &start);
+	ret = sqfs_write_table(file, cmp, writer->export_tbl.data,
+			       size, &start);
 	if (ret)
 		return ret;
 
