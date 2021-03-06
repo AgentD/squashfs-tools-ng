@@ -133,7 +133,7 @@ int main(void)
 	/* check the location list */
 	memcpy(locations, file_data + start, sizeof(locations));
 	for (i = 0; i < 4; ++i)
-		locations[i] = le32toh(locations[i]);
+		locations[i] = le64toh(locations[i]);
 
 	TEST_EQUAL_UI(locations[0], 0);
 	TEST_EQUAL_UI(locations[1], (1 * (8192 + 2)));
