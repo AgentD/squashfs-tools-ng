@@ -20,6 +20,7 @@
 
 #include "str_table.h"
 #include "rbtree.h"
+#include "array.h"
 #include "util.h"
 
 #include <stdlib.h>
@@ -51,9 +52,7 @@ struct sqfs_xattr_writer_t {
 	str_table_t keys;
 	str_table_t values;
 
-	sqfs_u64 *kv_pairs;
-	size_t max_pairs;
-	size_t num_pairs;
+	array_t kv_pairs;
 
 	size_t kv_start;
 

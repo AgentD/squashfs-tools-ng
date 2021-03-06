@@ -42,22 +42,21 @@ int sqfs_xattr_writer_begin(sqfs_xattr_writer_t *xwr, sqfs_u32 flags)
 	if (flags != 0)
 		return SQFS_ERROR_UNSUPPORTED;
 
-	xwr->kv_start = xwr->num_pairs;
+	xwr->kv_start = xwr->kv_pairs.used;
 	return 0;
 }
 
 int sqfs_xattr_writer_add(sqfs_xattr_writer_t *xwr, const char *key,
 			  const void *value, size_t size)
 {
-	size_t i, key_index, old_value_index, value_index, new_count;
-	sqfs_u64 kv_pair, *new;
+	size_t i, key_index, old_value_index, value_index;
+	sqfs_u64 kv_pair;
 	char *value_str;
 	int err;
 
 	if (sqfs_get_xattr_prefix_id(key) < 0)
 		return SQFS_ERROR_UNSUPPORTED;
 
-	/* resolve key and value into unique, incremental IDs */
 	err = str_table_get_index(&xwr->keys, key, &key_index);
 	if (err)
 		return err;
@@ -78,38 +77,25 @@ int sqfs_xattr_writer_add(sqfs_xattr_writer_t *xwr, const char *key,
 			return SQFS_ERROR_OVERFLOW;
 	}
 
-	/* bail if already have the pair, overwrite if we have the key */
 	kv_pair = MK_PAIR(key_index, value_index);
 
-	for (i = xwr->kv_start; i < xwr->num_pairs; ++i) {
-		if (xwr->kv_pairs[i] == kv_pair)
+	for (i = xwr->kv_start; i < xwr->kv_pairs.used; ++i) {
+		sqfs_u64 ent = ((sqfs_u64 *)xwr->kv_pairs.data)[i];
+
+		if (ent == kv_pair)
 			return 0;
 
-		if (GET_KEY(xwr->kv_pairs[i]) == key_index) {
-			old_value_index = GET_VALUE(xwr->kv_pairs[i]);
+		if (GET_KEY(ent) == key_index) {
+			old_value_index = GET_VALUE(ent);
 
 			str_table_del_ref(&xwr->values, old_value_index);
 
-			xwr->kv_pairs[i] = kv_pair;
+			((sqfs_u64 *)xwr->kv_pairs.data)[i] = kv_pair;
 			return 0;
 		}
 	}
 
-	/* append it to the list */
-	if (xwr->max_pairs == xwr->num_pairs) {
-		new_count = xwr->max_pairs * 2;
-		new = realloc(xwr->kv_pairs,
-			      sizeof(xwr->kv_pairs[0]) * new_count);
-
-		if (new == NULL)
-			return SQFS_ERROR_ALLOC;
-
-		xwr->kv_pairs = new;
-		xwr->max_pairs = new_count;
-	}
-
-	xwr->kv_pairs[xwr->num_pairs++] = kv_pair;
-	return 0;
+	return array_append(&xwr->kv_pairs, &kv_pair);
 }
 
 int sqfs_xattr_writer_end(sqfs_xattr_writer_t *xwr, sqfs_u32 *out)
@@ -121,21 +107,20 @@ int sqfs_xattr_writer_end(sqfs_xattr_writer_t *xwr, sqfs_u32 *out)
 
 	memset(&blk, 0, sizeof(blk));
 	blk.start = xwr->kv_start;
-	blk.count = xwr->num_pairs - xwr->kv_start;
+	blk.count = xwr->kv_pairs.used - xwr->kv_start;
 
 	if (blk.count == 0) {
 		*out = 0xFFFFFFFF;
 		return 0;
 	}
 
-	qsort(xwr->kv_pairs + blk.start, blk.count,
-	      sizeof(xwr->kv_pairs[0]), compare_u64);
+	array_sort_range(&xwr->kv_pairs, blk.start, blk.count, compare_u64);
 
 	n = rbtree_lookup(&xwr->kv_block_tree, &blk);
 
 	if (n != NULL) {
 		index = *((sqfs_u32 *)rbtree_node_value(n));
-		xwr->num_pairs = xwr->kv_start;
+		xwr->kv_pairs.used = xwr->kv_start;
 	} else {
 		index = xwr->num_blocks;
 
