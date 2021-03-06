@@ -46,3 +46,4 @@ tests/*.sh
 /mk42sqfs
 /list_files
 /sqfsbrowse
+/xattr_benchmark
