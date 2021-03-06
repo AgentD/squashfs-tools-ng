@@ -42,6 +42,7 @@ libsquashfs_la_SOURCES += lib/util/str_table.c lib/util/alloc.c
 libsquashfs_la_SOURCES += lib/util/xxhash.c
 libsquashfs_la_SOURCES += lib/util/hash_table.c include/hash_table.h
 libsquashfs_la_SOURCES += lib/util/rbtree.c include/rbtree.h
+libsquashfs_la_SOURCES += lib/util/array.c include/array.h
 
 if WINDOWS
 libsquashfs_la_SOURCES += lib/sqfs/win32/io_file.c
