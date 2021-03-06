@@ -12,7 +12,7 @@ script:
   - ./autogen.sh
   - ./configure $CONFIG_OPTS
   - make
-  - make check
+  - make check || (cat ./test-suite.log; false)
 
 matrix:
   include:
