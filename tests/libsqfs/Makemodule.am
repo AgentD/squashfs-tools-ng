@@ -4,8 +4,11 @@ test_abi_LDADD = libsquashfs.la
 test_table_SOURCES = tests/libsqfs/table.c tests/test.h
 test_table_LDADD = libsquashfs.la
 
+test_xattr_writer_SOURCES = tests/libsqfs/xattr_writer.c tests/test.h
+test_xattr_writer_LDADD = libsquashfs.la
+
 LIBSQFS_TESTS = \
-	test_abi test_table
+	test_abi test_table test_xattr_writer
 
 check_PROGRAMS += $(LIBSQFS_TESTS)
 TESTS += $(LIBSQFS_TESTS)
