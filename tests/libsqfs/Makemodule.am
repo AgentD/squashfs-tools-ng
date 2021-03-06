@@ -1,5 +1,11 @@
 test_abi_SOURCES = tests/libsqfs/abi.c tests/test.h
 test_abi_LDADD = libsquashfs.la
 
-check_PROGRAMS += test_abi
-TESTS += test_abi
+test_table_SOURCES = tests/libsqfs/table.c tests/test.h
+test_table_LDADD = libsquashfs.la
+
+LIBSQFS_TESTS = \
+	test_abi test_table
+
+check_PROGRAMS += $(LIBSQFS_TESTS)
+TESTS += $(LIBSQFS_TESTS)
