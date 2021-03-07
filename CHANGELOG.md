@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   to implement the transparent compression.
 - Internal cleanups & restructuring, trying to improve maintainabillity and
   testabillity of the code.
+- Drastic performance improvements of the xattr writer (#68).
 
 ### Fixed
 - libsquashfs: Allow shared read access to generated images on Windows (#79)
