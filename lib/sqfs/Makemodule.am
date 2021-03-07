@@ -44,6 +44,10 @@ libsquashfs_la_SOURCES += lib/util/hash_table.c include/hash_table.h
 libsquashfs_la_SOURCES += lib/util/rbtree.c include/rbtree.h
 libsquashfs_la_SOURCES += lib/util/array.c include/array.h
 
+if CUSTOM_ALLOC
+libsquashfs_la_SOURCES += lib/util/mempool.c include/mempool.h
+endif
+
 if WINDOWS
 libsquashfs_la_SOURCES += lib/sqfs/win32/io_file.c
 libsquashfs_la_CFLAGS += -DWINVER=0x0600 -D_WIN32_WINNT=0x0600

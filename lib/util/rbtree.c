@@ -14,6 +14,7 @@
 
 #define IS_RED(n) ((n) && (n)->is_red)
 
+#ifdef NO_CUSTOM_ALLOC
 static void destroy_nodes_dfs(rbtree_node_t *n)
 {
 	rbtree_node_t *l, *r;
@@ -26,6 +27,12 @@ static void destroy_nodes_dfs(rbtree_node_t *n)
 		destroy_nodes_dfs(r);
 	}
 }
+#else
+static void destroy_nodes_dfs(rbtree_node_t *n)
+{
+	(void)n;
+}
+#endif
 
 static void flip_colors(rbtree_node_t *n)
 {
@@ -89,11 +96,16 @@ static rbtree_node_t *subtree_insert(rbtree_t *tree, rbtree_node_t *root,
 	return subtree_balance(root);
 }
 
-static rbtree_node_t *mknode(const rbtree_t *t, const void *key, const void *value)
+static rbtree_node_t *mknode(rbtree_t *t, const void *key, const void *value)
 {
 	rbtree_node_t *node;
 
+#ifdef NO_CUSTOM_ALLOC
 	node = calloc(1, sizeof(*node) + t->key_size_padded + t->value_size);
+#else
+	node = mem_pool_allocate(t->pool);
+#endif
+
 	if (node == NULL)
 		return NULL;
 
@@ -105,11 +117,17 @@ static rbtree_node_t *mknode(const rbtree_t *t, const void *key, const void *val
 	return node;
 }
 
-static rbtree_node_t *copy_node(const rbtree_t *t, const rbtree_node_t *n)
+static rbtree_node_t *copy_node(rbtree_t *nt, const rbtree_t *t,
+				const rbtree_node_t *n)
 {
 	rbtree_node_t *out;
 
+#ifdef NO_CUSTOM_ALLOC
 	out = calloc(1, sizeof(*out) + t->key_size_padded + t->value_size);
+#else
+	out = mem_pool_allocate(nt->pool);
+#endif
+
 	if (out == NULL)
 		return NULL;
 
@@ -118,7 +136,7 @@ static rbtree_node_t *copy_node(const rbtree_t *t, const rbtree_node_t *n)
 	out->right = NULL;
 
 	if (n->left != NULL) {
-		out->left = copy_node(t, n->left);
+		out->left = copy_node(nt, t, n->left);
 
 		if (out->left == NULL) {
 			destroy_nodes_dfs(out);
@@ -127,7 +145,7 @@ static rbtree_node_t *copy_node(const rbtree_t *t, const rbtree_node_t *n)
 	}
 
 	if (n->right != NULL) {
-		out->right = copy_node(t, n->right);
+		out->right = copy_node(nt, t, n->right);
 
 		if (out->right == NULL) {
 			destroy_nodes_dfs(out);
@@ -176,6 +194,12 @@ int rbtree_init(rbtree_t *tree, size_t keysize, size_t valuesize,
 	if (SZ_ADD_OV(size, tree->value_size, &size))
 		return SQFS_ERROR_OVERFLOW;
 
+#ifndef NO_CUSTOM_ALLOC
+	/* initialize the underlying pool allocator */
+	tree->pool = mem_pool_create(size);
+	if (tree->pool == NULL)
+		return SQFS_ERROR_ALLOC;
+#endif
 	return 0;
 }
 
@@ -184,8 +208,16 @@ int rbtree_copy(const rbtree_t *tree, rbtree_t *out)
 	memcpy(out, tree, sizeof(*out));
 	out->root = NULL;
 
+#ifndef NO_CUSTOM_ALLOC
+	out->pool = mem_pool_create(sizeof(rbtree_node_t) +
+				    tree->key_size_padded +
+				    tree->value_size);
+	if (out->pool == NULL)
+		return SQFS_ERROR_ALLOC;
+#endif
+
 	if (tree->root != NULL) {
-		out->root = copy_node(tree, tree->root);
+		out->root = copy_node(out, tree, tree->root);
 
 		if (out->root == NULL) {
 			memset(out, 0, sizeof(*out));
@@ -198,7 +230,11 @@ int rbtree_copy(const rbtree_t *tree, rbtree_t *out)
 
 void rbtree_cleanup(rbtree_t *tree)
 {
+#ifdef NO_CUSTOM_ALLOC
 	destroy_nodes_dfs(tree->root);
+#else
+	mem_pool_destroy(tree->pool);
+#endif
 	memset(tree, 0, sizeof(*tree));
 }
 

@@ -107,6 +107,11 @@ AC_ARG_WITH([tools],
 			[Only build libsquashfs, do not build the tools.])],
 	[], [with_tools="yes"])
 
+AC_ARG_ENABLE([custom-alloc],
+	[AS_HELP_STRING([--disable-custom-alloc],
+			[Do not used any custom allocators.])],
+	[], [enable_custom_alloc="yes"])
+
 AC_ARG_ENABLE([corpora-tests],
 	[AS_HELP_STRING([--enable-corpora-tests],
 			[Perform corpora based reproducability tests.])],
@@ -268,6 +273,8 @@ AC_CHECK_FUNCS([strndup getsubopt])
 
 ##### generate output #####
 
+AM_CONDITIONAL([CUSTOM_ALLOC], [test "x$enable_custom_alloc" = "xyes"])
+
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([lib/sqfs/libsquashfs1.pc])
 AC_CONFIG_FILES([Doxyfile])
@@ -302,6 +309,8 @@ AC_MSG_RESULT([
 
 	SELinux support:   ${with_selinux}
 	Using pthreads:    ${with_pthread}
+
+	Custom allocators: ${enable_custom_alloc}
 
 	Building tools:    ${with_tools}
 	Doxygen found:     ${with_doxygen}

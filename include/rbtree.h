@@ -9,6 +9,7 @@
 
 #include "config.h"
 #include "sqfs/predef.h"
+#include "mempool.h"
 #include "compat.h"
 
 #include <stddef.h>
@@ -25,6 +26,10 @@ typedef struct rbtree_node_t {
 
 typedef struct rbtree_t {
 	rbtree_node_t *root;
+
+#ifndef NO_CUSTOM_ALLOC
+	mem_pool_t *pool;
+#endif
 
 	int (*key_compare)(const void *ctx,
 			   const void *lhs, const void *hrs);

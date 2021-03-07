@@ -7,6 +7,11 @@ if WITH_LZO
 AM_CPPFLAGS += -DWITH_LZO
 endif
 
+if CUSTOM_ALLOC
+else
+AM_CPPFLAGS += -DNO_CUSTOM_ALLOC
+endif
+
 noinst_LTLIBRARIES =
 noinst_LIBRARIES =
 noinst_PROGRAMS =
