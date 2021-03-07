@@ -200,11 +200,11 @@ static int write_kv_pairs(const sqfs_xattr_writer_t *xwr,
 	size_t i;
 
 	ool_locations = alloc_array(sizeof(ool_locations[0]),
-				    xwr->values.num_strings);
+				    str_table_count(&xwr->values));
 	if (ool_locations == NULL)
 		return SQFS_ERROR_ALLOC;
 
-	for (i = 0; i < xwr->values.num_strings; ++i)
+	for (i = 0; i < str_table_count(&xwr->values); ++i)
 		ool_locations[i] = 0xFFFFFFFFFFFFFFFFUL;
 
 	for (blk = xwr->kv_block_first; blk != NULL; blk = blk->next) {

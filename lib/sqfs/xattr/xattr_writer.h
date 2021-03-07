@@ -28,8 +28,6 @@
 #include <assert.h>
 
 
-#define XATTR_KEY_BUCKETS 31
-#define XATTR_VALUE_BUCKETS 511
 #define XATTR_INITIAL_PAIR_CAP 128
 
 #define MK_PAIR(key, value) (((sqfs_u64)(key) << 32UL) | (sqfs_u64)(value))

@@ -95,10 +95,10 @@ sqfs_xattr_writer_t *sqfs_xattr_writer_create(sqfs_u32 flags)
 	if (xwr == NULL)
 		return NULL;
 
-	if (str_table_init(&xwr->keys, XATTR_KEY_BUCKETS))
+	if (str_table_init(&xwr->keys))
 		goto fail_keys;
 
-	if (str_table_init(&xwr->values, XATTR_VALUE_BUCKETS))
+	if (str_table_init(&xwr->values))
 		goto fail_values;
 
 	if (array_init(&xwr->kv_pairs, sizeof(sqfs_u64),

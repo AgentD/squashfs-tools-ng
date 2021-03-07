@@ -45,7 +45,7 @@ int main(void)
 	if (read_strings())
 		return EXIT_FAILURE;
 
-	TEST_ASSERT(str_table_init(&table, 64) == 0);
+	TEST_ASSERT(str_table_init(&table) == 0);
 
 	for (i = 0; i < 1000; ++i) {
 		TEST_ASSERT(str_table_get_index(&table, strings[i], &idx) == 0);
