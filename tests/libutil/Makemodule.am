@@ -8,8 +8,12 @@ test_rbtree_LDADD = libutil.a libcompat.a
 test_xxhash_SOURCES = tests/libutil/xxhash.c
 test_xxhash_LDADD = libutil.a libcompat.a
 
+test_threadpool_SOURCES = tests/libutil/threadpool.c
+test_threadpool_CFLAGS = $(AM_CFLAGS) $(PTHREAD_CFLAGS)
+test_threadpool_LDADD = libutil.a libcompat.a $(PTHREAD_LIBS)
+
 LIBUTIL_TESTS = \
-	test_str_table test_rbtree test_xxhash
+	test_str_table test_rbtree test_xxhash test_threadpool
 
 check_PROGRAMS += $(LIBUTIL_TESTS)
 TESTS += $(LIBUTIL_TESTS)

@@ -4,8 +4,26 @@ libutil_a_SOURCES += lib/util/rbtree.c include/rbtree.h
 libutil_a_SOURCES += lib/util/array.c include/array.h
 libutil_a_SOURCES += lib/util/xxhash.c lib/util/hash_table.c
 libutil_a_SOURCES += lib/util/fast_urem_by_const.h
+libutil_a_SOURCES += include/threadpool.h
+libutil_a_SOURCES += include/w32threadwrap.h
+libutil_a_SOURCES += lib/util/threadpool_serial.c
 libutil_a_CFLAGS = $(AM_CFLAGS)
 libutil_a_CPPFLAGS = $(AM_CPPFLAGS)
+
+if WINDOWS
+libutil_a_CFLAGS += -DWINVER=0x0600 -D_WIN32_WINNT=0x0600
+endif
+
+if HAVE_PTHREAD
+libutil_a_SOURCES += lib/util/threadpool.c
+libutil_a_CFLAGS += $(PTHREAD_CFLAGS)
+else
+if WINDOWS
+libutil_a_SOURCES += lib/util/threadpool.c
+else
+libutil_a_CPPFLAGS += -DNO_THREAD_IMPL
+endif
+endif
 
 if CUSTOM_ALLOC
 libutil_a_SOURCES += lib/util/mempool.c include/mempool.h
