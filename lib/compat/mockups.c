@@ -7,6 +7,8 @@
 #include "config.h"
 #include "compat.h"
 
+#include <stdio.h>
+
 #ifdef _WIN32
 int fchownat(int dirfd, const char *path, int uid, int gid, int flags)
 {

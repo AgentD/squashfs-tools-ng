@@ -9,6 +9,7 @@
 
 #ifdef _WIN32
 #include <stdlib.h>
+#include <stdio.h>
 
 int chdir(const char *path)
 {
