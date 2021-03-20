@@ -269,7 +269,7 @@ AC_CHECK_HEADERS([sys/xattr.h], [], [])
 AC_CHECK_HEADERS([sys/sysinfo.h], [], [])
 AC_CHECK_HEADERS([alloca.h], [], [])
 
-AC_CHECK_FUNCS([strndup getsubopt])
+AC_CHECK_FUNCS([strndup getsubopt fnmatch])
 
 ##### generate output #####
 

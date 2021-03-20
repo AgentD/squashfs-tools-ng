@@ -8,8 +8,8 @@
 
 #include "fstree.h"
 #include "fstream.h"
+#include "compat.h"
 
-#include <fnmatch.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>

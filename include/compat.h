@@ -8,6 +8,7 @@
 #define COMPAT_H
 
 #include "sqfs/predef.h"
+#include "config.h"
 
 #if defined(__GNUC__) && __GNUC__ >= 5
 #	define SZ_ADD_OV __builtin_add_overflow
@@ -186,6 +187,17 @@ int getsubopt(char **opt, char *const *keys, char **val);
 
 #if defined(_WIN32) || defined(__WINDOWS__)
 WCHAR *path_to_windows(const char *input);
+#endif
+
+#ifdef HAVE_FNMATCH
+#include <fnmatch.h>
+#else
+#define	FNM_PATHNAME 0x1
+
+#define	FNM_NOMATCH 1
+#define FNM_NOSYS   (-1)
+
+int fnmatch(const char *, const char *, int);
 #endif
 
 #endif /* COMPAT_H */
