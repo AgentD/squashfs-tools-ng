@@ -14,6 +14,7 @@
 #include <sys/mman.h>
 
 #define DEF_POOL_SIZE (65536)
+#define MEM_ALIGN (8)
 
 typedef struct pool_t {
 	struct pool_t *next;
@@ -98,6 +99,9 @@ mem_pool_t *mem_pool_create(size_t obj_size)
 
 	if (mem == NULL)
 		return NULL;
+
+	if (obj_size % MEM_ALIGN)
+		obj_size += MEM_ALIGN - obj_size % MEM_ALIGN;
 
 	for (;;) {
 		total = pool_size_from_bitmap_count(count, obj_size);
