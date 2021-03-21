@@ -26,11 +26,11 @@ typedef struct {
 	thread_pool_worker_t fun;
 	void *user;
 	int status;
-} thread_pool_impl_t;
+} serial_impl_t;
 
 static void destroy(thread_pool_t *interface)
 {
-	thread_pool_impl_t *pool = (thread_pool_impl_t *)interface;
+	serial_impl_t *pool = (serial_impl_t *)interface;
 
 	while (pool->queue != NULL) {
 		work_item_t *item = pool->queue;
@@ -55,7 +55,7 @@ static size_t get_worker_count(thread_pool_t *pool)
 
 static void set_worker_ptr(thread_pool_t *interface, size_t idx, void *ptr)
 {
-	thread_pool_impl_t *pool = (thread_pool_impl_t *)interface;
+	serial_impl_t *pool = (serial_impl_t *)interface;
 
 	if (idx >= 1)
 		return;
@@ -65,7 +65,7 @@ static void set_worker_ptr(thread_pool_t *interface, size_t idx, void *ptr)
 
 static int submit(thread_pool_t *interface, void *ptr)
 {
-	thread_pool_impl_t *pool = (thread_pool_impl_t *)interface;
+	serial_impl_t *pool = (serial_impl_t *)interface;
 	work_item_t *item = NULL;
 
 	if (pool->status != 0)
@@ -97,7 +97,7 @@ static int submit(thread_pool_t *interface, void *ptr)
 
 static void *dequeue(thread_pool_t *interface)
 {
-	thread_pool_impl_t *pool = (thread_pool_impl_t *)interface;
+	serial_impl_t *pool = (serial_impl_t *)interface;
 	work_item_t *item;
 	void *ptr;
 	int ret;
@@ -127,14 +127,14 @@ static void *dequeue(thread_pool_t *interface)
 
 static int get_status(thread_pool_t *interface)
 {
-	thread_pool_impl_t *pool = (thread_pool_impl_t *)interface;
+	serial_impl_t *pool = (serial_impl_t *)interface;
 
 	return pool->status;
 }
 
 thread_pool_t *thread_pool_create_serial(thread_pool_worker_t worker)
 {
-	thread_pool_impl_t *pool = calloc(1, sizeof(*pool));
+	serial_impl_t *pool = calloc(1, sizeof(*pool));
 	thread_pool_t *interface = (thread_pool_t *)pool;
 
 	if (pool == NULL)
