@@ -20,6 +20,7 @@
 #include "sqfs/io.h"
 
 #include "hash_table.h"
+#include "threadpool.h"
 #include "util.h"
 
 #include <string.h>
@@ -42,7 +43,6 @@ typedef struct sqfs_block_t {
 	struct sqfs_block_t *next;
 	sqfs_inode_generic_t **inode;
 
-	sqfs_u32 proc_seq_num;
 	sqfs_u32 io_seq_num;
 	sqfs_u32 flags;
 	sqfs_u32 size;
@@ -58,11 +58,18 @@ typedef struct sqfs_block_t {
 	sqfs_u8 data[];
 } sqfs_block_t;
 
+typedef struct worker_data_t {
+	struct worker_data_t *next;
+	sqfs_compressor_t *cmp;
+
+	size_t scratch_size;
+	sqfs_u8 scratch[];
+} worker_data_t;
+
 struct sqfs_block_processor_t {
 	sqfs_object_t obj;
 
 	sqfs_frag_table_t *frag_tbl;
-	sqfs_compressor_t *cmp;
 	sqfs_block_t *frag_block;
 	sqfs_block_writer_t *wr;
 
@@ -78,39 +85,30 @@ struct sqfs_block_processor_t {
 	sqfs_block_t *free_list;
 
 	size_t max_block_size;
+	size_t max_backlog;
+	size_t backlog;
 
 	bool begin_called;
 
 	sqfs_file_t *file;
 	sqfs_compressor_t *uncmp;
-	sqfs_block_t *frag_cmp_current;
-	sqfs_u8 *frag_buffer;
-	sqfs_u32 buffered_index;
-	sqfs_u32 buffered_blk_size;
 
-	int (*process_completed_block)(sqfs_block_processor_t *proc,
-				       sqfs_block_t *block);
+	thread_pool_t *pool;
+	worker_data_t *workers;
 
-	int (*process_completed_fragment)(sqfs_block_processor_t *proc,
-					  sqfs_block_t *frag,
-					  sqfs_block_t **blk_out);
 
-	int (*process_block)(sqfs_block_t *block, sqfs_compressor_t *cmp,
-			     sqfs_u8 *scratch, size_t scratch_size);
 
-	int (*compare_frag_in_flight)(sqfs_block_processor_t *proc,
-				      sqfs_block_t *frag, sqfs_u32 index,
-				      sqfs_u32 offset);
-
-	int (*append_to_work_queue)(sqfs_block_processor_t *proc,
-				    sqfs_block_t *block);
-
-	int (*sync)(sqfs_block_processor_t *proc);
+	sqfs_block_t *io_queue;
+	sqfs_u32 io_seq_num;
+	sqfs_u32 io_deq_seq_num;
 };
 
-SQFS_INTERNAL void block_processor_cleanup(sqfs_block_processor_t *base);
+SQFS_INTERNAL
+int process_completed_block(sqfs_block_processor_t *proc, sqfs_block_t *blk);
 
-SQFS_INTERNAL int block_processor_init(sqfs_block_processor_t *base,
-				       const sqfs_block_processor_desc_t *desc);
+SQFS_INTERNAL
+int process_completed_fragment(sqfs_block_processor_t *proc,
+			       sqfs_block_t *frag,
+			       sqfs_block_t **blk_out);
 
 #endif /* INTERNAL_H */
