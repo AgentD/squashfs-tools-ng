@@ -362,8 +362,10 @@ int sqfs_block_processor_create_ex(const sqfs_block_processor_desc_t *desc,
 		proc->workers = worker;
 
 		worker->cmp = sqfs_copy(desc->cmp);
-		if (worker->cmp == NULL)
+		if (worker->cmp == NULL) {
+			ret = SQFS_ERROR_ALLOC;
 			goto fail_pool;
+		}
 
 		proc->pool->set_worker_ptr(proc->pool, i, worker);
 	}
