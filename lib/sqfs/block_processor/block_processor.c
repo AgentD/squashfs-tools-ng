@@ -98,7 +98,20 @@ int sqfs_block_processor_sync(sqfs_block_processor_t *proc)
 {
 	int ret;
 
-	while (proc->backlog > 0) {
+	for (;;) {
+		if (proc->backlog == 0)
+			break;
+
+		if ((proc->backlog == 1) &&
+		    (proc->frag_block != NULL || proc->blk_current != NULL)) {
+			break;
+		}
+
+		if ((proc->backlog == 2) &&
+		    proc->frag_block != NULL && proc->blk_current != NULL) {
+			break;
+		}
+
 		ret = dequeue_block(proc);
 		if (ret != 0)
 			return ret;
@@ -161,6 +174,10 @@ int sqfs_block_processor_create_ex(const sqfs_block_processor_desc_t *desc,
 	proc->uncmp = desc->uncmp;
 	proc->stats.size = sizeof(proc->stats);
 	((sqfs_object_t *)proc)->destroy = block_processor_destroy;
+
+	/* we need at least one current data block + one fragment block */
+	if (proc->max_backlog < 2)
+		proc->max_backlog = 2;
 
 	/* create the thread pool */
 	proc->pool = thread_pool_create(desc->num_workers, process_block);

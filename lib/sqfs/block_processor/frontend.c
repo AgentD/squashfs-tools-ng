@@ -28,6 +28,8 @@ static int get_new_block(sqfs_block_processor_t *proc, sqfs_block_t **out)
 
 	memset(blk, 0, sizeof(*blk));
 	*out = blk;
+
+	proc->backlog += 1;
 	return 0;
 }
 
@@ -56,11 +58,11 @@ int enqueue_block(sqfs_block_processor_t *proc, sqfs_block_t *blk)
 		if (status == 0)
 			status = SQFS_ERROR_ALLOC;
 
-		free(blk);
+		blk->next = proc->free_list;
+		proc->free_list = blk;
 		return status;
 	}
 
-	proc->backlog += 1;
 	return 0;
 }
 

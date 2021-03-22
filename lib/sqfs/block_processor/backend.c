@@ -48,6 +48,8 @@ static void release_old_block(sqfs_block_processor_t *proc, sqfs_block_t *blk)
 {
 	blk->next = proc->free_list;
 	proc->free_list = blk;
+
+	proc->backlog -= 1;
 }
 
 static int process_completed_block(sqfs_block_processor_t *proc, sqfs_block_t *blk)
@@ -216,7 +218,8 @@ static int process_completed_fragment(sqfs_block_processor_t *proc,
 	return 0;
 fail:
 	free(chunk);
-	free(frag);
+	if (frag != NULL)
+		release_old_block(proc, frag);
 	return err;
 }
 
@@ -236,7 +239,6 @@ static void store_io_block(sqfs_block_processor_t *proc, sqfs_block_t *blk)
 	}
 
 	blk->next = it;
-	proc->backlog += 1;
 }
 
 int dequeue_block(sqfs_block_processor_t *proc)
@@ -253,7 +255,6 @@ int dequeue_block(sqfs_block_processor_t *proc)
 			blk = proc->io_queue;
 			proc->io_queue = blk->next;
 			proc->io_deq_seq_num += 1;
-			proc->backlog -= 1;
 
 			status = process_completed_block(proc, blk);
 			if (status != 0)
@@ -269,8 +270,6 @@ int dequeue_block(sqfs_block_processor_t *proc)
 			status = proc->pool->get_status(proc->pool);
 			return status ? status : SQFS_ERROR_INTERNAL;
 		}
-
-		proc->backlog -= 1;
 
 		if (blk->flags & SQFS_BLK_IS_FRAGMENT) {
 			status = process_completed_fragment(proc, blk);
