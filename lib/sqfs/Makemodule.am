@@ -25,8 +25,9 @@ libsquashfs_la_SOURCES += lib/sqfs/xattr/xattr_writer_record.c
 libsquashfs_la_SOURCES += lib/sqfs/xattr/xattr_writer.h
 libsquashfs_la_SOURCES += lib/sqfs/write_super.c lib/sqfs/data_reader.c
 libsquashfs_la_SOURCES += lib/sqfs/block_processor/internal.h
-libsquashfs_la_SOURCES += lib/sqfs/block_processor/common.c
 libsquashfs_la_SOURCES += lib/sqfs/block_processor/frontend.c
+libsquashfs_la_SOURCES += lib/sqfs/block_processor/block_processor.c
+libsquashfs_la_SOURCES += lib/sqfs/block_processor/backend.c
 libsquashfs_la_SOURCES += lib/sqfs/frag_table.c include/sqfs/frag_table.h
 libsquashfs_la_SOURCES += lib/sqfs/block_writer.c include/sqfs/block_writer.h
 libsquashfs_la_CPPFLAGS = $(AM_CPPFLAGS)
@@ -43,6 +44,7 @@ libsquashfs_la_SOURCES += lib/util/xxhash.c
 libsquashfs_la_SOURCES += lib/util/hash_table.c include/hash_table.h
 libsquashfs_la_SOURCES += lib/util/rbtree.c include/rbtree.h
 libsquashfs_la_SOURCES += lib/util/array.c include/array.h
+libsquashfs_la_SOURCES += lib/util/is_memory_zero.c
 libsquashfs_la_SOURCES += include/threadpool.h
 
 if CUSTOM_ALLOC

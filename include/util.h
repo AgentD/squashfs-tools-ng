@@ -30,4 +30,9 @@ void *alloc_array(size_t item_size, size_t nmemb);
 
 SQFS_INTERNAL sqfs_u32 xxh32(const void *input, const size_t len);
 
+/*
+  Returns true if the given region of memory is filled with zero-bytes only.
+ */
+SQFS_INTERNAL bool is_memory_zero(const void *blob, size_t size);
+
 #endif /* SQFS_UTIL_H */

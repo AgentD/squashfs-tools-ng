@@ -7,6 +7,7 @@ libutil_a_SOURCES += lib/util/fast_urem_by_const.h
 libutil_a_SOURCES += include/threadpool.h
 libutil_a_SOURCES += include/w32threadwrap.h
 libutil_a_SOURCES += lib/util/threadpool_serial.c
+libutil_a_SOURCES += lib/util/is_memory_zero.c
 libutil_a_CFLAGS = $(AM_CFLAGS)
 libutil_a_CPPFLAGS = $(AM_CPPFLAGS)
 

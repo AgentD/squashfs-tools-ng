@@ -25,7 +25,6 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <assert.h>
 
 typedef struct {
 	sqfs_u32 index;
@@ -96,19 +95,14 @@ struct sqfs_block_processor_t {
 	thread_pool_t *pool;
 	worker_data_t *workers;
 
-
-
 	sqfs_block_t *io_queue;
 	sqfs_u32 io_seq_num;
 	sqfs_u32 io_deq_seq_num;
 };
 
-SQFS_INTERNAL
-int process_completed_block(sqfs_block_processor_t *proc, sqfs_block_t *blk);
+SQFS_INTERNAL int enqueue_block(sqfs_block_processor_t *proc,
+				sqfs_block_t *blk);
 
-SQFS_INTERNAL
-int process_completed_fragment(sqfs_block_processor_t *proc,
-			       sqfs_block_t *frag,
-			       sqfs_block_t **blk_out);
+SQFS_INTERNAL int dequeue_block(sqfs_block_processor_t *proc);
 
 #endif /* INTERNAL_H */
