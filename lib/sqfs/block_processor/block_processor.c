@@ -56,25 +56,25 @@ static void ht_delete_function(struct hash_entry *entry)
 	free(entry->data);
 }
 
+static void free_block_list(sqfs_block_t *list)
+{
+	while (list != NULL) {
+		sqfs_block_t *it = list;
+		list = it->next;
+		free(it);
+	}
+}
+
 static void block_processor_destroy(sqfs_object_t *base)
 {
 	sqfs_block_processor_t *proc = (sqfs_block_processor_t *)base;
-	sqfs_block_t *it;
 
 	free(proc->frag_block);
 	free(proc->blk_current);
 
-	while (proc->free_list != NULL) {
-		it = proc->free_list;
-		proc->free_list = it->next;
-		free(it);
-	}
-
-	while (proc->io_queue != NULL) {
-		it = proc->io_queue;
-		proc->io_queue = it->next;
-		free(it);
-	}
+	free_block_list(proc->free_list);
+	free_block_list(proc->io_queue);
+	free_block_list(proc->fblk_in_flight);
 
 	if (proc->frag_ht != NULL)
 		hash_table_destroy(proc->frag_ht, ht_delete_function);

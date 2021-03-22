@@ -58,6 +58,24 @@ static int process_completed_block(sqfs_block_processor_t *proc, sqfs_block_t *b
 	sqfs_u32 size;
 	int err;
 
+	if (blk->flags & SQFS_BLK_FRAGMENT_BLOCK) {
+		sqfs_block_t *it = proc->fblk_in_flight, *prev = NULL;
+
+		while (it != NULL && it->index != blk->index) {
+			prev = it;
+			it = it->next;
+		}
+
+		if (it != NULL) {
+			if (prev == NULL) {
+				proc->fblk_in_flight = it->next;
+			} else {
+				prev->next = it->next;
+			}
+			free(it);
+		}
+	}
+
 	err = proc->wr->write_data_block(proc->wr, blk->user, blk->size,
 					 blk->checksum,
 					 blk->flags & ~BLK_FLAG_INTERNAL,

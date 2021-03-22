@@ -52,6 +52,21 @@ int enqueue_block(sqfs_block_processor_t *proc, sqfs_block_t *blk)
 {
 	int status;
 
+	if ((blk->flags & SQFS_BLK_FRAGMENT_BLOCK) &&
+	    proc->file != NULL && proc->uncmp != NULL) {
+		sqfs_block_t *copy = alloc_flex(sizeof(*copy), 1, blk->size);
+
+		if (copy == NULL)
+			return SQFS_ERROR_ALLOC;
+
+		copy->size = blk->size;
+		copy->index = blk->index;
+		memcpy(copy->data, blk->data, blk->size);
+
+		copy->next = proc->fblk_in_flight;
+		proc->fblk_in_flight = copy;
+	}
+
 	if (proc->pool->submit(proc->pool, blk) != 0) {
 		status = proc->pool->get_status(proc->pool);
 
