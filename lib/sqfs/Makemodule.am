@@ -53,7 +53,6 @@ endif
 
 if WINDOWS
 libsquashfs_la_SOURCES += lib/sqfs/win32/io_file.c
-libsquashfs_la_SOURCES += lib/util/threadpool.c
 libsquashfs_la_CFLAGS += -DWINVER=0x0600 -D_WIN32_WINNT=0x0600
 libsquashfs_la_CFLAGS += -Wc,-static-libgcc
 libsquashfs_la_LDFLAGS += -no-undefined -avoid-version
@@ -64,8 +63,12 @@ endif
 if HAVE_PTHREAD
 libsquashfs_la_SOURCES += lib/util/threadpool.c
 else
+if WINDOWS
+libsquashfs_la_SOURCES += lib/util/threadpool.c
+else
 libsquashfs_la_SOURCES += lib/util/threadpool_serial.c
 libsquashfs_la_CPPFLAGS += -DNO_THREAD_IMPL
+endif
 endif
 
 if WITH_GZIP
