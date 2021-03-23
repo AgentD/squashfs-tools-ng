@@ -99,7 +99,12 @@ struct sqfs_block_processor_t {
 	sqfs_u32 io_seq_num;
 	sqfs_u32 io_deq_seq_num;
 
+	sqfs_block_t *current_frag;
+	sqfs_block_t *cached_frag_blk;
 	sqfs_block_t *fblk_in_flight;
+	int fblk_lookup_error;
+
+	sqfs_u8 scratch[];
 };
 
 SQFS_INTERNAL int enqueue_block(sqfs_block_processor_t *proc,

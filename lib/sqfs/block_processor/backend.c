@@ -152,8 +152,16 @@ static int process_completed_fragment(sqfs_block_processor_t *proc,
 		search.hash = frag->checksum;
 		search.size = frag->size;
 
+		proc->current_frag = frag;
+		proc->fblk_lookup_error = 0;
 		entry = hash_table_search_pre_hashed(proc->frag_ht,
 						     search.hash, &search);
+		proc->current_frag = NULL;
+
+		if (proc->fblk_lookup_error != 0) {
+			err = proc->fblk_lookup_error;
+			goto fail;
+		}
 
 		if (entry != NULL) {
 			if (frag->inode != NULL) {
@@ -219,8 +227,16 @@ static int process_completed_fragment(sqfs_block_processor_t *proc,
 		chunk->size = frag->size;
 		chunk->hash = frag->checksum;
 
+		proc->current_frag = frag;
+		proc->fblk_lookup_error = 0;
 		entry = hash_table_insert_pre_hashed(proc->frag_ht, chunk->hash,
 						     chunk, chunk);
+		proc->current_frag = NULL;
+
+		if (proc->fblk_lookup_error != 0) {
+			err = proc->fblk_lookup_error;
+			goto fail;
+		}
 
 		if (entry == NULL)
 			goto fail;

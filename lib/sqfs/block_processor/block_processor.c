@@ -44,11 +44,109 @@ static int process_block(void *userptr, void *workitem)
 	return 0;
 }
 
+static int load_frag_block(sqfs_block_processor_t *proc, sqfs_u32 index)
+{
+	sqfs_fragment_t info;
+	size_t size;
+	int ret;
+
+	if (proc->cached_frag_blk == NULL) {
+		size = sizeof(*proc->cached_frag_blk);
+
+		proc->cached_frag_blk = alloc_flex(size, 1,
+						   proc->max_block_size);
+
+		if (proc->cached_frag_blk == NULL)
+			return SQFS_ERROR_ALLOC;
+	} else {
+		if (proc->cached_frag_blk->index == index)
+			return 0;
+	}
+
+	ret = sqfs_frag_table_lookup(proc->frag_tbl, index, &info);
+	if (ret != 0)
+		return ret;
+
+	size = SQFS_ON_DISK_BLOCK_SIZE(info.size);
+	if (size >= proc->max_block_size)
+		return SQFS_ERROR_CORRUPTED;
+
+	if (SQFS_IS_BLOCK_COMPRESSED(info.size)) {
+		ret = proc->file->read_at(proc->file, info.start_offset,
+					  proc->scratch, size);
+		if (ret != 0)
+			return ret;
+
+		ret = proc->uncmp->do_block(proc->uncmp, proc->scratch, size,
+					    proc->cached_frag_blk->data,
+					    proc->max_block_size);
+		if (ret <= 0)
+			return ret ? ret : SQFS_ERROR_OVERFLOW;
+
+		size = ret;
+	} else {
+		ret = proc->file->read_at(proc->file, info.start_offset,
+					  proc->cached_frag_blk->data, size);
+		if (ret != 0)
+			return ret;
+	}
+
+	proc->cached_frag_blk->size = size;
+	proc->cached_frag_blk->index = index;
+	return 0;
+}
+
 static bool chunk_info_equals(void *user, const void *k, const void *c)
 {
 	const chunk_info_t *key = k, *cmp = c;
-	(void)user;
-	return key->size == cmp->size && key->hash == cmp->hash;
+	sqfs_block_processor_t *proc = user;
+	sqfs_block_t *it;
+	int ret;
+
+	if (key->size != cmp->size || key->hash != cmp->hash)
+		return false;
+
+	if (proc->uncmp == NULL || proc->file == NULL)
+		return true;
+
+	if (proc->current_frag == NULL || proc->frag_tbl == NULL)
+		return true;
+
+	if (proc->fblk_lookup_error != 0)
+		return false;
+
+	for (it = proc->fblk_in_flight; it != NULL; it = it->next) {
+		if (it->index == cmp->index)
+			break;
+	}
+
+	if (it == NULL && proc->frag_block != NULL) {
+		if (proc->frag_block->index == cmp->index)
+			it = proc->frag_block;
+	}
+
+	if (it == NULL) {
+		ret = load_frag_block(proc, cmp->index);
+		if (ret != 0) {
+			proc->fblk_lookup_error = ret;
+			return false;
+		}
+
+		it = proc->cached_frag_blk;
+	}
+
+	if (cmp->offset >= it->size || (it->size - cmp->offset) < cmp->size) {
+		proc->fblk_lookup_error = SQFS_ERROR_CORRUPTED;
+		return false;
+	}
+
+	if (cmp->size != proc->current_frag->size) {
+		proc->fblk_lookup_error = SQFS_ERROR_CORRUPTED;
+		return false;
+	}
+
+	return memcmp(it->data + cmp->offset,
+		      proc->current_frag->data, cmp->size) == 0;
 }
 
 static void ht_delete_function(struct hash_entry *entry)
@@ -71,6 +169,7 @@ static void block_processor_destroy(sqfs_object_t *base)
 
 	free(proc->frag_block);
 	free(proc->blk_current);
+	free(proc->cached_frag_blk);
 
 	free_block_list(proc->free_list);
 	free_block_list(proc->io_queue);
@@ -155,14 +254,17 @@ const sqfs_block_processor_stats_t
 int sqfs_block_processor_create_ex(const sqfs_block_processor_desc_t *desc,
 				   sqfs_block_processor_t **out)
 {
+	size_t i, count, scratch_size = 0;
 	sqfs_block_processor_t *proc;
-	size_t i, count;
 	int ret;
 
 	if (desc->size != sizeof(sqfs_block_processor_desc_t))
 		return SQFS_ERROR_ARG_INVALID;
 
-	proc = calloc(1, sizeof(*proc));
+	if (desc->file != NULL && desc->uncmp != NULL)
+		scratch_size = desc->max_block_size;
+
+	proc = alloc_flex(sizeof(*proc), 1, scratch_size);
 	if (proc == NULL)
 		return SQFS_ERROR_ALLOC;
 
