@@ -11,7 +11,12 @@
 #include <string.h>
 #include <assert.h>
 
+#if defined(_WIN32) || defined(__WINDOWS__)
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#else
 #include <sys/mman.h>
+#endif
 
 #define DEF_POOL_SIZE (65536)
 #define MEM_ALIGN (8)
@@ -60,11 +65,19 @@ static pool_t *create_pool(const mem_pool_t *mem)
 	unsigned char *ptr;
 	pool_t *pool;
 
+#if defined(_WIN32) || defined(__WINDOWS__)
+	ptr = VirtualAlloc(NULL, mem->pool_size, MEM_RESERVE | MEM_COMMIT,
+			   PAGE_READWRITE);
+
+	if (ptr == NULL)
+		return NULL;
+#else
 	ptr = mmap(NULL, mem->pool_size, PROT_READ | PROT_WRITE,
 		   MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 
 	if (ptr == MAP_FAILED)
 		return NULL;
+#endif
 
 	pool = (pool_t *)ptr;
 
@@ -124,7 +137,11 @@ void mem_pool_destroy(mem_pool_t *mem)
 		pool_t *pool = mem->pool_list;
 		mem->pool_list = pool->next;
 
+#if defined(_WIN32) || defined(__WINDOWS__)
+		VirtualFree(pool, mem->pool_size, MEM_RELEASE);
+#else
 		munmap(pool, mem->pool_size);
+#endif
 	}
 
 	free(mem);
