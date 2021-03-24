@@ -37,9 +37,9 @@ download() {
 
 ################################### get xz ###################################
 
-PKG_DIR="xz-5.2.4"
+PKG_DIR="xz-5.2.5"
 PKG_TAR="${PKG_DIR}.tar.xz"
-PKG_HASH="9717ae363760dedf573dad241420c5fea86256b65bc21d2cf71b2b12f0544f4b"
+PKG_HASH="3e1e518ffc912f86608a8cb35e4bd41ad1aec210df2a47aaa1f95e7f5576ef56"
 
 download
 
@@ -83,13 +83,13 @@ popd
 
 ################################## get zstd ##################################
 
-PKG_DIR="zstd-v1.4.4-win32"
+PKG_DIR="zstd-v1.4.9-win32"
 PKG_TAR="${PKG_DIR}.zip"
-PKG_HASH="60d4cd6510e7253d33f47a68554a003b50dba05d1db89e16ef32bc26b126b92c"
+PKG_HASH="9ba7e4126cf614719442c81b1de6498b6d20bf5cb0b866c6898cab7fdfa738c5"
 
 download
 mv "$PKG_DIR/dll/libzstd.dll" "$W32_DIR/bin"
-mv "$PKG_DIR/dll/libzstd.lib" "$W32_DIR/lib/libzstd.dll.a"
+mv "$PKG_DIR/dll/libzstd.dll.a" "$W32_DIR/lib/libzstd.dll.a"
 mv "$PKG_DIR/include"/*.h "$W32_DIR/include"
 
 cat > "$W32_DIR/lib/pkgconfig/libzstd.pc" <<_EOF
@@ -100,18 +100,18 @@ includedir=$W32_DIR/include
 Name: zstd
 Description: fast lossless compression algorithm library
 URL: http://www.zstd.net/
-Version: 1.4.4
+Version: 1.4.9
 Libs: -L$W32_DIR/lib -lzstd
 Cflags: -I$W32_DIR/include
 _EOF
 
-PKG_DIR="zstd-v1.4.4-win64"
+PKG_DIR="zstd-v1.4.9-win64"
 PKG_TAR="${PKG_DIR}.zip"
-PKG_HASH="bb1591db8376fb5360640088e0cc9920c6da9cd0f5fd4e9229316261808c1581"
+PKG_HASH="0bc374dadaec1fa879d5b2329d11b17212fb5251fe119e237a75e72d5e0745e7"
 
 download
 mv "$PKG_DIR/dll/libzstd.dll" "$W64_DIR/bin"
-mv "$PKG_DIR/dll/libzstd.lib" "$W64_DIR/lib/libzstd.dll.a"
+mv "$PKG_DIR/dll/libzstd.dll.a" "$W64_DIR/lib/libzstd.dll.a"
 mv "$PKG_DIR/include"/*.h "$W64_DIR/include"
 
 cat > "$W64_DIR/lib/pkgconfig/libzstd.pc" <<_EOF
@@ -122,7 +122,7 @@ includedir=$W64_DIR/include
 Name: zstd
 Description: fast lossless compression algorithm library
 URL: http://www.zstd.net/
-Version: 1.4.4
+Version: 1.4.9
 Libs: -L$W64_DIR/lib -lzstd
 Cflags: -I$W64_DIR/include
 _EOF
