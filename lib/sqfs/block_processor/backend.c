@@ -298,6 +298,16 @@ int dequeue_block(sqfs_block_processor_t *proc)
 		if (proc->backlog < backlog_old)
 			break;
 
+		if ((proc->backlog == 1) &&
+		    (proc->frag_block != NULL || proc->blk_current != NULL)) {
+			break;
+		}
+
+		if ((proc->backlog == 2) &&
+		    proc->frag_block != NULL && proc->blk_current != NULL) {
+			break;
+		}
+
 		blk = proc->pool->dequeue(proc->pool);
 
 		if (blk == NULL) {

@@ -278,8 +278,8 @@ int sqfs_block_processor_create_ex(const sqfs_block_processor_desc_t *desc,
 	((sqfs_object_t *)proc)->destroy = block_processor_destroy;
 
 	/* we need at least one current data block + one fragment block */
-	if (proc->max_backlog < 2)
-		proc->max_backlog = 2;
+	if (proc->max_backlog < 3)
+		proc->max_backlog = 3;
 
 	/* create the thread pool */
 	proc->pool = thread_pool_create(desc->num_workers, process_block);
