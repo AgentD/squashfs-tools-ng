@@ -1,10 +1,3 @@
-/* SPDX-License-Identifier: GPL-3.0-or-later */
-/*
- * getsubopt.c
- *
- * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
- */
-#include "config.h"
 #include "compat.h"
 
 #include <stdlib.h>
@@ -13,33 +6,22 @@
 #ifndef HAVE_GETSUBOPT
 int getsubopt(char **opt, char *const *keys, char **val)
 {
-	char *str = *opt;
-	size_t i, len;
+	char *s = *opt;
+	int i;
 
 	*val = NULL;
-	*opt = strchr(str, ',');
+	*opt = strchr(s, ',');
+	if (*opt) *(*opt)++ = 0;
+	else *opt = s + strlen(s);
 
-	if (*opt == NULL) {
-		*opt = str + strlen(str);
-	} else {
-		*(*opt)++ = '\0';
-	}
-
-	for (i = 0; keys[i]; ++i) {
-		len = strlen(keys[i]);
-
-		if (strncmp(keys[i], str, len) != 0)
-			continue;
-
-		if (str[len] != '=' && str[len] != '\0')
-			continue;
-
-		if (str[len] == '=')
-			*val = str + len + 1;
-
+	for (i=0; keys[i]; i++) {
+		size_t l = strlen(keys[i]);
+		if (strncmp(keys[i], s, l)) continue;
+		if (s[l] == '=')
+			*val = s + l + 1;
+		else if (s[l]) continue;
 		return i;
 	}
-
 	return -1;
 }
 #endif

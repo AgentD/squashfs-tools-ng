@@ -22,8 +22,14 @@ The rest of squashfs-tools-ng is released under the terms and conditions of
 the **GNU General Public License version 3 or later**, with the following
 exceptions:
 
- - `lib/compat/fnmatch.c` has been copied from Musl libc, which is subject to
-   an MIT style license. See `liceneses/musl.txt` for details.
+ - `lib/compat/fnmatch.c` has been copied from Musl libc.
+ - `lib/compat/getopt.c` has been copied from Musl libc.
+ - `lib/compat/getopt_long.c` has been copied from Musl libc.
+ - `lib/compat/getsubopt.c` has been copied from Musl libc.
+
+The components copied from Musl libc are subejct to an MIT style license.
+See `liceneses/musl.txt` for details and only compiled into executable programs
+if the target system does not provide an implementation.
 
 Copies of the LGPLv3 and GPLv3 are included in `licenses/LGPLv3.txt` and
 `licenses/GPLv3.txt` respectively.

@@ -181,6 +181,31 @@ void w32_perror(const char *str);
 char *strndup(const char *str, size_t max_len);
 #endif
 
+#ifndef HAVE_GETOPT
+extern char *optarg;
+extern int optind, opterr, optopt, optpos, optreset;
+
+void __getopt_msg(const char *a, const char *b, const char *c, size_t l);
+
+int getopt(int argc, char * const argv[], const char *optstring);
+#endif
+
+#ifndef HAVE_GETOPT_LONG
+struct option {
+	const char *name;
+	int has_arg;
+	int *flag;
+	int val;
+};
+
+#define no_argument        0
+#define required_argument  1
+#define optional_argument  2
+
+int getopt_long(int, char *const *, const char *,
+		const struct option *, int *);
+#endif
+
 #ifndef HAVE_GETSUBOPT
 int getsubopt(char **opt, char *const *keys, char **val);
 #endif
