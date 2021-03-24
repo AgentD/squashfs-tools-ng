@@ -60,6 +60,41 @@ make -j
 make install-strip
 popd
 
+################################# get bzip2 ##################################
+
+PKG_DIR="bzip2-1.0.8"
+PKG_TAR="${PKG_DIR}.tar.gz"
+PKG_HASH="ab5a03176ee106d3f0fa90e381da478ddae405918153cca248e682cd0c4a2269"
+
+download
+
+pushd "$PKG_DIR"
+${W32_PREFIX}-gcc -O2 -c blocksort.c
+${W32_PREFIX}-gcc -O2 -c huffman.c
+${W32_PREFIX}-gcc -O2 -c crctable.c
+${W32_PREFIX}-gcc -O2 -c randtable.c
+${W32_PREFIX}-gcc -O2 -c compress.c
+${W32_PREFIX}-gcc -O2 -c decompress.c
+${W32_PREFIX}-gcc -O2 -c bzlib.c
+${W32_PREFIX}-ar cq libbz2.a *.o
+${W32_PREFIX}-ranlib libbz2.a
+cp libbz2.a "$W32_DIR/lib"
+cp bzlib.h "$W32_DIR/include"
+
+rm *.o *.a
+${W64_PREFIX}-gcc -O2 -c blocksort.c
+${W64_PREFIX}-gcc -O2 -c huffman.c
+${W64_PREFIX}-gcc -O2 -c crctable.c
+${W64_PREFIX}-gcc -O2 -c randtable.c
+${W64_PREFIX}-gcc -O2 -c compress.c
+${W64_PREFIX}-gcc -O2 -c decompress.c
+${W64_PREFIX}-gcc -O2 -c bzlib.c
+${W64_PREFIX}-ar cq libbz2.a *.o
+${W64_PREFIX}-ranlib libbz2.a
+cp libbz2.a "$W64_DIR/lib"
+cp bzlib.h "$W64_DIR/include"
+popd
+
 ################################## get lzo ###################################
 
 PKG_DIR="lzo-2.10"
@@ -134,6 +169,8 @@ export PKG_CONFIG_PATH="$W32_DIR/lib/pkgconfig"
 ./autogen.sh
 ./configure CFLAGS="-O2" LZO_CFLAGS="-I$W32_DIR/include" \
 	    LZO_LIBS="-L$W32_DIR/lib -llzo2" \
+	    BZIP2_CFLAGS="-I$W32_DIR/include" \
+	    BZIP2_LIBS="-L$W32_DIR/lib -lbz2" \
 	    --prefix="$W32_DIR" --host="$W32_PREFIX" --with-builtin-lz4 \
 	    --with-builtin-zlib
 cp "$W32_DIR/bin/"*.dll .
@@ -142,6 +179,8 @@ rm *.dll
 
 ./configure CFLAGS="-O2 -DNDEBUG" LZO_CFLAGS="-I$W32_DIR/include" \
 	    LZO_LIBS="-L$W32_DIR/lib -llzo2" \
+	    BZIP2_CFLAGS="-I$W32_DIR/include" \
+	    BZIP2_LIBS="-L$W32_DIR/lib -lbz2" \
 	    --prefix="$W32_DIR" --host="$W32_PREFIX" --with-builtin-lz4 \
 	    --with-builtin-zlib
 make clean
@@ -154,6 +193,8 @@ export PKG_CONFIG_PATH="$W64_DIR/lib/pkgconfig"
 
 ./configure CFLAGS="-O2" LZO_CFLAGS="-I$W64_DIR/include" \
 	    LZO_LIBS="-L$W64_DIR/lib -llzo2" \
+	    BZIP2_CFLAGS="-I$W64_DIR/include" \
+	    BZIP2_LIBS="-L$W64_DIR/lib -lbz2" \
 	    --prefix="$W64_DIR" --host="$W64_PREFIX" --with-builtin-lz4 \
 	    --with-builtin-zlib
 make clean
@@ -163,6 +204,8 @@ rm *.dll
 
 ./configure CFLAGS="-O2 -DNDEBUG" LZO_CFLAGS="-I$W64_DIR/include" \
 	    LZO_LIBS="-L$W64_DIR/lib -llzo2" \
+	    BZIP2_CFLAGS="-I$W64_DIR/include" \
+	    BZIP2_LIBS="-L$W64_DIR/lib -lbz2" \
 	    --prefix="$W64_DIR" --host="$W64_PREFIX" --with-builtin-lz4 \
 	    --with-builtin-zlib
 make clean
