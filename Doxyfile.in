@@ -4,7 +4,7 @@
 # Project related configuration options
 #---------------------------------------------------------------------------
 DOXYFILE_ENCODING      = UTF-8
-PROJECT_NAME           = @PACKAGE_NAME@
+PROJECT_NAME           = libsquashfs
 PROJECT_NUMBER         = @PACKAGE_VERSION@
 PROJECT_BRIEF          = "A new set of tools and libraries for working with SquashFS images"
 PROJECT_LOGO           = 
