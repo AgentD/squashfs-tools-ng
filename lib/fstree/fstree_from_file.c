@@ -238,7 +238,7 @@ static int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 		DIR_SCAN_NO_FIFO | DIR_SCAN_NO_FILE | DIR_SCAN_NO_SLINK |
 		DIR_SCAN_NO_SOCK;
 
-	while (*extra != '\0') {
+	while (extra != NULL && *extra != '\0') {
 		count = sizeof(glob_scan_flags) / sizeof(glob_scan_flags[0]);
 
 		for (i = 0; i < count; ++i) {
@@ -318,17 +318,19 @@ static int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 		}
 	}
 
-	if (*extra == '\0') {
-		fprintf(stderr, "%s: " PRI_SZ ": glob path missing.\n",
-			filename, line_num);
-		free(ctx.name_pattern);
-		return -1;
-	}
+	if (extra != NULL && *extra == '\0')
+		extra = NULL;
 
 	/* do the scan */
 	if (basepath == NULL) {
-		ret = fstree_from_dir(fs, root, extra, glob_node_callback,
-				      &ctx, scan_flags);
+		if (extra == NULL) {
+			ret = fstree_from_dir(fs, root, ".", glob_node_callback,
+					      &ctx, scan_flags);
+		} else {
+			ret = fstree_from_dir(fs, root, extra,
+					      glob_node_callback,
+					      &ctx, scan_flags);
+		}
 	} else {
 		ret = fstree_from_subdir(fs, root, basepath, extra,
 					 glob_node_callback, &ctx,
@@ -357,7 +359,7 @@ static const struct callback_t {
 	{ "pipe", S_IFIFO, false, false, false, add_generic },
 	{ "sock", S_IFSOCK, false, false, false, add_generic },
 	{ "file", S_IFREG, false, false, false, add_file },
-	{ "glob", 0, true, true, true, glob_files },
+	{ "glob", 0, false, true, true, glob_files },
 };
 
 #define NUM_HOOKS (sizeof(file_list_hooks) / sizeof(file_list_hooks[0]))
