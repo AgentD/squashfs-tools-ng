@@ -252,7 +252,7 @@ static int process_completed_fragment(sqfs_block_processor_t *proc,
 	return 0;
 fail:
 	free(chunk);
-	if (frag != NULL)
+	if (frag != proc->frag_block)
 		release_old_block(proc, frag);
 	return err;
 }
