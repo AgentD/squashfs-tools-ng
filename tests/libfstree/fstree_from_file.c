@@ -21,6 +21,9 @@ int main(void)
 	n = fs.root->data.dir.children;
 
 	TEST_EQUAL_UI(fs.root->link_count, 9);
+	TEST_EQUAL_UI(fs.root->mode, S_IFDIR | 0755);
+	TEST_EQUAL_UI(fs.root->uid, 1000);
+	TEST_EQUAL_UI(fs.root->gid, 100);
 
 	TEST_EQUAL_UI(n->mode, S_IFBLK | 0600);
 	TEST_EQUAL_UI(n->uid, 8);

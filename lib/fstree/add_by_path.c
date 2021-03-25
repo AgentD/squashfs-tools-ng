@@ -17,6 +17,11 @@ tree_node_t *fstree_add_generic(fstree_t *fs, const char *path,
 	tree_node_t *child, *parent;
 	const char *name;
 
+	if (*path == '\0') {
+		child = fs->root;
+		goto out;
+	}
+
 	parent = fstree_get_node_by_path(fs, fs->root, path, true, true);
 	if (parent == NULL)
 		return NULL;
@@ -27,7 +32,7 @@ tree_node_t *fstree_add_generic(fstree_t *fs, const char *path,
 	child = parent->data.dir.children;
 	while (child != NULL && strcmp(child->name, name) != 0)
 		child = child->next;
-
+out:
 	if (child != NULL) {
 		if (!S_ISDIR(child->mode) || !S_ISDIR(sb->st_mode) ||
 		    !child->data.dir.created_implicitly) {

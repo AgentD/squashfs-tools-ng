@@ -344,19 +344,20 @@ static const struct callback_t {
 	unsigned int mode;
 	bool need_extra;
 	bool is_glob;
+	bool allow_root;
 	int (*callback)(fstree_t *fs, const char *filename, size_t line_num,
 			const char *path, struct stat *sb,
 			const char *basepath, unsigned int glob_flags,
 			const char *extra);
 } file_list_hooks[] = {
-	{ "dir", S_IFDIR, false, false, add_generic },
-	{ "slink", S_IFLNK, true, false, add_generic },
-	{ "link", 0, true, false, add_hard_link },
-	{ "nod", 0, true, false, add_device },
-	{ "pipe", S_IFIFO, false, false, add_generic },
-	{ "sock", S_IFSOCK, false, false, add_generic },
-	{ "file", S_IFREG, false, false, add_file },
-	{ "glob", 0, true, true, glob_files },
+	{ "dir", S_IFDIR, false, false, true, add_generic },
+	{ "slink", S_IFLNK, true, false, false, add_generic },
+	{ "link", 0, true, false, false, add_hard_link },
+	{ "nod", 0, true, false, false, add_device },
+	{ "pipe", S_IFIFO, false, false, false, add_generic },
+	{ "sock", S_IFSOCK, false, false, false, add_generic },
+	{ "file", S_IFREG, false, false, false, add_file },
+	{ "glob", 0, true, true, true, glob_files },
 };
 
 #define NUM_HOOKS (sizeof(file_list_hooks) / sizeof(file_list_hooks[0]))
@@ -456,8 +457,11 @@ static int handle_line(fstree_t *fs, const char *filename,
 	if ((line = read_str(line, &path)) == NULL)
 		goto fail_ent;
 
-	if (canonicalize_name(path) || *path == '\0')
+	if (canonicalize_name(path))
 		goto fail_ent;
+
+	if (*path == '\0' && !cb->allow_root)
+		goto fail_root;
 
 	if (cb->is_glob && *line == '*') {
 		++line;
@@ -507,6 +511,10 @@ static int handle_line(fstree_t *fs, const char *filename,
 
 	return cb->callback(fs, filename, line_num, path,
 			    &sb, basepath, glob_flags, extra);
+fail_root:
+	fprintf(stderr, "%s: " PRI_SZ ": cannot use / as argument for %s.\n",
+		filename, line_num, cb->keyword);
+	return -1;
 fail_no_extra:
 	fprintf(stderr, "%s: " PRI_SZ ": missing argument for %s.\n",
 		filename, line_num, cb->keyword);

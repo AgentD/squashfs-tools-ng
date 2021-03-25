@@ -74,3 +74,4 @@ endif
 
 EXTRA_DIST += $(FSTDATADIR)/fstree1.txt
 EXTRA_DIST += $(FSTDATADIR)/fstree_glob1.txt $(FSTDATADIR)/fstree_glob2.txt
+EXTRA_DIST += $(FSTDATADIR)/fstree_glob3.txt

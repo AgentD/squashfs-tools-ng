@@ -120,6 +120,7 @@ int fstree_init(fstree_t *fs, char *defaults)
 		return -1;
 	}
 
+	fs->root->data.dir.created_implicitly = true;
 	return 0;
 }
 

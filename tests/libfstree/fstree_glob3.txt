@@ -1,0 +1,2 @@
+glob / 0755 0 0 -type d ../libtar/data
+glob / 0644 0 0 -type f -name "*gnu*.tar" -- ../libtar/data

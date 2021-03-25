@@ -9,22 +9,32 @@
 #include "fstree.h"
 #include "../test.h"
 
-static void check_hierarchy(tree_node_t *root, bool recursive)
+static void check_hierarchy(tree_node_t *root, bool subdir, bool recursive)
 {
-	tree_node_t *n, *m;
+	tree_node_t *n, *m, *parentdir;
 
-	n = root->data.dir.children;
-	TEST_NOT_NULL(n);
-	TEST_STR_EQUAL(n->name, "tarcorpus");
-	TEST_ASSERT(S_ISDIR(n->mode));
-	TEST_ASSERT(n->parent == root);
-	TEST_NULL(n->next);
+	if (subdir) {
+		n = root->data.dir.children;
+		TEST_NOT_NULL(n);
+		TEST_STR_EQUAL(n->name, "tarcorpus");
+		TEST_ASSERT(S_ISDIR(n->mode));
+		TEST_ASSERT(n->parent == root);
+		TEST_NULL(n->next);
+	} else {
+		n = root;
+		TEST_NOT_NULL(n);
+		TEST_STR_EQUAL(n->name, "");
+		TEST_ASSERT(S_ISDIR(n->mode));
+		TEST_NULL(n->parent);
+		TEST_NULL(n->next);
+	}
 
+	parentdir = n;
 	n = n->data.dir.children;
 	TEST_NOT_NULL(n);
 	TEST_STR_EQUAL(n->name, "file-size");
 	TEST_ASSERT(S_ISDIR(n->mode));
-	TEST_ASSERT(n->parent == root->data.dir.children);
+	TEST_ASSERT(n->parent == parentdir);
 
 	if (recursive) {
 		m = n->data.dir.children;
@@ -43,7 +53,7 @@ static void check_hierarchy(tree_node_t *root, bool recursive)
 	TEST_NOT_NULL(n);
 	TEST_STR_EQUAL(n->name, "format-acceptance");
 	TEST_ASSERT(S_ISDIR(n->mode));
-	TEST_ASSERT(n->parent == root->data.dir.children);
+	TEST_ASSERT(n->parent == parentdir);
 
 	if (recursive) {
 		m = n->data.dir.children;
@@ -68,7 +78,7 @@ static void check_hierarchy(tree_node_t *root, bool recursive)
 	TEST_NOT_NULL(n);
 	TEST_STR_EQUAL(n->name, "large-mtime");
 	TEST_ASSERT(S_ISDIR(n->mode));
-	TEST_ASSERT(n->parent == root->data.dir.children);
+	TEST_ASSERT(n->parent == parentdir);
 
 	if (recursive) {
 		m = n->data.dir.children;
@@ -87,7 +97,7 @@ static void check_hierarchy(tree_node_t *root, bool recursive)
 	TEST_NOT_NULL(n);
 	TEST_STR_EQUAL(n->name, "long-paths");
 	TEST_ASSERT(S_ISDIR(n->mode));
-	TEST_ASSERT(n->parent == root->data.dir.children);
+	TEST_ASSERT(n->parent == parentdir);
 
 	if (recursive) {
 		m = n->data.dir.children;
@@ -106,7 +116,7 @@ static void check_hierarchy(tree_node_t *root, bool recursive)
 	TEST_NOT_NULL(n);
 	TEST_STR_EQUAL(n->name, "negative-mtime");
 	TEST_ASSERT(S_ISDIR(n->mode));
-	TEST_ASSERT(n->parent == root->data.dir.children);
+	TEST_ASSERT(n->parent == parentdir);
 
 	if (recursive) {
 		m = n->data.dir.children;
@@ -125,7 +135,7 @@ static void check_hierarchy(tree_node_t *root, bool recursive)
 	TEST_NOT_NULL(n);
 	TEST_STR_EQUAL(n->name, "sparse-files");
 	TEST_ASSERT(S_ISDIR(n->mode));
-	TEST_ASSERT(n->parent == root->data.dir.children);
+	TEST_ASSERT(n->parent == parentdir);
 
 	if (recursive) {
 		m = n->data.dir.children;
@@ -168,7 +178,7 @@ static void check_hierarchy(tree_node_t *root, bool recursive)
 	TEST_NOT_NULL(n);
 	TEST_STR_EQUAL(n->name, "user-group-largenum");
 	TEST_ASSERT(S_ISDIR(n->mode));
-	TEST_ASSERT(n->parent == root->data.dir.children);
+	TEST_ASSERT(n->parent == parentdir);
 
 	if (recursive) {
 		m = n->data.dir.children;
@@ -187,7 +197,7 @@ static void check_hierarchy(tree_node_t *root, bool recursive)
 	TEST_NOT_NULL(n);
 	TEST_STR_EQUAL(n->name, "xattr");
 	TEST_ASSERT(S_ISDIR(n->mode));
-	TEST_ASSERT(n->parent == root->data.dir.children);
+	TEST_ASSERT(n->parent == parentdir);
 	TEST_NULL(n->data.dir.children);
 
 	n = n->next;
@@ -207,7 +217,7 @@ int main(void)
 	TEST_EQUAL_I(ret, 0);
 
 	fstree_post_process(&fs);
-	check_hierarchy(fs.root, false);
+	check_hierarchy(fs.root, true, false);
 	fstree_cleanup(&fs);
 
 	/* first test case, directory tree plus fnmatch()ed files */
@@ -218,7 +228,18 @@ int main(void)
 	TEST_EQUAL_I(ret, 0);
 
 	fstree_post_process(&fs);
-	check_hierarchy(fs.root, true);
+	check_hierarchy(fs.root, true, true);
+	fstree_cleanup(&fs);
+
+	/* third test case, same as second, but entries directly at the root */
+	ret = fstree_init(&fs, NULL);
+	TEST_EQUAL_I(ret, 0);
+
+	ret = fstree_from_file(&fs, TEST_PATH "/fstree_glob3.txt", TEST_PATH);
+	TEST_EQUAL_I(ret, 0);
+
+	fstree_post_process(&fs);
+	check_hierarchy(fs.root, false, true);
 	fstree_cleanup(&fs);
 	return EXIT_SUCCESS;
 }
