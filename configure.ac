@@ -11,7 +11,7 @@ AC_PROG_SED
 AC_SYS_LARGEFILE
 AC_CANONICAL_HOST
 
-AC_SUBST([LIBSQUASHFS_SO_VERSION], [2:0:1])
+AC_SUBST([LIBSQUASHFS_SO_VERSION], [2:1:1])
 
 m4_ifndef([PKG_PROG_PKG_CONFIG],
   [m4_fatal([Could not locate the pkg-config autoconf

@@ -4,20 +4,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.1.0] - 2021-03-28
 ### Added
 - tar2sqfs: support transparently reading stream compressed archives
 - sqfs2tar: support creating stream compressed archives
 - gensquashfs: support file globbing/filtering in the description file
 - Support bzip2 compression for tar
-- Updated benchmarks, including benchmarks for decompression
+- Implement directory scanning for Windows
+- a `glob` keyword to `gensquashfs` for `find` like globbing from a directory.
 
 ### Changed
 - Rewrite file I/O in the tools around an I/O stream wrapper which is used
   to implement the transparent compression.
 - Internal cleanups & restructuring, trying to improve maintainabillity and
   testabillity of the code.
+- Updated benchmarks, including benchmarks for decompression.
 - Drastic performance improvements of the xattr writer (#68).
+- Performance improvements in the thread pool block processor.
+- Bump zstd & xz versions for Windows binary releases.
 
 ### Fixed
 - libsquashfs: Allow shared read access to generated images on Windows (#79)
@@ -390,7 +394,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Insert abstraction layers and split generic code off into support libraries
 
-[Unreleased]: https://github.com/AgentD/squashfs-tools-ng/compare/v1.0.4...HEAD
+[1.1.0]: https://github.com/AgentD/squashfs-tools-ng/compare/v1.0.4...v1.1.0
 [1.0.4]: https://github.com/AgentD/squashfs-tools-ng/compare/v1.0.3...v1.0.4
 [1.0.3]: https://github.com/AgentD/squashfs-tools-ng/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/AgentD/squashfs-tools-ng/compare/v1.0.1...v1.0.2
