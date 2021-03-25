@@ -9,6 +9,7 @@
 #include "fstree.h"
 
 #include <string.h>
+#include <assert.h>
 #include <errno.h>
 
 tree_node_t *fstree_add_generic(fstree_t *fs, const char *path,
@@ -19,6 +20,7 @@ tree_node_t *fstree_add_generic(fstree_t *fs, const char *path,
 
 	if (*path == '\0') {
 		child = fs->root;
+		assert(child != NULL);
 		goto out;
 	}
 
