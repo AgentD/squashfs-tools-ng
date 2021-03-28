@@ -6,7 +6,16 @@
 
   AMD Ryzen 7 3700X
   32GiB DDR4 RAM
-  Fedora 32
+  Fedora 33
+
+ The following gcc versions of GCC and Linux were used:
+
+  gcc (GCC) 10.2.1 20201125 (Red Hat 10.2.1-9)
+  Linux 5.11.9-200.fc33.x86_64
+
+ The following squashfs-tools-ng commit was tested:
+
+  7d2b3b077d7e204e64a1c57845524250c5b4a142
 
 
  An optimized build of squashfs-tools-ng was compiled and installed to a tmpfs:
@@ -16,13 +25,13 @@
   $ ./autogen.sh
   $ ./configure CFLAGS="-O3 -Ofast -march=native -mtune=native" \
                 LDFLAGS="-O3 -Ofast" --prefix=$(pwd)/out
-  $ make -j install
+  $ make -j install-strip
   $ cd out
 
 
- This was done to eliminate any influence of I/O performance and I/O caching
- side effects to the extend possible and only measure the actual processing
- time.
+ Working in a tmpfs was done to eliminate any influence of I/O performance and
+ I/O caching side effects to the extend possible and only measure the actual
+ processing time.
 
 
  For all benchmark tests, a Debian image extracted from the Debian 10.2 LiveDVD
@@ -47,20 +56,11 @@
 
  The tarball was then repacked and time was measured as follows:
 
-  $ time ./bin/tar2sqfs -j <NUM_CPU> -c <COMPRESSOR> -f test.sqfs < test.tar
+  $ time -p ./bin/tar2sqfs -j <NUM_CPU> -c <COMPRESSOR> -f test.sqfs < test.tar
 
 
  The repacking was repeated 4 times and the worst wall-clock time ("real") was
  used for comparison.
-
- Altough not relevant for this benchmark, the resulting image sizes were
- measured once for each compressor, so that the compression ratio could
- be estimated:
-
-  $ stat test.tar
-  $ stat test.sqfs
-
-
 
  The <NUM_CPU> was varied from 1 to 16 and for <COMPRESSOR>, all available
  compressors were used. All possible combinations <NUM_CPU> and <COMPRESSOR>
@@ -69,6 +69,11 @@
  In addition, a serial reference version was compiled by running configure
  with the additional option --without-pthread and re-running the tests for
  all compressors without the <NUM_CPU> option.
+
+
+ In addition to the existing compressors, the LZO compressor in libcommon.a was
+ briefly patched to not perform any compression at all. This way, a baseline
+ comparison was established for a completely uncompressed SquashFS image.
 
 
  1.2) What was computed from the results?
@@ -84,7 +89,7 @@
                                            runtime_serial(compressor)
 
 
- In addition, relative and absolute efficiency of the parellel implementation
+ In addition, relative and absolute efficiency of the parallel implementation
  were determined:
 
                                          speedup_rel(compressor, num_cpu)
@@ -96,56 +101,36 @@
                                                       num_cpu
 
 
- Furthermore, altough not relevant for this specific benchmark, having the
+ Furthermore, although not relevant for this specific benchmark, having the
  converted tarballs available, the compression ratio was computed as follows:
 
-                                    file_size(tarball)
-   compression_ratio(compressor) = ---------------------
-                                   file_size(compressor)
-
-
- 1.3) What software versions were used?
-
- squashfs-tools-ng v0.9
-
- TODO: update data and write the *exact* commit hash here, as well as gcc and
- Linux versions.
+                                      size(tarball)
+   max_throughput(compressor) = --------------------------
+                                 min(runtime(compressor))
 
 
  1.4) Results
 
  The raw timing results are as follows:
 
- Jobs    XZ          lzma        gzip        LZO         LZ4      zstd
- serial  17m39.613s  16m10.710s   9m56.606s  13m22.337s  12.159s  9m33.600s
-      1  17m38.050s  15m49.753s   9m46.948s  13m06.705s  11.908s  9m23.445s
-      2   9m26.712s   8m24.706s   5m08.152s   6m53.872s   7.395s  5m 1.734s
-      3   6m29.733s   5m47.422s   3m33.235s   4m44.407s   6.069s  3m30.708s
-      4   5m02.993s   4m30.361s   2m43.447s   3m39.825s   5.864s  2m44.418s
-      5   4m07.959s   3m40.860s   2m13.454s   2m59.395s   5.749s  2m16.745s
-      6   3m30.514s   3m07.816s   1m53.641s   2m32.461s   5.926s  1m57.607s
-      7   3m04.009s   2m43.765s   1m39.742s   2m12.536s   6.281s  1m43.734s
-      8   2m45.050s   2m26.996s   1m28.776s   1m58.253s   6.395s  1m34.500s
-      9   2m34.993s   2m18.868s   1m21.668s   1m50.461s   6.890s  1m29.820s
-     10   2m27.399s   2m11.214s   1m15.461s   1m44.060s   7.225s  1m26.176s
-     11   2m20.068s   2m04.592s   1m10.286s   1m37.749s   7.557s  1m22.566s
-     12   2m13.131s   1m58.710s   1m05.957s   1m32.596s   8.127s  1m18.883s
-     13   2m07.472s   1m53.481s   1m02.041s   1m27.982s   8.704s  1m16.218s
-     14   2m02.365s   1m48.773s   1m00.337s   1m24.444s   9.494s  1m14.175s
-     15   1m58.298s   1m45.079s     58.348s   1m21.445s  10.192s  1m12.134s
-     16   1m55.940s   1m42.176s     56.615s   1m19.030s  10.964s  1m11.049s
-
-
- The sizes of the tarball and the resulting images:
-
-  - LZ4 compressed SquashFS image:  ~3.1GiB (3,381,751,808)
-  - LZO compressed SquashFS image:  ~2.5GiB (2,732,015,616)
-  - zstd compressed SquashFS image: ~2.1GiB (2,295,017,472)
-  - gzip compressed SquashFS image: ~2.3GiB (2,471,276,544)
-  - lzma compressed SquashFS image: ~2.0GiB (2,102,169,600)
-  - XZ compressed SquashFS image:   ~2.0GiB (2,098,466,816)
-  - raw tarball:                    ~6.5GiB (7,008,118,272)
-
+ Jobs    XZ        lzma     gzip     LZO      LZ4     zstd     none
+ serial  1108.39s  995.43s  609.79s  753.14s  13.58s  550.59s  5.86s
+      1  1116.06s  990.33s  598.85s  753.53s  11.25s  550.37s  4.23s
+      2   591.21s  536.61s  312.14s  394.21s   6.41s  294.12s  4.13s
+      3   415.90s  370.48s  215.92s  273.14s   4.84s  205.14s  4.58s
+      4   320.02s  288.35s  165.50s  210.32s   4.29s  159.71s  4.62s
+      5   263.94s  235.69s  136.28s  172.33s   4.19s  132.27s  4.94s
+      6   224.23s  200.63s  116.44s  146.80s   4.28s  112.79s  5.08s
+      7   196.78s  176.35s  100.66s  128.61s   4.24s   99.26s  5.43s
+      8   175.04s  157.82s   89.79s  113.47s   4.46s   88.22s  5.68s
+      9   166.52s  148.88s   83.01s  106.14s   4.64s   84.97s  5.76s
+     10   159.35s  141.08s   77.04s   99.92s   4.84s   81.61s  5.94s
+     11   151.08s  136.27s   71.52s   94.23s   5.00s   77.51s  6.14s
+     12   144.72s  128.91s   67.21s   89.33s   5.28s   74.10s  6.39s
+     13   137.91s  122.67s   63.43s   84.39s   5.41s   71.83s  6.51s
+     14   132.94s  117.79s   59.45s   80.87s   5.71s   68.86s  6.68s
+     15   126.76s  113.51s   56.37s   76.68s   5.74s   65.78s  6.91s
+     16   119.06s  107.15s   52.56s   71.49s   6.37s   62.52s  7.10s
 
 
  1.5) Discussion
@@ -153,7 +138,7 @@
  Most obviously, the results indicate that LZ4, unlike the other compressors,
  is clearly I/O bound and not CPU bound and doesn't benefit from parallelization
  beyond 2-4 worker threads and even that benefit is marginal with efficiency
- plummetting immediately.
+ plummeting immediately.
 
 
  The other compressors are clearly CPU bound. Speedup increases linearly until
@@ -167,37 +152,55 @@
  also gensquashfs).
 
 
- Using more than 8 jobs causes a much slower increase in speedup and efficency
+ Using more than 8 jobs causes a much slower increase in speedup and efficiency
  declines even faster. This is probably due to the fact that the test system
  only has 8 physical cores and beyond that, SMT has to be used.
 
 
- It should also be noted that the thread pool compressor with only a single
- thread turns out to be *slightly* faster than the serial reference
- implementation. A possible explanation for this might be that the fragment
- blocks are actually assembled in the main thread, in parallel to the worker
- that can still continue with other data blocks. Because of this decoupling
- there is in fact some degree of parallelism, even if only one worker thread
- is used.
+ It should also be noted that for most of the compressors, as well as the
+ uncompressed version, the thread pool compressor with only a single thread
+ turns out to be *slightly* faster than the serial reference implementation.
+ A possible explanation for this might be that the fragment blocks are actually
+ assembled in the main thread, in parallel to the worker that can still
+ continue with other data blocks. Because of this decoupling there is in fact
+ some degree of parallelism, even if only one worker thread is used. For the
+ uncompressed version, the work still done in the thread pool is the hashing of
+ blocks and fragments for de-duplication.
 
 
- As a side effect, this benchmark also produces some insights into the
- compression ratio and throughput of the supported compressors. Indicating that
- for the Debian live image, XZ clearly provides the highest data density, while
- LZ4 is clearly the fastest compressor available.
+ Also of interest are the changes from the previous version of the benchmark,
+ performed on v0.9 of squashfs-tools-ng. Since then, the thread pool design has
+ been overhauled to spend a lot less time in the critical regions, but to also
+ perform byte-for-byte equivalence checks before considering blocks or fragments
+ to be identical. This may require a read-back and decompression step in the
+ main thread in order to access already written fragment blocks.
 
- The throughput of the zstd compressor is comparable to gzip, while the
- resulting compression ratio is closer to LZMA.
+ While the overall behavior has stayed the same, performance for XZ & LZMA has
+ decreased slightly, whereas performance for the gzip, LZ4 & ZSTD has improved
+ slightly. As the decompression benchmark shows, the first two are a lot slower
+ at decompression, which needs to be done when reading back a fragment block
+ from disk, and due to the higher data density also have a higher chance of
+ actually having to decompress a block, so as a net result, the performance
+ penalty from exact fragment matching eats all gains from the new thread pool
+ design. For the more I/O bound compressors like LZ4 & ZSTD, decompressing a
+ block is done much faster and due to the low data density for LZ4, the chance
+ of actually having to decompress a block is lowered. As a result, the gains
+ from the new thread pool design apparently outweigh the read-back penalty.
 
- Repeating the benchmark without tail-end-packing and with fragments completely
- disabled would also show the effectiveness of tail-end-packing and fragment
- packing as a side effect.
+
+ Also noteworthy, due to the inclusion of an uncompressed reference, is that
+ the LZ4 compressor is actually very close in performance to the uncompressed
+ version, in some cases even outperforming it. This might be due to the fact
+ that LZ4 actually does compress blocks, so in many cases where the
+ uncompressed version needs to read back a full block during deduplication,
+ the LZ4 version only needs to read a considerably smaller amount of data,
+ reducing the penalty of having to read back blocks.
 
 
  2) Reference Decompression Benchmark
  ************************************
 
- 1.1) What was measured?
+ 2.1) What was measured?
 
  A SquashFS image was generated for each supported compressor:
 
@@ -205,39 +208,42 @@
 
  And then, for each compressor, the unpacking time was measured:
 
-  $ time ./bin/sqfs2tar test.sqfs > /dev/null
+  $ time -p ./bin/sqfs2tar test.sqfs > /dev/null
 
 
  The unpacking step was repeated 4 times and the worst wall-clock time ("real")
  was used for comparison.
 
 
- 2.2) What software version was used?
+ 2.2) What was computed from the results?
 
- squashfs-tools-ng commit cc1141984a03da003e15ff229d3b417f8e5a24ad
+ The throughput was established by dividing the size of the resulting tarball by
+ the time taken to produce it from the image.
 
- gcc version: 10.2.1 20201016 (Red Hat 10.2.1-6)
- Linux version: 5.8.16-200.fc32.x86_64
+ For better comparison, this was also normalized to the throughput of the
+ uncompressed SquashFS image.
 
 
  2.3) Results
 
- gzip    20.466s
- lz4      2.519s
- lzma  1m58.455s
- lzo     10.521s
- xz    1m59.451s
- zstd     7.833s
+ xz             120.53s
+ lzma           118.91s
+ gzip            20.57s
+ lzo             10.65s
+ zstd             7.74s
+ lz4              2.59s
+ uncompressed     1.42s
 
 
  2.4) Discussion
 
  From the measurement, it becomes obvious that LZ4 and zstd are the two fastest
- decompressors. Zstd is particularly noteworth here, because it is not far
- behind LZ4 in speed, but also achievs a substantially better compression ratio
- that is somewhere between gzip and lzma. LZ4, despite being the fastest in
- decompression and beating the others in compression speed by orders of
- magnitudes, has by far the worst compression ratio.
+ decompressors, both being very close to the uncompressed version. Zstd is
+ particularly noteworthy here, because it is not far behind LZ4 in speed, but
+ also achieves a substantially better compression ratio that is
+ between gzip and lzma. LZ4, despite being the fastest in decompression and
+ beating the others in compression speed by orders of magnitudes, has by far
+ the worst compression ratio.
 
  It should be noted that the number of actually compressed blocks has not been
  determined. A worse compression ratio can lead to more blocks being stored
@@ -245,14 +251,14 @@
 
  However, since zstd has a better compression ratio than gzip, takes only 30% of
  the time to decompress, and in the serial compression benchmark only takes 2%
- of the time to compress, we cane safely say that in this benchmark, zstd beats
+ of the time to compress, we can safely say that in this benchmark, zstd beats
  gzip by every metric.
 
  Furthermore, while XZ stands out as the compressor with the best compression
  ratio, zstd only takes ~6% of the time to decompress the entire image, while
- being ~17% bigger than XZ. Shaving off 17% is definitely signifficant,
+ being ~17% bigger than XZ. Shaving off 17% is definitely significant,
  especially considering that in absolute numbers it is in the 100MB range, but
- it clearly comes at a substential performance cost.
+ it clearly comes at a substantial performance cost.
 
 
  Also interesting are the results for the LZO compressor. Its compression speed
@@ -262,8 +268,8 @@
  in compression speed.
 
 
- Concluding, for applications where a good compression ratio is most imporant,
- XZ is obviously the best choice, but if speed is favoured, zstd is probably a
+ Concluding, for applications where a good compression ratio is most important,
+ XZ is obviously the best choice, but if speed is favored, zstd is probably a
  very good option to go with. LZ4 is much faster, but has a lot worse
  compression ratio. It is probably best suited as transparent compression for a
  read/write file system or network protocols.
@@ -273,6 +279,51 @@
  representative of a real-life workload where only a small set of files are
  accessed in a random access fashion. In that case, a caching layer can largely
  mitigate the decompression cost, translating it into an initial or only
- occasionally occouring cache miss latency. But this benchmark should in theory
+ occasionally occurring cache miss latency. But this benchmark should in theory
  give an approximate idea how those cache miss latencies are expected to
  compare between the different compressors.
+
+
+ 3) Compression Size and Overhead Benchmark
+ ******************************************
+
+ 3.1) What was measured?
+
+ For each compressor, a SquashFS image was created in the way outlined in the
+ parallel compression benchmark and the resulting file size was recorded.
+
+ In addition, the raw tarball size was recorded for comparison.
+
+
+ 3.2) What was computed from the results?
+
+ The compression ratio was established as follows:
+
+                        size(compressor)
+  ratio(compressor) = --------------------
+                       size(uncompressed)
+
+ 3.3) Results
+
+               SquashFS                   tar
+ Uncompressed  ~6.1GiB (6,542,389,248)    ~6.5GiB (7,008,118,272)
+ LZ4           ~3.1GiB (3,381,751,808)
+ LZO           ~2.5GiB (2,732,015,616)
+ gzip          ~2.3GiB (2,471,276,544)
+ zstd          ~2.1GiB (2,295,078,912)
+ lzma          ~2.0GiB (2,102,169,600)
+ XZ            ~2.0GiB (2,098,466,816)
+
+
+ 3.4) Discussion
+
+ Obviously XZ and lzma achieve the highest data density, shrinking the SquashFS
+ image down to less than a third of the input size.
+
+ Noteworthy is also Zstd achieving higher data density than gzip while being
+ faster in compression as well as decompression.
+
+
+ Interestingly, even the uncompressed SquashFS image is still smaller than the
+ uncompressed tarball. Obviously SquashFS packs data and meta data more
+ efficiently than the tar format, shaving off ~7% in size.
