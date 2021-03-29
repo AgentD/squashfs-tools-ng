@@ -29,14 +29,14 @@ TESTS =
 include lib/zlib/Makemodule.am
 include lib/lz4/Makemodule.am
 include lib/sqfs/Makemodule.am
+include lib/util/Makemodule.am
+include lib/fstream/Makemodule.am
 
 if BUILD_TOOLS
-include lib/fstream/Makemodule.am
 include lib/fstree/Makemodule.am
 include lib/common/Makemodule.am
 include lib/tar/Makemodule.am
 include lib/compat/Makemodule.am
-include lib/util/Makemodule.am
 include bin/gensquashfs/Makemodule.am
 include bin/rdsquashfs/Makemodule.am
 include bin/sqfs2tar/Makemodule.am
