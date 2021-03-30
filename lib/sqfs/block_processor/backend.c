@@ -320,8 +320,10 @@ int dequeue_block(sqfs_block_processor_t *proc)
 			if (status != 0)
 				return status;
 		} else {
-			if (!(blk->flags & SQFS_BLK_FRAGMENT_BLOCK))
+			if (!(blk->flags & SQFS_BLK_FRAGMENT_BLOCK) ||
+			    (blk->flags & BLK_FLAG_MANUAL_SUBMISSION)) {
 				blk->io_seq_num = proc->io_seq_num++;
+			}
 
 			store_io_block(proc, blk);
 		}
