@@ -74,8 +74,11 @@ static int file_flush(ostream_t *strm)
 			goto fail;
 	}
 
-	if (fsync(file->fd) != 0)
+	if (fsync(file->fd) != 0) {
+		if (errno == EINVAL)
+			return 0;
 		goto fail;
+	}
 
 	return 0;
 fail:
