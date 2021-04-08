@@ -160,7 +160,7 @@ SQFS_API int sqfs_xattr_reader_seek_kv(sqfs_xattr_reader_t *xr,
  *
  * @param xr A pointer to an xattr reader instance
  * @param key_out Used to return the decoded key. The underlying memory can be
- *                released using a single free() call.
+ *                released using a single @ref sqfs_free call.
  *
  * @return Zero on success, a negative @ref SQFS_ERROR value on failure.
  */
@@ -181,7 +181,7 @@ int sqfs_xattr_reader_read_key(sqfs_xattr_reader_t *xr,
  * @param xr A pointer to an xattr reader instance.
  * @param key A pointer to the decoded key object.
  * @param val_out Used to return the decoded value. The underlying memory can
- *                be released using a single free() call.
+ *                be released using a single @ref sqfs_free call.
  *
  * @return Zero on success, a negative @ref SQFS_ERROR value on failure.
  */

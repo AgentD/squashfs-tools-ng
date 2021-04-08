@@ -94,7 +94,7 @@ SQFS_API int sqfs_data_reader_load_fragment_table(sqfs_data_reader_t *data,
  * @param inode A pointer to the inode describing the file.
  * @param size Returns the size of the data read.
  * @param out Returns a pointer to the raw data that must be
- *            released using free.
+ *            released using @ref sqfs_free.
  *
  * @return Zero on succcess, an @ref SQFS_ERROR value on failure.
  */
@@ -112,7 +112,7 @@ SQFS_API int sqfs_data_reader_get_fragment(sqfs_data_reader_t *data,
  * @param index The block index in the inodes block list.
  * @param size Returns the size of the data read.
  * @param out Returns a pointer to the raw data that must be
- *            released using free.
+ *            released using @ref sqfs_free.
  *
  * @return Zero on succcess, an @ref SQFS_ERROR value on failure.
  */

@@ -70,12 +70,12 @@ static void list_directory(const char *dirname)
 		sqfs_dir_reader_get_root_inode(dr, &root);
 
 		ret = sqfs_dir_reader_find_by_path(dr, root, dirname, &inode);
-		free(root);
+		sqfs_free(root);
 		if (ret)
 			goto fail_resolve;
 
 		ret = sqfs_dir_reader_open_dir(dr, inode, 0);
-		free(inode);
+		sqfs_free(inode);
 		if (ret)
 			goto fail_open;
 	} else {
@@ -85,7 +85,7 @@ static void list_directory(const char *dirname)
 			goto fail_resolve;
 
 		ret = sqfs_dir_reader_open_dir(dr, inode, 0);
-		free(inode);
+		sqfs_free(inode);
 		if (ret)
 			goto fail_open;
 	}
@@ -102,7 +102,7 @@ static void list_directory(const char *dirname)
 		}
 
 		len = ent->size + 1;
-		free(ent);
+		sqfs_free(ent);
 	}
 
 	col_count = 79 / (max_len + 1);
@@ -148,7 +148,7 @@ static void list_directory(const char *dirname)
 
 		printf("%.*s", ent->size + 1, ent->name);
 		fputs("\033[0m", stdout);
-		free(ent);
+		sqfs_free(ent);
 
 		++i;
 		if (i == col_count) {
@@ -231,7 +231,7 @@ static void stat_cmd(const char *filename)
 	if (*filename == '/') {
 		sqfs_dir_reader_get_root_inode(dr, &root);
 		ret = sqfs_dir_reader_find_by_path(dr, root, filename, &inode);
-		free(root);
+		sqfs_free(root);
 		if (ret)
 			goto fail_resolve;
 	} else {
@@ -398,12 +398,12 @@ static void stat_cmd(const char *filename)
 			printf("\tSize: %u\n", idx->size + 1);
 			printf("\tEntry: %.*s\n\n", idx->size + 1, idx->name);
 
-			free(idx);
+			sqfs_free(idx);
 		}
 		break;
 	}
 
-	free(inode);
+	sqfs_free(inode);
 	return;
 fail_resolve:
 	printf("Error resolving '%s', error code %d\n", filename, ret);
@@ -429,7 +429,7 @@ static void cat_cmd(const char *filename)
 	if (*filename == '/') {
 		sqfs_dir_reader_get_root_inode(dr, &root);
 		ret = sqfs_dir_reader_find_by_path(dr, root, filename, &inode);
-		free(root);
+		sqfs_free(root);
 	} else {
 		ret = sqfs_dir_reader_find_by_path(dr, working_dir,
 						   filename, &inode);
@@ -459,7 +459,7 @@ static void cat_cmd(const char *filename)
 		offset += diff;
 	}
 
-	free(inode);
+	sqfs_free(inode);
 }
 
 /*****************************************************************************/

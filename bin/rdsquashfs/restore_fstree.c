@@ -188,7 +188,7 @@ static int set_xattr(const char *path, sqfs_xattr_reader_t *xattr,
 
 		if (sqfs_xattr_reader_read_value(xattr, key, &value)) {
 			fputs("Error reading xattr value\n", stderr);
-			free(key);
+			sqfs_free(key);
 			return -1;
 		}
 
@@ -199,8 +199,8 @@ static int set_xattr(const char *path, sqfs_xattr_reader_t *xattr,
 				key->key, path, strerror(errno));
 		}
 
-		free(key);
-		free(value);
+		sqfs_free(key);
+		sqfs_free(value);
 		if (ret)
 			return -1;
 	}

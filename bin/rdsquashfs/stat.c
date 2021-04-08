@@ -172,7 +172,7 @@ int stat_file(const sqfs_tree_node_t *node)
 			       idx->size + 1, idx->name,
 			       idx->start_block, idx->index);
 
-			free(idx);
+			sqfs_free(idx);
 		}
 		break;
 	}

@@ -231,7 +231,7 @@ SQFS_API int sqfs_dir_reader_find(sqfs_dir_reader_t *rd, const char *name);
  *
  * @param rd A pointer to a directory reader.
  * @param out Returns a pointer to a directory entry on success that can be
- *            freed with a single free call.
+ *            freed with a single @ref sqfs_free call.
  *
  * @return Zero on success, an @ref SQFS_ERROR value on failure, a positive
  *         number if the end of the current directory listing has been reached.
@@ -246,7 +246,7 @@ SQFS_API int sqfs_dir_reader_read(sqfs_dir_reader_t *rd,
  *
  * @param rd A pointer to a directory reader.
  * @param out Returns a pointer to a generic inode that can be freed with a
- *            single free call.
+ *            single @ref sqfs_free call.
  *
  * @return Zero on success, an @ref SQFS_ERROR value on failure.
  */
@@ -260,7 +260,7 @@ SQFS_API int sqfs_dir_reader_get_inode(sqfs_dir_reader_t *rd,
  *
  * @param rd A pointer to a directory reader.
  * @param out Returns a pointer to a generic inode that can be freed with a
- *            single free call.
+ *            single @ref sqfs_free call.
  *
  * @return Zero on success, an @ref SQFS_ERROR value on failure.
  */
@@ -280,7 +280,7 @@ SQFS_API int sqfs_dir_reader_get_root_inode(sqfs_dir_reader_t *rd,
  *             be used to separate path components. Resolving '.' or '..' is
  *             not supported.
  * @param out Returns a pointer to a generic inode that can be freed with a
- *            single free call.
+ *            single @ref sqfs_free call.
  *
  * @return Zero on success, an @ref SQFS_ERROR value on failure.
  */

@@ -145,7 +145,7 @@ SQFS_API int sqfs_meta_reader_read_dir_header(sqfs_meta_reader_t *m,
  *
  * @param m A pointer to a meta data reader.
  * @param ent Returns a pointer to a directory entry. Can be released with a
- *            single free() call.
+ *            single @ref sqfs_free call.
  *
  * @return Zero on success, an @ref SQFS_ERROR value on failure.
  */
@@ -167,7 +167,7 @@ SQFS_API int sqfs_meta_reader_read_dir_ent(sqfs_meta_reader_t *m,
  * @param offset A byte offset within the uncompressed block where the
  *               inode is.
  * @param out Returns a pointer to an inode. Can be released with a
- *            single free() call.
+ *            single @ref sqfs_free call.
  *
  * @return Zero on success, an @ref SQFS_ERROR value on failure.
  */
