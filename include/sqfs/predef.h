@@ -32,7 +32,9 @@
 #include <stdint.h>
 
 #if defined(_WIN32) || defined(__CYGWIN__)
-	#ifdef SQFS_BUILDING_DLL
+	#if defined(SQFS_STATIC)
+		#define SQFS_API
+	#elif defined(SQFS_BUILDING_DLL)
 		#if defined(__GNUC__) || defined(__clang__)
 			#define SQFS_API __attribute__ ((dllexport))
 		#else
