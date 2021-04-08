@@ -95,7 +95,7 @@ int dump_xattrs(sqfs_xattr_reader_t *xattr, const sqfs_inode_generic_t *inode)
 
 		if (sqfs_xattr_reader_read_value(xattr, key, &value)) {
 			fputs("Error reading xattr value\n", stderr);
-			free(key);
+			sqfs_free(key);
 			return -1;
 		}
 
@@ -112,8 +112,8 @@ int dump_xattrs(sqfs_xattr_reader_t *xattr, const sqfs_inode_generic_t *inode)
 			printf("\n");
 		}
 
-		free(key);
-		free(value);
+		sqfs_free(key);
+		sqfs_free(value);
 	}
 
 	return 0;

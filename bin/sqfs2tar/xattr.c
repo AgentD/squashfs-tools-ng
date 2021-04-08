@@ -68,13 +68,13 @@ int get_xattrs(const char *name, const sqfs_inode_generic_t *inode,
 		ret = sqfs_xattr_reader_read_value(xr, key, &value);
 		if (ret) {
 			sqfs_perror(name, "reading xattr value", ret);
-			free(key);
+			sqfs_free(key);
 			goto fail;
 		}
 
 		ent = mkxattr(key, value);
-		free(key);
-		free(value);
+		sqfs_free(key);
+		sqfs_free(value);
 
 		if (ent == NULL)
 			goto fail;

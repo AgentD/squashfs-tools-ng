@@ -167,7 +167,7 @@ int main(void)
 	sqfs_meta_writer_get_position(inode_m, &block_start, &offset);
 	super.root_inode_ref = (block_start << 16) | offset;
 	sqfs_meta_writer_write_inode(inode_m, inode);
-	free(inode);
+	sqfs_free(inode);
 
 	/* flush the meta data to the file */
 	sqfs_meta_writer_flush(inode_m);

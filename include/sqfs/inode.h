@@ -718,7 +718,8 @@ SQFS_API int sqfs_inode_get_file_block_start(const sqfs_inode_generic_t *inode,
  * fiddles the raw data out into a propperly aligned, external structure.
  *
  * @param inode A pointer to an inode.
- * @param out Returns the index entry. Can be freed with a single free call.
+ * @param out Returns the index entry. Can be freed with a single
+ *            @ref sqfs_free call.
  * @param index An index value between 0 and inodex_count.
  *
  * @return Zero on success, @ref SQFS_ERROR_OUT_OF_BOUNDS if the given index
