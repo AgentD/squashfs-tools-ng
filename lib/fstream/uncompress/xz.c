@@ -18,6 +18,7 @@ static int precache(istream_t *base)
 {
 	istream_xz_t *xz = (istream_xz_t *)base;
 	istream_t *wrapped = ((istream_comp_t *)base)->wrapped;
+	lzma_action action;
 	lzma_ret ret_xz;
 	int ret;
 
@@ -26,13 +27,15 @@ static int precache(istream_t *base)
 		if (ret != 0)
 			return ret;
 
+		action = wrapped->eof ? LZMA_FINISH : LZMA_RUN;
+
 		xz->strm.avail_in = wrapped->buffer_used;
 		xz->strm.next_in = wrapped->buffer;
 
 		xz->strm.avail_out = BUFSZ - base->buffer_used;
 		xz->strm.next_out = base->buffer + base->buffer_used;
 
-		ret_xz = lzma_code(&xz->strm, LZMA_RUN);
+		ret_xz = lzma_code(&xz->strm, action);
 
 		base->buffer_used = BUFSZ - xz->strm.avail_out;
 		wrapped->buffer_offset = wrapped->buffer_used -
@@ -77,7 +80,7 @@ istream_comp_t *istream_xz_create(const char *filename)
 		return NULL;
 	}
 
-	ret_xz = lzma_stream_decoder(&xz->strm, memlimit, 0);
+	ret_xz = lzma_stream_decoder(&xz->strm, memlimit, LZMA_CONCATENATED);
 
 	if (ret_xz != LZMA_OK) {
 		fprintf(stderr,
