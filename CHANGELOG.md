@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2021-05-07
+### Fixed
+- tar2sqfs: currectly process concatenated xz streams from parallel compression
+- sqfs2tar: don't report an error if fsync() returns EINVAL
+- libsquashfs: static linking on Windows
+- libsquashfs: visibillity of internal mempool functions
+- libsquashfs: add sqfs_free() function, mainly for Windows portabillity
+- libsquashfs: block processor: Fix account for manually submitted blocks
+- Fix build failure if configured with --without-tools
+
 ## [1.1.0] - 2021-03-28
 ### Added
 - tar2sqfs: support transparently reading stream compressed archives
@@ -394,6 +404,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Insert abstraction layers and split generic code off into support libraries
 
+[1.1.1]: https://github.com/AgentD/squashfs-tools-ng/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/AgentD/squashfs-tools-ng/compare/v1.0.4...v1.1.0
 [1.0.4]: https://github.com/AgentD/squashfs-tools-ng/compare/v1.0.3...v1.0.4
 [1.0.3]: https://github.com/AgentD/squashfs-tools-ng/compare/v1.0.2...v1.0.3
