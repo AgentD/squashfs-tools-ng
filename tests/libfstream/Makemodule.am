@@ -3,9 +3,56 @@ test_get_line_LDADD = libfstream.a libcompat.a
 test_get_line_CPPFLAGS = $(AM_CPPFLAGS)
 test_get_line_CPPFLAGS += -DTESTFILE=$(top_srcdir)/tests/libfstream/get_line.txt
 
+test_xfrm_bzip2_SOURCES = tests/libfstream/uncompress.c tests/test.h
+test_xfrm_bzip2_LDADD = libfstream.a libcompat.a $(BZIP2_LIBS) $(ZLIB_LIBS)
+test_xfrm_bzip2_LDADD += $(XZ_LIBS) $(ZSTD_LIBS)
+test_xfrm_bzip2_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_BZIP2=1
+
+test_xfrm_xz_SOURCES = tests/libfstream/uncompress.c tests/test.h
+test_xfrm_xz_LDADD = libfstream.a libcompat.a $(BZIP2_LIBS) $(ZLIB_LIBS)
+test_xfrm_xz_LDADD += $(XZ_LIBS) $(ZSTD_LIBS)
+test_xfrm_xz_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_XZ=1
+
+test_xfrm_gzip_SOURCES = tests/libfstream/uncompress.c tests/test.h
+test_xfrm_gzip_LDADD = libfstream.a libcompat.a $(BZIP2_LIBS) $(ZLIB_LIBS)
+test_xfrm_gzip_LDADD += $(XZ_LIBS) $(ZSTD_LIBS)
+test_xfrm_gzip_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_GZIP=1
+
+test_xfrm_zstd_SOURCES = tests/libfstream/uncompress.c tests/test.h
+test_xfrm_zstd_LDADD = libfstream.a libcompat.a $(BZIP2_LIBS) $(ZLIB_LIBS)
+test_xfrm_zstd_LDADD += $(XZ_LIBS) $(ZSTD_LIBS)
+test_xfrm_zstd_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_ZSTD=1
+
+if WITH_OWN_ZLIB
+test_xfrm_bzip2_LDADD += libz.la
+test_xfrm_xz_LDADD += libz.la
+test_xfrm_gzip_LDADD += libz.la
+test_xfrm_zstd_LDADD += libz.la
+endif
+
 if BUILD_TOOLS
 check_PROGRAMS += test_get_line
 TESTS += test_get_line
+
+if WITH_BZIP2
+check_PROGRAMS += test_xfrm_bzip2
+TESTS += test_xfrm_bzip2
+endif
+
+if WITH_XZ
+check_PROGRAMS += test_xfrm_xz
+TESTS += test_xfrm_xz
+endif
+
+if WITH_GZIP
+check_PROGRAMS += test_xfrm_gzip
+TESTS += test_xfrm_gzip
+endif
+
+if WITH_ZSTD
+check_PROGRAMS += test_xfrm_zstd
+TESTS += test_xfrm_zstd
+endif
 endif
 
 EXTRA_DIST += $(top_srcdir)/tests/libfstream/get_line.txt
