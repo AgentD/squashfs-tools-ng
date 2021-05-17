@@ -194,7 +194,7 @@ AS_IF([test "x$with_zstd" != "xno"], [
 				       [with_zstd="no"])])
 ], [])
 
-AS_IF([test "x$with_zstd" != "xno"], [AC_TEST_ZSTD_STREAM], [])
+AC_TEST_ZSTD_STREAM
 
 AS_IF([test "x$with_selinux" != "xno"], [
 	have_selinux="yes"
