@@ -55,8 +55,10 @@ TESTS += test_xfrm_gzip
 endif
 
 if WITH_ZSTD
+if HAVE_ZSTD_STREAM
 check_PROGRAMS += test_xfrm_zstd
 TESTS += test_xfrm_zstd
+endif
 endif
 endif
 
