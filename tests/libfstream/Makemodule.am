@@ -8,6 +8,11 @@ test_xfrm_bzip2_LDADD = libfstream.a libcompat.a $(BZIP2_LIBS) $(ZLIB_LIBS)
 test_xfrm_bzip2_LDADD += $(XZ_LIBS) $(ZSTD_LIBS)
 test_xfrm_bzip2_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_BZIP2=1
 
+test_xfrm_bzip22_SOURCES = tests/libfstream/uncompress.c tests/test.h
+test_xfrm_bzip22_LDADD = libfstream.a libcompat.a $(BZIP2_LIBS) $(ZLIB_LIBS)
+test_xfrm_bzip22_LDADD += $(XZ_LIBS) $(ZSTD_LIBS)
+test_xfrm_bzip22_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_BZIP22=1
+
 test_xfrm_xz_SOURCES = tests/libfstream/uncompress.c tests/test.h
 test_xfrm_xz_LDADD = libfstream.a libcompat.a $(BZIP2_LIBS) $(ZLIB_LIBS)
 test_xfrm_xz_LDADD += $(XZ_LIBS) $(ZSTD_LIBS)
@@ -16,7 +21,7 @@ test_xfrm_xz_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_XZ=1
 test_xfrm_xz2_SOURCES = tests/libfstream/uncompress.c tests/test.h
 test_xfrm_xz2_LDADD = libfstream.a libcompat.a $(BZIP2_LIBS) $(ZLIB_LIBS)
 test_xfrm_xz2_LDADD += $(XZ_LIBS) $(ZSTD_LIBS)
-test_xfrm_xz2_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_XZ=2
+test_xfrm_xz2_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_XZ2=1
 
 test_xfrm_gzip_SOURCES = tests/libfstream/uncompress.c tests/test.h
 test_xfrm_gzip_LDADD = libfstream.a libcompat.a $(BZIP2_LIBS) $(ZLIB_LIBS)
@@ -40,8 +45,8 @@ check_PROGRAMS += test_get_line
 TESTS += test_get_line
 
 if WITH_BZIP2
-check_PROGRAMS += test_xfrm_bzip2
-TESTS += test_xfrm_bzip2
+check_PROGRAMS += test_xfrm_bzip2 test_xfrm_bzip22
+TESTS += test_xfrm_bzip2 test_xfrm_bzip22
 endif
 
 if WITH_XZ
