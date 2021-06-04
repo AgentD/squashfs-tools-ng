@@ -11,6 +11,7 @@
 typedef struct {
 	istream_comp_t base;
 
+	bool initialized;
 	bz_stream strm;
 } istream_bzip2_t;
 
@@ -21,6 +22,17 @@ static int precache(istream_t *base)
 	int ret;
 
 	for (;;) {
+		if (!bzip2->initialized) {
+			if (BZ2_bzDecompressInit(&bzip2->strm, 0, 0) != BZ_OK) {
+				fprintf(stderr, "%s: error initializing "
+					"bzip2 decompressor.\n",
+					wrapped->get_filename(wrapped));
+				return -1;
+			}
+
+			bzip2->initialized = true;
+		}
+
 		ret = istream_precache(wrapped);
 		if (ret != 0)
 			return ret;
@@ -48,8 +60,16 @@ static int precache(istream_t *base)
 					 bzip2->strm.avail_in;
 
 		if (ret == BZ_STREAM_END) {
-			base->eof = true;
-			break;
+			if (istream_precache(wrapped))
+				return -1;
+
+			BZ2_bzDecompressEnd(&bzip2->strm);
+			bzip2->initialized = false;
+
+			if (wrapped->buffer_used == 0) {
+				base->eof = true;
+				break;
+			}
 		}
 	}
 
@@ -60,7 +80,8 @@ static void cleanup(istream_comp_t *base)
 {
 	istream_bzip2_t *bzip2 = (istream_bzip2_t *)base;
 
-	BZ2_bzDecompressEnd(&bzip2->strm);
+	if (bzip2->initialized)
+		BZ2_bzDecompressEnd(&bzip2->strm);
 }
 
 istream_comp_t *istream_bzip2_create(const char *filename)
@@ -71,13 +92,6 @@ istream_comp_t *istream_bzip2_create(const char *filename)
 	if (bzip2 == NULL) {
 		fprintf(stderr, "%s: creating bzip2 compressor: %s.\n",
 			filename, strerror(errno));
-		return NULL;
-	}
-
-	if (BZ2_bzDecompressInit(&bzip2->strm, 0, 0) != BZ_OK) {
-		fprintf(stderr, "%s: error initializing bzip2 decompressor.\n",
-			filename);
-		free(bzip2);
 		return NULL;
 	}
 
