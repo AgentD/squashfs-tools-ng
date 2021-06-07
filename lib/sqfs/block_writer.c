@@ -187,14 +187,16 @@ static int write_data_block(sqfs_block_writer_t *base, void *user,
 	int err;
 	(void)user;
 
-	if (flags & SQFS_BLK_FIRST_BLOCK) {
-		wr->start = wr->file->get_size(wr->file);
-		wr->file_start = wr->num_blocks;
-
+	if (flags & (SQFS_BLK_FIRST_BLOCK | SQFS_BLK_FRAGMENT_BLOCK)) {
 		if (flags & SQFS_BLK_ALIGN) {
 			err = align_file(wr);
 			if (err)
 				return err;
+		}
+
+		if (flags & SQFS_BLK_FIRST_BLOCK) {
+			wr->start = wr->file->get_size(wr->file);
+			wr->file_start = wr->num_blocks;
 		}
 	}
 
@@ -217,13 +219,15 @@ static int write_data_block(sqfs_block_writer_t *base, void *user,
 		wr->blocks_written = wr->num_blocks;
 	}
 
-	if (flags & SQFS_BLK_LAST_BLOCK) {
-		if (flags & SQFS_BLK_ALIGN) {
+	if (flags & SQFS_BLK_ALIGN) {
+		if (flags & (SQFS_BLK_LAST_BLOCK | SQFS_BLK_FRAGMENT_BLOCK)) {
 			err = align_file(wr);
 			if (err)
 				return err;
 		}
+	}
 
+	if (flags & SQFS_BLK_LAST_BLOCK) {
 		count = wr->num_blocks - wr->file_start;
 
 		if (count == 0) {
