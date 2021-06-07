@@ -73,9 +73,9 @@
         |               |  Important information about the archive, including
         |  Superblock   |  locations of other sections.
         |_______________|
-        |               |
-        |  Compression  |  If non-default compression options have been used,
-        |    options    |  they can optionally be are encoded here.
+        |               |  If non-default compression options have been used,
+        |  Compression  |  they can optionally be stored here, to facilitate
+        |    options    |  later, offline editing of the archive.
         |_______________|
         |               |
         |  Data blocks  |  The contents of the files in the archive,
@@ -129,52 +129,47 @@
 
  2.2) Packing Metadata
 
- Metadata (e.g. inodes, directory listings, etc...) is stored in special
- metadata blocks.
+ Metadata (e.g. inodes, directory listings, etc...) is treated as a continuous
+ stream of records that is chopped up into 8KiB blocks that are separately
+ compressed into special metadata blocks.
 
- Metadata blocks always have a fixed input size of 8KiB. Similar to data
- blocks, if the compressed would exceed 8KiB, the uncompressed block is stored
- instead, so the on-disk size of a metadata block never exceeds 8KiB.
+ The input size of 8KiB is fixed and independent of the data block size.
+ Similar to data blocks, if the compressed size would exceed 8KiB, the
+ uncompressed block is stored instead, so the on-disk size of a metadata
+ block never exceeds 8KiB.
 
- In contrast to data blocks, metadata blocks are prefixed by a single, 16 bit
- unsigned integer.
+ Individual entries are allowed to cross the block boundary, so e.g. an inode
+ may be located at the end of a metadata block with some part of it located at
+ the start of the next block. Both have to be read and decompressed when
+ reading this inode. If an entry is written across block boundaries, there
+ MUST NOT be any gap between the compressed metadata blocks on-disk.
 
- This integer holds the on-disk size of the block that follows. The MSB is set
- if the block is stored uncompressed.
 
+ In contrast to data blocks, every metadata block is preceded by a single,
+ 16 bit unsigned integer. This integer holds the on-disk size of the block
+ that follows. The MSB is set if the block is stored uncompressed. Whenever
+ a metadata block is referenced, the position of this integer is given.
 
  To read a metadata block, seek to the indicated position and read the 16 bit
  header. Sanity check that the lower 15 bit are less than 8KiB and proceed
  to read that many bytes. If the highest bit of the header is cleared,
- uncompress the data you just read into an 8KiB buffer that MUST NOT overflow.
+ uncompress the data into an 8KiB buffer that MUST NOT overflow.
 
 
- In the SquashFS archive format, metadata is often referenced using a 64 bit
- integer. The lower 16 bit of consisting of an offset into the uncompressed
- block and the upper 48 bit pointing to the on-disk location of the possibly
- compressed block.
+ In the SquashFS archive format, metadata entries (e.g. inodes) are often
+ referenced using a 64 bit integer. The lower 16 bit hold an offset into the
+ uncompressed block and the upper 48 bit point to the on-disk location of the
+ block.
 
- The on-disk location is relative to the type of metadata, i.e. for inodes
- it is an offset relative to the start of the inode table and it always
- points to the location of the 16 bit header.
-
-
- In some cases, metadata records can be written across block boundaries. This
- results in two consecutive metadata blocks that both have to be decoded to
- retrieve and re-combine the parts of the original record. There must not be
- any gaps between the metadata blocks on-disk.
-
- From the perspective of a SquashFS reader, metadata is accessed as a
- continuous stream of records that can be seeked to using references. A lower
- layer must transparently fetch and uncompress records from disk. If a metadata
- block other than the last one contains less than 8KiB of data, the result is
- undefined.
+ The on-disk location is relative to the type of metadata entry, e.g. for
+ inodes it is relative to the start of the inode table given by the
+ super block.
 
 
  2.3) Storing Lookup Tables
 
  Lookup tables are arrays (i.e. sequences of identical sized records) that are
- addressed by an index in constant time.
+ addressed by an index.
 
  Such tables are stored in the SquashFS format as metadata blocks, i.e. by
  dividing the table data into 8KiB chunks that are separately compressed and
@@ -183,8 +178,7 @@
  To allow constant time lookup, a list of 64 bit unsigned integers is stored,
  holding the on-disk locations of each metadata block.
 
- This list is itself uncompressed and not preceded by a header. It is just a
- block of raw values.
+ This list itself is stored uncompressed and not preceded by a header.
 
  When referring to a lookup table, the superblock gives the number of table
  entries and points to this location list.
@@ -220,9 +214,9 @@
 
  The SquashFS format supports the following compressors:
 
-  - zlib deflate (referred to as "gzip" but only uses raw deflate streams)
+  - zlib deflate (referred to as "gzip" but only uses raw zlib streams)
   - lzo
-  - lzma 1
+  - lzma 1 (considered deprecated)
   - lzma 2 (referred to as "xz")
   - lz4
   - zstd
@@ -233,11 +227,11 @@
 
  While it is technically not possible to pick a "null" compressor in the super
  block, an implementation can still deliberately write only uncompressed blocks
- to a SquashFS file.
+ to a SquashFS archive, or choose to store certain metadata blocks without
+ compression.
 
- If compatibility with the Linux implementation is desired, the lzma 2 aka xz
- compressor should only use CRC32 checksums. The decompressor in the kernel
- cannot process the data if checksummed with SHA-256.
+ The lzma 2 aka xz compressor MUST use CRC32 checksums only. Using SHA-256 is
+ not supported.
 
 
  3) The superblock
@@ -270,10 +264,10 @@
  |      |               +-------+------+--------------------------------------+
  |      |               | Value | Name | Comment                              |
  |      |               +-------+------+--------------------------------------+
- |      |               | 1     | GZIP | just zlib deflate (no gzip headers!) |
+ |      |               | 1     | GZIP | just zlib streams (no gzip headers!) |
  |      |               | 2     | LZO  |                                      |
  |      |               | 3     | LZMA | LZMA version 1                       |
- |      |               | 4     | XZ   | LZMA version 2 (no XZ headers!)      |
+ |      |               | 4     | XZ   | LZMA version 2 as used by xz-utils   |
  |      |               | 5     | LZ4  |                                      |
  |      |               | 6     | ZSTD |                                      |
  +------+---------------+-------+------+--------------------------------------+
@@ -327,19 +321,19 @@
  omitted from the archive, the respective fields indicating their position
  must be set to 0xFFFFFFFFFFFFFFFF (i.e. all bits set).
 
- Please note that most of the flags are either redundant, or entirely useless
- and only serve an informational purpose.
+ Most of the flags only serve an informational purpose and are only useful
+ when editing the archive to convey the original packer settings.
 
  The only flag that actually carries information is the "Compressor options are
  present" flag. In fact, this is the only flag that the Linux kernel
  implementation actually tests for.
 
- Currently, the compressor options are equally useless and also serve mostly
- informal purpose, as most compression libraries understand their own stream
- format irregardless of the options used to compress and in fact don't provide
- any options for the decompressor. In the Linux kernel, the XZ decompressor is
- currently the only one that processes those options to pre-allocate the LZMA
- dictionary if a non-default size was used.
+ The compressor options, however, are also only there for informal purpose, as
+ most compression libraries understand their own stream format irregardless of
+ the options used to compress and in fact don't provide any options for the
+ decompressor. In the Linux kernel, the XZ decompressor is currently the only
+ one that processes those options to pre-allocate the LZMA dictionary if a
+ non-default size was used.
 
 
  3.1) Compression Options
@@ -370,7 +364,7 @@
  +------+-------------------+-------------------------------------------------+
  | u16  | window size       | In the range 8 to 15 (inclusive) Defaults to 15.|
  +------+-------------------+-------------------------------------------------+
- | u16  | strategies        | A bitfield describing the enabled strategies.   |
+ | u16  | strategies        | A bit field describing the enabled strategies.  |
  |      |                   | If no flags are set, the default strategy is    |
  |      |                   | implicitly used. Please consult the ZLIB manual |
  |      |                   | for details on specific strategies.             |
@@ -385,9 +379,9 @@
  |      |                   | 0x0010 | Fixed.                                 |
  +------+-------------------+--------+----------------------------------------+
 
- Note: If strategies are selected, the SquashFS writer is free to try all of
- them (including not setting any and letting zlib work with defaults) and
- select the result with the smallest size.
+ Note: The SquashFS writer typically tries all selected strategies (including
+ not setting any and letting zlib work with defaults) and stores the result
+ with the smallest size.
 
 
  3.1.2) XZ
@@ -395,10 +389,10 @@
  +======+===================+=================================================+
  | Type | Name              | Description                                     |
  +======+===================+=================================================+
- | u32  | dictionary size   | Should be > 8KiB, and must be either a power of |
- |      |                   | two, or the sum of two sequential powers of two.|
+ | u32  | dictionary size   | SHOULD be >= 8KiB, and must be either a power of|
+ |      |                   | 2, or the sum of two consecutive powers of 2.   |
  +------+-------------------+-------------------------------------------------+
- | u32  | Filters           | A bitfield describing the additional enabled    |
+ | u32  | Filters           | A bit field describing the additional enabled   |
  |      |                   | filters attempted to better compress executable |
  |      |                   | code.                                           |
  |      |                   |                                                 |
@@ -413,21 +407,21 @@
  |      |                   | 0x0020 | SPARC                                  |
  +------+-------------------+--------+----------------------------------------+
 
- Note: If multiple filters are selected, the SquashFS writer is free to try all
- of them (including not setting any and letting libxz work with defaults) and
- select the resulting block that has the smallest size.
+ Note: A SquashFS writer typically tries all selected VLI filters (including
+ not setting any and letting libxz work with defaults) and stores the resulting
+ block that has the smallest size.
 
  Also note that further options, such as XZ presets, are not included. The
  compressor typically uses the libxz defaults, i.e. level 6 and not using the
- extreme flag. Likewise for lc, lp and pb (defults are 3, 0 and 2
+ extreme flag. Likewise for lc, lp and pb (defaults are 3, 0 and 2
  respectively).
 
- If the encoder chooses to change those values, the decoder will for still be
+ If the encoder chooses to change those values, the decoder will still be
  able to read the data, but there is currently no way to convey that those
  values were changed.
 
  This is specifically problematic for the compression level, since increasing
- the level can result in drastically increasing the decoders memory consuption.
+ the level can result in drastically increasing the decoders memory consumption.
 
 
  3.1.3) LZ4
@@ -435,9 +429,9 @@
  +======+===================+=================================================+
  | Type | Name              | Description                                     |
  +======+===================+=================================================+
- | u32  | Version           | Must be set to 1.                               |
+ | u32  | Version           | MUST be set to 1.                               |
  +------+-------------------+-------------------------------------------------+
- | u32  | Flags             | A bitfield describing the enabled LZ4 flags.    |
+ | u32  | Flags             | A bit field describing the enabled LZ4 flags.   |
  |      |                   | There is currently only one possible flag:      |
  |      |                   |                                                 |
  |      |                   +--------+----------------------------------------+
@@ -508,13 +502,14 @@
 			      |                        |
 			      +------------------------+
 
- Figure 1: Packing of File Data.
+ Figure 2.1: Packing of File Data.
 
 
  In Figure 1, file A consists of 3 blocks and a single tail end, file B has
  2 blocks and one tail end while file C is smaller than block size.
 
- For each file, the blocks are compressed in sequence and stored on disk.
+ For each file, the blocks are individually compressed and stored on disk
+ in order.
 
  The tail ends of A and B, together with the entire contents of C are packed
  together into a fragment block F, that is compressed and stored on disk once
@@ -528,22 +523,24 @@
  There are no headers in front of data or fragment blocks and there MUST NOT be
  any gaps between data blocks from a single file, but a SquashFS packer is free
  to leave gaps between two different files or fragment blocks. The packer is
- also free to decide how to arange fragments within a fragment block and what
+ also free to decide how to arrange fragments within a fragment block and what
  fragments to pack together.
 
 
 
- To locate file data, the inodes store the following information:
+ To locate file data, the file inodes store the following information:
+
   - The uncompressed size of the file. From this, the number of blocks can
     be computed:
 
       block_count = floor(file_size / block_size)   if tail end packing is used
-      block_count = ceil(file_size / block_size)    if NOT
+      block_count = ceil(file_size / block_size)    otherwise
 
   - The exact location of the first block, if one exists.
   - For each consecutive block, the on-disk size.
+
       A 32 bit integer is used with bit 24 (i.e. 1 << 24) set if the block
-      is uncompressed.
+      is stored uncompressed.
 
   - If tail-end-packing was done, the location of the fragment block and a
     byte offset into the uncompressed fragment block. The size of the tail
@@ -551,9 +548,10 @@
 
       tail_end_size = file_size % block_size
 
- Since a fragment block will likely be refered to by multiple files, inodes
- don't store the on-disk location directly, but instead use a 32 bit index
- into a fragment block lookup table (see section 7).
+
+ Since a fragment block will likely be referred to by multiple files, inodes
+ don't store its on-disk location and size directly, but instead use a 32 bit
+ index into a fragment block lookup table (see section 7).
 
 
  If a data block other than the last one unpacks to less than block size, the
@@ -563,9 +561,10 @@
  from disk.
 
 
- The on-disk locations of file blocks may overlap and different file inodes are
- free to refere to the same fragment. Typical SquashFS packers would explicitly
- use this to remove duplicate files. Doing so is NOT counted as a hard link.
+ The on-disk locations of file blocks MAY overlap and different file inodes are
+ free to refer to the same fragment. Typical SquashFS packers would explicitly
+ use this to for files that are duplicates of others. Doing so is NOT counted
+ as a hard link.
 
  If an inode references on-disk locations outside the data area, the result is
  undefined.
@@ -580,7 +579,7 @@
  contents and size.
 
  To further save more space, inodes come in two flavors: simple inode types
- optimized for frequently occurring items, and extended inode types where
+ optimized for a simple, standard use case, and extended inode types where
  extra information has to be stored.
 
  SquashFS more or less supports 32 bit UIDs and GIDs. As an optimization, those
@@ -623,7 +622,7 @@
  |      |              | 13    | Extended Named Pipe (FIFO)                   |
  |      |              | 14    | Extended Socket                              |
  +------+--------------+-------+----------------------------------------------+
- | u16  | permissions  | A bitmask representing Unix file system permissions  |
+ | u16  | permissions  | A bit mask representing Unix file system permissions |
  |      |              | for the inode. This only stores permissions, not the |
  |      |              | type. The type is reconstructed from the field above.|
  +------+--------------+------------------------------------------------------+
@@ -641,8 +640,8 @@
  |      |              | the inode count from the super block.                |
  +------+--------------+------------------------------------------------------+
 
- Depending on the type, additional data follows, outlined in sections 4.2
- to 4.6.
+ Depending on the type, additional data follows, outlined in sections 5.2
+ to 5.6.
 
 
 
@@ -671,17 +670,17 @@
  |      |              | starts.                                              |
  +------+--------------+------------------------------------------------------+
  | u32  | parent inode | The inode number of the parent of this directory. If |
- |      |              | this is the root directory, this will be 0.          |
+ |      |              | this is the root directory, this SHOULD be 0.        |
  +------+--------------+------------------------------------------------------+
 
 
  Note that for historical reasons, the hard link count of a directory includes
  the number of entries in the directory and is initialized to 2 for an empty
- directory. I.e. a directory with N entries has N + 2 link count.
+ directory. I.e. a directory with N entries has at least N + 2 link count.
 
 
  If the "file size" is set to 0, the directory is empty and there is no
- coresponding listing in the directory table.
+ corresponding listing in the directory table.
 
 
  An extended directory can have a listing that is at most 4GiB in size, may
@@ -854,7 +853,7 @@
  +======+===============+=========================================+
  | Type | Name          | Description                             |
  +======+===============+=========================================+
- | u32  | link count    | The number of hard links to this entry. |
+ | u32  | link count    | Same as above.                          |
  +------+---------------+-----------------------------------------+
  | u32  | device number | Same as above.                          |
  +------+---------------+-----------------------------------------+
@@ -892,7 +891,7 @@
  entries, with references back to the inodes that describe those entries.
 
  The entry list itself is sorted ASCIIbetically by entry name and split into
- multiple runs that are preceded by a short header.
+ multiple runs, each preceded by a short header.
 
  The directory inodes store the total, uncompressed size of the entire listing,
  including headers. Using this size, a SquashFS reader can determine if another
@@ -900,7 +899,7 @@
  run.
 
  To save space, the header indicates a metadata block and a reference inode
- number. All entries that follow simply store a difference to that inode number
+ number. The entries that follow simply store a difference to that inode number
  and an offset into the specified metadata block.
 
  Every time, the inode block changes or the difference of the inode number
@@ -914,10 +913,9 @@
  and then allocate inode numbers incrementally, to optimize directory entry
  listings.
 
- Hard links of course break the sequence and require a new header if they are
- further away than +/- 32k of the reference number in the header. Inode number
- allocation and picking of the reference could of course be optimized to
- prevent this.
+ Since hard links might be further further away than +/- 32k of the reference
+ number, they might require a new header to be emitted. Inode number allocation
+ and picking of the reference could of course be optimized to prevent this.
 
  The directory header has the following structure:
 
@@ -963,8 +961,8 @@
  bytes. Since a zero length name makes no sense, the name length is stored
  off-by-one, i.e. the value 0 cannot be encoded.
 
- Also note, that the inode type is stored in the entry, but always as a basic
- type!
+ The inode type is stored in the entry, but always as the corresponding
+ basic type.
 
  While the field is technically 16 bits, the kernel implementation currently
  imposes an arbitrary limit of 255 on the name size field. Since the field is
@@ -1027,7 +1025,7 @@
  | u32  | size         | The on-disk size of the fragment block. If the block |
  |      |              | is uncompressed, bit 24 (i.e. 1 << 24) is set.       |
  +------+--------------+------------------------------------------------------+
- | u32  | unused       | Must be set to 0.                                    |
+ | u32  | unused       | SHOULD be set to 0.                                  |
  +------+--------------+------------------------------------------------------+
 
 
@@ -1038,6 +1036,10 @@
  the lookup table.
 
  Each metadata block can store up to 512 entries (= 8129 / 16).
+
+ The "unused" field is there for alignment and SHOULD be set to 0, however the
+ Linux kernel currently ignores this field completely, making it impossible for
+ Linux to ever re-purpose this field.
 
 
  8) Export Table
@@ -1112,7 +1114,7 @@
  +------+-----------+---------------------------------------------------------+
 
 
- After a key, the following structure follows to store the value:
+ Following the key, this structure is used to store the value:
 
  +======+============+========================================================+
  | Type | Name       | Description                                            |
@@ -1135,11 +1137,11 @@
 
 
  To actually address a block of key value pairs associated with an inode, a
- lookup table is used that specifies the start and size of a block of key
+ lookup table is used that specifies the start and size of a sequence of key
  value pairs.
 
  All an inode needs to store is a 32 bit index into this table. If two inodes
- have the identical attribute sets, the key/value block is only written once,
+ have an identical attribute sets, the key/value sequence is only written once,
  there is only one lookup table entry and both inodes have the same index.
 
  Each lookup table entry has the following structure:
@@ -1180,12 +1182,14 @@
  +-------+-----------+--------------------------------------------------------+
  | u32   | count     | The number of entries in the lookup table.             |
  +-------+-----------+--------------------------------------------------------+
- | u32   | unused    | Always set this to 0.                                  |
+ | u32   | unused    | SHOULD be set to 0, however Linux currently ignores    |
+ |       |           | this field completely and squashfs-tools used to leak  |
+ |       |           | stack data here, making it impossible for Linux to     |
+ |       |           | ever re-purpose this field.                            |
  +-------+-----------+--------------------------------------------------------+
  | u64[] | locations | An array holding the absolute on-disk location of each |
  |       |           | metadata block of the lookup table.                    |
  +-------+-----------+--------------------------------------------------------+
-
 
  If an inode has a a valid xattr index (i.e. not 0xFFFFFFFF), the metadata
  block index is computed as
