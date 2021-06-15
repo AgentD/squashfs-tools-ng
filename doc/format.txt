@@ -97,7 +97,7 @@
         |_______________|
         |               |
         |    UID/GID    |  A list of unique UID/GIDs. Inodes use an index into
-        |  lookup table	|  this table to save memory.
+        |  lookup table |  this table to save memory.
         |_______________|
         |               |
         |     Xattr     |  Extended attributes for items in the archive.
@@ -492,15 +492,15 @@
              | |  |   +------|---------------+     |   |              |
              | |  |   |   +--|---------------------+   |              |
              | |  |   |   |  |                         |              |
-	     | |  |   |   |  +-----------------------+ | +------------+
-	     | |  |   |   |                          | | |
+             | |  |   |   |  +-----------------------+ | +------------+
+             | |  |   |   |                          | | |
              V V  V   V   V                          V V V
             __ _ ___ ___ ___ __     Fragment block: |A|B|C|
    Output: |_A|A|_A_|_B_|_B_|_F|                       |
                                                      __V__
                               A                     |__F__|
-			      |                        |
-			      +------------------------+
+                              |                        |
+                              +------------------------+
 
  Figure 2.1: Packing of File Data.
 
