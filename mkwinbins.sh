@@ -233,3 +233,7 @@ zip -g -r -l "${W32_ZIP_NAME}.zip" "$W32_ZIP_NAME/licenses" $W32_ZIP_NAME/*.md
 zip -r "${W64_ZIP_NAME}.zip" "$W64_ZIP_NAME/bin" "$W64_ZIP_NAME/lib"
 zip -g -r -l "${W64_ZIP_NAME}.zip" "$W64_ZIP_NAME/include"
 zip -g -r -l "${W64_ZIP_NAME}.zip" "$W64_ZIP_NAME/licenses" $W64_ZIP_NAME/*.md
+
+############################# sign the packages ##############################
+gpg -o "${W64_ZIP_NAME}.zip.asc" --detach-sign -a "${W64_ZIP_NAME}.zip"
+gpg -o "${W32_ZIP_NAME}.zip.asc" --detach-sign -a "${W32_ZIP_NAME}.zip"
