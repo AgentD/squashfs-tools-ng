@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.2] - 2021-06-25
+### Added
+- Test cases for concatenated stream decompression
+
+### Fixed
+- Replace tabs with spaces in format.txt
+- Some documentation clarifications and typo fixes
+- libsquashfs: preserve alignment flag in block processor
+- libsquashfs: broken block alignment in block write
+- allow concatenated Bzip2 streams
+- Use Automake conditional for zstd stream compression support
+- Use *_MAX from limits.h instead of configure-time type size checks
+
 ## [1.1.1] - 2021-05-07
 ### Fixed
 - tar2sqfs: currectly process concatenated xz streams from parallel compression
@@ -404,6 +417,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Insert abstraction layers and split generic code off into support libraries
 
+[1.1.2]: https://github.com/AgentD/squashfs-tools-ng/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/AgentD/squashfs-tools-ng/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/AgentD/squashfs-tools-ng/compare/v1.0.4...v1.1.0
 [1.0.4]: https://github.com/AgentD/squashfs-tools-ng/compare/v1.0.3...v1.0.4
