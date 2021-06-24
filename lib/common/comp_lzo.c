@@ -206,7 +206,7 @@ static void lzo_get_configuration(const sqfs_compressor_t *base,
 
 static sqfs_object_t *lzo_create_copy(const sqfs_object_t *cmp)
 {
-	lzo_compressor_t *other = (lzo_compressor_t *)cmp;
+	const lzo_compressor_t *other = (const lzo_compressor_t *)cmp;
 	lzo_compressor_t *lzo;
 
 	lzo = calloc(1, sizeof(*lzo) + other->buf_size);

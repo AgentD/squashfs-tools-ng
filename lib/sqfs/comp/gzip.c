@@ -138,7 +138,7 @@ static int find_strategy(gzip_compressor_t *gzip, const sqfs_u8 *in,
 
 		strategy = flag_to_zlib_strategy(i);
 
-		gzip->strm.next_in = (void *)in;
+		gzip->strm.next_in = (z_const Bytef *)in;
 		gzip->strm.avail_in = size;
 		gzip->strm.next_out = out;
 		gzip->strm.avail_out = outsize;
@@ -189,7 +189,7 @@ static sqfs_s32 gzip_do_block(sqfs_compressor_t *base, const sqfs_u8 *in,
 	if (ret != Z_OK)
 		return SQFS_ERROR_COMPRESSOR;
 
-	gzip->strm.next_in = (void *)in;
+	gzip->strm.next_in = (const void *)in;
 	gzip->strm.avail_in = size;
 	gzip->strm.next_out = out;
 	gzip->strm.avail_out = outsize;

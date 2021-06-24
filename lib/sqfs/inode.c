@@ -349,8 +349,8 @@ int sqfs_inode_unpack_dir_index_entry(const sqfs_inode_generic_t *inode,
 				      size_t index)
 {
 	sqfs_dir_index_t ent;
+	const char *ptr;
 	size_t offset;
-	char *ptr;
 
 	if (inode->base.type != SQFS_INODE_EXT_DIR) {
 		if (inode->base.type == SQFS_INODE_DIR)
@@ -360,7 +360,7 @@ int sqfs_inode_unpack_dir_index_entry(const sqfs_inode_generic_t *inode,
 	}
 
 	offset = 0;
-	ptr = (char *)inode->extra;
+	ptr = (const char *)inode->extra;
 
 	for (;;) {
 		if (offset >= inode->payload_bytes_used)

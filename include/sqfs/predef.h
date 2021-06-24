@@ -152,8 +152,10 @@ static SQFS_INLINE void sqfs_destroy(void *obj)
  */
 static SQFS_INLINE void *sqfs_copy(const void *obj)
 {
-	if (((sqfs_object_t *)obj)->copy != NULL)
-		return ((sqfs_object_t *)obj)->copy((sqfs_object_t *)obj);
+	if (((const sqfs_object_t *)obj)->copy != NULL) {
+		return ((const sqfs_object_t *)obj)->
+			copy((const sqfs_object_t *)obj);
+	}
 
 	return NULL;
 }
