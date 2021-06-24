@@ -12,7 +12,7 @@
 static int key_compare(const void *ctx, const void *a, const void *b)
 {
 	(void)ctx;
-	return *((sqfs_s32 *)a) - *((sqfs_s32 *)b);
+	return *((const sqfs_s32 *)a) - *((const sqfs_s32 *)b);
 }
 
 static size_t count_nodes_dfs(rbtree_node_t *n)
