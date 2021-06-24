@@ -358,12 +358,25 @@ static int populate_dir(int dir_fd, fstree_t *fs, tree_node_t *root,
 			continue;
 
 		if (S_ISLNK(sb.st_mode)) {
-			extra = calloc(1, sb.st_size + 1);
+			size_t size;
+
+			if ((sizeof(sb.st_size) > sizeof(size_t)) &&
+			    sb.st_size > SIZE_MAX) {
+				errno = EOVERFLOW;
+				goto fail_rdlink;
+			}
+
+			if (SZ_ADD_OV((size_t)sb.st_size, 1, &size)) {
+				errno = EOVERFLOW;
+				goto fail_rdlink;
+			}
+
+			extra = calloc(1, size);
 			if (extra == NULL)
 				goto fail_rdlink;
 
 			if (readlinkat(dir_fd, ent->d_name,
-				       extra, sb.st_size) < 0) {
+				       extra, (size_t)sb.st_size) < 0) {
 				goto fail_rdlink;
 			}
 
