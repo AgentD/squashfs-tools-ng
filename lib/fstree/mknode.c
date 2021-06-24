@@ -70,10 +70,19 @@ tree_node_t *fstree_mknode(tree_node_t *parent, const char *name,
 	case S_IFDIR:
 		n->link_count = 2;
 		break;
+	default:
+		break;
 	}
 
-	if (parent != NULL)
-		parent->link_count += 1;
+	if (parent != NULL) {
+		if (parent->link_count == 0x0FFFF) {
+			free(n);
+			errno = EMLINK;
+			return NULL;
+		}
+
+		parent->link_count++;
+	}
 
 	return n;
 }

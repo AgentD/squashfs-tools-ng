@@ -62,9 +62,14 @@ int fstree_resolve_hard_link(fstree_t *fs, tree_node_t *node)
 		return -1;
 	}
 
+	if (node->link_count == 0x0FFFF) {
+		errno = EMLINK;
+		return -1;
+	}
+
 	start->mode = FSTREE_MODE_HARD_LINK_RESOLVED;
 	start->data.target_node = node;
 
-	node->link_count += 1;
+	node->link_count++;
 	return 0;
 }
