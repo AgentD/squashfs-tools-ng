@@ -9,6 +9,13 @@
 
 #include "sqfs/predef.h"
 
+#if defined(__GNUC__) || defined(__clang__)
+#	define PRINTF_ATTRIB(fmt, elipsis)			\
+		__attribute__ ((format (printf, fmt, elipsis)))
+#else
+#	define PRINTF_ATTRIB(fmt, elipsis)
+#endif
+
 /**
  * @struct ostream_t
  *
@@ -261,7 +268,8 @@ SQFS_INTERNAL const char *ostream_get_filename(ostream_t *strm);
  *
  * @return The number of characters written on success, -1 on failure.
  */
-SQFS_INTERNAL int ostream_printf(ostream_t *strm, const char *fmt, ...);
+SQFS_INTERNAL int ostream_printf(ostream_t *strm, const char *fmt, ...)
+	PRINTF_ATTRIB(2, 3);
 
 /**
  * @brief Read a line of text from an input stream
