@@ -91,3 +91,18 @@ matrix:
       compiler: gcc
       env:
         - CONFIG_OPTS="--with-pthread"
+
+    # FreeBSD
+    - name: FreeBSD
+      os: freebsd
+      compiler: clang
+      addons:
+        pkg:
+          packages:
+            - zstd
+            - lzo2
+            - liblz4
+            - bzip2
+            - readline
+      env:
+        - CONFIG_OPTS="--with-pthread"
