@@ -21,7 +21,16 @@ static int flush_inbuf(ostream_comp_t *base, bool finish)
 	int ret;
 
 	bzip2->strm.next_in = (char *)base->inbuf;
-	bzip2->strm.avail_in = base->inbuf_used;
+
+	if (base->inbuf_used > sizeof(base->inbuf))
+		base->inbuf_used = sizeof(base->inbuf);
+
+	if ((sizeof(size_t) > sizeof(unsigned int)) &&
+	    (base->inbuf_used > (size_t)UINT_MAX)) {
+		bzip2->strm.avail_in = UINT_MAX;
+	} else {
+		bzip2->strm.avail_in = (unsigned int)base->inbuf_used;
+	}
 
 	for (;;) {
 		bzip2->strm.next_out = (char *)base->outbuf;
