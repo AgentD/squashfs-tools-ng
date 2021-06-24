@@ -174,13 +174,13 @@ the `libsquashfs` library does not.
 
 ## Automated Testing and Analysis
 
-[![Build Status](https://travis-ci.org/AgentD/squashfs-tools-ng.svg?branch=master)](https://travis-ci.org/AgentD/squashfs-tools-ng)
+[![Build Status](https://travis-ci.com/AgentD/squashfs-tools-ng.svg?branch=master)](https://travis-ci.com/AgentD/squashfs-tools-ng)
 [![Coverity Status](https://scan.coverity.com/projects/18718/badge.svg)](https://scan.coverity.com/projects/squashfs-tools-ng)
 
 The GitHub project for squashfs-tools-ng is registered with Travis-CI and
 Coverity Scan.
 
-The [Travis-CI](https://travis-ci.org/github/AgentD/squashfs-tools-ng]) page
+The [Travis-CI](https://travis-ci.com/github/AgentD/squashfs-tools-ng]) page
 shows the current build status for various system configurations for the
 latest commit on master, as well as pull requests on the GitHub project page.
 
