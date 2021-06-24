@@ -12,10 +12,11 @@
 #include <stdio.h>
 #include <errno.h>
 
-static void alloc_inode_num_dfs(fstree_t *fs, tree_node_t *root)
+static int alloc_inode_num_dfs(fstree_t *fs, tree_node_t *root)
 {
 	bool has_subdirs = false;
 	tree_node_t *it;
+	size_t inum;
 
 	for (it = root->data.dir.children; it != NULL; it = it->next) {
 		if (S_ISDIR(it->mode)) {
@@ -26,17 +27,32 @@ static void alloc_inode_num_dfs(fstree_t *fs, tree_node_t *root)
 
 	if (has_subdirs) {
 		for (it = root->data.dir.children; it != NULL; it = it->next) {
-			if (S_ISDIR(it->mode))
-				alloc_inode_num_dfs(fs, it);
+			if (S_ISDIR(it->mode)) {
+				if (alloc_inode_num_dfs(fs, it))
+					return -1;
+			}
 		}
 	}
 
 	for (it = root->data.dir.children; it != NULL; it = it->next) {
 		if (it->mode != FSTREE_MODE_HARD_LINK_RESOLVED) {
-			it->inode_num = fs->unique_inode_count + 1;
-			fs->unique_inode_count += 1;
+			if (SZ_ADD_OV(fs->unique_inode_count, 1, &inum))
+				goto fail_ov;
+
+			if ((sizeof(size_t) > sizeof(sqfs_u32)) &&
+			    inum > 0x0FFFFFFFFUL) {
+				goto fail_ov;
+			}
+
+			it->inode_num = (sqfs_u32)inum;
+			fs->unique_inode_count = inum;
 		}
 	}
+
+	return 0;
+fail_ov:
+	fputs("Too many inodes.\n", stderr);
+	return -1;
 }
 
 static int resolve_hard_links_dfs(fstree_t *fs, tree_node_t *n)
@@ -167,7 +183,10 @@ static void reorder_hard_links(fstree_t *fs)
 			}
 
 			fs->inodes[i] = tgt;
-			tgt->inode_num = i + 1;
+
+			/* XXX: the possible overflow is checked for
+			   during allocation */
+			tgt->inode_num = (sqfs_u32)(i + 1);
 			++i;
 		}
 	}
@@ -175,15 +194,26 @@ static void reorder_hard_links(fstree_t *fs)
 
 int fstree_post_process(fstree_t *fs)
 {
+	size_t inum;
+
 	sort_recursive(fs->root);
 
 	if (resolve_hard_links_dfs(fs, fs->root))
 		return -1;
 
 	fs->unique_inode_count = 0;
-	alloc_inode_num_dfs(fs, fs->root);
-	fs->root->inode_num = fs->unique_inode_count + 1;
-	fs->unique_inode_count += 1;
+
+	if (alloc_inode_num_dfs(fs, fs->root))
+		return -1;
+
+	if (SZ_ADD_OV(fs->unique_inode_count, 1, &inum))
+		goto fail_root_ov;
+
+	if ((sizeof(size_t) > sizeof(sqfs_u32)) && inum > 0x0FFFFFFFFUL)
+		goto fail_root_ov;
+
+	fs->root->inode_num = (sqfs_u32)inum;
+	fs->unique_inode_count = inum;
 
 	fs->inodes = calloc(sizeof(fs->inodes[0]), fs->unique_inode_count);
 	if (fs->inodes == NULL) {
@@ -196,4 +226,7 @@ int fstree_post_process(fstree_t *fs)
 
 	fs->files = file_list_dfs(fs->root);
 	return 0;
+fail_root_ov:
+	fputs("Too many inodes, cannot allocate number for root.\n", stderr);
+	return -1;
 }
