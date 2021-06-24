@@ -7,6 +7,13 @@ addons:
   homebrew:
     packages:
       - zstd lzo lz4 xz zlib bzip2 readline
+  pkg:
+    packages:
+      - zstd
+      - lzo2
+      - liblz4
+      - bzip2
+      - readline
 
 script:
   - ./autogen.sh
@@ -89,5 +96,12 @@ matrix:
       arch: s390x
       dist: bionic
       compiler: gcc
+      env:
+        - CONFIG_OPTS="--with-pthread"
+
+    # FreeBSD
+    - name: FreeBSD
+      os: freebsd
+      compiler: clang
       env:
         - CONFIG_OPTS="--with-pthread"
