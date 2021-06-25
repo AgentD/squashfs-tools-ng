@@ -68,6 +68,7 @@ static int lzo_write_options(sqfs_compressor_t *base, sqfs_file_t *file)
 	lzo_compressor_t *lzo = (lzo_compressor_t *)base;
 	sqfs_u8 buffer[sizeof(lzo_options_t) + 2];
 	lzo_options_t opt;
+	sqfs_u16 header;
 	int ret;
 
 	if (lzo->algorithm == SQFS_LZO_DEFAULT_ALG &&
@@ -83,7 +84,9 @@ static int lzo_write_options(sqfs_compressor_t *base, sqfs_file_t *file)
 		opt.level = 0;
 	}
 
-	*((sqfs_u16 *)buffer) = htole16(0x8000 | sizeof(opt));
+	header = htole16(0x8000 | sizeof(opt));
+
+	memcpy(buffer, &header, sizeof(header));
 	memcpy(buffer + 2, &opt, sizeof(opt));
 
 	ret = file->write_at(file, sizeof(sqfs_super_t),
@@ -97,6 +100,7 @@ static int lzo_read_options(sqfs_compressor_t *base, sqfs_file_t *file)
 	lzo_compressor_t *lzo = (lzo_compressor_t *)base;
 	sqfs_u8 buffer[sizeof(lzo_options_t) + 2];
 	lzo_options_t opt;
+	sqfs_u16 header;
 	int ret;
 
 	ret = file->read_at(file, sizeof(sqfs_super_t),
@@ -104,7 +108,8 @@ static int lzo_read_options(sqfs_compressor_t *base, sqfs_file_t *file)
 	if (ret)
 		return ret;
 
-	if (le16toh(*((sqfs_u16 *)buffer)) != (0x8000 | sizeof(opt)))
+	memcpy(&header, buffer, sizeof(header));
+	if (le16toh(header) != (0x8000 | sizeof(opt)))
 		return SQFS_ERROR_CORRUPTED;
 
 	memcpy(&opt, buffer + 2, sizeof(opt));
