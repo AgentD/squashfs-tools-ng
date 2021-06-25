@@ -267,7 +267,8 @@ static void stat_cmd(const char *filename)
 	printf("Inode number: %u\n", inode->base.inode_number);
 
 	mode_to_str(inode->base.mode & ~SQFS_INODE_MODE_MASK, buffer);
-	printf("Access: 0%o/%s\n", inode->base.mode & ~SQFS_INODE_MODE_MASK,
+	printf("Access: 0%o/%s\n",
+	       (unsigned int)inode->base.mode & ~SQFS_INODE_MODE_MASK,
 	       buffer);
 
 	/* resolve and print UID/GID */
@@ -317,13 +318,15 @@ static void stat_cmd(const char *filename)
 		break;
 	case SQFS_INODE_SLINK:
 		printf("Hard link count: %u\n", inode->data.slink.nlink);
-		printf("Link target: %.*s\n", inode->data.slink.target_size,
+		printf("Link target: %.*s\n",
+		       (int)inode->data.slink.target_size,
 		       (const char *)inode->extra);
 		break;
 	case SQFS_INODE_EXT_SLINK:
 		printf("Hard link count: %u\n", inode->data.slink_ext.nlink);
 		printf("Xattr index: 0x%X\n", inode->data.slink_ext.xattr_idx);
-		printf("Link target: %.*s\n", inode->data.slink_ext.target_size,
+		printf("Link target: %.*s\n",
+		       (int)inode->data.slink_ext.target_size,
 		       (const char *)inode->extra);
 		break;
 	case SQFS_INODE_FILE:
@@ -398,7 +401,8 @@ static void stat_cmd(const char *filename)
 			printf("\tIndex: %u\n", idx->index);
 			printf("\tStart block: %u\n", idx->start_block);
 			printf("\tSize: %u\n", idx->size + 1);
-			printf("\tEntry: %.*s\n\n", idx->size + 1, idx->name);
+			printf("\tEntry: %.*s\n\n",
+			       (int)(idx->size + 1), idx->name);
 
 			sqfs_free(idx);
 		}

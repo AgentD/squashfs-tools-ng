@@ -53,7 +53,8 @@ static int print_name(const sqfs_tree_node_t *n, bool dont_escape)
 
 static void print_perm(const sqfs_tree_node_t *n)
 {
-	printf(" 0%o %d %d", n->inode->base.mode & (~S_IFMT), n->uid, n->gid);
+	printf(" 0%o %u %u", (unsigned int)n->inode->base.mode & (~S_IFMT),
+	       n->uid, n->gid);
 }
 
 static int print_simple(const char *type, const sqfs_tree_node_t *n,
@@ -112,7 +113,7 @@ int describe_tree(const sqfs_tree_node_t *root, const char *unpack_root)
 			devno = root->inode->data.dev.devno;
 		}
 
-		sprintf(buffer, "%c %d %d",
+		sprintf(buffer, "%c %u %u",
 			S_ISCHR(root->inode->base.mode) ? 'c' : 'b',
 			major(devno), minor(devno));
 		return print_simple("nod", root, buffer);

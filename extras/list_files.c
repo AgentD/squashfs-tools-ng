@@ -33,10 +33,12 @@ static void write_tree_dfs(const sqfs_tree_node_t *n)
 		fputs((const char *)n->name, stdout);
 
 		if (n->inode->base.type == SQFS_INODE_SLINK) {
-			printf(" ⭢ %.*s", n->inode->data.slink.target_size,
+			printf(" ⭢ %.*s",
+			       (int)n->inode->data.slink.target_size,
 			       (const char *)n->inode->extra);
 		} else if (n->inode->base.type == SQFS_INODE_EXT_SLINK) {
-			printf(" ⭢ %.*s", n->inode->data.slink_ext.target_size,
+			printf(" ⭢ %.*s",
+			       (int)n->inode->data.slink_ext.target_size,
 			       (const char *)n->inode->extra);
 		}
 
