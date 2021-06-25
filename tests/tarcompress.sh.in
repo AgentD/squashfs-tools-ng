@@ -1,0 +1,48 @@
+#!/bin/sh
+
+set -e
+
+TAR2SQFS="@abs_top_builddir@/tar2sqfs"
+RDSQFS="@abs_top_builddir@/rdsquashfs"
+
+URL="https://mirrors.edge.kernel.org/pub/linux/kernel/v3.x/"
+DIR="/dev/shm/tarcompress/"
+
+mkdir -p "$DIR"
+curl "$URL/linux-3.11.tar.bz2" > "$DIR/linux-3.11.tar.bz2"
+curl "$URL/linux-3.11.tar.gz" > "$DIR/linux-3.11.tar.gz"
+curl "$URL/linux-3.11.tar.xz" > "$DIR/linux-3.11.tar.xz"
+
+sha256sum -c <<_EOF
+e7ae11d20aafdc5a2dfd104f198d87e5ce65fa8ada1ce18a263e89ff0148e1fa  $DIR/linux-3.11.tar.bz2
+59904beb1fdae62eb1991f29926c234283c9e4009b6e437499f13d2749bed6ca  $DIR/linux-3.11.tar.gz
+803ec8f0ad4b2ddedcb0332a590cd2b5e10dfc57c3b1c95bc9c46af81d51d7f9  $DIR/linux-3.11.tar.xz
+_EOF
+
+"$TAR2SQFS" "$DIR/out1.sqfs" < "$DIR/linux-3.11.tar.bz2"
+"$TAR2SQFS" "$DIR/out2.sqfs" < "$DIR/linux-3.11.tar.gz"
+"$TAR2SQFS" "$DIR/out3.sqfs" < "$DIR/linux-3.11.tar.xz"
+
+# set -e makes sure this explodes if they aren't equal
+diff "$DIR/out1.sqfs" "$DIR/out2.sqfs"
+diff "$DIR/out2.sqfs" "$DIR/out3.sqfs"
+
+rm "$DIR/out2.sqfs" "$DIR/out3.sqfs"
+rm "$DIR/linux-3.11.tar.bz2"
+rm "$DIR/linux-3.11.tar.gz"
+
+# every file that exists in the tar ball MUST exist in the squashfs image
+# and they MUST be identical
+tar -C "$DIR" -xf "$DIR/linux-3.11.tar.xz"
+
+find "$DIR/linux-3.11" -type f | sed "s#$DIR/##" | \
+while read fname; do
+	"$RDSQFS" -c "$fname" "$DIR/out1.sqfs" > "$DIR/temp"
+
+	diff "$DIR/$fname" "$DIR/temp"
+done
+
+# cleanup
+rm "$DIR/temp" "$DIR/out1.sqfs" "$DIR/linux-3.11.tar.xz"
+rm --one-file-system -rf "$DIR/linux-3.11"
+rmdir "$DIR"
