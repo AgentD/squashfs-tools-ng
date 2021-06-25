@@ -64,6 +64,8 @@ static int get_type(sqfs_u16 mode)
 	case S_IFCHR:  return SQFS_INODE_CDEV;
 	case S_IFDIR:  return SQFS_INODE_DIR;
 	case S_IFREG:  return SQFS_INODE_FILE;
+	default:
+		break;
 	}
 
 	return SQFS_ERROR_UNSUPPORTED;

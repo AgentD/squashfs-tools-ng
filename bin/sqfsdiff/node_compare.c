@@ -78,6 +78,8 @@ int node_compare(sqfsdiff_t *sd, sqfs_tree_node_t *a, sqfs_tree_node_t *b)
 			if (b->inode->base.type == SQFS_INODE_SOCKET)
 				demoted = true;
 			break;
+		default:
+			break;
 		}
 
 		if (promoted) {

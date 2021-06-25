@@ -212,6 +212,8 @@ int sqfs_meta_writer_write_inode(sqfs_meta_writer_t *ir,
 		};
 		return sqfs_meta_writer_append(ir, &ipc, sizeof(ipc));
 	}
+	default:
+		break;
 	}
 
 	return SQFS_ERROR_UNSUPPORTED;

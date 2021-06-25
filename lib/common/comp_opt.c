@@ -212,6 +212,8 @@ int compressor_cfg_init_options(sqfs_compressor_config_t *cfg,
 		case OPT_PB: cfg->opt.xz.pb = ival; break;
 		case OPT_WINDOW: cfg->opt.gzip.window_size = ival; break;
 		case OPT_DICT: cfg->opt.xz.dict_size = ival; break;
+		default:
+			break;
 		}
 	}
 

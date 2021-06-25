@@ -37,6 +37,8 @@ static int should_skip(int type, unsigned int flags)
 	case SQFS_INODE_FIFO:
 	case SQFS_INODE_EXT_FIFO:
 		return (flags & SQFS_TREE_NO_FIFO);
+	default:
+		break;
 	}
 
 	return 0;

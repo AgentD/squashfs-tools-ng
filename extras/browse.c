@@ -142,6 +142,8 @@ static void list_directory(const char *dirname)
 		case SQFS_INODE_SOCKET:
 			fputs("\033[01;35m", stdout);
 			break;
+		default:
+			break;
 		}
 
 		len = ent->size + 1;
@@ -400,6 +402,8 @@ static void stat_cmd(const char *filename)
 
 			sqfs_free(idx);
 		}
+		break;
+	default:
 		break;
 	}
 

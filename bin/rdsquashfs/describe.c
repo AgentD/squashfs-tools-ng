@@ -128,6 +128,8 @@ int describe_tree(const sqfs_tree_node_t *root, const char *unpack_root)
 				return -1;
 		}
 		break;
+	default:
+		break;
 	}
 
 	return 0;

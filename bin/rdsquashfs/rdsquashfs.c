@@ -165,6 +165,8 @@ int main(int argc, char **argv)
 		if (dump_xattrs(xattr, n->inode))
 			goto out;
 		break;
+	default:
+		break;
 	}
 
 	status = EXIT_SUCCESS;

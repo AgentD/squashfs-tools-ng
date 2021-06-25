@@ -144,6 +144,8 @@ static lzma_vli flag_to_vli(int flag)
 		return LZMA_FILTER_ARMTHUMB;
 	case SQFS_COMP_FLAG_XZ_SPARC:
 		return LZMA_FILTER_SPARC;
+	default:
+		break;
 	}
 
 	return LZMA_VLI_UNKNOWN;
