@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.1.2] - 2021-06-25
 ### Added
 - Test cases for concatenated stream decompression
+- A more "real-world" test suite for `tar2sqfs` pre-release testing
 
 ### Fixed
 - Replace tabs with spaces in format.txt
@@ -16,6 +17,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - allow concatenated Bzip2 streams
 - Use Automake conditional for zstd stream compression support
 - Use *_MAX from limits.h instead of configure-time type size checks
+- Additional compiler warnings were turned on and addressed
+- libfstream: Add printf format specifier attribute
+- libfstream: guard against potential integer overflows
+- libfstree: guard against link count and inode number overflow
+- libfstree: guard against possible overflow in readlink()
+- libcommon: potentially un-aligned data access in LZO compressor
+- libsquashfs: potentially unaligned data access in meta data handling
+- Some format string type/signedness mismatch issues
 
 ## [1.1.1] - 2021-05-07
 ### Fixed
