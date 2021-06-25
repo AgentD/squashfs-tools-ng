@@ -99,7 +99,8 @@ int stat_file(const sqfs_tree_node_t *node)
 	printf("Name: %s\n", (const char *)node->name);
 	printf("Inode type: %s\n", type == NULL ? "UNKNOWN" : type);
 	printf("Inode number: %u\n", inode->base.inode_number);
-	printf("Access: 0%o\n", inode->base.mode & ~SQFS_INODE_MODE_MASK);
+	printf("Access: 0%o\n",
+	       (unsigned int)inode->base.mode & ~SQFS_INODE_MODE_MASK);
 	printf("UID: %u (index = %u)\n", node->uid, inode->base.uid_idx);
 	printf("GID: %u (index = %u)\n", node->gid, inode->base.gid_idx);
 	printf("Last modified: %s (%u)\n", buffer, inode->base.mod_time);
@@ -111,7 +112,7 @@ int stat_file(const sqfs_tree_node_t *node)
 		printf("Xattr index: 0x%X\n", xattr_idx);
 
 	if (link_target != NULL)
-		printf("Link target: %.*s\n", link_size, link_target);
+		printf("Link target: %.*s\n", (int)link_size, link_target);
 
 	if (have_devno) {
 		printf("Device number: %u:%u (%u)\n",
@@ -171,7 +172,7 @@ int stat_file(const sqfs_tree_node_t *node)
 			}
 
 			printf("\t'%.*s' -> block %u, header offset %u\n",
-			       idx->size + 1, idx->name,
+			       (int)(idx->size + 1), idx->name,
 			       idx->start_block, idx->index);
 
 			sqfs_free(idx);
