@@ -20,6 +20,9 @@ static int flush_inbuf(ostream_comp_t *base, bool finish)
 	size_t have;
 	int ret;
 
+	if (base->inbuf_used > sizeof(base->inbuf))
+		base->inbuf_used = sizeof(base->inbuf);
+
 	if (sizeof(size_t) > sizeof(uInt)) {
 		gzip->strm.avail_in = ~((uInt)0);
 
