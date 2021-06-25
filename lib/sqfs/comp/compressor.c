@@ -42,31 +42,44 @@ static const char *names[] = {
 
 int sqfs_generic_write_options(sqfs_file_t *file, const void *data, size_t size)
 {
-	sqfs_u8 buffer[size + 2];
+	sqfs_u8 buffer[64];
+	sqfs_u16 header;
 	int ret;
 
-	*((sqfs_u16 *)buffer) = htole16(0x8000 | size);
-	memcpy(buffer + 2, data, size);
+	/* XXX: options for all known compressors should fit into this */
+	if (size >= (sizeof(buffer) - sizeof(header)))
+		return SQFS_ERROR_INTERNAL;
+
+	header = htole16(0x8000 | size);
+	memcpy(buffer, &header, sizeof(header));
+	memcpy(buffer + sizeof(header), data, size);
 
 	ret = file->write_at(file, sizeof(sqfs_super_t),
-			     buffer, sizeof(buffer));
+			     buffer, sizeof(header) + size);
 	if (ret)
 		return ret;
 
-	return sizeof(buffer);
+	return sizeof(header) + size;
 }
 
 int sqfs_generic_read_options(sqfs_file_t *file, void *data, size_t size)
 {
-	sqfs_u8 buffer[size + 2];
+	sqfs_u8 buffer[64];
+	sqfs_u16 header;
 	int ret;
 
+	/* XXX: options for all known compressors should fit into this */
+	if (size >= (sizeof(buffer) - sizeof(header)))
+		return SQFS_ERROR_INTERNAL;
+
 	ret = file->read_at(file, sizeof(sqfs_super_t),
-			    buffer, sizeof(buffer));
+			    buffer, sizeof(header) + size);
 	if (ret)
 		return ret;
 
-	if (le16toh(*((sqfs_u16 *)buffer)) != (0x8000 | size))
+	memcpy(&header, buffer, sizeof(header));
+
+	if (le16toh(header) != (0x8000 | size))
 		return SQFS_ERROR_CORRUPTED;
 
 	memcpy(data, buffer + 2, size);

@@ -49,8 +49,13 @@ struct sqfs_meta_writer_t {
 
 static int write_block(sqfs_file_t *file, meta_block_t *outblk)
 {
-	size_t count = le16toh(((sqfs_u16 *)outblk->data)[0]) & 0x7FFF;
-	sqfs_u64 off = file->get_size(file);
+	sqfs_u16 header;
+	size_t count;
+	sqfs_u64 off;
+
+	memcpy(&header, outblk->data, sizeof(header));
+	count = le16toh(header) & 0x7FFF;
+	off = file->get_size(file);
 
 	return file->write_at(file, off, outblk->data, count + 2);
 }
@@ -92,6 +97,7 @@ sqfs_meta_writer_t *sqfs_meta_writer_create(sqfs_file_t *file,
 int sqfs_meta_writer_flush(sqfs_meta_writer_t *m)
 {
 	meta_block_t *outblk;
+	sqfs_u16 header;
 	sqfs_u32 count;
 	sqfs_s32 ret;
 
@@ -110,13 +116,15 @@ int sqfs_meta_writer_flush(sqfs_meta_writer_t *m)
 	}
 
 	if (ret > 0) {
-		((sqfs_u16 *)outblk->data)[0] = htole16(ret);
+		header = htole16(ret);
 		count = ret + 2;
 	} else {
-		((sqfs_u16 *)outblk->data)[0] = htole16(m->offset | 0x8000);
+		header = htole16(m->offset | 0x8000);
 		memcpy(outblk->data + 2, m->data, m->offset);
 		count = m->offset + 2;
 	}
+
+	memcpy(outblk->data, &header, sizeof(header));
 
 	ret = 0;
 
