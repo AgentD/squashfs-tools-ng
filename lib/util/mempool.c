@@ -31,7 +31,7 @@ typedef struct pool_t {
 
 	size_t obj_free;
 
-	unsigned char blob[];
+	unsigned int blob[];
 } pool_t;
 
 struct mem_pool_t {
@@ -66,36 +66,26 @@ static pool_t *create_pool(const mem_pool_t *mem)
 	pool_t *pool;
 
 #if defined(_WIN32) || defined(__WINDOWS__)
-	ptr = VirtualAlloc(NULL, mem->pool_size, MEM_RESERVE | MEM_COMMIT,
-			   PAGE_READWRITE);
+	pool = VirtualAlloc(NULL, mem->pool_size, MEM_RESERVE | MEM_COMMIT,
+			    PAGE_READWRITE);
 
-	if (ptr == NULL)
+	if (pool == NULL)
 		return NULL;
 #else
-	ptr = mmap(NULL, mem->pool_size, PROT_READ | PROT_WRITE,
-		   MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	pool = mmap(NULL, mem->pool_size, PROT_READ | PROT_WRITE,
+		    MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 
-	if (ptr == MAP_FAILED)
+	if (pool == MAP_FAILED)
 		return NULL;
 #endif
-
-	pool = (pool_t *)ptr;
-
-	ptr = pool->blob;
-
-	if (((intptr_t)ptr) % sizeof(unsigned int)) {
-		ptr += sizeof(unsigned int);
-		ptr -= ((intptr_t)ptr) % sizeof(unsigned int);
-	}
-
-	pool->bitmap = (unsigned int *)ptr;
+	pool->bitmap = pool->blob;
 	pool->obj_free = mem->bitmap_count * sizeof(unsigned int) * CHAR_BIT;
 
-	ptr += mem->bitmap_count * sizeof(unsigned int);
+	ptr = (unsigned char *)(pool->bitmap + mem->bitmap_count);
 
-	if (((intptr_t)ptr) % mem->obj_size) {
+	if (((uintptr_t)ptr) % mem->obj_size) {
 		ptr += mem->obj_size;
-		ptr -= ((intptr_t)ptr) % mem->obj_size;
+		ptr -= ((uintptr_t)ptr) % mem->obj_size;
 	}
 
 	pool->data = ptr;
