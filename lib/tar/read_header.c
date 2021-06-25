@@ -248,6 +248,8 @@ int read_header(FILE *fp, tar_header_decoded_t *out)
 					&out->actual_size))
 				goto fail;
 			break;
+		default:
+			break;
 		}
 		break;
 	}

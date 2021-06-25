@@ -117,6 +117,8 @@ static int flag_to_zlib_strategy(int flag)
 		return Z_RLE;
 	case SQFS_COMP_FLAG_GZIP_FIXED:
 		return Z_FIXED;
+	default:
+		break;
 	}
 
 	return 0;

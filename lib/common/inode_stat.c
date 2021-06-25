@@ -66,6 +66,8 @@ int inode_stat(const sqfs_tree_node_t *node, struct stat *sb)
 		sb->st_size = node->inode->data.dir_ext.size;
 		sb->st_nlink = node->inode->data.dir_ext.nlink;
 		break;
+	default:
+		break;
 	}
 
 	sb->st_blocks = sb->st_size / sb->st_blksize;

@@ -87,6 +87,8 @@ int stat_file(const sqfs_tree_node_t *node)
 	case SQFS_INODE_EXT_SOCKET:
 		nlinks = inode->data.ipc_ext.nlink;
 		break;
+	default:
+		break;
 	}
 
 	timeval = inode->base.mod_time;
@@ -174,6 +176,8 @@ int stat_file(const sqfs_tree_node_t *node)
 
 			sqfs_free(idx);
 		}
+		break;
+	default:
 		break;
 	}
 	return 0;

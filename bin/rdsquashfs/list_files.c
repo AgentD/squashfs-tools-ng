@@ -37,6 +37,7 @@ static void mode_to_str(sqfs_u16 mode, char *p)
 	case S_IXGRP:           *(p++) = 'x'; break;
 	case S_ISGID:           *(p++) = 'S'; break;
 	case 0:                 *(p++) = '-'; break;
+	default:                              break;
 	}
 
 	*(p++) = (mode & S_IROTH) ? 'r' : '-';
@@ -47,6 +48,7 @@ static void mode_to_str(sqfs_u16 mode, char *p)
 	case S_IXOTH:           *(p++) = 'x'; break;
 	case S_ISVTX:           *(p++) = 'T'; break;
 	case 0:                 *(p++) = '-'; break;
+	default:                              break;
 	}
 
 	*p = '\0';
