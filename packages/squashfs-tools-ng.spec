@@ -6,7 +6,7 @@
 %endif
 
 Name: squashfs-tools-ng
-Version: 1.0.4
+Version: 1.1.2
 Release: 1%{?dist}
 License: GPLv3+
 URL: https://github.com/AgentD/squashfs-tools-ng
@@ -54,14 +54,17 @@ BuildRequires: zlib-devel
 BuildRequires: xz-devel
 BuildRequires: lzo-devel
 BuildRequires: libattr-devel
+
 # Need to be explicitly declared on Fedora
 BuildRequires: make
 
-# OpenSUSE has a different lz4 devel package name
+# OpenSUSE has a different lz4 and bzip2 devel package names
 %if 0%{?suse_version} > 0
 BuildRequires: liblz4-devel
+BuildRequires: libbz2-devel
 %else
 BuildRequires: lz4-devel
+BuildRequires: bzip2-devel
 %endif
 
 %if 0%{?use_zstd}
@@ -74,8 +77,16 @@ Requires: zlib
 Requires: xz
 Requires: lzo
 Requires: libattr
-Requires: lz4
 Requires: libselinux
+
+# OpenSUSE has a different lz4 and bzip2 package names
+%if 0%{?suse_version} > 0
+Requires: liblz4
+Requires: libbz2
+%else
+BuildRequires: lz4
+BuildRequires: bzip2
+%endif
 
 #Recommends: squashfs-tools
    
@@ -141,9 +152,11 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Sat Jun 26 2021 David Oberhollenzer <goliath@infraroot.at> - 1.1.2-1
+- Bump to version 1.1.2.
 * Sat Jan 23 2021 David Oberhollenzer <goliath@infraroot.at> - 1.0.4-1
 - Bump to version 1.0.4.
-* Wed Nov 05 2020 David Oberhollenzer <goliath@infraroot.at> - 1.0.3-1
+* Thu Nov 05 2020 David Oberhollenzer <goliath@infraroot.at> - 1.0.3-1
 - Bump to version 1.0.3.
 * Thu Oct 01 2020 Sébastien Gross <seb•ɑƬ•chezwam•ɖɵʈ•org> - 1.0.2-1
 - Add Fedora support.

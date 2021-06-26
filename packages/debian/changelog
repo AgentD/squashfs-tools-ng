@@ -1,3 +1,25 @@
+squashfs-tools-ng (1.1.2-1) experimental; urgency=medium
+
+  * New upstream release.
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Sat, 26 Jun 2021 07:35:56 +0200
+
+squashfs-tools-ng (1.1.1-1) experimental; urgency=medium
+
+  * New upstream release.
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Sun, 23 May 2021 16:19:32 +0200
+
+squashfs-tools-ng (1.0.4-1) unstable; urgency=medium
+
+  * New upstream release.
+  * Add upstream metadata.
+  * Update packaging bits.
+  * Update debhelper level to 13 .
+  * Update Standards-Version to 4.5.1 .
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Fri, 29 Jan 2021 23:20:01 +0100
+
 squashfs-tools-ng (1.0.3-2) unstable; urgency=medium
 
   * Backport upstream fix for normalization of slashes in filenames

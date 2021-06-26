@@ -1,46 +1,33 @@
-# -*- sh -*-
-
-# Contributor:
-# Maintainer: Sébastien Gross <invalid@invalid.tld>
-
+# Contributor: Ryan Barnett <ryanbarnett3@gmail.com>
+# Maintainer: Ryan Barnett <ryanbarnett3@gmail.com>
 pkgname=squashfs-tools-ng
-pkgver=1.0.4
+pkgver=1.1.2
 pkgrel=0
-pkgdesc="New set of tools for working with SquashFS images."
-url="https://github.com/AgentD/squashfs-tools-ng"
+pkgdesc="A new set of tools and libraries for working with SquashFS images"
+url="https://infraroot.at/projects/squashfs-tools-ng/index.html"
 arch="all"
-license="GPL3"
-depends="squashfs-tools"
-makedepends="autoconf automake libtool m4 make gcc doxygen lzo-dev zstd-dev lz4-dev xz-dev zlib-dev libselinux-dev"
-install=""
-subpackages="$pkgname-static $pkgname-dev $pkgname-doc"
-source="https://github.com/AgentD/squashfs-tools-ng/archive/v$pkgver/$pkgname-$pkgver.tar.gz"
+license="GPL-3.0-or-later"
+makedepends="automake libselinux-dev lz4-dev lzo-dev xz-dev zlib-dev zstd-dev libbz2-dev"
+subpackages="$pkgname-dev $pkgname-libs $pkgname-doc"
+source="https://infraroot.at/pub/squashfs/squashfs-tools-ng-$pkgver.tar.gz"
 
 build() {
-    cd "$builddir"
-    ./autogen.sh
-    ./configure --prefix=/usr
-    make
-    make doxygen-doc
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--sysconfdir=/etc \
+		--mandir=/usr/share/man \
+		--localstatedir=/var
+	make
 }
 
 check() {
-    cd "$builddir"
-    make check
+	make check
 }
 
 package() {
-    cd "$builddir"
-    make -j1 DESTDIR="$pkgdir" install
+	make DESTDIR="$pkgdir" install
 }
 
-doc() {
-    cd "$builddir"
-    pkgdesc="$pkgname documemtation"
-    default_doc
-    install -d "$subpkgdir/usr/share/doc/$pkgname"
-    cp -a doxygen-doc/* "$subpkgdir/usr/share/doc/$pkgname"
-
-}
-
-sha512sums="3c9f3bea73becaf026bfe22fdc5da28de05d7b5fa7e17230a74f7cc9d08efefda59c004113b6d1aaa59d0e586fc379bc6d0f6e178ddab794bfe9c5966602204c  squashfs-tools-ng-1.0.4.tar.gz"
+sha512sums="3f66cd9034997104e2d3281e271e8ccfbdd6ecaa98313636dcfd5251717e173ceede27b4a94342b011707fc1e96884ec733423f978697c6420915d96c153cf3e  squashfs-tools-ng-1.1.2.tar.gz"

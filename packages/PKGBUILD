@@ -1,16 +1,19 @@
-# -*- sh -*-
-
-# Maintainer: Sébastien Gross <seb•ɑƬ•chezwam•ɖɵʈ•org>
-# Contributor:
+# Maintainer: David Oberhollenzer <goliath at infraroot dot at>
 
 pkgname=('squashfs-tools-ng' 'squashfs-tools-ng-doc')
-pkgver=1.0.4
+pkgver=1.1.2
 pkgrel=1
 epoch=
-pkgdesc="New set of tools for working with SquashFS images."
-url="https://github.com/AgentD/squashfs-tools-ng"
-license=('GPL3')
+pkgdesc='A new set of tools and libraries for working with SquashFS images'
+url='https://infraroot.at/projects/squashfs-tools-ng/index.html'
 arch=('x86_64')
+license=('GPL3' 'LGPL3')
+depends=('lzo' 'lz4' 'xz' 'zstd' 'zlib' 'attr' 'bzip2')
+source=(https://infraroot.at/pub/squashfs/${pkgname}-${pkgver}.tar.xz{,.asc})
+sha512sums=('3f66cd9034997104e2d3281e271e8ccfbdd6ecaa98313636dcfd5251717e173ceede27b4a94342b011707fc1e96884ec733423f978697c6420915d96c153cf3e'
+            'SKIP'
+	   )
+validpgpkeys=('13063F723C9E584AEACD5B9BBCE5DC3C741A02D1')
 groups=()
 makedepends=(
     'fakeroot'
@@ -25,7 +28,6 @@ makedepends=(
     'gcc'
     'doxygen')
 #
-depends=('zstd' 'lzo' 'attr')
 checkdepends=()
 optdepends=('squashfs-tools')
 provides=()
@@ -35,19 +37,7 @@ backup=()
 options=()
 install=
 changelog=
-source=("https://github.com/AgentD/squashfs-tools-ng/archive/v$pkgver/$pkgname-$pkgver.tar.gz")
 noextract=()
-
-## Generated using: makepkg -g PKGBUILD
-md5sums=('6f0a153a3438fa333771759e70d5fd41')
-sha1sums=('8996e3f4560eb99bb536f49aa3d43ef7d74386da')
-sha224sums=('a1abb8bcdc13c497f4be40866c0ac3425018af6e64fb866604614146')
-sha256sums=('addcd60f94971b7f7d7f65a973efa19714d273515a4f4bfc90138b0db0a4c9e9')
-sha384sums=('09adeae3321bbf61d4a40c26297892300da2074fbb83ca49a9002e3ab0d775ab6ea4f4945f075e65d18c32a5979b18a9')
-sha512sums=('3c9f3bea73becaf026bfe22fdc5da28de05d7b5fa7e17230a74f7cc9d08efefda59c004113b6d1aaa59d0e586fc379bc6d0f6e178ddab794bfe9c5966602204c')
-b2sums=('4ad4a36d10580c035b4af7c09ec2d4794fd1a054579d0427971debbb2dbb859b486dfc1d27ac56136d85b78e2e3787f4330917bf1c8c5bca0e1da028add55cf9')
-
-validpgpkeys=()
 
 prepare() {
     cd "$pkgname-$pkgver"
@@ -55,7 +45,6 @@ prepare() {
 
 build() {
     cd "$pkgname-$pkgver"
-    ./autogen.sh
     ./configure --prefix=/usr
     make
     make doxygen-doc
@@ -67,7 +56,7 @@ check() {
 }
 
 package_squashfs-tools-ng() {
-    #depends=('zstd' 'attr' 'zlib' 'xz' 'lzo' )
+    #depends=('zstd' 'attr' 'zlib' 'xz' 'lzo' 'bzip2' )
     cd "$pkgname-$pkgver"
     make DESTDIR="$pkgdir/" install
 }
