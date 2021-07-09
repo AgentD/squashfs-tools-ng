@@ -48,7 +48,7 @@ static int write_file(istream_t *input_file, sqfs_writer_t *sqfs,
 			diff = filesize - offset;
 		}
 
-		if (sizeof(diff) > sizeof(size_t) && diff > 0x7FFFFFFFUL)
+		if (diff > 0x7FFFFFFFUL)
 			diff = 0x7FFFFFFFUL;
 
 		if (sparse_region) {
