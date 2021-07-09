@@ -31,10 +31,10 @@ static void write_number(char *dst, sqfs_u64 value, int digits)
 		mask = (mask << 3) | 7;
 
 	if (value <= mask) {
-		sprintf(buffer, "%0*o ", digits - 1, (unsigned int)value);
+		sprintf(buffer, "%0*lo ", digits - 1, (unsigned long)value);
 		memcpy(dst, buffer, digits);
 	} else if (value <= ((mask << 3) | 7)) {
-		sprintf(buffer, "%0*o", digits, (unsigned int)value);
+		sprintf(buffer, "%0*lo", digits, (unsigned long)value);
 		memcpy(dst, buffer, digits);
 	} else {
 		write_binary(dst, value, digits);
