@@ -8,9 +8,10 @@
 
 #include "internal.h"
 
-static tar_xattr_t *mkxattr(const char *key, size_t keylen,
+static tar_xattr_t *mkxattr(const char *key,
 			    const char *value, size_t valuelen)
 {
+	size_t keylen = strlen(key);
 	tar_xattr_t *xattr;
 
 	xattr = calloc(1, sizeof(*xattr) + keylen + 1 + valuelen + 1);
@@ -56,72 +57,83 @@ int read_pax_header(istream_t *fp, sqfs_u64 entsize, unsigned int *set_by_pax,
 		if (ptr >= end || (ptr - line) >= len)
 			goto fail_malformed;
 
-		if (!strncmp(ptr, "uid=", 4)) {
-			if (pax_read_decimal(ptr + 4, &field))
+		key = ptr;
+
+		while (*ptr != '\0' && *ptr != '=')
+			++ptr;
+
+		if (ptr == key || *ptr != '=')
+			goto fail_malformed;
+
+		*(ptr++) = '\0';
+		value = ptr;
+
+		if (!strcmp(key, "uid")) {
+			if (pax_read_decimal(value, &field))
 				goto fail;
 			out->sb.st_uid = field;
 			*set_by_pax |= PAX_UID;
-		} else if (!strncmp(ptr, "gid=", 4)) {
-			if (pax_read_decimal(ptr + 4, &field))
+		} else if (!strcmp(key, "gid")) {
+			if (pax_read_decimal(value, &field))
 				goto fail;
 			out->sb.st_gid = field;
 			*set_by_pax |= PAX_GID;
-		} else if (!strncmp(ptr, "path=", 5)) {
+		} else if (!strcmp(key, "path")) {
 			free(out->name);
-			out->name = strdup(ptr + 5);
+			out->name = strdup(value);
 			if (out->name == NULL)
 				goto fail_errno;
 			*set_by_pax |= PAX_NAME;
-		} else if (!strncmp(ptr, "size=", 5)) {
-			if (pax_read_decimal(ptr + 5, &out->record_size))
+		} else if (!strcmp(key, "size")) {
+			if (pax_read_decimal(value, &out->record_size))
 				goto fail;
 			*set_by_pax |= PAX_SIZE;
-		} else if (!strncmp(ptr, "linkpath=", 9)) {
+		} else if (!strcmp(key, "linkpath")) {
 			free(out->link_target);
-			out->link_target = strdup(ptr + 9);
+			out->link_target = strdup(value);
 			if (out->link_target == NULL)
 				goto fail_errno;
 			*set_by_pax |= PAX_SLINK_TARGET;
-		} else if (!strncmp(ptr, "mtime=", 6)) {
-			if (ptr[6] == '-') {
-				if (pax_read_decimal(ptr + 7, &field))
+		} else if (!strcmp(key, "mtime")) {
+			if (value[0] == '-') {
+				if (pax_read_decimal(value + 1, &field))
 					goto fail;
 				out->mtime = -((sqfs_s64)field);
 			} else {
-				if (pax_read_decimal(ptr + 6, &field))
+				if (pax_read_decimal(value, &field))
 					goto fail;
 				out->mtime = field;
 			}
 			*set_by_pax |= PAX_MTIME;
-		} else if (!strncmp(ptr, "GNU.sparse.name=", 16)) {
+		} else if (!strcmp(key, "GNU.sparse.name")) {
 			free(out->name);
-			out->name = strdup(ptr + 16);
+			out->name = strdup(value);
 			if (out->name == NULL)
 				goto fail_errno;
 			*set_by_pax |= PAX_NAME;
-		} else if (!strncmp(ptr, "GNU.sparse.map=", 15)) {
+		} else if (!strcmp(key, "GNU.sparse.map")) {
 			free_sparse_list(out->sparse);
 			sparse_last = NULL;
 
-			out->sparse = read_sparse_map(ptr + 15);
+			out->sparse = read_sparse_map(value);
 			if (out->sparse == NULL)
 				goto fail;
-		} else if (!strncmp(ptr, "GNU.sparse.size=", 16)) {
-			if (pax_read_decimal(ptr + 16, &out->actual_size))
+		} else if (!strcmp(key, "GNU.sparse.size")) {
+			if (pax_read_decimal(value, &out->actual_size))
 				goto fail;
 			*set_by_pax |= PAX_SPARSE_SIZE;
-		} else if (!strncmp(ptr, "GNU.sparse.realsize=", 20)) {
-			if (pax_read_decimal(ptr + 20, &out->actual_size))
+		} else if (!strcmp(key, "GNU.sparse.realsize")) {
+			if (pax_read_decimal(value, &out->actual_size))
 				goto fail;
 			*set_by_pax |= PAX_SPARSE_SIZE;
-		} else if (!strncmp(ptr, "GNU.sparse.major=", 17) ||
-			   !strncmp(ptr, "GNU.sparse.minor=", 17)) {
+		} else if (!strcmp(key, "GNU.sparse.major") ||
+			   !strcmp(key, "GNU.sparse.minor")) {
 			*set_by_pax |= PAX_SPARSE_GNU_1_X;
-		} else if (!strncmp(ptr, "GNU.sparse.offset=", 18)) {
-			if (pax_read_decimal(ptr + 18, &offset))
+		} else if (!strcmp(key, "GNU.sparse.offset")) {
+			if (pax_read_decimal(value, &offset))
 				goto fail;
-		} else if (!strncmp(ptr, "GNU.sparse.numbytes=", 20)) {
-			if (pax_read_decimal(ptr + 20, &num_bytes))
+		} else if (!strcmp(key, "GNU.sparse.numbytes")) {
+			if (pax_read_decimal(value, &num_bytes))
 				goto fail;
 			sparse = calloc(1, sizeof(*sparse));
 			if (sparse == NULL)
@@ -135,32 +147,16 @@ int read_pax_header(istream_t *fp, sqfs_u64 entsize, unsigned int *set_by_pax,
 				sparse_last->next = sparse;
 				sparse_last = sparse;
 			}
-		} else if (!strncmp(ptr, "SCHILY.xattr.", 13)) {
-			key = ptr + 13;
-
-			ptr = strrchr(key, '=');
-			if (ptr == NULL || ptr == key)
-				continue;
-
-			value = ptr + 1;
-
-			xattr = mkxattr(key, ptr - key,
-					value, len - (value - line) - 1);
+		} else if (!strncmp(key, "SCHILY.xattr.", 13)) {
+			xattr = mkxattr(key + 13, value,
+					len - (value - line) - 1);
 			if (xattr == NULL)
 				goto fail_errno;
 
 			xattr->next = out->xattr;
 			out->xattr = xattr;
-		} else if (!strncmp(ptr, "LIBARCHIVE.xattr.", 17)) {
-			key = ptr + 17;
-
-			ptr = strrchr(key, '=');
-			if (ptr == NULL || ptr == key)
-				continue;
-
-			value = ptr + 1;
-
-			xattr = mkxattr(key, ptr - key, value, strlen(value));
+		} else if (!strncmp(key, "LIBARCHIVE.xattr.", 17)) {
+			xattr = mkxattr(key + 17, value, strlen(value));
 			if (xattr == NULL)
 				goto fail_errno;
 
