@@ -111,48 +111,8 @@ required dependencies:
 
 	./mkwinbins.sh
 
-## Structure of the Source Code
-
-The main functionality of the package is split up into a number of libraries.
-The actual tools are mainly wrappers around the libraries that combine their
-functionality in a useful way.
-
-The headers of all the libraries can be found in the `include` directory,
-whereas the source code is in a per-library sub-directory within `lib`. The
-tools themselves are in sub-directories within `bin`.
-
-The `include` directory has a sub-directory `sqfs` which contains the public
-headers of `libsquashfs.so` which are installed along with the library. All
-other headers are private to this package.
-
-The following components exist:
- - `libfstree.a` built from files in `lib/fstree` contains functions for
-   manipulating a file system tree.
- - `libtar.a` built from files in `lib/tar` contains data structures and
-   functions for parsing and creating tar files.
- - `libsquashfs.so` built from files in `lib/sqfs` contains all kinds of
-   data structures for reading and writing SquashFS archives. Abstractions
-   for data compression and so on. It contains the actual brains of this
-   package.
- - `libcommon.a` built from files in `lib/common` contains a bunch
-   of commonly used code shared across the utilities.
- - `libcompat.a` built from files in `lib/compat` contains minimal
-   implementations of POSIX or GNU functions that are not available on some
-   platforms.
- - `libutil.a` contains common utilities that are used internally by both the
-   programs and `libsquashfs.so`.
-
-Optionally, `libsquashfs` can be compiled with builtin, custom versions of zlib
-and lz4. The configure options `--with-builtin-zlib` and `--with-builtin-lz4`
-can be used. The respective library sources are also in the `lib` directory.
-
-The `tests` sub-directory contains unit tests for the libraries.
-
-The `extras` sub-directory contains a few demo programs that use `libsquashfs`.
-
-To allow 3rd party applications to use `libsquashfs.so` without restricting
-their choice of license, the code in the `lib/sqfs` and `lib/util` directories
-is licensed under the LGPLv3, in contrast to the rest of this package.
+An high-level overview of the source code and
+architecture [can be found here](doc/architecture.md).
 
 ## A Note on LZO Support
 
