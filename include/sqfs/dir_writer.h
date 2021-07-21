@@ -161,6 +161,11 @@ SQFS_API int sqfs_dir_writer_end(sqfs_dir_writer_t *writer);
  * size of the directory listing that is required for the directory inodes.
  * And also to determine which kind of directory inode to create.
  *
+ * Note that this size is only what was written to disk. SquashFS directory
+ * inodes need you to add 3 to this value, to account for "." and ".." entries
+ * which are not actually stored on disk. The @ref sqfs_dir_writer_create_inode
+ * function takes this into account and adds the 3 internally.
+ *
  * @param writer A pointer to a directory writer object.
  *
  * @return The size of the entire, uncompressed listing in bytes.
@@ -225,6 +230,8 @@ SQFS_API size_t sqfs_dir_writer_get_index_size(const sqfs_dir_writer_t *writer);
  * If the generated inode is an extended directory inode, you can use another
  * convenience function called @ref sqfs_dir_writer_write_index to write the
  * index meta data after writing the inode itself.
+ *
+ * @note The size is already adjusted for the required off-by-3 value.
  *
  * @param writer A pointer to a directory writer object.
  * @param hlinks The number of hard links pointing to the directory.

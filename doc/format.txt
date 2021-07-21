@@ -664,6 +664,11 @@
  +------+--------------+------------------------------------------------------+
  | u16  | file size    | Total (uncompressed) size in bytes of the entry      |
  |      |              | listing in the directory table, including headers.   |
+ |      |              |                                                      |
+ |      |              | This value is 3 bytes larger than the real listing.  |
+ |      |              | The Linux kernel creates "." and ".." entries for    |
+ |      |              | offsets 0 and 1, and only after 3 looks into the     |
+ |      |              | listing, subtracting 3 from the size.                |
  +------+--------------+------------------------------------------------------+
  | u16  | block offset | The (uncompressed) offset within the metadata block  |
  |      |              | in the directory table where the directory listing   |
@@ -679,8 +684,8 @@
  directory. I.e. a directory with N entries has at least N + 2 link count.
 
 
- If the "file size" is set to 0, the directory is empty and there is no
- corresponding listing in the directory table.
+ If the "file size" is set to a value < 4, the directory is empty and there is
+ no corresponding listing in the directory table.
 
 
  An extended directory can have a listing that is at most 4GiB in size, may

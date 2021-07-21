@@ -399,7 +399,7 @@ sqfs_inode_generic_t
 	block_offset = writer->dir_ref & 0xFFFF;
 
 	if (xattr != 0xFFFFFFFF || start_block > 0xFFFFFFFFUL ||
-	    writer->dir_size > 0xFFFF) {
+	    writer->dir_size > (0xFFFF - 3)) {
 		inode->base.type = SQFS_INODE_EXT_DIR;
 	} else {
 		inode->base.type = SQFS_INODE_DIR;
@@ -408,12 +408,12 @@ sqfs_inode_generic_t
 	if (inode->base.type == SQFS_INODE_DIR) {
 		inode->data.dir.start_block = start_block;
 		inode->data.dir.nlink = writer->ent_count + hlinks + 2;
-		inode->data.dir.size = writer->dir_size;
+		inode->data.dir.size = writer->dir_size + 3;
 		inode->data.dir.offset = block_offset;
 		inode->data.dir.parent_inode = parent_ino;
 	} else {
 		inode->data.dir_ext.nlink = writer->ent_count + hlinks + 2;
-		inode->data.dir_ext.size = writer->dir_size;
+		inode->data.dir_ext.size = writer->dir_size + 3;
 		inode->data.dir_ext.start_block = start_block;
 		inode->data.dir_ext.parent_inode = parent_ino;
 		inode->data.dir_ext.offset = block_offset;
