@@ -400,6 +400,15 @@ struct sqfs_inode_dir_t {
 
 	/**
 	 * @brief Combined size of all directory entries and headers in bytes.
+	 *
+	 * The value stored here is off by 3 bytes, i.e. 3 bytes larger than
+	 * the actual listing on disk. The Linux implementation of SquashFS
+	 * uses readdir() offsets 0 and 1 to synthesize "." and ".." entries,
+	 * and after that looks into the actual directory.
+	 *
+	 * Why store an off-by-3 value on disk instead of faking it in the
+	 * kernel and have something consistent here? Beats me, but that's
+	 * how it is implemented.
 	 */
 	sqfs_u16 size;
 
@@ -428,7 +437,7 @@ struct sqfs_inode_dir_ext_t {
 	sqfs_u32 nlink;
 
 	/**
-	 * @brief Combined size of all directory entries and headers in bytes.
+	 * @brief Size of all directory entries and headers in bytes plus 3.
 	 */
 	sqfs_u32 size;
 
