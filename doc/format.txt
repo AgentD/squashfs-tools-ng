@@ -732,12 +732,12 @@
  |      |              | stored in. If not used, this is set to 0xFFFFFFFF.   |
  +------+--------------+------------------------------------------------------+
  | u32  | block offset | The (uncompressed) offset within the fragment block  |
- |      |              | where the tail end of this file is. See section 3    |
+ |      |              | where the tail end of this file is. See section 4    |
  |      |              | for details.                                         |
  +------+--------------+------------------------------------------------------+
  | u32  | file size    | The (uncompressed) size of this file.                |
  +------+--------------+------------------------------------------------------+
- | u32[]| block sizes  | An array of consecutive block sizes. See section 3   |
+ | u32[]| block sizes  | An array of consecutive block sizes. See section 4   |
  |      |              | for details.                                         |
  +------+--------------+------------------------------------------------------+
 
