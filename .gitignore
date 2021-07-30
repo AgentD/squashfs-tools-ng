@@ -44,6 +44,7 @@ Doxyfile
 tests/*.sh
 /mknastyfs
 /mk42sqfs
+/extract_one
 /list_files
 /sqfsbrowse
 /xattr_benchmark
