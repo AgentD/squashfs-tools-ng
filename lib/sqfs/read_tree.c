@@ -179,6 +179,9 @@ void sqfs_dir_tree_destroy(sqfs_tree_node_t *root)
 {
 	sqfs_tree_node_t *it;
 
+	if (!root)
+		return;
+
 	while (root->children != NULL) {
 		it = root->children;
 		root->children = it->next;

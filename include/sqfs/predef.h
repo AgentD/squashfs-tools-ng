@@ -133,11 +133,12 @@ typedef struct sqfs_object_t {
  *
  * @memberof sqfs_object_t
  *
- * @param obj A pointer to an object
+ * @param obj A pointer to an object or NULL
  */
 static SQFS_INLINE void sqfs_destroy(void *obj)
 {
-	((sqfs_object_t *)obj)->destroy((sqfs_object_t *)obj);
+	if (obj)
+		((sqfs_object_t *)obj)->destroy((sqfs_object_t *)obj);
 }
 
 /**
