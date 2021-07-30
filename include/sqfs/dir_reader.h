@@ -320,7 +320,7 @@ SQFS_API int sqfs_dir_reader_get_full_hierarchy(sqfs_dir_reader_t *rd,
  * This function can be used to clean up after
  * @ref sqfs_dir_reader_get_full_hierarchy.
  *
- * @param root A pointer to the root node.
+ * @param root A pointer to the root node or NULL.
  */
 SQFS_API void sqfs_dir_tree_destroy(sqfs_tree_node_t *root);
 
