@@ -45,5 +45,6 @@ tests/*.sh
 tests/rdsquashfs/*.sh
 /mknastyfs
 /mk42sqfs
+/extract_one
 /list_files
 /sqfsbrowse

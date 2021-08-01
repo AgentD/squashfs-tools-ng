@@ -1,3 +1,9 @@
+/* SPDX-License-Identifier: 0BSD */
+/*
+ * mknastyfs.c
+ *
+ * Copyright (C) 2020 David Oberhollenzer <goliath@infraroot.at>
+ */
 #include "sqfs/meta_writer.h"
 #include "sqfs/dir_writer.h"
 #include "sqfs/compressor.h"

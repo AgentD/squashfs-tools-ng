@@ -34,7 +34,7 @@ Although the existing squashfs-tools and the Linux kernel implementation have
 been used for testing, the source code in this package is neither based on,
 nor derived from either of them.
 
-## Documentation and the Build System
+## Documentation, examples and the Build System
 
 The auto-tools based build system has in large parts been hacked together by
 copy & pasting from various tutorials and other projects (mostly util-linux,
@@ -50,6 +50,9 @@ style write-up of the SquashFS format. You may do with those as you please.
 If you use those as a basis for writing about SquashFS or this package, please
 cite your sources and mark verbatim quotations as such. I won't be angry if you
 don't, but a thesis supervisor, reviewer or fellow Wikipedian might be.
+
+The example programs in the `extras` directory are licensed under
+the **0BSD license**, a copy of which can be found in `licenses/0BSD.txt`.
 
 # Binary Packages with 3rd Party Libraries
 
