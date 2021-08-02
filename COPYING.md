@@ -61,8 +61,8 @@ If you use those as a basis for writing about SquashFS or this package, please
 cite your sources and mark verbatim quotations as such. I won't be angry if you
 don't, but a thesis supervisor, reviewer or fellow Wikipedian might be.
 
-The `extras/extract_one.c` example file is licensed under the **0BSD license**,
-a copy of which can be found in `licenses/0BSD.txt`
+The example programs in the `extras` directory are licensed under
+the **0BSD license**, a copy of which can be found in `licenses/0BSD.txt`.
 
 # Binary Packages with 3rd Party Libraries
 

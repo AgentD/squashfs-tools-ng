@@ -1,3 +1,9 @@
+/* SPDX-License-Identifier: 0BSD */
+/*
+ * browse.c
+ *
+ * Copyright (C) 2020 David Oberhollenzer <goliath@infraroot.at>
+ */
 #include "sqfs/data_reader.h"
 #include "sqfs/compressor.h"
 #include "sqfs/dir_reader.h"

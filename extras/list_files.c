@@ -1,3 +1,9 @@
+/* SPDX-License-Identifier: 0BSD */
+/*
+ * list_files.c
+ *
+ * Copyright (C) 2020 David Oberhollenzer <goliath@infraroot.at>
+ */
 #include "sqfs/compressor.h"
 #include "sqfs/dir_reader.h"
 #include "sqfs/id_table.h"
