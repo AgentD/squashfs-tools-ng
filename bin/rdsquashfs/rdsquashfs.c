@@ -6,6 +6,89 @@
  */
 #include "rdsquashfs.h"
 
+static sqfs_tree_node_t *list_merge(sqfs_tree_node_t *lhs,
+				    sqfs_tree_node_t *rhs)
+{
+	sqfs_tree_node_t *it, *head = NULL, **next_ptr = &head;
+
+	while (lhs != NULL && rhs != NULL) {
+		if (strcmp((const char *)lhs->name,
+			   (const char *)rhs->name) <= 0) {
+			it = lhs;
+			lhs = lhs->next;
+		} else {
+			it = rhs;
+			rhs = rhs->next;
+		}
+
+		*next_ptr = it;
+		next_ptr = &it->next;
+	}
+
+	it = (lhs != NULL ? lhs : rhs);
+	*next_ptr = it;
+	return head;
+}
+
+static sqfs_tree_node_t *list_sort(sqfs_tree_node_t *head)
+{
+	sqfs_tree_node_t *it, *half, *prev;
+
+	it = half = prev = head;
+
+	while (it != NULL) {
+		prev = half;
+		half = half->next;
+		it = it->next;
+
+		if (it != NULL)
+			it = it->next;
+	}
+
+	if (half == NULL)
+		return head;
+
+	prev->next = NULL;
+
+	return list_merge(list_sort(head), list_sort(half));
+}
+
+static int tree_sort(sqfs_tree_node_t *root)
+{
+	sqfs_tree_node_t *it;
+
+	if (root->children == NULL)
+		return 0;
+
+	root->children = list_sort(root->children);
+
+	/*
+	  XXX: not only an inconvenience but a security issue: e.g. we unpack a
+	  SquashFS image that has a symlink pointing somewhere, and then a
+	  sub-directory or file with the same name, the unpacker can be tricked
+	  to follow the symlink and write anything, anywhere on the filesystem.
+	 */
+	for (it = root->children; it->next != NULL; it = it->next) {
+		if (strcmp((const char *)it->name,
+			   (const char *)it->next->name) == 0) {
+			char *path = sqfs_tree_node_get_path(it);
+
+			fprintf(stderr, "Entry '%s' found more than once!\n",
+				path);
+
+			sqfs_free(path);
+			return -1;
+		}
+	}
+
+	for (it = root->children; it != NULL; it = it->next) {
+		if (tree_sort(it))
+			return -1;
+	}
+
+	return 0;
+}
+
 int main(int argc, char **argv)
 {
 	sqfs_xattr_reader_t *xattr = NULL;
@@ -128,6 +211,9 @@ int main(int argc, char **argv)
 		}
 		break;
 	case OP_UNPACK:
+		if (tree_sort(n))
+			goto out;
+
 		if (opt.unpack_root != NULL) {
 			if (mkdir_p(opt.unpack_root))
 				goto out;
