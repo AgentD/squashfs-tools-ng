@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.3] - 2021-08-15
+### Added
+- Overhaul format documentation, convert to ASCIIdoc (#88, #90)
+- Add an explicit license boiler plate to all the example programs (#89)
+- Additional example code & documentation
+
+### Fixed
+- Typos and formating issues in the documentation (#86)
+- Symlink based path traversal in rdsqaushfs when unpacking to a directory
+- libsquashfs directory writer size accounting (#85)
+- tar2sqfs, sqfs2tar: 4 GiB limitation for files in tarballs (#87)
+
 ## [1.1.2] - 2021-06-25
 ### Added
 - Test cases for concatenated stream decompression
@@ -57,6 +69,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - libsquashfs: Allow shared read access to generated images on Windows (#79)
+
+## [1.0.6] - 2021-08-15
+### Added
+- Overhaul format documentation, convert to ASCIIdoc (#88, #90)
+- Add an explicit license boiler plate to all the example programs (#89)
+- Additional example code & documentation
+
+### Fixed
+- Typos and formating issues in the documentation (#86)
+- Fix symlink path traversal in rdsqaushfs
+- Add a test case for the path traversal bug
+- Fix libsquashfs directory writer size accounting
+- tar2sqfs, sqfs2tar: 4 GiB limitation for files in tarballs (#87)
+
+## [1.0.5] - 2021-06-25
+### Fixed
+- libsquashfs: Allow shared read access to generated images on Windows (#79)
+- libsquashfs: preserve alignment flag in block processor
+- libsquashfs: broken block alignment in block write
+- libsquashfs: add sqfs_free() function, mainly for Windows portabillity
+- libsquashfs: static linking on Windows
+- Some documentation clarifications and typo fixes
+- libfstree: guard against link count and inode number overflow
+- libcommon: potentially un-aligned data access in LZO compressor
+- libsquashfs: potentially unaligned data access in meta data handling
+- More compiler warning flags turned on and partially fixed
 
 ## [1.0.4] - 2021-01-23
 ### Fixed
@@ -426,9 +464,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Insert abstraction layers and split generic code off into support libraries
 
+[1.1.3]: https://github.com/AgentD/squashfs-tools-ng/compare/v1.1.2...v1.1.3
 [1.1.2]: https://github.com/AgentD/squashfs-tools-ng/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/AgentD/squashfs-tools-ng/compare/v1.1.0...v1.1.1
-[1.1.0]: https://github.com/AgentD/squashfs-tools-ng/compare/v1.0.4...v1.1.0
+[1.1.0]: https://github.com/AgentD/squashfs-tools-ng/compare/v1.0.2...v1.1.0
+[1.0.6]: https://github.com/AgentD/squashfs-tools-ng/compare/v1.0.5...v1.0.6
+[1.0.5]: https://github.com/AgentD/squashfs-tools-ng/compare/v1.0.4...v1.0.5
 [1.0.4]: https://github.com/AgentD/squashfs-tools-ng/compare/v1.0.3...v1.0.4
 [1.0.3]: https://github.com/AgentD/squashfs-tools-ng/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/AgentD/squashfs-tools-ng/compare/v1.0.1...v1.0.2
