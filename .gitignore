@@ -42,6 +42,7 @@ m4/libtool.m4
 m4/lt*.m4
 Doxyfile
 tests/*.sh
+tests/rdsquashfs/*.sh
 /mknastyfs
 /mk42sqfs
 /list_files
