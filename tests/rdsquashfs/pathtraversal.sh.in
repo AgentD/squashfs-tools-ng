@@ -1,0 +1,12 @@
+#!/bin/sh
+
+RDSQFS="@abs_top_builddir@/rdsquashfs"
+REFFILE="@abs_top_srcdir@/tests/rdsquashfs/pathtraversal.sqfs"
+GOTCHA="/tmp/gotcha.txt"
+
+if "$RDSQFS" -u / -p . "$REFFILE"; then
+	if [ -e "$GOTCHA" ]; then
+		echo "Found $GOTCHA which should not be there"
+		exit 1
+	fi
+fi

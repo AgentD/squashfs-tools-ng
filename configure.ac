@@ -299,6 +299,8 @@ AC_CONFIG_FILES([tests/cantrbry.sh], [chmod +x tests/cantrbry.sh])
 AC_CONFIG_FILES([tests/test_tar_sqfs.sh], [chmod +x tests/test_tar_sqfs.sh])
 AC_CONFIG_FILES([tests/pack_dir_root.sh], [chmod +x tests/pack_dir_root.sh])
 AC_CONFIG_FILES([tests/tarcompress.sh], [chmod +x tests/tarcompress.sh])
+AC_CONFIG_FILES([tests/rdsquashfs/pathtraversal.sh],
+		[chmod +x tests/rdsquashfs/pathtraversal.sh])
 
 AC_OUTPUT([Makefile])
 

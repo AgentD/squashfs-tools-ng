@@ -11,7 +11,14 @@ TESTS += tests/cantrbry.sh tests/test_tar_sqfs.sh tests/pack_dir_root.sh
 endif
 endif
 
+if WINDOWS
+else
+check_SCRIPTS += tests/rdsquashfs/pathtraversal.sh
+TESTS += tests/rdsquashfs/pathtraversal.sh
+endif
+
 EXTRA_DIST += $(top_srcdir)/tests/tar2sqfs
 EXTRA_DIST += $(top_srcdir)/tests/corpus/cantrbry.tar.xz
 EXTRA_DIST += $(top_srcdir)/tests/corpus/cantrbry.sha512
 EXTRA_DIST += $(top_srcdir)/tests/pack_dir_root.txt.ref
+EXTRA_DIST += $(top_srcdir)/tests/rdsquashfs/pathtraversal.sqfs
