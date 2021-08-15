@@ -52,7 +52,7 @@ int main(int argc, char **argv)
 	ret = sqfs_super_read(&super, file);
 	if (ret) {
 		fprintf(stderr, "%s: error reading super block.\n", argv[1]);
-		goto out;
+		goto out_file;
 	}
 
 	sqfs_compressor_config_init(&cfg, super.compression_id,
@@ -62,62 +62,62 @@ int main(int argc, char **argv)
 	ret = sqfs_compressor_create(&cfg, &cmp);
 	if (ret != 0) {
 		fprintf(stderr, "%s: error creating compressor: %d.\n", argv[1], ret);
-		goto out;
+		goto out_file;
 	}
 
 	if (!(super.flags & SQFS_FLAG_NO_XATTRS)) {
 		xattr = sqfs_xattr_reader_create(0);
 		if (xattr == NULL) {
 			fprintf(stderr, "%s: error creating xattr reader: %d.\n", argv[1], SQFS_ERROR_ALLOC);
-			goto out;
+			goto out_cmp;
 		}
 
 		ret = sqfs_xattr_reader_load(xattr, &super, file, cmp);
 		if (ret) {
 			fprintf(stderr, "%s: error loading xattr reader: %d.\n", argv[1], ret);
-			goto out;
+			goto out_xattr;
 		}
 	}
 
 	idtbl = sqfs_id_table_create(0);
 	if (idtbl == NULL) {
 		fprintf(stderr, "%s: error creating ID table: %d.\n", argv[1], ret);
-		goto out;
+		goto out_xattr;
 	}
 
 	ret = sqfs_id_table_read(idtbl, file, &super, cmp);
 	if (ret) {
 		fprintf(stderr, "%s: error loading ID table: %d.\n", argv[1], ret);
-		goto out;
+		goto out_idtbl;
 	}
 
 	dirrd = sqfs_dir_reader_create(&super, cmp, file, 0);
 	if (dirrd == NULL) {
 		fprintf(stderr, "%s: error creating dir reader: %d.\n", argv[1], SQFS_ERROR_ALLOC);
-		goto out;
+		goto out_idtbl;
 	}
 
 	data = sqfs_data_reader_create(file, super.block_size, cmp, 0);
 	if (data == NULL) {
 		fprintf(stderr, "%s: error creating data reader: %d.\n", argv[1], SQFS_ERROR_ALLOC);
-		goto out;
+		goto out_dirrd;
 	}
 
 	ret = sqfs_data_reader_load_fragment_table(data, &super);
 	if (ret) {
 		fprintf(stderr, "%s: error loading fragment table: %d.\n", argv[1], ret);
-		goto out;
+		goto out_data;
 	}
 
 	ret = sqfs_dir_reader_get_full_hierarchy(dirrd, idtbl, argv[2], 0, &n);
 	if (ret) {
 		fprintf(stderr, "%s: error reading filesystem hierarchy: %d.\n", argv[1], ret);
-		goto out;
+		goto out_data;
 	}
 
 	if (!S_ISREG(n->inode->base.mode)) {
 		fprintf(stderr, "/%s is not a file\n", argv[2]);
-		goto out;
+		goto out_tree;
 	}
 
 	sqfs_inode_get_file_size(n->inode, &file_size);
@@ -125,7 +125,7 @@ int main(int argc, char **argv)
 	output = p = malloc(file_size);
 	if (output == NULL) {
 		fprintf(stderr, "malloc failed: %d\n", errno);
-		goto out;
+		goto out_tree;
 	}
 
 	for (size_t i = 0; i < sqfs_inode_get_file_block_count(n->inode); ++i) {
@@ -135,7 +135,7 @@ int main(int argc, char **argv)
 		ret = sqfs_data_reader_get_block(data, n->inode, i, &chunk_size, &chunk);
 		if (ret) {
 			fprintf(stderr, "reading data block: %d\n", ret);
-			goto out;
+			goto out_tree;
 		}
 
 		memcpy(p, chunk, chunk_size);
@@ -152,7 +152,7 @@ int main(int argc, char **argv)
 		ret = sqfs_data_reader_get_fragment(data, n->inode, &chunk_size, &chunk);
 		if (ret) {
 			fprintf(stderr, "reading fragment block: %d\n", ret);
-			goto out;
+			goto out_tree;
 		}
 
 		memcpy(p, chunk, chunk_size);
@@ -163,13 +163,20 @@ int main(int argc, char **argv)
 	fprintf(stdout, "%s\n", (char *)output);
 
 	status = EXIT_SUCCESS;
-out:
+out_tree:
 	sqfs_dir_tree_destroy(n);
+out_data:
 	sqfs_destroy(data);
+out_dirrd:
 	sqfs_destroy(dirrd);
+out_idtbl:
 	sqfs_destroy(idtbl);
-	sqfs_destroy(xattr);
+out_xattr:
+	if (xattr != NULL)
+		sqfs_destroy(xattr);
+out_cmp:
 	sqfs_destroy(cmp);
+out_file:
 	sqfs_destroy(file);
 	free(output);
 
