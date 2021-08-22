@@ -145,14 +145,14 @@ int sqfs_dir_reader_open_dir(sqfs_dir_reader_t *rd,
 	rd->size = size;
 	rd->entries = 0;
 
-	if (rd->size <= sizeof(rd->hdr))
-		return 0;
-
 	block_start += rd->super->directory_table_start;
 
 	rd->dir_block_start = block_start;
 	rd->dir_offset = offset;
 	rd->start_size = size;
+
+	if (rd->size <= sizeof(rd->hdr))
+		return 0;
 
 	return sqfs_meta_reader_seek(rd->meta_dir, block_start, offset);
 }
@@ -199,6 +199,9 @@ int sqfs_dir_reader_rewind(sqfs_dir_reader_t *rd)
 	memset(&rd->hdr, 0, sizeof(rd->hdr));
 	rd->size = rd->start_size;
 	rd->entries = 0;
+
+	if (rd->size <= sizeof(rd->hdr))
+		return 0;
 
 	return sqfs_meta_reader_seek(rd->meta_dir, rd->dir_block_start,
 				     rd->dir_offset);
