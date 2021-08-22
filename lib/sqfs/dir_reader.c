@@ -164,7 +164,7 @@ int sqfs_dir_reader_read(sqfs_dir_reader_t *rd, sqfs_dir_entry_t **out)
 	int err;
 
 	if (!rd->entries) {
-		if (rd->size < sizeof(rd->hdr))
+		if (rd->size <= sizeof(rd->hdr))
 			return 1;
 
 		err = sqfs_meta_reader_read_dir_header(rd->meta_dir, &rd->hdr);
@@ -173,6 +173,12 @@ int sqfs_dir_reader_read(sqfs_dir_reader_t *rd, sqfs_dir_entry_t **out)
 
 		rd->size -= sizeof(rd->hdr);
 		rd->entries = rd->hdr.count + 1;
+	}
+
+	if (rd->size <= sizeof(*ent)) {
+		rd->size = 0;
+		rd->entries = 0;
+		return 1;
 	}
 
 	err = sqfs_meta_reader_read_dir_ent(rd->meta_dir, &ent);
