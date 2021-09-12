@@ -35,8 +35,14 @@ static void test_compressor_opt_struct(void)
 		      sizeof(sqfs_u32));
 	TEST_EQUAL_UI(offsetof(sqfs_compressor_config_t, level),
 		      (2 * sizeof(sqfs_u32)));
-	TEST_EQUAL_UI(offsetof(sqfs_compressor_config_t, opt),
-		      (4 * sizeof(sqfs_u32)));
+
+	if (__alignof__(sqfs_compressor_config_t) == __alignof__(sqfs_u32)) {
+		TEST_EQUAL_UI(offsetof(sqfs_compressor_config_t, opt),
+			      (3 * sizeof(sqfs_u32)));
+	} else if (__alignof__(sqfs_compressor_config_t) == __alignof__(sqfs_u64)) {
+		TEST_EQUAL_UI(offsetof(sqfs_compressor_config_t, opt),
+			      (4 * sizeof(sqfs_u32)));
+	}
 }
 
 static const char *names[] = {
@@ -65,24 +71,7 @@ static void test_compressor_names(void)
 static void test_blockproc_stats(void)
 {
 	sqfs_block_processor_stats_t stats;
-
-	TEST_ASSERT(sizeof(stats) >= (8 * sizeof(sqfs_u64)));
-
-	TEST_EQUAL_UI(offsetof(sqfs_block_processor_stats_t, size), 0);
-	TEST_EQUAL_UI(offsetof(sqfs_block_processor_stats_t,
-			       input_bytes_read), sizeof(sqfs_u64));
-	TEST_EQUAL_UI(offsetof(sqfs_block_processor_stats_t,
-			       output_bytes_generated), 2 * sizeof(sqfs_u64));
-	TEST_EQUAL_UI(offsetof(sqfs_block_processor_stats_t,
-			       data_block_count), 3 * sizeof(sqfs_u64));
-	TEST_EQUAL_UI(offsetof(sqfs_block_processor_stats_t,
-			       frag_block_count), 4 * sizeof(sqfs_u64));
-	TEST_EQUAL_UI(offsetof(sqfs_block_processor_stats_t,
-			       sparse_block_count), 5 * sizeof(sqfs_u64));
-	TEST_EQUAL_UI(offsetof(sqfs_block_processor_stats_t,
-			       total_frag_count), 6 * sizeof(sqfs_u64));
-	TEST_EQUAL_UI(offsetof(sqfs_block_processor_stats_t,
-			       actual_frag_count), 7 * sizeof(sqfs_u64));
+	size_t off;
 
 	TEST_EQUAL_UI(sizeof(stats.size), sizeof(size_t));
 	TEST_EQUAL_UI(sizeof(stats.input_bytes_read), sizeof(sqfs_u64));
@@ -92,6 +81,50 @@ static void test_blockproc_stats(void)
 	TEST_EQUAL_UI(sizeof(stats.sparse_block_count), sizeof(sqfs_u64));
 	TEST_EQUAL_UI(sizeof(stats.total_frag_count), sizeof(sqfs_u64));
 	TEST_EQUAL_UI(sizeof(stats.actual_frag_count), sizeof(sqfs_u64));
+
+	if (__alignof__(stats) == __alignof__(sqfs_u32)) {
+		TEST_ASSERT(sizeof(stats) >=
+			    (sizeof(sqfs_u32) + 7 * sizeof(sqfs_u64)));
+	} else if (__alignof__(stats) == __alignof__(sqfs_u64)) {
+		TEST_ASSERT(sizeof(stats) >= (8 * sizeof(sqfs_u64)));
+	}
+
+	TEST_EQUAL_UI(offsetof(sqfs_block_processor_stats_t, size), 0);
+
+	if (sizeof(size_t) < sizeof(sqfs_u64) &&
+	    (__alignof__(sqfs_block_processor_stats_t) ==
+	     __alignof__(sqfs_u64))) {
+		off = sizeof(sqfs_u64);
+	} else {
+		off = sizeof(stats.size);
+	}
+
+	TEST_EQUAL_UI(offsetof(sqfs_block_processor_stats_t,
+			       input_bytes_read), off);
+	off += sizeof(sqfs_u64);
+
+	TEST_EQUAL_UI(offsetof(sqfs_block_processor_stats_t,
+			       output_bytes_generated), off);
+	off += sizeof(sqfs_u64);
+
+	TEST_EQUAL_UI(offsetof(sqfs_block_processor_stats_t,
+			       data_block_count), off);
+	off += sizeof(sqfs_u64);
+
+	TEST_EQUAL_UI(offsetof(sqfs_block_processor_stats_t,
+			       frag_block_count), off);
+	off += sizeof(sqfs_u64);
+
+	TEST_EQUAL_UI(offsetof(sqfs_block_processor_stats_t,
+			       sparse_block_count), off);
+	off += sizeof(sqfs_u64);
+
+	TEST_EQUAL_UI(offsetof(sqfs_block_processor_stats_t,
+			       total_frag_count), off);
+	off += sizeof(sqfs_u64);
+
+	TEST_EQUAL_UI(offsetof(sqfs_block_processor_stats_t,
+			       actual_frag_count), off);
 }
 
 static void test_blockproc_desc(void)
