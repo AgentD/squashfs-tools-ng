@@ -47,10 +47,10 @@ int main(void)
 	TEST_ASSERT(a->parent == root);
 	TEST_ASSERT(b->parent == root);
 	TEST_EQUAL_UI(b->link_count, 2);
-	TEST_ASSERT(root->data.dir.children == b);
+	TEST_ASSERT(root->data.dir.children == a);
+	TEST_ASSERT(a->next == b);
 	TEST_EQUAL_UI(root->link_count, 4);
-	TEST_ASSERT(b->next == a);
-	TEST_NULL(a->next);
+	TEST_NULL(b->next);
 	TEST_NULL(root->parent);
 	TEST_NULL(root->next);
 

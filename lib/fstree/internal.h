@@ -10,9 +10,6 @@
 #include "config.h"
 #include "fstree.h"
 
-/* ASCIIbetically sort a linked list of tree nodes */
-tree_node_t *tree_node_list_sort(tree_node_t *head);
-
 /*
   If the environment variable SOURCE_DATE_EPOCH is set to a parsable number
   that fits into an unsigned 32 bit value, return its value. Otherwise,
