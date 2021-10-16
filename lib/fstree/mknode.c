@@ -12,6 +12,25 @@
 #include <stdlib.h>
 #include <errno.h>
 
+static void insert_sorted(tree_node_t *root, tree_node_t *n)
+{
+	tree_node_t *it = root->data.dir.children, *prev = NULL;
+
+	while (it != NULL && strcmp(it->name, n->name) < 0) {
+		prev = it;
+		it = it->next;
+	}
+
+	n->parent = root;
+	n->next = it;
+
+	if (prev == NULL) {
+		root->data.dir.children = n;
+	} else {
+		prev->next = n;
+	}
+}
+
 tree_node_t *fstree_mknode(tree_node_t *parent, const char *name,
 			   size_t name_len, const char *extra,
 			   const struct stat *sb)
@@ -32,12 +51,6 @@ tree_node_t *fstree_mknode(tree_node_t *parent, const char *name,
 	n = calloc(1, size);
 	if (n == NULL)
 		return NULL;
-
-	if (parent != NULL) {
-		n->next = parent->data.dir.children;
-		parent->data.dir.children = n;
-		n->parent = parent;
-	}
 
 	n->xattr_idx = 0xFFFFFFFF;
 	n->uid = sb->st_uid;
@@ -75,6 +88,8 @@ tree_node_t *fstree_mknode(tree_node_t *parent, const char *name,
 	}
 
 	if (parent != NULL) {
+		insert_sorted(parent, n);
+
 		if (parent->link_count == 0x0FFFF) {
 			free(n);
 			errno = EMLINK;

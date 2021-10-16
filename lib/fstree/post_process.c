@@ -100,16 +100,6 @@ fail_link_loop: {
 	return -1;
 }
 
-static void sort_recursive(tree_node_t *n)
-{
-	n->data.dir.children = tree_node_list_sort(n->data.dir.children);
-
-	for (n = n->data.dir.children; n != NULL; n = n->next) {
-		if (S_ISDIR(n->mode))
-			sort_recursive(n);
-	}
-}
-
 static file_info_t *file_list_dfs(tree_node_t *n)
 {
 	if (S_ISREG(n->mode)) {
@@ -195,8 +185,6 @@ static void reorder_hard_links(fstree_t *fs)
 int fstree_post_process(fstree_t *fs)
 {
 	size_t inum;
-
-	sort_recursive(fs->root);
 
 	if (resolve_hard_links_dfs(fs, fs->root))
 		return -1;
