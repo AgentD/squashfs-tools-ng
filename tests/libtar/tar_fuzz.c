@@ -33,7 +33,7 @@ int main(int argc, char **argv)
 		if (ret < 0)
 			goto fail;
 
-		ret = istream_skip(fp, hdr.sb.st_size);
+		ret = istream_skip(fp, hdr.record_size);
 
 		clear_header(&hdr);
 		if (ret < 0)

@@ -22,33 +22,33 @@ int main(int argc, char **argv)
 
 	/* "deep" directory hierarchy containg 2 files */
 	TEST_ASSERT(read_header(fp, &hdr) == 0);
-	TEST_EQUAL_UI(hdr.sb.st_mode, S_IFDIR | 0777);
+	TEST_EQUAL_UI(hdr.mode, S_IFDIR | 0777);
 	TEST_STR_EQUAL(hdr.name, "20_characters_here01/");
 	clear_header(&hdr);
 
 	TEST_ASSERT(read_header(fp, &hdr) == 0);
-	TEST_EQUAL_UI(hdr.sb.st_mode, S_IFDIR | 0777);
+	TEST_EQUAL_UI(hdr.mode, S_IFDIR | 0777);
 	TEST_STR_EQUAL(hdr.name, "20_characters_here01/20_characters_here02/");
 	clear_header(&hdr);
 
 	TEST_ASSERT(read_header(fp, &hdr) == 0);
-	TEST_EQUAL_UI(hdr.sb.st_mode, S_IFDIR | 0777);
+	TEST_EQUAL_UI(hdr.mode, S_IFDIR | 0777);
 	TEST_STR_EQUAL(hdr.name, "20_characters_here01/20_characters_here02/"
 		       "20_characters_here03/");
 	clear_header(&hdr);
 
 	TEST_ASSERT(read_header(fp, &hdr) == 0);
-	TEST_EQUAL_UI(hdr.sb.st_mode, S_IFDIR | 0777);
+	TEST_EQUAL_UI(hdr.mode, S_IFDIR | 0777);
 	TEST_STR_EQUAL(hdr.name, "20_characters_here01/20_characters_here02/"
 		       "20_characters_here03/20_characters_here04/");
 	clear_header(&hdr);
 
 	TEST_ASSERT(read_header(fp, &hdr) == 0);
-	TEST_EQUAL_UI(hdr.sb.st_mode, S_IFREG | 0777);
+	TEST_EQUAL_UI(hdr.mode, S_IFREG | 0777);
 	TEST_STR_EQUAL(hdr.name, "20_characters_here01/20_characters_here02/"
 		       "20_characters_here03/20_characters_here04/"
 		       "errored_file_tst");
-	TEST_EQUAL_UI(hdr.sb.st_size, 5);
+	TEST_EQUAL_UI(hdr.actual_size, 5);
 	TEST_ASSERT(istream_read(fp, buffer, 5) == 5);
 	buffer[5] = '\0';
 	TEST_STR_EQUAL(buffer, "test\n");
@@ -56,11 +56,11 @@ int main(int argc, char **argv)
 	clear_header(&hdr);
 
 	TEST_ASSERT(read_header(fp, &hdr) == 0);
-	TEST_EQUAL_UI(hdr.sb.st_mode, S_IFREG | 0777);
+	TEST_EQUAL_UI(hdr.mode, S_IFREG | 0777);
 	TEST_STR_EQUAL(hdr.name, "20_characters_here01/20_characters_here02/"
 		       "20_characters_here03/20_characters_here04/"
 		       "some_test_file");
-	TEST_EQUAL_UI(hdr.sb.st_size, 5);
+	TEST_EQUAL_UI(hdr.actual_size, 5);
 	TEST_ASSERT(istream_read(fp, buffer, 5) == 5);
 	buffer[5] = '\0';
 	TEST_STR_EQUAL(buffer, "test\n");
@@ -69,23 +69,23 @@ int main(int argc, char **argv)
 
 	/* "deep" directory hierarchy containg a hard link */
 	TEST_ASSERT(read_header(fp, &hdr) == 0);
-	TEST_EQUAL_UI(hdr.sb.st_mode, S_IFDIR | 0777);
+	TEST_EQUAL_UI(hdr.mode, S_IFDIR | 0777);
 	TEST_STR_EQUAL(hdr.name, "20CharsForLnkTest001/");
 	clear_header(&hdr);
 
 	TEST_ASSERT(read_header(fp, &hdr) == 0);
-	TEST_EQUAL_UI(hdr.sb.st_mode, S_IFDIR | 0777);
+	TEST_EQUAL_UI(hdr.mode, S_IFDIR | 0777);
 	TEST_STR_EQUAL(hdr.name, "20CharsForLnkTest001/20CharsForLnkTest002/");
 	clear_header(&hdr);
 
 	TEST_ASSERT(read_header(fp, &hdr) == 0);
-	TEST_EQUAL_UI(hdr.sb.st_mode, S_IFDIR | 0777);
+	TEST_EQUAL_UI(hdr.mode, S_IFDIR | 0777);
 	TEST_STR_EQUAL(hdr.name, "20CharsForLnkTest001/20CharsForLnkTest002/"
 		       "20CharsForLnkTest003/");
 	clear_header(&hdr);
 
 	TEST_ASSERT(read_header(fp, &hdr) == 0);
-	TEST_EQUAL_UI(hdr.sb.st_mode, S_IFDIR | 0777);
+	TEST_EQUAL_UI(hdr.mode, S_IFDIR | 0777);
 	TEST_STR_EQUAL(hdr.name, "20CharsForLnkTest001/20CharsForLnkTest002/"
 		       "20CharsForLnkTest003/20CharsForLnkTest004/");
 	clear_header(&hdr);

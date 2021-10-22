@@ -20,10 +20,9 @@ int main(int argc, char **argv)
 	fp = istream_open_file("sparse-files/gnu-small.tar");
 	TEST_NOT_NULL(fp);
 	TEST_ASSERT(read_header(fp, &hdr) == 0);
-	TEST_EQUAL_UI(hdr.sb.st_mode, S_IFREG | 0644);
-	TEST_EQUAL_UI(hdr.sb.st_uid, 01750);
-	TEST_EQUAL_UI(hdr.sb.st_gid, 01750);
-	TEST_EQUAL_UI(hdr.sb.st_size, 524288);
+	TEST_EQUAL_UI(hdr.mode, S_IFREG | 0644);
+	TEST_EQUAL_UI(hdr.uid, 01750);
+	TEST_EQUAL_UI(hdr.gid, 01750);
 	TEST_EQUAL_UI(hdr.actual_size, 524288);
 	TEST_EQUAL_UI(hdr.record_size, 8192);
 	TEST_STR_EQUAL(hdr.name, "input.bin");

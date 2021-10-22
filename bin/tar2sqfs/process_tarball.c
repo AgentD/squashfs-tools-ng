@@ -128,6 +128,7 @@ static int create_node_and_repack_data(istream_t *input_file,
 				       tar_header_decoded_t *hdr)
 {
 	tree_node_t *node;
+	struct stat sb;
 
 	if (hdr->is_hard_link) {
 		node = fstree_add_hard_link(&sqfs->fs, hdr->name,
@@ -143,11 +144,19 @@ static int create_node_and_repack_data(istream_t *input_file,
 	}
 
 	if (!keep_time) {
-		hdr->sb.st_mtime = sqfs->fs.defaults.st_mtime;
+		hdr->mtime = sqfs->fs.defaults.st_mtime;
 	}
 
+	memset(&sb, 0, sizeof(sb));
+	sb.st_mode = hdr->mode;
+	sb.st_uid = hdr->uid;
+	sb.st_gid = hdr->gid;
+	sb.st_rdev = hdr->devno;
+	sb.st_size = hdr->actual_size;
+	sb.st_mtime = hdr->mtime;
+
 	node = fstree_add_generic(&sqfs->fs, hdr->name,
-				  &hdr->sb, hdr->link_target);
+				  &sb, hdr->link_target);
 	if (node == NULL)
 		goto fail_errno;
 
@@ -159,9 +168,9 @@ static int create_node_and_repack_data(istream_t *input_file,
 			return -1;
 	}
 
-	if (S_ISREG(hdr->sb.st_mode)) {
+	if (S_ISREG(hdr->mode)) {
 		if (write_file(input_file, sqfs, hdr, &node->data.file,
-			       hdr->sb.st_size)) {
+			       hdr->actual_size)) {
 			return -1;
 		}
 	}
@@ -175,17 +184,17 @@ fail_errno:
 static int set_root_attribs(sqfs_writer_t *sqfs,
 			    const tar_header_decoded_t *hdr)
 {
-	if (hdr->is_hard_link || !S_ISDIR(hdr->sb.st_mode)) {
+	if (hdr->is_hard_link || !S_ISDIR(hdr->mode)) {
 		fprintf(stderr, "'%s' is not a directory!\n", hdr->name);
 		return -1;
 	}
 
-	sqfs->fs.root->uid = hdr->sb.st_uid;
-	sqfs->fs.root->gid = hdr->sb.st_gid;
-	sqfs->fs.root->mode = hdr->sb.st_mode;
+	sqfs->fs.root->uid = hdr->uid;
+	sqfs->fs.root->gid = hdr->gid;
+	sqfs->fs.root->mode = hdr->mode;
 
 	if (keep_time)
-		sqfs->fs.root->mod_time = hdr->sb.st_mtime;
+		sqfs->fs.root->mod_time = hdr->mtime;
 
 	if (!cfg.no_xattr) {
 		if (copy_xattr(sqfs, sqfs->fs.root, hdr))
@@ -219,8 +228,6 @@ int process_tarball(istream_t *input_file, sqfs_writer_t *sqfs)
 
 		if ((sqfs_u64)hdr.mtime > 0x0FFFFFFFFUL)
 			hdr.mtime = 0x0FFFFFFFFUL;
-
-		hdr.sb.st_mtime = hdr.mtime;
 
 		skip = false;
 		is_root = false;
@@ -276,7 +283,7 @@ int process_tarball(istream_t *input_file, sqfs_writer_t *sqfs)
 		}
 
 		if (!is_prefixed) {
-			if (skip_entry(input_file, hdr.sb.st_size))
+			if (skip_entry(input_file, hdr.record_size))
 				goto fail;
 			clear_header(&hdr);
 			continue;
@@ -319,7 +326,7 @@ int process_tarball(istream_t *input_file, sqfs_writer_t *sqfs)
 		if (skip) {
 			if (dont_skip)
 				goto fail;
-			if (skip_entry(input_file, hdr.sb.st_size))
+			if (skip_entry(input_file, hdr.record_size))
 				goto fail;
 
 			clear_header(&hdr);

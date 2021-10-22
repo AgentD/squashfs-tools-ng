@@ -10,13 +10,13 @@
 
 static int pax_uid(tar_header_decoded_t *out, sqfs_u64 id)
 {
-	out->sb.st_uid = id;
+	out->uid = id;
 	return 0;
 }
 
 static int pax_gid(tar_header_decoded_t *out, sqfs_u64 id)
 {
-	out->sb.st_gid = id;
+	out->gid = id;
 	return 0;
 }
 
