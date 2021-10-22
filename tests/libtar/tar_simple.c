@@ -44,19 +44,12 @@ int main(int argc, char **argv)
 	fp = istream_open_file(STRVALUE(TESTPATH) "/" STRVALUE(TESTFILE));
 	TEST_NOT_NULL(fp);
 	TEST_ASSERT(read_header(fp, &hdr) == 0);
-	TEST_EQUAL_UI(hdr.sb.st_mode, S_IFREG | 0644);
-	TEST_EQUAL_UI(hdr.sb.st_uid, TESTUID);
-	TEST_EQUAL_UI(hdr.sb.st_gid, TESTGID);
-	TEST_EQUAL_UI(hdr.sb.st_size, 5);
+	TEST_EQUAL_UI(hdr.mode, S_IFREG | 0644);
+	TEST_EQUAL_UI(hdr.uid, TESTUID);
+	TEST_EQUAL_UI(hdr.gid, TESTGID);
+	TEST_EQUAL_UI(hdr.actual_size, 5);
 
 	ts = TESTTS;
-
-	if (sizeof(time_t) < sizeof(ts) && ts > INT32_MAX) {
-		TEST_EQUAL_UI(hdr.sb.st_mtime, INT32_MAX);
-	} else {
-		TEST_EQUAL_UI(hdr.sb.st_mtime, ts);
-	}
-
 	TEST_EQUAL_UI(hdr.mtime, ts);
 	TEST_STR_EQUAL(hdr.name, fname);
 	TEST_ASSERT(!hdr.unknown_record);

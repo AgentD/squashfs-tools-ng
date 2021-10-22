@@ -74,27 +74,27 @@ static int decode_header(const tar_header_t *hdr, unsigned int set_by_pax,
 	if (!(set_by_pax & PAX_UID)) {
 		if (read_number(hdr->uid, sizeof(hdr->uid), &field))
 			return -1;
-		out->sb.st_uid = field;
+		out->uid = field;
 	}
 
 	if (!(set_by_pax & PAX_GID)) {
 		if (read_number(hdr->gid, sizeof(hdr->gid), &field))
 			return -1;
-		out->sb.st_gid = field;
+		out->gid = field;
 	}
 
 	if (!(set_by_pax & PAX_DEV_MAJ)) {
 		if (read_number(hdr->devmajor, sizeof(hdr->devmajor), &field))
 			return -1;
 
-		out->sb.st_rdev = makedev(field, minor(out->sb.st_rdev));
+		out->devno = makedev(field, minor(out->devno));
 	}
 
 	if (!(set_by_pax & PAX_DEV_MIN)) {
 		if (read_number(hdr->devminor, sizeof(hdr->devminor), &field))
 			return -1;
 
-		out->sb.st_rdev = makedev(major(out->sb.st_rdev), field);
+		out->devno = makedev(major(out->devno), field);
 	}
 
 	if (!(set_by_pax & PAX_MTIME)) {
@@ -111,7 +111,7 @@ static int decode_header(const tar_header_t *hdr, unsigned int set_by_pax,
 	if (read_octal(hdr->mode, sizeof(hdr->mode), &field))
 		return -1;
 
-	out->sb.st_mode = field & 07777;
+	out->mode = field & 07777;
 
 	if (hdr->typeflag == TAR_TYPE_LINK ||
 	    hdr->typeflag == TAR_TYPE_SLINK) {
@@ -131,42 +131,31 @@ static int decode_header(const tar_header_t *hdr, unsigned int set_by_pax,
 	case '\0':
 	case TAR_TYPE_FILE:
 	case TAR_TYPE_GNU_SPARSE:
-		out->sb.st_mode |= S_IFREG;
+		out->mode |= S_IFREG;
 		break;
 	case TAR_TYPE_LINK:
 		out->is_hard_link = true;
 		break;
 	case TAR_TYPE_SLINK:
-		out->sb.st_mode = S_IFLNK | 0777;
+		out->mode = S_IFLNK | 0777;
 		break;
 	case TAR_TYPE_CHARDEV:
-		out->sb.st_mode |= S_IFCHR;
+		out->mode |= S_IFCHR;
 		break;
 	case TAR_TYPE_BLOCKDEV:
-		out->sb.st_mode |= S_IFBLK;
+		out->mode |= S_IFBLK;
 		break;
 	case TAR_TYPE_DIR:
-		out->sb.st_mode |= S_IFDIR;
+		out->mode |= S_IFDIR;
 		break;
 	case TAR_TYPE_FIFO:
-		out->sb.st_mode |= S_IFIFO;
+		out->mode |= S_IFIFO;
 		break;
 	default:
 		out->unknown_record = true;
 		break;
 	}
 
-	if (sizeof(time_t) * CHAR_BIT < 64) {
-		if (out->mtime > (sqfs_s64)INT32_MAX) {
-			out->sb.st_mtime = INT32_MAX;
-		} else if (out->mtime < (sqfs_s64)INT32_MIN) {
-			out->sb.st_mtime = INT32_MIN;
-		} else {
-			out->sb.st_mtime = out->mtime;
-		}
-	} else {
-		out->sb.st_mtime = out->mtime;
-	}
 	return 0;
 }
 
@@ -268,12 +257,9 @@ int read_header(istream_t *fp, tar_header_decoded_t *out)
 			goto fail;
 	}
 
-	if (out->sparse != NULL) {
-		out->sb.st_size = out->actual_size;
-	} else {
-		out->sb.st_size = out->record_size;
+	if (out->sparse == NULL)
 		out->actual_size = out->record_size;
-	}
+
 	return 0;
 out_eof:
 	clear_header(out);

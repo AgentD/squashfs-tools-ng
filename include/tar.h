@@ -78,7 +78,6 @@ typedef struct tar_xattr_t {
 } tar_xattr_t;
 
 typedef struct {
-	struct stat sb;
 	char *name;
 	char *link_target;
 	sparse_map_t *sparse;
@@ -88,8 +87,10 @@ typedef struct {
 	bool is_hard_link;
 	tar_xattr_t *xattr;
 
-	/* broken out since struct stat could contain
-	   32 bit values on 32 bit systems. */
+	sqfs_u16 mode;
+	sqfs_u64 uid;
+	sqfs_u64 gid;
+	sqfs_u64 devno;
 	sqfs_s64 mtime;
 } tar_header_decoded_t;
 
