@@ -540,16 +540,14 @@ out_desc:
 	return -1;
 }
 
-int fstree_from_file(fstree_t *fs, const char *filename, const char *basepath)
+int fstree_from_file_stream(fstree_t *fs, istream_t *fp, const char *basepath)
 {
+	const char *filename;
 	size_t line_num = 1;
-	istream_t *fp;
 	char *line;
 	int ret;
 
-	fp = istream_open_file(filename);
-	if (fp == NULL)
-		return -1;
+	filename = istream_get_filename(fp);
 
 	for (;;) {
 		ret = istream_get_line(fp, &line, &line_num,
@@ -570,10 +568,23 @@ int fstree_from_file(fstree_t *fs, const char *filename, const char *basepath)
 		++line_num;
 	}
 
-	sqfs_destroy(fp);
 	return 0;
 fail_line:
 	free(line);
-	sqfs_destroy(fp);
 	return -1;
+}
+
+int fstree_from_file(fstree_t *fs, const char *filename, const char *basepath)
+{
+	istream_t *fp;
+	int ret;
+
+	fp = istream_open_file(filename);
+	if (fp == NULL)
+		return -1;
+
+	ret = fstree_from_file_stream(fs, fp, basepath);
+
+	sqfs_destroy(fp);
+	return ret;
 }

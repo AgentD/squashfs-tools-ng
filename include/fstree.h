@@ -195,6 +195,9 @@ tree_node_t *fstree_add_generic(fstree_t *fs, const char *path,
 int fstree_from_file(fstree_t *fs, const char *filename,
 		     const char *basepath);
 
+int fstree_from_file_stream(fstree_t *fs, istream_t *file,
+			    const char *basepath);
+
 /*
   This function performs all the necessary post processing steps on the file
   system tree, i.e. recursively sorting all directory entries by name,
