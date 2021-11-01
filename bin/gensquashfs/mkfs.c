@@ -52,7 +52,7 @@ static int pack_files(sqfs_block_processor_t *data, fstree_t *fs,
 			return -1;
 		}
 
-		flags = 0;
+		flags = fi->flags;
 		filesize = file->get_size(file);
 
 		if (opt->no_tail_packing && filesize > opt->cfg.block_size)
@@ -141,6 +141,7 @@ static void override_owner_dfs(const options_t *opt, tree_node_t *n)
 int main(int argc, char **argv)
 {
 	int status = EXIT_FAILURE;
+	istream_t *sortfile = NULL;
 	void *sehnd = NULL;
 	sqfs_writer_t sqfs;
 	options_t opt;
@@ -153,6 +154,12 @@ int main(int argc, char **argv)
 	if (opt.selinux != NULL) {
 		sehnd = selinux_open_context_file(opt.selinux);
 		if (sehnd == NULL)
+			goto out;
+	}
+
+	if (opt.sortfile != NULL) {
+		sortfile = istream_open_file(opt.sortfile);
+		if (sortfile == NULL)
 			goto out;
 	}
 
@@ -179,6 +186,11 @@ int main(int argc, char **argv)
 		}
 	}
 
+	if (sortfile != NULL) {
+		if (fstree_sort_files(&sqfs.fs, sortfile))
+			goto out;
+	}
+
 	if (pack_files(sqfs.data, &sqfs.fs, &opt))
 		goto out;
 
@@ -190,6 +202,8 @@ out:
 	sqfs_writer_cleanup(&sqfs, status);
 	if (sehnd != NULL)
 		selinux_close_context_file(sehnd);
+	if (sortfile != NULL)
+		sqfs_destroy(sortfile);
 	free(opt.packdir);
 	return status;
 }
