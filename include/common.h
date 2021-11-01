@@ -33,9 +33,6 @@ typedef struct sqfs_hard_link_t {
 	char *target;
 } sqfs_hard_link_t;
 
-#define container_of(ptr, type, member) \
-	((type *)((char *)ptr - offsetof(type, member)))
-
 int inode_stat(const sqfs_tree_node_t *node, struct stat *sb);
 
 char *sqfs_tree_node_get_path(const sqfs_tree_node_t *node);

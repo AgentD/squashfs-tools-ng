@@ -15,6 +15,7 @@
 #include <stdio.h>
 
 #include "sqfs/predef.h"
+#include "fstream.h"
 #include "compat.h"
 
 enum {
@@ -41,6 +42,9 @@ typedef struct file_info_t file_info_t;
 typedef struct dir_info_t dir_info_t;
 typedef struct fstree_t fstree_t;
 
+#define container_of(ptr, type, member) \
+	((type *)((char *)ptr - offsetof(type, member)))
+
 /*
   Optionally used by fstree_from_dir and fstree_from_subdir to
   execute custom actions for each discovered node.
@@ -59,6 +63,11 @@ struct file_info_t {
 	char *input_file;
 
 	sqfs_inode_generic_t *inode;
+
+	/* used by sort file processing */
+	sqfs_s64 priority;
+	int flags;
+	bool already_matched;
 };
 
 /* Additional meta data stored in a tree_node_t for directories */
@@ -273,5 +282,7 @@ int fstree_from_dir(fstree_t *fs, tree_node_t *root,
 int fstree_from_subdir(fstree_t *fs, tree_node_t *root,
 		       const char *path, const char *subdir,
 		       scan_node_callback cb, void *user, unsigned int flags);
+
+int fstree_sort_files(fstree_t *fs, istream_t *sortfile);
 
 #endif /* FSTREE_H */

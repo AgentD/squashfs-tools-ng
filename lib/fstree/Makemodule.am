@@ -7,6 +7,7 @@ libfstree_a_SOURCES += include/fstree.h lib/fstree/internal.h
 libfstree_a_SOURCES += lib/fstree/source_date_epoch.c
 libfstree_a_SOURCES += lib/fstree/canonicalize_name.c
 libfstree_a_SOURCES += lib/fstree/filename_sane.c
+libfstree_a_SOURCES += lib/fstree/sort_by_file.c
 libfstree_a_CFLAGS = $(AM_CFLAGS)
 libfstree_a_CPPFLAGS = $(AM_CPPFLAGS)
 
