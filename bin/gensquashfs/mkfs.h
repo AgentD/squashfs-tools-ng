@@ -43,6 +43,7 @@ typedef struct {
 	unsigned int dirscan_flags;
 	const char *infile;
 	const char *selinux;
+	const char *sortfile;
 	bool no_tail_packing;
 
 	/* copied from command line or constructed from infile argument

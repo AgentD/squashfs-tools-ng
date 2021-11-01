@@ -35,12 +35,13 @@ static struct option long_opts[] = {
 #ifdef WITH_SELINUX
 	{ "selinux", required_argument, NULL, 's' },
 #endif
+	{ "sort-file", required_argument, NULL, 'S' },
 	{ "version", no_argument, NULL, 'V' },
 	{ "help", no_argument, NULL, 'h' },
 	{ NULL, 0, NULL, 0 },
 };
 
-static const char *short_opts = "F:D:X:c:b:B:d:u:g:j:Q:kxoefqThV"
+static const char *short_opts = "F:D:X:c:b:B:d:u:g:j:Q:S:kxoefqThV"
 #ifdef WITH_SELINUX
 "s:"
 #endif
@@ -97,6 +98,10 @@ static const char *help_string =
 "                              this value, no matter what the pack file or\n"
 "                              directory entries actually specify.\n"
 "  --all-root                  A short hand for `--set-uid 0 --set-gid 0`.\n"
+"\n"
+"  --sort-file, -S <file>      Specify a \"sort file\" that can be used to\n"
+"                              micro manage the order of files during packing\n"
+"                              and behaviour (compression, fragmentation, ..)\n"
 "\n"
 #ifdef WITH_SELINUX
 "  --selinux, -s <file>        Specify an SELinux label file to get context\n"
@@ -167,6 +172,39 @@ const char *help_details =
 "    glob /usr/lib 0755 0 0 -type d ./lib\n"
 "    glob /usr/lib 0755 0 0 -type f -name \"*.so.*\" ./lib\n"
 "    glob /usr/lib 0777 0 0 -type l -name \"*.so.*\" ./lib\n"
+"\n\n";
+
+const char *sort_details =
+"When using a sort file, the order in which regular files are packed can be\n"
+"changed, as well as packing behaviour. Each line in the sort file consists\n"
+"of a numeric priority (can be negative, lower priority is packed first),\n"
+"followed by optional packing flags, followed by the file path.\n"
+"\n"
+"The fields are white-space separated. The flags are comma seperated and\n"
+"contained within two square bracktes. Single line comments with `#` and\n"
+"empty lines are allowed.\n"
+"\n"
+"The default priority for un-listed files is 0. The filename specifies the\n"
+"path within the SquashFS image and is normalized. If e.g. spaces at the\n"
+"beginning or end are needed, it can be enclosed in double quotes `\"`\n"
+"and back-slash can be used for escaping.\n"
+"\n"
+"The sorting algorithm is stable, so files with the same priority do not\n"
+"change place relative to each other in their initial ordering.\n"
+"\n"
+"Example:\n"
+"    # Specify a packing order with file globbing\n"
+"    -8000  [glob]          bin/*\n"
+"    -5000  [glob]          lib/*\n"
+"\n"
+"    # glob_no_path means * is allowed to match /\n"
+"    -1000  [glob_no_path]  share/*\n"
+"\n"
+"    # Our boot loader needs this\n"
+"    -100000  [dont_compress,dont_fragment,nosparse]  boot/vmlinuz\n"
+"\n"
+"    # For demonstration, a quoted filename and no flags\n"
+"    1337  \"usr/share/my \\\"special\\\" file  \"\n"
 "\n\n";
 
 void process_command_line(options_t *opt, int argc, char **argv)
@@ -285,10 +323,14 @@ void process_command_line(options_t *opt, int argc, char **argv)
 			opt->selinux = optarg;
 			break;
 #endif
+		case 'S':
+			opt->sortfile = optarg;
+			break;
 		case 'h':
 			printf(help_string,
 			       SQFS_DEFAULT_BLOCK_SIZE, SQFS_DEVBLK_SIZE);
 			fputs(help_details, stdout);
+			fputs(sort_details, stdout);
 			compressor_print_available();
 			exit(EXIT_SUCCESS);
 		case 'V':
