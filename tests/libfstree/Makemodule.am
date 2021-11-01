@@ -59,6 +59,9 @@ test_fstree_epoch_SOURCES = tests/libfstree/epoch.c
 test_fstree_epoch_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/lib/fstree
 test_fstree_epoch_SOURCES += lib/fstree/source_date_epoch.c
 
+test_sort_file_SOURCES = tests/libfstree/sort_file.c
+test_sort_file_LDADD = libfstree.a libfstream.a libcompat.a
+
 fstree_fuzz_SOURCES = tests/libfstree/fstree_fuzz.c
 fstree_fuzz_LDADD = libfstree.a libfstream.a libcompat.a
 
@@ -67,7 +70,8 @@ FSTREE_TESTS = \
 	test_mknode_reg test_mknode_dir test_gen_inode_numbers \
 	test_add_by_path test_get_path test_fstree_sort test_fstree_from_file \
 	test_fstree_init test_filename_sane test_filename_sane_w32 \
-	test_fstree_from_dir test_fstree_glob1 test_fstree_epoch
+	test_fstree_from_dir test_fstree_glob1 test_fstree_epoch \
+	test_sort_file
 
 if BUILD_TOOLS
 check_PROGRAMS += $(FSTREE_TESTS)
