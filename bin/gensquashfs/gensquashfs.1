@@ -1,4 +1,4 @@
-.TH GENSQUASHFS "1" "March 2021" "generate squashfs images" "User Commands"
+.TH GENSQUASHFS "1" "November 2021" "generate squashfs images" "User Commands"
 .SH NAME
 gensquashfs \- generate squashfs images
 .SH SYNOPSIS
@@ -19,6 +19,11 @@ If \fB\-\-pack\-file\fR is used, this is the root path relative to which to
 read files. If no pack file is specified, pack the contents of the given
 directory into a SquashFS image. The directory becomes the root of the file
 system.
+.TP
+\fB\-\-sort\-file\fR, \fB\-S\fR <file>
+Specify a file that can override the order in which input files are packed,
+or affect packing behaviour (e.g. disable compression or fragmentation for
+certain files).
 .TP
 \fB\-\-compressor\fR, \fB\-c\fR <name>
 Select the compressor to use.
@@ -75,7 +80,6 @@ mode=<value>;0755
 mtime=<value>;\fB$SOURCE\_DATE\_EPOCH\fR if set, 0 otherwise
 .TE
 .TP
-.TP
 \fB\-\-set\-uid\fR, \fB\-u\fR <number>
 Force the owners user ID for ALL inodes to this value, no matter what the pack
 file or directory entries actually specify.
@@ -109,7 +113,7 @@ Print help text and exit.
 .TP
 \fB\-\-version\fR, \fB\-V\fR
 Print version information and exit.
-.SH INPUT FILE FORMAT
+.SH PACK FILE FORMAT
 The input file contains a simple, newline separated list that describe the
 files to be included in the squashfs image:
 .PP
@@ -253,6 +257,93 @@ file "/opt/my app/\\"special\\"/data" 0600 0 0
 glob /usr/lib 0755 0 0 -type d ./lib
 glob /usr/lib 0755 0 0 -type f -name "*.so.*" ./lib
 glob /usr/lib 0777 0 0 -type l -name "*.so.*" ./lib
+.fi
+.SH SORT FILE FORMAT
+The sort file is has one entry per line, consisting of a numeric priority and
+a filename. The name and the priority are separated by one or more space
+character (including tabs) and the line can be intended. Any leeding or
+preceeding spaces are dropped.
+
+The priority is a 64 bit number and can be negative. Files not listed in the
+sort file receive a default priority of 0. After processing the sort file,
+before packing the input files, the file list is sorted by priority, with lower
+values preceeding larger ones.
+
+The given filename is matched against the actual path of the file in the
+SquashFS file in the resulting image. It is \fInot\fR matched against the input
+path, which may differ. Any file is allowed to match only once. The first match
+encountered in the sort file will be used.
+
+Lines can be empty or contain a single line comment, started with
+\fB#\fR. Filenames can be wrapped can be wrapped in quotation marks ("...") if
+necessary, with \fB\\\fR serving as an escape character for quotation marks or
+itself.
+
+To control the packing behavior, an optional list of flags can be inserted
+between the priority and the filename. The flags are wrappe in brackets and
+comma separated, e.g. [flag1,flag2,...]. The following flags are supported:
+
+.TS
+tab(;) allbox;
+l l
+l l
+l l
+l l
+l l
+l l
+l l
+l l
+rd.
+\fBFlag\fR;\fBDescription\fR
+glob;T{
+Interpret the filename as a shell glob pattern and match all files that the
+pattern applies to. This performs path globbing, i.e. a wild card
+character (\fB*\fR or \fB?\fR) or a bracket range (\fB[]\fR) cannot match
+a path separator. A slash must always be matched by an explicit slash.
+T}
+glob_no_path;T{
+Same as \fBglob\fR, but disables path globbing. Wild cards are allowed to
+match slashes.
+T}
+align;T{
+Force device block alignment of the matched files, i.e. the compressed output
+always starts at a multiple of the device block size. Padding is inserted before
+and after.
+T}
+dont_fragment;T{
+Do not perform tail-end packing for the matched files, always generate a
+sequence of independent blocks.
+T}
+dont_compress;T{
+Do not compress the matched files. Note that if tail-end packing is performed,
+the entire fragment block is left uncompressed.
+T}
+dont_deduplicate;T{
+Do not perform deduplication on the matched files. If they are packed and the
+data blocks or the tail end happens to match a previously packed file, keep
+them anyway.
+T}
+nosparse;T{
+Do not perform sparse file detection. If a matched file contians block of zero
+bytes, pack them as-is.
+T}
+.TE
+.PP
+.SS Example
+.PP
+.nf
+# Specify a packing order with file globbing
+-8000  [glob]          bin/*
+-5000  [glob]          lib/*
+
+# glob_no_path means * is allowed to match /
+-1000  [glob_no_path]  share/*
+
+# Our boot loader needs this
+-100000  [dont_compress,dont_fragment,nosparse]  boot/vmlinuz
+
+# For demonstration, a quoted filename and no flags
+1337  "usr/share/my \\"special\\" file  "
 .fi
 .SH ENVIRONMENT
 If the command line switch \fB\-\-defaults\fR is not used or no default mtime
