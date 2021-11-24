@@ -35,7 +35,7 @@ static int w32_append(HANDLE hnd, const char *filename,
 
 static int w32_flush(HANDLE hnd, const char *filename)
 {
-	if (FlushFileBuffers(hnd) != 0) {
+	if (!FlushFileBuffers(hnd)) {
 		w32_perror(filename);
 		return -1;
 	}
