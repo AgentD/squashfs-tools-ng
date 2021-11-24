@@ -122,10 +122,10 @@ int mkdir_p(const char *path)
 			}
 		}
 
-		if (!done) {
+		if (!done)
 			*end = '\\';
-			ptr = end + 1;
-		}
+
+		ptr = done ? end : (end + 1);
 	}
 
 	free(wpath);
