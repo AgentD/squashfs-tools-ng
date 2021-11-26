@@ -227,4 +227,10 @@ WCHAR *path_to_windows(const char *input);
 int fnmatch(const char *, const char *, int);
 #endif
 
+#if defined(_WIN32) || defined(__WINDOWS__)
+#define main sqfs_tools_main
+
+extern int sqfs_tools_main(int argc, char **argv);
+#endif
+
 #endif /* COMPAT_H */
