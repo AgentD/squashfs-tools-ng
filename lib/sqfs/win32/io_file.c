@@ -155,14 +155,37 @@ sqfs_file_t *sqfs_open_file(const char *filename, sqfs_u32 flags)
 	sqfs_file_stdio_t *file;
 	LARGE_INTEGER size;
 	sqfs_file_t *base;
+	WCHAR *wpath = NULL;
+	DWORD length;
 
-	if (flags & ~SQFS_FILE_OPEN_ALL_FLAGS)
+	if (flags & ~SQFS_FILE_OPEN_ALL_FLAGS) {
+		SetLastError(ERROR_INVALID_PARAMETER);
 		return NULL;
+	}
+
+	if (!(flags & SQFS_FILE_OPEN_NO_CHARSET_XFRM)) {
+		length = MultiByteToWideChar(CP_UTF8, 0, filename, -1, NULL, 0);
+		if (length <= 0)
+			return NULL;
+
+		wpath = calloc(sizeof(wpath[0]), length + 1);
+		if (wpath == NULL) {
+			SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+			return NULL;
+		}
+
+		MultiByteToWideChar(CP_UTF8, 0, filename, -1,
+				    wpath, length + 1);
+		wpath[length] = '\0';
+	}
 
 	file = calloc(1, sizeof(*file));
 	base = (sqfs_file_t *)file;
-	if (file == NULL)
+	if (file == NULL) {
+		free(wpath);
+		SetLastError(ERROR_NOT_ENOUGH_MEMORY);
 		return NULL;
+	}
 
 	if (flags & SQFS_FILE_OPEN_READ_ONLY) {
 		file->readonly = true;
@@ -181,8 +204,17 @@ sqfs_file_t *sqfs_open_file(const char *filename, sqfs_u32 flags)
 		}
 	}
 
-	file->fd = CreateFile(filename, access_flags, share_mode, NULL, creation_mode,
-			      FILE_ATTRIBUTE_NORMAL, NULL);
+	if (flags & SQFS_FILE_OPEN_NO_CHARSET_XFRM) {
+		file->fd = CreateFileA(filename, access_flags, share_mode, NULL,
+				       creation_mode, FILE_ATTRIBUTE_NORMAL,
+				       NULL);
+	} else {
+		file->fd = CreateFileW(wpath, access_flags, share_mode, NULL,
+				       creation_mode, FILE_ATTRIBUTE_NORMAL,
+				       NULL);
+	}
+
+	free(wpath);
 
 	if (file->fd == INVALID_HANDLE_VALUE) {
 		free(file);
