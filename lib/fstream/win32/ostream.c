@@ -128,11 +128,16 @@ ostream_t *ostream_open_file(const char *path, int flags)
 	sqfs_object_t *obj = (sqfs_object_t *)file;
 	ostream_t *strm = (ostream_t *)file;
 	int access_flags, creation_mode;
+	WCHAR *wpath = NULL;
 
 	if (file == NULL) {
 		perror(path);
 		return NULL;
 	}
+
+	wpath = path_to_windows(path);
+	if (wpath == NULL)
+		goto fail_free;
 
 	file->path = strdup(path);
 	if (file->path == NULL) {
@@ -148,13 +153,15 @@ ostream_t *ostream_open_file(const char *path, int flags)
 		creation_mode = CREATE_NEW;
 	}
 
-	file->hnd = CreateFile(path, access_flags, 0, NULL, creation_mode,
-			       FILE_ATTRIBUTE_NORMAL, NULL);
+	file->hnd = CreateFileW(wpath, access_flags, 0, NULL, creation_mode,
+				FILE_ATTRIBUTE_NORMAL, NULL);
 
 	if (file->hnd == INVALID_HANDLE_VALUE) {
 		w32_perror(path);
 		goto fail_path;
 	}
+
+	free(wpath);
 
 	if (flags & OSTREAM_OPEN_SPARSE)
 		strm->append_sparse = file_append_sparse;
@@ -168,6 +175,7 @@ fail_path:
 	free(file->path);
 fail_free:
 	free(file);
+	free(wpath);
 	return NULL;
 }
 

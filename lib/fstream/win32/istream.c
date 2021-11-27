@@ -69,11 +69,16 @@ istream_t *istream_open_file(const char *path)
 	file_istream_t *file = calloc(1, sizeof(*file));
 	sqfs_object_t *obj = (sqfs_object_t *)file;
 	istream_t *strm = (istream_t *)file;
+	WCHAR *wpath = NULL;
 
 	if (file == NULL) {
 		perror(path);
 		return NULL;
 	}
+
+	wpath = path_to_windows(path);
+	if (wpath == NULL)
+		goto fail_free;
 
 	file->path = strdup(path);
 	if (file->path == NULL) {
@@ -81,13 +86,15 @@ istream_t *istream_open_file(const char *path)
 		goto fail_free;
 	}
 
-	file->hnd = CreateFile(path, GENERIC_READ, FILE_SHARE_READ, NULL,
+	file->hnd = CreateFileW(wpath, GENERIC_READ, FILE_SHARE_READ, NULL,
 			       OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 
 	if (file->hnd == INVALID_HANDLE_VALUE) {
 		perror(path);
 		goto fail_path;
 	}
+
+	free(wpath);
 
 	strm->buffer = file->buffer;
 	strm->precache = file_precache;
@@ -97,6 +104,7 @@ istream_t *istream_open_file(const char *path)
 fail_path:
 	free(file->path);
 fail_free:
+	free(wpath);
 	free(file);
 	return NULL;
 }

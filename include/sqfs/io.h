@@ -54,7 +54,29 @@ typedef enum {
 	 */
 	SQFS_FILE_OPEN_OVERWRITE = 0x02,
 
-	SQFS_FILE_OPEN_ALL_FLAGS = 0x03,
+	/**
+	 * @brief If set, do not try to apply any character set transformations
+	 *        to the file path.
+	 *
+	 * This flag instructs the @ref sqfs_open_file API to pass the file
+	 * path to the OS dependent API as-is and not to attempt any character
+	 * set transformation. By default, if the underlying OS has a concept
+	 * of locale dependent file paths, the input path is UTF-8 and it is
+	 * transformed as needed, in order to retain a level of portabillity
+	 * and sanity.
+	 *
+	 * This flag currently only affects the Windows implementation. On
+	 * Unix-like systems, the path is always passed to the OS API as-is
+	 * and this flag has no effect.
+	 *
+	 * On Windows, the input path is converted from UTF-8 to UTF-16 and
+	 * then passed on to the wide-char based file API. If this flag is set,
+	 * the path is used as-is and passed on to the 8-bit codepage-whatever
+	 * API instead.
+	 */
+	SQFS_FILE_OPEN_NO_CHARSET_XFRM = 0x04,
+
+	SQFS_FILE_OPEN_ALL_FLAGS = 0x07,
 } SQFS_FILE_OPEN_FLAGS;
 
 /**
@@ -134,7 +156,8 @@ extern "C" {
  * API for file I/O.
  *
  * On Unix-like systems, if the open call fails, this function makes sure to
- * preserves the value in errno indicating the underlying problem.
+ * preserves the value in errno indicating the underlying problem. Similarly,
+ * on Windows, the implementation tries to preserve the GetLastError value.
  *
  * @param filename The name of the file to open.
  * @param flags A set of @ref SQFS_FILE_OPEN_FLAGS.
