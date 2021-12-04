@@ -10,11 +10,13 @@
 #include "internal.h"
 #include "../test.h"
 
-int main(void)
+int main(int argc, char **argv)
 {
 	tree_node_t *a, *b, *c, *d;
 	struct stat sb;
 	fstree_t fs;
+	int ret;
+	(void)argc; (void)argv;
 
 	memset(&fs, 0, sizeof(fs));
 	memset(&sb, 0, sizeof(sb));

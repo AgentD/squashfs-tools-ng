@@ -40,9 +40,10 @@ static const char *must_not_work_here[] = {
 	NULL,
 };
 
-int main(void)
+int main(int argc, char **argv)
 {
 	size_t i;
+	(void)argc; (void)argv;
 
 	for (i = 0; must_work[i] != NULL; ++i) {
 		if (!is_filename_sane(must_work[i], false)) {

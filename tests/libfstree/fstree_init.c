@@ -10,10 +10,11 @@
 #include "internal.h"
 #include "../test.h"
 
-int main(void)
+int main(int argc, char **argv)
 {
 	fstree_t fs;
 	char *str;
+	(void)argc; (void)argv;
 
 	str = strdup("mtime=1337,uid=1000,gid=100,mode=0321");
 	TEST_NOT_NULL(str);

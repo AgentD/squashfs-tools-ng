@@ -53,7 +53,7 @@ static sqfs_inode_generic_t *create_file_inode(sqfs_id_table_t *idtbl,
 	return inode;
 }
 
-int main(void)
+int main(int argc, char **argv)
 {
 	sqfs_meta_writer_t *inode_m, *dir_m;
 	int ret, status = EXIT_FAILURE;
@@ -68,6 +68,7 @@ int main(void)
 	sqfs_file_t *file;
 	sqfs_u32 offset;
 	char buffer[32];
+	(void)argc; (void)argv;
 
 	/* get a file object referring to our destination file */
 	file = sqfs_open_file("42.sqfs", SQFS_FILE_OPEN_OVERWRITE);

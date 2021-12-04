@@ -71,7 +71,7 @@ static sqfs_compressor_t dummy_compressor = {
 
 /*****************************************************************************/
 
-int main(void)
+int main(int argc, char **argv)
 {
 	size_t offset, ool_value_offset, id_offset;
 	sqfs_xattr_id_table_t idtbl;
@@ -85,6 +85,7 @@ int main(void)
 	sqfs_u64 ref;
 	sqfs_u32 id;
 	int ret;
+	(void)argc; (void)argv;
 
 	/* setup */
 	xwr = sqfs_xattr_writer_create(0);

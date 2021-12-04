@@ -9,11 +9,12 @@
 #include "fstree.h"
 #include "../test.h"
 
-int main(void)
+int main(int argc, char **argv)
 {
 	tree_node_t *node;
 	struct stat sb;
 	fstree_t fs;
+	(void)argc; (void)argv;
 
 	memset(&fs, 0, sizeof(fs));
 

@@ -8,10 +8,11 @@
 #include "tar.h"
 #include "../test.h"
 
-int main(void)
+int main(int argc, char **argv)
 {
 	tar_header_decoded_t hdr;
 	istream_t *fp;
+	(void)argc; (void)argv;
 
 	fp = istream_open_file(STRVALUE(TESTPATH) "/" STRVALUE(TESTFILE));
 	TEST_NOT_NULL(fp);

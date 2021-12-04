@@ -9,12 +9,13 @@
 #include "fstree.h"
 #include "../test.h"
 
-int main(void)
+int main(int argc, char **argv)
 {
 	tree_node_t *a, *b;
 	struct stat sb;
 	fstree_t fs;
 	char *opts;
+	(void)argc; (void)argv;
 
 	opts = strdup("mode=0755,uid=21,gid=42");
 	TEST_ASSERT(fstree_init(&fs, opts) == 0);

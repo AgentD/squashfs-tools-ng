@@ -16,11 +16,12 @@ static const uint8_t value[] = {
 	0x00, 0x00, 0x00, 0x00,
 };
 
-int main(void)
+int main(int argc, char **argv)
 {
 	tar_header_decoded_t hdr;
 	char buffer[6];
 	istream_t *fp;
+	(void)argc; (void)argv;
 
 	fp = istream_open_file(STRVALUE(TESTPATH) "/" STRVALUE(TESTFILE));
 	TEST_NOT_NULL(fp);

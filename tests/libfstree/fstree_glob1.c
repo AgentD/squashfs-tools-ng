@@ -204,10 +204,11 @@ static void check_hierarchy(tree_node_t *root, bool subdir, bool recursive)
 	TEST_NULL(n);
 }
 
-int main(void)
+int main(int argc, char **argv)
 {
 	fstree_t fs;
 	int ret;
+	(void)argc; (void)argv;
 
 	/* first test case, directory tree only */
 	ret = fstree_init(&fs, NULL);

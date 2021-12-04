@@ -9,10 +9,11 @@
 #include "../test.h"
 #include "util.h"
 
-int main(void)
+int main(int argc, char **argv)
 {
 	unsigned char temp[1024];
 	size_t i, j;
+	(void)argc; (void)argv;
 
 	memset(temp, 0, sizeof(temp));
 

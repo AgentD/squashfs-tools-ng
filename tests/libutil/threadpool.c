@@ -40,13 +40,14 @@ static int worker(void *user, void *work_item)
 	return 0;
 }
 
-int main(void)
+int main(int argc, char **argv)
 {
 	unsigned int values[10];
 	thread_pool_t *pool;
 	unsigned int *ptr;
 	size_t i, count;
 	int ret;
+	(void)argc; (void)argv;
 
 	pool = thread_pool_create(10, worker);
 	TEST_NOT_NULL(pool);

@@ -34,11 +34,12 @@ static int read_strings(void)
 	return 0;
 }
 
-int main(void)
+int main(int argc, char **argv)
 {
 	str_table_t table;
 	size_t i, j, idx;
 	const char *str;
+	(void)argc; (void)argv;
 
 	TEST_ASSERT(chdir(TEST_PATH) == 0);
 
