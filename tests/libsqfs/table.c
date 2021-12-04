@@ -111,12 +111,13 @@ static sqfs_compressor_t dummy_uncompressor = {
 
 static sqfs_u64 table[4000];
 
-int main(void)
+int main(int argc, char **argv)
 {
 	sqfs_u64 start, value, locations[4], *copy;
 	sqfs_u16 hdr;
 	size_t i;
 	int ret;
+	(void)argc; (void)argv;
 
 	/* fill the table with data */
 	for (i = 0; i < sizeof(table) / sizeof(table[0]); ++i)

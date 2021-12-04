@@ -44,10 +44,11 @@ static void check_children_continuous(tree_node_t *root)
 		check_children_continuous(n);
 }
 
-int main(void)
+int main(int argc, char **argv)
 {
 	tree_node_t *a, *b, *c;
 	fstree_t fs;
+	(void)argc; (void)argv;
 
 	// inode table for the empty tree
 	TEST_ASSERT(fstree_init(&fs, NULL) == 0);

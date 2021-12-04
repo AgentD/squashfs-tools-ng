@@ -313,11 +313,12 @@ static void check_hierarchy(tree_node_t *root, bool recursive)
 	TEST_NULL(n);
 }
 
-int main(void)
+int main(int argc, char **argv)
 {
 	struct stat sb;
 	tree_node_t *n;
 	fstree_t fs;
+	(void)argc; (void)argv;
 
 	/* recursively scan into root */
 	TEST_ASSERT(fstree_init(&fs, NULL) == 0);

@@ -44,10 +44,11 @@ static const struct {
 	},
 };
 
-int main(void)
+int main(int argc, char **argv)
 {
 	sqfs_u32 hash;
 	size_t i;
+	(void)argc; (void)argv;
 
 	for (i = 0; i < sizeof(test_vectors) / sizeof(test_vectors[0]); ++i) {
 		hash = xxh32(test_vectors[i].plaintext, test_vectors[i].psize);

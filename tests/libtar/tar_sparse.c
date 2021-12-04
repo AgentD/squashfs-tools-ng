@@ -78,8 +78,9 @@ static void test_case_sparse(const char *path)
 	sqfs_destroy(fp);
 }
 
-int main(void)
+int main(int argc, char **argv)
 {
+	(void)argc; (void)argv;
 	test_case_sparse( STRVALUE(TESTPATH) "/" STRVALUE(TESTFILE) );
 	return EXIT_SUCCESS;
 }

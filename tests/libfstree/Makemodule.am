@@ -2,7 +2,7 @@ FSTDATADIR=$(top_srcdir)/tests/libfstree
 
 test_canonicalize_name_SOURCES = tests/libfstree/canonicalize_name.c
 test_canonicalize_name_SOURCES += tests/test.h
-test_canonicalize_name_LDADD = libfstree.a
+test_canonicalize_name_LDADD = libfstree.a libcompat.a
 
 test_mknode_simple_SOURCES = tests/libfstree/mknode_simple.c tests/test.h
 test_mknode_simple_LDADD = libfstree.a libcompat.a
@@ -50,14 +50,17 @@ test_fstree_init_LDADD = libfstree.a libfstream.a libcompat.a
 
 test_filename_sane_SOURCES = tests/libfstree/filename_sane.c
 test_filename_sane_SOURCES += lib/fstree/filename_sane.c
+test_filename_sane_LDADD = libcompat.a
 
 test_filename_sane_w32_SOURCES = tests/libfstree/filename_sane.c
 test_filename_sane_w32_SOURCES += lib/fstree/filename_sane.c
 test_filename_sane_w32_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_WIN32=1
+test_filename_sane_w32_LDADD = libcompat.a
 
 test_fstree_epoch_SOURCES = tests/libfstree/epoch.c
 test_fstree_epoch_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/lib/fstree
 test_fstree_epoch_SOURCES += lib/fstree/source_date_epoch.c
+test_fstree_epoch_LDADD = libcompat.a
 
 test_sort_file_SOURCES = tests/libfstree/sort_file.c
 test_sort_file_LDADD = libfstree.a libfstream.a libcompat.a

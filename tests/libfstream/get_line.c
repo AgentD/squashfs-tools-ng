@@ -143,8 +143,10 @@ static const line_t lines_no_empty_trim[] = {
 	{ 10, "dog" },
 };
 
-int main(void)
+int main(int argc, char **argv)
 {
+	(void)argc; (void)argv;
+
 	run_test_case(lines_raw, 11, 0);
 	run_test_case(lines_ltrim, 11, ISTREAM_LINE_LTRIM);
 	run_test_case(lines_rtrim, 11, ISTREAM_LINE_RTRIM);

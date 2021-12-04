@@ -163,8 +163,9 @@ static void test_blockproc_desc(void)
 		      (4 * sizeof(sqfs_u32) + 4 * sizeof(void *)));
 }
 
-int main(void)
+int main(int argc, char **argv)
 {
+	(void)argc; (void)argv;
 	test_compressor_opt_struct();
 	test_compressor_names();
 	test_blockproc_stats();

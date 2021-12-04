@@ -9,10 +9,11 @@
 #include "fstree.h"
 #include "../test.h"
 
-int main(void)
+int main(int argc, char **argv)
 {
 	tree_node_t *n;
 	fstree_t fs;
+	(void)argc; (void)argv;
 
 	TEST_ASSERT(fstree_init(&fs, NULL) == 0);
 	TEST_ASSERT(fstree_from_file(&fs, TEST_PATH, NULL) == 0);

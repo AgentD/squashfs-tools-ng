@@ -151,7 +151,7 @@ static int check_subtrees_equal(const rbtree_node_t *lhs,
 	return 0;
 }
 
-int main(void)
+int main(int argc, char **argv)
 {
 	size_t count, blkdepth, mind, maxd;
 	sqfs_s32 key, key2;
@@ -159,6 +159,7 @@ int main(void)
 	rbtree_node_t *n;
 	sqfs_u64 value;
 	int ret;
+	(void)argc; (void)argv;
 
 	TEST_ASSERT(rbtree_init(&rb, sizeof(sqfs_s32),
 				sizeof(sqfs_u64), key_compare) == 0);

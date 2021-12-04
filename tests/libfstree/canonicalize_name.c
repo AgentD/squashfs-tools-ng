@@ -40,10 +40,11 @@ static const char *must_not_work[] = {
 	"foo/bar/../",
 };
 
-int main(void)
+int main(int argc, char **argv)
 {
 	char buffer[512];
 	size_t i;
+	(void)argc; (void)argv;
 
 	for (i = 0; i < sizeof(must_work) / sizeof(must_work[0]); ++i) {
 		strcpy(buffer, must_work[i].in);

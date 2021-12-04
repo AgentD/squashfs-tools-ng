@@ -33,12 +33,13 @@ static const char *fname =
 static const char *fname = STRVALUE(TESTFNAME);
 #endif
 
-int main(void)
+int main(int argc, char **argv)
 {
 	tar_header_decoded_t hdr;
 	char buffer[6];
 	sqfs_s64 ts;
 	istream_t *fp;
+	(void)argc; (void)argv;
 
 	fp = istream_open_file(STRVALUE(TESTPATH) "/" STRVALUE(TESTFILE));
 	TEST_NOT_NULL(fp);

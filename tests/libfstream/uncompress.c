@@ -384,13 +384,14 @@ static istream_t memstream = {
 	.get_filename = get_filename,
 };
 
-int main(void)
+int main(int argc, char **argv)
 {
 	char buffer[2 * (sizeof(orig) / sizeof(orig[0]))];
 	const char *name;
 	istream_t *xfrm;
 	size_t orig_sz;
 	int ret;
+	(void)argc; (void)argv;
 
 	/* XXX: null terminator not included in the compressed blob */
 	orig_sz = (sizeof(orig) / sizeof(orig[0])) - 1;
