@@ -8,9 +8,28 @@
 #include "internal.h"
 #include "../test.h"
 
-int main(void)
+#if defined(_WIN32) || defined(__WINDOWS__)
+static void setenv(const char *key, const char *value, int overwrite)
+{
+	char buffer[128];
+	(void)overwrite;
+
+	snprintf(buffer, sizeof(buffer) - 1, "%s=%s", key, value);
+	buffer[sizeof(buffer) - 1] = '\0';
+
+	_putenv(buffer);
+}
+
+static void unsetenv(const char *key)
+{
+	setenv(key, "", 0);
+}
+#endif
+
+int main(int argc, char **argv)
 {
 	sqfs_u32 ts;
+	(void)argc; (void)argv;
 
 	unsetenv("SOURCE_DATE_EPOCH");
 	ts = get_source_date_epoch();

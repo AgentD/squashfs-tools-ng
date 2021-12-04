@@ -147,11 +147,12 @@ static istream_t memstream = {
 
 /*****************************************************************************/
 
-int main(void)
+int main(int argc, char **argv)
 {
 	file_info_t *fi;
 	fstree_t fs;
 	size_t i;
+	(void)argc; (void)argv;
 
 	input_file = listing;
 	memstream.buffer_used = 0;

@@ -60,6 +60,7 @@ test_filename_sane_w32_LDADD = libcompat.a
 test_fstree_epoch_SOURCES = tests/libfstree/epoch.c
 test_fstree_epoch_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/lib/fstree
 test_fstree_epoch_SOURCES += lib/fstree/source_date_epoch.c
+test_fstree_epoch_LDADD = libcompat.a
 
 test_sort_file_SOURCES = tests/libfstree/sort_file.c
 test_sort_file_LDADD = libfstree.a libfstream.a libcompat.a
