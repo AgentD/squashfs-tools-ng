@@ -17,4 +17,6 @@
  */
 sqfs_u32 get_source_date_epoch(void);
 
+void fstree_insert_sorted(tree_node_t *root, tree_node_t *n);
+
 #endif /* FSTREE_INTERNAL_H */

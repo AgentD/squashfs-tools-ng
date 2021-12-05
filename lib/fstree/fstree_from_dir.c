@@ -5,7 +5,7 @@
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
 #include "config.h"
-#include "fstree.h"
+#include "internal.h"
 
 #include <dirent.h>
 #include <stdlib.h>
@@ -98,9 +98,7 @@ static int add_node(fstree_t *fs, tree_node_t *root,
 		n->mod_time = fs->defaults.st_mtime;
 	}
 
-	n->parent = root;
-	n->next = root->data.dir.children;
-	root->data.dir.children = n;
+	fstree_insert_sorted(root, n);
 	return 0;
 }
 
