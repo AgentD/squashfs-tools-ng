@@ -6,13 +6,13 @@
  */
 #include "config.h"
 
-#include "fstree.h"
+#include "internal.h"
 
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
 
-static void insert_sorted(tree_node_t *root, tree_node_t *n)
+void fstree_insert_sorted(tree_node_t *root, tree_node_t *n)
 {
 	tree_node_t *it = root->data.dir.children, *prev = NULL;
 
@@ -88,7 +88,7 @@ tree_node_t *fstree_mknode(tree_node_t *parent, const char *name,
 	}
 
 	if (parent != NULL) {
-		insert_sorted(parent, n);
+		fstree_insert_sorted(parent, n);
 
 		if (parent->link_count == 0x0FFFF) {
 			free(n);
