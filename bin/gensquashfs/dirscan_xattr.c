@@ -122,10 +122,10 @@ fail:
 #endif
 
 static int xattr_xcan_dfs(const char *path_prefix, void *selinux_handle,
-			  sqfs_xattr_writer_t *xwr, bool scan_xattr,
+			  sqfs_xattr_writer_t *xwr, bool scan_xattr, void *xattr_map,
 			  tree_node_t *node)
 {
-	char *path;
+	char *path = NULL;
 	int ret;
 
 	ret = sqfs_xattr_writer_begin(xwr, 0);
@@ -143,32 +143,49 @@ static int xattr_xcan_dfs(const char *path_prefix, void *selinux_handle,
 
 		ret = xattr_from_path(xwr, path);
 		free(path);
-
-		if (ret)
-			return -1;
+		path = NULL;
+		if (ret) {
+			ret = -1;
+			goto out;
+		}
 	}
 #else
 	(void)path_prefix;
 #endif
 
-	if (selinux_handle != NULL) {
+	if (selinux_handle != NULL || xattr_map != NULL) {
 		path = fstree_get_path(node);
+
 		if (path == NULL) {
 			perror("reconstructing absolute path");
-			return -1;
+			ret = -1;
+			goto out;
 		}
+	}
 
+	if (xattr_map != NULL) {
+		ret = xattr_apply_map_file(path, xattr_map, xwr);
+
+		if (ret) {
+			ret = -1;
+			goto out;
+		}
+	}
+
+	if (selinux_handle != NULL) {
 		ret = selinux_relable_node(selinux_handle, xwr, node, path);
-		free(path);
 
-		if (ret)
-			return -1;
+		if (ret) {
+			ret = -1;
+			goto out;
+		}
 	}
 
 	if (sqfs_xattr_writer_end(xwr, &node->xattr_idx)) {
 		sqfs_perror(node->name, "completing xattr key-value pairs",
 			    ret);
-		return -1;
+		ret = -1;
+		goto out;
 	}
 
 	if (S_ISDIR(node->mode)) {
@@ -176,25 +193,28 @@ static int xattr_xcan_dfs(const char *path_prefix, void *selinux_handle,
 
 		while (node != NULL) {
 			if (xattr_xcan_dfs(path_prefix, selinux_handle, xwr,
-					   scan_xattr, node)) {
-				return -1;
+					   scan_xattr, xattr_map, node)) {
+				ret = -1;
+				goto out;
 			}
 
 			node = node->next;
 		}
 	}
 
-	return 0;
+out:
+	free(path);
+	return ret;
 }
 
 int xattrs_from_dir(fstree_t *fs, const char *path, void *selinux_handle,
-		    sqfs_xattr_writer_t *xwr, bool scan_xattr)
+		    void *xattr_map, sqfs_xattr_writer_t *xwr, bool scan_xattr)
 {
 	if (xwr == NULL)
 		return 0;
 
-	if (selinux_handle == NULL && !scan_xattr)
+	if (selinux_handle == NULL && !scan_xattr && xattr_map == NULL)
 		return 0;
 
-	return xattr_xcan_dfs(path, selinux_handle, xwr, scan_xattr, fs->root);
+	return xattr_xcan_dfs(path, selinux_handle, xwr, scan_xattr, xattr_map, fs->root);
 }

@@ -44,6 +44,7 @@ typedef struct {
 	unsigned int dirscan_flags;
 	const char *infile;
 	const char *selinux;
+	const char *xattr_file;
 	const char *sortfile;
 	bool no_tail_packing;
 
@@ -62,7 +63,14 @@ typedef struct {
 void process_command_line(options_t *opt, int argc, char **argv);
 
 int xattrs_from_dir(fstree_t *fs, const char *path, void *selinux_handle,
-		    sqfs_xattr_writer_t *xwr, bool scan_xattr);
+		    void *xattr_map, sqfs_xattr_writer_t *xwr, bool scan_xattr);
+
+void *xattr_open_map_file(const char *path);
+
+int
+xattr_apply_map_file(char *path, void *map, sqfs_xattr_writer_t *xwr);
+
+void xattr_close_map_file(void *xattr_map);
 
 void *selinux_open_context_file(const char *filename);
 
