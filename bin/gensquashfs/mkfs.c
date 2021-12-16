@@ -143,6 +143,7 @@ int main(int argc, char **argv)
 	int status = EXIT_FAILURE;
 	istream_t *sortfile = NULL;
 	void *sehnd = NULL;
+	void *xattrmap = NULL;
 	sqfs_writer_t sqfs;
 	options_t opt;
 
@@ -154,6 +155,11 @@ int main(int argc, char **argv)
 	if (opt.selinux != NULL) {
 		sehnd = selinux_open_context_file(opt.selinux);
 		if (sehnd == NULL)
+			goto out;
+	}
+	if (opt.xattr_file != NULL) {
+		xattrmap = xattr_open_map_file(opt.xattr_file);
+		if (xattrmap == NULL)
 			goto out;
 	}
 
@@ -180,7 +186,7 @@ int main(int argc, char **argv)
 		goto out;
 
 	if (opt.infile == NULL) {
-		if (xattrs_from_dir(&sqfs.fs, opt.packdir, sehnd,
+		if (xattrs_from_dir(&sqfs.fs, opt.packdir, sehnd, xattrmap,
 				    sqfs.xwr, opt.scan_xattr)) {
 			goto out;
 		}
