@@ -143,6 +143,7 @@ int main(int argc, char **argv)
 	int status = EXIT_FAILURE;
 	istream_t *sortfile = NULL;
 	void *sehnd = NULL;
+	void *xattrmap = NULL;
 	sqfs_writer_t sqfs;
 	options_t opt;
 
@@ -179,7 +180,11 @@ int main(int argc, char **argv)
 	if (fstree_post_process(&sqfs.fs))
 		goto out;
 
-	if (opt.infile == NULL) {
+	if (opt.xattr_file != NULL) {
+		if (xattrs_from_map_file(&sqfs.fs, opt.xattr_file, xattrmap,
+				    sqfs.xwr))
+			goto out;
+	} else if (opt.infile == NULL) {
 		if (xattrs_from_dir(&sqfs.fs, opt.packdir, sehnd,
 				    sqfs.xwr, opt.scan_xattr)) {
 			goto out;

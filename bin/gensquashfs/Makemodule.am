@@ -1,6 +1,7 @@
 gensquashfs_SOURCES = bin/gensquashfs/mkfs.c bin/gensquashfs/mkfs.h
 gensquashfs_SOURCES += bin/gensquashfs/options.c bin/gensquashfs/selinux.c
 gensquashfs_SOURCES += bin/gensquashfs/dirscan_xattr.c
+gensquashfs_SOURCES += bin/gensquashfs/filemap_xattr.c
 gensquashfs_LDADD = libcommon.a libsquashfs.la libfstree.a libfstream.a
 gensquashfs_LDADD += libcompat.a $(LZO_LIBS) $(PTHREAD_LIBS)
 gensquashfs_CPPFLAGS = $(AM_CPPFLAGS)

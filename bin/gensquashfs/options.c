@@ -35,13 +35,14 @@ static struct option long_opts[] = {
 #ifdef WITH_SELINUX
 	{ "selinux", required_argument, NULL, 's' },
 #endif
+	{ "xattr-file", required_argument, NULL, 'A' },
 	{ "sort-file", required_argument, NULL, 'S' },
 	{ "version", no_argument, NULL, 'V' },
 	{ "help", no_argument, NULL, 'h' },
 	{ NULL, 0, NULL, 0 },
 };
 
-static const char *short_opts = "F:D:X:c:b:B:d:u:g:j:Q:S:kxoefqThV"
+static const char *short_opts = "F:D:X:c:b:B:d:u:g:j:Q:S:A:kxoefqThV"
 #ifdef WITH_SELINUX
 "s:"
 #endif
@@ -107,6 +108,8 @@ static const char *help_string =
 "  --selinux, -s <file>        Specify an SELinux label file to get context\n"
 "                              attributes from.\n"
 #endif
+"  --xattr-file, -A <file>     Specify an Xattr file to get extended attributes\n"
+"                              for loading xattrs\n"
 "  --keep-time, -k             When using --pack-dir only, use the timestamps\n"
 "                              from the input files instead of setting\n"
 "                              defaults on all input paths.\n"
@@ -323,6 +326,9 @@ void process_command_line(options_t *opt, int argc, char **argv)
 			opt->selinux = optarg;
 			break;
 #endif
+		case 'A':
+			opt->xattr_file = optarg;
+			break;
 		case 'S':
 			opt->sortfile = optarg;
 			break;
