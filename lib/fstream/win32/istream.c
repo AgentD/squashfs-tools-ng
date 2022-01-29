@@ -30,6 +30,16 @@ static int file_precache(istream_t *strm)
 
 		if (!ReadFile(hnd, strm->buffer + strm->buffer_used,
 			      diff, &actual, NULL)) {
+			DWORD error = GetLastError();
+
+			if (error == ERROR_HANDLE_EOF ||
+			    error == ERROR_BROKEN_PIPE) {
+				strm->eof = true;
+				break;
+			}
+
+			SetLastError(error);
+
 			w32_perror(file->path == NULL ? "stdin" : file->path);
 			return -1;
 		}
