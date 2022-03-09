@@ -181,7 +181,7 @@ fail_free:
 
 ostream_t *ostream_open_stdout(void)
 {
-	ostream_t *strm = calloc(1, sizeof(strm));
+	ostream_t *strm = calloc(1, sizeof(*strm));
 	sqfs_object_t *obj = (sqfs_object_t *)strm;
 
 	if (strm == NULL) {
