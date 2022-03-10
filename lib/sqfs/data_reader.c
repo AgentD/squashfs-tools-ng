@@ -268,7 +268,10 @@ int sqfs_data_reader_get_fragment(sqfs_data_reader_t *data,
 
 	block_count = sqfs_inode_get_file_block_count(inode);
 
-	if (block_count * data->block_size >= filesz)
+	if (block_count > (UINT64_MAX / data->block_size))
+		return SQFS_ERROR_OVERFLOW;
+
+	if ((sqfs_u64)block_count * data->block_size >= filesz)
 		return 0;
 
 	frag_sz = filesz % data->block_size;
