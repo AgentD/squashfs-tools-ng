@@ -130,8 +130,10 @@ int stat_file(const sqfs_tree_node_t *node)
 		printf("Fragment offset: %u\n", frag_offset);
 		printf("File size: %lu\n", (unsigned long)size);
 
-		if (inode->base.type == SQFS_INODE_EXT_FILE)
-			printf("Sparse: %lu\n", inode->data.file_ext.sparse);
+		if (inode->base.type == SQFS_INODE_EXT_FILE) {
+			printf("Sparse: " PRI_U64 "\n",
+			       inode->data.file_ext.sparse);
+		}
 
 		printf("Blocks start: %lu\n", (unsigned long)location);
 		printf("Block count: %lu\n",
