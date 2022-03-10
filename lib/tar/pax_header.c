@@ -18,10 +18,14 @@ static tar_xattr_t *mkxattr(const char *key, size_t keylen,
 		return NULL;
 
 	xattr->key = xattr->data;
-	xattr->value = (sqfs_u8 *)xattr->data + keylen + 1;
-	xattr->value_len = valuelen;
 	memcpy(xattr->key, key, keylen);
+	xattr->key[keylen] = '\0';
+
+	xattr->value = (sqfs_u8 *)xattr->key + keylen + 1;
 	memcpy(xattr->value, value, valuelen);
+	xattr->value[valuelen] = '\0';
+
+	xattr->value_len = valuelen;
 	return xattr;
 }
 
