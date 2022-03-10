@@ -4,6 +4,7 @@ libcompat_a_SOURCES += lib/compat/chdir.c include/compat.h
 libcompat_a_SOURCES += lib/compat/path_to_windows.c
 libcompat_a_SOURCES += lib/compat/w32_perror.c
 libcompat_a_SOURCES += lib/compat/w32_wmain.c
+libcompat_a_SOURCES += lib/compat/w32_stdio.c
 libcompat_a_SOURCES += lib/compat/fnmatch.c
 libcompat_a_SOURCES += lib/compat/getopt.c
 libcompat_a_SOURCES += lib/compat/getopt_long.c

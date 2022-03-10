@@ -8,9 +8,11 @@
 #define COMPAT_H
 
 #include "sqfs/predef.h"
+#include "fstream.h"
 #include "config.h"
 
 #include <limits.h>
+#include <stdio.h>
 
 #if defined(__GNUC__) && __GNUC__ >= 5
 #	define SZ_ADD_OV __builtin_add_overflow
@@ -228,9 +230,19 @@ int fnmatch(const char *, const char *, int);
 #endif
 
 #if defined(_WIN32) || defined(__WINDOWS__)
-#define main sqfs_tools_main
-
 extern int sqfs_tools_main(int argc, char **argv);
+
+int stfs_tools_fputc(int c, FILE *strm);
+int stfs_tools_fputs(const char *str, FILE *strm);
+int stfs_tools_printf(const char *fmt, ...) PRINTF_ATTRIB(1, 2);
+int stfs_tools_fprintf(FILE *strm, const char *fmt, ...) PRINTF_ATTRIB(2, 3);
+
+#define main sqfs_tools_main
+#define printf stfs_tools_printf
+#define fprintf stfs_tools_fprintf
+#define fputs stfs_tools_fputs
+#define fputc stfs_tools_fputc
+#define putc stfs_tools_fputc
 #endif
 
 #endif /* COMPAT_H */
