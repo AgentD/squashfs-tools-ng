@@ -50,7 +50,7 @@
 static inline sqfs_u32
 _mul32by64_hi(sqfs_u32 a, sqfs_u64 b)
 {
-#if __SIZEOF_INT128__ == 16
+#if defined(__SIZEOF_INT128__) && __SIZEOF_INT128__ == 16
    return ((__uint128_t) b * a) >> 64;
 #else
    /*
