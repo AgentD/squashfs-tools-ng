@@ -1,6 +1,6 @@
 #!/bin/sh
 
-COVERITY_PATH="$HOME/Downloads/cov-analysis-linux64-2020.09"
+COVERITY_PATH="$HOME/Downloads/cov-analysis-linux64-2021.12.1"
 TOKEN=$(cat "$HOME/.coverity/squashfs-tools-ng")
 EMAIL=$(git log --follow --pretty=format:"%ae" -- coverity.sh | head -n 1)
 
@@ -9,8 +9,23 @@ VERSION=$(grep AC_INIT configure.ac | grep -o \\[[0-9.]*\\] | tr -d [])
 
 export PATH="$COVERITY_PATH/bin:$PATH"
 
-./autogen.sh
-./configure
+if [ $# -eq 1 ]; then
+	case "$1" in
+	--32bit)
+		./autogen.sh
+		./configure CFLAGS="-m32" CXXFLAGS="-m32" LDFLAGS="-m32"
+		DESCRIPTION="$DESCRIPTION-32bit"
+		;;
+	*)
+		echo "Unknown option `$1`" >&2
+		exit 1
+		;;
+	esac
+else
+	./autogen.sh
+	./configure
+fi
+
 make clean
 cov-build --dir cov-int make -j
 tar czvf squashfs-tools-ng.tgz cov-int
