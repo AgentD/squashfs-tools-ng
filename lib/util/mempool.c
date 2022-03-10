@@ -142,7 +142,7 @@ void *mem_pool_allocate(mem_pool_t *mem)
 	size_t idx, i, j;
 	void *ptr = NULL;
 	pool_t *it;
-
+retry_pool:
 	for (it = mem->pool_list; it != NULL; it = it->next) {
 		if (it->obj_free > 0)
 			break;
@@ -162,9 +162,19 @@ void *mem_pool_allocate(mem_pool_t *mem)
 			break;
 	}
 
+	if (i == mem->bitmap_count) {
+		it->obj_free = 0;
+		goto retry_pool;
+	}
+
 	for (j = 0; j < (sizeof(it->bitmap[i]) * CHAR_BIT); ++j) {
 		if (!(it->bitmap[i] & (1UL << j)))
 			break;
+	}
+
+	if (j == (sizeof(it->bitmap[i]) * CHAR_BIT)) {
+		it->obj_free = 0;
+		goto retry_pool;
 	}
 
 	idx = i * sizeof(unsigned int) * CHAR_BIT + j;
