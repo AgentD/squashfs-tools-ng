@@ -14,6 +14,7 @@
 #include "sqfs/block.h"
 #include "sqfs/dir.h"
 #include "sqfs/io.h"
+#include "compat.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -353,7 +354,7 @@ static void stat_cmd(const char *filename)
 		}
 		break;
 	case SQFS_INODE_EXT_FILE:
-		printf("Blocks start: %lu\n",
+		printf("Blocks start: " PRI_U64 "\n",
 		       inode->data.file_ext.blocks_start);
 		printf("Block count: %lu\n",
 		       (unsigned long)sqfs_inode_get_file_block_count(inode));
@@ -361,8 +362,10 @@ static void stat_cmd(const char *filename)
 		       inode->data.file_ext.fragment_idx);
 		printf("Fragment offset: %u\n",
 		       inode->data.file_ext.fragment_offset);
-		printf("File size: %lu\n", inode->data.file_ext.file_size);
-		printf("Sparse: %lu\n", inode->data.file_ext.sparse);
+		printf("File size: " PRI_U64 "\n",
+		       inode->data.file_ext.file_size);
+		printf("Sparse: " PRI_U64 "\n",
+		       inode->data.file_ext.sparse);
 		printf("Hard link count: %u\n", inode->data.file_ext.nlink);
 		printf("Xattr index: 0x%X\n", inode->data.file_ext.xattr_idx);
 
