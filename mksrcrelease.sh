@@ -68,8 +68,8 @@ libchanges=$(git diff --numstat v${old_ver}..HEAD lib/sqfs/ | wc -l)
 
 if [ $libchanges -gt 0 ]; then
 	echo "Detected changes to library code, updating so version"
-	added=$(askyesno "Have any public interfaces been changed")
-	changed=$(askyesno "Have any public interfaces been added")
+	changed=$(askyesno "Have any public interfaces been changed")
+	added=$(askyesno "Have any public interfaces been added")
 	removed=$(askyesno "Have any public interfaces been removed")
 
 	revision=$((revision+1))
