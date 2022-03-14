@@ -4,6 +4,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.4] - 2022-03-30
+### Added
+- libsquashfs: A flag for `sqfs_open_file` to *not* perform any
+  local charset based transformations, e.g. UTF-8 to UTF-16 on Windows (#96).
+
+### Fixed
+- libsquashfs: uninitializeed state in the directory reader caused by rewind
+  call after reading an emtpy directory.
+- libsquashfs: stricter bounds checking in directory reader.
+- libsquashfs: Guard against multiplication overflow in the
+  data reader on 32 bit systems.
+- structure alignment test on 32 bit x86 systems (#93)
+- Windows: error handling on FlushFileBuffers (#97)
+- Windows: loop exit condition in mkdir_p (#97)
+- Windows: error handling when reading from a pipe (#102)
+- Windows: heap corruption in stdout stream wrapper (#100)
+- Use the correct printf specifiers for 64 bit types on 32 bit systems.
+- Miscellaneous static analysis and compiler warnings.
+
+### Changed
+- Windows: add a wrapper for main() that reads the UTF-16 command line and
+  converts it to UTF-8 for propper Unicode support (#96).
+- Windows: when opening a file, treat the path as UTF-8, convert it to UTF-16
+  and use the WCHAR API for propper Unicode support (#96).
+- Windows: redirect stdio print functions, convert from UTF-8 to UTF-16 if
+  the target is the console for propper Unicode support (#96).
+- libsquashfs: Windows: when opening files, interpret the API argument path
+  as UTF-8, convert it to UTF-16 and use the WCHAR API, unless explictly
+  told not to (#96).
+- Upgraded version of the builtin copy of zlib.
+
 ## [1.1.3] - 2021-08-15
 ### Added
 - Overhaul format documentation, convert to ASCIIdoc (#88, #90)
