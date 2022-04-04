@@ -5,20 +5,7 @@
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
 #define SQFS_BUILDING_DLL
-#include "config.h"
-
-#include "sqfs/meta_reader.h"
-#include "sqfs/dir_reader.h"
-#include "sqfs/compressor.h"
-#include "sqfs/id_table.h"
-#include "sqfs/super.h"
-#include "sqfs/inode.h"
-#include "sqfs/error.h"
-#include "sqfs/dir.h"
-#include "util.h"
-
-#include <string.h>
-#include <stdlib.h>
+#include "internal.h"
 
 static int should_skip(int type, unsigned int flags)
 {
