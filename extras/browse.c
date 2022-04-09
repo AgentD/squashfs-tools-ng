@@ -543,7 +543,8 @@ int main(int argc, char **argv)
 	}
 
 	/* create a directory reader and get the root inode */
-	dr = sqfs_dir_reader_create(&super, cmp, file, 0);
+	dr = sqfs_dir_reader_create(&super, cmp, file,
+				    SQFS_DIR_READER_DOT_ENTRIES);
 	if (dr == NULL) {
 		fprintf(stderr, "%s: error creating directory reader.\n",
 			argv[1]);

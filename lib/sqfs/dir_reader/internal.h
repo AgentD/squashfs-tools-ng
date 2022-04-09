@@ -17,10 +17,19 @@
 #include "sqfs/inode.h"
 #include "sqfs/error.h"
 #include "sqfs/dir.h"
+#include "rbtree.h"
 #include "util.h"
 
 #include <string.h>
 #include <stdlib.h>
+
+enum {
+	DIR_STATE_NONE = 0,
+	DIR_STATE_OPENED = 1,
+	DIR_STATE_DOT = 2,
+	DIR_STATE_DOT_DOT = 3,
+	DIR_STATE_ENTRIES = 4,
+};
 
 struct sqfs_dir_reader_t {
 	sqfs_object_t base;
@@ -37,6 +46,28 @@ struct sqfs_dir_reader_t {
 	size_t start_size;
 	sqfs_u16 dir_offset;
 	sqfs_u16 inode_offset;
+
+	sqfs_u32 flags;
+
+	int start_state;
+	int state;
+	sqfs_u64 parent_ref;
+	sqfs_u64 cur_ref;
+	rbtree_t dcache;
 };
+
+SQFS_INTERNAL int sqfs_dir_reader_dcache_init(sqfs_dir_reader_t *rd,
+					      sqfs_u32 flags);
+
+SQFS_INTERNAL int sqfs_dir_reader_dcache_init_copy(sqfs_dir_reader_t *copy,
+						   const sqfs_dir_reader_t *rd);
+
+SQFS_INTERNAL int sqfs_dir_reader_dcache_add(sqfs_dir_reader_t *rd,
+					     sqfs_u32 inode, sqfs_u64 ref);
+
+SQFS_INTERNAL int sqfs_dir_reader_dcache_find(sqfs_dir_reader_t *rd,
+					      sqfs_u32 inode, sqfs_u64 *ref);
+
+SQFS_INTERNAL void sqfs_dir_reader_dcache_cleanup(sqfs_dir_reader_t *rd);
 
 #endif /* DIR_READER_INTERNAL_H */

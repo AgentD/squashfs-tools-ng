@@ -148,6 +148,51 @@ struct sqfs_tree_node_t {
 	sqfs_u8 name[];
 };
 
+/**
+ * @enum SQFS_DIR_READER_FLAGS
+ *
+ * @brief Flags for @ref sqfs_dir_reader_create
+ */
+typedef enum {
+	/**
+	 * @brief Support "." and ".." directory and path entries.
+	 *
+	 * If this flag is set, the directory reader returns "." and ".."
+	 * entries when iterating over a directory, can fetch the associated
+	 * inodes if requested and supports resolving "." and ".." path
+	 * components when looking up a full path.
+	 *
+	 * In order for this to work, it internally caches the locations of
+	 * directory inodes it encounteres. This means, it only works as long
+	 * as you only use inodes fetched through the directory reader. If
+	 * given a foreign inode it hasn't seen before, it might not be able
+	 * to resolve the parent link.
+	 */
+	SQFS_DIR_READER_DOT_ENTRIES = 0x00000001,
+
+	SQFS_DIR_READER_ALL_FLAGS = 0x00000001,
+} SQFS_DIR_READER_FLAGS;
+
+/**
+ * @enum SQFS_DIR_OPEN_FLAGS
+ *
+ * @brief Flags for @ref sqfs_dir_reader_open_dir
+ */
+typedef enum {
+	/**
+	 * @brief Do not generate "." and ".." entries
+	 *
+	 * If the @ref sqfs_dir_reader_t was created with
+	 * the @ref SQFS_DIR_READER_DOT_ENTRIES flag set, "." and ".." entries
+	 * are generated when iterating over a directory. If that is not desired
+	 * in some instances, this flag can be set to suppress this behaviour
+	 * when opening a directory.
+	 */
+	SQFS_DIR_OPEN_NO_DOT_ENTRIES = 0x00000001,
+
+	SQFS_DIR_OPEN_ALL_FLAGS = 0x00000001,
+} SQFS_DIR_OPEN_FLAGS;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -157,11 +202,15 @@ extern "C" {
  *
  * @memberof sqfs_dir_reader_t
  *
+ * The function fails if any unknown flag is set. In squashfs-tools-ng
+ * version 1.2 introduced the @ref SQFS_DIR_READER_DOT_ENTRIES flag,
+ * earlier versions require the flags field to be set to zero.
+ *
  * @param super A pointer to the super block. Kept internally an used for
  *              resolving table positions.
  * @param cmp A compressor to use for unpacking meta data blocks.
  * @param file The input file to read from.
- * @param flags Currently must be zero or the function fails.
+ * @param flags A combination of @ref SQFS_DIR_READER_FLAGS
  *
  * @return A new directory reader on success, NULL on allocation failure.
  */
@@ -181,9 +230,20 @@ SQFS_API sqfs_dir_reader_t *sqfs_dir_reader_create(const sqfs_super_t *super,
  * After that, consequtive cals to @ref sqfs_dir_reader_read can be made
  * to iterate over the directory contents.
  *
+ * If the reader was created with the @ref SQFS_DIR_READER_DOT_ENTRIES flag
+ * set, the first two entries will be ".", referring to the directory inode
+ * itself and "..", referring to the parent directory inode. Those entries
+ * are generated artificially, as SquashFS does not store them on disk, hence
+ * extra work is required and a flag is used to enable this behaviour. By
+ * default, no such entries are generated.
+ *
+ * If this flag is set, but you wish to override that behaviour on a
+ * per-instance basis, simply set the @ref SQFS_DIR_OPEN_NO_DOT_ENTRIES flag
+ * when calling this function.
+ *
  * @param rd A pointer to a directory reader.
  * @param inode An directory or extended directory inode.
- * @param flags Currently must be zero or the function fails.
+ * @param flags A combination of @ref SQFS_DIR_OPEN_FLAGS.
  *
  * @return Zero on success, an @ref SQFS_ERROR value on failure.
  */
