@@ -26,7 +26,7 @@ download() {
 	[ -d "$PKG_DIR" ] || {
 		case "$PKG_TAR" in
 		*.zip)
-			unzip "$PKG_TAR" -d "$PKG_DIR"
+			unzip "$PKG_TAR"
 			;;
 		*)
 			tar -xf "$PKG_TAR"
@@ -118,9 +118,9 @@ popd
 
 ################################## get zstd ##################################
 
-PKG_DIR="zstd-v1.4.9-win32"
+PKG_DIR="zstd-v1.5.2-win32"
 PKG_TAR="${PKG_DIR}.zip"
-PKG_HASH="9ba7e4126cf614719442c81b1de6498b6d20bf5cb0b866c6898cab7fdfa738c5"
+PKG_HASH="d0a5361401607f2f85706989fbc69ebb760c34d2337e72573a303433898c3196"
 
 download
 mv "$PKG_DIR/dll/libzstd.dll" "$W32_DIR/bin"
@@ -135,14 +135,14 @@ includedir=$W32_DIR/include
 Name: zstd
 Description: fast lossless compression algorithm library
 URL: http://www.zstd.net/
-Version: 1.4.9
+Version: 1.5.2
 Libs: -L$W32_DIR/lib -lzstd
 Cflags: -I$W32_DIR/include
 _EOF
 
-PKG_DIR="zstd-v1.4.9-win64"
+PKG_DIR="zstd-v1.5.2-win64"
 PKG_TAR="${PKG_DIR}.zip"
-PKG_HASH="0bc374dadaec1fa879d5b2329d11b17212fb5251fe119e237a75e72d5e0745e7"
+PKG_HASH="2faf3b9061b731f8d37c5b3bb4a6f08be89af43f62bdd93f784a85af7d7c4f5b"
 
 download
 mv "$PKG_DIR/dll/libzstd.dll" "$W64_DIR/bin"
@@ -157,7 +157,7 @@ includedir=$W64_DIR/include
 Name: zstd
 Description: fast lossless compression algorithm library
 URL: http://www.zstd.net/
-Version: 1.4.9
+Version: 1.5.2
 Libs: -L$W64_DIR/lib -lzstd
 Cflags: -I$W64_DIR/include
 _EOF
