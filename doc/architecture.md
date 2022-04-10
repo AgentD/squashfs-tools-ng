@@ -11,7 +11,7 @@ Shared header files for the libraries are in `include/`. So far, a header
 sub-directory is only used for `libsquashfs`, since those headers are somewhat
 more numerous and are installed on the system in the same sub-directory.
 
-If a binray program comes with a man page, the man page is located at the same
+If a binary program comes with a man page, the man page is located at the same
 location as the program source (i.e. `bin/<program-name>/<program-name>.1`).
 
 Extra documentation (like this file) is located in the `doc` directory, and
@@ -89,7 +89,7 @@ tasks.
 The application programs and the static libraries are GPL licensed,
 while `libsquashfs` is licensed under the LGPL. Because the code
 of `libutil` is compiled into `libsquashfs`, it also needs to be under
-the LGPL and only contain 3rd party code under a compatible license.
+the LGPL and can only contain 3rd party code under a compatible license.
 
 Furthermore, since the LZO compressor library is GPL licensed, `libsquashfs`
 cannot use it directly and thus does not support LZO compression. Instead,
@@ -139,9 +139,9 @@ only have a factory function to instantiate them, for a more loose coupling.
 The `sqfs/predef.h` defines and typedefs a `sqfs_object_t` structure, which
 is at the bottom of the inheritance hierarchy.
 
-It contains two function pointers `delete` and `copy`. The former destroys and
+It contains two function pointers `destroy` and `copy`. The former destroys and
 frees the object itself, the later creates an exact copy of the object.
-The `copy` callbacks may be `NULL`, if creating copies is not applicable for a
+The `copy` callback may be `NULL`, if creating copies is not applicable for a
 particular type of object.
 
 For convenience, two inline helpers `sqfs_destroy` and `sqfs_copy` are provided
@@ -156,7 +156,7 @@ some functions return pointers to data blobs or dumb structures that have been
 allocated with `malloc` and expect the caller to free them again.
 
 This turned out to be a design issue, since the shared library could in theory
-end up being linked against a different C runtime then an application using it.
+end up being linked against a different C runtime than the application using it.
 On Unix like systems this would require a rather freakish circumstances, but
 on Windows this actually happens fairly easily.
 
@@ -165,4 +165,4 @@ to the `free` function of the libraries run-time. All new code
 using `libsquashfs` should use that function, but to maintain backward
 compatibility with existing code, the library has to continue using regular
 malloc at those places, so programs that currently work with a simple `free`
-also continue to work.
+continue to work in the future.
