@@ -75,11 +75,36 @@ be included when distributing either source or binaries of squashfs-tools-ng.
 
 See [COPYING.md](COPYING.md) for more detailed information.
 
+# Package Versioning and Git Branches
+
+This package attempts to use [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+A [changelog](CHANGELOG.md) is maintained that summarizes changes between releases.
+
+Releases are tagged and gpg signed in the git tree and official release tarballs
+are generated using Autotools.
+
+The git `master` branch currently contains ongoing development for a
+future `1.2.0` release.
+
+The latest stable version is `1.1.4`, maintained in a `fixes-1.1.0` branch.
+
+Bug fixes that also affect the previous `1.0.x` minor version are back-ported to
+a `fixes-1.0.0` branch with occasionally patch level releases. The latest
+release from this branch is `1.0.6`.
+
+Older versions are no longer supported. This currently affects the initial
+development versions with major version `0` (`0.1` up to `0.9.2`). It is likely
+that support for `1.0.x` will also be dropped once a new minor version is
+released.
+
 # Getting and Building the Source Code
 
 Official release tarballs can be obtained here:
 
 https://infraroot.at/pub/squashfs
+
+In between patch level releases, bug fixes are continuously published as
+individual patch files in `fixes-<version>` directories.
 
 The official git tree is available at the following locations:
 
