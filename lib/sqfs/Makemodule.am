@@ -78,11 +78,6 @@ endif
 if WITH_GZIP
 libsquashfs_la_SOURCES += lib/sqfs/comp/gzip.c
 libsquashfs_la_CPPFLAGS += -DWITH_GZIP
-
-if WITH_OWN_ZLIB
-libsquashfs_la_CPPFLAGS += -I$(top_srcdir)/lib/zlib
-libsquashfs_la_LIBADD += libz.la
-endif
 endif
 
 if WITH_XZ

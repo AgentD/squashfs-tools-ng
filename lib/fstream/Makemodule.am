@@ -28,10 +28,6 @@ if WITH_GZIP
 libfstream_a_SOURCES += lib/fstream/compress/gzip.c
 libfstream_a_SOURCES += lib/fstream/uncompress/gzip.c
 libfstream_a_CPPFLAGS += -DWITH_GZIP
-
-if WITH_OWN_ZLIB
-libfstream_a_CPPFLAGS += -I$(top_srcdir)/lib/zlib
-endif
 endif
 
 if WITH_ZSTD

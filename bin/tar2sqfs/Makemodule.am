@@ -6,9 +6,5 @@ tar2sqfs_LDADD += libfstree.a libcompat.a libfstree.a $(LZO_LIBS)
 tar2sqfs_LDADD += $(ZLIB_LIBS) $(XZ_LIBS) $(ZSTD_LIBS) $(BZIP2_LIBS)
 tar2sqfs_LDADD += $(PTHREAD_LIBS)
 
-if WITH_OWN_ZLIB
-tar2sqfs_LDADD += libz.la
-endif
-
 dist_man1_MANS += bin/tar2sqfs/tar2sqfs.1
 bin_PROGRAMS += tar2sqfs

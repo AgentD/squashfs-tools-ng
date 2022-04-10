@@ -38,16 +38,6 @@ test_xfrm_zstd2_LDADD = libfstream.a libcompat.a $(BZIP2_LIBS) $(ZLIB_LIBS)
 test_xfrm_zstd2_LDADD += $(XZ_LIBS) $(ZSTD_LIBS)
 test_xfrm_zstd2_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_ZSTD2=1
 
-if WITH_OWN_ZLIB
-test_xfrm_bzip2_LDADD += libz.la
-test_xfrm_bzip22_LDADD += libz.la
-test_xfrm_xz_LDADD += libz.la
-test_xfrm_xz2_LDADD += libz.la
-test_xfrm_gzip_LDADD += libz.la
-test_xfrm_zstd_LDADD += libz.la
-test_xfrm_zstd2_LDADD += libz.la
-endif
-
 if BUILD_TOOLS
 check_PROGRAMS += test_get_line
 TESTS += test_get_line

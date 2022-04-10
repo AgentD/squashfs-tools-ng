@@ -110,10 +110,6 @@ AC_ARG_WITH([gzip],
 	[AS_HELP_STRING([--with-gzip], [Build with zlib compression support])],
 	[], [with_gzip="check"])
 
-AC_ARG_WITH([builtin-zlib],
-	[AS_HELP_STRING([--with-builtin-zlib], [Use a custom, static zlib])],
-	[], [with_builtin_zlib="no"])
-
 AC_ARG_WITH([selinux],
 	[AS_HELP_STRING([--with-selinux],
 			[Build with SELinux label file support])],
@@ -184,14 +180,12 @@ AS_IF([test -z "$BZIP2_LIBS"], [AS_IF([test "x$with_bzip2" = "xyes"],
 				    [with_bzip2="no"])],
 			       [with_bzip2="yes"])
 
-AS_IF([test "x$with_gzip" != "xno" -a "x$with_builtin_zlib" != "xyes"], [
+AS_IF([test "x$with_gzip" != "xno"], [
 	PKG_CHECK_MODULES(ZLIB, [zlib], [with_gzip="yes"],
 				[AS_IF([test "x$with_gzip" != "xcheck"],
 				       [AC_MSG_ERROR([cannot find zlib])],
 				       [with_gzip="no"])])
 ], [])
-
-AS_IF([test "x$with_builtin_zlib" != "xno"], [with_gzip="yes"], [])
 
 AS_IF([test "x$with_xz" != "xno"], [
 	PKG_CHECK_MODULES(XZ, [liblzma >= 5.0.0], [with_xz="yes"],
@@ -264,13 +258,12 @@ AM_CONDITIONAL([WITH_SELINUX], [test "x$with_selinux" = "xyes"])
 AM_CONDITIONAL([HAVE_PTHREAD], [test "x$with_pthread" = "xyes"])
 
 AM_CONDITIONAL([WITH_OWN_LZ4], [test "x$with_builtin_lz4" = "xyes"])
-AM_CONDITIONAL([WITH_OWN_ZLIB], [test "x$with_builtin_zlib" = "xyes"])
 
 libsqfs_dep_mod=""
 AS_IF([test "x$with_lz4" = "xyes" -a "x$with_builtin_lz4" != "xyes"],
 	[libsqfs_dep_mod="$libsqfs_dep_mod liblz4"], [])
 
-AS_IF([test "x$with_gzip" = "xyes" -a "x$with_builtin_zlib" != "xyes"],
+AS_IF([test "x$with_gzip" = "xyes"],
 	[libsqfs_dep_mod="$libsqfs_dep_mod zlib"], [])
 
 AM_COND_IF([WITH_XZ], [libsqfs_dep_mod="$libsqfs_dep_mod liblzma >= 5.0.0"], [])
