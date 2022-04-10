@@ -35,6 +35,82 @@ download() {
 	}
 }
 
+################################## get zlib ##################################
+
+PKG_DIR="zlib-1.2.12"
+PKG_TAR="${PKG_DIR}.tar.xz"
+PKG_HASH="7db46b8d7726232a621befaab4a1c870f00a90805511c0e0090441dac57def18"
+
+download
+
+mkdir -p "$W32_DIR/bin" "$W32_DIR/include" "$W32_DIR/lib/pkgconfig"
+mkdir -p "$W64_DIR/bin" "$W64_DIR/include" "$W64_DIR/lib/pkgconfig"
+
+cp "$PKG_DIR/zlib.h" "$PKG_DIR/zconf.h" "$W32_DIR/include"
+cp "$PKG_DIR/zlib.h" "$PKG_DIR/zconf.h" "$W64_DIR/include"
+
+pushd "$PKG_DIR"
+obj="adler32.o compress.o crc32.o deflate.o gzclose.o gzlib.o gzread.o"
+obj="$obj gzwrite.o infback.o inffast.o inflate.o inftrees.o trees.o"
+obj="$obj uncompr.o zutil.o"
+
+for outfile in $obj; do
+	infile="$(basename $outfile .o).c"
+	${W32_PREFIX}-gcc -O3 -c "$infile" -o "$outfile"
+done
+
+${W32_PREFIX}-windres --define GCC_WINDRES -o zlibrc.o win32/zlib1.rc
+${W32_PREFIX}-gcc -shared -Wl,--out-implib,libz.dll.a -o zlib1.dll \
+	     win32/zlib.def $obj zlibrc.o
+${W32_PREFIX}-strip zlib1.dll
+${W32_PREFIX}-ar rcs libz.a $obj
+
+rm *.o
+mv zlib1.dll "$W32_DIR/bin"
+mv libz.a libz.dll.a "$W32_DIR/lib"
+
+cat > "$W32_DIR/lib/pkgconfig/zlib.pc" <<_EOF
+prefix=$W32_DIR
+libdir=$W32_DIR/lib
+sharedlibdir=$W32_DIR/bin
+includedir=$W32_DIR/include
+
+Name: zlib
+Description: zlib compression library
+Version: 1.2.12
+Libs: -L$W32_DIR/lib -L$W32_DIR/bin -lz
+Cflags: -I$W32_DIR/include
+_EOF
+
+for outfile in $obj; do
+	infile="$(basename $outfile .o).c"
+	${W64_PREFIX}-gcc -O3 -c "$infile" -o "$outfile"
+done
+
+${W64_PREFIX}-windres --define GCC_WINDRES -o zlibrc.o win32/zlib1.rc
+${W64_PREFIX}-gcc -shared -Wl,--out-implib,libz.dll.a -o zlib1.dll \
+	     win32/zlib.def $obj zlibrc.o
+${W64_PREFIX}-strip zlib1.dll
+${W64_PREFIX}-ar rcs libz.a $obj
+
+rm *.o
+mv zlib1.dll "$W64_DIR/bin"
+mv libz.a libz.dll.a "$W64_DIR/lib"
+
+cat > "$W64_DIR/lib/pkgconfig/zlib.pc" <<_EOF
+prefix=$W64_DIR
+libdir=$W64_DIR/lib
+sharedlibdir=$W64_DIR/bin
+includedir=$W64_DIR/include
+
+Name: zlib
+Description: zlib compression library
+Version: 1.2.12
+Libs: -L$W64_DIR/lib -L$W64_DIR/bin -lz
+Cflags: -I$W64_DIR/include
+_EOF
+popd
+
 ################################### get xz ###################################
 
 PKG_DIR="xz-5.2.5"
@@ -171,8 +247,7 @@ export PKG_CONFIG_PATH="$W32_DIR/lib/pkgconfig"
 	    LZO_LIBS="-L$W32_DIR/lib -llzo2" \
 	    BZIP2_CFLAGS="-I$W32_DIR/include" \
 	    BZIP2_LIBS="-L$W32_DIR/lib -lbz2" \
-	    --prefix="$W32_DIR" --host="$W32_PREFIX" --with-builtin-lz4 \
-	    --with-builtin-zlib
+	    --prefix="$W32_DIR" --host="$W32_PREFIX" --with-builtin-lz4
 cp "$W32_DIR/bin/"*.dll .
 make -j check
 rm *.dll
@@ -181,8 +256,7 @@ rm *.dll
 	    LZO_LIBS="-L$W32_DIR/lib -llzo2" \
 	    BZIP2_CFLAGS="-I$W32_DIR/include" \
 	    BZIP2_LIBS="-L$W32_DIR/lib -lbz2" \
-	    --prefix="$W32_DIR" --host="$W32_PREFIX" --with-builtin-lz4 \
-	    --with-builtin-zlib
+	    --prefix="$W32_DIR" --host="$W32_PREFIX" --with-builtin-lz4
 make clean
 make -j
 make install-strip
@@ -195,8 +269,7 @@ export PKG_CONFIG_PATH="$W64_DIR/lib/pkgconfig"
 	    LZO_LIBS="-L$W64_DIR/lib -llzo2" \
 	    BZIP2_CFLAGS="-I$W64_DIR/include" \
 	    BZIP2_LIBS="-L$W64_DIR/lib -lbz2" \
-	    --prefix="$W64_DIR" --host="$W64_PREFIX" --with-builtin-lz4 \
-	    --with-builtin-zlib
+	    --prefix="$W64_DIR" --host="$W64_PREFIX" --with-builtin-lz4
 make clean
 cp "$W64_DIR/bin/"*.dll .
 make -j check
@@ -206,8 +279,7 @@ rm *.dll
 	    LZO_LIBS="-L$W64_DIR/lib -llzo2" \
 	    BZIP2_CFLAGS="-I$W64_DIR/include" \
 	    BZIP2_LIBS="-L$W64_DIR/lib -lbz2" \
-	    --prefix="$W64_DIR" --host="$W64_PREFIX" --with-builtin-lz4 \
-	    --with-builtin-zlib
+	    --prefix="$W64_DIR" --host="$W64_PREFIX" --with-builtin-lz4
 make clean
 make -j
 make install-strip
