@@ -274,6 +274,18 @@ PKG_CHECK_MODULES(READLINE, [readline], [have_readline="yes"],
 			    [have_readline="no"])
 AM_CONDITIONAL([WITH_READLINE], [test "x$have_readline" = "xyes"])
 
+#### make sure we actually have a compressor ####
+have_compressor="no"
+
+AS_IF([test "x$with_gzip" != "xno"], [have_compressor="yes"])
+AS_IF([test "x$with_xz" != "xno"], [have_compressor="yes"])
+AS_IF([test "x$with_lzo" != "xno"], [have_compressor="yes"])
+AS_IF([test "x$with_lz4" != "xno"], [have_compressor="yes"])
+AS_IF([test "x$with_zstd" != "xno"], [have_compressor="yes"])
+
+AS_IF([test "x$have_compressor" != "xyes"],
+      [AC_MSG_FAILURE([no block compression libraries found!])])
+
 ##### additional checks #####
 AC_CHECK_HEADERS([sys/xattr.h], [], [])
 AC_CHECK_HEADERS([sys/sysinfo.h], [], [])
