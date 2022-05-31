@@ -21,6 +21,7 @@
 #define SQFS_META_READER_H
 
 #include "sqfs/predef.h"
+#include "sqfs/super.h"
 
 /**
  * @file meta_reader.h
@@ -46,6 +47,37 @@
  * functions that transparently take care of fetching and uncompressing blocks
  * from disk and reading transparently across block boarders if required.
  */
+
+/**
+ * @struct sqfs_readdir_state_t
+ *
+ * @brief Encapsulates state for simple directory reading
+ */
+struct sqfs_readdir_state_t {
+	struct {
+		sqfs_u64 block;
+		size_t offset;
+		size_t size;
+	} init, current;
+
+	size_t entries;
+
+	sqfs_u32 inum_base;
+	sqfs_u64 inode_block;
+};
+
+/**
+ * @brief Rewind a directory state object back to its starting location
+ *
+ * @memberof sqfs_readdir_state_t
+ *
+ * @param it A pointer to the directory state.
+ */
+static SQFS_INLINE void sqfs_readdir_state_reset(sqfs_readdir_state_t *s)
+{
+	s->current = s->init;
+	s->entries = 0;
+}
 
 #ifdef __cplusplus
 extern "C" {
@@ -151,6 +183,57 @@ SQFS_API int sqfs_meta_reader_read_dir_header(sqfs_meta_reader_t *m,
  */
 SQFS_API int sqfs_meta_reader_read_dir_ent(sqfs_meta_reader_t *m,
 					   sqfs_dir_entry_t **ent);
+
+/**
+ * @brief Initialize a state object for reading a directory
+ *
+ * @memberof sqfs_readdir_state_t
+ *
+ * This function initializes a simple state object to point to the
+ * location of a directory header and store the total, uncompressed
+ * size of the directory.
+ *
+ * The state object can be passed to @ref sqfs_meta_reader_readdir
+ * to read entries one-by-one.
+ *
+ * @param s A pointer to the state object to initialize.
+ * @param super A pointer to the super block, telling us where
+ *              the directory table starts.
+ * @param inode A pointer to a directory inode from which to get the
+ *              directory location.
+ *
+ * @return Zero on success, an @ref SQFS_ERROR value on
+ *         failure (e.g. the inode is not a directory inode).
+ */
+SQFS_API
+int sqfs_readdir_state_init(sqfs_readdir_state_t *s, const sqfs_super_t *super,
+			    const sqfs_inode_generic_t *inode);
+
+/**
+ * @brief Simple directory reading interface
+ *
+ * @memberof sqfs_meta_reader_t
+ *
+ * This function successively reads directory entries, transparently
+ * parsing and skipping across headers. The state is encapsulated in
+ * an external object that is passed in and the function seeks to the
+ * location, so one can swap between multiple states and read several
+ * directories interchangeably.
+ *
+ * @param m A pointer to a meta data reader.
+ * @param s A pointer to a directory state that is used and updated.
+ * @param ent Returns a pointer to a directory entry. Can be
+ *            released with a single @ref sqfs_free call.
+ * @param inum If not NULL, returns the decoded inode number.
+ * @param iref If not NULL, returns a reference to the inode.
+ *
+ * @return Zero on success, a negative @ref SQFS_ERROR number on failure,
+ *         a positive number if the end of the directory is reached.
+ */
+SQFS_API int sqfs_meta_reader_readdir(sqfs_meta_reader_t *m,
+				      sqfs_readdir_state_t *s,
+				      sqfs_dir_entry_t **ent,
+				      sqfs_u32 *inum, sqfs_u64 *iref);
 
 /**
  * @brief Read and decode an inode from a meta data reader.

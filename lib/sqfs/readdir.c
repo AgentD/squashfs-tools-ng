@@ -9,6 +9,8 @@
 
 #include "sqfs/meta_reader.h"
 #include "sqfs/error.h"
+#include "sqfs/super.h"
+#include "sqfs/inode.h"
 #include "sqfs/dir.h"
 #include "compat.h"
 
@@ -63,4 +65,97 @@ int sqfs_meta_reader_read_dir_ent(sqfs_meta_reader_t *m,
 
 	*result = out;
 	return 0;
+}
+
+int sqfs_readdir_state_init(sqfs_readdir_state_t *s, const sqfs_super_t *super,
+			    const sqfs_inode_generic_t *inode)
+{
+	memset(s, 0, sizeof(*s));
+
+	if (inode->base.type == SQFS_INODE_DIR) {
+		s->init.block = inode->data.dir.start_block;
+		s->init.offset = inode->data.dir.offset;
+		s->init.size = inode->data.dir.size;
+	} else if (inode->base.type == SQFS_INODE_EXT_DIR) {
+		s->init.block = inode->data.dir_ext.start_block;
+		s->init.offset = inode->data.dir_ext.offset;
+		s->init.size = inode->data.dir_ext.size;
+	} else {
+		return SQFS_ERROR_NOT_DIR;
+	}
+
+	s->init.block += super->directory_table_start;
+	s->current = s->init;
+	return 0;
+}
+
+int sqfs_meta_reader_readdir(sqfs_meta_reader_t *m, sqfs_readdir_state_t *it,
+			     sqfs_dir_entry_t **ent,
+			     sqfs_u32 *inum, sqfs_u64 *iref)
+{
+	size_t count;
+	int ret;
+
+	if (it->entries == 0) {
+		sqfs_dir_header_t hdr;
+
+		if (it->current.size <= sizeof(hdr))
+			goto out_eof;
+
+		ret = sqfs_meta_reader_seek(m, it->current.block,
+					    it->current.offset);
+		if (ret != 0)
+			return ret;
+
+		ret = sqfs_meta_reader_read_dir_header(m, &hdr);
+		if (ret != 0)
+			return ret;
+
+		sqfs_meta_reader_get_position(m, &it->current.block,
+					      &it->current.offset);
+
+		it->current.size -= sizeof(hdr);
+		it->entries = hdr.count + 1;
+		it->inum_base = hdr.inode_number;
+		it->inode_block = hdr.start_block;
+	}
+
+	if (it->current.size <= sizeof(**ent))
+		goto out_eof;
+
+	ret = sqfs_meta_reader_seek(m, it->current.block, it->current.offset);
+	if (ret != 0)
+		return ret;
+
+	ret = sqfs_meta_reader_read_dir_ent(m, ent);
+	if (ret)
+		return ret;
+
+	sqfs_meta_reader_get_position(m, &it->current.block,
+				      &it->current.offset);
+
+	it->current.size -= sizeof(**ent);
+	it->entries -= 1;
+
+	count = (*ent)->size + 1;
+
+	if (count >= it->current.size) {
+		it->current.size = 0;
+	} else {
+		it->current.size -= count;
+	}
+
+	if (inum != NULL)
+		*inum = it->inum_base + (*ent)->inode_diff;
+
+	if (iref != NULL) {
+		*iref = (sqfs_u64)it->inode_block << 16UL;
+		*iref |= (*ent)->offset;
+	}
+
+	return 0;
+out_eof:
+	it->current.size = 0;
+	it->entries = 0;
+	return 1;
 }

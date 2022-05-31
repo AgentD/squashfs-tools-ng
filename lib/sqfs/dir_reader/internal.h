@@ -38,14 +38,7 @@ struct sqfs_dir_reader_t {
 	sqfs_meta_reader_t *meta_inode;
 	const sqfs_super_t *super;
 
-	sqfs_dir_header_t hdr;
-	sqfs_u64 dir_block_start;
-	size_t entries;
-	size_t size;
-
-	size_t start_size;
-	sqfs_u16 dir_offset;
-	sqfs_u16 inode_offset;
+	sqfs_readdir_state_t it;
 
 	sqfs_u32 flags;
 
@@ -53,6 +46,7 @@ struct sqfs_dir_reader_t {
 	int state;
 	sqfs_u64 parent_ref;
 	sqfs_u64 cur_ref;
+	sqfs_u64 ent_ref;
 	rbtree_t dcache;
 };
 
