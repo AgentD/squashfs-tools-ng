@@ -147,8 +147,13 @@ int sqfs_meta_reader_seek(sqfs_meta_reader_t *m, sqfs_u64 block_start,
 void sqfs_meta_reader_get_position(const sqfs_meta_reader_t *m,
 				   sqfs_u64 *block_start, size_t *offset)
 {
-	*block_start = m->block_offset;
-	*offset = m->offset;
+	if (m->offset == m->data_used) {
+		*block_start = m->next_block;
+		*offset = 0;
+	} else {
+		*block_start = m->block_offset;
+		*offset = m->offset;
+	}
 }
 
 int sqfs_meta_reader_read(sqfs_meta_reader_t *m, void *data, size_t size)
