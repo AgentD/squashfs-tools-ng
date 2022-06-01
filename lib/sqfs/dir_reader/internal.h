@@ -50,18 +50,4 @@ struct sqfs_dir_reader_t {
 	rbtree_t dcache;
 };
 
-SQFS_INTERNAL int sqfs_dir_reader_dcache_init(sqfs_dir_reader_t *rd,
-					      sqfs_u32 flags);
-
-SQFS_INTERNAL int sqfs_dir_reader_dcache_init_copy(sqfs_dir_reader_t *copy,
-						   const sqfs_dir_reader_t *rd);
-
-SQFS_INTERNAL int sqfs_dir_reader_dcache_add(sqfs_dir_reader_t *rd,
-					     sqfs_u32 inode, sqfs_u64 ref);
-
-SQFS_INTERNAL int sqfs_dir_reader_dcache_find(sqfs_dir_reader_t *rd,
-					      sqfs_u32 inode, sqfs_u64 *ref);
-
-SQFS_INTERNAL void sqfs_dir_reader_dcache_cleanup(sqfs_dir_reader_t *rd);
-
 #endif /* DIR_READER_INTERNAL_H */

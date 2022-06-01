@@ -7,11 +7,55 @@
 #define SQFS_BUILDING_DLL
 #include "internal.h"
 
+static int dcache_key_compare(const void *ctx, const void *l, const void *r)
+{
+	sqfs_u32 lhs = *((const sqfs_u32 *)l), rhs = *((const sqfs_u32 *)r);
+	(void)ctx;
+
+	return lhs < rhs ? -1 : (lhs > rhs ? 1 : 0);
+}
+
+static int dcache_add(sqfs_dir_reader_t *rd,
+		      const sqfs_inode_generic_t *inode, sqfs_u64 ref)
+{
+	sqfs_u32 inum = inode->base.inode_number;
+
+	if (!(rd->flags & SQFS_DIR_READER_DOT_ENTRIES))
+		return 0;
+
+	if (inode->base.type != SQFS_INODE_DIR &&
+	    inode->base.type != SQFS_INODE_EXT_DIR) {
+		return 0;
+	}
+
+	if (rbtree_lookup(&rd->dcache, &inum) != NULL)
+		return 0;
+
+	return rbtree_insert(&rd->dcache, &inum, &ref);
+}
+
+static int dcache_find(sqfs_dir_reader_t *rd, sqfs_u32 inode, sqfs_u64 *ref)
+{
+	rbtree_node_t *node;
+
+	if (!(rd->flags & SQFS_DIR_READER_DOT_ENTRIES))
+		return SQFS_ERROR_NO_ENTRY;
+
+	node = rbtree_lookup(&rd->dcache, &inode);
+	if (node == NULL)
+		return SQFS_ERROR_NO_ENTRY;
+
+	*ref = *((sqfs_u64 *)rbtree_node_value(node));
+	return 0;
+}
+
 static void dir_reader_destroy(sqfs_object_t *obj)
 {
 	sqfs_dir_reader_t *rd = (sqfs_dir_reader_t *)obj;
 
-	sqfs_dir_reader_dcache_cleanup(rd);
+	if (rd->flags & SQFS_DIR_READER_DOT_ENTRIES)
+		rbtree_cleanup(&rd->dcache);
+
 	sqfs_destroy(rd->meta_inode);
 	sqfs_destroy(rd->meta_dir);
 	free(rd);
@@ -27,8 +71,10 @@ static sqfs_object_t *dir_reader_copy(const sqfs_object_t *obj)
 
 	memcpy(copy, rd, sizeof(*copy));
 
-	if (sqfs_dir_reader_dcache_init_copy(copy, rd))
-		goto fail_cache;
+	if (rd->flags & SQFS_DIR_READER_DOT_ENTRIES) {
+		if (rbtree_copy(&rd->dcache, &copy->dcache))
+			goto fail_cache;
+	}
 
 	copy->meta_inode = sqfs_copy(rd->meta_inode);
 	if (copy->meta_inode == NULL)
@@ -42,7 +88,8 @@ static sqfs_object_t *dir_reader_copy(const sqfs_object_t *obj)
 fail_mdir:
 	sqfs_destroy(copy->meta_inode);
 fail_mino:
-	sqfs_dir_reader_dcache_cleanup(copy);
+	if (copy->flags & SQFS_DIR_READER_DOT_ENTRIES)
+		rbtree_cleanup(&copy->dcache);
 fail_cache:
 	free(copy);
 	return NULL;
@@ -55,6 +102,7 @@ sqfs_dir_reader_t *sqfs_dir_reader_create(const sqfs_super_t *super,
 {
 	sqfs_dir_reader_t *rd;
 	sqfs_u64 start, limit;
+	int ret;
 
 	if (flags & ~SQFS_DIR_READER_ALL_FLAGS)
 		return NULL;
@@ -63,8 +111,13 @@ sqfs_dir_reader_t *sqfs_dir_reader_create(const sqfs_super_t *super,
 	if (rd == NULL)
 		return NULL;
 
-	if (sqfs_dir_reader_dcache_init(rd, flags))
-		goto fail_dcache;
+	if (flags & SQFS_DIR_READER_DOT_ENTRIES) {
+		ret = rbtree_init(&rd->dcache, sizeof(sqfs_u32),
+				  sizeof(sqfs_u64), dcache_key_compare);
+
+		if (ret != 0)
+			goto fail_dcache;
+	}
 
 	start = super->inode_table_start;
 	limit = super->directory_table_start;
@@ -95,7 +148,8 @@ sqfs_dir_reader_t *sqfs_dir_reader_create(const sqfs_super_t *super,
 fail_mdir:
 	sqfs_destroy(rd->meta_inode);
 fail_mino:
-	sqfs_dir_reader_dcache_cleanup(rd);
+	if (flags & SQFS_DIR_READER_DOT_ENTRIES)
+		rbtree_cleanup(&rd->dcache);
 fail_dcache:
 	free(rd);
 	return NULL;
@@ -123,15 +177,12 @@ int sqfs_dir_reader_open_dir(sqfs_dir_reader_t *rd,
 			parent = inode->data.dir.parent_inode;
 		}
 
-		if (sqfs_dir_reader_dcache_find(rd, inode->base.inode_number,
-						&rd->cur_ref)) {
+		if (dcache_find(rd, inode->base.inode_number, &rd->cur_ref))
 			return SQFS_ERROR_NO_ENTRY;
-		}
 
 		if (rd->cur_ref == rd->super->root_inode_ref) {
 			rd->parent_ref = rd->cur_ref;
-		} else if (sqfs_dir_reader_dcache_find(rd, parent,
-						       &rd->parent_ref)) {
+		} else if (dcache_find(rd, parent, &rd->parent_ref)) {
 			return SQFS_ERROR_NO_ENTRY;
 		}
 
@@ -242,16 +293,7 @@ int sqfs_dir_reader_get_inode(sqfs_dir_reader_t *rd,
 	if (ret != 0)
 		return ret;
 
-	if ((*inode)->base.type == SQFS_INODE_DIR ||
-	    (*inode)->base.type == SQFS_INODE_EXT_DIR) {
-		sqfs_u32 inum = (*inode)->base.inode_number;
-
-		ret = sqfs_dir_reader_dcache_add(rd, inum, ref);
-		if (ret != 0)
-			return ret;
-	}
-
-	return 0;
+	return dcache_add(rd, *inode, ref);
 }
 
 int sqfs_dir_reader_get_root_inode(sqfs_dir_reader_t *rd,
@@ -263,19 +305,8 @@ int sqfs_dir_reader_get_root_inode(sqfs_dir_reader_t *rd,
 
 	ret = sqfs_meta_reader_read_inode(rd->meta_inode, rd->super,
 					  block_start, offset, inode);
-
 	if (ret != 0)
 		return ret;
 
-	if ((*inode)->base.type == SQFS_INODE_DIR ||
-	    (*inode)->base.type == SQFS_INODE_EXT_DIR) {
-		sqfs_u32 inum = (*inode)->base.inode_number;
-		sqfs_u64 ref = rd->super->root_inode_ref;
-
-		ret = sqfs_dir_reader_dcache_add(rd, inum, ref);
-		if (ret != 0)
-			return ret;
-	}
-
-	return 0;
+	return dcache_add(rd, *inode, rd->super->root_inode_ref);
 }
