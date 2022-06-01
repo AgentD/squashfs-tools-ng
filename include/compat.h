@@ -245,4 +245,8 @@ int stfs_tools_fprintf(FILE *strm, const char *fmt, ...) PRINTF_ATTRIB(2, 3);
 #define putc stfs_tools_fputc
 #endif
 
+#ifndef HAVE_STRCHRNUL
+char *strchrnul(const char *s, int c);
+#endif
+
 #endif /* COMPAT_H */

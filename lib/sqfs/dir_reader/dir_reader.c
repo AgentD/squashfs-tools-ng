@@ -7,6 +7,17 @@
 #define SQFS_BUILDING_DLL
 #include "internal.h"
 
+static int inode_copy(const sqfs_inode_generic_t *inode,
+		      sqfs_inode_generic_t **out)
+{
+	*out = alloc_flex(sizeof(*inode), 1, inode->payload_bytes_used);
+	if (*out == NULL)
+		return SQFS_ERROR_ALLOC;
+
+	memcpy(*out, inode, sizeof(*inode) + inode->payload_bytes_used);
+	return 0;
+}
+
 static int dcache_key_compare(const void *ctx, const void *l, const void *r)
 {
 	sqfs_u32 lhs = *((const sqfs_u32 *)l), rhs = *((const sqfs_u32 *)r);
@@ -309,4 +320,54 @@ int sqfs_dir_reader_get_root_inode(sqfs_dir_reader_t *rd,
 		return ret;
 
 	return dcache_add(rd, *inode, rd->super->root_inode_ref);
+}
+
+int sqfs_dir_reader_find_by_path(sqfs_dir_reader_t *rd,
+				 const sqfs_inode_generic_t *start,
+				 const char *path, sqfs_inode_generic_t **out)
+{
+	sqfs_inode_generic_t *inode;
+	const char *ptr;
+	int ret = 0;
+	char *name;
+
+	if (start == NULL) {
+		ret = sqfs_dir_reader_get_root_inode(rd, &inode);
+	} else {
+		ret = inode_copy(start, &inode);
+	}
+
+	if (ret)
+		return ret;
+
+	for (; *path != '\0'; path = ptr) {
+		if (*path == '/') {
+			for (ptr = path; *ptr == '/'; ++ptr)
+				;
+			continue;
+		}
+
+		ret = sqfs_dir_reader_open_dir(rd, inode, 0);
+		free(inode);
+		if (ret)
+			return ret;
+
+		ptr = strchrnul(path, '/');
+
+		name = strndup(path, ptr - path);
+		if (name == NULL)
+			return SQFS_ERROR_ALLOC;
+
+		ret = sqfs_dir_reader_find(rd, name);
+		free(name);
+		if (ret)
+			return ret;
+
+		ret = sqfs_dir_reader_get_inode(rd, &inode);
+		if (ret)
+			return ret;
+	}
+
+	*out = inode;
+	return 0;
 }
