@@ -27,8 +27,7 @@ enum {
 	DIR_STATE_NONE = 0,
 	DIR_STATE_OPENED = 1,
 	DIR_STATE_DOT = 2,
-	DIR_STATE_DOT_DOT = 3,
-	DIR_STATE_ENTRIES = 4,
+	DIR_STATE_ENTRIES = 3,
 };
 
 struct sqfs_dir_reader_t {

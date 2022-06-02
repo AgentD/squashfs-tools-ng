@@ -231,17 +231,18 @@ int sqfs_dir_reader_read(sqfs_dir_reader_t *rd, sqfs_dir_entry_t **out)
 	switch (rd->state) {
 	case DIR_STATE_OPENED:
 		err = mk_dummy_entry(".", out);
-		if (err == 0)
+		if (err == 0) {
 			rd->state = DIR_STATE_DOT;
+			rd->ent_ref = rd->cur_ref;
+		}
 		return err;
 	case DIR_STATE_DOT:
 		err = mk_dummy_entry("..", out);
-		if (err == 0)
-			rd->state = DIR_STATE_DOT_DOT;
+		if (err == 0) {
+			rd->state = DIR_STATE_ENTRIES;
+			rd->ent_ref = rd->parent_ref;
+		}
 		return err;
-	case DIR_STATE_DOT_DOT:
-		rd->state = DIR_STATE_ENTRIES;
-		break;
 	case DIR_STATE_ENTRIES:
 		break;
 	default:
@@ -288,23 +289,15 @@ int sqfs_dir_reader_find(sqfs_dir_reader_t *rd, const char *name)
 int sqfs_dir_reader_get_inode(sqfs_dir_reader_t *rd,
 			      sqfs_inode_generic_t **inode)
 {
-	sqfs_u64 ref;
 	int ret;
 
-	switch (rd->state) {
-	case DIR_STATE_DOT:     ref = rd->cur_ref; break;
-	case DIR_STATE_DOT_DOT: ref = rd->parent_ref; break;
-	case DIR_STATE_ENTRIES: ref = rd->ent_ref; break;
-	default:
-		return SQFS_ERROR_SEQUENCE;
-	}
-
 	ret = sqfs_meta_reader_read_inode(rd->meta_inode, rd->super,
-					  ref >> 16, ref & 0x0FFFF, inode);
+					  rd->ent_ref >> 16,
+					  rd->ent_ref & 0x0FFFF, inode);
 	if (ret != 0)
 		return ret;
 
-	return dcache_add(rd, *inode, ref);
+	return dcache_add(rd, *inode, rd->ent_ref);
 }
 
 int sqfs_dir_reader_get_root_inode(sqfs_dir_reader_t *rd,
