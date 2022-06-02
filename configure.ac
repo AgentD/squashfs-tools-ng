@@ -1,11 +1,10 @@
-AC_PREREQ([2.60])
-AC_INIT([squashfs-tools-ng], [1.1.4], [goliath@infraroot.at], squashfs-tools-ng)
+AC_PREREQ([2.71])
+AC_INIT([squashfs-tools-ng],[1.1.4],[goliath@infraroot.at],[squashfs-tools-ng])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([foreign dist-xz subdir-objects])
 AM_SILENT_RULES([yes])
 AC_PROG_CC([cc gcc clang])
 LT_INIT([win32-dll])
-AC_PROG_CC_C99
 AC_PROG_INSTALL
 AC_PROG_SED
 AC_SYS_LARGEFILE
@@ -307,7 +306,8 @@ AC_CONFIG_FILES([tests/tarcompress.sh], [chmod +x tests/tarcompress.sh])
 AC_CONFIG_FILES([tests/rdsquashfs/pathtraversal.sh],
 		[chmod +x tests/rdsquashfs/pathtraversal.sh])
 
-AC_OUTPUT([Makefile])
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT
 
 AC_MSG_RESULT([
 	${PACKAGE}  ${VERSION}
