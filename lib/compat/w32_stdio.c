@@ -38,7 +38,7 @@ static BOOL isatty(HANDLE hnd)
 	return (GetFileType(hnd) == FILE_TYPE_CHAR);
 }
 
-int stfs_tools_fputs(const char *str, FILE *strm)
+int sqfs_tools_fputs(const char *str, FILE *strm)
 {
 	DWORD length;
 	WCHAR *wstr;
@@ -65,14 +65,14 @@ int stfs_tools_fputs(const char *str, FILE *strm)
 	return ret;
 }
 
-int stfs_tools_fputc(int c, FILE *strm)
+int sqfs_tools_fputc(int c, FILE *strm)
 {
 	char str[2];
 
 	str[0] = c;
 	str[1] = '\0';
 
-	return stfs_tools_fputs(str, strm);
+	return sqfs_tools_fputs(str, strm);
 }
 
 static int sqfs_printf_common(FILE *out, const char *fmt, va_list ap)
@@ -94,14 +94,14 @@ static int sqfs_printf_common(FILE *out, const char *fmt, va_list ap)
 		return -1;
 	}
 
-	if (stfs_tools_fputs(str, out) == EOF)
+	if (sqfs_tools_fputs(str, out) == EOF)
 		ret = -1;
 
 	free(str);
 	return ret;
 }
 
-int stfs_tools_printf(const char *fmt, ...)
+int sqfs_tools_printf(const char *fmt, ...)
 {
 	va_list ap;
 	int ret;
@@ -112,7 +112,7 @@ int stfs_tools_printf(const char *fmt, ...)
 	return ret;
 }
 
-int stfs_tools_fprintf(FILE *strm, const char *fmt, ...)
+int sqfs_tools_fprintf(FILE *strm, const char *fmt, ...)
 {
 	va_list ap;
 	int ret;

@@ -232,17 +232,17 @@ int fnmatch(const char *, const char *, int);
 #if defined(_WIN32) || defined(__WINDOWS__)
 extern int sqfs_tools_main(int argc, char **argv);
 
-int stfs_tools_fputc(int c, FILE *strm);
-int stfs_tools_fputs(const char *str, FILE *strm);
-int stfs_tools_printf(const char *fmt, ...) PRINTF_ATTRIB(1, 2);
-int stfs_tools_fprintf(FILE *strm, const char *fmt, ...) PRINTF_ATTRIB(2, 3);
+int sqfs_tools_fputc(int c, FILE *strm);
+int sqfs_tools_fputs(const char *str, FILE *strm);
+int sqfs_tools_printf(const char *fmt, ...) PRINTF_ATTRIB(1, 2);
+int sqfs_tools_fprintf(FILE *strm, const char *fmt, ...) PRINTF_ATTRIB(2, 3);
 
 #define main sqfs_tools_main
-#define printf stfs_tools_printf
-#define fprintf stfs_tools_fprintf
-#define fputs stfs_tools_fputs
-#define fputc stfs_tools_fputc
-#define putc stfs_tools_fputc
+#define printf sqfs_tools_printf
+#define fprintf sqfs_tools_fprintf
+#define fputs sqfs_tools_fputs
+#define fputc sqfs_tools_fputc
+#define putc sqfs_tools_fputc
 #endif
 
 #ifndef HAVE_STRCHRNUL
