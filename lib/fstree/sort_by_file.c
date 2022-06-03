@@ -328,6 +328,7 @@ int fstree_sort_files(fstree_t *fs, istream_t *sortfile)
 					"reconstructing node path\n",
 					filename, line_num);
 				free(line);
+				free(path);
 				return -1;
 			}
 
