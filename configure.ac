@@ -1,4 +1,4 @@
-AC_PREREQ([2.71])
+AC_PREREQ([2.69])
 AC_INIT([squashfs-tools-ng],[1.1.4],[goliath@infraroot.at],[squashfs-tools-ng])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([foreign dist-xz subdir-objects])
@@ -306,8 +306,7 @@ AC_CONFIG_FILES([tests/tarcompress.sh], [chmod +x tests/tarcompress.sh])
 AC_CONFIG_FILES([tests/rdsquashfs/pathtraversal.sh],
 		[chmod +x tests/rdsquashfs/pathtraversal.sh])
 
-AC_CONFIG_FILES([Makefile])
-AC_OUTPUT
+AC_OUTPUT([Makefile])
 
 AC_MSG_RESULT([
 	${PACKAGE}  ${VERSION}
