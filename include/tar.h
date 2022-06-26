@@ -9,7 +9,8 @@
 
 #include "config.h"
 #include "compat.h"
-#include "fstream.h"
+#include "io/istream.h"
+#include "io/ostream.h"
 
 #include <stdbool.h>
 #include <stdint.h>

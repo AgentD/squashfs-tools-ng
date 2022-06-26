@@ -94,15 +94,15 @@ char *root_becomes = NULL;
 
 static void input_compressor_print_available(void)
 {
-	int i = FSTREAM_COMPRESSOR_MIN;
+	int i = IO_COMPRESSOR_MIN;
 	const char *name;
 
 	fputs("\nSupported tar compression formats:\n", stdout);
 
-	while (i <= FSTREAM_COMPRESSOR_MAX) {
-		name = fstream_compressor_name_from_id(i);
+	while (i <= IO_COMPRESSOR_MAX) {
+		name = io_compressor_name_from_id(i);
 
-		if (fstream_compressor_exists(i))
+		if (io_compressor_exists(i))
 			printf("\t%s\n", name);
 
 		++i;

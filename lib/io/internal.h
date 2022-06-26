@@ -9,7 +9,11 @@
 
 #include "config.h"
 #include "compat.h"
-#include "fstream.h"
+#include "io/istream.h"
+#include "io/ostream.h"
+#include "io/file.h"
+#include "io/xfrm.h"
+#include "io/std.h"
 
 #include <string.h>
 #include <stdlib.h>

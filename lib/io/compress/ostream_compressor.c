@@ -67,22 +67,22 @@ ostream_t *ostream_compressor_create(ostream_t *strm, int comp_id)
 	ostream_t *base;
 
 	switch (comp_id) {
-	case FSTREAM_COMPRESSOR_GZIP:
+	case IO_COMPRESSOR_GZIP:
 #ifdef WITH_GZIP
 		comp = ostream_gzip_create(strm->get_filename(strm));
 #endif
 		break;
-	case FSTREAM_COMPRESSOR_XZ:
+	case IO_COMPRESSOR_XZ:
 #ifdef WITH_XZ
 		comp = ostream_xz_create(strm->get_filename(strm));
 #endif
 		break;
-	case FSTREAM_COMPRESSOR_ZSTD:
+	case IO_COMPRESSOR_ZSTD:
 #if defined(WITH_ZSTD) && defined(HAVE_ZSTD_STREAM)
 		comp = ostream_zstd_create(strm->get_filename(strm));
 #endif
 		break;
-	case FSTREAM_COMPRESSOR_BZIP2:
+	case IO_COMPRESSOR_BZIP2:
 #ifdef WITH_BZIP2
 		comp = ostream_bzip2_create(strm->get_filename(strm));
 #endif

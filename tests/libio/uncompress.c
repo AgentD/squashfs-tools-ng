@@ -4,7 +4,8 @@
  *
  * Copyright (C) 2021 David Oberhollenzer <goliath@infraroot.at>
  */
-#include "fstream.h"
+#include "io/istream.h"
+#include "io/xfrm.h"
 #include "../test.h"
 
 static sqfs_u8 data_in[] = {
@@ -341,16 +342,16 @@ static const char orig[] =
 
 #if defined(TEST_BZIP2) || defined(TEST_BZIP22)
 #define COMP_NAME "bzip2"
-#define COMP_ID FSTREAM_COMPRESSOR_BZIP2
+#define COMP_ID IO_COMPRESSOR_BZIP2
 #elif defined(TEST_XZ) || defined(TEST_XZ2)
 #define COMP_NAME "xz"
-#define COMP_ID FSTREAM_COMPRESSOR_XZ
+#define COMP_ID IO_COMPRESSOR_XZ
 #elif defined(TEST_GZIP)
 #define COMP_NAME "gzip"
-#define COMP_ID FSTREAM_COMPRESSOR_GZIP
+#define COMP_ID IO_COMPRESSOR_GZIP
 #elif defined(TEST_ZSTD) || defined(TEST_ZSTD2)
 #define COMP_NAME "zstd"
-#define COMP_ID FSTREAM_COMPRESSOR_ZSTD
+#define COMP_ID IO_COMPRESSOR_ZSTD
 #endif
 
 static void destroy_noop(sqfs_object_t *obj)
@@ -397,12 +398,12 @@ int main(int argc, char **argv)
 	orig_sz = (sizeof(orig) / sizeof(orig[0])) - 1;
 
 	/* generic API test */
-	TEST_ASSERT(fstream_compressor_exists(COMP_ID));
+	TEST_ASSERT(io_compressor_exists(COMP_ID));
 
-	name = fstream_compressor_name_from_id(COMP_ID);
+	name = io_compressor_name_from_id(COMP_ID);
 	TEST_STR_EQUAL(name, COMP_NAME);
 
-	ret = fstream_compressor_id_from_name(name);
+	ret = io_compressor_id_from_name(name);
 	TEST_EQUAL_I(ret, COMP_ID);
 
 	ret = istream_detect_compressor(&memstream, NULL);

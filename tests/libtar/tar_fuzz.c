@@ -6,6 +6,7 @@
  */
 #include "config.h"
 
+#include "io/file.h"
 #include "tar.h"
 
 #include <stdlib.h>

@@ -7,7 +7,7 @@
 #include "config.h"
 
 #include "util/str_table.h"
-#include "fstream.h"
+#include "io/file.h"
 #include "compat.h"
 #include "../test.h"
 

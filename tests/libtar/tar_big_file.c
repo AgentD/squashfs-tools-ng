@@ -6,6 +6,7 @@
  */
 #include "config.h"
 #include "tar.h"
+#include "io/file.h"
 #include "../test.h"
 
 int main(int argc, char **argv)

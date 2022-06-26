@@ -12,6 +12,8 @@
 #include "compat.h"
 #include "tar.h"
 
+#include "io/xfrm.h"
+
 #include <stdlib.h>
 #include <getopt.h>
 #include <string.h>

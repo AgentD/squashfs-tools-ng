@@ -50,11 +50,11 @@ int main(int argc, char **argv)
 		goto out_if;
 
 	if (ret > 0) {
-		if (!fstream_compressor_exists(ret)) {
+		if (!io_compressor_exists(ret)) {
 			fprintf(stderr,
 				"%s: %s compression is not supported.\n",
 				istream_get_filename(input_file),
-				fstream_compressor_name_from_id(ret));
+				io_compressor_name_from_id(ret));
 			goto out_if;
 		}
 

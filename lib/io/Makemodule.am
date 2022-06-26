@@ -1,0 +1,45 @@
+libio_a_SOURCES = lib/io/internal.h
+libio_a_SOURCES += include/io/istream.h lib/io/ostream.c lib/io/printf.c
+libio_a_SOURCES += include/io/ostream.h lib/io/istream.c lib/io/get_line.c
+libio_a_SOURCES += include/io/xfrm.h lib/io/xfrm.c
+libio_a_SOURCES += include/io/file.h include/io/std.h
+libio_a_SOURCES += lib/io/compress/ostream_compressor.c
+libio_a_SOURCES += lib/io/uncompress/istream_compressor.c
+libio_a_SOURCES += lib/io/uncompress/autodetect.c
+libio_a_CFLAGS = $(AM_CFLAGS) $(ZLIB_CFLAGS) $(XZ_CFLAGS)
+libio_a_CFLAGS += $(ZSTD_CFLAGS) $(BZIP2_CFLAGS)
+libio_a_CPPFLAGS = $(AM_CPPFLAGS)
+
+if WINDOWS
+libio_a_SOURCES += lib/io/win32/ostream.c
+libio_a_SOURCES += lib/io/win32/istream.c
+libio_a_CFLAGS += -DWINVER=0x0600 -D_WIN32_WINNT=0x0600
+else
+libio_a_SOURCES += lib/io/unix/ostream.c
+libio_a_SOURCES += lib/io/unix/istream.c
+endif
+
+if WITH_XZ
+libio_a_SOURCES += lib/io/compress/xz.c lib/io/uncompress/xz.c
+libio_a_CPPFLAGS += -DWITH_XZ
+endif
+
+if WITH_GZIP
+libio_a_SOURCES += lib/io/compress/gzip.c
+libio_a_SOURCES += lib/io/uncompress/gzip.c
+libio_a_CPPFLAGS += -DWITH_GZIP
+endif
+
+if WITH_ZSTD
+libio_a_SOURCES += lib/io/compress/zstd.c
+libio_a_SOURCES += lib/io/uncompress/zstd.c
+libio_a_CPPFLAGS += -DWITH_ZSTD
+endif
+
+if WITH_BZIP2
+libio_a_SOURCES += lib/io/compress/bzip2.c
+libio_a_SOURCES += lib/io/uncompress/bzip2.c
+libio_a_CPPFLAGS += -DWITH_BZIP2
+endif
+
+noinst_LIBRARIES += libio.a

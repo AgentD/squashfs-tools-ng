@@ -20,7 +20,9 @@
 
 #include "simple_writer.h"
 #include "compress_cli.h"
-#include "fstream.h"
+#include "io/ostream.h"
+#include "io/file.h"
+#include "io/std.h"
 #include "compat.h"
 #include "fstree.h"
 #include "tar.h"

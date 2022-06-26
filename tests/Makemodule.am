@@ -1,5 +1,5 @@
 include tests/libutil/Makemodule.am
-include tests/libfstream/Makemodule.am
+include tests/libio/Makemodule.am
 include tests/libfstree/Makemodule.am
 include tests/libtar/Makemodule.am
 include tests/libsqfs/Makemodule.am

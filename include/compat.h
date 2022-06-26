@@ -8,7 +8,7 @@
 #define COMPAT_H
 
 #include "sqfs/predef.h"
-#include "fstream.h"
+#include "io/ostream.h"
 #include "config.h"
 
 #include <limits.h>

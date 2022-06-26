@@ -15,7 +15,7 @@
 #include <stdio.h>
 
 #include "sqfs/predef.h"
-#include "fstream.h"
+#include "io/istream.h"
 #include "compat.h"
 
 enum {

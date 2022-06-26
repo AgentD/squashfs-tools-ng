@@ -6,7 +6,7 @@
  */
 #include "config.h"
 
-#include "fstream.h"
+#include "io/file.h"
 #include "../test.h"
 
 typedef struct {

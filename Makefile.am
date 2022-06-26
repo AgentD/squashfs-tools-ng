@@ -29,7 +29,7 @@ TESTS =
 include lib/lz4/Makemodule.am
 include lib/sqfs/Makemodule.am
 include lib/util/Makemodule.am
-include lib/fstream/Makemodule.am
+include lib/io/Makemodule.am
 
 if BUILD_TOOLS
 include lib/fstree/Makemodule.am

@@ -6,8 +6,8 @@
  */
 #include "config.h"
 
+#include "io/file.h"
 #include "fstree.h"
-#include "fstream.h"
 #include "compat.h"
 
 #include <stdlib.h>
