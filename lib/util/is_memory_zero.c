@@ -5,7 +5,7 @@
  * Copyright (C) 2021 David Oberhollenzer <goliath@infraroot.at>
  */
 #include "config.h"
-#include "util.h"
+#include "util/util.h"
 
 #include <stdint.h>
 

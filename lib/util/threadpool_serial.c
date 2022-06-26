@@ -4,8 +4,8 @@
  *
  * Copyright (C) 2021 David Oberhollenzer <goliath@infraroot.at>
  */
-#include "threadpool.h"
-#include "util.h"
+#include "util/threadpool.h"
+#include "util/util.h"
 
 #include <stdlib.h>
 #include <string.h>

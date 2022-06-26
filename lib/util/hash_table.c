@@ -45,7 +45,7 @@
 #include <assert.h>
 
 #include "fast_urem_by_const.h"
-#include "hash_table.h"
+#include "util/hash_table.h"
 
 #  define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 

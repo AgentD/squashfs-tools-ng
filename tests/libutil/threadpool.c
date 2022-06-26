@@ -6,7 +6,7 @@
  */
 #include "config.h"
 
-#include "threadpool.h"
+#include "util/threadpool.h"
 #include "../test.h"
 
 #if defined(_WIN32) || defined(__WINDOWS__)

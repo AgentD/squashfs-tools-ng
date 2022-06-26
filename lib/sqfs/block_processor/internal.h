@@ -19,9 +19,9 @@
 #include "sqfs/block.h"
 #include "sqfs/io.h"
 
-#include "hash_table.h"
-#include "threadpool.h"
-#include "util.h"
+#include "util/hash_table.h"
+#include "util/threadpool.h"
+#include "util/util.h"
 
 #include <string.h>
 #include <stdlib.h>

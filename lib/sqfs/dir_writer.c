@@ -15,8 +15,8 @@
 #include "sqfs/error.h"
 #include "sqfs/block.h"
 #include "sqfs/dir.h"
-#include "array.h"
-#include "util.h"
+#include "util/array.h"
+#include "util/util.h"
 
 #include <stdlib.h>
 #include <string.h>

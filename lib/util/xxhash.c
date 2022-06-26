@@ -35,7 +35,7 @@
  * - xxHash source repository: https://github.com/Cyan4973/xxHash
  */
 #include "config.h"
-#include "util.h"
+#include "util/util.h"
 
 #include <string.h>
 

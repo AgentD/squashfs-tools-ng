@@ -13,7 +13,7 @@
 #include "sqfs/error.h"
 #include "sqfs/block.h"
 #include "compat.h"
-#include "array.h"
+#include "util/array.h"
 
 #include <stdlib.h>
 #include <string.h>

@@ -17,8 +17,8 @@
 #include "sqfs/inode.h"
 #include "sqfs/error.h"
 #include "sqfs/dir.h"
-#include "rbtree.h"
-#include "util.h"
+#include "util/rbtree.h"
+#include "util/util.h"
 
 #include <string.h>
 #include <stdlib.h>

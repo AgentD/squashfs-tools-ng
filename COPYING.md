@@ -11,7 +11,7 @@ with the following exceptions:
  - `lib/lz4` contains files extracted from the LZ4 compression library.
    See `lib/lz4/README` for details and `licenses/LZ4.txt` for copyright and
    licensing information (2 clause BSD license).
- - `lib/util/hash_table.c`, `include/hash_table.h` and
+ - `lib/util/hash_table.c`, `include/util/hash_table.h` and
    `lib/util/fast_urem_by_const.h` contain a hash table implementation (MIT
    license). See `licenses/hash_table.txt` for details.
 

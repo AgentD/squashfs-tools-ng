@@ -6,7 +6,7 @@
  */
 #include "config.h"
 #include "compat.h"
-#include "array.h"
+#include "util/array.h"
 
 #include "sqfs/error.h"
 

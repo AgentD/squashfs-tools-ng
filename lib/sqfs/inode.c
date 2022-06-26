@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "util.h"
+#include "util/util.h"
 
 static int inverse_type[] = {
 	[SQFS_INODE_DIR] = SQFS_INODE_EXT_DIR,

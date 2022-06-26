@@ -4,7 +4,7 @@
  *
  * Copyright (C) 2021 David Oberhollenzer <goliath@infraroot.at>
  */
-#include "mempool.h"
+#include "util/mempool.h"
 
 #include <stdlib.h>
 #include <limits.h>

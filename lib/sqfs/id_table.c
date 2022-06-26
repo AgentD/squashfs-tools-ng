@@ -12,7 +12,7 @@
 #include "sqfs/table.h"
 #include "sqfs/error.h"
 #include "compat.h"
-#include "array.h"
+#include "util/array.h"
 
 #include <stdlib.h>
 #include <string.h>

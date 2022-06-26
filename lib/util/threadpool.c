@@ -4,14 +4,14 @@
  *
  * Copyright (C) 2021 David Oberhollenzer <goliath@infraroot.at>
  */
-#include "threadpool.h"
-#include "util.h"
+#include "util/threadpool.h"
+#include "util/util.h"
 
 #include <stdlib.h>
 #include <string.h>
 
 #if defined(_WIN32) || defined(__WINDOWS__)
-#include "w32threadwrap.h"
+#include "util/w32threadwrap.h"
 
 #define THREAD_FUN(funname, argname) DWORD WINAPI funname(LPVOID argname)
 #define THREAD_EXIT_SUCCESS (0)

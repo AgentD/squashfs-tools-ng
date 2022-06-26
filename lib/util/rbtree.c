@@ -7,7 +7,7 @@
 #include "config.h"
 
 #include "sqfs/error.h"
-#include "rbtree.h"
+#include "util/rbtree.h"
 
 #include <stdlib.h>
 #include <string.h>

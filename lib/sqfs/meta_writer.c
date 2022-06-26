@@ -12,7 +12,7 @@
 #include "sqfs/error.h"
 #include "sqfs/block.h"
 #include "sqfs/io.h"
-#include "util.h"
+#include "util/util.h"
 
 #include <string.h>
 #include <stdlib.h>

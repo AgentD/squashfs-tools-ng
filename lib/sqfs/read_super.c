@@ -10,7 +10,7 @@
 #include "sqfs/super.h"
 #include "sqfs/error.h"
 #include "sqfs/io.h"
-#include "util.h"
+#include "util/util.h"
 
 #include <string.h>
 
