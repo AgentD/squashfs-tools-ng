@@ -6,8 +6,9 @@
  */
 #include "config.h"
 
-#include "tar.h"
+#include "tar/tar.h"
 #include "internal.h"
+#include <stdlib.h>
 
 char *record_to_memory(istream_t *fp, size_t size)
 {

@@ -7,6 +7,7 @@
 #include "config.h"
 
 #include "internal.h"
+#include <string.h>
 
 static void write_binary(char *dst, sqfs_u64 value, int digits)
 {

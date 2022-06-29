@@ -25,7 +25,6 @@
 #include "io/std.h"
 #include "compat.h"
 #include "fstree.h"
-#include "tar.h"
 
 #include <stddef.h>
 

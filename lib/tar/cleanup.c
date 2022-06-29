@@ -7,6 +7,8 @@
 #include "config.h"
 
 #include "internal.h"
+#include <stdlib.h>
+#include <string.h>
 
 void free_sparse_list(sparse_map_t *sparse)
 {

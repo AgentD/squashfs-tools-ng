@@ -6,7 +6,10 @@
  */
 #include "config.h"
 
-#include "internal.h"
+#include "tar/format.h"
+
+#include <ctype.h>
+#include <stdio.h>
 
 int read_octal(const char *str, int digits, sqfs_u64 *out)
 {
@@ -31,7 +34,7 @@ int read_octal(const char *str, int digits, sqfs_u64 *out)
 	return 0;
 }
 
-int read_binary(const char *str, int digits, sqfs_u64 *out)
+static int read_binary(const char *str, int digits, sqfs_u64 *out)
 {
 	sqfs_u64 x, ov, result = 0;
 	bool first = true;
@@ -73,21 +76,4 @@ int read_number(const char *str, int digits, sqfs_u64 *out)
 		return read_binary(str, digits, out);
 
 	return read_octal(str, digits, out);
-}
-
-int pax_read_decimal(const char *str, sqfs_u64 *out)
-{
-	sqfs_u64 result = 0;
-
-	while (*str >= '0' && *str <= '9') {
-		if (result > 0xFFFFFFFFFFFFFFFFUL / 10) {
-			fputs("numeric overflow parsing pax header\n", stderr);
-			return -1;
-		}
-
-		result = (result * 10) + (*(str++) - '0');
-	}
-
-	*out = result;
-	return 0;
 }

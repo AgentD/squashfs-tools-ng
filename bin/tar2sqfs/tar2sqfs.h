@@ -10,8 +10,9 @@
 #include "config.h"
 #include "common.h"
 #include "compat.h"
-#include "tar.h"
 
+#include "tar/tar.h"
+#include "tar/format.h"
 #include "io/xfrm.h"
 
 #include <stdlib.h>

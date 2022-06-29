@@ -5,8 +5,10 @@
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
 #include "config.h"
-
 #include "internal.h"
+
+#include <ctype.h>
+#include <stdlib.h>
 
 sparse_map_t *read_gnu_old_sparse(istream_t *fp, tar_header_t *hdr)
 {

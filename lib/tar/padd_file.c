@@ -5,7 +5,8 @@
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
 #include "config.h"
-#include "tar.h"
+#include "tar/tar.h"
+#include "tar/format.h"
 
 #include <stdlib.h>
 #include <stdio.h>

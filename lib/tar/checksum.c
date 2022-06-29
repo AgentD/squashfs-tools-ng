@@ -6,7 +6,9 @@
  */
 #include "config.h"
 
-#include "internal.h"
+#include "tar/format.h"
+
+#include <stdio.h>
 
 static unsigned int get_checksum(const tar_header_t *hdr)
 {

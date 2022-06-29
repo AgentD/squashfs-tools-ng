@@ -7,6 +7,8 @@
 #include "config.h"
 
 #include "internal.h"
+#include <string.h>
+#include <stdlib.h>
 
 static bool is_zero_block(const tar_header_t *hdr)
 {

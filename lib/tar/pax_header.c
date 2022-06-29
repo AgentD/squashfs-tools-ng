@@ -7,6 +7,105 @@
 #include "config.h"
 
 #include "internal.h"
+#include <ctype.h>
+#include <string.h>
+#include <stdlib.h>
+
+static sqfs_u8 base64_convert(char in)
+{
+	if (isupper(in))
+		return in - 'A';
+	if (islower(in))
+		return in - 'a' + 26;
+	if (isdigit(in))
+		return in - '0' + 52;
+	if (in == '+')
+		return 62;
+	if (in == '/' || in == '-')
+		return 63;
+	return 0;
+}
+
+static int xdigit(int x)
+{
+	if (isupper(x))
+		return x - 'A' + 0x0A;
+	if (islower(x))
+		return x - 'a' + 0x0A;
+	return x - '0';
+}
+
+static size_t base64_decode(sqfs_u8 *out, const char *in, size_t len)
+{
+	sqfs_u8 *start = out;
+
+	while (len > 0) {
+		unsigned int diff = 0, value = 0;
+
+		while (diff < 4 && len > 0) {
+			if (*in == '=' || *in == '_' || *in == '\0') {
+				len = 0;
+			} else {
+				value = (value << 6) | base64_convert(*(in++));
+				--len;
+				++diff;
+			}
+		}
+
+		if (diff < 2)
+			break;
+
+		value <<= 6 * (4 - diff);
+
+		switch (diff) {
+		case 4:  out[2] = value & 0xff; /* fall-through */
+		case 3:  out[1] = (value >> 8) & 0xff; /* fall-through */
+		default: out[0] = (value >> 16) & 0xff;
+		}
+
+		out += (diff * 3) / 4;
+	}
+
+	*out = '\0';
+	return out - start;
+}
+
+static int pax_read_decimal(const char *str, sqfs_u64 *out)
+{
+	sqfs_u64 result = 0;
+
+	while (*str >= '0' && *str <= '9') {
+		if (result > 0xFFFFFFFFFFFFFFFFUL / 10) {
+			fputs("numeric overflow parsing pax header\n", stderr);
+			return -1;
+		}
+
+		result = (result * 10) + (*(str++) - '0');
+	}
+
+	*out = result;
+	return 0;
+}
+
+static void urldecode(char *str)
+{
+	unsigned char *out = (unsigned char *)str;
+	char *in = str;
+	int x;
+
+	while (*in != '\0') {
+		x = *(in++);
+
+		if (x == '%' && isxdigit(in[0]) && isxdigit(in[1])) {
+			x = xdigit(*(in++)) << 4;
+			x |= xdigit(*(in++));
+		}
+
+		*(out++) = x;
+	}
+
+	*out = '\0';
+}
 
 static int pax_uid(tar_header_decoded_t *out, sqfs_u64 id)
 {
@@ -52,6 +151,55 @@ static int pax_slink(tar_header_decoded_t *out, char *path)
 	return 0;
 }
 
+static int pax_sparse_map(tar_header_decoded_t *out, const char *line)
+{
+	sparse_map_t *last = NULL, *list = NULL, *ent = NULL;
+
+	free_sparse_list(out->sparse);
+	out->sparse = NULL;
+
+	do {
+		ent = calloc(1, sizeof(*ent));
+		if (ent == NULL)
+			goto fail_errno;
+
+		if (pax_read_decimal(line, &ent->offset))
+			goto fail_format;
+
+		while (isdigit(*line))
+			++line;
+
+		if (*(line++) != ',')
+			goto fail_format;
+
+		if (pax_read_decimal(line, &ent->count))
+			goto fail_format;
+
+		while (isdigit(*line))
+			++line;
+
+		if (last == NULL) {
+			list = last = ent;
+		} else {
+			last->next = ent;
+			last = ent;
+		}
+	} while (*(line++) == ',');
+
+	out->sparse = list;
+	return 0;
+fail_errno:
+	perror("parsing GNU pax sparse file record");
+	goto fail;
+fail_format:
+	fputs("malformed GNU pax sparse file record\n", stderr);
+	goto fail;
+fail:
+	free_sparse_list(list);
+	free(ent);
+	return -1;
+}
+
 static int pax_xattr_schily(tar_header_decoded_t *out,
 			    tar_xattr_t *xattr)
 {
@@ -76,6 +224,7 @@ enum {
 	PAX_TYPE_SINT = 0,
 	PAX_TYPE_UINT,
 	PAX_TYPE_STRING,
+	PAX_TYPE_CONST_STRING,
 	PAX_TYPE_PREFIXED_XATTR,
 	PAX_TYPE_IGNORE,
 };
@@ -88,6 +237,7 @@ static const struct pax_handler_t {
 		int (*sint)(tar_header_decoded_t *out, sqfs_s64 sval);
 		int (*uint)(tar_header_decoded_t *out, sqfs_u64 uval);
 		int (*str)(tar_header_decoded_t *out, char *str);
+		int (*cstr)(tar_header_decoded_t *out, const char *str);
 		int (*xattr)(tar_header_decoded_t *out, tar_xattr_t *xattr);
 	} cb;
 } pax_fields[] = {
@@ -110,6 +260,8 @@ static const struct pax_handler_t {
 	  { .xattr = pax_xattr_schily } },
 	{ "LIBARCHIVE.xattr", 0, PAX_TYPE_PREFIXED_XATTR,
 	  { .xattr = pax_xattr_libarchive } },
+	{ "GNU.sparse.map", 0, PAX_TYPE_CONST_STRING,
+	  { .cstr = pax_sparse_map } },
 };
 
 static const struct pax_handler_t *find_handler(const char *key)
@@ -183,6 +335,8 @@ static int apply_handler(tar_header_decoded_t *out,
 		if (pax_read_decimal(value, &uval))
 			return -1;
 		return field->cb.uint(out, uval);
+	case PAX_TYPE_CONST_STRING:
+		return field->cb.cstr(out, value);
 	case PAX_TYPE_STRING:
 		copy = strdup(value);
 		if (copy == NULL) {
@@ -264,13 +418,6 @@ int read_pax_header(istream_t *fp, sqfs_u64 entsize, unsigned int *set_by_pax,
 			}
 
 			*set_by_pax |= field->flag;
-		} else if (!strcmp(key, "GNU.sparse.map")) {
-			free_sparse_list(out->sparse);
-			sparse_last = NULL;
-
-			out->sparse = read_sparse_map(value);
-			if (out->sparse == NULL)
-				goto fail;
 		} else if (!strcmp(key, "GNU.sparse.offset")) {
 			if (pax_read_decimal(value, &offset))
 				goto fail;

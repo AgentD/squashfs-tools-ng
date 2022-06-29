@@ -5,8 +5,11 @@
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
 #include "config.h"
-
 #include "internal.h"
+
+#include <ctype.h>
+#include <string.h>
+#include <stdlib.h>
 
 static int decode(const char *str, size_t len, size_t *out)
 {

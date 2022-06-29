@@ -9,7 +9,7 @@
 
 #include "config.h"
 #include "common.h"
-#include "tar.h"
+#include "tar/tar.h"
 
 #include "io/xfrm.h"
 

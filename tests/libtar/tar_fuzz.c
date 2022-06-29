@@ -7,7 +7,7 @@
 #include "config.h"
 
 #include "io/file.h"
-#include "tar.h"
+#include "tar/tar.h"
 
 #include <stdlib.h>
 #include <stdio.h>
