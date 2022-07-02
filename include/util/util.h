@@ -35,4 +35,12 @@ SQFS_INTERNAL sqfs_u32 xxh32(const void *input, const size_t len);
  */
 SQFS_INTERNAL bool is_memory_zero(const void *blob, size_t size);
 
+/*
+  A wrapper around mkdir() that behaves like 'mkdir -p'. It tries to create
+  every component of the given path and skips already existing entries.
+
+  Returns 0 on success.
+*/
+SQFS_INTERNAL int mkdir_p(const char *path);
+
 #endif /* SQFS_UTIL_H */

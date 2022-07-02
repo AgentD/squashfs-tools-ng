@@ -1,10 +1,10 @@
-/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* SPDX-License-Identifier: LGPL-3.0-or-later */
 /*
  * mkdir_p.c
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
-#include "common.h"
+#include "util/util.h"
 
 #include <string.h>
 #include <stdlib.h>

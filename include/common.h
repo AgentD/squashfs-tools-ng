@@ -51,14 +51,6 @@ void sqfs_perror(const char *file, const char *action, int error_code);
 int sqfs_tree_find_hard_links(const sqfs_tree_node_t *root,
 			      sqfs_hard_link_t **out);
 
-/*
-  A wrapper around mkdir() that behaves like 'mkdir -p'. It tries to create
-  every component of the given path and skips already existing entries.
-
-  Returns 0 on success.
-*/
-int mkdir_p(const char *path);
-
 /* A common implementation of the '--version' command line flag. */
 void print_version(const char *progname);
 

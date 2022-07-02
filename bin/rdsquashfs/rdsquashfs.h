@@ -10,6 +10,7 @@
 #include "config.h"
 #include "common.h"
 #include "fstree.h"
+#include "util/util.h"
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
