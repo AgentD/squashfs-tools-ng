@@ -34,8 +34,6 @@ typedef struct sqfs_hard_link_t {
 	char *target;
 } sqfs_hard_link_t;
 
-int inode_stat(const sqfs_tree_node_t *node, struct stat *sb);
-
 char *sqfs_tree_node_get_path(const sqfs_tree_node_t *node);
 
 int sqfs_data_reader_dump(const char *name, sqfs_data_reader_t *data,

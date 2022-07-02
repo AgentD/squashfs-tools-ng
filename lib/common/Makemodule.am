@@ -1,4 +1,4 @@
-libcommon_a_SOURCES = lib/common/inode_stat.c lib/common/hardlink.c
+libcommon_a_SOURCES = lib/common/hardlink.c
 libcommon_a_SOURCES += lib/common/print_version.c lib/common/data_reader_dump.c
 libcommon_a_SOURCES += lib/common/compress.c lib/common/comp_opt.c
 libcommon_a_SOURCES += lib/common/data_writer.c include/common.h

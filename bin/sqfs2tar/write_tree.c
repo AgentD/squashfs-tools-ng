@@ -24,6 +24,47 @@ static sqfs_hard_link_t *find_hard_link(const char *name, sqfs_u32 inum)
 	return lnk;
 }
 
+static void inode_stat(const sqfs_tree_node_t *node, struct stat *sb)
+{
+	memset(sb, 0, sizeof(*sb));
+
+	sb->st_mode = node->inode->base.mode;
+	sb->st_uid = node->uid;
+	sb->st_gid = node->gid;
+	sb->st_mtime = node->inode->base.mod_time;
+
+	switch (node->inode->base.type) {
+	case SQFS_INODE_BDEV:
+	case SQFS_INODE_CDEV:
+		sb->st_rdev = node->inode->data.dev.devno;
+		break;
+	case SQFS_INODE_EXT_BDEV:
+	case SQFS_INODE_EXT_CDEV:
+		sb->st_rdev = node->inode->data.dev_ext.devno;
+		break;
+	case SQFS_INODE_SLINK:
+		sb->st_size = node->inode->data.slink.target_size;
+		break;
+	case SQFS_INODE_EXT_SLINK:
+		sb->st_size = node->inode->data.slink_ext.target_size;
+		break;
+	case SQFS_INODE_FILE:
+		sb->st_size = node->inode->data.file.file_size;
+		break;
+	case SQFS_INODE_EXT_FILE:
+		sb->st_size = node->inode->data.file_ext.file_size;
+		break;
+	case SQFS_INODE_DIR:
+		sb->st_size = node->inode->data.dir.size;
+		break;
+	case SQFS_INODE_EXT_DIR:
+		sb->st_size = node->inode->data.dir_ext.size;
+		break;
+	default:
+		break;
+	}
+}
+
 static int write_tree_dfs(const sqfs_tree_node_t *n)
 {
 	sqfs_hard_link_t *lnk = NULL;
