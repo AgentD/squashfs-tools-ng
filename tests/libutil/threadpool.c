@@ -7,7 +7,7 @@
 #include "config.h"
 
 #include "util/threadpool.h"
-#include "../test.h"
+#include "util/test.h"
 
 #if defined(_WIN32) || defined(__WINDOWS__)
 #define WIN32_LEAN_AND_MEAN

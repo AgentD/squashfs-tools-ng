@@ -7,7 +7,7 @@
 #include "config.h"
 
 #include "util/util.h"
-#include "../test.h"
+#include "util/test.h"
 
 static const struct {
 	const char *plaintext;

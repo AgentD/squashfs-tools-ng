@@ -1,5 +1,5 @@
 libutil_a_SOURCES = include/util/util.h include/util/str_table.h
-libutil_a_SOURCES += include/util/hash_table.h
+libutil_a_SOURCES += include/util/hash_table.h include/util/test.h
 libutil_a_SOURCES += lib/util/str_table.c lib/util/alloc.c
 libutil_a_SOURCES += lib/util/rbtree.c include/util/rbtree.h
 libutil_a_SOURCES += lib/util/array.c include/util/array.h

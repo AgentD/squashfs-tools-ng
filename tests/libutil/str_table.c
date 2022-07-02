@@ -9,7 +9,7 @@
 #include "util/str_table.h"
 #include "io/file.h"
 #include "compat.h"
-#include "../test.h"
+#include "util/test.h"
 
 static char *strings[1000];
 

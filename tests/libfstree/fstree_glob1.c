@@ -7,7 +7,7 @@
 #include "config.h"
 
 #include "fstree.h"
-#include "../test.h"
+#include "util/test.h"
 
 static void check_hierarchy(tree_node_t *root, bool subdir, bool recursive)
 {

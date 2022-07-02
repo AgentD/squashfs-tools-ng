@@ -6,7 +6,7 @@
  */
 #include "config.h"
 #include "compat.h"
-#include "../test.h"
+#include "util/test.h"
 
 #include "sqfs/compressor.h"
 #include "sqfs/error.h"

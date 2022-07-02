@@ -6,7 +6,7 @@
  */
 #include "config.h"
 
-#include "../test.h"
+#include "util/test.h"
 #include "util/util.h"
 
 int main(int argc, char **argv)

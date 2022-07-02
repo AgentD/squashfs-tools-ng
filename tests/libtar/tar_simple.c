@@ -7,7 +7,7 @@
 #include "config.h"
 #include "io/file.h"
 #include "tar/tar.h"
-#include "../test.h"
+#include "util/test.h"
 
 #ifndef TESTUID
 #define TESTUID 1000

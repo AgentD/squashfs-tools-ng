@@ -6,7 +6,7 @@
  */
 #include "config.h"
 #include "compat.h"
-#include "../test.h"
+#include "util/test.h"
 
 #include "sqfs/xattr_writer.h"
 #include "sqfs/compressor.h"

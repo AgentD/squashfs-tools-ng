@@ -8,7 +8,7 @@
 
 #include "sqfs/block.h"
 #include "fstree.h"
-#include "../test.h"
+#include "util/test.h"
 
 static const char *listing =
 "dir /bin 0755 0 0\n"

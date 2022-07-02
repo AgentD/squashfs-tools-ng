@@ -6,7 +6,7 @@
  */
 #include "config.h"
 #include "internal.h"
-#include "../test.h"
+#include "util/test.h"
 
 #if defined(_WIN32) || defined(__WINDOWS__)
 static void setenv(const char *key, const char *value, int overwrite)

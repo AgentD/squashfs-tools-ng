@@ -7,7 +7,7 @@
 #include "config.h"
 
 #include "util/rbtree.h"
-#include "../test.h"
+#include "util/test.h"
 
 static int key_compare(const void *ctx, const void *a, const void *b)
 {

@@ -7,7 +7,7 @@
 #include "config.h"
 
 #include "fstree.h"
-#include "../test.h"
+#include "util/test.h"
 
 static tree_node_t *gen_node(tree_node_t *parent, const char *name)
 {

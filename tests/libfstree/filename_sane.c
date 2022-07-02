@@ -6,7 +6,7 @@
  */
 #include "config.h"
 #include "fstree.h"
-#include "../test.h"
+#include "util/test.h"
 
 static const char *must_work[] = {
 	"foobar",

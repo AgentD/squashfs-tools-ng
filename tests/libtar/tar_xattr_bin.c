@@ -7,7 +7,7 @@
 #include "config.h"
 #include "io/file.h"
 #include "tar/tar.h"
-#include "../test.h"
+#include "util/test.h"
 
 static const uint8_t value[] = {
 	0x00, 0x00, 0x00, 0x02,

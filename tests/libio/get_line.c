@@ -7,7 +7,7 @@
 #include "config.h"
 
 #include "io/file.h"
-#include "../test.h"
+#include "util/test.h"
 
 typedef struct {
 	size_t line_num;

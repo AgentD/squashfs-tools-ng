@@ -1,10 +1,10 @@
-test_abi_SOURCES = tests/libsqfs/abi.c tests/test.h
+test_abi_SOURCES = tests/libsqfs/abi.c
 test_abi_LDADD = libsquashfs.la libcompat.a
 
-test_table_SOURCES = tests/libsqfs/table.c tests/test.h
+test_table_SOURCES = tests/libsqfs/table.c
 test_table_LDADD = libsquashfs.la libcompat.a
 
-test_xattr_writer_SOURCES = tests/libsqfs/xattr_writer.c tests/test.h
+test_xattr_writer_SOURCES = tests/libsqfs/xattr_writer.c
 test_xattr_writer_LDADD = libsquashfs.la libcompat.a
 
 xattr_benchmark_SOURCES = tests/libsqfs/xattr_benchmark.c

@@ -9,7 +9,7 @@
 #include "sqfs/block_processor.h"
 #include "sqfs/compressor.h"
 #include "sqfs/block.h"
-#include "../test.h"
+#include "util/test.h"
 
 #include <stddef.h>
 

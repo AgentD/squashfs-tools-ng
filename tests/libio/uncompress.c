@@ -6,7 +6,7 @@
  */
 #include "io/istream.h"
 #include "io/xfrm.h"
-#include "../test.h"
+#include "util/test.h"
 
 static sqfs_u8 data_in[] = {
 #if defined(TEST_BZIP2)
