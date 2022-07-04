@@ -17,7 +17,7 @@ char *node_path(const sqfs_tree_node_t *n)
 
 	if (canonicalize_name(path)) {
 		fprintf(stderr, "failed to canonicalization '%s'\n", path);
-		free(path);
+		sqfs_free(path);
 		return NULL;
 	}
 

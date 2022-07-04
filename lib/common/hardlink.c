@@ -57,7 +57,7 @@ static int map_nodes(rbtree_t *inumtree, sqfs_hard_link_t **out,
 		lnk->next = (*out);
 		(*out) = lnk;
 	} else {
-		free(lnk->target);
+		sqfs_free(lnk->target);
 		free(lnk);
 	}
 	return 0;

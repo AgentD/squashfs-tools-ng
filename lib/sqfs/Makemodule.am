@@ -20,6 +20,7 @@ libsquashfs_la_SOURCES += lib/sqfs/read_table.c lib/sqfs/comp/compressor.c
 libsquashfs_la_SOURCES += lib/sqfs/comp/internal.h
 libsquashfs_la_SOURCES += lib/sqfs/dir_reader/dir_reader.c
 libsquashfs_la_SOURCES += lib/sqfs/dir_reader/read_tree.c
+libsquashfs_la_SOURCES += lib/sqfs/dir_reader/get_path.c
 libsquashfs_la_SOURCES += lib/sqfs/dir_reader/internal.h
 libsquashfs_la_SOURCES += lib/sqfs/inode.c lib/sqfs/xattr/xattr_writer.c
 libsquashfs_la_SOURCES += lib/sqfs/xattr/xattr_writer_flush.c

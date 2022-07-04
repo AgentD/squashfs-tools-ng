@@ -384,6 +384,27 @@ SQFS_API int sqfs_dir_reader_get_full_hierarchy(sqfs_dir_reader_t *rd,
  */
 SQFS_API void sqfs_dir_tree_destroy(sqfs_tree_node_t *root);
 
+/**
+ * @brief Recursively destroy a tree of @ref sqfs_tree_node_t nodes
+ *
+ * @memberof sqfs_tree_node_t
+ *
+ * This function can be used to assemble an absolute path from a tree
+ * node returned by @ref sqfs_dir_reader_get_full_hierarchy.
+ *
+ * The function recursively walks up the tree to assemble a path string. It
+ * returns "/" for the root node and assembles paths beginning with "/" for
+ * non-root nodes. The resulting path is slash separated, but (except for
+ * the root) never ends with a slash.
+ *
+ * The returned string needs to be free'd with @ref sqfs_free.
+ *
+ * @param node A pointer to a tree node.
+ *
+ * @return A pointer to a string on success, NULL on allocation failure.
+ */
+SQFS_API char *sqfs_tree_node_get_path(const sqfs_tree_node_t *node);
+
 #ifdef __cplusplus
 }
 #endif

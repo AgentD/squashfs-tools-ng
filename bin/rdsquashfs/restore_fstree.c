@@ -141,7 +141,7 @@ static int create_node_dfs(const sqfs_tree_node_t *n, int flags)
 		printf("creating %s\n", name);
 
 	ret = create_node(n, name, flags);
-	free(name);
+	sqfs_free(name);
 	if (ret)
 		return -1;
 
@@ -276,10 +276,10 @@ static int set_attribs(sqfs_xattr_reader_t *xattr,
 		}
 	}
 
-	free(path);
+	sqfs_free(path);
 	return 0;
 fail:
-	free(path);
+	sqfs_free(path);
 	return -1;
 }
 

@@ -89,7 +89,7 @@ static int add_file(const sqfs_tree_node_t *node)
 
 	if (canonicalize_name(path)) {
 		fprintf(stderr, "Invalid file path '%s'\n", path);
-		free(path);
+		sqfs_free(path);
 		return -1;
 	}
 
@@ -104,7 +104,7 @@ static void clear_file_list(void)
 	size_t i;
 
 	for (i = 0; i < num_files; ++i)
-		free(files[i].path);
+		sqfs_free(files[i].path);
 
 	free(files);
 	files = NULL;

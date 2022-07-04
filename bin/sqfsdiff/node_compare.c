@@ -90,7 +90,7 @@ int node_compare(sqfsdiff_t *sd, sqfs_tree_node_t *a, sqfs_tree_node_t *b)
 			status = 1;
 		} else {
 			fprintf(stdout, "%s has a different type\n", path);
-			free(path);
+			sqfs_free(path);
 			return 1;
 		}
 	}
@@ -168,7 +168,7 @@ int node_compare(sqfsdiff_t *sd, sqfs_tree_node_t *a, sqfs_tree_node_t *b)
 		if (ret > 0)
 			status = 1;
 
-		free(path);
+		sqfs_free(path);
 		path = NULL;
 
 		ait = a->children;
@@ -200,6 +200,6 @@ int node_compare(sqfsdiff_t *sd, sqfs_tree_node_t *a, sqfs_tree_node_t *b)
 		break;
 	}
 
-	free(path);
+	sqfs_free(path);
 	return status;
 }

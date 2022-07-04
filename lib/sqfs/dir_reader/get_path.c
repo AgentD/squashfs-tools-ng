@@ -1,10 +1,11 @@
-/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* SPDX-License-Identifier: LGPL-3.0-or-later */
 /*
  * get_path.c
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
-#include "common.h"
+#define SQFS_BUILDING_DLL
+#include "internal.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -15,12 +16,8 @@ char *sqfs_tree_node_get_path(const sqfs_tree_node_t *node)
 	char *str, *ptr;
 	size_t len = 0;
 
-	if (node->parent == NULL) {
-		if (node->name[0] != '\0')
-			return strdup((const char *)node->name);
-
+	if (node->parent == NULL)
 		return strdup("/");
-	}
 
 	for (it = node; it != NULL && it->parent != NULL; it = it->parent) {
 		len += strlen((const char *)it->name) + 1;

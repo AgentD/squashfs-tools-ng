@@ -119,14 +119,14 @@ static int write_tree_dfs(const sqfs_tree_node_t *n)
 		if (lnk != NULL) {
 			ret = write_hard_link(out_file, &sb, name, lnk->target,
 					      record_counter++);
-			free(name);
+			sqfs_free(name);
 			return ret;
 		}
 	}
 
 	if (!no_xattr) {
 		if (get_xattrs(name, n->inode, &xattr)) {
-			free(name);
+			sqfs_free(name);
 			return -1;
 		}
 	}
@@ -140,24 +140,24 @@ static int write_tree_dfs(const sqfs_tree_node_t *n)
 		goto out_skip;
 
 	if (ret < 0) {
-		free(name);
+		sqfs_free(name);
 		return -1;
 	}
 
 	if (S_ISREG(sb.st_mode)) {
 		if (sqfs_data_reader_dump(name, data, n->inode, out_file,
 					  super.block_size)) {
-			free(name);
+			sqfs_free(name);
 			return -1;
 		}
 
 		if (padd_file(out_file, sb.st_size)) {
-			free(name);
+			sqfs_free(name);
 			return -1;
 		}
 	}
 
-	free(name);
+	sqfs_free(name);
 skip_hdr:
 	for (n = n->children; n != NULL; n = n->next) {
 		if (write_tree_dfs(n))
@@ -172,7 +172,7 @@ out_skip:
 		fprintf(stderr, "Skipping %s\n", name);
 		ret = 0;
 	}
-	free(name);
+	sqfs_free(name);
 	return ret;
 }
 
@@ -198,7 +198,7 @@ out_links:
 	while (links != NULL) {
 		lnk = links;
 		links = links->next;
-		free(lnk->target);
+		sqfs_free(lnk->target);
 		free(lnk);
 	}
 	return status;

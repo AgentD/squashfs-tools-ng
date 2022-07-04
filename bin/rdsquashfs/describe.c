@@ -17,7 +17,7 @@ static int print_name(const sqfs_tree_node_t *n, bool dont_escape)
 
 	if (canonicalize_name(name) != 0) {
 		fprintf(stderr, "Error sanitizing file path '%s'\n", name);
-		free(name);
+		sqfs_free(name);
 		return -1;
 	}
 
@@ -47,7 +47,7 @@ static int print_name(const sqfs_tree_node_t *n, bool dont_escape)
 		fputc('"', stdout);
 	}
 
-	free(name);
+	sqfs_free(name);
 	return 0;
 }
 
