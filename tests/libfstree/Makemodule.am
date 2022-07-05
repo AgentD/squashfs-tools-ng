@@ -40,7 +40,6 @@ test_fstree_from_dir_CPPFLAGS += -DTESTPATH=$(top_srcdir)/tests/libtar/data
 test_fstree_from_dir_LDADD = libfstree.a libutil.a libcompat.a
 
 test_fstree_init_SOURCES = tests/libfstree/fstree_init.c
-test_fstree_init_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/lib/fstree
 test_fstree_init_LDADD = libfstree.a libio.a libutil.a libcompat.a
 
 test_sort_file_SOURCES = tests/libfstree/sort_file.c

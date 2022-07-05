@@ -269,4 +269,6 @@ int fstree_from_subdir(fstree_t *fs, tree_node_t *root,
 
 int fstree_sort_files(fstree_t *fs, istream_t *sortfile);
 
+void fstree_insert_sorted(tree_node_t *root, tree_node_t *n);
+
 #endif /* FSTREE_H */

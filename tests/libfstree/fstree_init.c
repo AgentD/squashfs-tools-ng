@@ -7,7 +7,6 @@
 #include "config.h"
 
 #include "fstree.h"
-#include "internal.h"
 #include "util/test.h"
 #include "util/util.h"
 
