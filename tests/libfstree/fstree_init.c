@@ -9,6 +9,7 @@
 #include "fstree.h"
 #include "internal.h"
 #include "util/test.h"
+#include "util/util.h"
 
 int main(int argc, char **argv)
 {

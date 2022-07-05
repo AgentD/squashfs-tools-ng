@@ -10,13 +10,6 @@
 #include "config.h"
 #include "fstree.h"
 
-/*
-  If the environment variable SOURCE_DATE_EPOCH is set to a parsable number
-  that fits into an unsigned 32 bit value, return its value. Otherwise,
-  default to 0.
- */
-sqfs_u32 get_source_date_epoch(void);
-
 void fstree_insert_sorted(tree_node_t *root, tree_node_t *n);
 
 #endif /* FSTREE_INTERNAL_H */

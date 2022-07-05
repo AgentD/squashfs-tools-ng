@@ -16,14 +16,14 @@ test_gen_inode_numbers_SOURCES = tests/libfstree/gen_inode_numbers.c
 test_gen_inode_numbers_LDADD = libfstree.a libutil.a libcompat.a
 
 test_add_by_path_SOURCES = tests/libfstree/add_by_path.c
-test_add_by_path_LDADD = libfstree.a libcompat.a
+test_add_by_path_LDADD = libfstree.a libutil.a libcompat.a
 
 test_get_path_SOURCES = tests/libfstree/get_path.c
-test_get_path_LDADD = libfstree.a libcompat.a
+test_get_path_LDADD = libfstree.a libutil.a libcompat.a
 
 test_fstree_sort_SOURCES = tests/libfstree/fstree_sort.c
 test_fstree_sort_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/lib/fstree
-test_fstree_sort_LDADD = libfstree.a libio.a libcompat.a
+test_fstree_sort_LDADD = libfstree.a libio.a libutil.a libcompat.a
 
 test_fstree_from_file_SOURCES = tests/libfstree/fstree_from_file.c
 test_fstree_from_file_CPPFLAGS = $(AM_CPPFLAGS)
@@ -41,12 +41,7 @@ test_fstree_from_dir_LDADD = libfstree.a libutil.a libcompat.a
 
 test_fstree_init_SOURCES = tests/libfstree/fstree_init.c
 test_fstree_init_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/lib/fstree
-test_fstree_init_LDADD = libfstree.a libio.a libcompat.a
-
-test_fstree_epoch_SOURCES = tests/libfstree/epoch.c
-test_fstree_epoch_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/lib/fstree
-test_fstree_epoch_SOURCES += lib/fstree/source_date_epoch.c
-test_fstree_epoch_LDADD = libcompat.a
+test_fstree_init_LDADD = libfstree.a libio.a libutil.a libcompat.a
 
 test_sort_file_SOURCES = tests/libfstree/sort_file.c
 test_sort_file_LDADD = libfstree.a libio.a libutil.a libcompat.a
@@ -58,8 +53,7 @@ FSTREE_TESTS = \
 	test_mknode_simple test_mknode_slink \
 	test_mknode_reg test_mknode_dir test_gen_inode_numbers \
 	test_add_by_path test_get_path test_fstree_sort test_fstree_from_file \
-	test_fstree_init \
-	test_fstree_from_dir test_fstree_glob1 test_fstree_epoch \
+	test_fstree_init test_fstree_from_dir test_fstree_glob1 \
 	test_sort_file
 
 if BUILD_TOOLS

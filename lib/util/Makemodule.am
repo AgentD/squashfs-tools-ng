@@ -12,6 +12,7 @@ libutil_a_SOURCES += lib/util/is_memory_zero.c
 libutil_a_SOURCES += lib/util/mkdir_p.c
 libutil_a_SOURCES += lib/util/canonicalize_name.c
 libutil_a_SOURCES += lib/util/filename_sane.c
+libutil_a_SOURCES += lib/util/source_date_epoch.c
 libutil_a_CFLAGS = $(AM_CFLAGS)
 libutil_a_CPPFLAGS = $(AM_CPPFLAGS)
 

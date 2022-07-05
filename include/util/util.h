@@ -62,4 +62,11 @@ SQFS_INTERNAL int canonicalize_name(char *filename);
  */
 SQFS_INTERNAL bool is_filename_sane(const char *name, bool check_os_specific);
 
+/*
+  If the environment variable SOURCE_DATE_EPOCH is set to a parsable number
+  that fits into an unsigned 32 bit value, return its value. Otherwise,
+  default to 0.
+ */
+SQFS_INTERNAL sqfs_u32 get_source_date_epoch(void);
+
 #endif /* SQFS_UTIL_H */
