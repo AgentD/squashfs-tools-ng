@@ -1,8 +1,5 @@
 FSTDATADIR=$(top_srcdir)/tests/libfstree
 
-test_canonicalize_name_SOURCES = tests/libfstree/canonicalize_name.c
-test_canonicalize_name_LDADD = libfstree.a libcompat.a
-
 test_mknode_simple_SOURCES = tests/libfstree/mknode_simple.c
 test_mknode_simple_LDADD = libfstree.a libcompat.a
 
@@ -16,7 +13,7 @@ test_mknode_dir_SOURCES = tests/libfstree/mknode_dir.c
 test_mknode_dir_LDADD = libfstree.a libcompat.a
 
 test_gen_inode_numbers_SOURCES = tests/libfstree/gen_inode_numbers.c
-test_gen_inode_numbers_LDADD = libfstree.a libcompat.a
+test_gen_inode_numbers_LDADD = libfstree.a libutil.a libcompat.a
 
 test_add_by_path_SOURCES = tests/libfstree/add_by_path.c
 test_add_by_path_LDADD = libfstree.a libcompat.a
@@ -31,29 +28,20 @@ test_fstree_sort_LDADD = libfstree.a libio.a libcompat.a
 test_fstree_from_file_SOURCES = tests/libfstree/fstree_from_file.c
 test_fstree_from_file_CPPFLAGS = $(AM_CPPFLAGS)
 test_fstree_from_file_CPPFLAGS += -DTESTPATH=$(FSTDATADIR)/fstree1.txt
-test_fstree_from_file_LDADD = libfstree.a libio.a libcompat.a
+test_fstree_from_file_LDADD = libfstree.a libio.a libutil.a libcompat.a
 
 test_fstree_glob1_SOURCES = tests/libfstree/fstree_glob1.c
 test_fstree_glob1_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(FSTDATADIR)
-test_fstree_glob1_LDADD = libfstree.a libio.a libcompat.a
+test_fstree_glob1_LDADD = libfstree.a libio.a libutil.a libcompat.a
 
 test_fstree_from_dir_SOURCES = tests/libfstree/fstree_from_dir.c
 test_fstree_from_dir_CPPFLAGS = $(AM_CPPFLAGS)
 test_fstree_from_dir_CPPFLAGS += -DTESTPATH=$(top_srcdir)/tests/libtar/data
-test_fstree_from_dir_LDADD = libfstree.a libcompat.a
+test_fstree_from_dir_LDADD = libfstree.a libutil.a libcompat.a
 
 test_fstree_init_SOURCES = tests/libfstree/fstree_init.c
 test_fstree_init_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/lib/fstree
 test_fstree_init_LDADD = libfstree.a libio.a libcompat.a
-
-test_filename_sane_SOURCES = tests/libfstree/filename_sane.c
-test_filename_sane_SOURCES += lib/fstree/filename_sane.c
-test_filename_sane_LDADD = libcompat.a
-
-test_filename_sane_w32_SOURCES = tests/libfstree/filename_sane.c
-test_filename_sane_w32_SOURCES += lib/fstree/filename_sane.c
-test_filename_sane_w32_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_WIN32=1
-test_filename_sane_w32_LDADD = libcompat.a
 
 test_fstree_epoch_SOURCES = tests/libfstree/epoch.c
 test_fstree_epoch_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/lib/fstree
@@ -61,16 +49,16 @@ test_fstree_epoch_SOURCES += lib/fstree/source_date_epoch.c
 test_fstree_epoch_LDADD = libcompat.a
 
 test_sort_file_SOURCES = tests/libfstree/sort_file.c
-test_sort_file_LDADD = libfstree.a libio.a libcompat.a
+test_sort_file_LDADD = libfstree.a libio.a libutil.a libcompat.a
 
 fstree_fuzz_SOURCES = tests/libfstree/fstree_fuzz.c
-fstree_fuzz_LDADD = libfstree.a libio.a libcompat.a
+fstree_fuzz_LDADD = libfstree.a libio.a libutil.a libcompat.a
 
 FSTREE_TESTS = \
-	test_canonicalize_name test_mknode_simple test_mknode_slink \
+	test_mknode_simple test_mknode_slink \
 	test_mknode_reg test_mknode_dir test_gen_inode_numbers \
 	test_add_by_path test_get_path test_fstree_sort test_fstree_from_file \
-	test_fstree_init test_filename_sane test_filename_sane_w32 \
+	test_fstree_init \
 	test_fstree_from_dir test_fstree_glob1 test_fstree_epoch \
 	test_sort_file
 

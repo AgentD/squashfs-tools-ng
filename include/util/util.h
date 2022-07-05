@@ -43,4 +43,23 @@ SQFS_INTERNAL bool is_memory_zero(const void *blob, size_t size);
 */
 SQFS_INTERNAL int mkdir_p(const char *path);
 
+/*
+  Remove all preceeding and trailing slashes, collapse all sequences of
+  slashes, remove all path components that are '.' and returns failure
+  state if one of the path components is '..'.
+
+  Returns 0 on success.
+*/
+SQFS_INTERNAL int canonicalize_name(char *filename);
+
+/*
+  Returns true if a given filename is sane, false if it is not (e.g. contains
+  slashes or it is equal to '.' or '..').
+
+  If check_os_specific is true, this also checks if the filename contains
+  a character, or is equal to a name, that is black listed on the current OS.
+  E.g. on Windows, a file named "COM0" or "AUX" is a no-no.
+ */
+SQFS_INTERNAL bool is_filename_sane(const char *name, bool check_os_specific);
+
 #endif /* SQFS_UTIL_H */

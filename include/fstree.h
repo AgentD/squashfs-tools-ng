@@ -237,25 +237,6 @@ tree_node_t *fstree_get_node_by_path(fstree_t *fs, tree_node_t *root,
 				     bool stop_at_parent);
 
 /*
-  Convert back to forward slashed, remove all preceeding and trailing slashes,
-  collapse all sequences of slashes, remove all path components that are '.'
-  and returns failure state if one of the path components is '..'.
-
-  Returns 0 on success.
-*/
-int canonicalize_name(char *filename);
-
-/*
-  Returns true if a given filename is sane, false if it is not (e.g. contains
-  slashes or it is equal to '.' or '..').
-
-  If check_os_specific is true, this also checks if the filename contains
-  a character, or is equal to a name, that is black listed on the current OS.
-  E.g. on Windows, a file named "COM0" or "AUX" is a no-no.
- */
-bool is_filename_sane(const char *name, bool check_os_specific);
-
-/*
   Add a hard link node. Returns NULL on failure and sets errno.
  */
 tree_node_t *fstree_add_hard_link(fstree_t *fs, const char *path,

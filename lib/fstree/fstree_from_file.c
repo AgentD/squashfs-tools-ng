@@ -6,6 +6,7 @@
  */
 #include "config.h"
 
+#include "util/util.h"
 #include "io/file.h"
 #include "fstree.h"
 #include "compat.h"

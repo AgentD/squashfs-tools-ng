@@ -6,6 +6,7 @@
  */
 #include "common.h"
 #include "util/rbtree.h"
+#include "util/util.h"
 
 #include <stdlib.h>
 #include <assert.h>

@@ -11,6 +11,7 @@
 #include "common.h"
 #include "compat.h"
 
+#include "util/util.h"
 #include "tar/tar.h"
 #include "tar/format.h"
 #include "io/xfrm.h"

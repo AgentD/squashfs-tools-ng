@@ -9,8 +9,9 @@
 
 #include "config.h"
 #include "common.h"
-#include "tar/tar.h"
 
+#include "util/util.h"
+#include "tar/tar.h"
 #include "io/xfrm.h"
 
 #include <getopt.h>
