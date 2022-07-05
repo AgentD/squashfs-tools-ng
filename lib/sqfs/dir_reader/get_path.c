@@ -10,33 +10,72 @@
 #include <string.h>
 #include <stdlib.h>
 
-char *sqfs_tree_node_get_path(const sqfs_tree_node_t *node)
+int sqfs_tree_node_get_path(const sqfs_tree_node_t *node, char **out)
 {
 	const sqfs_tree_node_t *it;
+	size_t clen, len = 0;
 	char *str, *ptr;
-	size_t len = 0;
 
-	if (node->parent == NULL)
-		return strdup("/");
+	*out = NULL;
 
-	for (it = node; it != NULL && it->parent != NULL; it = it->parent) {
-		len += strlen((const char *)it->name) + 1;
+	if (node == NULL)
+		return SQFS_ERROR_ARG_INVALID;
+
+	for (it = node; it->parent != NULL; it = it->parent) {
+		if (it->parent == node)
+			return SQFS_ERROR_LINK_LOOP;
+
+		/* non-root nodes must have a valid name */
+		clen = strlen((const char *)it->name);
+
+		if (clen == 0)
+			return SQFS_ERROR_CORRUPTED;
+
+		if (strchr((const char *)it->name, '/') != NULL)
+			return SQFS_ERROR_CORRUPTED;
+
+		if (it->name[0] == '.') {
+			if (clen == 1 || (clen == 2 && it->name[1] == '.'))
+				return SQFS_ERROR_CORRUPTED;
+		}
+
+		/* compute total path length */
+		if (SZ_ADD_OV(clen, 1, &clen))
+			return SQFS_ERROR_OVERFLOW;
+
+		if (SZ_ADD_OV(len, clen, &len))
+			return SQFS_ERROR_OVERFLOW;
 	}
 
-	str = malloc(len + 1);
-	if (str == NULL)
-		return NULL;
+	/* root node must not have a name */
+	if (it->name[0] != '\0')
+		return SQFS_ERROR_ARG_INVALID;
 
-	ptr = str + len;
-	*ptr = '\0';
+	/* generate the path */
+	if (node->parent == NULL) {
+		str = strdup("/");
+		if (str == NULL)
+			return SQFS_ERROR_ALLOC;
+	} else {
+		if (SZ_ADD_OV(len, 1, &len))
+			return SQFS_ERROR_OVERFLOW;
 
-	for (it = node; it != NULL && it->parent != NULL; it = it->parent) {
-		len = strlen((const char *)it->name);
-		ptr -= len;
+		str = malloc(len);
+		if (str == NULL)
+			return SQFS_ERROR_ALLOC;
 
-		memcpy(ptr, (const char *)it->name, len);
-		*(--ptr) = '/';
+		ptr = str + len - 1;
+		*ptr = '\0';
+
+		for (it = node; it->parent != NULL; it = it->parent) {
+			len = strlen((const char *)it->name);
+			ptr -= len;
+
+			memcpy(ptr, (const char *)it->name, len);
+			*(--ptr) = '/';
+		}
 	}
 
-	return str;
+	*out = str;
+	return 0;
 }

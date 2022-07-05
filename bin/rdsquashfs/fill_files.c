@@ -67,6 +67,7 @@ static int add_file(const sqfs_tree_node_t *node)
 	struct file_ent *new;
 	size_t new_sz;
 	char *path;
+	int ret;
 
 	if (num_files == max_files) {
 		new_sz = max_files ? max_files * 2 : 256;
@@ -81,9 +82,9 @@ static int add_file(const sqfs_tree_node_t *node)
 		max_files = new_sz;
 	}
 
-	path = sqfs_tree_node_get_path(node);
-	if (path == NULL) {
-		perror("assembling file path");
+	ret = sqfs_tree_node_get_path(node, &path);
+	if (ret != 0) {
+		sqfs_perror(NULL, "assembling file path", ret);
 		return -1;
 	}
 

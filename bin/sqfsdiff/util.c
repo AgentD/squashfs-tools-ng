@@ -8,10 +8,12 @@
 
 char *node_path(const sqfs_tree_node_t *n)
 {
-	char *path = sqfs_tree_node_get_path(n);
+	char *path;
+	int ret;
 
-	if (path == NULL) {
-		perror("get path");
+	ret = sqfs_tree_node_get_path(n, &path);
+	if (ret != 0) {
+		sqfs_perror(NULL, "get path", ret);
 		return NULL;
 	}
 

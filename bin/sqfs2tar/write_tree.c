@@ -102,9 +102,9 @@ static int write_tree_dfs(const sqfs_tree_node_t *n)
 			return 0;
 		}
 
-		name = sqfs_tree_node_get_path(n);
-		if (name == NULL) {
-			perror("resolving tree node path");
+		ret = sqfs_tree_node_get_path(n, &name);
+		if (ret != 0) {
+			sqfs_perror(NULL, "resolving tree node path", ret);
 			return -1;
 		}
 

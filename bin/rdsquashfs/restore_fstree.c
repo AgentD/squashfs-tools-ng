@@ -127,10 +127,10 @@ static int create_node_dfs(const sqfs_tree_node_t *n, int flags)
 		return 0;
 	}
 
-	name = sqfs_tree_node_get_path(n);
-	if (name == NULL) {
-		fprintf(stderr, "Constructing full path for '%s': %s\n",
-			(const char *)n->name, strerror(errno));
+	ret = sqfs_tree_node_get_path(n, &name);
+	if (ret != 0) {
+		sqfs_perror((const char *)n->name,
+			    "constructing full path", ret);
 		return -1;
 	}
 
@@ -226,10 +226,9 @@ static int set_attribs(sqfs_xattr_reader_t *xattr,
 		}
 	}
 
-	path = sqfs_tree_node_get_path(n);
-	if (path == NULL) {
-		fprintf(stderr, "Reconstructing full path: %s\n",
-			strerror(errno));
+	ret = sqfs_tree_node_get_path(n, &path);
+	if (ret != 0) {
+		sqfs_perror(NULL, "reconstructing full path", ret);
 		return -1;
 	}
 

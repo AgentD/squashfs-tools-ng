@@ -8,10 +8,12 @@
 
 static int print_name(const sqfs_tree_node_t *n, bool dont_escape)
 {
-	char *start, *ptr, *name = sqfs_tree_node_get_path(n);
+	char *start, *ptr, *name;
+	int ret;
 
-	if (name == NULL) {
-		perror("Recovering file path of tree node");
+	ret = sqfs_tree_node_get_path(n, &name);
+	if (ret != 0) {
+		sqfs_perror(NULL, "Recovering file path of tree node", ret);
 		return -1;
 	}
 

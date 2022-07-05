@@ -49,9 +49,9 @@ static int map_nodes(rbtree_t *inumtree, sqfs_hard_link_t **out,
 		goto fail_oom;
 
 	lnk->inode_number = idx;
-	lnk->target = sqfs_tree_node_get_path(target);
-	if (lnk->target == NULL)
-		goto fail_oom;
+	ret = sqfs_tree_node_get_path(target, &lnk->target);
+	if (ret != 0)
+		goto fail_path;
 
 	if (canonicalize_name(lnk->target) == 0) {
 		lnk->next = (*out);
@@ -61,6 +61,10 @@ static int map_nodes(rbtree_t *inumtree, sqfs_hard_link_t **out,
 		free(lnk);
 	}
 	return 0;
+fail_path:
+	sqfs_perror(NULL, "re-constructing hard link path", ret);
+	free(lnk);
+	return -1;
 fail_oom:
 	fputs("detecting hard links in file system tree: out of memory\n",
 	      stderr);

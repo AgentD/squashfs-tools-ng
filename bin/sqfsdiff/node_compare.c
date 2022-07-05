@@ -8,13 +8,14 @@
 
 int node_compare(sqfsdiff_t *sd, sqfs_tree_node_t *a, sqfs_tree_node_t *b)
 {
-	char *path = sqfs_tree_node_get_path(a);
 	sqfs_tree_node_t *ait, *bit;
 	bool promoted, demoted;
 	int ret, status = 0;
+	char *path;
 
-	if (path == NULL) {
-		perror("constructing absolute file path");
+	ret = sqfs_tree_node_get_path(a, &path);
+	if (ret != 0) {
+		sqfs_perror(NULL, "constructing absolute file path", ret);
 		return -1;
 	}
 

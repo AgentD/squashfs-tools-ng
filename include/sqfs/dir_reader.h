@@ -397,13 +397,23 @@ SQFS_API void sqfs_dir_tree_destroy(sqfs_tree_node_t *root);
  * non-root nodes. The resulting path is slash separated, but (except for
  * the root) never ends with a slash.
  *
+ * While walking the node list, the function enforces various invariantes. It
+ * returns @ref SQFS_ERROR_LINK_LOOP if the list of parent pointers is cyclical,
+ * @ref SQFS_ERROR_CORRUPTED if any node has an empty name, or a name that
+ * contains '/' or equals ".." or ".". The function
+ * returns @ref SQFS_ERROR_ARG_INVALID if given NULL node or the root has a name
+ * set. Additionally, the function can return overflow or allocation failures
+ * while constructing the path.
+ *
  * The returned string needs to be free'd with @ref sqfs_free.
  *
  * @param node A pointer to a tree node.
+ * @param out Returns a pointer to a string on success, set to NULL on failure.
  *
- * @return A pointer to a string on success, NULL on allocation failure.
+ * @return Zero on success, an @ref SQFS_ERROR value on failure.
  */
-SQFS_API char *sqfs_tree_node_get_path(const sqfs_tree_node_t *node);
+SQFS_API int sqfs_tree_node_get_path(const sqfs_tree_node_t *node,
+				     char **out);
 
 #ifdef __cplusplus
 }
