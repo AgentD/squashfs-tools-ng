@@ -10,8 +10,11 @@ test_xattr_writer_LDADD = libsquashfs.la libcompat.a
 xattr_benchmark_SOURCES = tests/libsqfs/xattr_benchmark.c
 xattr_benchmark_LDADD = libcommon.a libsquashfs.la libcompat.a
 
+test_get_node_path_SOURCES = tests/libsqfs/get_node_path.c
+test_get_node_path_LDADD = libcommon.a libsquashfs.la libcompat.a
+
 LIBSQFS_TESTS = \
-	test_abi test_table test_xattr_writer
+	test_abi test_table test_xattr_writer test_get_node_path
 
 if BUILD_TOOLS
 noinst_PROGRAMS += xattr_benchmark
