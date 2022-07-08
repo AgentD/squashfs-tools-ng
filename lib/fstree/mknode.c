@@ -88,7 +88,7 @@ tree_node_t *fstree_mknode(tree_node_t *parent, const char *name,
 	}
 
 	if (parent != NULL) {
-		if (parent->link_count == 0x0FFFF) {
+		if (parent->link_count == 0xFFFFFFFF) {
 			free(n);
 			errno = EMLINK;
 			return NULL;
