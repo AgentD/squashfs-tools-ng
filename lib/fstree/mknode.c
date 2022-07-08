@@ -88,14 +88,13 @@ tree_node_t *fstree_mknode(tree_node_t *parent, const char *name,
 	}
 
 	if (parent != NULL) {
-		fstree_insert_sorted(parent, n);
-
 		if (parent->link_count == 0x0FFFF) {
 			free(n);
 			errno = EMLINK;
 			return NULL;
 		}
 
+		fstree_insert_sorted(parent, n);
 		parent->link_count++;
 	}
 
