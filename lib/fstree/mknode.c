@@ -33,12 +33,6 @@ tree_node_t *fstree_mknode(tree_node_t *parent, const char *name,
 	if (n == NULL)
 		return NULL;
 
-	if (parent != NULL) {
-		n->next = parent->data.dir.children;
-		parent->data.dir.children = n;
-		n->parent = parent;
-	}
-
 	n->xattr_idx = 0xFFFFFFFF;
 	n->uid = sb->st_uid;
 	n->gid = sb->st_gid;
@@ -80,6 +74,10 @@ tree_node_t *fstree_mknode(tree_node_t *parent, const char *name,
 			errno = EMLINK;
 			return NULL;
 		}
+
+		n->next = parent->data.dir.children;
+		parent->data.dir.children = n;
+		n->parent = parent;
 
 		parent->link_count++;
 	}
