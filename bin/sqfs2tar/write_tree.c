@@ -182,8 +182,12 @@ int write_tree(const sqfs_tree_node_t *n)
 	int status = -1;
 
 	if (!no_links) {
-		if (sqfs_tree_find_hard_links(n, &links))
+		int ret = sqfs_tree_find_hard_links(n, &links);
+		if (ret) {
+			sqfs_perror(NULL, "detecting hard links in "
+				    "file system tree", ret);
 			return -1;
+		}
 
 		for (lnk = links; lnk != NULL; lnk = lnk->next) {
 			lnk->target = assemble_tar_path(lnk->target, false);
