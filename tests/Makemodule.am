@@ -6,8 +6,10 @@ include tests/libsqfs/Makemodule.am
 
 if BUILD_TOOLS
 if CORPORA_TESTS
-check_SCRIPTS += tests/cantrbry.sh tests/test_tar_sqfs.sh tests/pack_dir_root.sh
-TESTS += tests/cantrbry.sh tests/test_tar_sqfs.sh tests/pack_dir_root.sh
+check_SCRIPTS += tests/cantrbry.sh tests/test_tar_sqfs.sh \
+		tests/pack_dir_root.sh tests/tarcompress.sh
+TESTS += tests/cantrbry.sh tests/test_tar_sqfs.sh \
+	tests/pack_dir_root.sh tests/tarcompress.sh
 endif
 endif
 

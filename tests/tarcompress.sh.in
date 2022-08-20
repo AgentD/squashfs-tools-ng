@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 set -e
 
@@ -31,18 +31,41 @@ rm "$DIR/out2.sqfs" "$DIR/out3.sqfs"
 rm "$DIR/linux-3.11.tar.bz2"
 rm "$DIR/linux-3.11.tar.gz"
 
+# unpack tarball and squashfs image
+tar -C "$DIR" -xf "$DIR/linux-3.11.tar.xz"
+rm "$DIR/linux-3.11.tar.xz"
+
+"$RDSQFS" -DSF -u / -p "$DIR/sqfs/" "$DIR/out1.sqfs"
+rm "$DIR/out1.sqfs"
+
 # every file that exists in the tar ball MUST exist in the squashfs image
 # and they MUST be identical
-tar -C "$DIR" -xf "$DIR/linux-3.11.tar.xz"
-
 find "$DIR/linux-3.11" -type f | sed "s#$DIR/##" | \
 while read fname; do
-	"$RDSQFS" -c "$fname" "$DIR/out1.sqfs" > "$DIR/temp"
-
-	diff "$DIR/$fname" "$DIR/temp"
+	set -e
+	diff "$DIR/$fname" "$DIR/sqfs/$fname"
+	rm "$DIR/sqfs/$fname" "$DIR/$fname"
+	echo "match $DIR/$fname"
 done
 
-# cleanup
-rm "$DIR/temp" "$DIR/out1.sqfs" "$DIR/linux-3.11.tar.xz"
-rm --one-file-system -rf "$DIR/linux-3.11"
+find "$DIR/linux-3.11" -type l | sed "s#$DIR/##" | \
+while read fname; do
+	set -e
+	a=$(readlink "$DIR/$fname")
+	b=$(readlink "$DIR/sqfs/$fname")
+	[ "x$a" = "x$b" ] || exit 1
+	unlink "$DIR/sqfs/$fname"
+	unlink "$DIR/$fname"
+	echo "match $DIR/$fname"
+done
+
+# match directories and cleanup at the same time
+find "$DIR/linux-3.11" -type d | sed "s#$DIR/##" | sort -ur | \
+while read fname; do
+	set -e
+	rmdir "$DIR/$fname" "$DIR/sqfs/$fname"
+done
+
+rmdir "$DIR/sqfs"
 rmdir "$DIR"
+echo "DONE!"
