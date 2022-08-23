@@ -72,11 +72,17 @@ static int tree_sort(sqfs_tree_node_t *root)
 		if (strcmp((const char *)it->name,
 			   (const char *)it->next->name) == 0) {
 			char *path;
+			int ret;
 
-			sqfs_tree_node_get_path(it, &path);
+			ret = sqfs_tree_node_get_path(it, &path);
 
-			fprintf(stderr, "Entry '%s' found more than once!\n",
-				path);
+			if (ret == 0) {
+				fprintf(stderr,
+					"Entry '%s' found more than once!\n",
+					path);
+			} else {
+				fputs("Entry found more than once!\n", stderr);
+			}
 
 			sqfs_free(path);
 			return -1;
