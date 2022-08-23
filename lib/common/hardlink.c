@@ -32,7 +32,7 @@ static int map_nodes(rbtree_t *inumtree, sqfs_hard_link_t **out,
 	}
 
 	if (!is_filename_sane((const char *)n->name, false))
-		return 0;
+		return SQFS_ERROR_CORRUPTED;
 
 	idx = n->inode->base.inode_number;
 	tn = rbtree_lookup(inumtree, &idx);
@@ -53,13 +53,14 @@ static int map_nodes(rbtree_t *inumtree, sqfs_hard_link_t **out,
 		return ret;
 	}
 
-	if (canonicalize_name(lnk->target) == 0) {
-		lnk->next = (*out);
-		(*out) = lnk;
-	} else {
+	if (canonicalize_name(lnk->target) != 0) {
 		sqfs_free(lnk->target);
 		free(lnk);
+		return SQFS_ERROR_CORRUPTED;
 	}
+
+	lnk->next = (*out);
+	(*out) = lnk;
 	return 0;
 }
 
