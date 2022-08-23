@@ -18,7 +18,6 @@ static int precache(istream_t *base)
 {
 	istream_t *wrapped = ((istream_comp_t *)base)->wrapped;
 	istream_gzip_t *gzip = (istream_gzip_t *)base;
-	size_t avail_in, avail_out;
 	int ret;
 
 	for (;;) {
@@ -26,22 +25,8 @@ static int precache(istream_t *base)
 		if (ret != 0)
 			return ret;
 
-		avail_in = wrapped->buffer_used;
-		avail_out = BUFSZ - base->buffer_used;
-
-		if (sizeof(size_t) > sizeof(uInt)) {
-			gzip->strm.avail_in = ~((uInt)0U);
-			gzip->strm.avail_out = ~((uInt)0U);
-
-			if ((size_t)gzip->strm.avail_in > avail_in)
-				gzip->strm.avail_in = (uInt)avail_in;
-
-			if ((size_t)gzip->strm.avail_out > avail_out)
-				gzip->strm.avail_out = (uInt)avail_out;
-		} else {
-			gzip->strm.avail_in = (uInt)avail_in;
-			gzip->strm.avail_out = (uInt)avail_out;
-		}
+		gzip->strm.avail_in = (uInt)wrapped->buffer_used;
+		gzip->strm.avail_out = (uInt)(BUFSZ - base->buffer_used);
 
 		gzip->strm.next_in = wrapped->buffer;
 		gzip->strm.next_out = base->buffer + base->buffer_used;
