@@ -817,7 +817,7 @@ The directory header has the following structure:
 | u32 | start | The location of the metadata block in the inode table
                 where the inodes are stored. This is relative to the
                 inode table start from the super block.
-| s32 | inode number | An arbitrary inode number. The entries that follow
+| u32 | inode number | An arbitrary inode number. The entries that follow
                        store their inode number as a difference to this.
 |===
 
