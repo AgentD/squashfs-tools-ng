@@ -54,43 +54,19 @@ static int store_block_location(block_writer_default_t *wr, sqfs_u64 offset,
 	return array_append(&(wr->blocks), &info);
 }
 
-static int compare_blocks(block_writer_default_t *wr, sqfs_u64 loc_a,
-			  sqfs_u64 loc_b, size_t size)
-{
-	sqfs_u8 *ptr_a = wr->scratch, *ptr_b = ptr_a + SCRATCH_SIZE / 2;
-	size_t diff;
-	int ret;
-
-	while (size > 0) {
-		diff = SCRATCH_SIZE / 2;
-		diff = diff > size ? size : diff;
-
-		ret = wr->file->read_at(wr->file, loc_a, ptr_a, diff);
-		if (ret != 0)
-			return ret;
-
-		ret = wr->file->read_at(wr->file, loc_b, ptr_b, diff);
-		if (ret != 0)
-			return ret;
-
-		if (memcmp(ptr_a, ptr_b, diff) != 0)
-			return 1;
-
-		size -= diff;
-		loc_a += diff;
-		loc_b += diff;
-	}
-
-	return 0;
-}
-
 static int deduplicate_blocks(block_writer_default_t *wr, size_t count,
 			      size_t *out)
 {
 	const blk_info_t *blocks = wr->blocks.data;
-	sqfs_u64 loc_a, loc_b;
-	size_t i, j, sz;
+	sqfs_u64 loc_a, loc_b, sz;
+	size_t i, j;
 	int ret;
+
+	sz = 0;
+	loc_a = blocks[wr->file_start].offset;
+
+	for (i = 0; i < count; ++i)
+		sz += SIZE_FROM_HASH(blocks[wr->file_start + i].hash);
 
 	for (i = 0; i < wr->file_start; ++i) {
 		for (j = 0; j < count; ++j) {
@@ -108,21 +84,14 @@ static int deduplicate_blocks(block_writer_default_t *wr, size_t count,
 		if (wr->flags & SQFS_BLOCK_WRITER_HASH_COMPARE_ONLY)
 			break;
 
-		for (j = 0; j < count; ++j) {
-			sz = SIZE_FROM_HASH(blocks[i + j].hash);
+		loc_b = blocks[i].offset;
 
-			loc_a = blocks[i + j].offset;
-			loc_b = blocks[wr->file_start + j].offset;
-
-			ret = compare_blocks(wr, loc_a, loc_b, sz);
-			if (ret < 0)
-				return ret;
-			if (ret > 0)
-				break;
-		}
-
-		if (j == count)
+		ret = check_file_range_equal(wr->file, wr->scratch,
+					     SCRATCH_SIZE, loc_a, loc_b, sz);
+		if (ret == 0)
 			break;
+		if (ret < 0)
+			return ret;
 	}
 
 	*out = i;

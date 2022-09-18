@@ -44,7 +44,7 @@ libsquashfs_la_LIBADD += $(ZSTD_LIBS) $(PTHREAD_LIBS)
 
 # directly "import" stuff from libutil
 libsquashfs_la_SOURCES += lib/util/str_table.c lib/util/alloc.c
-libsquashfs_la_SOURCES += lib/util/xxhash.c
+libsquashfs_la_SOURCES += lib/util/xxhash.c lib/util/file_cmp.c
 libsquashfs_la_SOURCES += lib/util/hash_table.c include/util/hash_table.h
 libsquashfs_la_SOURCES += lib/util/rbtree.c include/util/rbtree.h
 libsquashfs_la_SOURCES += lib/util/array.c include/util/array.h

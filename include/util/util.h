@@ -69,4 +69,12 @@ SQFS_INTERNAL bool is_filename_sane(const char *name, bool check_os_specific);
  */
 SQFS_INTERNAL sqfs_u32 get_source_date_epoch(void);
 
+/*
+  Check if two regions in a file are equal using a scratch buffer to load the
+  data into for comparision. Returns 0 if equal, > 0 if not, < 0 if error.
+ */
+SQFS_INTERNAL int check_file_range_equal(sqfs_file_t *file, void *scratch,
+					 size_t scratch_size, sqfs_u64 loc_a,
+					 sqfs_u64 loc_b, sqfs_u64 size);
+
 #endif /* SQFS_UTIL_H */
