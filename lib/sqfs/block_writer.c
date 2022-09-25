@@ -38,7 +38,6 @@ typedef struct {
 	array_t blocks;
 	size_t devblksz;
 
-	sqfs_u64 start;
 	size_t file_start;
 
 	sqfs_u32 flags;
@@ -54,13 +53,23 @@ static int store_block_location(block_writer_default_t *wr, sqfs_u64 offset,
 	return array_append(&(wr->blocks), &info);
 }
 
-static int deduplicate_blocks(block_writer_default_t *wr, size_t count,
-			      size_t *out)
+static int deduplicate_blocks(block_writer_default_t *wr, sqfs_u32 flags, sqfs_u64 *out)
 {
 	const blk_info_t *blocks = wr->blocks.data;
 	sqfs_u64 loc_a, loc_b, sz;
-	size_t i, j;
+	size_t i, j, count;
 	int ret;
+
+	count = wr->blocks.used - wr->file_start;
+	if (count == 0) {
+		*out = 0;
+		return 0;
+	}
+
+	if (flags & SQFS_BLK_DONT_DEDUPLICATE) {
+		*out = blocks[wr->file_start].offset;
+		return 0;
+	}
 
 	sz = 0;
 	loc_a = blocks[wr->file_start].offset;
@@ -94,16 +103,31 @@ static int deduplicate_blocks(block_writer_default_t *wr, size_t count,
 			return ret;
 	}
 
-	*out = i;
-	return 0;
+	*out = blocks[i].offset;
+	if (i >= wr->file_start)
+		return 0;
+
+	if (count >= (wr->file_start - i)) {
+		wr->blocks.used = i + count;
+	} else {
+		wr->blocks.used = wr->file_start;
+	}
+
+	sz = blocks[wr->blocks.used - 1].offset +
+		SIZE_FROM_HASH(blocks[wr->blocks.used - 1].hash);
+
+	return wr->file->truncate(wr->file, sz);
 }
 
-static int align_file(block_writer_default_t *wr)
+static int align_file(block_writer_default_t *wr, sqfs_u32 flags)
 {
 	void *padding;
 	sqfs_u64 size;
 	size_t diff;
 	int ret;
+
+	if (!(flags & SQFS_BLK_ALIGN))
+		return 0;
 
 	size = wr->file->get_size(wr->file);
 	diff = size % wr->devblksz;
@@ -133,28 +157,22 @@ static int write_data_block(sqfs_block_writer_t *base, void *user,
 			    const sqfs_u8 *data, sqfs_u64 *location)
 {
 	block_writer_default_t *wr = (block_writer_default_t *)base;
-	size_t start, count;
-	sqfs_u32 out;
 	int err;
 	(void)user;
 
 	if (flags & (SQFS_BLK_FIRST_BLOCK | SQFS_BLK_FRAGMENT_BLOCK)) {
-		if (flags & SQFS_BLK_ALIGN) {
-			err = align_file(wr);
-			if (err)
-				return err;
-		}
+		err = align_file(wr, flags);
+		if (err)
+			return err;
 
-		if (flags & SQFS_BLK_FIRST_BLOCK) {
-			wr->start = wr->file->get_size(wr->file);
+		if (flags & SQFS_BLK_FIRST_BLOCK)
 			wr->file_start = wr->blocks.used;
-		}
 	}
 
 	*location = wr->file->get_size(wr->file);
 
 	if (size != 0 && !(flags & SQFS_BLK_IS_SPARSE)) {
-		out = size;
+		sqfs_u32 out = size;
 		if (!(flags & SQFS_BLK_IS_COMPRESSED))
 			out |= 1 << 24;
 
@@ -167,40 +185,13 @@ static int write_data_block(sqfs_block_writer_t *base, void *user,
 			return err;
 	}
 
-	if (flags & SQFS_BLK_ALIGN) {
-		if (flags & (SQFS_BLK_LAST_BLOCK | SQFS_BLK_FRAGMENT_BLOCK)) {
-			err = align_file(wr);
-			if (err)
-				return err;
-		}
-	}
+	if (flags & (SQFS_BLK_LAST_BLOCK | SQFS_BLK_FRAGMENT_BLOCK)) {
+		err = align_file(wr, flags);
+		if (err)
+			return err;
 
-	if (flags & SQFS_BLK_LAST_BLOCK) {
-		count = wr->blocks.used - wr->file_start;
-
-		if (count == 0) {
-			*location = 0;
-		} else if (!(flags & SQFS_BLK_DONT_DEDUPLICATE)) {
-			err = deduplicate_blocks(wr, count, &start);
-			if (err)
-				return err;
-
-			*location = ((blk_info_t *)
-				     wr->blocks.data)[start].offset;
-
-			if (start >= wr->file_start)
-				return 0;
-
-			if (count >= (wr->file_start - start)) {
-				wr->blocks.used = start + count;
-			} else {
-				wr->blocks.used = wr->file_start;
-			}
-
-			err = wr->file->truncate(wr->file, wr->start);
-			if (err)
-				return err;
-		}
+		if (flags & SQFS_BLK_LAST_BLOCK)
+			return deduplicate_blocks(wr, flags, location);
 	}
 
 	return 0;
