@@ -212,4 +212,5 @@ void mem_pool_free(mem_pool_t *mem, void *ptr)
 	assert((it->bitmap[i] & (1 << j)) != 0);
 
 	it->bitmap[i] &= ~(1 << j);
+	it->obj_free += 1;
 }
