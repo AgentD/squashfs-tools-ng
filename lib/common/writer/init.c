@@ -10,16 +10,20 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 
-#ifdef HAVE_SYS_SYSINFO_H
-#include <sys/sysinfo.h>
+#ifdef HAVE_SCHED_GETAFFINITY
+#include <sched.h>
 
 static size_t os_get_num_jobs(void)
 {
-	int nprocs;
+	cpu_set_t cpu_set;
+	CPU_ZERO(&cpu_set);
 
-	nprocs = get_nprocs_conf();
-	return nprocs < 1 ? 1 : nprocs;
+	if (sched_getaffinity(0, sizeof cpu_set, &cpu_set) == -1)
+		return 1;
+	else
+		return CPU_COUNT(&cpu_set);
 }
 #else
 static size_t os_get_num_jobs(void)

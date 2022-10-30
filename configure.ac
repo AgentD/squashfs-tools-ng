@@ -287,10 +287,9 @@ AS_IF([test "x$have_compressor" != "xyes"],
 
 ##### additional checks #####
 AC_CHECK_HEADERS([sys/xattr.h], [], [])
-AC_CHECK_HEADERS([sys/sysinfo.h], [], [])
 AC_CHECK_HEADERS([alloca.h], [], [])
 
-AC_CHECK_FUNCS([strndup getopt getopt_long getsubopt fnmatch strchrnul])
+AC_CHECK_FUNCS([strndup getopt getopt_long getsubopt fnmatch strchrnul sched_getaffinity])
 
 ##### generate output #####
 
