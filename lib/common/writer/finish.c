@@ -39,7 +39,7 @@ static void print_statistics(const sqfs_super_t *super,
 	fputc('\n', stdout);
 
 	printf("Data blocks written: " PRI_U64 "\n", blocks_written);
-	printf("Out of which where fragment blocks: " PRI_U64 "\n",
+	printf("Out of which were fragment blocks: " PRI_U64 "\n",
 	       proc_stats->frag_block_count);
 
 	printf("Duplicate blocks omitted: " PRI_U64 "\n",
