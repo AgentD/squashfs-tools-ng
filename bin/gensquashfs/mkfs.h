@@ -3,6 +3,7 @@
  * mkfs.h
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
+ * Copyright (C) 2022 Enno Boland <mail@eboland.de>
  */
 #ifndef MKFS_H
 #define MKFS_H
@@ -59,6 +60,23 @@ typedef struct {
 
 	bool scan_xattr;
 } options_t;
+
+struct XattrMapEntry {
+	char *key;
+	char *value;
+	size_t value_len;
+	struct XattrMapEntry *next;
+};
+
+struct XattrMapPattern {
+	char *path;
+	struct XattrMapEntry *entries;
+	struct XattrMapPattern *next;
+};
+
+struct XattrMap {
+	struct XattrMapPattern *patterns;
+};
 
 void process_command_line(options_t *opt, int argc, char **argv);
 

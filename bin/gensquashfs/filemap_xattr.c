@@ -10,23 +10,6 @@
 
 #define NEW_FILE_START "# file: "
 
-struct XattrMapEntry {
-	char *key;
-	char *value;
-	size_t value_len;
-	struct XattrMapEntry *next;
-};
-
-struct XattrMapPattern {
-	char *path;
-	struct XattrMapEntry *entries;
-	struct XattrMapPattern *next;
-};
-
-struct XattrMap {
-	struct XattrMapPattern *patterns;
-};
-
 // Taken from attr-2.5.1/tools/setfattr.c
 static int
 hex_digit(char c) {
