@@ -26,15 +26,6 @@ static sqfs_u8 base64_convert(char in)
 	return 0;
 }
 
-static int xdigit(int x)
-{
-	if (isupper(x))
-		return x - 'A' + 0x0A;
-	if (islower(x))
-		return x - 'a' + 0x0A;
-	return x - '0';
-}
-
 static size_t base64_decode(sqfs_u8 *out, const char *in, size_t len)
 {
 	sqfs_u8 *start = out;
@@ -91,14 +82,13 @@ static void urldecode(char *str)
 {
 	unsigned char *out = (unsigned char *)str;
 	char *in = str;
-	int x;
 
 	while (*in != '\0') {
-		x = *(in++);
+		sqfs_u8 x = *(in++);
 
 		if (x == '%' && isxdigit(in[0]) && isxdigit(in[1])) {
-			x = xdigit(*(in++)) << 4;
-			x |= xdigit(*(in++));
+			hex_decode(in, 2, &x, 1);
+			in += 2;
 		}
 
 		*(out++) = x;

@@ -12,19 +12,6 @@
 
 // Taken from attr-2.5.1/tools/setfattr.c
 static int
-hex_digit(char c) {
-	if (c >= '0' && c <= '9')
-		return c - '0';
-	else if (c >= 'A' && c <= 'F')
-		return c - 'A' + 10;
-	else if (c >= 'a' && c <= 'f')
-		return c - 'a' + 10;
-	else
-		return -1;
-}
-
-// Taken from attr-2.5.1/tools/setfattr.c
-static int
 base64_digit(char c) {
 	if (c >= 'A' && c <= 'Z')
 		return c - 'A';
@@ -50,36 +37,18 @@ decode(const char *value, size_t *size) {
 	if (*size == 0)
 		return strdup("");
 	if (value[0] == '0' && (value[1] == 'x' || value[1] == 'X')) {
-		const char *v = value + 2, *end = value + *size;
-		char *d;
+		*size = ((*size) - 2) / 2;
 
-		decoded = realloc(decoded, *size / 2);
+		decoded = realloc(decoded, *size);
 		if (decoded == NULL) {
 			return NULL;
 		}
-		d = decoded;
-		while (v < end) {
-			int d1, d0;
 
-			while (v < end && isspace(*v))
-				v++;
-			if (v == end)
-				break;
-			d1 = hex_digit(*v++);
-			while (v < end && isspace(*v))
-				v++;
-			if (v == end) {
-			bad_hex_encoding:
-				fprintf(stderr, "bad input encoding\n");
-				free(decoded);
-				return NULL;
-			}
-			d0 = hex_digit(*v++);
-			if (d1 < 0 || d0 < 0)
-				goto bad_hex_encoding;
-			*d++ = ((d1 << 4) | d0);
+		if (hex_decode(value + 2, (*size) * 2, decoded, *size)) {
+			fprintf(stderr, "bad input encoding\n");
+			free(decoded);
+			return NULL;
 		}
-		*size = d - decoded;
 	} else if (value[0] == '0' && (value[1] == 's' || value[1] == 'S')) {
 		const char *v = value + 2, *end = value + *size;
 		int d0, d1, d2, d3;

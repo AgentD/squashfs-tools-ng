@@ -11,6 +11,7 @@
 
 #include "tar/tar.h"
 #include "tar/format.h"
+#include "util/util.h"
 
 enum {
 	PAX_SIZE = 0x001,

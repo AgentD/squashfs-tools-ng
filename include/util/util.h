@@ -77,4 +77,7 @@ SQFS_INTERNAL int check_file_range_equal(sqfs_file_t *file, void *scratch,
 					 size_t scratch_size, sqfs_u64 loc_a,
 					 sqfs_u64 loc_b, sqfs_u64 size);
 
+SQFS_INTERNAL int hex_decode(const char *in, size_t in_sz,
+			     sqfs_u8 *out, size_t out_sz);
+
 #endif /* SQFS_UTIL_H */
