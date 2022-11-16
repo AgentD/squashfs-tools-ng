@@ -1,0 +1,9 @@
+# file: dev/
+security.selinux="system_u:object_r:device_t:s0"
+
+# file: dev/zero
+security.selinux="system_u:object_r:zero_device_t:s0"
+
+# file: dev/rfkill
+security.selinux="system_u:object_r:wireless_device_t:s0"
+system.posix_acl_access=0sAgAAAAEABgD/////AgAGAOgDAAAEAAYA/////xAABgD/////IAAEAP////8=

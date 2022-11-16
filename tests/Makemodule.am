@@ -3,6 +3,7 @@ include tests/libio/Makemodule.am
 include tests/libfstree/Makemodule.am
 include tests/libtar/Makemodule.am
 include tests/libsqfs/Makemodule.am
+include tests/gensquashfs/Makemodule.am
 
 if BUILD_TOOLS
 if CORPORA_TESTS

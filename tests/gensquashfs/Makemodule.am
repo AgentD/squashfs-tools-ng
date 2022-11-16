@@ -1,0 +1,20 @@
+GENDATADIR=$(top_srcdir)/tests/gensquashfs
+
+test_filemap_xattr_SOURCES = tests/gensquashfs/filemap_xattr.c \
+				bin/gensquashfs/filemap_xattr.c \
+				bin/gensquashfs/mkfs.h
+test_filemap_xattr_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/bin/gensquashfs
+test_filemap_xattr_CPPFLAGS += -DTESTPATH=$(GENDATADIR)/xattr1.txt
+test_filemap_xattr_LDADD = libsquashfs.la libfstree.a libutil.a
+test_filemap_xattr_LDADD += libio.a libcompat.a
+
+GENSQUASHFS_TESTS = \
+	test_filemap_xattr
+
+if BUILD_TOOLS
+check_PROGRAMS += $(GENSQUASHFS_TESTS)
+TESTS += $(GENSQUASHFS_TESTS)
+endif
+
+EXTRA_DIST += $(GENDATADIR)/xattr1.txt
+
