@@ -86,15 +86,9 @@ decode(const char *value, size_t *size) {
 
 static int
 parse_file_name(char *line, struct XattrMap *map) {
-	char *p;
 	struct XattrMapPattern *current_file;
-	char *file_name = &line[strlen(NEW_FILE_START)];
+	char *file_name = strdup(line + strlen(NEW_FILE_START));
 
-	p = strchr(file_name, '\n');
-	if (p != NULL) {
-		*p = '\0';
-	}
-	file_name = strdup(file_name);
 	if (file_name == NULL) {
 		return -1;
 	}
@@ -114,17 +108,9 @@ parse_file_name(char *line, struct XattrMap *map) {
 
 static int
 parse_xattr(char *key_start, char *value_start, struct XattrMap *map) {
-	char *p;
 	size_t len;
 	struct XattrMapPattern *current_pattern = map->patterns;
 	struct XattrMapEntry *current_entry;
-
-	*value_start = '\0';
-	value_start += 1;
-	p = strchr(value_start, '\n');
-	if (p != NULL) {
-		*p = '\0';
-	}
 
 	current_entry = calloc(1, sizeof(struct XattrMapEntry));
 	if (current_entry == NULL) {
@@ -144,10 +130,9 @@ parse_xattr(char *key_start, char *value_start, struct XattrMap *map) {
 void *
 xattr_open_map_file(const char *path) {
 	struct XattrMap *map;
-	char *line = NULL;
-	size_t line_size;
+	size_t line_num = 1;
 	char *p = NULL;
-	FILE *file = fopen(path, "r");
+	istream_t *file = istream_open_file(path);
 	if (file == NULL) {
 		return NULL;
 	}
@@ -156,23 +141,36 @@ xattr_open_map_file(const char *path) {
 	if (map == NULL)
 		goto fail_close;
 
-	while (getline(&line, &line_size, file) != -1) {
+	for (;;) {
+		char *line = NULL;
+		int ret = istream_get_line(file, &line, &line_num,
+					   ISTREAM_LINE_LTRIM |
+					   ISTREAM_LINE_RTRIM |
+					   ISTREAM_LINE_SKIP_EMPTY);
+		if (ret < 0)
+			goto fail;
+		if (ret > 0)
+			break;
+
 		if (strncmp(NEW_FILE_START, line, strlen(NEW_FILE_START)) == 0) {
-			if (parse_file_name(line, map) < 0)
-				goto fail;
+			ret = parse_file_name(line, map);
 		} else if ((p = strchr(line, '=')) && map->patterns) {
-			if (parse_xattr(line, p, map) < 0)
-				goto fail;
+			*(p++) = '\0';
+			ret = parse_xattr(line, p, map);
 		}
+
+		++line_num;
+		free(line);
+		if (ret < 0)
+			goto fail;
 	}
 
-	free(line);
-	fclose(file);
+	sqfs_destroy(file);
 	return map;
 fail:
 	xattr_close_map_file(map);
 fail_close:
-	fclose(file);
+	sqfs_destroy(file);
 	return NULL;
 }
 

@@ -13,6 +13,7 @@
 #include "common.h"
 #include "fstree.h"
 #include "util/util.h"
+#include "io/file.h"
 
 #ifdef HAVE_SYS_XATTR_H
 #include <sys/xattr.h>
