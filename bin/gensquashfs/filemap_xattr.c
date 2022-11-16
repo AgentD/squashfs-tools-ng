@@ -153,30 +153,27 @@ xattr_open_map_file(const char *path) {
 	}
 
 	map = calloc(1, sizeof(struct XattrMap));
-	if (map == NULL) {
-		fclose(file);
-		return NULL;
-	}
+	if (map == NULL)
+		goto fail_close;
 
 	while (getline(&line, &line_size, file) != -1) {
 		if (strncmp(NEW_FILE_START, line, strlen(NEW_FILE_START)) == 0) {
-			if (parse_file_name(line, map) < 0) {
-				fclose(file);
-				xattr_close_map_file(map);
-				return NULL;
-			}
+			if (parse_file_name(line, map) < 0)
+				goto fail;
 		} else if ((p = strchr(line, '=')) && map->patterns) {
-			if (parse_xattr(line, p, map) < 0) {
-				fclose(file);
-				xattr_close_map_file(map);
-				return NULL;
-			}
+			if (parse_xattr(line, p, map) < 0)
+				goto fail;
 		}
 	}
 
 	free(line);
 	fclose(file);
 	return map;
+fail:
+	xattr_close_map_file(map);
+fail_close:
+	fclose(file);
+	return NULL;
 }
 
 void
@@ -189,13 +186,10 @@ xattr_close_map_file(void *xattr_map) {
 			struct XattrMapEntry *entry = file->entries;
 			file->entries = entry->next;
 			free(entry->key);
-			entry->key = NULL;
 			free(entry->value);
-			entry->value = NULL;
 			free(entry);
 		}
 		free(file->path);
-		file->path = NULL;
 		free(file);
 	}
 	free(xattr_map);
