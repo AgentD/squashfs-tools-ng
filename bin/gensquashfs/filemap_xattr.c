@@ -11,25 +11,6 @@
 #define NEW_FILE_START "# file: "
 
 // Taken from attr-2.5.1/tools/setfattr.c
-static int
-base64_digit(char c) {
-	if (c >= 'A' && c <= 'Z')
-		return c - 'A';
-	else if (c >= 'a' && c <= 'z')
-		return 26 + c - 'a';
-	else if (c >= '0' && c <= '9')
-		return 52 + c - '0';
-	else if (c == '+')
-		return 62;
-	else if (c == '/')
-		return 63;
-	else if (c == '=')
-		return -2;
-	else
-		return -1;
-}
-
-// Taken from attr-2.5.1/tools/setfattr.c
 static char *
 decode(const char *value, size_t *size) {
 	char *decoded = NULL;
@@ -50,71 +31,20 @@ decode(const char *value, size_t *size) {
 			return NULL;
 		}
 	} else if (value[0] == '0' && (value[1] == 's' || value[1] == 'S')) {
-		const char *v = value + 2, *end = value + *size;
-		int d0, d1, d2, d3;
-		char *d;
+		size_t input_len = *size - 2;
 
-		decoded = realloc(decoded, *size / 4 * 3);
+		*size = (input_len / 4) * 3;
+
+		decoded = realloc(decoded, *size);
 		if (decoded == NULL) {
 			return NULL;
 		}
-		d = decoded;
-		for (;;) {
-			while (v < end && isspace(*v))
-				v++;
-			if (v == end) {
-				d0 = d1 = d2 = d3 = -2;
-				break;
-			}
-			if (v + 4 > end) {
-			bad_base64_encoding:
-				free(decoded);
-				fprintf(stderr, "bad input encoding\n");
-				return NULL;
-			}
-			d0 = base64_digit(*v++);
-			d1 = base64_digit(*v++);
-			d2 = base64_digit(*v++);
-			d3 = base64_digit(*v++);
-			if (d0 < 0 || d1 < 0 || d2 < 0 || d3 < 0)
-				break;
 
-			*d++ = (char)((d0 << 2) | (d1 >> 4));
-			*d++ = (char)((d1 << 4) | (d2 >> 2));
-			*d++ = (char)((d2 << 6) | d3);
+		if (base64_decode(value + 2, input_len, decoded, size)) {
+			free(decoded);
+			fprintf(stderr, "bad input encoding\n");
+			return NULL;
 		}
-		if (d0 == -2) {
-			if (d1 != -2 || d2 != -2 || d3 != -2)
-				goto bad_base64_encoding;
-			goto base64_end;
-		}
-		if (d0 == -1 || d1 < 0 || d2 == -1 || d3 == -1)
-			goto bad_base64_encoding;
-		*d++ = (char)((d0 << 2) | (d1 >> 4));
-		if (d2 != -2)
-			*d++ = (char)((d1 << 4) | (d2 >> 2));
-		else {
-			if (d1 & 0x0F || d3 != -2)
-				goto bad_base64_encoding;
-			goto base64_end;
-		}
-		if (d3 != -2)
-			*d++ = (char)((d2 << 6) | d3);
-		else if (d2 & 0x03)
-			goto bad_base64_encoding;
-	base64_end:
-		while (v < end && isspace(*v))
-			v++;
-		if (v + 4 <= end && *v == '=') {
-			if (*++v != '=' || *++v != '=' || *++v != '=')
-				goto bad_base64_encoding;
-			v++;
-		}
-		while (v < end && isspace(*v))
-			v++;
-		if (v < end)
-			goto bad_base64_encoding;
-		*size = d - decoded;
 	} else {
 		const char *v = value, *end = value + *size;
 		char *d;

@@ -80,4 +80,7 @@ SQFS_INTERNAL int check_file_range_equal(sqfs_file_t *file, void *scratch,
 SQFS_INTERNAL int hex_decode(const char *in, size_t in_sz,
 			     sqfs_u8 *out, size_t out_sz);
 
+SQFS_INTERNAL int base64_decode(const char *in, size_t in_len,
+				sqfs_u8 *out, size_t *out_len);
+
 #endif /* SQFS_UTIL_H */

@@ -15,6 +15,7 @@ libutil_a_SOURCES += lib/util/filename_sane.c
 libutil_a_SOURCES += lib/util/source_date_epoch.c
 libutil_a_SOURCES += lib/util/file_cmp.c
 libutil_a_SOURCES += lib/util/hex_decode.c
+libutil_a_SOURCES += lib/util/base64_decode.c
 libutil_a_CFLAGS = $(AM_CFLAGS)
 libutil_a_CPPFLAGS = $(AM_CPPFLAGS)
 
