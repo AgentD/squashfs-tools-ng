@@ -92,6 +92,8 @@ int sqfs_compressor_create(const sqfs_compressor_config_t *cfg,
 	sqfs_u8 padd0[sizeof(cfg->opt)];
 	int ret;
 
+	*out = NULL;
+
 	/* check compressor ID */
 	if (cfg == NULL)
 		return SQFS_ERROR_ARG_INVALID;
