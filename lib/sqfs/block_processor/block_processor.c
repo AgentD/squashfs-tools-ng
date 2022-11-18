@@ -68,7 +68,7 @@ static int load_frag_block(sqfs_block_processor_t *proc, sqfs_u32 index)
 		return ret;
 
 	size = SQFS_ON_DISK_BLOCK_SIZE(info.size);
-	if (size >= proc->max_block_size)
+	if (size > proc->max_block_size)
 		return SQFS_ERROR_CORRUPTED;
 
 	if (SQFS_IS_BLOCK_COMPRESSED(info.size)) {
