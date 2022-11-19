@@ -55,7 +55,9 @@ static const char *help_string =
 "Usage: gensquashfs [OPTIONS...] <squashfs-file>\n"
 "\n"
 "Possible options:\n"
-"\n"
+"\n";
+
+static const char *pack_options =
 "  --pack-file, -F <file>      Use a `gen_init_cpio` style description file.\n"
 "                              The file format is specified below.\n"
 "                              If --pack-dir is used, input file paths are\n"
@@ -98,7 +100,9 @@ static const char *help_string =
 "                              this value, no matter what the pack file or\n"
 "                              directory entries actually specify.\n"
 "  --all-root                  A short hand for `--set-uid 0 --set-gid 0`.\n"
-"\n"
+"\n";
+
+const char *extra_options =
 "  --sort-file, -S <file>      Specify a \"sort file\" that can be used to\n"
 "                              micro manage the order of files during packing\n"
 "                              and behaviour (compression, fragmentation, ..)\n"
@@ -125,7 +129,7 @@ static const char *help_string =
 "  --version, -V               Print version information and exit.\n"
 "\n";
 
-const char *help_details =
+const char *pack_details =
 "Example of a pack file:\n"
 "\n"
 "    # A simple squashfs image\n"
@@ -297,9 +301,11 @@ void process_command_line(options_t *opt, int argc, char **argv)
 			opt->sortfile = optarg;
 			break;
 		case 'h':
-			printf(help_string,
-			       SQFS_DEFAULT_BLOCK_SIZE, SQFS_DEVBLK_SIZE);
-			fputs(help_details, stdout);
+			fputs(help_string, stdout);
+			printf(pack_options, SQFS_DEFAULT_BLOCK_SIZE,
+			       SQFS_DEVBLK_SIZE);
+			fputs(extra_options, stdout);
+			fputs(pack_details, stdout);
 			fputs(sort_details, stdout);
 			compressor_print_available();
 			exit(EXIT_SUCCESS);
