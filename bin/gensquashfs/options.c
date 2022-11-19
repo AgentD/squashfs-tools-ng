@@ -178,6 +178,20 @@ const char *sort_details =
 "    1337  \"usr/share/my \\\"special\\\" file  \"\n"
 "\n\n";
 
+static const char *xattr_details =
+"The format of xattr files tries to immitate the format generated\n"
+"by `getfattr --dump`.\n"
+"\n"
+"Example:\n"
+"    # file: dev/\n"
+"    security.selinux=\"system_u:object_r:device_t:s0\"\n"
+"    user.beverage_preference=0xCAFECAFEDECAFBAD\n"
+"\n"
+"    # file: dev/rfkill\n"
+"    security.selinux=\"system_u:object_r:wireless_device_t:s0\"\n"
+"    system.posix_acl_access=0sSGVsbG8gdGhlcmUgOi0pCg==\n"
+"\n\n";
+
 void process_command_line(options_t *opt, int argc, char **argv)
 {
 	bool have_compressor;
@@ -307,6 +321,7 @@ void process_command_line(options_t *opt, int argc, char **argv)
 			fputs(extra_options, stdout);
 			fputs(pack_details, stdout);
 			fputs(sort_details, stdout);
+			fputs(xattr_details, stdout);
 			compressor_print_available();
 			exit(EXIT_SUCCESS);
 		case 'V':
