@@ -10,42 +10,44 @@
 
 #define NEW_FILE_START "# file: "
 
+static void print_error(const char *filename, size_t line_num, const char *err)
+{
+	fprintf(stderr, "%s: " PRI_SZ ": %s\n", filename, line_num, err);
+}
+
 // Taken from attr-2.5.1/tools/setfattr.c
-static sqfs_u8 *decode(const char *value, size_t *size)
+static sqfs_u8 *decode(const char *filename, size_t line_num,
+		       const char *value, size_t *size)
 {
 	sqfs_u8 *decoded = NULL;
 
-	if (*size == 0)
-		return (sqfs_u8 *)strdup("");
+	if (*size == 0) {
+		decoded = (sqfs_u8 *)strdup("");
+		if (decoded == NULL)
+			goto fail_alloc;
+		return decoded;
+	}
 
 	if (value[0] == '0' && (value[1] == 'x' || value[1] == 'X')) {
 		*size = ((*size) - 2) / 2;
 
 		decoded = calloc(1, (*size) + 1);
-		if (decoded == NULL) {
-			return NULL;
-		}
+		if (decoded == NULL)
+			goto fail_alloc;
 
-		if (hex_decode(value + 2, (*size) * 2, decoded, *size)) {
-			fprintf(stderr, "bad input encoding\n");
-			free(decoded);
-			return NULL;
-		}
+		if (hex_decode(value + 2, (*size) * 2, decoded, *size))
+			goto fail_encode;
 	} else if (value[0] == '0' && (value[1] == 's' || value[1] == 'S')) {
 		size_t input_len = *size - 2;
 
 		*size = (input_len / 4) * 3;
 
 		decoded = calloc(1, (*size) + 1);
-		if (decoded == NULL) {
-			return NULL;
-		}
+		if (decoded == NULL)
+			goto fail_alloc;
 
-		if (base64_decode(value + 2, input_len, decoded, size)) {
-			free(decoded);
-			fprintf(stderr, "bad input encoding\n");
-			return NULL;
-		}
+		if (base64_decode(value + 2, input_len, decoded, size))
+			goto fail_encode;
 	} else {
 		const char *v = value, *end = value + *size;
 		sqfs_u8 *d;
@@ -56,9 +58,8 @@ static sqfs_u8 *decode(const char *value, size_t *size)
 		}
 
 		decoded = calloc(1, (*size) + 1);
-		if (decoded == NULL) {
-			return NULL;
-		}
+		if (decoded == NULL)
+			goto fail_alloc;
 
 		d = decoded;
 
@@ -84,35 +85,57 @@ static sqfs_u8 *decode(const char *value, size_t *size)
 		*size = d - decoded;
 	}
 	return decoded;
+fail_alloc:
+	fprintf(stderr, "out of memory\n");
+	return NULL;
+fail_encode:
+	print_error(filename, line_num, "bad input encoding");
+	free(decoded);
+	return NULL;
 }
 
-static int
-parse_file_name(char *line, struct XattrMap *map) {
+static int parse_file_name(const char *filename, size_t line_num,
+			   char *line, struct XattrMap *map)
+{
 	struct XattrMapPattern *current_file;
 	char *file_name = strdup(line + strlen(NEW_FILE_START));
 
-	if (file_name == NULL) {
-		return -1;
-	}
+	if (file_name == NULL)
+		goto fail_alloc;
+
 	current_file = calloc(1, sizeof(struct XattrMapPattern));
-	if (current_file == NULL) {
+	if (current_file == NULL)
+		goto fail_alloc;
+
+	current_file->next = map->patterns;
+	map->patterns = current_file;
+
+	if (canonicalize_name(file_name)) {
+		print_error(filename, line_num, "invalid absolute path");
+		free(current_file);
 		free(file_name);
 		return -1;
 	}
 
-	current_file->next = map->patterns;
-	map->patterns = current_file;
-	canonicalize_name(file_name);
 	current_file->path = file_name;
-
 	return 0;
+fail_alloc:
+	fprintf(stderr, "out of memory\n");
+	free(file_name);
+	return -1;
 }
 
-static int
-parse_xattr(char *key_start, char *value_start, struct XattrMap *map) {
+static int parse_xattr(const char *filename, size_t line_num, char *key_start,
+		       char *value_start, struct XattrMap *map)
+{
 	size_t len;
 	struct XattrMapPattern *current_pattern = map->patterns;
 	struct XattrMapEntry *current_entry;
+
+	if (current_pattern == NULL) {
+		print_error(filename, line_num, "no file specified yet");
+		return -1;
+	}
 
 	current_entry = calloc(1, sizeof(struct XattrMapEntry));
 	if (current_entry == NULL) {
@@ -123,7 +146,7 @@ parse_xattr(char *key_start, char *value_start, struct XattrMap *map) {
 
 	current_entry->key = strdup(key_start);
 	len = strlen(value_start);
-	current_entry->value = decode(value_start, &len);
+	current_entry->value = decode(filename, line_num, value_start, &len);
 	current_entry->value_len = len;
 
 	return 0;
@@ -155,10 +178,13 @@ xattr_open_map_file(const char *path) {
 			break;
 
 		if (strncmp(NEW_FILE_START, line, strlen(NEW_FILE_START)) == 0) {
-			ret = parse_file_name(line, map);
-		} else if ((p = strchr(line, '=')) && map->patterns) {
+			ret = parse_file_name(path, line_num, line, map);
+		} else if ((p = strchr(line, '='))) {
 			*(p++) = '\0';
-			ret = parse_xattr(line, p, map);
+			ret = parse_xattr(path, line_num, line, p, map);
+		} else if (line[0] != '#') {
+			print_error(path, line_num, "not a key-value pair");
+			ret = -1;
 		}
 
 		++line_num;
