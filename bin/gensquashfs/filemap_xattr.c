@@ -11,16 +11,17 @@
 #define NEW_FILE_START "# file: "
 
 // Taken from attr-2.5.1/tools/setfattr.c
-static char *
-decode(const char *value, size_t *size) {
-	char *decoded = NULL;
+static sqfs_u8 *decode(const char *value, size_t *size)
+{
+	sqfs_u8 *decoded = NULL;
 
 	if (*size == 0)
-		return strdup("");
+		return (sqfs_u8 *)strdup("");
+
 	if (value[0] == '0' && (value[1] == 'x' || value[1] == 'X')) {
 		*size = ((*size) - 2) / 2;
 
-		decoded = realloc(decoded, *size);
+		decoded = calloc(1, (*size) + 1);
 		if (decoded == NULL) {
 			return NULL;
 		}
@@ -35,7 +36,7 @@ decode(const char *value, size_t *size) {
 
 		*size = (input_len / 4) * 3;
 
-		decoded = realloc(decoded, *size);
+		decoded = calloc(1, (*size) + 1);
 		if (decoded == NULL) {
 			return NULL;
 		}
@@ -47,17 +48,18 @@ decode(const char *value, size_t *size) {
 		}
 	} else {
 		const char *v = value, *end = value + *size;
-		char *d;
+		sqfs_u8 *d;
 
 		if (end > v + 1 && *v == '"' && *(end - 1) == '"') {
 			v++;
 			end--;
 		}
 
-		decoded = realloc(decoded, *size);
+		decoded = calloc(1, (*size) + 1);
 		if (decoded == NULL) {
 			return NULL;
 		}
+
 		d = decoded;
 
 		while (v < end) {

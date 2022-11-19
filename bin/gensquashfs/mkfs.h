@@ -64,7 +64,7 @@ typedef struct {
 
 struct XattrMapEntry {
 	char *key;
-	char *value;
+	sqfs_u8 *value;
 	size_t value_len;
 	struct XattrMapEntry *next;
 };
