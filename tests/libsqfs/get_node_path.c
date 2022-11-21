@@ -11,11 +11,13 @@
 #include "sqfs/dir_reader.h"
 #include "sqfs/error.h"
 
-int main(void)
+int main(int argc, char **argv)
 {
 	sqfs_tree_node_t *n0, *n1, *n2;
 	char *str;
 	int ret;
+	(void)argc;
+	(void)argv;
 
 	n0 = calloc(1, sizeof(*n0) + 16);
 	TEST_NOT_NULL(n0);
