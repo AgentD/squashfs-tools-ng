@@ -51,6 +51,10 @@ libsquashfs_la_SOURCES += lib/util/array.c include/util/array.h
 libsquashfs_la_SOURCES += lib/util/is_memory_zero.c
 libsquashfs_la_SOURCES += include/util/threadpool.h
 
+# and from libcompat
+libsquashfs_la_SOURCES += lib/compat/strchrnul.c lib/compat/strndup.c
+libsquashfs_la_SOURCES += include/compat.h
+
 if CUSTOM_ALLOC
 libsquashfs_la_SOURCES += lib/util/mempool.c include/util/mempool.h
 endif

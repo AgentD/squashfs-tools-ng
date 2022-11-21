@@ -28,6 +28,9 @@ The components copied from Musl libc are subejct to an MIT style license.
 See `liceneses/musl.txt` for details and only compiled into executable programs
 if the target system does not provide an implementation.
 
+Some additional components of `lib/compat` are also LGPL licensed, to allow
+their inclusion in `libsquashfs`. See SPDX identifiers.
+
 Copies of the LGPLv3 and GPLv3 are included in `licenses/LGPLv3.txt` and
 `licenses/GPLv3.txt` respectively.
 
