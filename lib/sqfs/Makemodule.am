@@ -93,11 +93,6 @@ endif
 if WITH_LZ4
 libsquashfs_la_SOURCES += lib/sqfs/comp/lz4.c
 libsquashfs_la_CPPFLAGS += -DWITH_LZ4
-
-if WITH_OWN_LZ4
-libsquashfs_la_CPPFLAGS += -I$(top_srcdir)/lib/lz4
-libsquashfs_la_LIBADD += liblz4.la
-endif
 endif
 
 if WITH_ZSTD

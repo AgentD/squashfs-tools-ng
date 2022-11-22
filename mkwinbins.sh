@@ -238,6 +238,54 @@ Libs: -L$W64_DIR/lib -lzstd
 Cflags: -I$W64_DIR/include
 _EOF
 
+################################## get lz4 ##################################
+
+PKG_DIR="lz4-1.9.4"
+PKG_TAR="${PKG_DIR}.tar.gz"
+PKG_HASH="0b0e3aa07c8c063ddf40b082bdf7e37a1562bda40a0ff5272957f3e987e0e54b"
+
+download
+
+pushd "$PKG_DIR/lib"
+make TARGET_OS=Windows CC=${W32_PREFIX}-gcc WINDRES=${W32_PREFIX}-windres
+mv dll/*.lib "$W32_DIR/lib"
+mv dll/*.dll "$W32_DIR/bin"
+cp *.h "$W32_DIR/include"
+rm *.o *.a
+
+make TARGET_OS=Windows CC=${W64_PREFIX}-gcc WINDRES=${W64_PREFIX}-windres
+mv dll/*.lib "$W64_DIR/lib"
+mv dll/*.dll "$W64_DIR/bin"
+cp *.h "$W64_DIR/include"
+rm *.o *.a
+popd
+
+cat > "$W32_DIR/lib/pkgconfig/liblz4.pc" <<_EOF
+prefix=$W32_DIR
+libdir=$W32_DIR/lib
+includedir=$W32_DIR/include
+
+Name: lz4
+Description: fast lossless compression algorithm library
+URL: https://lz4.github.io/lz4/
+Version: 1.9.4
+Libs: -L$W32_DIR/lib -llz4
+Cflags: -I$W32_DIR/include
+_EOF
+
+cat > "$W64_DIR/lib/pkgconfig/liblz4.pc" <<_EOF
+prefix=$W64_DIR
+libdir=$W64_DIR/lib
+includedir=$W64_DIR/include
+
+Name: lz4
+Description: fast lossless compression algorithm library
+URL: https://lz4.github.io/lz4/
+Version: 1.9.4
+Libs: -L$W64_DIR/lib -llz4
+Cflags: -I$W64_DIR/include
+_EOF
+
 ################################ build 32 bit ################################
 
 export PKG_CONFIG_PATH="$W32_DIR/lib/pkgconfig"
@@ -247,7 +295,7 @@ export PKG_CONFIG_PATH="$W32_DIR/lib/pkgconfig"
 	    LZO_LIBS="-L$W32_DIR/lib -llzo2" \
 	    BZIP2_CFLAGS="-I$W32_DIR/include" \
 	    BZIP2_LIBS="-L$W32_DIR/lib -lbz2" \
-	    --prefix="$W32_DIR" --host="$W32_PREFIX" --with-builtin-lz4
+	    --prefix="$W32_DIR" --host="$W32_PREFIX"
 cp "$W32_DIR/bin/"*.dll .
 make -j check
 rm *.dll
@@ -256,7 +304,7 @@ rm *.dll
 	    LZO_LIBS="-L$W32_DIR/lib -llzo2" \
 	    BZIP2_CFLAGS="-I$W32_DIR/include" \
 	    BZIP2_LIBS="-L$W32_DIR/lib -lbz2" \
-	    --prefix="$W32_DIR" --host="$W32_PREFIX" --with-builtin-lz4
+	    --prefix="$W32_DIR" --host="$W32_PREFIX"
 make clean
 make -j
 make install-strip
@@ -269,7 +317,7 @@ export PKG_CONFIG_PATH="$W64_DIR/lib/pkgconfig"
 	    LZO_LIBS="-L$W64_DIR/lib -llzo2" \
 	    BZIP2_CFLAGS="-I$W64_DIR/include" \
 	    BZIP2_LIBS="-L$W64_DIR/lib -lbz2" \
-	    --prefix="$W64_DIR" --host="$W64_PREFIX" --with-builtin-lz4
+	    --prefix="$W64_DIR" --host="$W64_PREFIX"
 make clean
 cp "$W64_DIR/bin/"*.dll .
 make -j check
@@ -279,7 +327,7 @@ rm *.dll
 	    LZO_LIBS="-L$W64_DIR/lib -llzo2" \
 	    BZIP2_CFLAGS="-I$W64_DIR/include" \
 	    BZIP2_LIBS="-L$W64_DIR/lib -lbz2" \
-	    --prefix="$W64_DIR" --host="$W64_PREFIX" --with-builtin-lz4
+	    --prefix="$W64_DIR" --host="$W64_PREFIX"
 make clean
 make -j
 make install-strip

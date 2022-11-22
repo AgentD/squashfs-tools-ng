@@ -8,9 +8,6 @@ with the following exceptions:
  - `lib/util/xxhash.c` contains a modified implementation of the xxhash32
    algorithm. See `licenses/xxhash.txt` for copyright and licensing
    information (2 clause BSD license).
- - `lib/lz4` contains files extracted from the LZ4 compression library.
-   See `lib/lz4/README` for details and `licenses/LZ4.txt` for copyright and
-   licensing information (2 clause BSD license).
  - `lib/util/hash_table.c`, `include/util/hash_table.h` and
    `lib/util/fast_urem_by_const.h` contain a hash table implementation (MIT
    license). See `licenses/hash_table.txt` for details.
@@ -76,9 +73,7 @@ The following may be included:
    released under the terms and conditions of the GNU General Public License
    version 2. A copy of the license is included in `licenses/GPLv2.txt`.
  - The LZ4 compression library. Copyright Yann Collet. This is released under a
-   2 clause BSD style license, included in `licenses/LZ4.txt`. This library may
-   be linked directly into `libsquashfs`, built from source code included in
-   the source distribution.
+   2 clause BSD style license, included in `licenses/LZ4.txt`.
  - The XZ utils liblzma library is released into the public domain. An excerpt
    from the `COPYING` file of its source code archive is included
    in `licenses/xz.txt`.

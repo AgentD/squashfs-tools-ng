@@ -97,10 +97,6 @@ AC_ARG_WITH([lz4],
 	[AS_HELP_STRING([--with-lz4], [Build with lz4 compression support])],
 	[], [with_lz4="check"])
 
-AC_ARG_WITH([builtin-lz4],
-	[AS_HELP_STRING([--with-builtin-lz4], [Use a custom, static liblz4])],
-	[], [with_builtin_lz4="no"])
-
 AC_ARG_WITH([zstd],
 	[AS_HELP_STRING([--with-zstd], [Build with zstd compression support])],
 	[], [with_zstd="check"])
@@ -193,14 +189,12 @@ AS_IF([test "x$with_xz" != "xno"], [
 				     [with_xz="no"])])
 ], [])
 
-AS_IF([test "x$with_lz4" != "xno" -a "x$with_builtin_lz4" != "xyes"], [
+AS_IF([test "x$with_lz4" != "xno"], [
 	PKG_CHECK_MODULES(LZ4, [liblz4], [with_lz4="yes"],
 			       [AS_IF([test "x$with_lz4" = "xyes"],
 				      [AC_MSG_ERROR([cannot find liblz4])],
 				      [with_lz4="no"])])
 ], [])
-
-AS_IF([test "x$with_builtin_lz4" != "xno"], [with_lz4="yes"], [])
 
 AS_IF([test "x$with_zstd" != "xno"], [
 	PKG_CHECK_MODULES(ZSTD, [libzstd >= 1.3.1], [with_zstd="yes"],
@@ -256,10 +250,8 @@ AM_CONDITIONAL([WITH_LZO], [test "x$with_lzo" = "xyes"])
 AM_CONDITIONAL([WITH_SELINUX], [test "x$with_selinux" = "xyes"])
 AM_CONDITIONAL([HAVE_PTHREAD], [test "x$with_pthread" = "xyes"])
 
-AM_CONDITIONAL([WITH_OWN_LZ4], [test "x$with_builtin_lz4" = "xyes"])
-
 libsqfs_dep_mod=""
-AS_IF([test "x$with_lz4" = "xyes" -a "x$with_builtin_lz4" != "xyes"],
+AS_IF([test "x$with_lz4" = "xyes"],
 	[libsqfs_dep_mod="$libsqfs_dep_mod liblz4"], [])
 
 AS_IF([test "x$with_gzip" = "xyes"],
