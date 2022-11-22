@@ -7,9 +7,9 @@
 #include "config.h"
 
 #include "sqfs/block.h"
-#include "fstree.h"
 #include "util/test.h"
 #include "util/util.h"
+#include "mkfs.h"
 
 static const char *listing =
 "dir /bin 0755 0 0\n"

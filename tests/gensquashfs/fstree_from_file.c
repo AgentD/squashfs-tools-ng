@@ -6,8 +6,8 @@
  */
 #include "config.h"
 
-#include "fstree.h"
 #include "util/test.h"
+#include "mkfs.h"
 
 int main(int argc, char **argv)
 {

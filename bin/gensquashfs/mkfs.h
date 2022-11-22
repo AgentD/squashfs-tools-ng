@@ -98,4 +98,40 @@ int selinux_relable_node(void *sehnd, sqfs_xattr_writer_t *xwr,
 
 void selinux_close_context_file(void *sehnd);
 
+/*
+  Parses the file format accepted by gensquashfs and produce a file system
+  tree from it. File input paths are interpreted as relative to the current
+  working directory.
+
+  On failure, an error report with filename and line number is written
+  to stderr.
+
+  Returns 0 on success.
+ */
+int fstree_from_file(fstree_t *fs, const char *filename,
+		     const char *basepath);
+
+int fstree_from_file_stream(fstree_t *fs, istream_t *file,
+			    const char *basepath);
+
+/*
+  Recursively scan a directory to build a file system tree.
+
+  Returns 0 on success, prints to stderr on failure.
+ */
+int fstree_from_dir(fstree_t *fs, tree_node_t *root,
+		    const char *path, scan_node_callback cb, void *user,
+		    unsigned int flags);
+
+/*
+  Same as fstree_from_dir, but scans a sub-directory inside the specified path.
+
+  Returns 0 on success, prints to stderr on failure.
+ */
+int fstree_from_subdir(fstree_t *fs, tree_node_t *root,
+		       const char *path, const char *subdir,
+		       scan_node_callback cb, void *user, unsigned int flags);
+
+int fstree_sort_files(fstree_t *fs, istream_t *sortfile);
+
 #endif /* MKFS_H */

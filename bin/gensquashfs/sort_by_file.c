@@ -8,7 +8,7 @@
 
 #include "util/util.h"
 #include "fstree.h"
-#include "compat.h"
+#include "mkfs.h"
 
 #include "sqfs/block.h"
 

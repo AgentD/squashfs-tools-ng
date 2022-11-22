@@ -8,8 +8,8 @@
 
 #include "util/util.h"
 #include "io/file.h"
-#include "fstree.h"
 #include "compat.h"
+#include "mkfs.h"
 
 #include <stdlib.h>
 #include <string.h>

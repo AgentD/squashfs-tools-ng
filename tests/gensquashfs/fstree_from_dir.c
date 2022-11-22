@@ -6,8 +6,8 @@
  */
 #include "config.h"
 
-#include "fstree.h"
 #include "util/test.h"
+#include "mkfs.h"
 
 static void check_hierarchy(tree_node_t *root, bool recursive)
 {

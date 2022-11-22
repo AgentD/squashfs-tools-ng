@@ -6,7 +6,7 @@
  */
 #include "config.h"
 
-#include "fstree.h"
+#include "mkfs.h"
 
 #include <stdlib.h>
 #include <stdio.h>

@@ -5,7 +5,7 @@
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
 #include "config.h"
-#include "fstree.h"
+#include "mkfs.h"
 
 #include <dirent.h>
 #include <stdlib.h>
