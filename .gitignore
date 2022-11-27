@@ -43,6 +43,7 @@ m4/lt*.m4
 Doxyfile
 tests/*.sh
 tests/rdsquashfs/*.sh
+tests/tar2sqfs/*.sh
 /mknastyfs
 /mk42sqfs
 /extract_one

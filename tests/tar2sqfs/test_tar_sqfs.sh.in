@@ -4,7 +4,7 @@ set -e
 
 TARDIR="@abs_top_srcdir@/tests/libtar/data"
 TARDIR2="@abs_top_srcdir@/tests/tar2sqfs"
-SHA512FILE="@abs_top_srcdir@/tests/libtar/data/sqfs.sha512"
+SHA512FILE="$TARDIR2/sqfs.sha512"
 TAR2SQFS="@abs_top_builddir@/tar2sqfs"
 
 if [ ! -f "$TAR2SQFS" -a -f "${TAR2SQFS}.exe" ]; then

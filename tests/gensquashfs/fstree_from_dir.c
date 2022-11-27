@@ -237,12 +237,6 @@ static void check_hierarchy(tree_node_t *root, bool recursive)
 
 	n = n->next;
 	TEST_NOT_NULL(n);
-	TEST_STR_EQUAL(n->name, "sqfs.sha512");
-	TEST_ASSERT(S_ISREG(n->mode));
-	TEST_ASSERT(n->parent == root);
-
-	n = n->next;
-	TEST_NOT_NULL(n);
 	TEST_STR_EQUAL(n->name, "user-group-largenum");
 	TEST_ASSERT(S_ISDIR(n->mode));
 	TEST_ASSERT(n->parent == root);

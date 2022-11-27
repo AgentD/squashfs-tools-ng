@@ -125,13 +125,6 @@ AC_ARG_ENABLE([custom-alloc],
 			[Do not used any custom allocators.])],
 	[], [enable_custom_alloc="yes"])
 
-AC_ARG_ENABLE([corpora-tests],
-	[AS_HELP_STRING([--enable-corpora-tests],
-			[Perform corpora based reproducability tests.])],
-	[], [enable_corpora_tests="no"])
-
-AM_CONDITIONAL([CORPORA_TESTS], [test "x$enable_corpora_tests" = "xyes"])
-
 AS_IF([test "x$build_windows" = "xyes"], [with_pthread="no"], [])
 AS_IF([test "x$with_tools" != "xyes"], [with_selinux="no"], [])
 AM_CONDITIONAL([BUILD_TOOLS], [test "x$with_tools" = "xyes"])
@@ -290,10 +283,8 @@ AM_CONDITIONAL([CUSTOM_ALLOC], [test "x$enable_custom_alloc" = "xyes"])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([lib/sqfs/libsquashfs1.pc])
 AC_CONFIG_FILES([Doxyfile])
-AC_CONFIG_FILES([tests/cantrbry.sh], [chmod +x tests/cantrbry.sh])
-AC_CONFIG_FILES([tests/test_tar_sqfs.sh], [chmod +x tests/test_tar_sqfs.sh])
-AC_CONFIG_FILES([tests/pack_dir_root.sh], [chmod +x tests/pack_dir_root.sh])
-AC_CONFIG_FILES([tests/tarcompress.sh], [chmod +x tests/tarcompress.sh])
+AC_CONFIG_FILES([tests/tar2sqfs/test_tar_sqfs.sh],
+		[chmod +x tests/tar2sqfs/test_tar_sqfs.sh])
 AC_CONFIG_FILES([tests/rdsquashfs/pathtraversal.sh],
 		[chmod +x tests/rdsquashfs/pathtraversal.sh])
 
