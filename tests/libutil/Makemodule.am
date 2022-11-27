@@ -10,7 +10,12 @@ test_xxhash_LDADD = libutil.a libcompat.a
 
 test_threadpool_SOURCES = tests/libutil/threadpool.c
 test_threadpool_CFLAGS = $(AM_CFLAGS) $(PTHREAD_CFLAGS)
+test_threadpool_CPPFLAGS = $(AM_CPPFLAGS)
 test_threadpool_LDADD = libutil.a libcompat.a $(PTHREAD_LIBS)
+
+if HAVE_PTHREAD
+test_threadpool_CPPFLAGS += -DHAVE_PTHREAD
+endif
 
 test_ismemzero_SOURCES = tests/libutil/is_memory_zero.c
 test_ismemzero_LDADD = libutil.a libcompat.a
