@@ -28,7 +28,7 @@ test_fstree_from_dir_SOURCES = tests/gensquashfs/fstree_from_dir.c \
 				bin/gensquashfs/fstree_from_dir.c \
 				bin/gensquashfs/mkfs.h
 test_fstree_from_dir_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/bin/gensquashfs
-test_fstree_from_dir_CPPFLAGS += -DTESTPATH=$(top_srcdir)/tests/libtar/data
+test_fstree_from_dir_CPPFLAGS += -DTESTPATH=$(GENDATADIR)/testdir
 test_fstree_from_dir_LDADD = libfstree.a libutil.a libcompat.a
 
 test_sort_file_SOURCES = tests/gensquashfs/sort_file.c \
@@ -60,3 +60,4 @@ endif
 EXTRA_DIST += $(GENDATADIR)/xattr1.txt $(GENDATADIR)/fstree1.txt
 EXTRA_DIST += $(GENDATADIR)/fstree_glob1.txt $(GENDATADIR)/fstree_glob2.txt
 EXTRA_DIST += $(GENDATADIR)/fstree_glob3.txt
+EXTRA_DIST += $(GENDATADIR)/testdir

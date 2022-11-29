@@ -15,32 +15,26 @@ static void check_hierarchy(tree_node_t *root, bool recursive)
 
 	n = root->data.dir.children;
 	TEST_NOT_NULL(n);
-	TEST_STR_EQUAL(n->name, "CREDITS");
-	TEST_ASSERT(S_ISREG(n->mode));
-	TEST_ASSERT(n->parent == root);
-
-	n = n->next;
-	TEST_NOT_NULL(n);
-	TEST_STR_EQUAL(n->name, "file-size");
+	TEST_STR_EQUAL(n->name, "dira");
 	TEST_ASSERT(S_ISDIR(n->mode));
 	TEST_ASSERT(n->parent == root);
 
 	if (recursive) {
 		m = n->data.dir.children;
 		TEST_NOT_NULL(m);
-		TEST_STR_EQUAL(m->name, "12-digit.tar");
+		TEST_STR_EQUAL(m->name, "file_a0");
 		TEST_ASSERT(S_ISREG(m->mode));
 		TEST_ASSERT(m->parent == n);
 
 		m = m->next;
 		TEST_NOT_NULL(m);
-		TEST_STR_EQUAL(m->name, "gnu.tar");
+		TEST_STR_EQUAL(m->name, "file_a1");
 		TEST_ASSERT(S_ISREG(m->mode));
 		TEST_ASSERT(m->parent == n);
 
 		m = m->next;
 		TEST_NOT_NULL(m);
-		TEST_STR_EQUAL(m->name, "pax.tar");
+		TEST_STR_EQUAL(m->name, "file_a2");
 		TEST_ASSERT(S_ISREG(m->mode));
 		TEST_ASSERT(m->parent == n);
 
@@ -52,50 +46,26 @@ static void check_hierarchy(tree_node_t *root, bool recursive)
 
 	n = n->next;
 	TEST_NOT_NULL(n);
-	TEST_STR_EQUAL(n->name, "format-acceptance");
+	TEST_STR_EQUAL(n->name, "dirb");
 	TEST_ASSERT(S_ISDIR(n->mode));
 	TEST_ASSERT(n->parent == root);
 
 	if (recursive) {
 		m = n->data.dir.children;
 		TEST_NOT_NULL(m);
-		TEST_STR_EQUAL(m->name, "gnu-g.tar");
+		TEST_STR_EQUAL(m->name, "file_b0");
 		TEST_ASSERT(S_ISREG(m->mode));
 		TEST_ASSERT(m->parent == n);
 
 		m = m->next;
 		TEST_NOT_NULL(m);
-		TEST_STR_EQUAL(m->name, "gnu.tar");
+		TEST_STR_EQUAL(m->name, "file_b1");
 		TEST_ASSERT(S_ISREG(m->mode));
 		TEST_ASSERT(m->parent == n);
 
 		m = m->next;
 		TEST_NOT_NULL(m);
-		TEST_STR_EQUAL(m->name, "link_filled.tar");
-		TEST_ASSERT(S_ISREG(m->mode));
-		TEST_ASSERT(m->parent == n);
-
-		m = m->next;
-		TEST_NOT_NULL(m);
-		TEST_STR_EQUAL(m->name, "pax.tar");
-		TEST_ASSERT(S_ISREG(m->mode));
-		TEST_ASSERT(m->parent == n);
-
-		m = m->next;
-		TEST_NOT_NULL(m);
-		TEST_STR_EQUAL(m->name, "ustar-pre-posix.tar");
-		TEST_ASSERT(S_ISREG(m->mode));
-		TEST_ASSERT(m->parent == n);
-
-		m = m->next;
-		TEST_NOT_NULL(m);
-		TEST_STR_EQUAL(m->name, "ustar.tar");
-		TEST_ASSERT(S_ISREG(m->mode));
-		TEST_ASSERT(m->parent == n);
-
-		m = m->next;
-		TEST_NOT_NULL(m);
-		TEST_STR_EQUAL(m->name, "v7.tar");
+		TEST_STR_EQUAL(m->name, "file_b2");
 		TEST_ASSERT(S_ISREG(m->mode));
 		TEST_ASSERT(m->parent == n);
 
@@ -107,193 +77,26 @@ static void check_hierarchy(tree_node_t *root, bool recursive)
 
 	n = n->next;
 	TEST_NOT_NULL(n);
-	TEST_STR_EQUAL(n->name, "large-mtime");
+	TEST_STR_EQUAL(n->name, "dirc");
 	TEST_ASSERT(S_ISDIR(n->mode));
 	TEST_ASSERT(n->parent == root);
 
 	if (recursive) {
 		m = n->data.dir.children;
 		TEST_NOT_NULL(m);
-		TEST_STR_EQUAL(m->name, "12-digit.tar");
+		TEST_STR_EQUAL(m->name, "file_c0");
 		TEST_ASSERT(S_ISREG(m->mode));
 		TEST_ASSERT(m->parent == n);
 
 		m = m->next;
 		TEST_NOT_NULL(m);
-		TEST_STR_EQUAL(m->name, "gnu.tar");
+		TEST_STR_EQUAL(m->name, "file_c1");
 		TEST_ASSERT(S_ISREG(m->mode));
 		TEST_ASSERT(m->parent == n);
 
 		m = m->next;
 		TEST_NOT_NULL(m);
-		TEST_STR_EQUAL(m->name, "pax.tar");
-		TEST_ASSERT(S_ISREG(m->mode));
-		TEST_ASSERT(m->parent == n);
-
-		m = m->next;
-		TEST_NULL(m);
-	} else {
-		TEST_NULL(n->data.dir.children);
-	}
-
-	n = n->next;
-	TEST_NOT_NULL(n);
-	TEST_STR_EQUAL(n->name, "long-paths");
-	TEST_ASSERT(S_ISDIR(n->mode));
-	TEST_ASSERT(n->parent == root);
-
-	if (recursive) {
-		m = n->data.dir.children;
-		TEST_NOT_NULL(m);
-		TEST_STR_EQUAL(m->name, "gnu.tar");
-		TEST_ASSERT(S_ISREG(m->mode));
-		TEST_ASSERT(m->parent == n);
-
-		m = m->next;
-		TEST_NOT_NULL(m);
-		TEST_STR_EQUAL(m->name, "pax.tar");
-		TEST_ASSERT(S_ISREG(m->mode));
-		TEST_ASSERT(m->parent == n);
-
-		m = m->next;
-		TEST_NOT_NULL(m);
-		TEST_STR_EQUAL(m->name, "ustar.tar");
-		TEST_ASSERT(S_ISREG(m->mode));
-		TEST_ASSERT(m->parent == n);
-
-		m = m->next;
-		TEST_NULL(m);
-	} else {
-		TEST_NULL(n->data.dir.children);
-	}
-
-	n = n->next;
-	TEST_NOT_NULL(n);
-	TEST_STR_EQUAL(n->name, "negative-mtime");
-	TEST_ASSERT(S_ISDIR(n->mode));
-	TEST_ASSERT(n->parent == root);
-
-	if (recursive) {
-		m = n->data.dir.children;
-		TEST_NOT_NULL(m);
-		TEST_STR_EQUAL(m->name, "gnu.tar");
-		TEST_ASSERT(S_ISREG(m->mode));
-		TEST_ASSERT(m->parent == n);
-
-		m = m->next;
-		TEST_NOT_NULL(m);
-		TEST_STR_EQUAL(m->name, "pax.tar");
-		TEST_ASSERT(S_ISREG(m->mode));
-		TEST_ASSERT(m->parent == n);
-
-		m = m->next;
-		TEST_NULL(m);
-	} else {
-		TEST_NULL(n->data.dir.children);
-	}
-
-	n = n->next;
-	TEST_NOT_NULL(n);
-	TEST_STR_EQUAL(n->name, "sparse-files");
-	TEST_ASSERT(S_ISDIR(n->mode));
-	TEST_ASSERT(n->parent == root);
-
-	if (recursive) {
-		m = n->data.dir.children;
-		TEST_NOT_NULL(m);
-		TEST_STR_EQUAL(m->name, "gnu-small.tar");
-		TEST_ASSERT(S_ISREG(m->mode));
-		TEST_ASSERT(m->parent == n);
-
-		m = m->next;
-		TEST_NOT_NULL(m);
-		TEST_STR_EQUAL(m->name, "gnu.tar");
-		TEST_ASSERT(S_ISREG(m->mode));
-		TEST_ASSERT(m->parent == n);
-
-		m = m->next;
-		TEST_NOT_NULL(m);
-		TEST_STR_EQUAL(m->name, "pax-gnu0-0.tar");
-		TEST_ASSERT(S_ISREG(m->mode));
-		TEST_ASSERT(m->parent == n);
-
-		m = m->next;
-		TEST_NOT_NULL(m);
-		TEST_STR_EQUAL(m->name, "pax-gnu0-1.tar");
-		TEST_ASSERT(S_ISREG(m->mode));
-		TEST_ASSERT(m->parent == n);
-
-		m = m->next;
-		TEST_NOT_NULL(m);
-		TEST_STR_EQUAL(m->name, "pax-gnu1-0.tar");
-		TEST_ASSERT(S_ISREG(m->mode));
-		TEST_ASSERT(m->parent == n);
-
-		m = m->next;
-		TEST_NULL(m);
-	} else {
-		TEST_NULL(n->data.dir.children);
-	}
-
-	n = n->next;
-	TEST_NOT_NULL(n);
-	TEST_STR_EQUAL(n->name, "user-group-largenum");
-	TEST_ASSERT(S_ISDIR(n->mode));
-	TEST_ASSERT(n->parent == root);
-
-	if (recursive) {
-		m = n->data.dir.children;
-		TEST_NOT_NULL(m);
-		TEST_STR_EQUAL(m->name, "8-digit.tar");
-		TEST_ASSERT(S_ISREG(m->mode));
-		TEST_ASSERT(m->parent == n);
-
-		m = m->next;
-		TEST_NOT_NULL(m);
-		TEST_STR_EQUAL(m->name, "gnu.tar");
-		TEST_ASSERT(S_ISREG(m->mode));
-		TEST_ASSERT(m->parent == n);
-
-		m = m->next;
-		TEST_NOT_NULL(m);
-		TEST_STR_EQUAL(m->name, "pax.tar");
-		TEST_ASSERT(S_ISREG(m->mode));
-		TEST_ASSERT(m->parent == n);
-
-		m = m->next;
-		TEST_NULL(m);
-	} else {
-		TEST_NULL(n->data.dir.children);
-	}
-
-	n = n->next;
-	TEST_NOT_NULL(n);
-	TEST_STR_EQUAL(n->name, "xattr");
-	TEST_ASSERT(S_ISDIR(n->mode));
-	TEST_ASSERT(n->parent == root);
-
-	if (recursive) {
-		m = n->data.dir.children;
-		TEST_NOT_NULL(m);
-		TEST_STR_EQUAL(m->name, "acl.tar");
-		TEST_ASSERT(S_ISREG(m->mode));
-		TEST_ASSERT(m->parent == n);
-
-		m = m->next;
-		TEST_NOT_NULL(m);
-		TEST_STR_EQUAL(m->name, "xattr-libarchive.tar");
-		TEST_ASSERT(S_ISREG(m->mode));
-		TEST_ASSERT(m->parent == n);
-
-		m = m->next;
-		TEST_NOT_NULL(m);
-		TEST_STR_EQUAL(m->name, "xattr-schily-binary.tar");
-		TEST_ASSERT(S_ISREG(m->mode));
-		TEST_ASSERT(m->parent == n);
-
-		m = m->next;
-		TEST_NOT_NULL(m);
-		TEST_STR_EQUAL(m->name, "xattr-schily.tar");
+		TEST_STR_EQUAL(m->name, "file_c2");
 		TEST_ASSERT(S_ISREG(m->mode));
 		TEST_ASSERT(m->parent == n);
 
