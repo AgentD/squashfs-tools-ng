@@ -4,6 +4,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2022-12-03
+### Added
+- Make it possible for `gensquashfs` to add xattrs from a description file
+- Make it possible for `gensquashfs` to specify file sorting order
+- Support `.` and `..` directory browsing support in `sqfs_dir_reader_t`
+- Add `sqfs_tree_node_get_path` to `libsquashfs`
+
+### Fixed
+- Only use actuaylly available CPUs in `gensquashfs` and `tar2sqfs`
+- Overzealous bounds check in the `libsquashfs `block processor (#110)
+- In `sqfs_compressor_create`, clear the output pointer on error (#110)
+- Typo in `gensquashfs` and `tar2sqfs` block count statistics (#108)
+- Hard link resolution: report error if path cannonicalization fails
+- Documentation: signedness of the directory header inode number
+- Seek position in `libsquashfs` meta data reader erroneously out-of-bounds
+- Memory leak in `libfstree` error path
+- Double-free in `libfstree` error path
+
+### Changed
+- Allow NULL pointer for `sqfs_destroy`, `sqfs_dir_tree_destroy`
+- Use 32 bit hard link counter in `libfstree` instead of just 16 bit
+- Internal cleanup and restructuring
+- Upgrade autotools version
+- Check in `autogen.sh` if the requried tools are available
+- Trigger a build failure if no compressor library is available
+
 ## [1.1.4] - 2022-03-30
 ### Added
 - libsquashfs: A flag for `sqfs_open_file` to *not* perform any
@@ -495,6 +521,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Insert abstraction layers and split generic code off into support libraries
 
+[1.2.0]: https://github.com/AgentD/squashfs-tools-ng/compare/v1.1.4...v1.2.0
+[1.1.4]: https://github.com/AgentD/squashfs-tools-ng/compare/v1.1.3...v1.1.4
 [1.1.3]: https://github.com/AgentD/squashfs-tools-ng/compare/v1.1.2...v1.1.3
 [1.1.2]: https://github.com/AgentD/squashfs-tools-ng/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/AgentD/squashfs-tools-ng/compare/v1.1.0...v1.1.1
