@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `sqfs_tree_node_get_path` to `libsquashfs`
 
 ### Fixed
-- Only use actuaylly available CPUs in `gensquashfs` and `tar2sqfs`
+- Only use actually available CPUs in `gensquashfs` and `tar2sqfs`
 - Overzealous bounds check in the `libsquashfs `block processor (#110)
 - In `sqfs_compressor_create`, clear the output pointer on error (#110)
 - Typo in `gensquashfs` and `tar2sqfs` block count statistics (#108)
@@ -27,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use 32 bit hard link counter in `libfstree` instead of just 16 bit
 - Internal cleanup and restructuring
 - Upgrade autotools version
-- Check in `autogen.sh` if the requried tools are available
+- Check in `autogen.sh` if the required tools are available
 - Trigger a build failure if no compressor library is available
 
 ## [1.1.4] - 2022-03-30
