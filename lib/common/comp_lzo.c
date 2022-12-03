@@ -266,6 +266,8 @@ int lzo_compressor_create(const sqfs_compressor_config_t *cfg,
 	if (lzo == NULL)
 		return SQFS_ERROR_ALLOC;
 
+	sqfs_object_init(lzo, lzo_destroy, lzo_create_copy);
+
 	lzo->block_size = cfg->block_size;
 	lzo->algorithm = cfg->opt.lzo.algorithm;
 	lzo->level = cfg->level;
@@ -277,8 +279,6 @@ int lzo_compressor_create(const sqfs_compressor_config_t *cfg,
 		lzo_uncomp_block : lzo_comp_block;
 	base->write_options = lzo_write_options;
 	base->read_options = lzo_read_options;
-	((sqfs_object_t *)base)->copy = lzo_create_copy;
-	((sqfs_object_t *)base)->destroy = lzo_destroy;
 
 	*out = base;
 	return 0;

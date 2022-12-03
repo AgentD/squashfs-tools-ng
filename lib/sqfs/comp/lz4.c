@@ -156,6 +156,8 @@ int lz4_compressor_create(const sqfs_compressor_config_t *cfg,
 	if (lz4 == NULL)
 		return SQFS_ERROR_ALLOC;
 
+	sqfs_object_init(lz4, lz4_destroy, lz4_create_copy);
+
 	lz4->high_compression = (cfg->flags & SQFS_COMP_FLAG_LZ4_HC) != 0;
 	lz4->block_size = cfg->block_size;
 
@@ -164,8 +166,6 @@ int lz4_compressor_create(const sqfs_compressor_config_t *cfg,
 		lz4_uncomp_block : lz4_comp_block;
 	base->write_options = lz4_write_options;
 	base->read_options = lz4_read_options;
-	((sqfs_object_t *)base)->copy = lz4_create_copy;
-	((sqfs_object_t *)base)->destroy = lz4_destroy;
 
 	*out = base;
 	return 0;

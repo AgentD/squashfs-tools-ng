@@ -59,9 +59,9 @@ sqfs_frag_table_t *sqfs_frag_table_create(sqfs_u32 flags)
 	if (tbl == NULL)
 		return NULL;
 
+	sqfs_object_init(tbl, frag_table_destroy, frag_table_copy);
+
 	array_init(&tbl->table, sizeof(sqfs_fragment_t), 0);
-	((sqfs_object_t *)tbl)->copy = frag_table_copy;
-	((sqfs_object_t *)tbl)->destroy = frag_table_destroy;
 	return tbl;
 }
 

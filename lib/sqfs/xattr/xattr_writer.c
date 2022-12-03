@@ -95,6 +95,8 @@ sqfs_xattr_writer_t *sqfs_xattr_writer_create(sqfs_u32 flags)
 	if (xwr == NULL)
 		return NULL;
 
+	sqfs_object_init(xwr, xattr_writer_destroy, xattr_writer_copy);
+
 	if (str_table_init(&xwr->keys))
 		goto fail_keys;
 
@@ -112,9 +114,6 @@ sqfs_xattr_writer_t *sqfs_xattr_writer_create(sqfs_u32 flags)
 	}
 
 	xwr->kv_block_tree.key_context = xwr;
-
-	((sqfs_object_t *)xwr)->copy = xattr_writer_copy;
-	((sqfs_object_t *)xwr)->destroy = xattr_writer_destroy;
 	return xwr;
 fail_tree:
 	array_cleanup(&xwr->kv_pairs);

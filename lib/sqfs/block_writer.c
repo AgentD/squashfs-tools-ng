@@ -219,9 +219,10 @@ sqfs_block_writer_t *sqfs_block_writer_create(sqfs_file_t *file,
 	if (wr == NULL)
 		return NULL;
 
+	sqfs_object_init(wr, block_writer_destroy, NULL);
+
 	((sqfs_block_writer_t *)wr)->write_data_block = write_data_block;
 	((sqfs_block_writer_t *)wr)->get_block_count = get_block_count;
-	((sqfs_object_t *)wr)->destroy = block_writer_destroy;
 	wr->flags = flags;
 	wr->file = file;
 	wr->devblksz = devblksz;

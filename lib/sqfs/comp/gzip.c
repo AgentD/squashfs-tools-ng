@@ -277,6 +277,8 @@ int gzip_compressor_create(const sqfs_compressor_config_t *cfg,
 	if (gzip == NULL)
 		return SQFS_ERROR_ALLOC;
 
+	sqfs_object_init(gzip, gzip_destroy, gzip_create_copy);
+
 	gzip->opt.level = cfg->level;
 	gzip->opt.window = cfg->opt.gzip.window_size;
 	gzip->opt.strategies = cfg->flags & SQFS_COMP_FLAG_GZIP_ALL;
@@ -286,8 +288,6 @@ int gzip_compressor_create(const sqfs_compressor_config_t *cfg,
 	base->do_block = gzip_do_block;
 	base->write_options = gzip_write_options;
 	base->read_options = gzip_read_options;
-	((sqfs_object_t *)base)->copy = gzip_create_copy;
-	((sqfs_object_t *)base)->destroy = gzip_destroy;
 
 	if (gzip->compress) {
 		ret = deflateInit2(&gzip->strm, cfg->level,

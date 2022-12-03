@@ -65,13 +65,14 @@ static void file_destroy(sqfs_object_t *obj)
 istream_t *istream_open_file(const char *path)
 {
 	file_istream_t *file = calloc(1, sizeof(*file));
-	sqfs_object_t *obj = (sqfs_object_t *)file;
 	istream_t *strm = (istream_t *)file;
 
 	if (file == NULL) {
 		perror(path);
 		return NULL;
 	}
+
+	sqfs_object_init(file, file_destroy, NULL);
 
 	file->path = strdup(path);
 	if (file->path == NULL) {
@@ -88,7 +89,6 @@ istream_t *istream_open_file(const char *path)
 	strm->buffer = file->buffer;
 	strm->precache = file_precache;
 	strm->get_filename = file_get_filename;
-	obj->destroy = file_destroy;
 	return strm;
 fail_path:
 	free(file->path);
@@ -100,11 +100,12 @@ fail_free:
 istream_t *istream_open_stdin(void)
 {
 	file_istream_t *file = calloc(1, sizeof(*file));
-	sqfs_object_t *obj = (sqfs_object_t *)file;
 	istream_t *strm = (istream_t *)file;
 
 	if (file == NULL)
 		goto fail;
+
+	sqfs_object_init(file, file_destroy, NULL);
 
 	file->path = strdup("stdin");
 	if (file->path == NULL)
@@ -114,7 +115,6 @@ istream_t *istream_open_stdin(void)
 	strm->buffer = file->buffer;
 	strm->precache = file_precache;
 	strm->get_filename = file_get_filename;
-	obj->destroy = file_destroy;
 	return strm;
 fail:
 	perror("creating file wrapper for stdin");

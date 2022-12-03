@@ -154,6 +154,8 @@ sqfs_file_t *sqfs_open_file(const char *filename, sqfs_u32 flags)
 	if (file == NULL)
 		return NULL;
 
+	sqfs_object_init(file, stdio_destroy, stdio_copy);
+
 	if (flags & SQFS_FILE_OPEN_READ_ONLY) {
 		file->readonly = true;
 		open_mode = O_RDONLY;
@@ -190,7 +192,5 @@ sqfs_file_t *sqfs_open_file(const char *filename, sqfs_u32 flags)
 	base->write_at = stdio_write_at;
 	base->get_size = stdio_get_size;
 	base->truncate = stdio_truncate;
-	((sqfs_object_t *)base)->copy = stdio_copy;
-	((sqfs_object_t *)base)->destroy = stdio_destroy;
 	return base;
 }

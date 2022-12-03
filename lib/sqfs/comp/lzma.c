@@ -260,6 +260,8 @@ int lzma_compressor_create(const sqfs_compressor_config_t *cfg,
 	if (lzma == NULL)
 		return SQFS_ERROR_ALLOC;
 
+	sqfs_object_init(lzma, lzma_destroy, lzma_create_copy);
+
 	lzma->block_size = cfg->block_size;
 	lzma->flags = cfg->flags;
 	lzma->level = cfg->level;
@@ -273,8 +275,6 @@ int lzma_compressor_create(const sqfs_compressor_config_t *cfg,
 		lzma_uncomp_block : lzma_comp_block;
 	base->write_options = lzma_write_options;
 	base->read_options = lzma_read_options;
-	((sqfs_object_t *)base)->copy = lzma_create_copy;
-	((sqfs_object_t *)base)->destroy = lzma_destroy;
 
 	*out = base;
 	return 0;

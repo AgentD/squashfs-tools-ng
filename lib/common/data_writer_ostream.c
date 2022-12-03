@@ -64,7 +64,6 @@ ostream_t *data_writer_ostream_create(const char *filename,
 				      int flags)
 {
 	data_writer_ostream_t *strm = calloc(1, sizeof(*strm));
-	sqfs_object_t *obj = (sqfs_object_t *)strm;
 	ostream_t *base = (ostream_t *)strm;
 	int ret;
 
@@ -72,6 +71,8 @@ ostream_t *data_writer_ostream_create(const char *filename,
 		perror(filename);
 		return NULL;
 	}
+
+	sqfs_object_init(strm, stream_destroy, NULL);
 
 	ret = sqfs_block_processor_begin_file(proc, inode, NULL, flags);
 
@@ -86,6 +87,5 @@ ostream_t *data_writer_ostream_create(const char *filename,
 	base->append = stream_append;
 	base->flush = stream_flush;
 	base->get_filename = stream_get_filename;
-	obj->destroy = stream_destroy;
 	return base;
 }

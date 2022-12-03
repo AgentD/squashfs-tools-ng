@@ -151,6 +151,8 @@ int zstd_compressor_create(const sqfs_compressor_config_t *cfg,
 	if (zstd == NULL)
 		return SQFS_ERROR_ALLOC;
 
+	sqfs_object_init(zstd, zstd_destroy, zstd_create_copy);
+
 	zstd->block_size = cfg->block_size;
 	zstd->level = cfg->level;
 	zstd->zctx = ZSTD_createCCtx();
@@ -164,8 +166,6 @@ int zstd_compressor_create(const sqfs_compressor_config_t *cfg,
 		zstd_uncomp_block : zstd_comp_block;
 	base->write_options = zstd_write_options;
 	base->read_options = zstd_read_options;
-	((sqfs_object_t *)base)->copy = zstd_create_copy;
-	((sqfs_object_t *)base)->destroy = zstd_destroy;
 
 	*out = base;
 	return 0;

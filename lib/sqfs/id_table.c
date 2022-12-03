@@ -58,9 +58,7 @@ sqfs_id_table_t *sqfs_id_table_create(sqfs_u32 flags)
 
 	if (tbl != NULL) {
 		array_init(&tbl->ids, sizeof(sqfs_u32), 0);
-
-		((sqfs_object_t *)tbl)->destroy = id_table_destroy;
-		((sqfs_object_t *)tbl)->copy = id_table_copy;
+		sqfs_object_init(tbl, id_table_destroy, id_table_copy);
 	}
 
 	return tbl;

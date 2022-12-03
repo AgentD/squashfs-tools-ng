@@ -107,13 +107,14 @@ static const char *file_get_filename(ostream_t *strm)
 ostream_t *ostream_open_file(const char *path, int flags)
 {
 	file_ostream_t *file = calloc(1, sizeof(*file));
-	sqfs_object_t *obj = (sqfs_object_t *)file;
 	ostream_t *strm = (ostream_t *)file;
 
 	if (file == NULL) {
 		perror(path);
 		return NULL;
 	}
+
+	sqfs_object_init(file, file_destroy, NULL);
 
 	file->path = strdup(path);
 	if (file->path == NULL) {
@@ -138,7 +139,6 @@ ostream_t *ostream_open_file(const char *path, int flags)
 	strm->append = file_append;
 	strm->flush = file_flush;
 	strm->get_filename = file_get_filename;
-	obj->destroy = file_destroy;
 	return strm;
 fail_path:
 	free(file->path);
@@ -150,7 +150,6 @@ fail_free:
 ostream_t *ostream_open_stdout(void)
 {
 	file_ostream_t *file = calloc(1, sizeof(*file));
-	sqfs_object_t *obj = (sqfs_object_t *)file;
 	ostream_t *strm = (ostream_t *)file;
 
 	if (file == NULL)
@@ -164,7 +163,6 @@ ostream_t *ostream_open_stdout(void)
 	strm->append = file_append;
 	strm->flush = file_flush;
 	strm->get_filename = file_get_filename;
-	obj->destroy = file_destroy;
 	return strm;
 fail:
 	perror("creating file wrapper for stdout");

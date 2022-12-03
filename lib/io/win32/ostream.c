@@ -135,6 +135,8 @@ ostream_t *ostream_open_file(const char *path, int flags)
 		return NULL;
 	}
 
+	sqfs_object_init(file, file_destroy, NULL);
+
 	wpath = path_to_windows(path);
 	if (wpath == NULL)
 		goto fail_free;
@@ -169,7 +171,6 @@ ostream_t *ostream_open_file(const char *path, int flags)
 	strm->append = file_append;
 	strm->flush = file_flush;
 	strm->get_filename = file_get_filename;
-	obj->destroy = file_destroy;
 	return strm;
 fail_path:
 	free(file->path);
@@ -189,9 +190,10 @@ ostream_t *ostream_open_stdout(void)
 		return NULL;
 	}
 
+	sqfs_object_init(strm, stdout_destroy, NULL);
+
 	strm->append = stdout_append;
 	strm->flush = stdout_flush;
 	strm->get_filename = stdout_get_filename;
-	obj->destroy = stdout_destroy;
 	return strm;
 }

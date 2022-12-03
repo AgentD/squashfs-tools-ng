@@ -147,6 +147,8 @@ sqfs_dir_writer_t *sqfs_dir_writer_create(sqfs_meta_writer_t *dm,
 	if (writer == NULL)
 		return NULL;
 
+	sqfs_object_init(writer, dir_writer_destroy, NULL);
+
 	if (flags & SQFS_DIR_WRITER_CREATE_EXPORT_TABLE) {
 		if (array_init(&writer->export_tbl, sizeof(sqfs_u64), 512)) {
 			free(writer);
@@ -157,7 +159,6 @@ sqfs_dir_writer_t *sqfs_dir_writer_create(sqfs_meta_writer_t *dm,
 		       writer->export_tbl.size * writer->export_tbl.count);
 	}
 
-	((sqfs_object_t *)writer)->destroy = dir_writer_destroy;
 	writer->dm = dm;
 	return writer;
 }

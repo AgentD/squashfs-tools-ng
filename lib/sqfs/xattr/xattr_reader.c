@@ -347,7 +347,6 @@ sqfs_xattr_reader_t *sqfs_xattr_reader_create(sqfs_u32 flags)
 	if (xr == NULL)
 		return NULL;
 
-	((sqfs_object_t *)xr)->copy = xattr_reader_copy;
-	((sqfs_object_t *)xr)->destroy = xattr_reader_destroy;
+	sqfs_object_init(xr, xattr_reader_destroy, xattr_reader_copy);
 	return xr;
 }

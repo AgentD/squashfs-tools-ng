@@ -162,6 +162,22 @@ static SQFS_INLINE void *sqfs_copy(const void *obj)
 	return NULL;
 }
 
+/**
+ * @brief Initialize an object with default callbacks.
+ *
+ * @memberof sqfs_object_t
+ *
+ * @param obj A pointer to an uninitialized object
+ */
+static SQFS_INLINE
+void sqfs_object_init(void *obj,
+		      void (*destroy_fn)(sqfs_object_t *),
+		      sqfs_object_t *(*copy_fn)(const sqfs_object_t *))
+{
+	((sqfs_object_t *)obj)->destroy = destroy_fn;
+	((sqfs_object_t *)obj)->copy = copy_fn;
+}
+
 #ifdef __cplusplus
 extern "C" {
 #endif

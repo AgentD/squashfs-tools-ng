@@ -122,6 +122,8 @@ sqfs_dir_reader_t *sqfs_dir_reader_create(const sqfs_super_t *super,
 	if (rd == NULL)
 		return NULL;
 
+	sqfs_object_init(rd, dir_reader_destroy, dir_reader_copy);
+
 	if (flags & SQFS_DIR_READER_DOT_ENTRIES) {
 		ret = rbtree_init(&rd->dcache, sizeof(sqfs_u32),
 				  sizeof(sqfs_u64), dcache_key_compare);
@@ -150,8 +152,6 @@ sqfs_dir_reader_t *sqfs_dir_reader_create(const sqfs_super_t *super,
 	if (rd->meta_dir == NULL)
 		goto fail_mdir;
 
-	((sqfs_object_t *)rd)->destroy = dir_reader_destroy;
-	((sqfs_object_t *)rd)->copy = dir_reader_copy;
 	rd->super = super;
 	rd->flags = flags;
 	rd->state = DIR_STATE_NONE;

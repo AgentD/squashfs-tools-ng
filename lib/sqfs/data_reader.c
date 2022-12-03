@@ -196,14 +196,14 @@ sqfs_data_reader_t *sqfs_data_reader_create(sqfs_file_t *file,
 	if (data == NULL)
 		return NULL;
 
+	sqfs_object_init(data, data_reader_destroy, data_reader_copy);
+
 	data->frag_tbl = sqfs_frag_table_create(0);
 	if (data->frag_tbl == NULL) {
 		free(data);
 		return NULL;
 	}
 
-	((sqfs_object_t *)data)->destroy = data_reader_destroy;
-	((sqfs_object_t *)data)->copy = data_reader_copy;
 	data->file = file;
 	data->block_size = block_size;
 	data->cmp = cmp;

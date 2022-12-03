@@ -268,6 +268,8 @@ int sqfs_block_processor_create_ex(const sqfs_block_processor_desc_t *desc,
 	if (proc == NULL)
 		return SQFS_ERROR_ALLOC;
 
+	sqfs_object_init(proc, block_processor_destroy, NULL);
+
 	proc->max_backlog = desc->max_backlog;
 	proc->max_block_size = desc->max_block_size;
 	proc->frag_tbl = desc->tbl;
@@ -275,7 +277,6 @@ int sqfs_block_processor_create_ex(const sqfs_block_processor_desc_t *desc,
 	proc->file = desc->file;
 	proc->uncmp = desc->uncmp;
 	proc->stats.size = sizeof(proc->stats);
-	((sqfs_object_t *)proc)->destroy = block_processor_destroy;
 
 	/* we need at least one current data block + one fragment block */
 	if (proc->max_backlog < 3)

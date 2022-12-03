@@ -63,7 +63,6 @@ static void comp_destroy(sqfs_object_t *obj)
 ostream_t *ostream_compressor_create(ostream_t *strm, int comp_id)
 {
 	ostream_comp_t *comp = NULL;
-	sqfs_object_t *obj;
 	ostream_t *base;
 
 	switch (comp_id) {
@@ -94,6 +93,8 @@ ostream_t *ostream_compressor_create(ostream_t *strm, int comp_id)
 	if (comp == NULL)
 		return NULL;
 
+	sqfs_object_init(comp, comp_destroy, NULL);
+
 	comp->wrapped = strm;
 	comp->inbuf_used = 0;
 
@@ -101,8 +102,5 @@ ostream_t *ostream_compressor_create(ostream_t *strm, int comp_id)
 	base->append = comp_append;
 	base->flush = comp_flush;
 	base->get_filename = comp_get_filename;
-
-	obj = (sqfs_object_t *)comp;
-	obj->destroy = comp_destroy;
 	return base;
 }

@@ -87,7 +87,8 @@ sqfs_meta_writer_t *sqfs_meta_writer_create(sqfs_file_t *file,
 	if (m == NULL)
 		return NULL;
 
-	((sqfs_object_t *)m)->destroy = meta_writer_destroy;
+	sqfs_object_init(m, meta_writer_destroy, NULL);
+
 	m->cmp = cmp;
 	m->file = file;
 	m->flags = flags;

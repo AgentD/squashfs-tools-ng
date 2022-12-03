@@ -304,6 +304,8 @@ int xz_compressor_create(const sqfs_compressor_config_t *cfg,
 	if (xz == NULL)
 		return SQFS_ERROR_ALLOC;
 
+	sqfs_object_init(xz, xz_destroy, xz_create_copy);
+
 	xz->flags = cfg->flags;
 	xz->dict_size = cfg->opt.xz.dict_size;
 	xz->block_size = cfg->block_size;
@@ -316,8 +318,6 @@ int xz_compressor_create(const sqfs_compressor_config_t *cfg,
 		xz_uncomp_block : xz_comp_block;
 	base->write_options = xz_write_options;
 	base->read_options = xz_read_options;
-	((sqfs_object_t *)base)->copy = xz_create_copy;
-	((sqfs_object_t *)base)->destroy = xz_destroy;
 
 	*out = base;
 	return 0;
