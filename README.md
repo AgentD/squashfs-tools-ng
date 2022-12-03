@@ -84,18 +84,18 @@ Releases are tagged and gpg signed in the git tree and official release tarballs
 are generated using Autotools.
 
 The git `master` branch currently contains ongoing development for a
-future `1.2.0` release.
+future `2.0` release.
 
-The latest stable version is `1.1.4`, maintained in a `fixes-1.1.0` branch.
+The latest stable version is `1.2.0`, maintained in a `fixes-1.2.0` branch.
 
-Bug fixes that also affect the previous `1.0.x` minor version are back-ported to
-a `fixes-1.0.0` branch with occasionally patch level releases. The latest
-release from this branch is `1.0.6`.
+Bug fixes that also affect the previous `1.1.0` minor version are back-ported to
+a `fixes-1.1.0` branch with occasionally patch level releases. The latest
+release from this branch is `1.1.4`.
 
-Older versions are no longer supported. This currently affects the initial
-development versions with major version `0` (`0.1` up to `0.9.2`). It is likely
-that support for `1.0.x` will also be dropped once a new minor version is
-released.
+Older versions are no longer supported. Fixes were previously backported to
+the `fixes-1.0.0` branch, the final release is `1.0.7`.
+
+It is likely that support for `1.1.x` will also be dropped after version `2.0`.
 
 # Getting and Building the Source Code
 
