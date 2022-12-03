@@ -173,29 +173,9 @@ extern "C" {
  * and return pointers to them, with the expectation that the user takes care
  * of freeing them memory again.
  *
- * In the past this worked without hitches, because most sane operating systems
- * have a single, global C library that everything is linked against. On
- * systems like Windows that have a huge fragmentation of runtime libraries
- * this fails, because the library and application can easily end up linked
- * against different runtime libraries, making it impossible for the program
- * to free the memory.
- *
- * To re-create the same situation on Linux, one would have to link a program
- * and the squashfs library dynamically, while linking at least one of them
- * statically against the C runtime, or intentionally linking against two
- * different runtimes.
- *
- * This function mitigates the arising problem by exposing the free() function
- * of the libraries runtime to the application, so it can propperly release
- * memory again to the correct heap.
- *
- * To maintain API/ABI compatibillity, it is guaranteed that for all versions
- * of libsquashfs with major version 1, this function does nothing other than
- * call free() on the C runtime that the library was linked against. If just
- * calling free() works on your system, it will continue to work, and older
- * application will continue to work with newer versions of libsquashfs 1.x.
- * Going forward, new applications using libsquashfs should use this function
- * instead for better portabillity.
+ * The application cannot simply use free, as it might be linked against a
+ * different runtime than the library (e.g. on systems like Windows that
+ * have a huge fragmentation of runtime libraries).
  *
  * @param ptr A pointer to a memory block returned by a libsquashfs function.
  */
