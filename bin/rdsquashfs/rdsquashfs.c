@@ -100,15 +100,15 @@ static int tree_sort(sqfs_tree_node_t *root)
 int main(int argc, char **argv)
 {
 	sqfs_xattr_reader_t *xattr = NULL;
+	sqfs_data_reader_t *data = NULL;
+	sqfs_dir_reader_t *dirrd = NULL;
+	sqfs_compressor_t *cmp = NULL;
+	sqfs_id_table_t *idtbl = NULL;
 	sqfs_compressor_config_t cfg;
+	sqfs_tree_node_t *n = NULL;
 	int status = EXIT_FAILURE;
-	sqfs_data_reader_t *data;
-	sqfs_dir_reader_t *dirrd;
-	sqfs_compressor_t *cmp;
-	sqfs_id_table_t *idtbl;
-	sqfs_tree_node_t *n;
+	sqfs_file_t *file = NULL;
 	sqfs_super_t super;
-	sqfs_file_t *file;
 	options_t opt;
 	int ret;
 
@@ -117,13 +117,13 @@ int main(int argc, char **argv)
 	file = sqfs_open_file(opt.image_name, SQFS_FILE_OPEN_READ_ONLY);
 	if (file == NULL) {
 		perror(opt.image_name);
-		goto out_cmd;
+		goto out;
 	}
 
 	ret = sqfs_super_read(&super, file);
 	if (ret) {
 		sqfs_perror(opt.image_name, "reading super block", ret);
-		goto out_file;
+		goto out;
 	}
 
 	sqfs_compressor_config_init(&cfg, super.compression_id,
@@ -139,7 +139,7 @@ int main(int argc, char **argv)
 
 	if (ret != 0) {
 		sqfs_perror(opt.image_name, "creating compressor", ret);
-		goto out_file;
+		goto out;
 	}
 
 	if (!(super.flags & SQFS_FLAG_NO_XATTRS)) {
@@ -147,14 +147,14 @@ int main(int argc, char **argv)
 		if (xattr == NULL) {
 			sqfs_perror(opt.image_name, "creating xattr reader",
 				    SQFS_ERROR_ALLOC);
-			goto out_cmp;
+			goto out;
 		}
 
 		ret = sqfs_xattr_reader_load(xattr, &super, file, cmp);
 		if (ret) {
 			sqfs_perror(opt.image_name, "loading xattr table",
 				    ret);
-			goto out_xr;
+			goto out;
 		}
 	}
 
@@ -162,40 +162,40 @@ int main(int argc, char **argv)
 	if (idtbl == NULL) {
 		sqfs_perror(opt.image_name, "creating ID table",
 			    SQFS_ERROR_ALLOC);
-		goto out_xr;
+		goto out;
 	}
 
 	ret = sqfs_id_table_read(idtbl, file, &super, cmp);
 	if (ret) {
 		sqfs_perror(opt.image_name, "loading ID table", ret);
-		goto out_id;
+		goto out;
 	}
 
 	dirrd = sqfs_dir_reader_create(&super, cmp, file, 0);
 	if (dirrd == NULL) {
 		sqfs_perror(opt.image_name, "creating dir reader",
 			    SQFS_ERROR_ALLOC);
-		goto out_id;
+		goto out;
 	}
 
 	data = sqfs_data_reader_create(file, super.block_size, cmp, 0);
 	if (data == NULL) {
 		sqfs_perror(opt.image_name, "creating data reader",
 			    SQFS_ERROR_ALLOC);
-		goto out_dr;
+		goto out;
 	}
 
 	ret = sqfs_data_reader_load_fragment_table(data, &super);
 	if (ret) {
 		sqfs_perror(opt.image_name, "loading fragment table", ret);
-		goto out_data;
+		goto out;
 	}
 
 	ret = sqfs_dir_reader_get_full_hierarchy(dirrd, idtbl, opt.cmdpath,
 						 opt.rdtree_flags, &n);
 	if (ret) {
 		sqfs_perror(opt.image_name, "reading filesystem tree", ret);
-		goto out_data;
+		goto out;
 	}
 
 	switch (opt.op) {
@@ -219,13 +219,11 @@ int main(int argc, char **argv)
 		if (fp == NULL)
 			goto out;
 
-		if (sqfs_data_reader_dump(opt.cmdpath, data, n->inode,
-					  fp, super.block_size)) {
-			sqfs_drop(fp);
-			goto out;
-		}
-
+		ret = sqfs_data_reader_dump(opt.cmdpath, data, n->inode,
+					    fp, super.block_size);
 		sqfs_drop(fp);
+		if (ret)
+			goto out;
 		break;
 	}
 	case OP_UNPACK:
@@ -266,20 +264,12 @@ int main(int argc, char **argv)
 	status = EXIT_SUCCESS;
 out:
 	sqfs_dir_tree_destroy(n);
-out_data:
 	sqfs_drop(data);
-out_dr:
 	sqfs_drop(dirrd);
-out_id:
 	sqfs_drop(idtbl);
-out_xr:
-	if (xattr != NULL)
-		sqfs_drop(xattr);
-out_cmp:
+	sqfs_drop(xattr);
 	sqfs_drop(cmp);
-out_file:
 	sqfs_drop(file);
-out_cmd:
 	free(opt.cmdpath);
 	return status;
 }

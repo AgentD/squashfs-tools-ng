@@ -6,9 +6,21 @@
  */
 #include "sqfsdiff.h"
 
+static void close_sfqs(sqfs_state_t *state)
+{
+	sqfs_drop(state->data);
+	sqfs_dir_tree_destroy(state->root);
+	sqfs_drop(state->dr);
+	sqfs_drop(state->idtbl);
+	sqfs_drop(state->cmp);
+	sqfs_drop(state->file);
+}
+
 static int open_sfqs(sqfs_state_t *state, const char *path)
 {
 	int ret;
+
+	memset(state, 0, sizeof(*state));
 
 	state->file = sqfs_open_file(path, SQFS_FILE_OPEN_READ_ONLY);
 	if (state->file == NULL) {
@@ -19,7 +31,7 @@ static int open_sfqs(sqfs_state_t *state, const char *path)
 	ret = sqfs_super_read(&state->super, state->file);
 	if (ret) {
 		sqfs_perror(path, "reading super block", ret);
-		goto fail_file;
+		goto fail;
 	}
 
 	sqfs_compressor_config_init(&state->cfg, state->super.compression_id,
@@ -35,7 +47,7 @@ static int open_sfqs(sqfs_state_t *state, const char *path)
 
 	if (ret != 0) {
 		sqfs_perror(path, "creating compressor", ret);
-		goto fail_file;
+		goto fail;
 	}
 
 	if (state->super.flags & SQFS_FLAG_COMPRESSOR_OPTIONS) {
@@ -56,14 +68,14 @@ static int open_sfqs(sqfs_state_t *state, const char *path)
 	state->idtbl = sqfs_id_table_create(0);
 	if (state->idtbl == NULL) {
 		sqfs_perror(path, "creating ID table", SQFS_ERROR_ALLOC);
-		goto fail_cmp;
+		goto fail;
 	}
 
 	ret = sqfs_id_table_read(state->idtbl, state->file,
 				 &state->super, state->cmp);
 	if (ret) {
 		sqfs_perror(path, "loading ID table", ret);
-		goto fail_id;
+		goto fail;
 	}
 
 	state->dr = sqfs_dir_reader_create(&state->super, state->cmp,
@@ -71,14 +83,14 @@ static int open_sfqs(sqfs_state_t *state, const char *path)
 	if (state->dr == NULL) {
 		sqfs_perror(path, "creating directory reader",
 			    SQFS_ERROR_ALLOC);
-		goto fail_id;
+		goto fail;
 	}
 
 	ret = sqfs_dir_reader_get_full_hierarchy(state->dr, state->idtbl,
 						 NULL, 0, &state->root);
 	if (ret) {
 		sqfs_perror(path, "loading filesystem tree", ret);
-		goto fail_dr;
+		goto fail;
 	}
 
 	state->data = sqfs_data_reader_create(state->file,
@@ -86,39 +98,19 @@ static int open_sfqs(sqfs_state_t *state, const char *path)
 					      state->cmp, 0);
 	if (state->data == NULL) {
 		sqfs_perror(path, "creating data reader", SQFS_ERROR_ALLOC);
-		goto fail_tree;
+		goto fail;
 	}
 
 	ret = sqfs_data_reader_load_fragment_table(state->data, &state->super);
 	if (ret) {
 		sqfs_perror(path, "loading fragment table", ret);
-		goto fail_data;
+		goto fail;
 	}
 
 	return 0;
-fail_data:
-	sqfs_drop(state->data);
-fail_tree:
-	sqfs_dir_tree_destroy(state->root);
-fail_dr:
-	sqfs_drop(state->dr);
-fail_id:
-	sqfs_drop(state->idtbl);
-fail_cmp:
-	sqfs_drop(state->cmp);
-fail_file:
-	sqfs_drop(state->file);
+fail:
+	close_sfqs(state);
 	return -1;
-}
-
-static void close_sfqs(sqfs_state_t *state)
-{
-	sqfs_drop(state->data);
-	sqfs_dir_tree_destroy(state->root);
-	sqfs_drop(state->dr);
-	sqfs_drop(state->idtbl);
-	sqfs_drop(state->cmp);
-	sqfs_drop(state->file);
 }
 
 int main(int argc, char **argv)
