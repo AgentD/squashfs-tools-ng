@@ -48,6 +48,10 @@ struct sqfs_meta_reader_t {
 
 static void meta_reader_destroy(sqfs_object_t *m)
 {
+	sqfs_meta_reader_t *mr = (sqfs_meta_reader_t *)m;
+
+	sqfs_drop(mr->file);
+	sqfs_drop(mr->cmp);
 	free(m);
 }
 
@@ -58,10 +62,12 @@ static sqfs_object_t *meta_reader_copy(const sqfs_object_t *obj)
 
 	if (copy != NULL) {
 		memcpy(copy, m, sizeof(*m));
+
+		/* duplicate references */
+		copy->cmp = sqfs_grab(copy->cmp);
+		copy->file = sqfs_grab(copy->file);
 	}
 
-	/* XXX: cmp and file aren't deep-copied because m
-	        doesn't own them either. */
 	return (sqfs_object_t *)copy;
 }
 
@@ -79,8 +85,8 @@ sqfs_meta_reader_t *sqfs_meta_reader_create(sqfs_file_t *file,
 	m->block_offset = 0xFFFFFFFFFFFFFFFFUL;
 	m->start = start;
 	m->limit = limit;
-	m->file = file;
-	m->cmp = cmp;
+	m->file = sqfs_grab(file);
+	m->cmp = sqfs_grab(cmp);
 	return m;
 }
 

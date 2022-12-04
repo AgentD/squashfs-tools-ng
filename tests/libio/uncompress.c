@@ -427,6 +427,6 @@ int main(int argc, char **argv)
 	TEST_EQUAL_I(ret, 0);
 
 	/* cleanup */
-	sqfs_destroy(xfrm);
+	sqfs_drop(xfrm);
 	return EXIT_SUCCESS;
 }

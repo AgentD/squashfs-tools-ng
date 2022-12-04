@@ -130,6 +130,7 @@ static void dir_writer_destroy(sqfs_object_t *obj)
 {
 	sqfs_dir_writer_t *writer = (sqfs_dir_writer_t *)obj;
 
+	sqfs_drop(writer->dm);
 	writer_reset(writer);
 	array_cleanup(&writer->export_tbl);
 	free(writer);
@@ -159,7 +160,7 @@ sqfs_dir_writer_t *sqfs_dir_writer_create(sqfs_meta_writer_t *dm,
 		       writer->export_tbl.size * writer->export_tbl.count);
 	}
 
-	writer->dm = dm;
+	writer->dm = sqfs_grab(dm);
 	return writer;
 }
 

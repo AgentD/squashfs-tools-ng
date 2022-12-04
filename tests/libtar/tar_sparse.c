@@ -75,7 +75,7 @@ static void test_case_sparse(const char *path)
 	TEST_NULL(sparse);
 
 	clear_header(&hdr);
-	sqfs_destroy(fp);
+	sqfs_drop(fp);
 }
 
 int main(int argc, char **argv)

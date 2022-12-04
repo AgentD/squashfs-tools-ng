@@ -197,16 +197,16 @@ int main(int argc, char **argv)
 
 	/* cleanup */
 	status = EXIT_SUCCESS;
-	sqfs_destroy(idtbl);
+	sqfs_drop(idtbl);
 out_dirwr:
-	sqfs_destroy(dirwr);
+	sqfs_drop(dirwr);
 out_dm:
-	sqfs_destroy(dir_m);
+	sqfs_drop(dir_m);
 out_im:
-	sqfs_destroy(inode_m);
+	sqfs_drop(inode_m);
 out_cmp:
-	sqfs_destroy(cmp);
+	sqfs_drop(cmp);
 out_file:
-	sqfs_destroy(file);
+	sqfs_drop(file);
 	return status;
 }

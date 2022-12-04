@@ -193,12 +193,12 @@ xattr_open_map_file(const char *path) {
 			goto fail;
 	}
 
-	sqfs_destroy(file);
+	sqfs_drop(file);
 	return map;
 fail:
 	xattr_close_map_file(map);
 fail_close:
-	sqfs_destroy(file);
+	sqfs_drop(file);
 	return NULL;
 }
 

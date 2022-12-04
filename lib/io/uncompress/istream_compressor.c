@@ -18,7 +18,7 @@ static void comp_destroy(sqfs_object_t *obj)
 	istream_comp_t *comp = (istream_comp_t *)obj;
 
 	comp->cleanup(comp);
-	sqfs_destroy(comp->wrapped);
+	sqfs_drop(comp->wrapped);
 	free(comp);
 }
 
@@ -57,7 +57,7 @@ istream_t *istream_compressor_create(istream_t *strm, int comp_id)
 
 	sqfs_object_init(comp, comp_destroy, NULL);
 
-	comp->wrapped = strm;
+	comp->wrapped = sqfs_grab(strm);
 
 	base = (istream_t *)comp;
 	base->get_filename = comp_get_filename;

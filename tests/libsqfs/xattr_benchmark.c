@@ -113,10 +113,10 @@ int main(int argc, char **argv)
 	}
 
 	/* cleanup */
-	sqfs_destroy(xwr);
+	sqfs_drop(xwr);
 	return EXIT_SUCCESS;
 fail:
-	sqfs_destroy(xwr);
+	sqfs_drop(xwr);
 	return EXIT_FAILURE;
 fail_arg:
 	fputs("Try `xattr_benchmark --help' for more information.\n", stderr);

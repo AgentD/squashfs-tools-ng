@@ -30,7 +30,7 @@ static int read_strings(void)
 		strings[i] = line;
 	}
 
-	sqfs_destroy(fp);
+	sqfs_drop(fp);
 	return 0;
 }
 

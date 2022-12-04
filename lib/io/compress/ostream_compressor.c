@@ -56,7 +56,7 @@ static void comp_destroy(sqfs_object_t *obj)
 	ostream_comp_t *comp = (ostream_comp_t *)obj;
 
 	comp->cleanup(comp);
-	sqfs_destroy(comp->wrapped);
+	sqfs_drop(comp->wrapped);
 	free(comp);
 }
 
@@ -95,7 +95,7 @@ ostream_t *ostream_compressor_create(ostream_t *strm, int comp_id)
 
 	sqfs_object_init(comp, comp_destroy, NULL);
 
-	comp->wrapped = strm;
+	comp->wrapped = sqfs_grab(strm);
 	comp->inbuf_used = 0;
 
 	base = (ostream_t *)comp;

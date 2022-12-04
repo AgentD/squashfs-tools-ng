@@ -48,33 +48,29 @@ static sqfs_object_t *xattr_reader_copy(const sqfs_object_t *obj)
 	if (xr->kvrd != NULL) {
 		copy->kvrd = sqfs_copy(xr->kvrd);
 		if (copy->kvrd == NULL)
-			goto fail_kvrd;
+			goto fail;
 	}
 
 	if (xr->idrd != NULL) {
 		copy->idrd = sqfs_copy(xr->idrd);
 		if (copy->idrd == NULL)
-			goto fail_idrd;
+			goto fail;
 	}
 
 	if (xr->id_block_starts != NULL) {
 		copy->id_block_starts = alloc_array(sizeof(sqfs_u64),
 						    xr->num_id_blocks);
 		if (copy->id_block_starts == NULL)
-			goto fail_idblk;
+			goto fail;
 
 		memcpy(copy->id_block_starts, xr->id_block_starts,
 		       sizeof(sqfs_u64) * xr->num_id_blocks);
 	}
 
 	return (sqfs_object_t *)copy;
-fail_idblk:
-	if (copy->idrd != NULL)
-		sqfs_destroy(copy->idrd);
-fail_idrd:
-	if (copy->kvrd != NULL)
-		sqfs_destroy(copy->kvrd);
-fail_kvrd:
+fail:
+	sqfs_drop(copy->idrd);
+	sqfs_drop(copy->kvrd);
 	free(copy);
 	return NULL;
 }
@@ -83,12 +79,8 @@ static void xattr_reader_destroy(sqfs_object_t *obj)
 {
 	sqfs_xattr_reader_t *xr = (sqfs_xattr_reader_t *)obj;
 
-	if (xr->kvrd != NULL)
-		sqfs_destroy(xr->kvrd);
-
-	if (xr->idrd != NULL)
-		sqfs_destroy(xr->idrd);
-
+	sqfs_drop(xr->kvrd);
+	sqfs_drop(xr->idrd);
 	free(xr->id_block_starts);
 	free(xr);
 }
@@ -111,15 +103,8 @@ int sqfs_xattr_reader_load(sqfs_xattr_reader_t *xr, const sqfs_super_t *super,
 		return SQFS_ERROR_OUT_OF_BOUNDS;
 
 	/* cleanup pre-existing data */
-	if (xr->idrd != NULL) {
-		sqfs_destroy(xr->idrd);
-		xr->idrd = NULL;
-	}
-
-	if (xr->kvrd != NULL) {
-		sqfs_destroy(xr->kvrd);
-		xr->kvrd = NULL;
-	}
+	xr->idrd = sqfs_drop(xr->idrd);
+	xr->kvrd = sqfs_drop(xr->kvrd);
 
 	free(xr->id_block_starts);
 	xr->id_block_starts = NULL;
@@ -174,8 +159,7 @@ int sqfs_xattr_reader_load(sqfs_xattr_reader_t *xr, const sqfs_super_t *super,
 	xr->xattr_end = super->bytes_used;
 	return 0;
 fail_idrd:
-	sqfs_destroy(xr->idrd);
-	xr->idrd = NULL;
+	xr->idrd = sqfs_drop(xr->idrd);
 fail_blocks:
 	free(xr->id_block_starts);
 	xr->id_block_starts = NULL;

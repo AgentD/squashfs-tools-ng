@@ -71,6 +71,8 @@ static void meta_writer_destroy(sqfs_object_t *obj)
 		free(blk);
 	}
 
+	sqfs_drop(m->file);
+	sqfs_drop(m->cmp);
 	free(m);
 }
 
@@ -89,8 +91,8 @@ sqfs_meta_writer_t *sqfs_meta_writer_create(sqfs_file_t *file,
 
 	sqfs_object_init(m, meta_writer_destroy, NULL);
 
-	m->cmp = cmp;
-	m->file = file;
+	m->cmp = sqfs_grab(cmp);
+	m->file = sqfs_grab(file);
 	m->flags = flags;
 	return m;
 }

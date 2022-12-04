@@ -59,7 +59,7 @@ static int pack_files(sqfs_block_processor_t *data, fstree_t *fs,
 			flags |= SQFS_BLK_DONT_FRAGMENT;
 
 		ret = write_data_from_file(path, data, &fi->inode, file, flags);
-		sqfs_destroy(file);
+		sqfs_drop(file);
 		free(node_path);
 
 		if (ret)
@@ -209,7 +209,7 @@ out:
 	if (sehnd != NULL)
 		selinux_close_context_file(sehnd);
 	if (sortfile != NULL)
-		sqfs_destroy(sortfile);
+		sqfs_drop(sortfile);
 	free(opt.packdir);
 	return status;
 }

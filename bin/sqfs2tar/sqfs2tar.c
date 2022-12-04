@@ -124,7 +124,11 @@ int main(int argc, char **argv)
 	}
 
 	if (compressor > 0) {
-		out_file = ostream_compressor_create(out_file, compressor);
+		ostream_t *strm = ostream_compressor_create(out_file,
+							    compressor);
+		sqfs_drop(out_file);
+		out_file = strm;
+
 		if (out_file == NULL)
 			goto out_dirs;
 	}
@@ -251,20 +255,19 @@ out:
 	if (root != NULL)
 		sqfs_dir_tree_destroy(root);
 out_xr:
-	if (xr != NULL)
-		sqfs_destroy(xr);
+	sqfs_drop(xr);
 out_dr:
-	sqfs_destroy(dr);
+	sqfs_drop(dr);
 out_data:
-	sqfs_destroy(data);
+	sqfs_drop(data);
 out_id:
-	sqfs_destroy(idtbl);
+	sqfs_drop(idtbl);
 out_cmp:
-	sqfs_destroy(cmp);
+	sqfs_drop(cmp);
 out_fd:
-	sqfs_destroy(file);
+	sqfs_drop(file);
 out_ostrm:
-	sqfs_destroy(out_file);
+	sqfs_drop(out_file);
 out_dirs:
 	for (i = 0; i < num_subdirs; ++i)
 		free(subdirs[i]);

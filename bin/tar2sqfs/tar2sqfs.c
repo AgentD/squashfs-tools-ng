@@ -50,6 +50,8 @@ int main(int argc, char **argv)
 		goto out_if;
 
 	if (ret > 0) {
+		istream_t *strm;
+
 		if (!io_compressor_exists(ret)) {
 			fprintf(stderr,
 				"%s: %s compression is not supported.\n",
@@ -58,7 +60,10 @@ int main(int argc, char **argv)
 			goto out_if;
 		}
 
-		input_file = istream_compressor_create(input_file, ret);
+		strm = istream_compressor_create(input_file, ret);
+		sqfs_drop(input_file);
+		input_file = strm;
+
 		if (input_file == NULL)
 			return EXIT_FAILURE;
 	}
@@ -80,6 +85,6 @@ int main(int argc, char **argv)
 out:
 	sqfs_writer_cleanup(&sqfs, status);
 out_if:
-	sqfs_destroy(input_file);
+	sqfs_drop(input_file);
 	return status;
 }

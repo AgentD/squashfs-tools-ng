@@ -148,6 +148,7 @@ static int align_file(block_writer_default_t *wr, sqfs_u32 flags)
 
 static void block_writer_destroy(sqfs_object_t *wr)
 {
+	sqfs_drop(((block_writer_default_t *)wr)->file);
 	array_cleanup(&(((block_writer_default_t *)wr)->blocks));
 	free(wr);
 }
@@ -224,10 +225,11 @@ sqfs_block_writer_t *sqfs_block_writer_create(sqfs_file_t *file,
 	((sqfs_block_writer_t *)wr)->write_data_block = write_data_block;
 	((sqfs_block_writer_t *)wr)->get_block_count = get_block_count;
 	wr->flags = flags;
-	wr->file = file;
+	wr->file = sqfs_grab(file);
 	wr->devblksz = devblksz;
 
 	if (array_init(&(wr->blocks), sizeof(blk_info_t), INIT_BLOCK_COUNT)) {
+		sqfs_drop(wr->file);
 		free(wr);
 		return NULL;
 	}

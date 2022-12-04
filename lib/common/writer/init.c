@@ -70,7 +70,7 @@ int sqfs_writer_init(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *wrcfg)
 #ifdef WITH_LZO
 	if (cfg.id == SQFS_COMP_LZO) {
 		if (sqfs->cmp != NULL)
-			sqfs_destroy(sqfs->cmp);
+			sqfs_drop(sqfs->cmp);
 
 		ret = lzo_compressor_create(&cfg, &sqfs->cmp);
 	}
@@ -87,7 +87,7 @@ int sqfs_writer_init(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *wrcfg)
 #ifdef WITH_LZO
 	if (cfg.id == SQFS_COMP_LZO) {
 		if (ret == 0 && sqfs->uncmp != NULL)
-			sqfs_destroy(sqfs->uncmp);
+			sqfs_drop(sqfs->uncmp);
 
 		ret = lzo_compressor_create(&cfg, &sqfs->uncmp);
 	}
@@ -193,27 +193,26 @@ int sqfs_writer_init(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *wrcfg)
 
 	return 0;
 fail_dm:
-	sqfs_destroy(sqfs->dm);
+	sqfs_drop(sqfs->dm);
 fail_im:
-	sqfs_destroy(sqfs->im);
+	sqfs_drop(sqfs->im);
 fail_xwr:
-	if (sqfs->xwr != NULL)
-		sqfs_destroy(sqfs->xwr);
+	sqfs_drop(sqfs->xwr);
 fail_id:
-	sqfs_destroy(sqfs->idtbl);
+	sqfs_drop(sqfs->idtbl);
 fail_data:
-	sqfs_destroy(sqfs->data);
+	sqfs_drop(sqfs->data);
 fail_fragtbl:
-	sqfs_destroy(sqfs->fragtbl);
+	sqfs_drop(sqfs->fragtbl);
 fail_blkwr:
-	sqfs_destroy(sqfs->blkwr);
+	sqfs_drop(sqfs->blkwr);
 fail_uncmp:
-	sqfs_destroy(sqfs->uncmp);
+	sqfs_drop(sqfs->uncmp);
 fail_cmp:
-	sqfs_destroy(sqfs->cmp);
+	sqfs_drop(sqfs->cmp);
 fail_fs:
 	fstree_cleanup(&sqfs->fs);
 fail_file:
-	sqfs_destroy(sqfs->outfile);
+	sqfs_drop(sqfs->outfile);
 	return -1;
 }

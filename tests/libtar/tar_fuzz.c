@@ -41,9 +41,9 @@ int main(int argc, char **argv)
 			goto fail;
 	}
 
-	sqfs_destroy(fp);
+	sqfs_drop(fp);
 	return EXIT_SUCCESS;
 fail:
-	sqfs_destroy(fp);
+	sqfs_drop(fp);
 	return EXIT_FAILURE;
 }

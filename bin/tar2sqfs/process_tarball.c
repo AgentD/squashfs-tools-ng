@@ -72,7 +72,7 @@ static int write_file(istream_t *input_file, sqfs_writer_t *sqfs,
 	}
 
 	ostream_flush(out);
-	sqfs_destroy(out);
+	sqfs_drop(out);
 
 	if (ret)
 		return -1;

@@ -45,6 +45,6 @@ int main(int argc, char **argv)
 	TEST_NULL(hdr.xattr->next);
 
 	clear_header(&hdr);
-	sqfs_destroy(fp);
+	sqfs_drop(fp);
 	return EXIT_SUCCESS;
 }

@@ -76,12 +76,12 @@ int sqfs_read_table(sqfs_file_t *file, sqfs_compressor_t *cmp,
 		table_size -= diff;
 	}
 
-	sqfs_destroy(m);
+	sqfs_drop(m);
 	free(locations);
 	*out = data;
 	return 0;
 fail:
-	sqfs_destroy(m);
+	sqfs_drop(m);
 fail_idx:
 	free(locations);
 fail_data:

@@ -131,7 +131,9 @@ static void data_reader_destroy(sqfs_object_t *obj)
 {
 	sqfs_data_reader_t *data = (sqfs_data_reader_t *)obj;
 
-	sqfs_destroy(data->frag_tbl);
+	sqfs_drop(data->cmp);
+	sqfs_drop(data->file);
+	sqfs_drop(data->frag_tbl);
 	free(data->data_block);
 	free(data->frag_block);
 	free(data);
@@ -170,13 +172,14 @@ static sqfs_object_t *data_reader_copy(const sqfs_object_t *obj)
 		       data->frag_blk_size);
 	}
 
-	/* XXX: file and cmp aren't deep-copied becaues data
-	        doesn't own them either. */
+	/* duplicate references */
+	copy->file = sqfs_grab(copy->file);
+	copy->cmp = sqfs_grab(copy->cmp);
 	return (sqfs_object_t *)copy;
 fail_fblk:
 	free(copy->data_block);
 fail_dblk:
-	sqfs_destroy(copy->frag_tbl);
+	sqfs_drop(copy->frag_tbl);
 fail_ftbl:
 	free(copy);
 	return NULL;
@@ -204,9 +207,9 @@ sqfs_data_reader_t *sqfs_data_reader_create(sqfs_file_t *file,
 		return NULL;
 	}
 
-	data->file = file;
+	data->file = sqfs_grab(file);
 	data->block_size = block_size;
-	data->cmp = cmp;
+	data->cmp = sqfs_grab(cmp);
 	return data;
 }
 

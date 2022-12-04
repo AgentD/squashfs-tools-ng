@@ -104,7 +104,6 @@ int main(int argc, char **argv)
 
 	/* end of file */
 	TEST_ASSERT(read_header(fp, &hdr) > 0);
-	sqfs_destroy(fp);
-
+	sqfs_drop(fp);
 	return EXIT_SUCCESS;
 }

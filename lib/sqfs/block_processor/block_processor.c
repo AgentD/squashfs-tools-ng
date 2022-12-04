@@ -186,10 +186,14 @@ static void block_processor_destroy(sqfs_object_t *base)
 		worker_data_t *worker = proc->workers;
 		proc->workers = worker->next;
 
-		sqfs_destroy(worker->cmp);
+		sqfs_drop(worker->cmp);
 		free(worker);
 	}
 
+	sqfs_drop(proc->frag_tbl);
+	sqfs_drop(proc->wr);
+	sqfs_drop(proc->file);
+	sqfs_drop(proc->uncmp);
 	free(proc);
 }
 
@@ -272,10 +276,10 @@ int sqfs_block_processor_create_ex(const sqfs_block_processor_desc_t *desc,
 
 	proc->max_backlog = desc->max_backlog;
 	proc->max_block_size = desc->max_block_size;
-	proc->frag_tbl = desc->tbl;
-	proc->wr = desc->wr;
-	proc->file = desc->file;
-	proc->uncmp = desc->uncmp;
+	proc->frag_tbl = sqfs_grab(desc->tbl);
+	proc->wr = sqfs_grab(desc->wr);
+	proc->file = sqfs_grab(desc->file);
+	proc->uncmp = sqfs_grab(desc->uncmp);
 	proc->stats.size = sizeof(proc->stats);
 
 	/* we need at least one current data block + one fragment block */
@@ -285,8 +289,8 @@ int sqfs_block_processor_create_ex(const sqfs_block_processor_desc_t *desc,
 	/* create the thread pool */
 	proc->pool = thread_pool_create(desc->num_workers, process_block);
 	if (proc->pool == NULL) {
-		free(proc);
-		return SQFS_ERROR_INTERNAL;
+		ret = SQFS_ERROR_INTERNAL;
+		goto fail_pool;
 	}
 
 	/* create the worker compressors & scratch buffer */

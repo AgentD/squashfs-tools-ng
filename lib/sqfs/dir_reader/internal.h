@@ -35,7 +35,7 @@ struct sqfs_dir_reader_t {
 
 	sqfs_meta_reader_t *meta_dir;
 	sqfs_meta_reader_t *meta_inode;
-	const sqfs_super_t *super;
+	sqfs_super_t super;
 
 	sqfs_readdir_state_t it;
 

@@ -84,7 +84,7 @@ static sqfs_s32 dummy_uncompress(sqfs_compressor_t *cmp, const sqfs_u8 *in,
 }
 
 static sqfs_file_t dummy_file = {
-	{ NULL, NULL },
+	{ 1, NULL, NULL },
 	dummy_read_at,
 	dummy_write_at,
 	dummy_get_size,
@@ -92,7 +92,7 @@ static sqfs_file_t dummy_file = {
 };
 
 static sqfs_compressor_t dummy_compressor = {
-	{ NULL, NULL },
+	{ 1, NULL, NULL },
 	NULL,
 	NULL,
 	NULL,
@@ -100,7 +100,7 @@ static sqfs_compressor_t dummy_compressor = {
 };
 
 static sqfs_compressor_t dummy_uncompressor = {
-	{ NULL, NULL },
+	{ 1, NULL, NULL },
 	NULL,
 	NULL,
 	NULL,

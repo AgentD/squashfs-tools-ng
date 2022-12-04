@@ -59,6 +59,6 @@ int main(int argc, char **argv)
 	buffer[5] = '\0';
 	TEST_STR_EQUAL(buffer, "test\n");
 	clear_header(&hdr);
-	sqfs_destroy(fp);
+	sqfs_drop(fp);
 	return EXIT_SUCCESS;
 }

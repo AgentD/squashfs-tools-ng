@@ -612,16 +612,16 @@ int main(int argc, char **argv)
 	status = EXIT_SUCCESS;
 	free(buffer);
 out:
-	sqfs_destroy(data);
+	sqfs_drop(data);
 out_dir:
 	if (working_dir != NULL)
 		free(working_dir);
-	sqfs_destroy(dr);
+	sqfs_drop(dr);
 out_id:
-	sqfs_destroy(idtbl);
+	sqfs_drop(idtbl);
 out_cmp:
-	sqfs_destroy(cmp);
+	sqfs_drop(cmp);
 out_fd:
-	sqfs_destroy(file);
+	sqfs_drop(file);
 	return status;
 }

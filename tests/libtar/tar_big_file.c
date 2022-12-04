@@ -26,6 +26,6 @@ int main(int argc, char **argv)
 	TEST_STR_EQUAL(hdr.name, "big-file.bin");
 	TEST_ASSERT(!hdr.unknown_record);
 	clear_header(&hdr);
-	sqfs_destroy(fp);
+	sqfs_drop(fp);
 	return EXIT_SUCCESS;
 }

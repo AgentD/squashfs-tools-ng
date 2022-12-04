@@ -206,8 +206,7 @@ extern "C" {
  * version 1.2 introduced the @ref SQFS_DIR_READER_DOT_ENTRIES flag,
  * earlier versions require the flags field to be set to zero.
  *
- * @param super A pointer to the super block. Kept internally an used for
- *              resolving table positions.
+ * @param super A pointer to the super block.
  * @param cmp A compressor to use for unpacking meta data blocks.
  * @param file The input file to read from.
  * @param flags A combination of @ref SQFS_DIR_READER_FLAGS

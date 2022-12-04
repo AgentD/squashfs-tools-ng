@@ -342,6 +342,6 @@ int sqfs_xattr_writer_flush(const sqfs_xattr_writer_t *xwr, sqfs_file_t *file,
 				   locations, count);
 out:
 	free(locations);
-	sqfs_destroy(mw);
+	sqfs_drop(mw);
 	return err;
 }

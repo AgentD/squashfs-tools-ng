@@ -163,6 +163,8 @@ ostream_t *ostream_open_stdout(void)
 	strm->append = file_append;
 	strm->flush = file_flush;
 	strm->get_filename = file_get_filename;
+
+	sqfs_object_init(file, file_destroy, NULL);
 	return strm;
 fail:
 	perror("creating file wrapper for stdout");

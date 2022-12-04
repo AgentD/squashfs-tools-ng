@@ -221,11 +221,11 @@ int main(int argc, char **argv)
 
 		if (sqfs_data_reader_dump(opt.cmdpath, data, n->inode,
 					  fp, super.block_size)) {
-			sqfs_destroy(fp);
+			sqfs_drop(fp);
 			goto out;
 		}
 
-		sqfs_destroy(fp);
+		sqfs_drop(fp);
 		break;
 	}
 	case OP_UNPACK:
@@ -267,18 +267,18 @@ int main(int argc, char **argv)
 out:
 	sqfs_dir_tree_destroy(n);
 out_data:
-	sqfs_destroy(data);
+	sqfs_drop(data);
 out_dr:
-	sqfs_destroy(dirrd);
+	sqfs_drop(dirrd);
 out_id:
-	sqfs_destroy(idtbl);
+	sqfs_drop(idtbl);
 out_xr:
 	if (xattr != NULL)
-		sqfs_destroy(xattr);
+		sqfs_drop(xattr);
 out_cmp:
-	sqfs_destroy(cmp);
+	sqfs_drop(cmp);
 out_file:
-	sqfs_destroy(file);
+	sqfs_drop(file);
 out_cmd:
 	free(opt.cmdpath);
 	return status;

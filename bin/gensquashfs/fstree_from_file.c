@@ -586,6 +586,6 @@ int fstree_from_file(fstree_t *fs, const char *filename, const char *basepath)
 
 	ret = fstree_from_file_stream(fs, fp, basepath);
 
-	sqfs_destroy(fp);
+	sqfs_drop(fp);
 	return ret;
 }

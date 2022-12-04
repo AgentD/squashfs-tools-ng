@@ -32,7 +32,7 @@ SQFS_COMPRESSOR compressor_get_default(void)
 		ret = sqfs_compressor_create(&cfg, &temp);
 
 		if (ret == 0) {
-			sqfs_destroy(temp);
+			sqfs_drop(temp);
 			return cmp_ids[i];
 		}
 	}
@@ -64,7 +64,7 @@ void compressor_print_available(void)
 		have_compressor = false;
 
 		if (ret == 0) {
-			sqfs_destroy(temp);
+			sqfs_drop(temp);
 			have_compressor = true;
 		} else {
 #ifdef WITH_LZO

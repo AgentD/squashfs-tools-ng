@@ -124,22 +124,49 @@ typedef struct sqfs_xattr_id_table_t sqfs_xattr_id_table_t;
  * @brief Base interface for all libsquashfs in-memory data structures.
  */
 typedef struct sqfs_object_t {
+	size_t refcount;
+
 	void (*destroy)(struct sqfs_object_t *instance);
 
 	struct sqfs_object_t *(*copy)(const struct sqfs_object_t *orig);
 } sqfs_object_t;
 
 /**
- * @brief Destroy an object and free all its memory
+ * @brief Grab a reference to an object
  *
  * @memberof sqfs_object_t
  *
  * @param obj A pointer to an object or NULL
+ *
+ * @return The original pointer passed into the function
  */
-static SQFS_INLINE void sqfs_destroy(void *obj)
+static SQFS_INLINE void *sqfs_grab(void *obj)
 {
 	if (obj)
-		((sqfs_object_t *)obj)->destroy((sqfs_object_t *)obj);
+		((sqfs_object_t *)obj)->refcount += 1;
+	return obj;
+}
+
+/**
+ * @brief Drop a reference to an object, release it if it was the last reference
+ *
+ * @memberof sqfs_object_t
+ *
+ * @param obj A pointer to an object or NULL
+ *
+ * @return A NULL pointer.
+ */
+static SQFS_INLINE void *sqfs_drop(void *obj)
+{
+	if (obj) {
+		if (((sqfs_object_t *)obj)->refcount <= 1) {
+			((sqfs_object_t *)obj)->destroy((sqfs_object_t *)obj);
+		} else {
+			((sqfs_object_t *)obj)->refcount -= 1;
+		}
+	}
+
+	return NULL;
 }
 
 /**
@@ -174,6 +201,7 @@ void sqfs_object_init(void *obj,
 		      void (*destroy_fn)(sqfs_object_t *),
 		      sqfs_object_t *(*copy_fn)(const sqfs_object_t *))
 {
+	((sqfs_object_t *)obj)->refcount = 1;
 	((sqfs_object_t *)obj)->destroy = destroy_fn;
 	((sqfs_object_t *)obj)->copy = copy_fn;
 }

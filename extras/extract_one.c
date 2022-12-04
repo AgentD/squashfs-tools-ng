@@ -165,12 +165,12 @@ int main(int argc, char **argv)
 	status = EXIT_SUCCESS;
 out:
 	sqfs_dir_tree_destroy(n);
-	sqfs_destroy(data);
-	sqfs_destroy(dirrd);
-	sqfs_destroy(idtbl);
-	sqfs_destroy(xattr);
-	sqfs_destroy(cmp);
-	sqfs_destroy(file);
+	sqfs_drop(data);
+	sqfs_drop(dirrd);
+	sqfs_drop(idtbl);
+	sqfs_drop(xattr);
+	sqfs_drop(cmp);
+	sqfs_drop(file);
 	free(output);
 
 	return status;

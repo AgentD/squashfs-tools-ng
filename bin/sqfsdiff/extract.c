@@ -29,12 +29,12 @@ static int extract(sqfs_data_reader_t *data, const sqfs_inode_generic_t *inode,
 	}
 
 	if (sqfs_data_reader_dump(path, data, inode, fp, block_size)) {
-		sqfs_destroy(fp);
+		sqfs_drop(fp);
 		return -1;
 	}
 
 	ostream_flush(fp);
-	sqfs_destroy(fp);
+	sqfs_drop(fp);
 	return 0;
 }
 

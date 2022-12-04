@@ -158,7 +158,7 @@ static int fill_files(sqfs_data_reader_t *data, int flags)
 		if (ret == 0)
 			ret = ostream_flush(fp);
 
-		sqfs_destroy(fp);
+		sqfs_drop(fp);
 		if (ret)
 			return -1;
 	}
