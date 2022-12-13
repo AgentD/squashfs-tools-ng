@@ -124,9 +124,15 @@ int main(int argc, char **argv)
 	}
 
 	if (compressor > 0) {
-		ostream_t *strm = ostream_compressor_create(out_file,
-							    compressor);
+		xfrm_stream_t *xfrm = compressor_stream_create(compressor,NULL);
+		ostream_t *strm;
+
+		if (xfrm == NULL)
+			goto out;
+
+		strm = ostream_xfrm_create(out_file, xfrm);
 		sqfs_drop(out_file);
+		sqfs_drop(xfrm);
 		out_file = strm;
 
 		if (out_file == NULL)

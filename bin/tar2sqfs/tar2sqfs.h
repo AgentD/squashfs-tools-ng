@@ -14,6 +14,7 @@
 #include "util/util.h"
 #include "tar/tar.h"
 #include "tar/format.h"
+#include "xfrm/compress.h"
 #include "io/xfrm.h"
 
 #include <stdlib.h>

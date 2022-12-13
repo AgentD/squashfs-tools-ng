@@ -12,6 +12,7 @@
 
 #include "util/util.h"
 #include "tar/tar.h"
+#include "xfrm/compress.h"
 #include "io/xfrm.h"
 
 #include <getopt.h>

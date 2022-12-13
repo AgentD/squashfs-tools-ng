@@ -1,0 +1,27 @@
+libxfrm_a_SOURCES = include/xfrm/stream.h include/xfrm/compress.h
+libxfrm_a_SOURCES += lib/xfrm/compress.c
+libxfrm_a_CFLAGS = $(AM_CFLAGS)
+
+if WITH_XZ
+libxfrm_a_SOURCES += lib/xfrm/xz.c
+libxfrm_a_CFLAGS += $(XZ_CFLAGS) -DWITH_XZ
+endif
+
+if WITH_BZIP2
+libxfrm_a_SOURCES += lib/xfrm/bzip2.c
+libxfrm_a_CFLAGS += $(BZIP2_CFLAGS) -DWITH_BZIP2
+endif
+
+if WITH_GZIP
+libxfrm_a_SOURCES += lib/xfrm/gzip.c
+libxfrm_a_CFLAGS += $(ZLIB_CFLAGS) -DWITH_GZIP
+endif
+
+if WITH_ZSTD
+if HAVE_ZSTD_STREAM
+libxfrm_a_SOURCES += lib/xfrm/zstd.c
+libxfrm_a_CFLAGS += $(ZSTD_CFLAGS) -DWITH_ZSTD
+endif
+endif
+
+noinst_LIBRARIES += libxfrm.a

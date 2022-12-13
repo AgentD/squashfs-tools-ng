@@ -32,12 +32,45 @@ static int tar_probe(const sqfs_u8 *data, size_t size)
 	return 0;
 }
 
+static istream_t *magic_autowrap(istream_t *strm)
+{
+	xfrm_stream_t *xfrm = NULL;
+	istream_t *wrapper = NULL;
+	const sqfs_u8 *data;
+	size_t avail;
+	int ret;
+
+	ret = istream_precache(strm);
+	if (ret != 0)
+		goto out;
+
+	data = strm->buffer + strm->buffer_offset;
+	avail = strm->buffer_used - strm->buffer_offset;
+
+	ret = tar_probe(data, avail);
+	if (ret > 0)
+		return strm;
+
+	ret = xfrm_compressor_id_from_magic(data, avail);
+	if (ret <= 0)
+		return strm;
+
+	xfrm = decompressor_stream_create(ret);
+	if (xfrm == NULL)
+		goto out;
+
+	wrapper = istream_xfrm_create(strm, xfrm);
+out:
+	sqfs_drop(strm);
+	sqfs_drop(xfrm);
+	return wrapper;
+}
+
 int main(int argc, char **argv)
 {
 	int status = EXIT_FAILURE;
 	istream_t *input_file = NULL;
 	sqfs_writer_t sqfs;
-	int ret;
 
 	process_args(argc, argv);
 
@@ -45,28 +78,9 @@ int main(int argc, char **argv)
 	if (input_file == NULL)
 		return EXIT_FAILURE;
 
-	ret = istream_detect_compressor(input_file, tar_probe);
-	if (ret < 0)
-		goto out_if;
-
-	if (ret > 0) {
-		istream_t *strm;
-
-		if (!io_compressor_exists(ret)) {
-			fprintf(stderr,
-				"%s: %s compression is not supported.\n",
-				istream_get_filename(input_file),
-				io_compressor_name_from_id(ret));
-			goto out_if;
-		}
-
-		strm = istream_compressor_create(input_file, ret);
-		sqfs_drop(input_file);
-		input_file = strm;
-
-		if (input_file == NULL)
-			return EXIT_FAILURE;
-	}
+	input_file = magic_autowrap(input_file);
+	if (input_file == NULL)
+		return EXIT_FAILURE;
 
 	memset(&sqfs, 0, sizeof(sqfs));
 	if (sqfs_writer_init(&sqfs, &cfg))

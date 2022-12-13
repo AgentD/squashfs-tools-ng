@@ -91,16 +91,9 @@ void process_args(int argc, char **argv)
 
 		switch (i) {
 		case 'c':
-			compressor = io_compressor_id_from_name(optarg);
+			compressor = xfrm_compressor_id_from_name(optarg);
 			if (compressor <= 0) {
 				fprintf(stderr, "unknown compressor '%s'.\n",
-					optarg);
-				goto fail;
-			}
-
-			if (!io_compressor_exists(compressor)) {
-				fprintf(stderr,
-					"%s compressor is not supported.\n",
 					optarg);
 				goto fail;
 			}
@@ -163,11 +156,11 @@ void process_args(int argc, char **argv)
 		case 'h':
 			fputs(usagestr, stdout);
 
-			i = IO_COMPRESSOR_MIN;
+			i = XFRM_COMPRESSOR_MIN;
 
-			while (i <= IO_COMPRESSOR_MAX) {
-				name = io_compressor_name_from_id(i);
-				if (io_compressor_exists(i))
+			while (i <= XFRM_COMPRESSOR_MAX) {
+				name = xfrm_compressor_name_from_id(i);
+				if (name != NULL)
 					printf("\t%s\n", name);
 				++i;
 			}

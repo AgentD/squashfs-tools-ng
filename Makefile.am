@@ -27,6 +27,7 @@ TESTS =
 
 include lib/sqfs/Makemodule.am
 include lib/util/Makemodule.am
+include lib/xfrm/Makemodule.am
 include lib/io/Makemodule.am
 
 if BUILD_TOOLS
@@ -47,6 +48,7 @@ include tests/libutil/Makemodule.am
 include tests/libio/Makemodule.am
 include tests/libfstree/Makemodule.am
 include tests/libtar/Makemodule.am
+include tests/libxfrm/Makemodule.am
 include tests/libsqfs/Makemodule.am
 include tests/gensquashfs/Makemodule.am
 include tests/rdsquashfs/Makemodule.am

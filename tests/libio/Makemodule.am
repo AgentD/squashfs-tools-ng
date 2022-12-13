@@ -3,66 +3,9 @@ test_get_line_LDADD = libio.a libcompat.a
 test_get_line_CPPFLAGS = $(AM_CPPFLAGS)
 test_get_line_CPPFLAGS += -DTESTFILE=$(top_srcdir)/tests/libio/get_line.txt
 
-test_xfrm_bzip2_SOURCES = tests/libio/uncompress.c
-test_xfrm_bzip2_LDADD = libio.a libcompat.a $(BZIP2_LIBS) $(ZLIB_LIBS)
-test_xfrm_bzip2_LDADD += $(XZ_LIBS) $(ZSTD_LIBS)
-test_xfrm_bzip2_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_BZIP2=1
-
-test_xfrm_bzip22_SOURCES = tests/libio/uncompress.c
-test_xfrm_bzip22_LDADD = libio.a libcompat.a $(BZIP2_LIBS) $(ZLIB_LIBS)
-test_xfrm_bzip22_LDADD += $(XZ_LIBS) $(ZSTD_LIBS)
-test_xfrm_bzip22_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_BZIP22=1
-
-test_xfrm_xz_SOURCES = tests/libio/uncompress.c
-test_xfrm_xz_LDADD = libio.a libcompat.a $(BZIP2_LIBS) $(ZLIB_LIBS)
-test_xfrm_xz_LDADD += $(XZ_LIBS) $(ZSTD_LIBS)
-test_xfrm_xz_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_XZ=1
-
-test_xfrm_xz2_SOURCES = tests/libio/uncompress.c
-test_xfrm_xz2_LDADD = libio.a libcompat.a $(BZIP2_LIBS) $(ZLIB_LIBS)
-test_xfrm_xz2_LDADD += $(XZ_LIBS) $(ZSTD_LIBS)
-test_xfrm_xz2_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_XZ2=1
-
-test_xfrm_gzip_SOURCES = tests/libio/uncompress.c
-test_xfrm_gzip_LDADD = libio.a libcompat.a $(BZIP2_LIBS) $(ZLIB_LIBS)
-test_xfrm_gzip_LDADD += $(XZ_LIBS) $(ZSTD_LIBS)
-test_xfrm_gzip_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_GZIP=1
-
-test_xfrm_zstd_SOURCES = tests/libio/uncompress.c
-test_xfrm_zstd_LDADD = libio.a libcompat.a $(BZIP2_LIBS) $(ZLIB_LIBS)
-test_xfrm_zstd_LDADD += $(XZ_LIBS) $(ZSTD_LIBS)
-test_xfrm_zstd_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_ZSTD=1
-
-test_xfrm_zstd2_SOURCES = tests/libio/uncompress.c
-test_xfrm_zstd2_LDADD = libio.a libcompat.a $(BZIP2_LIBS) $(ZLIB_LIBS)
-test_xfrm_zstd2_LDADD += $(XZ_LIBS) $(ZSTD_LIBS)
-test_xfrm_zstd2_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_ZSTD2=1
-
 if BUILD_TOOLS
 check_PROGRAMS += test_get_line
 TESTS += test_get_line
-
-if WITH_BZIP2
-check_PROGRAMS += test_xfrm_bzip2 test_xfrm_bzip22
-TESTS += test_xfrm_bzip2 test_xfrm_bzip22
-endif
-
-if WITH_XZ
-check_PROGRAMS += test_xfrm_xz test_xfrm_xz2
-TESTS += test_xfrm_xz test_xfrm_xz2
-endif
-
-if WITH_GZIP
-check_PROGRAMS += test_xfrm_gzip
-TESTS += test_xfrm_gzip
-endif
-
-if WITH_ZSTD
-if HAVE_ZSTD_STREAM
-check_PROGRAMS += test_xfrm_zstd test_xfrm_zstd2
-TESTS += test_xfrm_zstd test_xfrm_zstd2
-endif
-endif
 endif
 
 EXTRA_DIST += $(top_srcdir)/tests/libio/get_line.txt
