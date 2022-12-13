@@ -10,7 +10,6 @@ typedef struct {
 	istream_t base;
 	char *path;
 	int fd;
-	bool eof;
 
 	sqfs_u8 buffer[BUFSZ];
 } file_istream_t;
@@ -27,7 +26,7 @@ static int file_precache(istream_t *strm)
 		ret = read(file->fd, strm->buffer + strm->buffer_used, diff);
 
 		if (ret == 0) {
-			file->eof = true;
+			strm->eof = true;
 			break;
 		}
 
