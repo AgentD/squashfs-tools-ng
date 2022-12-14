@@ -40,10 +40,18 @@ static int create_node(const sqfs_tree_node_t *n, const char *name, int flags)
 
 	free(wpath);
 	return 0;
-fail:
-	fprintf(stderr, "Creating %s: %ld\n", name, GetLastError());
+fail: {
+	DWORD err = GetLastError();
 	free(wpath);
+	SetLastError(err);
+	w32_perror(name);
+
+	if (err == ERROR_FILE_EXISTS) {
+		fputs("\nHINT: this could be caused by case "
+		      "sensitivity on Windows.\n", stderr);
+	}
 	return -1;
+}
 }
 #else
 static int create_node(const sqfs_tree_node_t *n, const char *name, int flags)
