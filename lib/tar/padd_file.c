@@ -8,32 +8,12 @@
 #include "tar/tar.h"
 #include "tar/format.h"
 
-#include <stdlib.h>
-#include <stdio.h>
-
 int padd_file(ostream_t *fp, sqfs_u64 size)
 {
 	size_t padd_sz = size % TAR_RECORD_SIZE;
-	int status = -1;
-	sqfs_u8 *buffer;
 
 	if (padd_sz == 0)
 		return 0;
 
-	padd_sz = TAR_RECORD_SIZE - padd_sz;
-
-	buffer = calloc(1, padd_sz);
-	if (buffer == NULL)
-		goto fail_errno;
-
-	if (ostream_append(fp, buffer, padd_sz))
-		goto out;
-
-	status = 0;
-out:
-	free(buffer);
-	return status;
-fail_errno:
-	perror("padding output file to block size");
-	goto out;
+	return ostream_append_sparse(fp, TAR_RECORD_SIZE - padd_sz);
 }
