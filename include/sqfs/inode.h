@@ -576,9 +576,10 @@ SQFS_API int sqfs_inode_get_xattr_index(const sqfs_inode_generic_t *inode,
  *
  * @memberof sqfs_inode_generic_t
  *
- * For basic inodes, this function promes the inodes to extended inodes if the
- * index is not 0xFFFFFFFF. If the index is 0xFFFFFFFF, the function tries to
- * demote extended inode to a basic inode after setting the index.
+ * For basic inodes, this function promotes the inodes to extended inodes if
+ * the index is not 0xFFFFFFFF. The function does not try to demote extended
+ * inodes if the index is 0xFFFFFFFF, because that would cause additional
+ * information like a directory index to be lost.
  *
  * @param inode A pointer to an inode.
  * @param index The extended attribute index.

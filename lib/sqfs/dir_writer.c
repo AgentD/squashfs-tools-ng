@@ -21,6 +21,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define DIR_INDEX_THRESHOLD (256)
+
 typedef struct dir_entry_t {
 	struct dir_entry_t *next;
 	sqfs_u64 inode_ref;
@@ -384,6 +386,9 @@ sqfs_inode_generic_t
 	} else {
 		inode->base.type = SQFS_INODE_DIR;
 	}
+
+	if (writer->ent_count >= DIR_INDEX_THRESHOLD)
+		inode->base.type = SQFS_INODE_EXT_DIR;
 
 	if (inode->base.type == SQFS_INODE_DIR) {
 		inode->data.dir.start_block = start_block;
