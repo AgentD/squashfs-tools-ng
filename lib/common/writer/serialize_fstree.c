@@ -144,6 +144,9 @@ static int serialize_tree_node(const char *filename, sqfs_writer_t *wr,
 
 	sqfs_inode_set_xattr_index(inode, n->xattr_idx);
 
+	if (n->xattr_idx == 0xFFFFFFFF && !S_ISDIR(n->mode))
+		sqfs_inode_make_basic(inode);
+
 	ret = sqfs_id_table_id_to_index(wr->idtbl, n->uid,
 					&inode->base.uid_idx);
 	if (ret)

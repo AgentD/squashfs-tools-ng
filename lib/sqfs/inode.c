@@ -110,12 +110,6 @@ int sqfs_inode_set_xattr_index(sqfs_inode_generic_t *inode, sqfs_u32 index)
 		return SQFS_ERROR_CORRUPTED;
 	}
 
-	if (index == 0xFFFFFFFF) {
-		err = sqfs_inode_make_basic(inode);
-		if (err)
-			return err;
-	}
-
 	return 0;
 }
 
