@@ -56,8 +56,11 @@ extern "C" {
  *
  * @return Zero on success, -1 on failure.
  */
-SQFS_INTERNAL int ostream_append(ostream_t *strm, const void *data,
-				 size_t size);
+SQFS_INLINE int ostream_append(ostream_t *strm, const void *data,
+			       size_t size)
+{
+	return strm->append(strm, data, size);
+}
 
 /**
  * @brief Append a number of zero bytes to an output stream.
@@ -89,7 +92,10 @@ SQFS_INTERNAL int ostream_append_sparse(ostream_t *strm, size_t size);
  *
  * @return Zero on success, -1 on failure.
  */
-SQFS_INTERNAL int ostream_flush(ostream_t *strm);
+SQFS_INLINE int ostream_flush(ostream_t *strm)
+{
+	return strm->flush(strm);
+}
 
 /**
  * @brief Get the underlying filename of a output stream.
@@ -100,7 +106,10 @@ SQFS_INTERNAL int ostream_flush(ostream_t *strm);
  *
  * @return A string holding the underlying filename.
  */
-SQFS_INTERNAL const char *ostream_get_filename(ostream_t *strm);
+SQFS_INLINE const char *ostream_get_filename(ostream_t *strm)
+{
+	return strm->get_filename(strm);
+}
 
 /**
  * @brief Printf like function that appends to an output stream

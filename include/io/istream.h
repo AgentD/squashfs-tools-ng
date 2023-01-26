@@ -107,7 +107,10 @@ SQFS_INTERNAL int istream_precache(istream_t *strm);
  *
  * @return A string holding the underlying filename.
  */
-SQFS_INTERNAL const char *istream_get_filename(istream_t *strm);
+SQFS_INLINE const char *istream_get_filename(istream_t *strm)
+{
+	return strm->get_filename(strm);
+}
 
 /**
  * @brief Skip over a number of bytes in an input stream.

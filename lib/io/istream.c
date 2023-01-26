@@ -58,11 +58,6 @@ int istream_precache(istream_t *strm)
 	return strm->precache(strm);
 }
 
-const char *istream_get_filename(istream_t *strm)
-{
-	return strm->get_filename(strm);
-}
-
 int istream_skip(istream_t *strm, sqfs_u64 size)
 {
 	size_t diff;
