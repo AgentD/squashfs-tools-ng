@@ -34,7 +34,5 @@ FSTREE_TESTS = \
 	test_add_by_path test_get_path test_fstree_sort \
 	test_fstree_init
 
-if BUILD_TOOLS
 check_PROGRAMS += $(FSTREE_TESTS)
 TESTS += $(FSTREE_TESTS)
-endif

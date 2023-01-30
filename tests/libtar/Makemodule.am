@@ -168,11 +168,9 @@ LIBTAR_TESTS = \
 	test_tar_xattr_bsd test_tar_xattr_schily test_tar_xattr_schily_bin \
 	test_tar_target_filled
 
-if BUILD_TOOLS
 check_PROGRAMS += $(LIBTAR_TESTS)
 TESTS += $(LIBTAR_TESTS)
 
 noinst_PROGRAMS += tar_fuzz
-endif
 
 EXTRA_DIST += $(TARDATADIR)

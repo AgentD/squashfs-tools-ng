@@ -16,9 +16,7 @@ test_get_node_path_LDADD = libcommon.a libsquashfs.la libcompat.a
 LIBSQFS_TESTS = \
 	test_abi test_table test_xattr_writer test_get_node_path
 
-if BUILD_TOOLS
 noinst_PROGRAMS += xattr_benchmark
-endif
 
 check_PROGRAMS += $(LIBSQFS_TESTS)
 TESTS += $(LIBSQFS_TESTS)

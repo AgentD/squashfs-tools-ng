@@ -30,7 +30,6 @@ include lib/util/Makemodule.am
 include lib/xfrm/Makemodule.am
 include lib/io/Makemodule.am
 
-if BUILD_TOOLS
 include lib/fstree/Makemodule.am
 include lib/common/Makemodule.am
 include lib/tar/Makemodule.am
@@ -40,7 +39,6 @@ include bin/rdsquashfs/Makemodule.am
 include bin/sqfs2tar/Makemodule.am
 include bin/sqfsdiff/Makemodule.am
 include bin/tar2sqfs/Makemodule.am
-endif
 
 include extras/Makemodule.am
 

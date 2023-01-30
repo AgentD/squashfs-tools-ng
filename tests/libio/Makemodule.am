@@ -6,9 +6,7 @@ test_get_line_CPPFLAGS += -DTESTFILE=$(top_srcdir)/tests/libio/get_line.txt
 test_sparse_fb_SOURCES = tests/libio/sparse_fb.c
 test_sparse_fb_LDADD = libio.a libutil.a libcompat.a
 
-if BUILD_TOOLS
 check_PROGRAMS += test_get_line test_sparse_fb
 TESTS += test_get_line test_sparse_fb
-endif
 
 EXTRA_DIST += $(top_srcdir)/tests/libio/get_line.txt

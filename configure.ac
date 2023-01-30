@@ -115,19 +115,12 @@ AC_ARG_WITH([pthread],
 			[Build without pthread based block compressor])],
 	[], [with_pthread="yes"])
 
-AC_ARG_WITH([tools],
-	[AS_HELP_STRING([--without-tools],
-			[Only build libsquashfs, do not build the tools.])],
-	[], [with_tools="yes"])
-
 AC_ARG_ENABLE([custom-alloc],
 	[AS_HELP_STRING([--disable-custom-alloc],
 			[Do not used any custom allocators.])],
 	[], [enable_custom_alloc="yes"])
 
 AS_IF([test "x$build_windows" = "xyes"], [with_pthread="no"], [])
-AS_IF([test "x$with_tools" != "xyes"], [with_selinux="no"], [])
-AM_CONDITIONAL([BUILD_TOOLS], [test "x$with_tools" = "xyes"])
 
 ##### Doxygen reference manual #####
 
@@ -318,7 +311,6 @@ AC_MSG_RESULT([
 
 	Custom allocators: ${enable_custom_alloc}
 
-	Building tools:    ${with_tools}
 	Doxygen found:     ${with_doxygen}
 
 	warnings:

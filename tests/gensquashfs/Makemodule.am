@@ -50,12 +50,10 @@ GENSQUASHFS_TESTS = \
 	test_filemap_xattr test_fstree_from_file test_fstree_from_dir \
 	test_fstree_glob1 test_sort_file
 
-if BUILD_TOOLS
 noinst_PROGRAMS += fstree_fuzz
 
 check_PROGRAMS += $(GENSQUASHFS_TESTS)
 TESTS += $(GENSQUASHFS_TESTS)
-endif
 
 EXTRA_DIST += $(GENDATADIR)/xattr1.txt $(GENDATADIR)/fstree1.txt
 EXTRA_DIST += $(GENDATADIR)/fstree_glob1.txt $(GENDATADIR)/fstree_glob2.txt
