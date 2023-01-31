@@ -32,3 +32,55 @@ libutil_a_SOURCES += lib/util/src/mempool.c
 endif
 
 noinst_LIBRARIES += libutil.a
+
+test_str_table_SOURCES = lib/util/test/str_table.c
+test_str_table_LDADD = libutil.a libio.a libcompat.a
+test_str_table_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(top_srcdir)/lib/util/test
+
+test_rbtree_SOURCES = lib/util/test/rbtree.c
+test_rbtree_LDADD = libutil.a libcompat.a
+
+test_xxhash_SOURCES = lib/util/test/xxhash.c
+test_xxhash_LDADD = libutil.a libcompat.a
+
+test_threadpool_SOURCES = lib/util/test/threadpool.c
+test_threadpool_CFLAGS = $(AM_CFLAGS) $(PTHREAD_CFLAGS)
+test_threadpool_CPPFLAGS = $(AM_CPPFLAGS)
+test_threadpool_LDADD = libutil.a libcompat.a $(PTHREAD_LIBS)
+
+if HAVE_PTHREAD
+test_threadpool_CPPFLAGS += -DHAVE_PTHREAD
+endif
+
+test_ismemzero_SOURCES = lib/util/test/is_memory_zero.c
+test_ismemzero_LDADD = libutil.a libcompat.a
+
+test_canonicalize_name_SOURCES = lib/util/test/canonicalize_name.c
+test_canonicalize_name_LDADD = libutil.a libcompat.a
+
+test_filename_sane_SOURCES = lib/util/test/filename_sane.c
+test_filename_sane_SOURCES += lib/util/src/filename_sane.c
+test_filename_sane_LDADD = libcompat.a libutil.a
+
+test_filename_sane_w32_SOURCES = lib/util/test/filename_sane.c
+test_filename_sane_w32_SOURCES += lib/util/src/filename_sane.c
+test_filename_sane_w32_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_WIN32=1
+test_filename_sane_w32_LDADD = libcompat.a
+
+test_sdate_epoch_SOURCES = lib/util/test/epoch.c
+test_sdate_epoch_LDADD = libutil.a libcompat.a
+
+test_hex_decode_SOURCES = lib/util/test/hex_decode.c
+test_hex_decode_LDADD = libutil.a libcompat.a
+
+test_base64_decode_SOURCES = lib/util/test/base64_decode.c
+test_base64_decode_LDADD = libutil.a libcompat.a
+
+LIBUTIL_TESTS = \
+	test_str_table test_rbtree test_xxhash test_threadpool test_ismemzero \
+	test_canonicalize_name test_filename_sane test_filename_sane_w32 \
+	test_sdate_epoch test_hex_decode test_base64_decode
+
+check_PROGRAMS += $(LIBUTIL_TESTS)
+TESTS += $(LIBUTIL_TESTS)
+EXTRA_DIST += $(top_srcdir)/lib/util/test/words.txt

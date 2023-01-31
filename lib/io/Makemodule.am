@@ -14,3 +14,16 @@ libio_a_SOURCES += lib/io/src/unix/ostream.c lib/io/src/unix/istream.c
 endif
 
 noinst_LIBRARIES += libio.a
+
+test_get_line_SOURCES = lib/io/test/get_line.c
+test_get_line_LDADD = libio.a libcompat.a
+test_get_line_CPPFLAGS = $(AM_CPPFLAGS)
+test_get_line_CPPFLAGS += -DTESTFILE=$(top_srcdir)/lib/io/test/get_line.txt
+
+test_sparse_fb_SOURCES = lib/io/test/sparse_fb.c
+test_sparse_fb_LDADD = libio.a libutil.a libcompat.a
+
+check_PROGRAMS += test_get_line test_sparse_fb
+TESTS += test_get_line test_sparse_fb
+
+EXTRA_DIST += $(top_srcdir)/lib/io/test/get_line.txt

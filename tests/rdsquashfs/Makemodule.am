@@ -1,7 +1,0 @@
-if WINDOWS
-else
-check_SCRIPTS += tests/rdsquashfs/pathtraversal.sh
-TESTS += tests/rdsquashfs/pathtraversal.sh
-endif
-
-EXTRA_DIST += $(top_srcdir)/tests/rdsquashfs/pathtraversal.sqfs

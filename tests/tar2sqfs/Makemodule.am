@@ -1,5 +1,0 @@
-check_SCRIPTS += tests/tar2sqfs/test_tar_sqfs.sh
-TESTS += tests/tar2sqfs/test_tar_sqfs.sh
-
-EXTRA_DIST += $(top_srcdir)/tests/tar2sqfs/simple.tar
-EXTRA_DIST += $(top_srcdir)/tests/tar2sqfs/sqfs.sha512

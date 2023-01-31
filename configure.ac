@@ -276,10 +276,10 @@ AM_CONDITIONAL([CUSTOM_ALLOC], [test "x$enable_custom_alloc" = "xyes"])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([lib/sqfs/libsquashfs1.pc])
 AC_CONFIG_FILES([Doxyfile])
-AC_CONFIG_FILES([tests/tar2sqfs/test_tar_sqfs.sh],
-		[chmod +x tests/tar2sqfs/test_tar_sqfs.sh])
-AC_CONFIG_FILES([tests/rdsquashfs/pathtraversal.sh],
-		[chmod +x tests/rdsquashfs/pathtraversal.sh])
+AC_CONFIG_FILES([bin/tar2sqfs/test/test_tar_sqfs.sh],
+		[chmod +x bin/tar2sqfs/test/test_tar_sqfs.sh])
+AC_CONFIG_FILES([bin/rdsquashfs/test/pathtraversal.sh],
+		[chmod +x bin/rdsquashfs/test/pathtraversal.sh])
 
 AC_OUTPUT([Makefile])
 

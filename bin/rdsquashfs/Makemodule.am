@@ -9,3 +9,11 @@ rdsquashfs_LDADD += libfstree.a $(LZO_LIBS) $(PTHREAD_LIBS)
 
 dist_man1_MANS += bin/rdsquashfs/rdsquashfs.1
 bin_PROGRAMS += rdsquashfs
+
+if WINDOWS
+else
+check_SCRIPTS += bin/rdsquashfs/test/pathtraversal.sh
+TESTS += bin/rdsquashfs/test/pathtraversal.sh
+endif
+
+EXTRA_DIST += $(top_srcdir)/bin/rdsquashfs/test/pathtraversal.sqfs

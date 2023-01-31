@@ -8,3 +8,9 @@ tar2sqfs_LDADD += $(PTHREAD_LIBS)
 
 dist_man1_MANS += bin/tar2sqfs/tar2sqfs.1
 bin_PROGRAMS += tar2sqfs
+
+check_SCRIPTS += bin/tar2sqfs/test/test_tar_sqfs.sh
+TESTS += bin/tar2sqfs/test/test_tar_sqfs.sh
+
+EXTRA_DIST += $(top_srcdir)/bin/tar2sqfs/test/simple.tar
+EXTRA_DIST += $(top_srcdir)/bin/tar2sqfs/test/sqfs.sha512

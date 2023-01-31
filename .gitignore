@@ -41,9 +41,8 @@ ltmain.sh
 m4/libtool.m4
 m4/lt*.m4
 Doxyfile
-tests/*.sh
-tests/rdsquashfs/*.sh
-tests/tar2sqfs/*.sh
+bin/rdsquashfs/test/*.sh
+bin/tar2sqfs/test/*.sh
 /mknastyfs
 /mk42sqfs
 /extract_one

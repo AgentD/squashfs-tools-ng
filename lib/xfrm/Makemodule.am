@@ -1,3 +1,6 @@
+LIBXFRM_LIBS = $(ZLIB_LIBS) $(XZ_LIBS) $(BZIP2_LIBS) $(ZSTD_LIBS)
+LIBXFRM_TESTS =
+
 libxfrm_a_SOURCES = include/xfrm/stream.h include/xfrm/compress.h \
 	lib/xfrm/src/compress.c
 libxfrm_a_CFLAGS = $(AM_CFLAGS)
@@ -5,23 +8,66 @@ libxfrm_a_CFLAGS = $(AM_CFLAGS)
 if WITH_XZ
 libxfrm_a_SOURCES += lib/xfrm/src/xz.c
 libxfrm_a_CFLAGS += $(XZ_CFLAGS) -DWITH_XZ
+
+test_unpack_xz_SOURCES = lib/xfrm/test/unpack.c
+test_unpack_xz_LDADD = libxfrm.a $(XZ_LIBS)
+test_unpack_xz_CPPFLAGS = $(AM_CPPFLAGS) -DDO_XZ=1
+
+test_pack_xz_SOURCES = lib/xfrm/test/pack.c
+test_pack_xz_LDADD = libxfrm.a $(LIBXFRM_LIBS)
+test_pack_xz_CPPFLAGS = $(AM_CPPFLAGS) -DDO_XZ=1
+
+LIBXFRM_TESTS += test_pack_xz test_unpack_xz
 endif
 
 if WITH_BZIP2
 libxfrm_a_SOURCES += lib/xfrm/src/bzip2.c
 libxfrm_a_CFLAGS += $(BZIP2_CFLAGS) -DWITH_BZIP2
+
+test_unpack_bzip2_SOURCES = lib/xfrm/test/unpack.c
+test_unpack_bzip2_LDADD = libxfrm.a $(BZIP2_LIBS)
+test_unpack_bzip2_CPPFLAGS = $(AM_CPPFLAGS) -DDO_BZIP2=1
+
+test_pack_bzip2_SOURCES = lib/xfrm/test/pack.c
+test_pack_bzip2_LDADD = libxfrm.a $(LIBXFRM_LIBS)
+test_pack_bzip2_CPPFLAGS = $(AM_CPPFLAGS) -DDO_BZIP2=1
+
+LIBXFRM_TESTS += test_unpack_bzip2 test_pack_bzip2
 endif
 
 if WITH_GZIP
 libxfrm_a_SOURCES += lib/xfrm/src/gzip.c
 libxfrm_a_CFLAGS += $(ZLIB_CFLAGS) -DWITH_GZIP
+
+test_unpack_gzip_SOURCES = lib/xfrm/test/unpack.c
+test_unpack_gzip_LDADD = libxfrm.a $(ZLIB_LIBS)
+test_unpack_gzip_CPPFLAGS = $(AM_CPPFLAGS) -DDO_GZIP=1
+
+test_pack_gzip_SOURCES = lib/xfrm/test/pack.c
+test_pack_gzip_LDADD = libxfrm.a $(LIBXFRM_LIBS)
+test_pack_gzip_CPPFLAGS = $(AM_CPPFLAGS) -DDO_GZIP=1
+
+LIBXFRM_TESTS += test_pack_gzip test_unpack_gzip
 endif
 
 if WITH_ZSTD
 if HAVE_ZSTD_STREAM
 libxfrm_a_SOURCES += lib/xfrm/src/zstd.c
 libxfrm_a_CFLAGS += $(ZSTD_CFLAGS) -DWITH_ZSTD
+
+test_pack_zstd_SOURCES = lib/xfrm/test/unpack.c
+test_pack_zstd_LDADD = libxfrm.a $(ZSTD_LIBS)
+test_pack_zstd_CPPFLAGS = $(AM_CPPFLAGS) -DDO_ZSTD=1
+
+test_unpack_zstd_SOURCES = lib/xfrm/test/pack.c
+test_unpack_zstd_LDADD = libxfrm.a $(LIBXFRM_LIBS)
+test_unpack_zstd_CPPFLAGS = $(AM_CPPFLAGS) -DDO_ZSTD=1
+
+LIBXFRM_TESTS += test_pack_zstd test_unpack_zstd
 endif
 endif
 
 noinst_LIBRARIES += libxfrm.a
+
+check_PROGRAMS += $(LIBXFRM_TESTS)
+TESTS += $(LIBXFRM_TESTS)

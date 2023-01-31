@@ -1,7 +1,7 @@
 #!/bin/sh
 
 RDSQFS="@abs_top_builddir@/rdsquashfs"
-REFFILE="@abs_top_srcdir@/tests/rdsquashfs/pathtraversal.sqfs"
+REFFILE="@abs_top_srcdir@/bin/rdsquashfs/test/pathtraversal.sqfs"
 GOTCHA="/tmp/gotcha.txt"
 
 if "$RDSQFS" -u / -p . "$REFFILE"; then

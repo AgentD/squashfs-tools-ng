@@ -2,8 +2,8 @@
 
 set -e
 
-TARDIR="@abs_top_srcdir@/tests/libtar/data"
-TARDIR2="@abs_top_srcdir@/tests/tar2sqfs"
+TARDIR="@abs_top_srcdir@/lib/tar/test/data"
+TARDIR2="@abs_top_srcdir@/bin/tar2sqfs/test"
 SHA512FILE="$TARDIR2/sqfs.sha512"
 TAR2SQFS="@abs_top_builddir@/tar2sqfs"
 
@@ -13,7 +13,7 @@ fi
 
 # process tar files used for conformance tests
 for filename in $(find "$TARDIR" -name "*.tar" | grep -v ".*/file-size/.*"); do
-	dir="$(dirname $filename | sed -n -e 's;.*/tests/;tests/;p')"
+	dir="$(dirname $filename | sed -n -e 's;.*/test/;test_tar/;p')"
 	imgname="$dir/$(basename $filename .tar).sqfs"
 
 	mkdir -p "$dir"
@@ -22,10 +22,8 @@ done
 
 # edge case test
 filename="$TARDIR2/simple.tar"
-dir="$(dirname $filename | sed -n -e 's;.*/tests/;tests/;p')"
-imgname="$dir/root-becomes.sqfs"
+imgname="./test_tar/root-becomes.sqfs"
 
-mkdir -p "$dir"
 "$TAR2SQFS" --root-becomes foo --defaults mtime=0 \
 	    -c gzip -q "$imgname" < "$filename"
 
@@ -33,12 +31,4 @@ mkdir -p "$dir"
 sha512sum -c "$SHA512FILE"
 
 # cleanup
-rm "$dir/root-becomes.sqfs"
-
-for filename in $(find "$TARDIR" -name "*.tar" | grep -v ".*/file-size/.*"); do
-	dir="$(dirname $filename | sed -n -e 's;.*/tests/;tests/;p')"
-	imgname="$dir/$(basename $filename .tar).sqfs"
-
-	rm "$imgname"
-	rmdir -p "$dir" || true
-done
+rm -rf "./test_tar"

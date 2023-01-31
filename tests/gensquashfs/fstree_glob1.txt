@@ -1,2 +1,0 @@
-dir /tarcorpus 0755 0 0
-glob /tarcorpus 0755 0 0 -type d -- ../libtar/data
