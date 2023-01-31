@@ -1,18 +1,16 @@
-libcommon_a_SOURCES = lib/common/hardlink.c
-libcommon_a_SOURCES += lib/common/print_version.c lib/common/data_reader_dump.c
-libcommon_a_SOURCES += lib/common/compress.c lib/common/comp_opt.c
-libcommon_a_SOURCES += lib/common/data_writer.c include/common.h
-libcommon_a_SOURCES += lib/common/data_writer_ostream.c
-libcommon_a_SOURCES += lib/common/perror.c lib/common/parse_size.c
-libcommon_a_SOURCES += lib/common/print_size.c include/simple_writer.h
-libcommon_a_SOURCES += include/compress_cli.h
-libcommon_a_SOURCES += lib/common/writer/init.c lib/common/writer/cleanup.c
-libcommon_a_SOURCES += lib/common/writer/serialize_fstree.c
-libcommon_a_SOURCES += lib/common/writer/finish.c
+libcommon_a_SOURCES = include/common.h include/simple_writer.h \
+	include/compress_cli.h \
+	lib/common/src/hardlink.c lib/common/src/print_version.c \
+	lib/common/src/data_reader_dump.c lib/common/src/compress.c \
+	lib/common/src/comp_opt.c lib/common/src/data_writer.c \
+	lib/common/src/data_writer_ostream.c lib/common/src/perror.c \
+	lib/common/src/parse_size.c lib/common/src/print_size.c \
+	lib/common/src/writer/init.c lib/common/src/writer/cleanup.c \
+	lib/common/src/writer/serialize_fstree.c lib/common/src/writer/finish.c
 libcommon_a_CFLAGS = $(AM_CFLAGS) $(LZO_CFLAGS)
 
 if WITH_LZO
-libcommon_a_SOURCES += lib/common/comp_lzo.c
+libcommon_a_SOURCES += lib/common/src/comp_lzo.c
 endif
 
 noinst_LIBRARIES += libcommon.a

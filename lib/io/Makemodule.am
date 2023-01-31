@@ -1,19 +1,16 @@
-libio_a_SOURCES = lib/io/internal.h
-libio_a_SOURCES += include/io/istream.h lib/io/ostream.c lib/io/printf.c
-libio_a_SOURCES += include/io/ostream.h lib/io/istream.c lib/io/get_line.c
-libio_a_SOURCES += include/io/xfrm.h include/io/file.h include/io/std.h
-libio_a_SOURCES += lib/io/xfrm/ostream.c lib/io/xfrm/istream.c
+libio_a_SOURCES = include/io/istream.h include/io/ostream.h include/io/xfrm.h \
+	include/io/file.h include/io/std.h \
+	lib/io/src/internal.h lib/io/src/ostream.c lib/io/src/printf.c \
+	lib/io/src/istream.c lib/io/src/get_line.c lib/io/src/xfrm/ostream.c \
+	lib/io/src/xfrm/istream.c
 libio_a_CFLAGS = $(AM_CFLAGS) $(ZLIB_CFLAGS) $(XZ_CFLAGS)
 libio_a_CFLAGS += $(ZSTD_CFLAGS) $(BZIP2_CFLAGS)
-libio_a_CPPFLAGS = $(AM_CPPFLAGS)
 
 if WINDOWS
-libio_a_SOURCES += lib/io/win32/ostream.c
-libio_a_SOURCES += lib/io/win32/istream.c
+libio_a_SOURCES += lib/io/src/win32/ostream.c lib/io/src/win32/istream.c
 libio_a_CFLAGS += -DWINVER=0x0600 -D_WIN32_WINNT=0x0600
 else
-libio_a_SOURCES += lib/io/unix/ostream.c
-libio_a_SOURCES += lib/io/unix/istream.c
+libio_a_SOURCES += lib/io/src/unix/ostream.c lib/io/src/unix/istream.c
 endif
 
 noinst_LIBRARIES += libio.a

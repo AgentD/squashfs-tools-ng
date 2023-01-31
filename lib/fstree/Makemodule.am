@@ -1,8 +1,6 @@
-libfstree_a_SOURCES = include/fstree.h lib/fstree/fstree.c
-libfstree_a_SOURCES += lib/fstree/post_process.c lib/fstree/get_path.c
-libfstree_a_SOURCES += lib/fstree/mknode.c lib/fstree/hardlink.c
-libfstree_a_SOURCES += lib/fstree/add_by_path.c lib/fstree/get_by_path.c
-libfstree_a_CFLAGS = $(AM_CFLAGS)
-libfstree_a_CPPFLAGS = $(AM_CPPFLAGS)
+libfstree_a_SOURCES = include/fstree.h lib/fstree/src/fstree.c \
+	lib/fstree/src/post_process.c lib/fstree/src/get_path.c \
+	lib/fstree/src/mknode.c lib/fstree/src/hardlink.c \
+	lib/fstree/src/add_by_path.c lib/fstree/src/get_by_path.c
 
 noinst_LIBRARIES += libfstree.a

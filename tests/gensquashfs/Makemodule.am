@@ -1,49 +1,51 @@
 GENDATADIR=$(top_srcdir)/tests/gensquashfs
 
 test_filemap_xattr_SOURCES = tests/gensquashfs/filemap_xattr.c \
-				bin/gensquashfs/filemap_xattr.c \
-				bin/gensquashfs/mkfs.h
-test_filemap_xattr_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/bin/gensquashfs
+				bin/gensquashfs/src/filemap_xattr.c \
+				bin/gensquashfs/src/mkfs.h
+test_filemap_xattr_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/bin/gensquashfs/src
 test_filemap_xattr_CPPFLAGS += -DTESTPATH=$(GENDATADIR)/xattr1.txt
 test_filemap_xattr_LDADD = libsquashfs.la libfstree.a libutil.a
 test_filemap_xattr_LDADD += libio.a libcompat.a
 
 test_fstree_from_file_SOURCES = tests/gensquashfs/fstree_from_file.c \
-				bin/gensquashfs/fstree_from_file.c \
-				bin/gensquashfs/fstree_from_dir.c \
-				bin/gensquashfs/mkfs.h
-test_fstree_from_file_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/bin/gensquashfs
+				bin/gensquashfs/src/fstree_from_file.c \
+				bin/gensquashfs/src/fstree_from_dir.c \
+				bin/gensquashfs/src/mkfs.h
+test_fstree_from_file_CPPFLAGS = $(AM_CPPFLAGS)
+test_fstree_from_file_CPPFLAGS += -I$(top_srcdir)/bin/gensquashfs/src
 test_fstree_from_file_CPPFLAGS += -DTESTPATH=$(GENDATADIR)/fstree1.txt
 test_fstree_from_file_LDADD = libfstree.a libio.a libutil.a libcompat.a
 
 test_fstree_glob1_SOURCES = tests/gensquashfs/fstree_glob1.c \
-				bin/gensquashfs/fstree_from_file.c \
-				bin/gensquashfs/fstree_from_dir.c \
-				bin/gensquashfs/mkfs.h
-test_fstree_glob1_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/bin/gensquashfs
+				bin/gensquashfs/src/fstree_from_file.c \
+				bin/gensquashfs/src/fstree_from_dir.c \
+				bin/gensquashfs/src/mkfs.h
+test_fstree_glob1_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/bin/gensquashfs/src
 test_fstree_glob1_CPPFLAGS += -DTESTPATH=$(GENDATADIR)
 test_fstree_glob1_LDADD = libfstree.a libio.a libutil.a libcompat.a
 
 test_fstree_from_dir_SOURCES = tests/gensquashfs/fstree_from_dir.c \
-				bin/gensquashfs/fstree_from_dir.c \
-				bin/gensquashfs/mkfs.h
-test_fstree_from_dir_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/bin/gensquashfs
+				bin/gensquashfs/src/fstree_from_dir.c \
+				bin/gensquashfs/src/mkfs.h
+test_fstree_from_dir_CPPFLAGS = $(AM_CPPFLAGS)
+test_fstree_from_dir_CPPFLAGS += -I$(top_srcdir)/bin/gensquashfs/src
 test_fstree_from_dir_CPPFLAGS += -DTESTPATH=$(GENDATADIR)/testdir
 test_fstree_from_dir_LDADD = libfstree.a libutil.a libcompat.a
 
 test_sort_file_SOURCES = tests/gensquashfs/sort_file.c \
-				bin/gensquashfs/fstree_from_file.c \
-				bin/gensquashfs/fstree_from_dir.c \
-				bin/gensquashfs/sort_by_file.c \
-				bin/gensquashfs/mkfs.h
-test_sort_file_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/bin/gensquashfs
+				bin/gensquashfs/src/fstree_from_file.c \
+				bin/gensquashfs/src/fstree_from_dir.c \
+				bin/gensquashfs/src/sort_by_file.c \
+				bin/gensquashfs/src/mkfs.h
+test_sort_file_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/bin/gensquashfs/src
 test_sort_file_LDADD = libfstree.a libio.a libutil.a libcompat.a
 
 fstree_fuzz_SOURCES = tests/gensquashfs/fstree_fuzz.c \
-			bin/gensquashfs/fstree_from_file.c \
-			bin/gensquashfs/fstree_from_dir.c \
-			bin/gensquashfs/mkfs.h
-fstree_fuzz_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/bin/gensquashfs
+			bin/gensquashfs/src/fstree_from_file.c \
+			bin/gensquashfs/src/fstree_from_dir.c \
+			bin/gensquashfs/src/mkfs.h
+fstree_fuzz_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/bin/gensquashfs/src
 fstree_fuzz_LDADD = libfstree.a libio.a libutil.a libcompat.a
 
 GENSQUASHFS_TESTS = \

@@ -10,30 +10,27 @@ LIBSQFS_HEARDS = include/sqfs/meta_writer.h \
 		include/sqfs/xattr_reader.h include/sqfs/xattr_writer.h \
 		include/sqfs/frag_table.h include/sqfs/block_writer.h
 
-libsquashfs_la_SOURCES = $(LIBSQFS_HEARDS) lib/sqfs/id_table.c lib/sqfs/super.c
-libsquashfs_la_SOURCES += lib/sqfs/readdir.c lib/sqfs/xattr/xattr.c
-libsquashfs_la_SOURCES += lib/sqfs/write_table.c lib/sqfs/meta_writer.c
-libsquashfs_la_SOURCES += lib/sqfs/read_super.c lib/sqfs/meta_reader.c
-libsquashfs_la_SOURCES += lib/sqfs/read_inode.c lib/sqfs/write_inode.c
-libsquashfs_la_SOURCES += lib/sqfs/dir_writer.c lib/sqfs/xattr/xattr_reader.c
-libsquashfs_la_SOURCES += lib/sqfs/read_table.c lib/sqfs/comp/compressor.c
-libsquashfs_la_SOURCES += lib/sqfs/comp/internal.h
-libsquashfs_la_SOURCES += lib/sqfs/dir_reader/dir_reader.c
-libsquashfs_la_SOURCES += lib/sqfs/dir_reader/read_tree.c
-libsquashfs_la_SOURCES += lib/sqfs/dir_reader/get_path.c
-libsquashfs_la_SOURCES += lib/sqfs/dir_reader/internal.h
-libsquashfs_la_SOURCES += lib/sqfs/inode.c lib/sqfs/xattr/xattr_writer.c
-libsquashfs_la_SOURCES += lib/sqfs/xattr/xattr_writer_flush.c
-libsquashfs_la_SOURCES += lib/sqfs/xattr/xattr_writer_record.c
-libsquashfs_la_SOURCES += lib/sqfs/xattr/xattr_writer.h
-libsquashfs_la_SOURCES += lib/sqfs/write_super.c lib/sqfs/data_reader.c
-libsquashfs_la_SOURCES += lib/sqfs/block_processor/internal.h
-libsquashfs_la_SOURCES += lib/sqfs/block_processor/frontend.c
-libsquashfs_la_SOURCES += lib/sqfs/block_processor/block_processor.c
-libsquashfs_la_SOURCES += lib/sqfs/block_processor/backend.c
-libsquashfs_la_SOURCES += lib/sqfs/frag_table.c include/sqfs/frag_table.h
-libsquashfs_la_SOURCES += lib/sqfs/block_writer.c include/sqfs/block_writer.h
-libsquashfs_la_SOURCES += lib/sqfs/misc.c
+libsquashfs_la_SOURCES = $(LIBSQFS_HEARDS) lib/sqfs/src/id_table.c \
+	lib/sqfs/src/super.c lib/sqfs/src/readdir.c lib/sqfs/src/xattr/xattr.c \
+	lib/sqfs/src/write_table.c lib/sqfs/src/meta_writer.c \
+	lib/sqfs/src/read_super.c lib/sqfs/src/meta_reader.c \
+	lib/sqfs/src/read_inode.c lib/sqfs/src/write_inode.c \
+	lib/sqfs/src/dir_writer.c lib/sqfs/src/xattr/xattr_reader.c \
+	lib/sqfs/src/read_table.c lib/sqfs/src/comp/compressor.c \
+	lib/sqfs/src/comp/internal.h lib/sqfs/src/dir_reader/dir_reader.c \
+	lib/sqfs/src/dir_reader/read_tree.c lib/sqfs/src/dir_reader/get_path.c \
+	lib/sqfs/src/dir_reader/internal.h lib/sqfs/src/inode.c \
+	lib/sqfs/src/xattr/xattr_writer.c \
+	lib/sqfs/src/xattr/xattr_writer_flush.c \
+	lib/sqfs/src/xattr/xattr_writer_record.c \
+	lib/sqfs/src/xattr/xattr_writer.h \
+	lib/sqfs/src/write_super.c lib/sqfs/src/data_reader.c \
+	lib/sqfs/src/block_processor/internal.h \
+	lib/sqfs/src/block_processor/frontend.c \
+	lib/sqfs/src/block_processor/block_processor.c \
+	lib/sqfs/src/block_processor/backend.c \
+	lib/sqfs/src/frag_table.c lib/sqfs/src/block_writer.c \
+	lib/sqfs/src/misc.c
 libsquashfs_la_CPPFLAGS = $(AM_CPPFLAGS)
 libsquashfs_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBSQUASHFS_SO_VERSION)
 libsquashfs_la_CFLAGS = $(AM_CFLAGS) $(PTHREAD_CFLAGS) $(ZLIB_CFLAGS)
@@ -43,60 +40,60 @@ libsquashfs_la_LIBADD = $(XZ_LIBS) $(ZLIB_LIBS) $(LZ4_LIBS)
 libsquashfs_la_LIBADD += $(ZSTD_LIBS) $(PTHREAD_LIBS)
 
 # directly "import" stuff from libutil
-libsquashfs_la_SOURCES += lib/util/str_table.c lib/util/alloc.c
-libsquashfs_la_SOURCES += lib/util/xxhash.c lib/util/file_cmp.c
-libsquashfs_la_SOURCES += lib/util/hash_table.c include/util/hash_table.h
-libsquashfs_la_SOURCES += lib/util/rbtree.c include/util/rbtree.h
-libsquashfs_la_SOURCES += lib/util/array.c include/util/array.h
-libsquashfs_la_SOURCES += lib/util/is_memory_zero.c
+libsquashfs_la_SOURCES += lib/util/src/str_table.c lib/util/src/alloc.c
+libsquashfs_la_SOURCES += lib/util/src/xxhash.c lib/util/src/file_cmp.c
+libsquashfs_la_SOURCES += lib/util/src/hash_table.c include/util/hash_table.h
+libsquashfs_la_SOURCES += lib/util/src/rbtree.c include/util/rbtree.h
+libsquashfs_la_SOURCES += lib/util/src/array.c include/util/array.h
+libsquashfs_la_SOURCES += lib/util/src/is_memory_zero.c
 libsquashfs_la_SOURCES += include/util/threadpool.h
 
 # and from libcompat
-libsquashfs_la_SOURCES += lib/compat/strchrnul.c lib/compat/strndup.c
+libsquashfs_la_SOURCES += lib/compat/src/strchrnul.c lib/compat/src/strndup.c
 libsquashfs_la_SOURCES += include/compat.h
 
 if CUSTOM_ALLOC
-libsquashfs_la_SOURCES += lib/util/mempool.c include/util/mempool.h
+libsquashfs_la_SOURCES += lib/util/src/mempool.c include/util/mempool.h
 endif
 
 if WINDOWS
-libsquashfs_la_SOURCES += lib/sqfs/win32/io_file.c
+libsquashfs_la_SOURCES += lib/sqfs/src/win32/io_file.c
 libsquashfs_la_CFLAGS += -DWINVER=0x0600 -D_WIN32_WINNT=0x0600
 libsquashfs_la_CFLAGS += -Wc,-static-libgcc
 libsquashfs_la_LDFLAGS += -no-undefined -avoid-version
 else
-libsquashfs_la_SOURCES += lib/sqfs/unix/io_file.c
+libsquashfs_la_SOURCES += lib/sqfs/src/unix/io_file.c
 endif
 
 if HAVE_PTHREAD
-libsquashfs_la_SOURCES += lib/util/threadpool.c
+libsquashfs_la_SOURCES += lib/util/src/threadpool.c
 else
 if WINDOWS
-libsquashfs_la_SOURCES += lib/util/threadpool.c
+libsquashfs_la_SOURCES += lib/util/src/threadpool.c
 else
-libsquashfs_la_SOURCES += lib/util/threadpool_serial.c
+libsquashfs_la_SOURCES += lib/util/src/threadpool_serial.c
 libsquashfs_la_CPPFLAGS += -DNO_THREAD_IMPL
 endif
 endif
 
 if WITH_GZIP
-libsquashfs_la_SOURCES += lib/sqfs/comp/gzip.c
+libsquashfs_la_SOURCES += lib/sqfs/src/comp/gzip.c
 libsquashfs_la_CPPFLAGS += -DWITH_GZIP
 endif
 
 if WITH_XZ
-libsquashfs_la_SOURCES += lib/sqfs/comp/xz.c
-libsquashfs_la_SOURCES += lib/sqfs/comp/lzma.c
+libsquashfs_la_SOURCES += lib/sqfs/src/comp/xz.c
+libsquashfs_la_SOURCES += lib/sqfs/src/comp/lzma.c
 libsquashfs_la_CPPFLAGS += -DWITH_XZ
 endif
 
 if WITH_LZ4
-libsquashfs_la_SOURCES += lib/sqfs/comp/lz4.c
+libsquashfs_la_SOURCES += lib/sqfs/src/comp/lz4.c
 libsquashfs_la_CPPFLAGS += -DWITH_LZ4
 endif
 
 if WITH_ZSTD
-libsquashfs_la_SOURCES += lib/sqfs/comp/zstd.c
+libsquashfs_la_SOURCES += lib/sqfs/src/comp/zstd.c
 libsquashfs_la_CPPFLAGS += -DWITH_ZSTD
 endif
 

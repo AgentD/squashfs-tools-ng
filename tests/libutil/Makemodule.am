@@ -24,11 +24,11 @@ test_canonicalize_name_SOURCES = tests/libutil/canonicalize_name.c
 test_canonicalize_name_LDADD = libutil.a libcompat.a
 
 test_filename_sane_SOURCES = tests/libutil/filename_sane.c
-test_filename_sane_SOURCES += lib/util/filename_sane.c
+test_filename_sane_SOURCES += lib/util/src/filename_sane.c
 test_filename_sane_LDADD = libcompat.a libutil.a
 
 test_filename_sane_w32_SOURCES = tests/libutil/filename_sane.c
-test_filename_sane_w32_SOURCES += lib/util/filename_sane.c
+test_filename_sane_w32_SOURCES += lib/util/src/filename_sane.c
 test_filename_sane_w32_CPPFLAGS = $(AM_CPPFLAGS) -DTEST_WIN32=1
 test_filename_sane_w32_LDADD = libcompat.a
 

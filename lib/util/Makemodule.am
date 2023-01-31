@@ -1,21 +1,14 @@
-libutil_a_SOURCES = include/util/util.h include/util/str_table.h
-libutil_a_SOURCES += include/util/hash_table.h include/util/test.h
-libutil_a_SOURCES += lib/util/str_table.c lib/util/alloc.c
-libutil_a_SOURCES += lib/util/rbtree.c include/util/rbtree.h
-libutil_a_SOURCES += lib/util/array.c include/util/array.h
-libutil_a_SOURCES += lib/util/xxhash.c lib/util/hash_table.c
-libutil_a_SOURCES += lib/util/fast_urem_by_const.h
-libutil_a_SOURCES += include/util/threadpool.h
-libutil_a_SOURCES += include/util/w32threadwrap.h
-libutil_a_SOURCES += lib/util/threadpool_serial.c
-libutil_a_SOURCES += lib/util/is_memory_zero.c
-libutil_a_SOURCES += lib/util/mkdir_p.c
-libutil_a_SOURCES += lib/util/canonicalize_name.c
-libutil_a_SOURCES += lib/util/filename_sane.c
-libutil_a_SOURCES += lib/util/source_date_epoch.c
-libutil_a_SOURCES += lib/util/file_cmp.c
-libutil_a_SOURCES += lib/util/hex_decode.c
-libutil_a_SOURCES += lib/util/base64_decode.c
+libutil_a_SOURCES = include/util/util.h include/util/str_table.h \
+	include/util/hash_table.h include/util/test.h include/util/rbtree.h \
+	include/util/array.h include/util/threadpool.h \
+	include/util/w32threadwrap.h include/util/mempool.h \
+	lib/util/src/str_table.c lib/util/src/alloc.c lib/util/src/rbtree.c \
+	lib/util/src/array.c lib/util/src/xxhash.c lib/util/src/hash_table.c \
+	lib/util/src/fast_urem_by_const.h lib/util/src/threadpool_serial.c \
+	lib/util/src/is_memory_zero.c lib/util/src/mkdir_p.c \
+	lib/util/src/canonicalize_name.c lib/util/src/filename_sane.c \
+	lib/util/src/source_date_epoch.c lib/util/src/file_cmp.c \
+	lib/util/src/hex_decode.c lib/util/src/base64_decode.c
 libutil_a_CFLAGS = $(AM_CFLAGS)
 libutil_a_CPPFLAGS = $(AM_CPPFLAGS)
 
@@ -24,18 +17,18 @@ libutil_a_CFLAGS += -DWINVER=0x0600 -D_WIN32_WINNT=0x0600
 endif
 
 if HAVE_PTHREAD
-libutil_a_SOURCES += lib/util/threadpool.c
+libutil_a_SOURCES += lib/util/src/threadpool.c
 libutil_a_CFLAGS += $(PTHREAD_CFLAGS)
 else
 if WINDOWS
-libutil_a_SOURCES += lib/util/threadpool.c
+libutil_a_SOURCES += lib/util/src/threadpool.c
 else
 libutil_a_CPPFLAGS += -DNO_THREAD_IMPL
 endif
 endif
 
 if CUSTOM_ALLOC
-libutil_a_SOURCES += lib/util/mempool.c include/util/mempool.h
+libutil_a_SOURCES += lib/util/src/mempool.c
 endif
 
 noinst_LIBRARIES += libutil.a

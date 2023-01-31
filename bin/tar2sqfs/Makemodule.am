@@ -1,5 +1,5 @@
-tar2sqfs_SOURCES = bin/tar2sqfs/tar2sqfs.c bin/tar2sqfs/tar2sqfs.h
-tar2sqfs_SOURCES += bin/tar2sqfs/options.c bin/tar2sqfs/process_tarball.c
+tar2sqfs_SOURCES = bin/tar2sqfs/src/tar2sqfs.c bin/tar2sqfs/src/tar2sqfs.h \
+	bin/tar2sqfs/src/options.c bin/tar2sqfs/src/process_tarball.c
 tar2sqfs_CFLAGS = $(AM_CFLAGS) $(PTHREAD_CFLAGS)
 tar2sqfs_LDADD = libcommon.a libsquashfs.la libtar.a libio.a libxfrm.a
 tar2sqfs_LDADD += libfstree.a libcompat.a libfstree.a libutil.a $(LZO_LIBS)

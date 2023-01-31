@@ -1,11 +1,8 @@
-libtar_a_SOURCES = lib/tar/read_header.c lib/tar/write_header.c
-libtar_a_SOURCES += lib/tar/number.c lib/tar/checksum.c lib/tar/cleanup.c
-libtar_a_SOURCES += lib/tar/read_sparse_map_old.c
-libtar_a_SOURCES += lib/tar/internal.h
-libtar_a_SOURCES += lib/tar/padd_file.c lib/tar/record_to_memory.c
-libtar_a_SOURCES += lib/tar/pax_header.c lib/tar/read_sparse_map_new.c
-libtar_a_SOURCES += include/tar/tar.h include/tar/format.h
-libtar_a_CFLAGS = $(AM_CFLAGS)
-libtar_a_CPPFLAGS = $(AM_CPPFLAGS)
+libtar_a_SOURCES = lib/tar/src/read_header.c lib/tar/src/write_header.c \
+	lib/tar/src/number.c lib/tar/src/checksum.c lib/tar/src/cleanup.c \
+	lib/tar/src/read_sparse_map_old.c lib/tar/src/internal.h \
+	lib/tar/src/padd_file.c lib/tar/src/record_to_memory.c \
+	lib/tar/src/pax_header.c lib/tar/src/read_sparse_map_new.c \
+	include/tar/tar.h include/tar/format.h
 
 noinst_LIBRARIES += libtar.a
