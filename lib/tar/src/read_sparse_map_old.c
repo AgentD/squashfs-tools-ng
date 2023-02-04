@@ -10,42 +10,52 @@
 #include <ctype.h>
 #include <stdlib.h>
 
-sparse_map_t *read_gnu_old_sparse(istream_t *fp, tar_header_t *hdr)
+static int parse(const gnu_old_sparse_t *in, size_t count,
+		 sparse_map_t **head, sparse_map_t **tail)
 {
-	sparse_map_t *list = NULL, *end = NULL, *node;
-	gnu_sparse_t sph;
+	sparse_map_t *node;
 	sqfs_u64 off, sz;
-	int i, ret;
 
-	for (i = 0; i < 4; ++i) {
-		if (!isdigit(hdr->tail.gnu.sparse[i].offset[0]))
-			break;
-		if (!isdigit(hdr->tail.gnu.sparse[i].numbytes[0]))
-			break;
-
-		if (read_octal(hdr->tail.gnu.sparse[i].offset,
-			       sizeof(hdr->tail.gnu.sparse[i].offset), &off))
-			goto fail;
-		if (read_octal(hdr->tail.gnu.sparse[i].numbytes,
-			       sizeof(hdr->tail.gnu.sparse[i].numbytes), &sz))
-			goto fail;
+	while (count--) {
+		if (!isdigit(in->offset[0]) || !isdigit(in->numbytes[0]))
+			return 1;
+		if (read_number(in->offset, sizeof(in->offset), &off))
+			return -1;
+		if (read_number(in->numbytes, sizeof(in->numbytes), &sz))
+			return -1;
+		++in;
 
 		node = calloc(1, sizeof(*node));
-		if (node == NULL)
-			goto fail_errno;
+		if (node == NULL) {
+			perror("parsing GNU sparse header");
+			return -1;
+		}
 
 		node->offset = off;
 		node->count = sz;
 
-		if (list == NULL) {
-			list = end = node;
+		if ((*head) == NULL) {
+			(*head) = (*tail) = node;
 		} else {
-			end->next = node;
-			end = node;
+			(*tail)->next = node;
+			(*tail) = node;
 		}
 	}
 
-	if (hdr->tail.gnu.isextended == 0)
+	return 0;
+}
+
+sparse_map_t *read_gnu_old_sparse(istream_t *fp, tar_header_t *hdr)
+{
+	sparse_map_t *list = NULL, *end = NULL;
+	gnu_old_sparse_record_t sph;
+	int ret;
+
+	ret = parse(hdr->tail.gnu.sparse, 4, &list, &end);
+	if (ret < 0)
+		goto fail;
+
+	if (ret > 0 || hdr->tail.gnu.isextended == 0)
 		return list;
 
 	do {
@@ -53,46 +63,17 @@ sparse_map_t *read_gnu_old_sparse(istream_t *fp, tar_header_t *hdr)
 		if (ret < 0)
 			goto fail;
 
-		if ((size_t)ret < sizeof(sph)) {
-			fputs("reading GNU sparse header: "
-			      "unexpected end-of-file\n",
-			      stderr);
+		if ((size_t)ret < sizeof(sph))
+			goto fail_eof;
+
+		ret = parse(sph.sparse, 21, &list, &end);
+		if (ret < 0)
 			goto fail;
-		}
-
-		for (i = 0; i < 21; ++i) {
-			if (!isdigit(sph.sparse[i].offset[0]))
-				break;
-			if (!isdigit(sph.sparse[i].numbytes[0]))
-				break;
-
-			if (read_octal(sph.sparse[i].offset,
-				       sizeof(sph.sparse[i].offset), &off))
-				goto fail;
-			if (read_octal(sph.sparse[i].numbytes,
-				       sizeof(sph.sparse[i].numbytes), &sz))
-				goto fail;
-
-			node = calloc(1, sizeof(*node));
-			if (node == NULL)
-				goto fail_errno;
-
-			node->offset = off;
-			node->count = sz;
-
-			if (list == NULL) {
-				list = end = node;
-			} else {
-				end->next = node;
-				end = node;
-			}
-		}
-	} while (sph.isextended != 0);
+	} while (ret == 0 && sph.isextended != 0);
 
 	return list;
-fail_errno:
-	perror("parsing GNU sparse header");
-	goto fail;
+fail_eof:
+	fputs("reading GNU sparse header: unexpected end-of-file\n", stderr);
 fail:
 	free_sparse_list(list);
 	return NULL;

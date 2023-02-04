@@ -10,6 +10,17 @@
 #include "sqfs/predef.h"
 
 typedef struct {
+	char offset[12];
+	char numbytes[12];
+} gnu_old_sparse_t;
+
+typedef struct {
+	gnu_old_sparse_t sparse[21];
+	char isextended;
+	char padding[7];
+} gnu_old_sparse_record_t;
+
+typedef struct {
 	char name[100];
 	char mode[8];
 	char uid[8];
@@ -37,25 +48,13 @@ typedef struct {
 			char offset[12];
 			char deprecated[4];
 			char unused;
-			struct {
-				char offset[12];
-				char numbytes[12];
-			} sparse[4];
+			gnu_old_sparse_t sparse[4];
 			char isextended;
 			char realsize[12];
 			char padding[17];
 		} gnu;
 	} tail;
 } tar_header_t;
-
-typedef struct {
-	struct {
-		char offset[12];
-		char numbytes[12];
-	} sparse[21];
-	char isextended;
-	char padding[7];
-} gnu_sparse_t;
 
 #define TAR_TYPE_FILE '0'
 #define TAR_TYPE_LINK '1'
