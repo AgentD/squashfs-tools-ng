@@ -14,7 +14,7 @@ static bool is_checksum_valid(const tar_header_t *hdr)
 {
 	sqfs_u64 read_chksum;
 
-	if (read_octal(hdr->chksum, sizeof(hdr->chksum), &read_chksum))
+	if (read_number(hdr->chksum, sizeof(hdr->chksum), &read_chksum))
 		return false;
 
 	return read_chksum == tar_compute_checksum(hdr);
@@ -113,7 +113,7 @@ static int decode_header(const tar_header_t *hdr, unsigned int set_by_pax,
 		}
 	}
 
-	if (read_octal(hdr->mode, sizeof(hdr->mode), &field))
+	if (read_number(hdr->mode, sizeof(hdr->mode), &field))
 		return -1;
 
 	out->mode = field & 07777;

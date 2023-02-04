@@ -11,7 +11,7 @@
 #include <ctype.h>
 #include <stdio.h>
 
-int read_octal(const char *str, int digits, sqfs_u64 *out)
+static int read_octal(const char *str, int digits, sqfs_u64 *out)
 {
 	sqfs_u64 result = 0;
 

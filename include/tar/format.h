@@ -89,8 +89,6 @@ typedef struct {
 extern "C" {
 #endif
 
-int read_octal(const char *str, int digits, sqfs_u64 *out);
-
 int read_number(const char *str, int digits, sqfs_u64 *out);
 
 unsigned int tar_compute_checksum(const tar_header_t *hdr);
