@@ -94,9 +94,7 @@ int read_octal(const char *str, int digits, sqfs_u64 *out);
 
 int read_number(const char *str, int digits, sqfs_u64 *out);
 
-void update_checksum(tar_header_t *hdr);
-
-bool is_checksum_valid(const tar_header_t *hdr);
+unsigned int tar_compute_checksum(const tar_header_t *hdr);
 
 #ifdef __cplusplus
 }

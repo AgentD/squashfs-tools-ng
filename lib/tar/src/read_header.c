@@ -10,11 +10,14 @@
 #include <string.h>
 #include <stdlib.h>
 
-static bool is_zero_block(const tar_header_t *hdr)
+static bool is_checksum_valid(const tar_header_t *hdr)
 {
-	const unsigned char *ptr = (const unsigned char *)hdr;
+	sqfs_u64 read_chksum;
 
-	return ptr[0] == '\0' && memcmp(ptr, ptr + 1, sizeof(*hdr) - 1) == 0;
+	if (read_octal(hdr->chksum, sizeof(hdr->chksum), &read_chksum))
+		return false;
+
+	return read_chksum == tar_compute_checksum(hdr);
 }
 
 static int check_version(const tar_header_t *hdr)
@@ -179,7 +182,7 @@ int read_header(istream_t *fp, tar_header_decoded_t *out)
 		if ((size_t)ret < sizeof(hdr))
 			goto out_eof;
 
-		if (is_zero_block(&hdr)) {
+		if (is_memory_zero(&hdr, sizeof(hdr))) {
 			if (prev_was_zero)
 				goto out_eof;
 			prev_was_zero = true;

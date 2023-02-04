@@ -9,6 +9,13 @@
 #include "internal.h"
 #include <string.h>
 
+static void update_checksum(tar_header_t *hdr)
+{
+	sprintf(hdr->chksum, "%06o", tar_compute_checksum(hdr));
+	hdr->chksum[6] = '\0';
+	hdr->chksum[7] = ' ';
+}
+
 static void write_binary(char *dst, sqfs_u64 value, int digits)
 {
 	memset(dst, 0, digits);

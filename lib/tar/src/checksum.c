@@ -4,13 +4,9 @@
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
-#include "config.h"
-
 #include "tar/format.h"
 
-#include <stdio.h>
-
-static unsigned int get_checksum(const tar_header_t *hdr)
+unsigned int tar_compute_checksum(const tar_header_t *hdr)
 {
 	const unsigned char *header_start = (const unsigned char *)hdr;
 	const unsigned char *chksum_start = (const unsigned char *)hdr->chksum;
@@ -26,23 +22,4 @@ static unsigned int get_checksum(const tar_header_t *hdr)
 	for (; p < header_end; p++)
 		chksum += *p;
 	return chksum;
-}
-
-void update_checksum(tar_header_t *hdr)
-{
-	unsigned int chksum = get_checksum(hdr);
-
-	sprintf(hdr->chksum, "%06o", chksum);
-	hdr->chksum[6] = '\0';
-	hdr->chksum[7] = ' ';
-}
-
-bool is_checksum_valid(const tar_header_t *hdr)
-{
-	unsigned int calculated_chksum = get_checksum(hdr);
-	sqfs_u64 read_chksum;
-
-	if (read_octal(hdr->chksum, sizeof(hdr->chksum), &read_chksum))
-		return 0;
-	return read_chksum == calculated_chksum;
 }
