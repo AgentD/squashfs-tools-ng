@@ -5,21 +5,21 @@ The `libsquashfs` library is released under the terms and conditions of the
 all source code in the directories `lib/sqfs`, `lib/util` and `include/sqfs`
 with the following exceptions:
 
- - `lib/util/xxhash.c` contains a modified implementation of the xxhash32
+ - `lib/util/src/xxhash.c` contains a modified implementation of the xxhash32
    algorithm. See `licenses/xxhash.txt` for copyright and licensing
    information (2 clause BSD license).
- - `lib/util/hash_table.c`, `include/util/hash_table.h` and
-   `lib/util/fast_urem_by_const.h` contain a hash table implementation (MIT
+ - `lib/util/src/hash_table.c`, `include/util/src/hash_table.h` and
+   `lib/util/src/fast_urem_by_const.h` contain a hash table implementation (MIT
    license). See `licenses/hash_table.txt` for details.
 
 The rest of squashfs-tools-ng is released under the terms and conditions of
 the **GNU General Public License version 3 or later**, with the following
 exceptions:
 
- - `lib/compat/fnmatch.c` has been copied from Musl libc.
- - `lib/compat/getopt.c` has been copied from Musl libc.
- - `lib/compat/getopt_long.c` has been copied from Musl libc.
- - `lib/compat/getsubopt.c` has been copied from Musl libc.
+ - `lib/compat/src/fnmatch.c` has been copied from Musl libc.
+ - `lib/compat/src/getopt.c` has been copied from Musl libc.
+ - `lib/compat/src/getopt_long.c` has been copied from Musl libc.
+ - `lib/compat/src/getsubopt.c` has been copied from Musl libc.
 
 The components copied from Musl libc are subejct to an MIT style license.
 See `liceneses/musl.txt` for details and only compiled into executable programs
