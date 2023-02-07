@@ -33,3 +33,6 @@ The following addtional files have been added:
      Contributed in GitHub issue #64. A tar ball that contains a hard link
      where the 100 byte target field is completely filled without containing
      a null-terminator.
+ - istream/sparse.tar
+     Derived from sparse/gnu.tar and contains some test data for testing the
+     tar istream implementation.

@@ -76,6 +76,13 @@ static void check_hierarchy(tree_node_t *root, bool subdir, bool recursive)
 
 	n = n->next;
 	TEST_NOT_NULL(n);
+	TEST_STR_EQUAL(n->name, "istream");
+	TEST_ASSERT(S_ISDIR(n->mode));
+	TEST_ASSERT(n->parent == parentdir);
+	TEST_NULL(n->data.dir.children);
+
+	n = n->next;
+	TEST_NOT_NULL(n);
 	TEST_STR_EQUAL(n->name, "large-mtime");
 	TEST_ASSERT(S_ISDIR(n->mode));
 	TEST_ASSERT(n->parent == parentdir);

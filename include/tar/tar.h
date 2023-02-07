@@ -75,6 +75,9 @@ int read_header(istream_t *fp, tar_header_decoded_t *out);
 
 void clear_header(tar_header_decoded_t *hdr);
 
+istream_t *tar_record_istream_create(istream_t *parent,
+				     const tar_header_decoded_t *hdr);
+
 /*
   Write zero bytes to an output file to padd it to the tar record size.
   Returns 0 on success. On failure, prints error message to stderr.
