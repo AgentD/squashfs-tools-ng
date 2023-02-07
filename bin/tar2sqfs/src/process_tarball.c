@@ -7,16 +7,13 @@
 #include "tar2sqfs.h"
 
 static int write_file(istream_t *input_file, sqfs_writer_t *sqfs,
-		      const tar_header_decoded_t *hdr,
-		      file_info_t *fi, sqfs_u64 filesize)
+		      const tar_header_decoded_t *hdr, file_info_t *fi)
 {
-	const sparse_map_t *list;
 	int flags = 0, ret = 0;
-	sqfs_u64 offset, diff;
-	bool sparse_region;
 	ostream_t *out;
+	istream_t *in;
 
-	if (no_tail_pack && filesize > cfg.block_size)
+	if (no_tail_pack && hdr->actual_size > cfg.block_size)
 		flags |= SQFS_BLK_DONT_FRAGMENT;
 
 	out = data_writer_ostream_create(hdr->name, sqfs->data, &fi->inode,
@@ -25,60 +22,24 @@ static int write_file(istream_t *input_file, sqfs_writer_t *sqfs,
 	if (out == NULL)
 		return -1;
 
-	list = hdr->sparse;
-
-	for (offset = 0; offset < filesize; offset += diff) {
-		if (hdr->sparse != NULL) {
-			if (list == NULL) {
-				sparse_region = true;
-				diff = filesize - offset;
-			} else if (offset < list->offset) {
-				sparse_region = true;
-				diff = list->offset - offset;
-			} else if (offset - list->offset >= list->count) {
-				list = list->next;
-				diff = 0;
-				continue;
-			} else {
-				sparse_region = false;
-				diff = list->count - (offset - list->offset);
-			}
-		} else {
-			sparse_region = false;
-			diff = filesize - offset;
-		}
-
-		if (diff > 0x7FFFFFFFUL)
-			diff = 0x7FFFFFFFUL;
-
-		if (sparse_region) {
-			ret = ostream_append_sparse(out, diff);
-		} else {
-			ret = ostream_append_from_istream(out, input_file,
-							  diff);
-
-			if (ret == 0) {
-				fprintf(stderr, "%s: unexpected end-of-file\n",
-					hdr->name);
-				ret = -1;
-			} else if (ret > 0) {
-				diff = ret;
-				ret = 0;
-			}
-		}
-
-		if (ret < 0)
-			break;
+	in = tar_record_istream_create(input_file, hdr);
+	if (in == NULL) {
+		sqfs_drop(out);
+		return -1;
 	}
+
+	do {
+		ret = ostream_append_from_istream(out, in, cfg.block_size);
+	} while (ret > 0);
 
 	ostream_flush(out);
 	sqfs_drop(out);
+	sqfs_drop(in);
 
 	if (ret)
 		return -1;
 
-	return skip_padding(input_file, hdr->sparse == NULL ?
-			    filesize : hdr->record_size);
+	return skip_padding(input_file, hdr->record_size);
 }
 
 static int copy_xattr(sqfs_writer_t *sqfs, tree_node_t *node,
@@ -169,10 +130,8 @@ static int create_node_and_repack_data(istream_t *input_file,
 	}
 
 	if (S_ISREG(hdr->mode)) {
-		if (write_file(input_file, sqfs, hdr, &node->data.file,
-			       hdr->actual_size)) {
+		if (write_file(input_file, sqfs, hdr, &node->data.file))
 			return -1;
-		}
 	}
 
 	return 0;
