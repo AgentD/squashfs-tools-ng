@@ -77,8 +77,6 @@ int main(int argc, char **argv)
 	ti = sqfs_drop(ti);
 	TEST_EQUAL_UI(((sqfs_object_t *)fp)->refcount, 1);
 
-	TEST_ASSERT(skip_padding(fp, 5) == 0);
-
 	TEST_EQUAL_UI(((sqfs_object_t *)fp)->refcount, 1);
 	TEST_ASSERT(read_header(fp, &hdr) == 0);
 	TEST_EQUAL_UI(((sqfs_object_t *)fp)->refcount, 1);
@@ -101,8 +99,6 @@ int main(int argc, char **argv)
 
 	ti = sqfs_drop(ti);
 	TEST_EQUAL_UI(((sqfs_object_t *)fp)->refcount, 1);
-
-	TEST_ASSERT(skip_padding(fp, 5) == 0);
 
 	/* "deep" directory hierarchy containg a hard link */
 	TEST_EQUAL_UI(((sqfs_object_t *)fp)->refcount, 1);

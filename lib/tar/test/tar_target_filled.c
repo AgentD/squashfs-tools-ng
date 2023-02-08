@@ -53,7 +53,7 @@ int main(int argc, char **argv)
 	TEST_ASSERT(istream_read(fp, buffer, 5) == 5);
 	buffer[5] = '\0';
 	TEST_STR_EQUAL(buffer, "test\n");
-	TEST_ASSERT(skip_padding(fp, 5) == 0);
+	TEST_ASSERT(istream_skip(fp, 512 - 5) == 0);
 	clear_header(&hdr);
 
 	TEST_ASSERT(read_header(fp, &hdr) == 0);
@@ -65,7 +65,7 @@ int main(int argc, char **argv)
 	TEST_ASSERT(istream_read(fp, buffer, 5) == 5);
 	buffer[5] = '\0';
 	TEST_STR_EQUAL(buffer, "test\n");
-	TEST_ASSERT(skip_padding(fp, 5) == 0);
+	TEST_ASSERT(istream_skip(fp, 512 - 5) == 0);
 	clear_header(&hdr);
 
 	/* "deep" directory hierarchy containg a hard link */

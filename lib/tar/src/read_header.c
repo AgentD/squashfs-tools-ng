@@ -292,13 +292,6 @@ fail:
 	return -1;
 }
 
-int skip_padding(istream_t *fp, sqfs_u64 size)
-{
-	size_t tail = size % 512;
-
-	return tail ? istream_skip(fp, 512 - tail) : 0;
-}
-
 int skip_entry(istream_t *fp, sqfs_u64 size)
 {
 	size_t tail = size % 512;

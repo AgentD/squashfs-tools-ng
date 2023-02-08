@@ -28,6 +28,7 @@ typedef struct {
 	sqfs_u64 file_size;
 	sqfs_u64 offset;
 
+	size_t padding;
 	size_t last_chunk;
 	bool last_sparse;
 
@@ -83,6 +84,9 @@ static int precache(istream_t *strm)
 		strm->buffer = tar->buffer;
 		if (tar->record_size > 0)
 			goto fail_rec_sz;
+		if (istream_skip(tar->parent, tar->padding))
+			goto fail;
+		tar->padding = 0;
 		return 0;
 	}
 
@@ -105,7 +109,7 @@ static int precache(istream_t *strm)
 		if ((diff > avail) &&
 		    ((tar->parent->buffer_offset > 0) || avail == 0)) {
 			if (istream_precache(tar->parent))
-				return -1;
+				goto fail;
 
 			if (tar->parent->buffer_used == 0 && tar->parent->eof)
 				goto fail_eof;
@@ -127,10 +131,14 @@ fail_rec_sz:
 	fprintf(stderr,
 		"%s: missmatch in tar record size vs file size for `%s`.\n",
 		istream_get_filename(tar->parent), istream_get_filename(strm));
-	return -1;
+	goto fail;
 fail_eof:
 	fprintf(stderr, "%s: unexpected end-of-file while reading `%s`\n",
 		istream_get_filename(tar->parent), istream_get_filename(strm));
+	goto fail;
+fail:
+	tar->record_size = 0;
+	tar->padding = 0;
 	return -1;
 }
 
@@ -142,6 +150,12 @@ static const char *get_filename(istream_t *strm)
 static void tar_istream_destroy(sqfs_object_t *obj)
 {
 	tar_istream_t *strm = (tar_istream_t *)obj;
+
+	if (strm->record_size > 0)
+		istream_skip(strm->parent, strm->record_size);
+
+	if (strm->padding > 0)
+		istream_skip(strm->parent, strm->padding);
 
 	sqfs_drop(strm->parent);
 	free(strm->sparse);
@@ -196,6 +210,10 @@ istream_t *tar_record_istream_create(istream_t *parent,
 		if (diff < strm->sparse[idx - 1].count)
 			goto fail_sparse;
 	}
+
+	strm->padding = hdr->record_size % 512;
+	if (strm->padding > 0)
+		strm->padding = 512 - strm->padding;
 
 	strm->record_size = hdr->record_size;
 	strm->file_size = hdr->actual_size;

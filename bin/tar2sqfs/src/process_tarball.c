@@ -35,11 +35,7 @@ static int write_file(istream_t *input_file, sqfs_writer_t *sqfs,
 	ostream_flush(out);
 	sqfs_drop(out);
 	sqfs_drop(in);
-
-	if (ret)
-		return -1;
-
-	return skip_padding(input_file, hdr->record_size);
+	return ret;
 }
 
 static int copy_xattr(sqfs_writer_t *sqfs, tree_node_t *node,

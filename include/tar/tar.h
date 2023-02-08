@@ -65,9 +65,6 @@ int write_tar_header(ostream_t *fp, const struct stat *sb, const char *name,
 int write_hard_link(ostream_t *fp, const struct stat *sb, const char *name,
 		    const char *target, unsigned int counter);
 
-/* calcuate and skip the zero padding */
-int skip_padding(istream_t *fp, sqfs_u64 size);
-
 /* round up to block size and skip the entire entry */
 int skip_entry(istream_t *fp, sqfs_u64 size);
 

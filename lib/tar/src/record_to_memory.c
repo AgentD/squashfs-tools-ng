@@ -27,8 +27,10 @@ char *record_to_memory(istream_t *fp, size_t size)
 		goto fail;
 	}
 
-	if (skip_padding(fp, size))
-		goto fail;
+	if (size % 512) {
+		if (istream_skip(fp, 512 - (size % 512)))
+			goto fail;
+	}
 
 	buffer[size] = '\0';
 	return buffer;
