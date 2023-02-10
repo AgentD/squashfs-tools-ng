@@ -23,7 +23,15 @@ test_get_line_CPPFLAGS += -DTESTFILE=$(top_srcdir)/lib/io/test/get_line.txt
 test_sparse_fb_SOURCES = lib/io/test/sparse_fb.c
 test_sparse_fb_LDADD = libio.a libutil.a libcompat.a
 
-check_PROGRAMS += test_get_line test_sparse_fb
-TESTS += test_get_line test_sparse_fb
+test_istream_read_SOURCES = lib/io/test/istream_read.c
+test_istream_read_LDADD = libio.a libutil.a libcompat.a
+
+test_istream_skip_SOURCES = lib/io/test/istream_skip.c
+test_istream_skip_LDADD = libio.a libutil.a libcompat.a
+
+check_PROGRAMS += test_get_line test_sparse_fb test_istream_read
+check_PROGRAMS += test_istream_skip
+TESTS += test_get_line test_sparse_fb test_istream_read
+TESTS += test_istream_skip
 
 EXTRA_DIST += $(top_srcdir)/lib/io/test/get_line.txt
