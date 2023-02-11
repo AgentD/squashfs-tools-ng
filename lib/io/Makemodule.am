@@ -29,9 +29,12 @@ test_istream_read_LDADD = libio.a libutil.a libcompat.a
 test_istream_skip_SOURCES = lib/io/test/istream_skip.c
 test_istream_skip_LDADD = libio.a libutil.a libcompat.a
 
+test_stream_splice_SOURCES = lib/io/test/stream_splice.c
+test_stream_splice_LDADD = libio.a libutil.a libcompat.a
+
 check_PROGRAMS += test_get_line test_sparse_fb test_istream_read
-check_PROGRAMS += test_istream_skip
+check_PROGRAMS += test_istream_skip test_stream_splice
 TESTS += test_get_line test_sparse_fb test_istream_read
-TESTS += test_istream_skip
+TESTS += test_istream_skip test_stream_splice
 
 EXTRA_DIST += $(top_srcdir)/lib/io/test/get_line.txt
