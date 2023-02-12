@@ -179,6 +179,11 @@ test_tar_istream3_CPPFLAGS += -DTESTFILE=istream/sparse.tar
 tar_fuzz_SOURCES = lib/tar/test/tar_fuzz.c
 tar_fuzz_LDADD = libtar.a libio.a libutil.a libcompat.a
 
+test_tar_write_simple_SOURCES = lib/tar/test/tar_write_simple.c
+test_tar_write_simple_LDADD = libtar.a libio.a libutil.a libcompat.a
+test_tar_write_simple_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(TARDATADIR)
+test_tar_write_simple_CPPFLAGS += -DTESTFILE=write/simple.tar
+
 LIBTAR_TESTS = \
 	test_tar_ustar0 test_tar_ustar1 test_tar_ustar2 test_tar_ustar3 \
 	test_tar_ustar4 test_tar_ustar5 test_tar_ustar6 \
@@ -190,7 +195,8 @@ LIBTAR_TESTS = \
 	test_tar_sparse_gnu2 test_tar_sparse_gnu3 \
 	test_tar_xattr_bsd test_tar_xattr_schily test_tar_xattr_schily_bin \
 	test_tar_target_filled \
-	test_tar_istream test_tar_istream2 test_tar_istream3
+	test_tar_istream test_tar_istream2 test_tar_istream3 \
+	test_tar_write_simple
 
 check_PROGRAMS += $(LIBTAR_TESTS)
 TESTS += $(LIBTAR_TESTS)
