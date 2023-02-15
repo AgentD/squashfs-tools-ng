@@ -52,6 +52,10 @@ static SQFS_INLINE void *rbtree_node_value(rbtree_node_t *n)
 	return n->data + n->value_offset;
 }
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 SQFS_INTERNAL int rbtree_init(rbtree_t *tree, size_t keysize, size_t valuesize,
 			      int(*key_compare)(const void *, const void *,
 						const void *));
