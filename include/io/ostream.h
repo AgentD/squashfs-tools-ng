@@ -10,13 +10,6 @@
 #include "sqfs/predef.h"
 #include "io/istream.h"
 
-#if defined(__GNUC__) || defined(__clang__)
-#	define PRINTF_ATTRIB(fmt, elipsis)			\
-		__attribute__ ((format (printf, fmt, elipsis)))
-#else
-#	define PRINTF_ATTRIB(fmt, elipsis)
-#endif
-
 /**
  * @struct ostream_t
  *
@@ -110,19 +103,6 @@ SQFS_INLINE const char *ostream_get_filename(ostream_t *strm)
 {
 	return strm->get_filename(strm);
 }
-
-/**
- * @brief Printf like function that appends to an output stream
- *
- * @memberof ostream_t
- *
- * @param strm The output stream to append to.
- * @param fmt A printf style format string.
- *
- * @return The number of characters written on success, -1 on failure.
- */
-SQFS_INTERNAL int ostream_printf(ostream_t *strm, const char *fmt, ...)
-	PRINTF_ATTRIB(2, 3);
 
 /**
  * @brief Read data from an input stream and append it to an output stream

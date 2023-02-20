@@ -164,13 +164,21 @@ static int write_schily_xattr(ostream_t *fp, const struct stat *orig,
 		return -1;
 
 	for (it = xattr; it != NULL; it = it->next) {
+		char buffer[64];
+
 		len = strlen(prefix) + strlen(it->key) + it->value_len + 3;
 		len += prefix_digit_len(len);
 
-		if (ostream_printf(fp, PRI_SZ " %s%s=",
-				   len, prefix, it->key) < 0) {
+		sprintf(buffer, PRI_SZ " ", len);
+
+		if (ostream_append(fp, buffer, strlen(buffer)))
 			return -1;
-		}
+		if (ostream_append(fp, prefix, strlen(prefix)))
+			return -1;
+		if (ostream_append(fp, it->key, strlen(it->key)))
+			return -1;
+		if (ostream_append(fp, "=", 1))
+			return -1;
 		if (ostream_append(fp, it->value, it->value_len))
 			return -1;
 		if (ostream_append(fp, "\n", 1))

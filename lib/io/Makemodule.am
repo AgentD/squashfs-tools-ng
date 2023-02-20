@@ -1,6 +1,6 @@
 libio_a_SOURCES = include/io/istream.h include/io/ostream.h include/io/xfrm.h \
 	include/io/file.h include/io/std.h \
-	lib/io/src/internal.h lib/io/src/ostream.c lib/io/src/printf.c \
+	lib/io/src/internal.h lib/io/src/ostream.c \
 	lib/io/src/istream.c lib/io/src/get_line.c lib/io/src/xfrm/ostream.c \
 	lib/io/src/xfrm/istream.c
 libio_a_CFLAGS = $(AM_CFLAGS) $(ZLIB_CFLAGS) $(XZ_CFLAGS)

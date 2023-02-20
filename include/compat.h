@@ -8,11 +8,17 @@
 #define COMPAT_H
 
 #include "sqfs/predef.h"
-#include "io/ostream.h"
 #include "config.h"
 
 #include <limits.h>
 #include <stdio.h>
+
+#if defined(__GNUC__) || defined(__clang__)
+#	define PRINTF_ATTRIB(fmt, elipsis)			\
+		__attribute__ ((format (printf, fmt, elipsis)))
+#else
+#	define PRINTF_ATTRIB(fmt, elipsis)
+#endif
 
 #if defined(__GNUC__) && __GNUC__ >= 5
 #	define SZ_ADD_OV __builtin_add_overflow
