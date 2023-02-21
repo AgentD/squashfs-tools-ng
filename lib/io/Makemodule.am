@@ -15,6 +15,9 @@ endif
 
 noinst_LIBRARIES += libio.a
 
+LIBIO_TESTS = test_get_line test_sparse_fb test_istream_read \
+	test_istream_skip test_stream_splice
+
 test_get_line_SOURCES = lib/io/test/get_line.c
 test_get_line_LDADD = libio.a libcompat.a
 test_get_line_CPPFLAGS = $(AM_CPPFLAGS)
@@ -32,9 +35,41 @@ test_istream_skip_LDADD = libio.a libutil.a libcompat.a
 test_stream_splice_SOURCES = lib/io/test/stream_splice.c
 test_stream_splice_LDADD = libio.a libutil.a libcompat.a
 
-check_PROGRAMS += test_get_line test_sparse_fb test_istream_read
-check_PROGRAMS += test_istream_skip test_stream_splice
-TESTS += test_get_line test_sparse_fb test_istream_read
-TESTS += test_istream_skip test_stream_splice
+if WITH_XZ
+test_io_xfrm_xz_SOURCES = lib/io/test/xfrm.c
+test_io_xfrm_xz_LDADD = libio.a libxfrm.a $(XZ_LIBS)
+test_io_xfrm_xz_CPPFLAGS = $(AM_CPPFLAGS) -DDO_XZ=1
+
+LIBIO_TESTS += test_io_xfrm_xz
+endif
+
+if WITH_BZIP2
+test_io_xfrm_bzip2_SOURCES = lib/io/test/xfrm.c
+test_io_xfrm_bzip2_LDADD = libio.a libxfrm.a $(BZIP2_LIBS)
+test_io_xfrm_bzip2_CPPFLAGS = $(AM_CPPFLAGS) -DDO_BZIP2=1
+
+LIBIO_TESTS += test_io_xfrm_bzip2
+endif
+
+if WITH_GZIP
+test_io_xfrm_gzip_SOURCES = lib/io/test/xfrm.c
+test_io_xfrm_gzip_LDADD = libio.a libxfrm.a $(ZLIB_LIBS)
+test_io_xfrm_gzip_CPPFLAGS = $(AM_CPPFLAGS) -DDO_GZIP=1
+
+LIBIO_TESTS += test_io_xfrm_gzip
+endif
+
+if WITH_ZSTD
+if HAVE_ZSTD_STREAM
+test_io_xfrm_zstd_SOURCES = lib/io/test/xfrm.c
+test_io_xfrm_zstd_LDADD = libio.a libxfrm.a $(ZSTD_LIBS)
+test_io_xfrm_zstd_CPPFLAGS = $(AM_CPPFLAGS) -DDO_ZSTD=1
+
+LIBIO_TESTS += test_io_xfrm_zstd
+endif
+endif
+
+check_PROGRAMS += $(LIBIO_TESTS)
+TESTS += $(LIBIO_TESTS)
 
 EXTRA_DIST += $(top_srcdir)/lib/io/test/get_line.txt
