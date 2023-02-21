@@ -8,6 +8,7 @@
 
 #include "internal.h"
 #include <string.h>
+#include <stdlib.h>
 
 static void update_checksum(tar_header_t *hdr)
 {
@@ -99,7 +100,7 @@ static int write_header(ostream_t *fp, const struct stat *sb, const char *name,
 	return ostream_append(fp, &hdr, sizeof(hdr));
 }
 
-static int write_gnu_header(ostream_t *fp, const struct stat *orig,
+static int write_ext_header(ostream_t *fp, const struct stat *orig,
 			    const char *payload, size_t payload_len,
 			    int type, const char *name)
 {
@@ -148,7 +149,8 @@ static int write_schily_xattr(ostream_t *fp, const struct stat *orig,
 	static const char *prefix = "SCHILY.xattr.";
 	size_t len, total_size = 0;
 	const tar_xattr_t *it;
-	struct stat sb;
+	char *buffer, *ptr;
+	int ret;
 
 	for (it = xattr; it != NULL; it = it->next) {
 		len = strlen(prefix) + strlen(it->key) + it->value_len + 3;
@@ -156,36 +158,29 @@ static int write_schily_xattr(ostream_t *fp, const struct stat *orig,
 		total_size += len + prefix_digit_len(len);
 	}
 
-	sb = *orig;
-	sb.st_mode = S_IFREG | 0644;
-	sb.st_size = total_size;
-
-	if (write_header(fp, &sb, name, NULL, TAR_TYPE_PAX))
+	buffer = calloc(1, total_size + 1);
+	if (buffer == NULL) {
+		fprintf(stderr, "%s: generating xattr header: "
+			"out-of-memory\n", name);
 		return -1;
+	}
+
+	ptr = buffer;
 
 	for (it = xattr; it != NULL; it = it->next) {
-		char buffer[64];
-
 		len = strlen(prefix) + strlen(it->key) + it->value_len + 3;
 		len += prefix_digit_len(len);
 
-		sprintf(buffer, PRI_SZ " ", len);
-
-		if (ostream_append(fp, buffer, strlen(buffer)))
-			return -1;
-		if (ostream_append(fp, prefix, strlen(prefix)))
-			return -1;
-		if (ostream_append(fp, it->key, strlen(it->key)))
-			return -1;
-		if (ostream_append(fp, "=", 1))
-			return -1;
-		if (ostream_append(fp, it->value, it->value_len))
-			return -1;
-		if (ostream_append(fp, "\n", 1))
-			return -1;
+		sprintf(ptr, PRI_SZ " %s%s=", len, prefix, it->key);
+		ptr += strlen(ptr);
+		memcpy(ptr, it->value, it->value_len);
+		ptr += it->value_len;
+		*(ptr++) = '\n';
 	}
 
-	return padd_file(fp, total_size);
+	ret = write_ext_header(fp, orig, buffer, total_size, TAR_TYPE_PAX, name);
+	free(buffer);
+	return ret;
 }
 
 int write_tar_header(ostream_t *fp, const struct stat *sb, const char *name,
@@ -208,7 +203,7 @@ int write_tar_header(ostream_t *fp, const struct stat *sb, const char *name,
 
 	if (S_ISLNK(sb->st_mode) && sb->st_size >= 100) {
 		sprintf(buffer, "gnu/target%u", counter);
-		if (write_gnu_header(fp, sb, slink_target, sb->st_size,
+		if (write_ext_header(fp, sb, slink_target, sb->st_size,
 				     TAR_TYPE_GNU_SLINK, buffer))
 			return -1;
 		slink_target = NULL;
@@ -217,7 +212,7 @@ int write_tar_header(ostream_t *fp, const struct stat *sb, const char *name,
 	if (strlen(name) >= 100) {
 		sprintf(buffer, "gnu/name%u", counter);
 
-		if (write_gnu_header(fp, sb, name, strlen(name),
+		if (write_ext_header(fp, sb, name, strlen(name),
 				     TAR_TYPE_GNU_PATH, buffer)) {
 			return -1;
 		}
@@ -259,7 +254,7 @@ int write_hard_link(ostream_t *fp, const struct stat *sb, const char *name,
 	len = strlen(target);
 	if (len >= 100) {
 		sprintf(buffer, "gnu/target%u", counter);
-		if (write_gnu_header(fp, sb, target, len,
+		if (write_ext_header(fp, sb, target, len,
 				     TAR_TYPE_GNU_SLINK, buffer))
 			return -1;
 		sprintf(hdr.linkname, "hardlink_%u", counter);
@@ -270,7 +265,7 @@ int write_hard_link(ostream_t *fp, const struct stat *sb, const char *name,
 	len = strlen(name);
 	if (len >= 100) {
 		sprintf(buffer, "gnu/name%u", counter);
-		if (write_gnu_header(fp, sb, name, len,
+		if (write_ext_header(fp, sb, name, len,
 				     TAR_TYPE_GNU_PATH, buffer)) {
 			return -1;
 		}
