@@ -55,12 +55,12 @@ if HAVE_ZSTD_STREAM
 libxfrm_a_SOURCES += lib/xfrm/src/zstd.c
 libxfrm_a_CFLAGS += $(ZSTD_CFLAGS) -DWITH_ZSTD
 
-test_pack_zstd_SOURCES = lib/xfrm/test/unpack.c
-test_pack_zstd_LDADD = libxfrm.a $(ZSTD_LIBS)
+test_pack_zstd_SOURCES = lib/xfrm/test/pack.c
+test_pack_zstd_LDADD = libxfrm.a $(LIBXFRM_LIBS)
 test_pack_zstd_CPPFLAGS = $(AM_CPPFLAGS) -DDO_ZSTD=1
 
-test_unpack_zstd_SOURCES = lib/xfrm/test/pack.c
-test_unpack_zstd_LDADD = libxfrm.a $(LIBXFRM_LIBS)
+test_unpack_zstd_SOURCES = lib/xfrm/test/unpack.c
+test_unpack_zstd_LDADD = libxfrm.a $(ZSTD_LIBS)
 test_unpack_zstd_CPPFLAGS = $(AM_CPPFLAGS) -DDO_ZSTD=1
 
 LIBXFRM_TESTS += test_pack_zstd test_unpack_zstd
