@@ -202,8 +202,7 @@ static int process_completed_fragment(sqfs_block_processor_t *proc,
 		offset = 0;
 		proc->frag_block = frag;
 		proc->frag_block->index = index;
-		proc->frag_block->flags &=
-			(SQFS_BLK_DONT_COMPRESS | SQFS_BLK_ALIGN);
+		proc->frag_block->flags &= SQFS_BLK_DONT_COMPRESS;
 		proc->frag_block->flags |= SQFS_BLK_FRAGMENT_BLOCK;
 	} else {
 		index = proc->frag_block->index;
@@ -214,8 +213,7 @@ static int process_completed_fragment(sqfs_block_processor_t *proc,
 
 		proc->frag_block->size += frag->size;
 		proc->frag_block->flags |=
-			(frag->flags &
-			 (SQFS_BLK_DONT_COMPRESS | SQFS_BLK_ALIGN));
+			(frag->flags & SQFS_BLK_DONT_COMPRESS);
 	}
 
 	if (proc->frag_tbl != NULL) {

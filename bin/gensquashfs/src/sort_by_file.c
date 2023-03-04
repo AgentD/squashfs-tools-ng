@@ -159,9 +159,6 @@ static int decode_flags(const char *filename, size_t line_no, bool *do_glob,
 		} else if (strncmp(line, "dont_fragment", 13) == 0) {
 			line += 13;
 			(*flags) |= SQFS_BLK_DONT_FRAGMENT;
-		} else if (strncmp(line, "align", 5) == 0) {
-			line += 5;
-			(*flags) |= SQFS_BLK_ALIGN;
 		} else if (strncmp(line, "dont_compress", 13) == 0) {
 			line += 13;
 			(*flags) |= SQFS_BLK_DONT_COMPRESS;

@@ -120,8 +120,7 @@ int sqfs_writer_init(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *wrcfg)
 	if (ret > 0)
 		sqfs->super.flags |= SQFS_FLAG_COMPRESSOR_OPTIONS;
 
-	sqfs->blkwr = sqfs_block_writer_create(sqfs->outfile,
-					       wrcfg->devblksize, 0);
+	sqfs->blkwr = sqfs_block_writer_create(sqfs->outfile, 0);
 	if (sqfs->blkwr == NULL) {
 		perror("creating block writer");
 		goto fail_uncmp;

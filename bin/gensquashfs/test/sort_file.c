@@ -42,7 +42,7 @@ static const char *sort_file =
 "  50 [glob] /bin/*\n"
 "\n"
 "# Make this file appear first\n"
-"  -10000 [dont_compress,dont_fragment,align] /usr/share/bla.txt";
+"  -10000 [dont_compress,dont_fragment] /usr/share/bla.txt";
 
 static const char *initial_order[] = {
 	"bin/chmod",
@@ -93,7 +93,7 @@ static sqfs_s64 priorities[] = {
 };
 
 static int flags[] = {
-	SQFS_BLK_DONT_COMPRESS | SQFS_BLK_ALIGN | SQFS_BLK_DONT_FRAGMENT,
+	SQFS_BLK_DONT_COMPRESS | SQFS_BLK_DONT_FRAGMENT,
 	0,
 	0,
 	0,

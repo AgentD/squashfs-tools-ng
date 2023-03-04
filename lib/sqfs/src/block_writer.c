@@ -36,7 +36,6 @@ typedef struct {
 	sqfs_file_t *file;
 
 	array_t blocks;
-	size_t devblksz;
 
 	size_t file_start;
 
@@ -79,9 +78,6 @@ static int deduplicate_blocks(block_writer_default_t *wr, sqfs_u32 flags, sqfs_u
 
 	for (i = 0; i < wr->file_start; ++i) {
 		for (j = 0; j < count; ++j) {
-			if (blocks[i + j].hash == 0)
-				break;
-
 			if (blocks[i + j].hash !=
 			    blocks[wr->file_start + j].hash)
 				break;
@@ -119,33 +115,6 @@ static int deduplicate_blocks(block_writer_default_t *wr, sqfs_u32 flags, sqfs_u
 	return wr->file->truncate(wr->file, sz);
 }
 
-static int align_file(block_writer_default_t *wr, sqfs_u32 flags)
-{
-	void *padding;
-	sqfs_u64 size;
-	size_t diff;
-	int ret;
-
-	if (!(flags & SQFS_BLK_ALIGN))
-		return 0;
-
-	size = wr->file->get_size(wr->file);
-	diff = size % wr->devblksz;
-	if (diff == 0)
-		return 0;
-
-	padding = calloc(1, diff);
-	if (padding == 0)
-		return SQFS_ERROR_ALLOC;
-
-	ret = wr->file->write_at(wr->file, size, padding, diff);
-	free(padding);
-	if (ret)
-		return ret;
-
-	return store_block_location(wr, size, 0, 0);
-}
-
 static void block_writer_destroy(sqfs_object_t *wr)
 {
 	sqfs_drop(((block_writer_default_t *)wr)->file);
@@ -161,14 +130,8 @@ static int write_data_block(sqfs_block_writer_t *base, void *user,
 	int err;
 	(void)user;
 
-	if (flags & (SQFS_BLK_FIRST_BLOCK | SQFS_BLK_FRAGMENT_BLOCK)) {
-		err = align_file(wr, flags);
-		if (err)
-			return err;
-
-		if (flags & SQFS_BLK_FIRST_BLOCK)
-			wr->file_start = wr->blocks.used;
-	}
+	if (flags & SQFS_BLK_FIRST_BLOCK)
+		wr->file_start = wr->blocks.used;
 
 	*location = wr->file->get_size(wr->file);
 
@@ -186,14 +149,8 @@ static int write_data_block(sqfs_block_writer_t *base, void *user,
 			return err;
 	}
 
-	if (flags & (SQFS_BLK_LAST_BLOCK | SQFS_BLK_FRAGMENT_BLOCK)) {
-		err = align_file(wr, flags);
-		if (err)
-			return err;
-
-		if (flags & SQFS_BLK_LAST_BLOCK)
-			return deduplicate_blocks(wr, flags, location);
-	}
+	if (flags & SQFS_BLK_LAST_BLOCK)
+		return deduplicate_blocks(wr, flags, location);
 
 	return 0;
 }
@@ -203,8 +160,7 @@ static sqfs_u64 get_block_count(const sqfs_block_writer_t *wr)
 	return ((const block_writer_default_t *)wr)->blocks.used;
 }
 
-sqfs_block_writer_t *sqfs_block_writer_create(sqfs_file_t *file,
-					      size_t devblksz, sqfs_u32 flags)
+sqfs_block_writer_t *sqfs_block_writer_create(sqfs_file_t *file, sqfs_u32 flags)
 {
 	block_writer_default_t *wr;
 
@@ -226,7 +182,6 @@ sqfs_block_writer_t *sqfs_block_writer_create(sqfs_file_t *file,
 	((sqfs_block_writer_t *)wr)->get_block_count = get_block_count;
 	wr->flags = flags;
 	wr->file = sqfs_grab(file);
-	wr->devblksz = devblksz;
 
 	if (array_init(&(wr->blocks), sizeof(blk_info_t), INIT_BLOCK_COUNT)) {
 		sqfs_drop(wr->file);

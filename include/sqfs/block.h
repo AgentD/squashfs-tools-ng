@@ -72,12 +72,9 @@ typedef enum {
 	SQFS_BLK_DONT_COMPRESS = 0x0001,
 
 	/**
-	 * @brief Align the block on disk to device block size.
-	 *
-	 * If set, the @ref sqfs_block_processor_t will add padding before the
-	 * first block of the affected file and after the last block.
+	 * @brief Don't compute block data checksums.
 	 */
-	SQFS_BLK_ALIGN = 0x0002,
+	SQFS_BLK_DONT_HASH = 0x0002,
 
 	/**
 	 * @brief Don't add the tail end of a file to a fragment block.
@@ -103,11 +100,6 @@ typedef enum {
 	 * are instead processed like normal blocks.
 	 */
 	SQFS_BLK_IGNORE_SPARSE = 0x0010,
-
-	/**
-	 * @brief Don't compute block data checksums.
-	 */
-	SQFS_BLK_DONT_HASH = 0x0020,
 
 	/**
 	 * @brief Set by the @ref sqfs_block_processor_t if it determines a
@@ -148,9 +140,9 @@ typedef enum {
 	/**
 	 * @brief The combination of all flags that are user settable.
 	 */
-	SQFS_BLK_USER_SETTABLE_FLAGS = 0x003F,
+	SQFS_BLK_USER_SETTABLE_FLAGS = 0x001F,
 
-	SQFS_BLK_FLAGS_ALL = 0xFC3F,
+	SQFS_BLK_FLAGS_ALL = 0xFC1F,
 } SQFS_BLK_FLAGS;
 
 #endif /* SQFS_BLOCK_H */

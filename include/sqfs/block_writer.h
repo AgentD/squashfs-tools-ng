@@ -52,11 +52,6 @@ struct sqfs_block_writer_t {
 	 * @ref SQFS_BLK_LAST_BLOCK flag is set, it uses those stored locations
 	 * to do block deduplication.
 	 *
-	 * If the flag @ref SQFS_BLK_ALIGN is set in combination with the
-	 * @ref SQFS_BLK_FIRST_BLOCK, the file size is padded to a multiple of
-	 * the device block size before writing. If it is set together with the
-	 * @ref SQFS_BLK_LAST_BLOCK flag, the padding is added afterwards.
-	 *
 	 * @param wr A pointer to a block writer.
 	 * @param user An optional user data pointer.
 	 *             The @ref sqfs_block_processor_t can be told to pass this
@@ -126,15 +121,12 @@ extern "C" {
  * @memberof sqfs_block_writer_t
  *
  * @param file A pointer to a file object that data should be appended to.
- * @param devblksz The underlying device block size if output data
- *                 should be aligned.
  * @param flags A combination of @ref SQFS_BLOCK_WRITER_FLAGS values. If an
  *              unknown flag is set, creation will fail.
  *
  * @return A pointer to a new block writer on success, NULL on failure.
  */
 SQFS_API sqfs_block_writer_t *sqfs_block_writer_create(sqfs_file_t *file,
-						       size_t devblksz,
 						       sqfs_u32 flags);
 
 #ifdef __cplusplus
