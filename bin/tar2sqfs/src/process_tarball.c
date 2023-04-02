@@ -101,7 +101,7 @@ static int create_node_and_repack_data(istream_t *input_file,
 	}
 
 	if (!keep_time) {
-		hdr->mtime = sqfs->fs.defaults.st_mtime;
+		hdr->mtime = sqfs->fs.defaults.mtime;
 	}
 
 	memset(&sb, 0, sizeof(sb));

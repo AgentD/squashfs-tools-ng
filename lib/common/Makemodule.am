@@ -6,7 +6,8 @@ libcommon_a_SOURCES = include/common.h include/simple_writer.h \
 	lib/common/src/data_writer_ostream.c lib/common/src/perror.c \
 	lib/common/src/parse_size.c lib/common/src/print_size.c \
 	lib/common/src/writer/init.c lib/common/src/writer/cleanup.c \
-	lib/common/src/writer/serialize_fstree.c lib/common/src/writer/finish.c
+	lib/common/src/writer/serialize_fstree.c lib/common/src/writer/finish.c\
+	lib/common/src/fstree_cli.c
 libcommon_a_CFLAGS = $(AM_CFLAGS) $(LZO_CFLAGS)
 
 if WITH_LZO
@@ -14,3 +15,12 @@ libcommon_a_SOURCES += lib/common/src/comp_lzo.c
 endif
 
 noinst_LIBRARIES += libcommon.a
+
+test_fstree_cli_SOURCES = lib/common/test/fstree_cli.c
+test_fstree_cli_LDADD = libcommon.a libio.a libutil.a libcompat.a
+
+LIBCOMMON_TESTS = \
+	test_fstree_cli
+
+check_PROGRAMS += $(LIBCOMMON_TESTS)
+TESTS += $(LIBCOMMON_TESTS)

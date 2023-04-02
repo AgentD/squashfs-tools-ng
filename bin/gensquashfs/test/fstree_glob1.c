@@ -220,12 +220,15 @@ static void check_hierarchy(tree_node_t *root, bool subdir, bool recursive)
 
 int main(int argc, char **argv)
 {
+	fstree_defaults_t fsd;
 	fstree_t fs;
 	int ret;
 	(void)argc; (void)argv;
 
+	TEST_ASSERT(parse_fstree_defaults(&fsd, NULL) == 0);
+
 	/* first test case, directory tree only */
-	ret = fstree_init(&fs, NULL);
+	ret = fstree_init(&fs, &fsd);
 	TEST_EQUAL_I(ret, 0);
 
 	ret = fstree_from_file(&fs, TEST_PATH "/fstree_glob1.txt", TEST_PATH);
@@ -236,7 +239,7 @@ int main(int argc, char **argv)
 	fstree_cleanup(&fs);
 
 	/* first test case, directory tree plus fnmatch()ed files */
-	ret = fstree_init(&fs, NULL);
+	ret = fstree_init(&fs, &fsd);
 	TEST_EQUAL_I(ret, 0);
 
 	ret = fstree_from_file(&fs, TEST_PATH "/fstree_glob2.txt", TEST_PATH);
@@ -247,7 +250,7 @@ int main(int argc, char **argv)
 	fstree_cleanup(&fs);
 
 	/* third test case, same as second, but entries directly at the root */
-	ret = fstree_init(&fs, NULL);
+	ret = fstree_init(&fs, &fsd);
 	TEST_EQUAL_I(ret, 0);
 
 	ret = fstree_from_file(&fs, TEST_PATH "/fstree_glob3.txt", TEST_PATH);

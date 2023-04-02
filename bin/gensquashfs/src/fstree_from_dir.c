@@ -382,7 +382,7 @@ static int populate_dir(int dir_fd, fstree_t *fs, tree_node_t *root,
 		}
 
 		if (!(flags & DIR_SCAN_KEEP_TIME))
-			sb.st_mtime = fs->defaults.st_mtime;
+			sb.st_mtime = fs->defaults.mtime;
 
 		if (S_ISDIR(sb.st_mode) && (flags & DIR_SCAN_NO_DIR)) {
 			n = fstree_get_node_by_path(fs, root, ent->d_name,

@@ -7,6 +7,7 @@
 #include "config.h"
 
 #include "fstree.h"
+#include "common.h"
 #include "util/test.h"
 
 static tree_node_t *gen_node(tree_node_t *parent, const char *name)
@@ -47,18 +48,20 @@ static void check_children_continuous(tree_node_t *root)
 int main(int argc, char **argv)
 {
 	tree_node_t *a, *b, *c;
+	fstree_defaults_t fsd;
 	fstree_t fs;
 	(void)argc; (void)argv;
 
 	// inode table for the empty tree
-	TEST_ASSERT(fstree_init(&fs, NULL) == 0);
+	TEST_ASSERT(parse_fstree_defaults(&fsd, NULL) == 0);
+	TEST_ASSERT(fstree_init(&fs, &fsd) == 0);
 	fstree_post_process(&fs);
 	TEST_EQUAL_UI(fs.unique_inode_count, 1);
 	TEST_EQUAL_UI(fs.root->inode_num, 1);
 	fstree_cleanup(&fs);
 
 	// tree with 2 levels under root, fan out 3
-	TEST_ASSERT(fstree_init(&fs, NULL) == 0);
+	TEST_ASSERT(fstree_init(&fs, &fsd) == 0);
 
 	a = gen_node(fs.root, "a");
 	b = gen_node(fs.root, "b");

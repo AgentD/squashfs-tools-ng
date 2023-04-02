@@ -150,6 +150,7 @@ static istream_t memstream = {
 
 int main(int argc, char **argv)
 {
+	fstree_defaults_t fsd;
 	file_info_t *fi;
 	fstree_t fs;
 	size_t i;
@@ -160,7 +161,8 @@ int main(int argc, char **argv)
 	memstream.buffer_offset = 0;
 	memstream.eof = false;
 
-	TEST_ASSERT(fstree_init(&fs, NULL) == 0);
+	TEST_ASSERT(parse_fstree_defaults(&fsd, NULL) == 0);
+	TEST_ASSERT(fstree_init(&fs, &fsd) == 0);
 	TEST_ASSERT(fstree_from_file_stream(&fs, &memstream, NULL) == 0);
 
 	fstree_post_process(&fs);

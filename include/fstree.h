@@ -37,6 +37,7 @@ enum {
 #define FSTREE_MODE_HARD_LINK (0)
 #define FSTREE_MODE_HARD_LINK_RESOLVED (1)
 
+typedef struct fstree_defaults_t fstree_defaults_t;
 typedef struct tree_node_t tree_node_t;
 typedef struct file_info_t file_info_t;
 typedef struct dir_info_t dir_info_t;
@@ -120,9 +121,18 @@ struct tree_node_t {
 	sqfs_u8 payload[];
 };
 
+/* Default settings for new nodes */
+struct fstree_defaults_t {
+	sqfs_u32 uid;
+	sqfs_u32 gid;
+	sqfs_u32 mtime;
+	sqfs_u16 mode;
+};
+
 /* Encapsulates a file system tree */
 struct fstree_t {
-	struct stat defaults;
+	fstree_defaults_t defaults;
+
 	size_t unique_inode_count;
 
 	/* flat array of all nodes that have an inode number */
@@ -138,13 +148,9 @@ struct fstree_t {
   Initializing means copying over the default values and creating a root node.
   On error, an error message is written to stderr.
 
-  The string `defaults` can specify default attributes (mode, uid, gid, mtime)
-  as a comma separated list of key value paris (<key>=<value>[,...]). The string
-  is passed to getsubopt and will be altered.
-
   Returns 0 on success.
 */
-int fstree_init(fstree_t *fs, char *defaults);
+int fstree_init(fstree_t *fs, const fstree_defaults_t *defaults);
 
 void fstree_cleanup(fstree_t *fs);
 

@@ -46,6 +46,7 @@ int sqfs_writer_init(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *wrcfg)
 {
 	sqfs_block_processor_desc_t blkdesc;
 	sqfs_compressor_config_t cfg;
+	fstree_defaults_t fsd;
 	int ret, flags;
 
 	sqfs->filename = wrcfg->filename;
@@ -62,7 +63,10 @@ int sqfs_writer_init(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *wrcfg)
 		return -1;
 	}
 
-	if (fstree_init(&sqfs->fs, wrcfg->fs_defaults))
+	if (parse_fstree_defaults(&fsd, wrcfg->fs_defaults))
+		goto fail_file;
+
+	if (fstree_init(&sqfs->fs, &fsd))
 		goto fail_file;
 
 	ret = sqfs_compressor_create(&cfg, &sqfs->cmp);
@@ -99,7 +103,7 @@ int sqfs_writer_init(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *wrcfg)
 	}
 
 	ret = sqfs_super_init(&sqfs->super, wrcfg->block_size,
-			      sqfs->fs.defaults.st_mtime, wrcfg->comp_id);
+			      sqfs->fs.defaults.mtime, wrcfg->comp_id);
 	if (ret) {
 		sqfs_perror(wrcfg->filename, "initializing super block", ret);
 		goto fail_uncmp;

@@ -7,11 +7,13 @@
 #include "config.h"
 
 #include "fstree.h"
+#include "common.h"
 #include "util/test.h"
 
 int main(int argc, char **argv)
 {
 	tree_node_t *a, *b, *c, *d;
+	fstree_defaults_t fsd;
 	struct stat sb;
 	fstree_t fs;
 	int ret;
@@ -22,7 +24,8 @@ int main(int argc, char **argv)
 	sb.st_rdev = 1337;
 
 	/* in order */
-	ret = fstree_init(&fs, NULL);
+	TEST_ASSERT(parse_fstree_defaults(&fsd, NULL) == 0);
+	ret = fstree_init(&fs, &fsd);
 	TEST_EQUAL_I(ret, 0);
 
 	a = fstree_mknode(fs.root, "a", 1, NULL, &sb);
@@ -54,7 +57,7 @@ int main(int argc, char **argv)
 	fstree_cleanup(&fs);
 
 	/* out-of-order */
-	ret = fstree_init(&fs, NULL);
+	ret = fstree_init(&fs, &fsd);
 	TEST_EQUAL_I(ret, 0);
 
 	d = fstree_mknode(fs.root, "d", 1, NULL, &sb);

@@ -11,11 +11,13 @@
 
 int main(int argc, char **argv)
 {
+	fstree_defaults_t fsd;
 	tree_node_t *n;
 	fstree_t fs;
 	(void)argc; (void)argv;
 
-	TEST_ASSERT(fstree_init(&fs, NULL) == 0);
+	TEST_ASSERT(parse_fstree_defaults(&fsd, NULL) == 0);
+	TEST_ASSERT(fstree_init(&fs, &fsd) == 0);
 	TEST_ASSERT(fstree_from_file(&fs, TEST_PATH, NULL) == 0);
 
 	fstree_post_process(&fs);

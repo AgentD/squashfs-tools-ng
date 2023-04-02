@@ -112,13 +112,16 @@ static void check_hierarchy(tree_node_t *root, bool recursive)
 
 int main(int argc, char **argv)
 {
+	fstree_defaults_t fsd;
 	struct stat sb;
 	tree_node_t *n;
 	fstree_t fs;
 	(void)argc; (void)argv;
 
+	TEST_ASSERT(parse_fstree_defaults(&fsd, NULL) == 0);
+
 	/* recursively scan into root */
-	TEST_ASSERT(fstree_init(&fs, NULL) == 0);
+	TEST_ASSERT(fstree_init(&fs, &fsd) == 0);
 	TEST_ASSERT(fstree_from_dir(&fs, fs.root, TEST_PATH,
 				    NULL, NULL, 0) == 0);
 
@@ -127,7 +130,7 @@ int main(int argc, char **argv)
 	fstree_cleanup(&fs);
 
 	/* non-recursively scan into root */
-	TEST_ASSERT(fstree_init(&fs, NULL) == 0);
+	TEST_ASSERT(fstree_init(&fs, &fsd) == 0);
 	TEST_ASSERT(fstree_from_dir(&fs, fs.root, TEST_PATH, NULL, NULL,
 				    DIR_SCAN_NO_RECURSION) == 0);
 
@@ -139,7 +142,7 @@ int main(int argc, char **argv)
 	memset(&sb, 0, sizeof(sb));
 	sb.st_mode = S_IFDIR | 0755;
 
-	TEST_ASSERT(fstree_init(&fs, NULL) == 0);
+	TEST_ASSERT(fstree_init(&fs, &fsd) == 0);
 
 	n = fstree_mknode(fs.root, "foodir", 6, NULL, &sb);
 	TEST_NOT_NULL(n);
@@ -158,7 +161,7 @@ int main(int argc, char **argv)
 	memset(&sb, 0, sizeof(sb));
 	sb.st_mode = S_IFDIR | 0755;
 
-	TEST_ASSERT(fstree_init(&fs, NULL) == 0);
+	TEST_ASSERT(fstree_init(&fs, &fsd) == 0);
 
 	n = fstree_mknode(fs.root, "foodir", 6, NULL, &sb);
 	TEST_NOT_NULL(n);

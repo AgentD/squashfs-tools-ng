@@ -69,4 +69,11 @@ ostream_t *data_writer_ostream_create(const char *filename,
 				      sqfs_inode_generic_t **inode,
 				      int flags);
 
+/*
+  Parse a comma separated list (e.g. "uid=...,gid=..." of defaults for
+  fstree nodes. Used for command line parsing. Returns 0 on success,
+  -1 on failure. Prints an error message to stderr on failure.
+ */
+int parse_fstree_defaults(fstree_defaults_t *out, char *str);
+
 #endif /* COMMON_H */

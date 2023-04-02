@@ -7,10 +7,12 @@
 #include "config.h"
 
 #include "fstree.h"
+#include "common.h"
 #include "util/test.h"
 
 int main(int argc, char **argv)
 {
+	fstree_defaults_t fsd;
 	tree_node_t *a, *b;
 	struct stat sb;
 	fstree_t fs;
@@ -18,8 +20,9 @@ int main(int argc, char **argv)
 	(void)argc; (void)argv;
 
 	opts = strdup("mode=0755,uid=21,gid=42");
-	TEST_ASSERT(fstree_init(&fs, opts) == 0);
+	TEST_ASSERT(parse_fstree_defaults(&fsd, opts) == 0);
 	free(opts);
+	TEST_ASSERT(fstree_init(&fs, &fsd) == 0);
 
 	memset(&sb, 0, sizeof(sb));
 	sb.st_mode = S_IFDIR | 0750;

@@ -507,7 +507,7 @@ static int handle_line(fstree_t *fs, const char *filename,
 
 	/* forward to callback */
 	memset(&sb, 0, sizeof(sb));
-	sb.st_mtime = fs->defaults.st_mtime;
+	sb.st_mtime = fs->defaults.mtime;
 	sb.st_mode = mode | cb->mode;
 	sb.st_uid = uid;
 	sb.st_gid = gid;

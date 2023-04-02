@@ -56,12 +56,20 @@ tree_node_t *fstree_get_node_by_path(fstree_t *fs, tree_node_t *root,
 		n = child_by_name(root, path, len);
 
 		if (n == NULL) {
+			struct stat sb;
+
 			if (!create_implicitly) {
 				errno = ENOENT;
 				return NULL;
 			}
 
-			n = fstree_mknode(root, path, len, NULL, &fs->defaults);
+			memset(&sb, 0, sizeof(sb));
+			sb.st_mode = S_IFDIR | (fs->defaults.mode & 07777);
+			sb.st_uid = fs->defaults.uid;
+			sb.st_gid = fs->defaults.gid;
+			sb.st_mtime = fs->defaults.mtime;
+
+			n = fstree_mknode(root, path, len, NULL, &sb);
 			if (n == NULL)
 				return NULL;
 
