@@ -46,15 +46,6 @@ typedef struct fstree_t fstree_t;
 #define container_of(ptr, type, member) \
 	((type *)((char *)ptr - offsetof(type, member)))
 
-/*
-  Optionally used by fstree_from_dir and fstree_from_subdir to
-  execute custom actions for each discovered node.
-
-  If it returns a value > 0, the new node is discarded, if < 0, scanning is
-  aborted and returns a failure status.
- */
-typedef int (*scan_node_callback)(void *user, fstree_t *fs, tree_node_t *node);
-
 /* Additional meta data stored in a tree_node_t for regular files. */
 struct file_info_t {
 	/* Linked list pointer for files in fstree_t */

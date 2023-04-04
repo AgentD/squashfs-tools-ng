@@ -41,6 +41,15 @@
 #include <errno.h>
 #include <ctype.h>
 
+/*
+  Optionally used by fstree_from_dir and fstree_from_subdir to
+  execute custom actions for each discovered node.
+
+  If it returns a value > 0, the new node is discarded, if < 0, scanning is
+  aborted and returns a failure status.
+ */
+typedef int (*scan_node_callback)(void *user, fstree_t *fs, tree_node_t *node);
+
 typedef struct {
 	sqfs_writer_cfg_t cfg;
 	unsigned int dirscan_flags;
