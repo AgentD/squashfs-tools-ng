@@ -41,6 +41,22 @@
 #include <errno.h>
 #include <ctype.h>
 
+enum {
+	DIR_SCAN_KEEP_TIME = 0x01,
+
+	DIR_SCAN_ONE_FILESYSTEM = 0x02,
+
+	DIR_SCAN_NO_RECURSION = 0x04,
+
+	DIR_SCAN_NO_SOCK = 0x0008,
+	DIR_SCAN_NO_SLINK = 0x0010,
+	DIR_SCAN_NO_FILE = 0x0020,
+	DIR_SCAN_NO_BLK = 0x0040,
+	DIR_SCAN_NO_DIR = 0x0080,
+	DIR_SCAN_NO_CHR = 0x0100,
+	DIR_SCAN_NO_FIFO = 0x0200,
+};
+
 /*
   Optionally used by fstree_from_dir and fstree_from_subdir to
   execute custom actions for each discovered node.
