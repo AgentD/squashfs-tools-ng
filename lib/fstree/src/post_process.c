@@ -9,7 +9,6 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 #include <stdio.h>
 #include <errno.h>
 
@@ -119,9 +118,6 @@ static void reorder_hard_links(fstree_t *fs)
 
 			if (tgt_idx <= i)
 				continue;
-
-			/* TODO ? */
-			assert(!S_ISDIR(tgt->mode));
 
 			for (j = tgt_idx; j > i; --j) {
 				fs->inodes[j] = fs->inodes[j - 1];

@@ -53,9 +53,6 @@ struct dir_info_t {
 
 	/* Set to true for implicitly generated directories.  */
 	bool created_implicitly;
-
-	/* Used by recursive tree walking code to avoid hard link loops */
-	bool visited;
 };
 
 /* A node in a file system tree */
