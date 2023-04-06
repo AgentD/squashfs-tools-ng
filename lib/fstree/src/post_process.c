@@ -56,51 +56,6 @@ fail_ov:
 	return -1;
 }
 
-static int resolve_hard_links_dfs(fstree_t *fs, tree_node_t *n)
-{
-	tree_node_t *it;
-
-	if (n->mode == FSTREE_MODE_HARD_LINK) {
-		if (fstree_resolve_hard_link(fs, n))
-			goto fail_link;
-
-		assert(n->mode == FSTREE_MODE_HARD_LINK_RESOLVED);
-		it = n->data.target_node;
-
-		if (S_ISDIR(it->mode) && it->data.dir.visited)
-			goto fail_link_loop;
-	} else if (S_ISDIR(n->mode)) {
-		n->data.dir.visited = true;
-
-		for (it = n->data.dir.children; it != NULL; it = it->next) {
-			if (resolve_hard_links_dfs(fs, it))
-				return -1;
-		}
-
-		n->data.dir.visited = false;
-	}
-
-	return 0;
-fail_link: {
-	char *path = fstree_get_path(n);
-	fprintf(stderr, "Resolving hard link '%s' -> '%s': %s\n",
-		path == NULL ? n->name : path, n->data.target,
-		strerror(errno));
-	free(path);
-}
-	return -1;
-fail_link_loop: {
-	char *npath = fstree_get_path(n);
-	char *tpath = fstree_get_path(it);
-	fprintf(stderr, "Hard link loop detected in '%s' -> '%s'\n",
-		npath == NULL ? n->name : npath,
-		tpath == NULL ? it->name : tpath);
-	free(npath);
-	free(tpath);
-}
-	return -1;
-}
-
 static file_info_t *file_list_dfs(tree_node_t *n)
 {
 	if (S_ISREG(n->mode)) {
@@ -187,7 +142,7 @@ int fstree_post_process(fstree_t *fs)
 {
 	size_t inum;
 
-	if (resolve_hard_links_dfs(fs, fs->root))
+	if (fstree_resolve_hard_links(fs))
 		return -1;
 
 	fs->unique_inode_count = 0;

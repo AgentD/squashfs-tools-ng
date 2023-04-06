@@ -208,11 +208,11 @@ tree_node_t *fstree_add_hard_link(fstree_t *fs, const char *path,
 				  const char *target);
 
 /*
-  Resolve a hard link node and replace it with a direct pointer to the target.
+  Try to resolve all hard links in the tree.
 
   Returns 0 on success. On failure, errno is set.
  */
-int fstree_resolve_hard_link(fstree_t *fs, tree_node_t *node);
+int fstree_resolve_hard_links(fstree_t *fs);
 
 void fstree_insert_sorted(tree_node_t *root, tree_node_t *n);
 
