@@ -95,7 +95,7 @@ static int add_node(fstree_t *fs, tree_node_t *root,
 	if (flags & DIR_SCAN_KEEP_TIME) {
 		n->mod_time = w32time_to_sqfs_time(&(entry->ftLastWriteTime));
 	} else {
-		n->mod_time = fs->defaults.st_mtime;
+		n->mod_time = fs->defaults.mtime;
 	}
 
 	fstree_insert_sorted(root, n);
