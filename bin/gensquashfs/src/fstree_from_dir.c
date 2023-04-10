@@ -84,10 +84,8 @@ static int add_node(fstree_t *fs, tree_node_t *root,
 	return 0;
 }
 
-static int scan_dir(fstree_t *fs, tree_node_t *root,
-		    const char *path,
-		    scan_node_callback cb, void *user,
-		    unsigned int flags)
+static int scan_dir(fstree_t *fs, tree_node_t *root, const char *path,
+		    scan_node_callback cb, void *user, unsigned int flags)
 {
 	dir_iterator_t *it = dir_iterator_create(path);
 
@@ -117,58 +115,6 @@ static int scan_dir(fstree_t *fs, tree_node_t *root,
 
 	sqfs_drop(it);
 	return 0;
-}
-
-int fstree_from_subdir(fstree_t *fs, tree_node_t *root,
-		       const char *path, const char *subdir,
-		       scan_node_callback cb, void *user,
-		       unsigned int flags)
-{
-	size_t plen, slen;
-	char *temp = NULL;
-	tree_node_t *n;
-
-	plen = strlen(path);
-	slen = subdir == NULL ? 0 : strlen(subdir);
-
-	if (slen > 0) {
-		temp = calloc(1, plen + 1 + slen + 1);
-		if (temp == NULL) {
-			fprintf(stderr, "%s/%s: allocation failure.\n",
-				path, subdir);
-			return -1;
-		}
-
-		memcpy(temp, path, plen);
-		temp[plen] = '/';
-		memcpy(temp + plen + 1, subdir, slen);
-		temp[plen + 1 + slen] = '\0';
-
-		path = temp;
-	}
-
-	if (scan_dir(fs, root, path, cb, user, flags))
-		goto fail;
-
-	if (flags & DIR_SCAN_NO_RECURSION) {
-		free(temp);
-		return 0;
-	}
-
-	for (n = root->data.dir.children; n != NULL; n = n->next) {
-		if (!S_ISDIR(n->mode))
-			continue;
-
-		if (fstree_from_subdir(fs, n, path, n->name, cb, user, flags))
-			goto fail;
-	}
-
-	free(temp);
-	return 0;
-fail:
-	free(temp);
-	return -1;
-
 }
 #else
 static void discard_node(tree_node_t *root, tree_node_t *n)
@@ -220,8 +166,8 @@ static char *read_link(const struct stat *sb, int dir_fd, const char *name)
 	return out;
 }
 
-static int populate_dir(const char *path, fstree_t *fs, tree_node_t *root,
-			scan_node_callback cb, void *user, unsigned int flags)
+static int scan_dir(fstree_t *fs, tree_node_t *root, const char *path,
+		    scan_node_callback cb, void *user, unsigned int flags)
 {
 	char *extra = NULL;
 	dev_t devstart = 0;
@@ -315,6 +261,7 @@ fail:
 	free(extra);
 	return -1;
 }
+#endif
 
 int fstree_from_subdir(fstree_t *fs, tree_node_t *root,
 		       const char *path, const char *subdir,
@@ -351,7 +298,7 @@ int fstree_from_subdir(fstree_t *fs, tree_node_t *root,
 		path = temp;
 	}
 
-	if (populate_dir(path, fs, root, cb, user, flags))
+	if (scan_dir(fs, root, path, cb, user, flags))
 		goto fail;
 
 	if (flags & DIR_SCAN_NO_RECURSION) {
@@ -373,7 +320,6 @@ fail:
 	free(temp);
 	return -1;
 }
-#endif
 
 int fstree_from_dir(fstree_t *fs, tree_node_t *root,
 		    const char *path, scan_node_callback cb,
