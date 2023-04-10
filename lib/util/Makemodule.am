@@ -2,6 +2,7 @@ libutil_a_SOURCES = include/util/util.h include/util/str_table.h \
 	include/util/hash_table.h include/util/test.h include/util/rbtree.h \
 	include/util/array.h include/util/threadpool.h \
 	include/util/w32threadwrap.h include/util/mempool.h \
+	include/util/dir_iterator.h \
 	lib/util/src/str_table.c lib/util/src/alloc.c lib/util/src/rbtree.c \
 	lib/util/src/array.c lib/util/src/xxhash.c lib/util/src/hash_table.c \
 	lib/util/src/fast_urem_by_const.h lib/util/src/threadpool_serial.c \
@@ -14,6 +15,7 @@ libutil_a_CPPFLAGS = $(AM_CPPFLAGS)
 
 if WINDOWS
 libutil_a_CFLAGS += -DWINVER=0x0600 -D_WIN32_WINNT=0x0600
+libutil_a_SOURCES += lib/util/src/w32_dir_iterator.c
 endif
 
 if HAVE_PTHREAD

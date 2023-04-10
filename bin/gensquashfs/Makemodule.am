@@ -67,7 +67,7 @@ fstree_fuzz_SOURCES = bin/gensquashfs/test/fstree_fuzz.c \
 			bin/gensquashfs/src/fstree_from_dir.c \
 			bin/gensquashfs/src/mkfs.h
 fstree_fuzz_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/bin/gensquashfs/src
-fstree_fuzz_LDADD = libfstree.a libio.a libutil.a libcompat.a
+fstree_fuzz_LDADD = libcommon.a libfstree.a libio.a libutil.a libcompat.a
 
 GENSQUASHFS_TESTS = \
 	test_filemap_xattr test_fstree_from_file test_fstree_from_dir \
