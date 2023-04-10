@@ -107,29 +107,6 @@ static int scan_dir(fstree_t *fs, tree_node_t *root,
 	return 0;
 }
 
-int fstree_from_dir(fstree_t *fs, tree_node_t *root,
-		    const char *path, scan_node_callback cb,
-		    void *user, unsigned int flags)
-{
-	tree_node_t *n;
-
-	if (scan_dir(fs, root, path, cb, user, flags))
-		return -1;
-
-	if (flags & DIR_SCAN_NO_RECURSION)
-		return 0;
-
-	for (n = root->data.dir.children; n != NULL; n = n->next) {
-		if (!S_ISDIR(n->mode))
-			continue;
-
-		if (fstree_from_subdir(fs, n, path, n->name, cb, user, flags))
-			return -1;
-	}
-
-	return 0;
-}
-
 int fstree_from_subdir(fstree_t *fs, tree_node_t *root,
 		       const char *path, const char *subdir,
 		       scan_node_callback cb, void *user,
@@ -142,21 +119,23 @@ int fstree_from_subdir(fstree_t *fs, tree_node_t *root,
 	plen = strlen(path);
 	slen = subdir == NULL ? 0 : strlen(subdir);
 
-	if (slen == 0)
-		return fstree_from_dir(fs, root, path, cb, user, flags);
+	if (slen > 0) {
+		temp = calloc(1, plen + 1 + slen + 1);
+		if (temp == NULL) {
+			fprintf(stderr, "%s/%s: allocation failure.\n",
+				path, subdir);
+			return -1;
+		}
 
-	temp = calloc(1, plen + 1 + slen + 1);
-	if (temp == NULL) {
-		fprintf(stderr, "%s/%s: allocation failure.\n", path, subdir);
-		return -1;
+		memcpy(temp, path, plen);
+		temp[plen] = '/';
+		memcpy(temp + plen + 1, subdir, slen);
+		temp[plen + 1 + slen] = '\0';
+
+		path = temp;
 	}
 
-	memcpy(temp, path, plen);
-	temp[plen] = '/';
-	memcpy(temp + plen + 1, subdir, slen);
-	temp[plen + 1 + slen] = '\0';
-
-	if (scan_dir(fs, root, temp, cb, user, flags))
+	if (scan_dir(fs, root, path, cb, user, flags))
 		goto fail;
 
 	if (flags & DIR_SCAN_NO_RECURSION) {
@@ -168,7 +147,7 @@ int fstree_from_subdir(fstree_t *fs, tree_node_t *root,
 		if (!S_ISDIR(n->mode))
 			continue;
 
-		if (fstree_from_subdir(fs, n, temp, n->name, cb, user, flags))
+		if (fstree_from_subdir(fs, n, path, n->name, cb, user, flags))
 			goto fail;
 	}
 
@@ -401,6 +380,7 @@ int fstree_from_subdir(fstree_t *fs, tree_node_t *root,
 
 	return populate_dir(fd, fs, root, sb.st_dev, cb, user, flags);
 }
+#endif
 
 int fstree_from_dir(fstree_t *fs, tree_node_t *root,
 		    const char *path, scan_node_callback cb,
@@ -408,4 +388,3 @@ int fstree_from_dir(fstree_t *fs, tree_node_t *root,
 {
 	return fstree_from_subdir(fs, root, path, NULL, cb, user, flags);
 }
-#endif
