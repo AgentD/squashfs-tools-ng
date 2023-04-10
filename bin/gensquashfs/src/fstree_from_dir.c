@@ -12,6 +12,31 @@
 #include <string.h>
 #include <errno.h>
 
+static bool should_skip(const char *name, sqfs_u16 mode, unsigned int flags)
+{
+	if (!strcmp(name, "..") || !strcmp(name, "."))
+		return true;
+
+	switch (mode & S_IFMT) {
+	case S_IFSOCK:
+		return (flags & DIR_SCAN_NO_SOCK) != 0;
+	case S_IFLNK:
+		return (flags & DIR_SCAN_NO_SLINK) != 0;
+	case S_IFREG:
+		return (flags & DIR_SCAN_NO_FILE) != 0;
+	case S_IFBLK:
+		return (flags & DIR_SCAN_NO_BLK) != 0;
+	case S_IFCHR:
+		return (flags & DIR_SCAN_NO_CHR) != 0;
+	case S_IFIFO:
+		return (flags & DIR_SCAN_NO_FIFO) != 0;
+	default:
+		break;
+	}
+
+	return false;
+}
+
 #if defined(_WIN32) || defined(__WINDOWS__)
 static int add_node(fstree_t *fs, tree_node_t *root,
 		    scan_node_callback cb, void *user,
@@ -21,21 +46,8 @@ static int add_node(fstree_t *fs, tree_node_t *root,
 	size_t length = strlen(entry->name);
 	tree_node_t *n;
 
-	if (entry->name[0] == '.') {
-		if (length == 1)
-			return 0;
-
-		if (entry->name[1] == '.' && length == 2)
-			return 0;
-	}
-
-	if (S_ISDIR(entry->mode)) {
-		if (flags & DIR_SCAN_NO_DIR)
-			return 0;
-	} else {
-		if (flags & DIR_SCAN_NO_FILE)
-			return 0;
-	}
+	if (should_skip(entry->name, entry->mode, flags))
+		return 0;
 
 	n = calloc(1, sizeof(*n) + length + 1);
 	if (n == NULL) {
@@ -212,42 +224,13 @@ static int populate_dir(int dir_fd, fstree_t *fs, tree_node_t *root,
 			break;
 		}
 
-		if (!strcmp(ent->d_name, "..") || !strcmp(ent->d_name, "."))
-			continue;
-
 		if (fstatat(dir_fd, ent->d_name, &sb, AT_SYMLINK_NOFOLLOW)) {
 			perror(ent->d_name);
 			goto fail;
 		}
 
-		switch (sb.st_mode & S_IFMT) {
-		case S_IFSOCK:
-			if (flags & DIR_SCAN_NO_SOCK)
-				continue;
-			break;
-		case S_IFLNK:
-			if (flags & DIR_SCAN_NO_SLINK)
-				continue;
-			break;
-		case S_IFREG:
-			if (flags & DIR_SCAN_NO_FILE)
-				continue;
-			break;
-		case S_IFBLK:
-			if (flags & DIR_SCAN_NO_BLK)
-				continue;
-			break;
-		case S_IFCHR:
-			if (flags & DIR_SCAN_NO_CHR)
-				continue;
-			break;
-		case S_IFIFO:
-			if (flags & DIR_SCAN_NO_FIFO)
-				continue;
-			break;
-		default:
-			break;
-		}
+		if (should_skip(ent->d_name, sb.st_mode, flags))
+			continue;
 
 		if ((flags & DIR_SCAN_ONE_FILESYSTEM) && sb.st_dev != devstart)
 			continue;
