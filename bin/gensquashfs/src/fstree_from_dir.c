@@ -190,6 +190,36 @@ static void discard_node(tree_node_t *root, tree_node_t *n)
 	free(n);
 }
 
+static char *read_link(const struct stat *sb, int dir_fd, const char *name)
+{
+	size_t size;
+	char *out;
+
+	if ((sizeof(sb->st_size) > sizeof(size_t)) && sb->st_size > SIZE_MAX) {
+		errno = EOVERFLOW;
+		return NULL;
+	}
+
+	if (SZ_ADD_OV((size_t)sb->st_size, 1, &size)) {
+		errno = EOVERFLOW;
+		return NULL;
+	}
+
+	out = calloc(1, size);
+	if (out == NULL)
+		return NULL;
+
+	if (readlinkat(dir_fd, name, out, (size_t)sb->st_size) < 0) {
+		int temp = errno;
+		free(out);
+		errno = temp;
+		return NULL;
+	}
+
+	out[sb->st_size] = '\0';
+	return out;
+}
+
 static int populate_dir(int dir_fd, fstree_t *fs, tree_node_t *root,
 			dev_t devstart, scan_node_callback cb,
 			void *user, unsigned int flags)
@@ -236,29 +266,11 @@ static int populate_dir(int dir_fd, fstree_t *fs, tree_node_t *root,
 			continue;
 
 		if (S_ISLNK(sb.st_mode)) {
-			size_t size;
-
-			if ((sizeof(sb.st_size) > sizeof(size_t)) &&
-			    sb.st_size > SIZE_MAX) {
-				errno = EOVERFLOW;
-				goto fail_rdlink;
+			extra = read_link(&sb, dir_fd, ent->d_name);
+			if (extra == NULL) {
+				perror("readlink");
+				goto fail;
 			}
-
-			if (SZ_ADD_OV((size_t)sb.st_size, 1, &size)) {
-				errno = EOVERFLOW;
-				goto fail_rdlink;
-			}
-
-			extra = calloc(1, size);
-			if (extra == NULL)
-				goto fail_rdlink;
-
-			if (readlinkat(dir_fd, ent->d_name,
-				       extra, (size_t)sb.st_size) < 0) {
-				goto fail_rdlink;
-			}
-
-			extra[sb.st_size] = '\0';
 		}
 
 		if (!(flags & DIR_SCAN_KEEP_TIME))
@@ -310,8 +322,6 @@ static int populate_dir(int dir_fd, fstree_t *fs, tree_node_t *root,
 
 	closedir(dir);
 	return 0;
-fail_rdlink:
-	perror("readlink");
 fail:
 	closedir(dir);
 	free(extra);
