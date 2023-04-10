@@ -11,6 +11,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <errno.h>
 
 enum {
 	DEF_UID = 0,
@@ -75,11 +76,16 @@ int parse_fstree_defaults(fstree_defaults_t *sb, char *subopts)
 			sb->mode = S_IFDIR | (sqfs_u16)lval;
 			break;
 		case DEF_MTIME:
+			errno = 0;
 			lval = strtol(value, NULL, 0);
 			if (lval < 0)
 				goto fail_uv;
-			if (lval > (long)UINT32_MAX)
+			if (sizeof(long) > sizeof(sqfs_u32)) {
+				if (lval > (long)UINT32_MAX)
+					goto fail_ov;
+			} else if (errno != 0) {
 				goto fail_ov;
+			}
 			sb->mtime = lval;
 			break;
 		default:

@@ -43,5 +43,15 @@ int main(int argc, char **argv)
 	TEST_ASSERT(parse_fstree_defaults(&fs, str) != 0);
 	free(str);
 
+	str = strdup("mtime=-12");
+	TEST_NOT_NULL(str);
+	TEST_ASSERT(parse_fstree_defaults(&fs, str) != 0);
+	free(str);
+
+	str = strdup("mtime=4294967296");
+	TEST_NOT_NULL(str);
+	TEST_ASSERT(parse_fstree_defaults(&fs, str) != 0);
+	free(str);
+
 	return EXIT_SUCCESS;
 }
