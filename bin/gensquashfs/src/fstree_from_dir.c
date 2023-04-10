@@ -220,27 +220,30 @@ static char *read_link(const struct stat *sb, int dir_fd, const char *name)
 	return out;
 }
 
-static int populate_dir(int dir_fd, fstree_t *fs, tree_node_t *root,
-			dev_t devstart, scan_node_callback cb,
-			void *user, unsigned int flags)
+static int populate_dir(const char *path, fstree_t *fs, tree_node_t *root,
+			scan_node_callback cb, void *user, unsigned int flags)
 {
 	char *extra = NULL;
+	dev_t devstart = 0;
 	struct dirent *ent;
-	int ret, childfd;
 	struct stat sb;
 	tree_node_t *n;
 	DIR *dir;
+	int ret;
 
-	dir = fdopendir(dir_fd);
+	dir = opendir(path);
 	if (dir == NULL) {
-		perror("fdopendir");
-		close(dir_fd);
+		perror(path);
 		return -1;
 	}
 
-	/* XXX: fdopendir can dup and close dir_fd internally
-	   and still be compliant with the spec. */
-	dir_fd = dirfd(dir);
+	if (flags & DIR_SCAN_ONE_FILESYSTEM) {
+		if (fstat(dirfd(dir), &sb)) {
+			perror(path);
+			goto fail;
+		}
+		devstart = sb.st_dev;
+	}
 
 	for (;;) {
 		errno = 0;
@@ -254,7 +257,8 @@ static int populate_dir(int dir_fd, fstree_t *fs, tree_node_t *root,
 			break;
 		}
 
-		if (fstatat(dir_fd, ent->d_name, &sb, AT_SYMLINK_NOFOLLOW)) {
+		if (fstatat(dirfd(dir), ent->d_name,
+			    &sb, AT_SYMLINK_NOFOLLOW)) {
 			perror(ent->d_name);
 			goto fail;
 		}
@@ -266,7 +270,7 @@ static int populate_dir(int dir_fd, fstree_t *fs, tree_node_t *root,
 			continue;
 
 		if (S_ISLNK(sb.st_mode)) {
-			extra = read_link(&sb, dir_fd, ent->d_name);
+			extra = read_link(&sb, dirfd(dir), ent->d_name);
 			if (extra == NULL) {
 				perror("readlink");
 				goto fail;
@@ -300,24 +304,8 @@ static int populate_dir(int dir_fd, fstree_t *fs, tree_node_t *root,
 		if (ret < 0)
 			goto fail;
 
-		if (ret > 0) {
+		if (ret > 0)
 			discard_node(root, n);
-			continue;
-		}
-
-		if (S_ISDIR(n->mode) && !(flags & DIR_SCAN_NO_RECURSION)) {
-			childfd = openat(dir_fd, n->name, O_DIRECTORY |
-					 O_RDONLY | O_CLOEXEC);
-			if (childfd < 0) {
-				perror(n->name);
-				goto fail;
-			}
-
-			if (populate_dir(childfd, fs, n, devstart,
-					 cb, user, flags)) {
-				goto fail;
-			}
-		}
 	}
 
 	closedir(dir);
@@ -333,8 +321,9 @@ int fstree_from_subdir(fstree_t *fs, tree_node_t *root,
 		       scan_node_callback cb, void *user,
 		       unsigned int flags)
 {
-	struct stat sb;
-	int fd, subfd;
+	size_t plen, slen;
+	char *temp = NULL;
+	tree_node_t *n;
 
 	if (!S_ISDIR(root->mode)) {
 		fprintf(stderr,
@@ -343,35 +332,46 @@ int fstree_from_subdir(fstree_t *fs, tree_node_t *root,
 		return -1;
 	}
 
-	fd = open(path, O_DIRECTORY | O_RDONLY | O_CLOEXEC);
-	if (fd < 0) {
-		perror(path);
-		return -1;
-	}
+	plen = strlen(path);
+	slen = subdir == NULL ? 0 : strlen(subdir);
 
-	if (subdir != NULL) {
-		subfd = openat(fd, subdir, O_DIRECTORY | O_RDONLY | O_CLOEXEC);
-
-		if (subfd < 0) {
-			fprintf(stderr, "%s/%s: %s\n", path, subdir,
-				strerror(errno));
-			close(fd);
+	if (slen > 0) {
+		temp = calloc(1, plen + 1 + slen + 1);
+		if (temp == NULL) {
+			fprintf(stderr, "%s/%s: allocation failure.\n",
+				path, subdir);
 			return -1;
 		}
 
-		close(fd);
-		fd = subfd;
+		memcpy(temp, path, plen);
+		temp[plen] = '/';
+		memcpy(temp + plen + 1, subdir, slen);
+		temp[plen + 1 + slen] = '\0';
+
+		path = temp;
 	}
 
-	if (fstat(fd, &sb)) {
-		fprintf(stderr, "%s/%s: %s\n", path,
-			subdir == NULL ? "" : subdir,
-			strerror(errno));
-		close(fd);
-		return -1;
+	if (populate_dir(path, fs, root, cb, user, flags))
+		goto fail;
+
+	if (flags & DIR_SCAN_NO_RECURSION) {
+		free(temp);
+		return 0;
 	}
 
-	return populate_dir(fd, fs, root, sb.st_dev, cb, user, flags);
+	for (n = root->data.dir.children; n != NULL; n = n->next) {
+		if (!S_ISDIR(n->mode))
+			continue;
+
+		if (fstree_from_subdir(fs, n, path, n->name, cb, user, flags))
+			goto fail;
+	}
+
+	free(temp);
+	return 0;
+fail:
+	free(temp);
+	return -1;
 }
 #endif
 
