@@ -211,6 +211,4 @@ tree_node_t *fstree_add_hard_link(fstree_t *fs, const char *path,
  */
 int fstree_resolve_hard_links(fstree_t *fs);
 
-void fstree_insert_sorted(tree_node_t *root, tree_node_t *n);
-
 #endif /* FSTREE_H */

@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <errno.h>
 
-void fstree_insert_sorted(tree_node_t *root, tree_node_t *n)
+static void insert_sorted(tree_node_t *root, tree_node_t *n)
 {
 	tree_node_t *it = root->data.dir.children, *prev = NULL;
 
@@ -93,7 +93,7 @@ tree_node_t *fstree_mknode(tree_node_t *parent, const char *name,
 			return NULL;
 		}
 
-		fstree_insert_sorted(parent, n);
+		insert_sorted(parent, n);
 		parent->link_count++;
 	}
 
