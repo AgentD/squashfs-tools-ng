@@ -47,6 +47,13 @@ static sqfs_s64 w32time_to_unix(const FILETIME *ft)
 	return w32ts - UNIX_EPOCH_ON_W32;
 }
 
+static int dir_iterator_read_link(dir_iterator_t *it, char **out)
+{
+	(void)it;
+	*out = NULL;
+	return SQFS_ERROR_UNSUPPORTED;
+}
+
 static int dir_iterator_next(dir_iterator_t *it, dir_entry_t **out)
 {
 	dir_iterator_win32_t *w32 = (dir_iterator_win32_t *)it;
@@ -177,6 +184,7 @@ dir_iterator_t *dir_iterator_create(const char *path)
 	sqfs_object_init(it, dir_iterator_destroy, NULL);
 
 	((dir_iterator_t *)it)->next = dir_iterator_next;
+	((dir_iterator_t *)it)->read_link = dir_iterator_read_link;
 
 	it->state = STATE_HAVE_ENTRY;
 	it->dirhnd = dirhnd;

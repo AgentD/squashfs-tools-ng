@@ -23,8 +23,12 @@ typedef struct {
 typedef struct dir_iterator_t {
 	sqfs_object_t obj;
 
+	sqfs_u64 dev;
+
 	int (*next)(struct dir_iterator_t *it,
 		    dir_entry_t **out);
+
+	int (*read_link)(struct dir_iterator_t *it, char **out);
 } dir_iterator_t;
 
 dir_iterator_t *dir_iterator_create(const char *path);

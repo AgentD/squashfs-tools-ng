@@ -37,6 +37,15 @@ static bool should_skip(const char *name, sqfs_u16 mode, unsigned int flags)
 	return false;
 }
 
+static sqfs_u32 clamp_timestamp(sqfs_s64 ts)
+{
+	if (ts < 0)
+		return 0;
+	if (ts > 0x0FFFFFFFFLL)
+		return 0xFFFFFFFF;
+	return ts;
+}
+
 #if defined(_WIN32) || defined(__WINDOWS__)
 static int add_node(fstree_t *fs, tree_node_t *root,
 		    scan_node_callback cb, void *user,
@@ -69,13 +78,7 @@ static int add_node(fstree_t *fs, tree_node_t *root,
 	}
 
 	if (flags & DIR_SCAN_KEEP_TIME) {
-		if (entry->mtime < 0) {
-			n->mod_time = 0;
-		} else if (entry->mtime > 0x0FFFFFFFFLL) {
-			n->mod_time = 0xFFFFFFFF;
-		} else {
-			n->mod_time = entry->mtime;
-		}
+		n->mod_time = clamp_timestamp(entry->mtime);
 	} else {
 		n->mod_time = fs->defaults.mtime;
 	}
@@ -136,116 +139,80 @@ static void discard_node(tree_node_t *root, tree_node_t *n)
 	free(n);
 }
 
-static char *read_link(const struct stat *sb, int dir_fd, const char *name)
-{
-	size_t size;
-	char *out;
-
-	if ((sizeof(sb->st_size) > sizeof(size_t)) && sb->st_size > SIZE_MAX) {
-		errno = EOVERFLOW;
-		return NULL;
-	}
-
-	if (SZ_ADD_OV((size_t)sb->st_size, 1, &size)) {
-		errno = EOVERFLOW;
-		return NULL;
-	}
-
-	out = calloc(1, size);
-	if (out == NULL)
-		return NULL;
-
-	if (readlinkat(dir_fd, name, out, (size_t)sb->st_size) < 0) {
-		int temp = errno;
-		free(out);
-		errno = temp;
-		return NULL;
-	}
-
-	out[sb->st_size] = '\0';
-	return out;
-}
-
 static int scan_dir(fstree_t *fs, tree_node_t *root, const char *path,
 		    scan_node_callback cb, void *user, unsigned int flags)
 {
-	char *extra = NULL;
-	dev_t devstart = 0;
-	struct dirent *ent;
-	struct stat sb;
-	tree_node_t *n;
-	DIR *dir;
-	int ret;
+	dir_iterator_t *dir;
 
-	dir = opendir(path);
-	if (dir == NULL) {
-		perror(path);
+	dir = dir_iterator_create(path);
+	if (dir == NULL)
 		return -1;
-	}
-
-	if (flags & DIR_SCAN_ONE_FILESYSTEM) {
-		if (fstat(dirfd(dir), &sb)) {
-			perror(path);
-			goto fail;
-		}
-		devstart = sb.st_dev;
-	}
 
 	for (;;) {
-		errno = 0;
-		ent = readdir(dir);
+		dir_entry_t *ent = NULL;
+		tree_node_t *n = NULL;
+		char *extra = NULL;
 
-		if (ent == NULL) {
-			if (errno) {
-				perror("readdir");
-				goto fail;
-			}
+		int ret = dir->next(dir, &ent);
+		if (ret > 0)
 			break;
+		if (ret < 0) {
+			sqfs_drop(dir);
+			return -1;
 		}
 
-		if (fstatat(dirfd(dir), ent->d_name,
-			    &sb, AT_SYMLINK_NOFOLLOW)) {
-			perror(ent->d_name);
-			goto fail;
+		if (should_skip(ent->name, ent->mode, flags)) {
+			free(ent);
+			continue;
 		}
 
-		if (should_skip(ent->d_name, sb.st_mode, flags))
+		if ((flags & DIR_SCAN_ONE_FILESYSTEM) && ent->dev != dir->dev) {
+			free(ent);
 			continue;
+		}
 
-		if ((flags & DIR_SCAN_ONE_FILESYSTEM) && sb.st_dev != devstart)
-			continue;
-
-		if (S_ISLNK(sb.st_mode)) {
-			extra = read_link(&sb, dirfd(dir), ent->d_name);
-			if (extra == NULL) {
-				perror("readlink");
-				goto fail;
+		if (S_ISLNK(ent->mode)) {
+			if (dir->read_link(dir, &extra)) {
+				free(ent);
+				return -1;
 			}
 		}
 
 		if (!(flags & DIR_SCAN_KEEP_TIME))
-			sb.st_mtime = fs->defaults.mtime;
+			ent->mtime = fs->defaults.mtime;
 
-		if (S_ISDIR(sb.st_mode) && (flags & DIR_SCAN_NO_DIR)) {
-			n = fstree_get_node_by_path(fs, root, ent->d_name,
+		if (S_ISDIR(ent->mode) && (flags & DIR_SCAN_NO_DIR)) {
+			n = fstree_get_node_by_path(fs, root, ent->name,
 						    false, false);
-			if (n == NULL)
+			if (n == NULL) {
+				free(ent);
 				continue;
+			}
 
 			ret = 0;
 		} else {
-			n = fstree_mknode(root, ent->d_name,
-					  strlen(ent->d_name), extra, &sb);
+			struct stat sb;
+
+			memset(&sb, 0, sizeof(sb));
+			sb.st_uid = ent->uid;
+			sb.st_gid = ent->gid;
+			sb.st_mode = ent->mode;
+			sb.st_mtime = clamp_timestamp(ent->mtime);
+
+			n = fstree_mknode(root, ent->name,
+					  strlen(ent->name), extra, &sb);
 			if (n == NULL) {
 				perror("creating tree node");
+				free(extra);
+				free(ent);
 				goto fail;
 			}
 
 			ret = (cb == NULL) ? 0 : cb(user, fs, n);
 		}
 
+		free(ent);
 		free(extra);
-		extra = NULL;
 
 		if (ret < 0)
 			goto fail;
@@ -254,11 +221,10 @@ static int scan_dir(fstree_t *fs, tree_node_t *root, const char *path,
 			discard_node(root, n);
 	}
 
-	closedir(dir);
+	sqfs_drop(dir);
 	return 0;
 fail:
-	closedir(dir);
-	free(extra);
+	sqfs_drop(dir);
 	return -1;
 }
 #endif
