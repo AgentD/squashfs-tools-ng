@@ -140,8 +140,17 @@ static int scan_dir(fstree_t *fs, tree_node_t *root, const char *path,
 		if (ret < 0)
 			goto fail;
 
-		if (ret > 0)
+		if (ret > 0) {
 			discard_node(root, n);
+			continue;
+		}
+
+		if (!(flags & DIR_SCAN_NO_RECURSION) && S_ISDIR(n->mode)) {
+			if (fstree_from_subdir(fs, n, path, n->name,
+					       cb, user, flags)) {
+				goto fail;
+			}
+		}
 	}
 
 	sqfs_drop(dir);
@@ -158,7 +167,7 @@ int fstree_from_subdir(fstree_t *fs, tree_node_t *root,
 {
 	size_t plen, slen;
 	char *temp = NULL;
-	tree_node_t *n;
+	int ret;
 
 	if (!S_ISDIR(root->mode)) {
 		fprintf(stderr,
@@ -186,27 +195,9 @@ int fstree_from_subdir(fstree_t *fs, tree_node_t *root,
 		path = temp;
 	}
 
-	if (scan_dir(fs, root, path, cb, user, flags))
-		goto fail;
-
-	if (flags & DIR_SCAN_NO_RECURSION) {
-		free(temp);
-		return 0;
-	}
-
-	for (n = root->data.dir.children; n != NULL; n = n->next) {
-		if (!S_ISDIR(n->mode))
-			continue;
-
-		if (fstree_from_subdir(fs, n, path, n->name, cb, user, flags))
-			goto fail;
-	}
-
+	ret = scan_dir(fs, root, path, cb, user, flags);
 	free(temp);
-	return 0;
-fail:
-	free(temp);
-	return -1;
+	return ret;
 }
 
 int fstree_from_dir(fstree_t *fs, tree_node_t *root,
