@@ -91,6 +91,7 @@ static int dir_next(dir_iterator_t *base, dir_entry_t **out)
 	dir_entry_t *decoded;
 	size_t len;
 
+	*out = NULL;
 	if (it->state != 0)
 		return it->state;
 
