@@ -26,9 +26,6 @@ typedef struct tree_node_t tree_node_t;
 typedef struct file_info_t file_info_t;
 typedef struct fstree_t fstree_t;
 
-#define container_of(ptr, type, member) \
-	((type *)((char *)ptr - offsetof(type, member)))
-
 enum {
 	FLAG_DIR_CREATED_IMPLICITLY = 0x01,
 	FLAG_FILE_ALREADY_MATCHED = 0x02,
@@ -36,9 +33,6 @@ enum {
 
 /* Additional meta data stored in a tree_node_t for regular files. */
 struct file_info_t {
-	/* Linked list pointer for files in fstree_t */
-	file_info_t *next;
-
 	/* Path to the input file. */
 	char *input_file;
 
@@ -51,6 +45,8 @@ struct file_info_t {
 
 /* A node in a file system tree */
 struct tree_node_t {
+	tree_node_t *next_by_type;
+
 	/* Parent directory children linked list pointer. */
 	tree_node_t *next;
 
@@ -108,7 +104,7 @@ struct fstree_t {
 	tree_node_t *root;
 
 	/* linear linked list of all regular files */
-	file_info_t *files;
+	tree_node_t *files;
 };
 
 /*

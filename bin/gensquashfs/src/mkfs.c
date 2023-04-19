@@ -12,9 +12,6 @@ static int pack_files(sqfs_block_processor_t *data, fstree_t *fs,
 	sqfs_u64 filesize;
 	sqfs_file_t *file;
 	tree_node_t *node;
-	const char *path;
-	char *node_path;
-	file_info_t *fi;
 	int flags;
 	int ret;
 
@@ -23,10 +20,11 @@ static int pack_files(sqfs_block_processor_t *data, fstree_t *fs,
 		return -1;
 	}
 
-	for (fi = fs->files; fi != NULL; fi = fi->next) {
-		if (fi->input_file == NULL) {
-			node = container_of(fi, tree_node_t, data.file);
+	for (node = fs->files; node != NULL; node = node->next_by_type) {
+		const char *path = node->data.file.input_file;
+		char *node_path = NULL;
 
+		if (path == NULL) {
 			node_path = fstree_get_path(node);
 			if (node_path == NULL) {
 				perror("reconstructing file path");
@@ -37,9 +35,6 @@ static int pack_files(sqfs_block_processor_t *data, fstree_t *fs,
 			assert(ret == 0);
 
 			path = node_path;
-		} else {
-			node_path = NULL;
-			path = fi->input_file;
 		}
 
 		if (!opt->cfg.quiet)
@@ -52,13 +47,14 @@ static int pack_files(sqfs_block_processor_t *data, fstree_t *fs,
 			return -1;
 		}
 
-		flags = fi->flags;
+		flags = node->data.file.flags;
 		filesize = file->get_size(file);
 
 		if (opt->no_tail_packing && filesize > opt->cfg.block_size)
 			flags |= SQFS_BLK_DONT_FRAGMENT;
 
-		ret = write_data_from_file(path, data, &fi->inode, file, flags);
+		ret = write_data_from_file(path, data, &(node->data.file.inode),
+					   file, flags);
 		sqfs_drop(file);
 		free(node_path);
 

@@ -208,41 +208,41 @@ fail_flag:
 
 static void sort_file_list(fstree_t *fs)
 {
-	file_info_t *out = NULL, *out_last = NULL;
+	tree_node_t *out = NULL, *out_last = NULL;
 
 	while (fs->files != NULL) {
-		sqfs_s64 lowest = fs->files->priority;
-		file_info_t *it, *prev;
+		sqfs_s64 lowest = fs->files->data.file.priority;
+		tree_node_t *it, *prev;
 
-		for (it = fs->files; it != NULL; it = it->next) {
-			if (it->priority < lowest)
-				lowest = it->priority;
+		for (it = fs->files; it != NULL; it = it->next_by_type) {
+			if (it->data.file.priority < lowest)
+				lowest = it->data.file.priority;
 		}
 
 		it = fs->files;
 		prev = NULL;
 
 		while (it != NULL) {
-			if (it->priority != lowest) {
+			if (it->data.file.priority != lowest) {
 				prev = it;
-				it = it->next;
+				it = it->next_by_type;
 				continue;
 			}
 
 			if (prev == NULL) {
-				fs->files = it->next;
+				fs->files = it->next_by_type;
 			} else {
-				prev->next = it->next;
+				prev->next_by_type = it->next_by_type;
 			}
 
 			if (out == NULL) {
 				out = it;
 			} else {
-				out_last->next = it;
+				out_last->next_by_type = it;
 			}
 
 			out_last = it;
-			it = it->next;
+			it = it->next_by_type;
 			out_last->next = NULL;
 		}
 	}
@@ -254,13 +254,11 @@ int fstree_sort_files(fstree_t *fs, istream_t *sortfile)
 {
 	const char *filename;
 	size_t line_num = 1;
-	file_info_t *it;
+	tree_node_t *node;
 
-	for (it = fs->files; it != NULL; it = it->next) {
-		tree_node_t *node = container_of(it, tree_node_t, data.file);
-
-		it->priority = 0;
-		it->flags = 0;
+	for (node = fs->files; node != NULL; node = node->next_by_type) {
+		node->data.file.priority = 0;
+		node->data.file.flags = 0;
 		node->flags &= ~FLAG_FILE_ALREADY_MATCHED;
 	}
 
@@ -306,11 +304,9 @@ int fstree_sort_files(fstree_t *fs, istream_t *sortfile)
 
 		have_match = false;
 
-		for (it = fs->files; it != NULL; it = it->next) {
-			tree_node_t *node;
+		for (node = fs->files; node != NULL; node = node->next_by_type) {
 			char *path;
 
-			node = container_of(it, tree_node_t, data.file);
 			if (node->flags & FLAG_FILE_ALREADY_MATCHED)
 				continue;
 
@@ -335,7 +331,6 @@ int fstree_sort_files(fstree_t *fs, istream_t *sortfile)
 			if (do_glob) {
 				ret = fnmatch(line, path,
 					      path_glob ? FNM_PATHNAME : 0);
-
 			} else {
 				ret = strcmp(path, line);
 			}
@@ -344,8 +339,8 @@ int fstree_sort_files(fstree_t *fs, istream_t *sortfile)
 
 			if (ret == 0) {
 				have_match = true;
-				it->flags = flags;
-				it->priority = priority;
+				node->data.file.flags = flags;
+				node->data.file.priority = priority;
 				node->flags |= FLAG_FILE_ALREADY_MATCHED;
 
 				if (!do_glob)

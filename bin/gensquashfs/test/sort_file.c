@@ -151,7 +151,7 @@ static istream_t memstream = {
 int main(int argc, char **argv)
 {
 	fstree_defaults_t fsd;
-	file_info_t *fi;
+	tree_node_t *n;
 	fstree_t fs;
 	size_t i;
 	(void)argc; (void)argv;
@@ -167,8 +167,7 @@ int main(int argc, char **argv)
 
 	fstree_post_process(&fs);
 
-	for (i = 0, fi = fs.files; fi != NULL; fi = fi->next, ++i) {
-		tree_node_t *n = container_of(fi, tree_node_t, data.file);
+	for (i = 0, n = fs.files; n != NULL; n = n->next_by_type, ++i) {
 		char *path = fstree_get_path(n);
 		int ret;
 
@@ -180,8 +179,8 @@ int main(int argc, char **argv)
 		TEST_STR_EQUAL(initial_order[i], path);
 		free(path);
 
-		TEST_EQUAL_I(fi->priority, 0);
-		TEST_EQUAL_I(fi->flags, 0);
+		TEST_EQUAL_I(n->data.file.priority, 0);
+		TEST_EQUAL_I(n->data.file.flags, 0);
 	}
 
 	TEST_EQUAL_UI(i, sizeof(initial_order) / sizeof(initial_order[0]));
@@ -194,8 +193,7 @@ int main(int argc, char **argv)
 
 	TEST_ASSERT(fstree_sort_files(&fs, &memstream) == 0);
 
-	for (i = 0, fi = fs.files; fi != NULL; fi = fi->next, ++i) {
-		tree_node_t *n = container_of(fi, tree_node_t, data.file);
+	for (i = 0, n = fs.files; n != NULL; n = n->next_by_type, ++i) {
 		char *path = fstree_get_path(n);
 		int ret;
 
@@ -207,8 +205,8 @@ int main(int argc, char **argv)
 		TEST_STR_EQUAL(after_sort_order[i], path);
 		free(path);
 
-		TEST_EQUAL_I(fi->priority, priorities[i]);
-		TEST_EQUAL_I(fi->flags, flags[i]);
+		TEST_EQUAL_I(n->data.file.priority, priorities[i]);
+		TEST_EQUAL_I(n->data.file.flags, flags[i]);
 	}
 
 	TEST_EQUAL_UI(i, sizeof(after_sort_order) /

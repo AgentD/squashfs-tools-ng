@@ -55,15 +55,15 @@ fail_ov:
 	return -1;
 }
 
-static file_info_t *file_list_dfs(tree_node_t *n)
+static tree_node_t *file_list_dfs(tree_node_t *n)
 {
 	if (S_ISREG(n->mode)) {
-		n->data.file.next = NULL;
-		return &n->data.file;
+		n->next_by_type = NULL;
+		return n;
 	}
 
 	if (S_ISDIR(n->mode)) {
-		file_info_t *list = NULL, *last = NULL;
+		tree_node_t *list = NULL, *last = NULL;
 
 		for (n = n->data.children; n != NULL; n = n->next) {
 			if (list == NULL) {
@@ -72,11 +72,11 @@ static file_info_t *file_list_dfs(tree_node_t *n)
 					continue;
 				last = list;
 			} else {
-				last->next = file_list_dfs(n);
+				last->next_by_type = file_list_dfs(n);
 			}
 
-			while (last->next != NULL)
-				last = last->next;
+			while (last->next_by_type != NULL)
+				last = last->next_by_type;
 		}
 
 		return list;
