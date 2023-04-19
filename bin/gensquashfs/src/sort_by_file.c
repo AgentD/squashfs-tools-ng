@@ -257,9 +257,11 @@ int fstree_sort_files(fstree_t *fs, istream_t *sortfile)
 	file_info_t *it;
 
 	for (it = fs->files; it != NULL; it = it->next) {
+		tree_node_t *node = container_of(it, tree_node_t, data.file);
+
 		it->priority = 0;
 		it->flags = 0;
-		it->already_matched = false;
+		node->flags &= ~FLAG_FILE_ALREADY_MATCHED;
 	}
 
 	filename = istream_get_filename(sortfile);
@@ -308,10 +310,10 @@ int fstree_sort_files(fstree_t *fs, istream_t *sortfile)
 			tree_node_t *node;
 			char *path;
 
-			if (it->already_matched)
+			node = container_of(it, tree_node_t, data.file);
+			if (node->flags & FLAG_FILE_ALREADY_MATCHED)
 				continue;
 
-			node = container_of(it, tree_node_t, data.file);
 			path = fstree_get_path(node);
 			if (path == NULL) {
 				fprintf(stderr, "%s: " PRI_SZ ": out-of-memory\n",
@@ -344,7 +346,7 @@ int fstree_sort_files(fstree_t *fs, istream_t *sortfile)
 				have_match = true;
 				it->flags = flags;
 				it->priority = priority;
-				it->already_matched = true;
+				node->flags |= FLAG_FILE_ALREADY_MATCHED;
 
 				if (!do_glob)
 					break;

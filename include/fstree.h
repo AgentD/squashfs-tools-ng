@@ -31,6 +31,7 @@ typedef struct fstree_t fstree_t;
 
 enum {
 	FLAG_DIR_CREATED_IMPLICITLY = 0x01,
+	FLAG_FILE_ALREADY_MATCHED = 0x02,
 };
 
 /* Additional meta data stored in a tree_node_t for regular files. */
@@ -46,7 +47,6 @@ struct file_info_t {
 	/* used by sort file processing */
 	sqfs_s64 priority;
 	int flags;
-	bool already_matched;
 };
 
 /* A node in a file system tree */
