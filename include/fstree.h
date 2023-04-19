@@ -102,6 +102,9 @@ struct fstree_t {
 
 	/* linear linked list of all regular files */
 	tree_node_t *files;
+
+	/* linear linked list of all unresolved hard links */
+	tree_node_t *links_unresolved;
 };
 
 /*

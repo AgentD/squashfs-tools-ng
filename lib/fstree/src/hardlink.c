@@ -53,31 +53,6 @@ static int resolve_link(fstree_t *fs, tree_node_t *node)
 	return 0;
 }
 
-static int resolve_hard_links_dfs(fstree_t *fs, tree_node_t *n)
-{
-	tree_node_t *it;
-
-	if (n->mode == FSTREE_MODE_HARD_LINK) {
-		if (resolve_link(fs, n))
-			goto fail_link;
-	} else if (S_ISDIR(n->mode)) {
-		for (it = n->data.children; it != NULL; it = it->next) {
-			if (resolve_hard_links_dfs(fs, it))
-				return -1;
-		}
-	}
-
-	return 0;
-fail_link: {
-	char *path = fstree_get_path(n);
-	fprintf(stderr, "Resolving hard link '%s' -> '%s': %s\n",
-		path == NULL ? n->name : path, n->data.target,
-		strerror(errno));
-	free(path);
-}
-	return -1;
-}
-
 tree_node_t *fstree_add_hard_link(fstree_t *fs, const char *path,
 				  const char *target)
 {
@@ -98,10 +73,30 @@ tree_node_t *fstree_add_hard_link(fstree_t *fs, const char *path,
 		n->mode = FSTREE_MODE_HARD_LINK;
 	}
 
+	n->next_by_type = fs->links_unresolved;
+	fs->links_unresolved = n;
+
 	return n;
 }
 
 int fstree_resolve_hard_links(fstree_t *fs)
 {
-	return resolve_hard_links_dfs(fs, fs->root);
+	while (fs->links_unresolved != NULL) {
+		tree_node_t *n = fs->links_unresolved;
+
+		if (resolve_link(fs, n)) {
+			char *path = fstree_get_path(n);
+			fprintf(stderr,
+				"Resolving hard link '%s' -> '%s': %s\n",
+				path == NULL ? n->name : path, n->data.target,
+				strerror(errno));
+			free(path);
+			return -1;
+		}
+
+		fs->links_unresolved = n->next_by_type;
+		n->next_by_type = NULL;
+	}
+
+	return 0;
 }
