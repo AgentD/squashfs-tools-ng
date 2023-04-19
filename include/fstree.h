@@ -23,24 +23,11 @@
 
 typedef struct fstree_defaults_t fstree_defaults_t;
 typedef struct tree_node_t tree_node_t;
-typedef struct file_info_t file_info_t;
 typedef struct fstree_t fstree_t;
 
 enum {
 	FLAG_DIR_CREATED_IMPLICITLY = 0x01,
 	FLAG_FILE_ALREADY_MATCHED = 0x02,
-};
-
-/* Additional meta data stored in a tree_node_t for regular files. */
-struct file_info_t {
-	/* Path to the input file. */
-	char *input_file;
-
-	sqfs_inode_generic_t *inode;
-
-	/* used by sort file processing */
-	sqfs_s64 priority;
-	int flags;
 };
 
 /* A node in a file system tree */
@@ -74,8 +61,18 @@ struct tree_node_t {
 
 	/* Type specific data. "target" pointer is into payload area below. */
 	union {
+		struct {
+			/* Path to the input file. */
+			char *input_file;
+
+			sqfs_inode_generic_t *inode;
+
+			/* used by sort file processing */
+			sqfs_s64 priority;
+			int flags;
+		} file;
+
 		tree_node_t *children;
-		file_info_t file;
 		char *target;
 		sqfs_u64 devno;
 		tree_node_t *target_node;

@@ -7,7 +7,7 @@
 #include "tar2sqfs.h"
 
 static int write_file(istream_t *input_file, sqfs_writer_t *sqfs,
-		      const tar_header_decoded_t *hdr, file_info_t *fi)
+		      const tar_header_decoded_t *hdr, tree_node_t *n)
 {
 	int flags = 0, ret = 0;
 	ostream_t *out;
@@ -16,8 +16,8 @@ static int write_file(istream_t *input_file, sqfs_writer_t *sqfs,
 	if (no_tail_pack && hdr->actual_size > cfg.block_size)
 		flags |= SQFS_BLK_DONT_FRAGMENT;
 
-	out = data_writer_ostream_create(hdr->name, sqfs->data, &fi->inode,
-					 flags);
+	out = data_writer_ostream_create(hdr->name, sqfs->data,
+					 &(n->data.file.inode), flags);
 
 	if (out == NULL)
 		return -1;
@@ -126,7 +126,7 @@ static int create_node_and_repack_data(istream_t *input_file,
 	}
 
 	if (S_ISREG(hdr->mode)) {
-		if (write_file(input_file, sqfs, hdr, &node->data.file))
+		if (write_file(input_file, sqfs, hdr, node))
 			return -1;
 	}
 
