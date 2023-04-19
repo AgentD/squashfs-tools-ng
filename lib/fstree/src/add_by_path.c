@@ -31,13 +31,13 @@ tree_node_t *fstree_add_generic(fstree_t *fs, const char *path,
 	name = strrchr(path, '/');
 	name = (name == NULL ? path : (name + 1));
 
-	child = parent->data.dir.children;
+	child = parent->data.children;
 	while (child != NULL && strcmp(child->name, name) != 0)
 		child = child->next;
 out:
 	if (child != NULL) {
 		if (!S_ISDIR(child->mode) || !S_ISDIR(sb->st_mode) ||
-		    !child->data.dir.created_implicitly) {
+		    !(child->flags & FLAG_DIR_CREATED_IMPLICITLY)) {
 			errno = EEXIST;
 			return NULL;
 		}
@@ -46,7 +46,7 @@ out:
 		child->gid = sb->st_gid;
 		child->mode = sb->st_mode;
 		child->mod_time = sb->st_mtime;
-		child->data.dir.created_implicitly = false;
+		child->flags &= ~FLAG_DIR_CREATED_IMPLICITLY;
 		return child;
 	}
 

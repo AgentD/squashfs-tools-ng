@@ -101,7 +101,7 @@ static int relabel_tree_dfs(const char *filename, sqfs_xattr_writer_t *xwr,
 	free(path);
 
 	if (S_ISDIR(n->mode)) {
-		for (n = n->data.dir.children; n != NULL; n = n->next) {
+		for (n = n->data.children; n != NULL; n = n->next) {
 			if (relabel_tree_dfs(filename, xwr, n, selinux_handle))
 				return -1;
 		}
@@ -133,7 +133,7 @@ static void override_owner_dfs(const options_t *opt, tree_node_t *n)
 		n->gid = opt->force_gid_value;
 
 	if (S_ISDIR(n->mode)) {
-		for (n = n->data.dir.children; n != NULL; n = n->next)
+		for (n = n->data.children; n != NULL; n = n->next)
 			override_owner_dfs(opt, n);
 	}
 }

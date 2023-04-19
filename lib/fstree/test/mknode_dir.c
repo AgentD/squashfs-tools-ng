@@ -31,7 +31,7 @@ int main(int argc, char **argv)
 	TEST_EQUAL_UI(root->link_count, 2);
 	TEST_ASSERT(root->name >= (char *)root->payload);
 	TEST_STR_EQUAL(root->name, "rootdir");
-	TEST_NULL(root->data.dir.children);
+	TEST_NULL(root->data.children);
 	TEST_NULL(root->parent);
 	TEST_NULL(root->next);
 
@@ -40,7 +40,7 @@ int main(int argc, char **argv)
 	TEST_NULL(a->next);
 	TEST_EQUAL_UI(a->link_count, 2);
 	TEST_EQUAL_UI(root->link_count, 3);
-	TEST_ASSERT(root->data.dir.children == a);
+	TEST_ASSERT(root->data.children == a);
 	TEST_NULL(root->parent);
 	TEST_NULL(root->next);
 
@@ -48,7 +48,7 @@ int main(int argc, char **argv)
 	TEST_ASSERT(a->parent == root);
 	TEST_ASSERT(b->parent == root);
 	TEST_EQUAL_UI(b->link_count, 2);
-	TEST_ASSERT(root->data.dir.children == a);
+	TEST_ASSERT(root->data.children == a);
 	TEST_ASSERT(a->next == b);
 	TEST_EQUAL_UI(root->link_count, 4);
 	TEST_NULL(b->next);

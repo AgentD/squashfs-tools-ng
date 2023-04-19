@@ -13,14 +13,14 @@ static void check_hierarchy(tree_node_t *root, bool recursive)
 {
 	tree_node_t *n, *m;
 
-	n = root->data.dir.children;
+	n = root->data.children;
 	TEST_NOT_NULL(n);
 	TEST_STR_EQUAL(n->name, "dira");
 	TEST_ASSERT(S_ISDIR(n->mode));
 	TEST_ASSERT(n->parent == root);
 
 	if (recursive) {
-		m = n->data.dir.children;
+		m = n->data.children;
 		TEST_NOT_NULL(m);
 		TEST_STR_EQUAL(m->name, "file_a0");
 		TEST_ASSERT(S_ISREG(m->mode));
@@ -41,7 +41,7 @@ static void check_hierarchy(tree_node_t *root, bool recursive)
 		m = m->next;
 		TEST_NULL(m);
 	} else {
-		TEST_NULL(n->data.dir.children);
+		TEST_NULL(n->data.children);
 	}
 
 	n = n->next;
@@ -51,7 +51,7 @@ static void check_hierarchy(tree_node_t *root, bool recursive)
 	TEST_ASSERT(n->parent == root);
 
 	if (recursive) {
-		m = n->data.dir.children;
+		m = n->data.children;
 		TEST_NOT_NULL(m);
 		TEST_STR_EQUAL(m->name, "file_b0");
 		TEST_ASSERT(S_ISREG(m->mode));
@@ -72,7 +72,7 @@ static void check_hierarchy(tree_node_t *root, bool recursive)
 		m = m->next;
 		TEST_NULL(m);
 	} else {
-		TEST_NULL(n->data.dir.children);
+		TEST_NULL(n->data.children);
 	}
 
 	n = n->next;
@@ -82,7 +82,7 @@ static void check_hierarchy(tree_node_t *root, bool recursive)
 	TEST_ASSERT(n->parent == root);
 
 	if (recursive) {
-		m = n->data.dir.children;
+		m = n->data.children;
 		TEST_NOT_NULL(m);
 		TEST_STR_EQUAL(m->name, "file_c0");
 		TEST_ASSERT(S_ISREG(m->mode));
@@ -103,7 +103,7 @@ static void check_hierarchy(tree_node_t *root, bool recursive)
 		m = m->next;
 		TEST_NULL(m);
 	} else {
-		TEST_NULL(n->data.dir.children);
+		TEST_NULL(n->data.children);
 	}
 
 	n = n->next;
@@ -146,11 +146,11 @@ int main(int argc, char **argv)
 
 	n = fstree_mknode(fs.root, "foodir", 6, NULL, &sb);
 	TEST_NOT_NULL(n);
-	fs.root->data.dir.children = n;
+	fs.root->data.children = n;
 
 	TEST_ASSERT(fstree_from_dir(&fs, n, TEST_PATH, NULL, NULL, 0) == 0);
 
-	TEST_ASSERT(fs.root->data.dir.children == n);
+	TEST_ASSERT(fs.root->data.children == n);
 	TEST_NULL(n->next);
 
 	fstree_post_process(&fs);
@@ -165,12 +165,12 @@ int main(int argc, char **argv)
 
 	n = fstree_mknode(fs.root, "foodir", 6, NULL, &sb);
 	TEST_NOT_NULL(n);
-	fs.root->data.dir.children = n;
+	fs.root->data.children = n;
 
 	TEST_ASSERT(fstree_from_dir(&fs, n, TEST_PATH, NULL, NULL,
 				    DIR_SCAN_NO_RECURSION) == 0);
 
-	TEST_ASSERT(fs.root->data.dir.children == n);
+	TEST_ASSERT(fs.root->data.children == n);
 	TEST_NULL(n->next);
 
 	fstree_post_process(&fs);

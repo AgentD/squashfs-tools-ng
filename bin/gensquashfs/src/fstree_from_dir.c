@@ -54,10 +54,10 @@ static void discard_node(tree_node_t *root, tree_node_t *n)
 {
 	tree_node_t *it;
 
-	if (n == root->data.dir.children) {
-		root->data.dir.children = n->next;
+	if (n == root->data.children) {
+		root->data.children = n->next;
 	} else {
-		it = root->data.dir.children;
+		it = root->data.children;
 
 		while (it != NULL && it->next != n)
 			it = it->next;

@@ -14,7 +14,7 @@ static void check_hierarchy(tree_node_t *root, bool subdir, bool recursive)
 	tree_node_t *n, *m, *parentdir;
 
 	if (subdir) {
-		n = root->data.dir.children;
+		n = root->data.children;
 		TEST_NOT_NULL(n);
 		TEST_STR_EQUAL(n->name, "tarcorpus");
 		TEST_ASSERT(S_ISDIR(n->mode));
@@ -30,14 +30,14 @@ static void check_hierarchy(tree_node_t *root, bool subdir, bool recursive)
 	}
 
 	parentdir = n;
-	n = n->data.dir.children;
+	n = n->data.children;
 	TEST_NOT_NULL(n);
 	TEST_STR_EQUAL(n->name, "file-size");
 	TEST_ASSERT(S_ISDIR(n->mode));
 	TEST_ASSERT(n->parent == parentdir);
 
 	if (recursive) {
-		m = n->data.dir.children;
+		m = n->data.children;
 		TEST_NOT_NULL(m);
 		TEST_STR_EQUAL(m->name, "gnu.tar");
 		TEST_ASSERT(S_ISREG(m->mode));
@@ -46,7 +46,7 @@ static void check_hierarchy(tree_node_t *root, bool subdir, bool recursive)
 		m = m->next;
 		TEST_NULL(m);
 	} else {
-		TEST_NULL(n->data.dir.children);
+		TEST_NULL(n->data.children);
 	}
 
 	n = n->next;
@@ -56,7 +56,7 @@ static void check_hierarchy(tree_node_t *root, bool subdir, bool recursive)
 	TEST_ASSERT(n->parent == parentdir);
 
 	if (recursive) {
-		m = n->data.dir.children;
+		m = n->data.children;
 		TEST_NOT_NULL(m);
 		TEST_STR_EQUAL(m->name, "gnu-g.tar");
 		TEST_ASSERT(S_ISREG(m->mode));
@@ -71,7 +71,7 @@ static void check_hierarchy(tree_node_t *root, bool subdir, bool recursive)
 		m = m->next;
 		TEST_NULL(m);
 	} else {
-		TEST_NULL(n->data.dir.children);
+		TEST_NULL(n->data.children);
 	}
 
 	n = n->next;
@@ -79,7 +79,7 @@ static void check_hierarchy(tree_node_t *root, bool subdir, bool recursive)
 	TEST_STR_EQUAL(n->name, "istream");
 	TEST_ASSERT(S_ISDIR(n->mode));
 	TEST_ASSERT(n->parent == parentdir);
-	TEST_NULL(n->data.dir.children);
+	TEST_NULL(n->data.children);
 
 	n = n->next;
 	TEST_NOT_NULL(n);
@@ -88,7 +88,7 @@ static void check_hierarchy(tree_node_t *root, bool subdir, bool recursive)
 	TEST_ASSERT(n->parent == parentdir);
 
 	if (recursive) {
-		m = n->data.dir.children;
+		m = n->data.children;
 		TEST_NOT_NULL(m);
 		TEST_STR_EQUAL(m->name, "gnu.tar");
 		TEST_ASSERT(S_ISREG(m->mode));
@@ -97,7 +97,7 @@ static void check_hierarchy(tree_node_t *root, bool subdir, bool recursive)
 		m = m->next;
 		TEST_NULL(m);
 	} else {
-		TEST_NULL(n->data.dir.children);
+		TEST_NULL(n->data.children);
 	}
 
 	n = n->next;
@@ -107,7 +107,7 @@ static void check_hierarchy(tree_node_t *root, bool subdir, bool recursive)
 	TEST_ASSERT(n->parent == parentdir);
 
 	if (recursive) {
-		m = n->data.dir.children;
+		m = n->data.children;
 		TEST_NOT_NULL(m);
 		TEST_STR_EQUAL(m->name, "gnu.tar");
 		TEST_ASSERT(S_ISREG(m->mode));
@@ -116,7 +116,7 @@ static void check_hierarchy(tree_node_t *root, bool subdir, bool recursive)
 		m = m->next;
 		TEST_NULL(m);
 	} else {
-		TEST_NULL(n->data.dir.children);
+		TEST_NULL(n->data.children);
 	}
 
 	n = n->next;
@@ -126,7 +126,7 @@ static void check_hierarchy(tree_node_t *root, bool subdir, bool recursive)
 	TEST_ASSERT(n->parent == parentdir);
 
 	if (recursive) {
-		m = n->data.dir.children;
+		m = n->data.children;
 		TEST_NOT_NULL(m);
 		TEST_STR_EQUAL(m->name, "gnu.tar");
 		TEST_ASSERT(S_ISREG(m->mode));
@@ -135,7 +135,7 @@ static void check_hierarchy(tree_node_t *root, bool subdir, bool recursive)
 		m = m->next;
 		TEST_NULL(m);
 	} else {
-		TEST_NULL(n->data.dir.children);
+		TEST_NULL(n->data.children);
 	}
 
 	n = n->next;
@@ -145,7 +145,7 @@ static void check_hierarchy(tree_node_t *root, bool subdir, bool recursive)
 	TEST_ASSERT(n->parent == parentdir);
 
 	if (recursive) {
-		m = n->data.dir.children;
+		m = n->data.children;
 		TEST_NOT_NULL(m);
 		TEST_STR_EQUAL(m->name, "gnu-small.tar");
 		TEST_ASSERT(S_ISREG(m->mode));
@@ -178,7 +178,7 @@ static void check_hierarchy(tree_node_t *root, bool subdir, bool recursive)
 		m = m->next;
 		TEST_NULL(m);
 	} else {
-		TEST_NULL(n->data.dir.children);
+		TEST_NULL(n->data.children);
 	}
 
 	n = n->next;
@@ -188,7 +188,7 @@ static void check_hierarchy(tree_node_t *root, bool subdir, bool recursive)
 	TEST_ASSERT(n->parent == parentdir);
 
 	if (recursive) {
-		m = n->data.dir.children;
+		m = n->data.children;
 		TEST_NOT_NULL(m);
 		TEST_STR_EQUAL(m->name, "gnu.tar");
 		TEST_ASSERT(S_ISREG(m->mode));
@@ -197,7 +197,7 @@ static void check_hierarchy(tree_node_t *root, bool subdir, bool recursive)
 		m = m->next;
 		TEST_NULL(m);
 	} else {
-		TEST_NULL(n->data.dir.children);
+		TEST_NULL(n->data.children);
 	}
 
 	n = n->next;
@@ -205,14 +205,14 @@ static void check_hierarchy(tree_node_t *root, bool subdir, bool recursive)
 	TEST_STR_EQUAL(n->name, "write");
 	TEST_ASSERT(S_ISDIR(n->mode));
 	TEST_ASSERT(n->parent == parentdir);
-	TEST_NULL(n->data.dir.children);
+	TEST_NULL(n->data.children);
 
 	n = n->next;
 	TEST_NOT_NULL(n);
 	TEST_STR_EQUAL(n->name, "xattr");
 	TEST_ASSERT(S_ISDIR(n->mode));
 	TEST_ASSERT(n->parent == parentdir);
-	TEST_NULL(n->data.dir.children);
+	TEST_NULL(n->data.children);
 
 	n = n->next;
 	TEST_NULL(n);

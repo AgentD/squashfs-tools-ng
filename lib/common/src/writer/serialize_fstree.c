@@ -70,7 +70,7 @@ static sqfs_inode_generic_t *write_dir_entries(const char *filename,
 	if (ret)
 		goto fail;
 
-	for (it = node->data.dir.children; it != NULL; it = it->next) {
+	for (it = node->data.children; it != NULL; it = it->next) {
 		if (it->mode == FSTREE_MODE_HARD_LINK_RESOLVED) {
 			tgt = it->data.target_node;
 		} else {

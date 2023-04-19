@@ -30,25 +30,25 @@ int main(int argc, char **argv)
 
 	a = fstree_mknode(fs.root, "a", 1, NULL, &sb);
 	TEST_NOT_NULL(a);
-	TEST_ASSERT(fs.root->data.dir.children == a);
+	TEST_ASSERT(fs.root->data.children == a);
 	TEST_NULL(a->next);
 
 	b = fstree_mknode(fs.root, "b", 1, NULL, &sb);
 	TEST_NOT_NULL(a);
-	TEST_ASSERT(fs.root->data.dir.children == a);
+	TEST_ASSERT(fs.root->data.children == a);
 	TEST_ASSERT(a->next == b);
 	TEST_NULL(b->next);
 
 	c = fstree_mknode(fs.root, "c", 1, NULL, &sb);
 	TEST_NOT_NULL(c);
-	TEST_ASSERT(fs.root->data.dir.children == a);
+	TEST_ASSERT(fs.root->data.children == a);
 	TEST_ASSERT(a->next == b);
 	TEST_ASSERT(b->next == c);
 	TEST_NULL(c->next);
 
 	d = fstree_mknode(fs.root, "d", 1, NULL, &sb);
 	TEST_NOT_NULL(d);
-	TEST_ASSERT(fs.root->data.dir.children == a);
+	TEST_ASSERT(fs.root->data.children == a);
 	TEST_ASSERT(a->next == b);
 	TEST_ASSERT(b->next == c);
 	TEST_ASSERT(c->next == d);
@@ -62,25 +62,25 @@ int main(int argc, char **argv)
 
 	d = fstree_mknode(fs.root, "d", 1, NULL, &sb);
 	TEST_NOT_NULL(d);
-	TEST_ASSERT(fs.root->data.dir.children == d);
+	TEST_ASSERT(fs.root->data.children == d);
 	TEST_NULL(d->next);
 
 	c = fstree_mknode(fs.root, "c", 1, NULL, &sb);
 	TEST_NOT_NULL(c);
-	TEST_ASSERT(fs.root->data.dir.children == c);
+	TEST_ASSERT(fs.root->data.children == c);
 	TEST_ASSERT(c->next == d);
 	TEST_NULL(d->next);
 
 	b = fstree_mknode(fs.root, "b", 1, NULL, &sb);
 	TEST_NOT_NULL(b);
-	TEST_ASSERT(fs.root->data.dir.children == b);
+	TEST_ASSERT(fs.root->data.children == b);
 	TEST_ASSERT(b->next == c);
 	TEST_ASSERT(c->next == d);
 	TEST_NULL(d->next);
 
 	a = fstree_mknode(fs.root, "a", 1, NULL, &sb);
 	TEST_NOT_NULL(a);
-	TEST_ASSERT(fs.root->data.dir.children == a);
+	TEST_ASSERT(fs.root->data.children == a);
 	TEST_ASSERT(a->next == b);
 	TEST_ASSERT(b->next == c);
 	TEST_ASSERT(c->next == d);

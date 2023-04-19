@@ -40,9 +40,9 @@ int main(int argc, char **argv)
 	TEST_ASSERT(a->parent == fs.root);
 	TEST_EQUAL_UI(a->link_count, 2);
 	TEST_NULL(a->next);
-	TEST_ASSERT(fs.root->data.dir.children == a);
+	TEST_ASSERT(fs.root->data.children == a);
 	TEST_EQUAL_UI(fs.root->link_count, 3);
-	TEST_ASSERT(!a->data.dir.created_implicitly);
+	TEST_ASSERT(!(a->flags & FLAG_DIR_CREATED_IMPLICITLY));
 
 	memset(&sb, 0, sizeof(sb));
 	sb.st_mode = S_IFBLK | 0640;
@@ -60,7 +60,7 @@ int main(int argc, char **argv)
 	TEST_EQUAL_UI(b->data.devno, sb.st_rdev);
 	TEST_ASSERT(b->next == a);
 	TEST_EQUAL_UI(fs.root->link_count, 4);
-	TEST_ASSERT(fs.root->data.dir.children == b);
+	TEST_ASSERT(fs.root->data.children == b);
 
 	TEST_NULL(fstree_add_generic(&fs, "blkdev/foo", &sb, NULL));
 	TEST_EQUAL_UI(errno, ENOTDIR);
@@ -84,7 +84,7 @@ int main(int argc, char **argv)
 	TEST_ASSERT(b->parent == a);
 	TEST_EQUAL_UI(b->data.devno, sb.st_rdev);
 	TEST_NULL(b->next);
-	TEST_ASSERT(a->data.dir.children == b);
+	TEST_ASSERT(a->data.children == b);
 
 	TEST_EQUAL_UI(a->link_count, 3);
 	TEST_EQUAL_UI(fs.root->link_count, 4);
@@ -103,10 +103,10 @@ int main(int argc, char **argv)
 
 	TEST_EQUAL_UI(a->link_count, 4);
 	TEST_EQUAL_UI(fs.root->link_count, 4);
-	TEST_ASSERT(a->data.dir.children != b);
+	TEST_ASSERT(a->data.children != b);
 
 	b = b->parent;
-	TEST_ASSERT(b->data.dir.created_implicitly);
+	TEST_ASSERT((b->flags & FLAG_DIR_CREATED_IMPLICITLY));
 	TEST_EQUAL_UI(b->mode, S_IFDIR | 0755);
 	TEST_EQUAL_UI(b->uid, 21);
 	TEST_EQUAL_UI(b->gid, 42);
@@ -120,7 +120,7 @@ int main(int argc, char **argv)
 	a = fstree_add_generic(&fs, "dir/foo", &sb, NULL);
 	TEST_NOT_NULL(a);
 	TEST_ASSERT(a == b);
-	TEST_ASSERT(!a->data.dir.created_implicitly);
+	TEST_ASSERT(!(a->flags & FLAG_DIR_CREATED_IMPLICITLY));
 	TEST_EQUAL_UI(a->mode, sb.st_mode);
 	TEST_EQUAL_UI(a->uid, sb.st_uid);
 	TEST_EQUAL_UI(a->gid, sb.st_gid);

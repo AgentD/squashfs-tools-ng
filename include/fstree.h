@@ -24,11 +24,14 @@
 typedef struct fstree_defaults_t fstree_defaults_t;
 typedef struct tree_node_t tree_node_t;
 typedef struct file_info_t file_info_t;
-typedef struct dir_info_t dir_info_t;
 typedef struct fstree_t fstree_t;
 
 #define container_of(ptr, type, member) \
 	((type *)((char *)ptr - offsetof(type, member)))
+
+enum {
+	FLAG_DIR_CREATED_IMPLICITLY = 0x01,
+};
 
 /* Additional meta data stored in a tree_node_t for regular files. */
 struct file_info_t {
@@ -44,15 +47,6 @@ struct file_info_t {
 	sqfs_s64 priority;
 	int flags;
 	bool already_matched;
-};
-
-/* Additional meta data stored in a tree_node_t for directories */
-struct dir_info_t {
-	/* Linked list head for children in the directory */
-	tree_node_t *children;
-
-	/* Set to true for implicitly generated directories.  */
-	bool created_implicitly;
 };
 
 /* A node in a file system tree */
@@ -73,6 +67,7 @@ struct tree_node_t {
 	sqfs_u32 mod_time;
 	sqfs_u32 link_count;
 	sqfs_u16 mode;
+	sqfs_u16 flags;
 
 	/* SquashFS inode refernce number. 32 bit offset of the meta data
 	   block start (relative to inode table start), shifted left by 16
@@ -83,7 +78,7 @@ struct tree_node_t {
 
 	/* Type specific data. "target" pointer is into payload area below. */
 	union {
-		dir_info_t dir;
+		tree_node_t *children;
 		file_info_t file;
 		char *target;
 		sqfs_u64 devno;

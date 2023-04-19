@@ -189,7 +189,7 @@ static int xattr_xcan_dfs(const char *path_prefix, void *selinux_handle,
 	}
 
 	if (S_ISDIR(node->mode)) {
-		node = node->data.dir.children;
+		node = node->data.children;
 
 		while (node != NULL) {
 			if (xattr_xcan_dfs(path_prefix, selinux_handle, xwr,

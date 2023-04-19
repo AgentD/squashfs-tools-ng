@@ -13,7 +13,7 @@
 
 static void insert_sorted(tree_node_t *root, tree_node_t *n)
 {
-	tree_node_t *it = root->data.dir.children, *prev = NULL;
+	tree_node_t *it = root->data.children, *prev = NULL;
 
 	while (it != NULL && strcmp(it->name, n->name) < 0) {
 		prev = it;
@@ -24,7 +24,7 @@ static void insert_sorted(tree_node_t *root, tree_node_t *n)
 	n->next = it;
 
 	if (prev == NULL) {
-		root->data.dir.children = n;
+		root->data.children = n;
 	} else {
 		prev->next = n;
 	}

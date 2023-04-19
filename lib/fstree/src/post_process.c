@@ -18,7 +18,7 @@ static int alloc_inode_num_dfs(fstree_t *fs, tree_node_t *root)
 	tree_node_t *it;
 	size_t inum;
 
-	for (it = root->data.dir.children; it != NULL; it = it->next) {
+	for (it = root->data.children; it != NULL; it = it->next) {
 		if (S_ISDIR(it->mode)) {
 			has_subdirs = true;
 			break;
@@ -26,7 +26,7 @@ static int alloc_inode_num_dfs(fstree_t *fs, tree_node_t *root)
 	}
 
 	if (has_subdirs) {
-		for (it = root->data.dir.children; it != NULL; it = it->next) {
+		for (it = root->data.children; it != NULL; it = it->next) {
 			if (S_ISDIR(it->mode)) {
 				if (alloc_inode_num_dfs(fs, it))
 					return -1;
@@ -34,7 +34,7 @@ static int alloc_inode_num_dfs(fstree_t *fs, tree_node_t *root)
 		}
 	}
 
-	for (it = root->data.dir.children; it != NULL; it = it->next) {
+	for (it = root->data.children; it != NULL; it = it->next) {
 		if (it->mode != FSTREE_MODE_HARD_LINK_RESOLVED) {
 			if (SZ_ADD_OV(fs->unique_inode_count, 1, &inum))
 				goto fail_ov;
@@ -65,7 +65,7 @@ static file_info_t *file_list_dfs(tree_node_t *n)
 	if (S_ISDIR(n->mode)) {
 		file_info_t *list = NULL, *last = NULL;
 
-		for (n = n->data.dir.children; n != NULL; n = n->next) {
+		for (n = n->data.children; n != NULL; n = n->next) {
 			if (list == NULL) {
 				list = file_list_dfs(n);
 				if (list == NULL)
@@ -93,7 +93,7 @@ static void map_inodes_dfs(fstree_t *fs, tree_node_t *n)
 	fs->inodes[n->inode_num - 1] = n;
 
 	if (S_ISDIR(n->mode)) {
-		for (n = n->data.dir.children; n != NULL; n = n->next)
+		for (n = n->data.children; n != NULL; n = n->next)
 			map_inodes_dfs(fs, n);
 	}
 }
@@ -107,7 +107,7 @@ static void reorder_hard_links(fstree_t *fs)
 		if (!S_ISDIR(fs->inodes[i]->mode))
 			continue;
 
-		it = fs->inodes[i]->data.dir.children;
+		it = fs->inodes[i]->data.children;
 
 		for (; it != NULL; it = it->next) {
 			if (it->mode != FSTREE_MODE_HARD_LINK_RESOLVED)

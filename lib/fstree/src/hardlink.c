@@ -61,7 +61,7 @@ static int resolve_hard_links_dfs(fstree_t *fs, tree_node_t *n)
 		if (resolve_link(fs, n))
 			goto fail_link;
 	} else if (S_ISDIR(n->mode)) {
-		for (it = n->data.dir.children; it != NULL; it = it->next) {
+		for (it = n->data.children; it != NULL; it = it->next) {
 			if (resolve_hard_links_dfs(fs, it))
 				return -1;
 		}

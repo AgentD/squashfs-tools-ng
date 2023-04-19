@@ -21,7 +21,7 @@ int main(int argc, char **argv)
 	TEST_ASSERT(fstree_from_file(&fs, TEST_PATH, NULL) == 0);
 
 	fstree_post_process(&fs);
-	n = fs.root->data.dir.children;
+	n = fs.root->data.children;
 
 	TEST_EQUAL_UI(fs.root->link_count, 9);
 	TEST_EQUAL_UI(fs.root->mode, S_IFDIR | 0755);
@@ -49,7 +49,7 @@ int main(int argc, char **argv)
 	TEST_EQUAL_UI(n->gid, 5);
 	TEST_EQUAL_UI(n->link_count, 2);
 	TEST_STR_EQUAL(n->name, "dir");
-	TEST_NULL(n->data.dir.children);
+	TEST_NULL(n->data.children);
 
 	n = n->next;
 	TEST_EQUAL_UI(n->mode, S_IFDIR | 0755);
@@ -57,15 +57,15 @@ int main(int argc, char **argv)
 	TEST_EQUAL_UI(n->gid, 0);
 	TEST_EQUAL_UI(n->link_count, 3);
 	TEST_STR_EQUAL(n->name, "foo bar");
-	TEST_NOT_NULL(n->data.dir.children);
+	TEST_NOT_NULL(n->data.children);
 
-	TEST_NULL(n->data.dir.children->next);
-	TEST_EQUAL_UI(n->data.dir.children->mode, S_IFDIR | 0755);
-	TEST_EQUAL_UI(n->data.dir.children->uid, 0);
-	TEST_EQUAL_UI(n->data.dir.children->gid, 0);
-	TEST_EQUAL_UI(n->data.dir.children->link_count, 2);
-	TEST_STR_EQUAL(n->data.dir.children->name, " test \"");
-	TEST_NULL(n->data.dir.children->data.dir.children);
+	TEST_NULL(n->data.children->next);
+	TEST_EQUAL_UI(n->data.children->mode, S_IFDIR | 0755);
+	TEST_EQUAL_UI(n->data.children->uid, 0);
+	TEST_EQUAL_UI(n->data.children->gid, 0);
+	TEST_EQUAL_UI(n->data.children->link_count, 2);
+	TEST_STR_EQUAL(n->data.children->name, " test \"");
+	TEST_NULL(n->data.children->data.children);
 
 	n = n->next;
 	TEST_EQUAL_UI(n->mode, S_IFIFO | 0644);
