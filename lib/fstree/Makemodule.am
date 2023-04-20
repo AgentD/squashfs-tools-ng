@@ -1,7 +1,8 @@
 libfstree_a_SOURCES = include/fstree.h lib/fstree/src/fstree.c \
 	lib/fstree/src/post_process.c lib/fstree/src/get_path.c \
 	lib/fstree/src/mknode.c lib/fstree/src/hardlink.c \
-	lib/fstree/src/add_by_path.c lib/fstree/src/get_by_path.c
+	lib/fstree/src/add_by_path.c lib/fstree/src/get_by_path.c \
+	lib/fstree/src/stats.c
 
 noinst_LIBRARIES += libfstree.a
 

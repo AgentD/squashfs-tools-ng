@@ -11,7 +11,8 @@
 
 static void print_statistics(const sqfs_super_t *super,
 			     const sqfs_block_processor_t *blk,
-			     const sqfs_block_writer_t *wr)
+			     const sqfs_block_writer_t *wr,
+			     const fstree_stats_t *fs_stat)
 {
 	const sqfs_block_processor_stats_t *proc_stats;
 	sqfs_u64 bytes_written, blocks_written;
@@ -36,6 +37,14 @@ static void print_statistics(const sqfs_super_t *super,
 	printf("Data bytes read: %s\n", read_sz);
 	printf("Data bytes written: %s\n", written_sz);
 	printf("Data compression ratio: " PRI_SZ "%%\n", ratio);
+	fputc('\n', stdout);
+
+	printf("Files: " PRI_SZ "\n", fs_stat->num_files);
+	printf("Directories: " PRI_SZ "\n", fs_stat->num_dirs);
+	printf("IPC files: " PRI_SZ "\n", fs_stat->num_ipc);
+	printf("Device files: " PRI_SZ "\n", fs_stat->num_devices);
+	printf("Hard links: " PRI_SZ "\n", fs_stat->num_links);
+	printf("Soft links: " PRI_SZ "\n", fs_stat->num_slinks);
 	fputc('\n', stdout);
 
 	printf("Data blocks written: " PRI_U64 "\n", blocks_written);
@@ -169,8 +178,14 @@ int sqfs_writer_finish(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *cfg)
 		return -1;
 	}
 
-	if (!cfg->quiet)
-		print_statistics(&sqfs->super, sqfs->data, sqfs->blkwr);
+	if (!cfg->quiet) {
+		fstree_stats_t fs_stat;
+
+		fstree_collect_stats(&sqfs->fs, &fs_stat);
+
+		print_statistics(&sqfs->super, sqfs->data,
+				 sqfs->blkwr, &fs_stat);
+	}
 
 	return 0;
 }

@@ -21,6 +21,7 @@
 typedef struct fstree_defaults_t fstree_defaults_t;
 typedef struct tree_node_t tree_node_t;
 typedef struct fstree_t fstree_t;
+typedef struct fstree_stats_t fstree_stats_t;
 
 enum {
 	FLAG_DIR_CREATED_IMPLICITLY = 0x01,
@@ -78,6 +79,15 @@ struct tree_node_t {
 	} data;
 
 	sqfs_u8 payload[];
+};
+
+struct fstree_stats_t {
+	size_t num_ipc;
+	size_t num_links;
+	size_t num_slinks;
+	size_t num_files;
+	size_t num_devices;
+	size_t num_dirs;
 };
 
 /* Default settings for new nodes */
@@ -200,5 +210,7 @@ tree_node_t *fstree_add_hard_link(fstree_t *fs, const char *path,
   Returns 0 on success. On failure, errno is set.
  */
 int fstree_resolve_hard_links(fstree_t *fs);
+
+void fstree_collect_stats(const fstree_t *fs, fstree_stats_t *out);
 
 #endif /* FSTREE_H */
