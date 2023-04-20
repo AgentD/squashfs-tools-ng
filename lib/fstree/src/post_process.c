@@ -35,18 +35,19 @@ static int alloc_inode_num_dfs(fstree_t *fs, tree_node_t *root)
 	}
 
 	for (it = root->data.children; it != NULL; it = it->next) {
-		if (it->mode != FSTREE_MODE_HARD_LINK_RESOLVED) {
-			if (SZ_ADD_OV(fs->unique_inode_count, 1, &inum))
-				goto fail_ov;
+		if (S_ISLNK(it->mode) && (it->flags & FLAG_LINK_IS_HARD))
+			continue;
 
-			if ((sizeof(size_t) > sizeof(sqfs_u32)) &&
-			    inum > 0x0FFFFFFFFUL) {
-				goto fail_ov;
-			}
+		if (SZ_ADD_OV(fs->unique_inode_count, 1, &inum))
+			goto fail_ov;
 
-			it->inode_num = (sqfs_u32)inum;
-			fs->unique_inode_count = inum;
+		if ((sizeof(size_t) > sizeof(sqfs_u32)) &&
+		    inum > 0x0FFFFFFFFUL) {
+			goto fail_ov;
 		}
+
+		it->inode_num = (sqfs_u32)inum;
+		fs->unique_inode_count = inum;
 	}
 
 	return 0;
@@ -87,7 +88,7 @@ static tree_node_t *file_list_dfs(tree_node_t *n)
 
 static void map_inodes_dfs(fstree_t *fs, tree_node_t *n)
 {
-	if (n->mode == FSTREE_MODE_HARD_LINK_RESOLVED)
+	if (S_ISLNK(n->mode) && (n->flags & FLAG_LINK_IS_HARD))
 		return;
 
 	fs->inodes[n->inode_num - 1] = n;
@@ -110,7 +111,9 @@ static void reorder_hard_links(fstree_t *fs)
 		it = fs->inodes[i]->data.children;
 
 		for (; it != NULL; it = it->next) {
-			if (it->mode != FSTREE_MODE_HARD_LINK_RESOLVED)
+			if (!S_ISLNK(it->mode))
+				continue;
+			if (!(it->flags & FLAG_LINK_IS_HARD))
 				continue;
 
 			tgt = it->data.target_node;

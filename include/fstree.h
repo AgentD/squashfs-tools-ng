@@ -18,9 +18,6 @@
 #include "io/istream.h"
 #include "compat.h"
 
-#define FSTREE_MODE_HARD_LINK (0)
-#define FSTREE_MODE_HARD_LINK_RESOLVED (1)
-
 typedef struct fstree_defaults_t fstree_defaults_t;
 typedef struct tree_node_t tree_node_t;
 typedef struct fstree_t fstree_t;
@@ -28,6 +25,8 @@ typedef struct fstree_t fstree_t;
 enum {
 	FLAG_DIR_CREATED_IMPLICITLY = 0x01,
 	FLAG_FILE_ALREADY_MATCHED = 0x02,
+	FLAG_LINK_IS_HARD = 0x04,
+	FLAG_LINK_RESOVED = 0x08,
 };
 
 /* A node in a file system tree */

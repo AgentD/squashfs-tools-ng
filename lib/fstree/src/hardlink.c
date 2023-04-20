@@ -18,16 +18,17 @@ static int resolve_link(fstree_t *fs, tree_node_t *node)
 	tree_node_t *start = node;
 
 	for (;;) {
-		if (node->mode == FSTREE_MODE_HARD_LINK_RESOLVED) {
+		if (!S_ISLNK(node->mode) || !(node->flags & FLAG_LINK_IS_HARD))
+			break;
+
+		if (node->flags & FLAG_LINK_RESOVED) {
 			node = node->data.target_node;
-		} else if (node->mode == FSTREE_MODE_HARD_LINK) {
+		} else {
 			node = fstree_get_node_by_path(fs, fs->root,
 						       node->data.target,
 						       false, false);
 			if (node == NULL)
 				return -1;
-		} else {
-			break;
 		}
 
 		if (node == start) {
@@ -46,7 +47,7 @@ static int resolve_link(fstree_t *fs, tree_node_t *node)
 		return -1;
 	}
 
-	start->mode = FSTREE_MODE_HARD_LINK_RESOLVED;
+	start->flags |= FLAG_LINK_RESOVED;
 	start->data.target_node = node;
 
 	node->link_count++;
@@ -70,7 +71,7 @@ tree_node_t *fstree_add_hard_link(fstree_t *fs, const char *path,
 			return NULL;
 		}
 
-		n->mode = FSTREE_MODE_HARD_LINK;
+		n->flags |= FLAG_LINK_IS_HARD;
 	}
 
 	n->next_by_type = fs->links_unresolved;

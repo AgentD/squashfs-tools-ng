@@ -35,6 +35,7 @@ static sqfs_inode_generic_t *tree_node_to_inode(tree_node_t *node)
 		inode->data.ipc.nlink = node->link_count;
 		break;
 	case S_IFLNK:
+		assert(!(node->flags & FLAG_LINK_IS_HARD));
 		inode->base.type = SQFS_INODE_SLINK;
 		inode->data.slink.nlink = node->link_count;
 		inode->data.slink.target_size = extra;
@@ -71,7 +72,7 @@ static sqfs_inode_generic_t *write_dir_entries(const char *filename,
 		goto fail;
 
 	for (it = node->data.children; it != NULL; it = it->next) {
-		if (it->mode == FSTREE_MODE_HARD_LINK_RESOLVED) {
+		if (S_ISLNK(it->mode) && (it->flags & FLAG_LINK_IS_HARD)) {
 			tgt = it->data.target_node;
 		} else {
 			tgt = it;
