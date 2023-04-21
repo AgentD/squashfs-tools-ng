@@ -35,54 +35,41 @@ static void dir_destroy(sqfs_object_t *obj)
 static int dir_read_link(dir_iterator_t *base, char **out)
 {
 	unix_dir_iterator_t *it = (unix_dir_iterator_t *)base;
+	ssize_t ret;
 	size_t size;
 	char *str;
 
 	*out = NULL;
 
-	if (it->state != 0 || it->ent == NULL) {
-		fputs("[BUG] no entry loaded, cannot readlink\n", stderr);
-		return SQFS_ERROR_INTERNAL;
-	}
+	if (it->state < 0)
+		return it->state;
 
-	if (!S_ISLNK(it->sb.st_mode)) {
-		fprintf(stderr, "[BUG] %s is not a symlink, cannot readlink\n",
-			it->ent->d_name);
-		it->state = SQFS_ERROR_INTERNAL;
-		return SQFS_ERROR_INTERNAL;
-	}
+	if (it->state > 0 || it->ent == NULL)
+		return SQFS_ERROR_NO_ENTRY;
 
 	if ((sizeof(it->sb.st_size) > sizeof(size_t)) &&
 	    it->sb.st_size > SIZE_MAX) {
-		goto fail_ov;
+		return SQFS_ERROR_ALLOC;
 	}
 
 	if (SZ_ADD_OV((size_t)it->sb.st_size, 1, &size))
-		goto fail_ov;
+		return SQFS_ERROR_ALLOC;
 
 	str = calloc(1, size);
-	if (str == NULL) {
-		perror(it->ent->d_name);
-		it->state = SQFS_ERROR_ALLOC;
-		return it->state;
-	}
+	if (str == NULL)
+		return SQFS_ERROR_ALLOC;
 
-	if (readlinkat(dirfd(it->dir), it->ent->d_name,
-		       str, (size_t)it->sb.st_size) < 0) {
-		fprintf(stderr, "%s: readlink: %s\n", it->ent->d_name,
-			strerror(errno));
+	ret = readlinkat(dirfd(it->dir), it->ent->d_name,
+			 str, (size_t)it->sb.st_size);
+	if (ret < 0) {
 		free(str);
-		it->state = SQFS_ERROR_INTERNAL;
-		return it->state;
+		return SQFS_ERROR_IO;
 	}
 
-	str[it->sb.st_size] = '\0';
+	str[ret] = '\0';
 
 	*out = str;
-	return it->state;
-fail_ov:
-	fprintf(stderr, "%s: link target too long\n", it->ent->d_name);
-	return SQFS_ERROR_OVERFLOW;
+	return 0;
 }
 
 static int dir_next(dir_iterator_t *base, dir_entry_t **out)
@@ -100,8 +87,7 @@ static int dir_next(dir_iterator_t *base, dir_entry_t **out)
 
 	if (it->ent == NULL) {
 		if (errno != 0) {
-			perror("readdir");
-			it->state = SQFS_ERROR_INTERNAL;
+			it->state = SQFS_ERROR_IO;
 		} else {
 			it->state = 1;
 		}
@@ -109,9 +95,9 @@ static int dir_next(dir_iterator_t *base, dir_entry_t **out)
 		return it->state;
 	}
 
-	if (fstatat(dirfd(it->dir), it->ent->d_name, &it->sb, AT_SYMLINK_NOFOLLOW)) {
-		perror(it->ent->d_name);
-		it->state = SQFS_ERROR_INTERNAL;
+	if (fstatat(dirfd(it->dir), it->ent->d_name,
+		    &it->sb, AT_SYMLINK_NOFOLLOW)) {
+		it->state = SQFS_ERROR_IO;
 		return it->state;
 	}
 
@@ -119,7 +105,6 @@ static int dir_next(dir_iterator_t *base, dir_entry_t **out)
 
 	decoded = alloc_flex(sizeof(*decoded), 1, len + 1);
 	if (decoded == NULL) {
-		perror(it->ent->d_name);
 		it->state = SQFS_ERROR_ALLOC;
 		return it->state;
 	}

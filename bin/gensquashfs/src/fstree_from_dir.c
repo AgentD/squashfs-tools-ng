@@ -80,8 +80,10 @@ static int scan_dir(fstree_t *fs, tree_node_t *root, dir_iterator_t *dir,
 		int ret = dir->next(dir, &ent);
 		if (ret > 0)
 			break;
-		if (ret < 0)
+		if (ret < 0) {
+			sqfs_perror("readdir", NULL, ret);
 			return -1;
+		}
 
 		if (should_skip(dir, ent, flags)) {
 			free(ent);
@@ -89,8 +91,10 @@ static int scan_dir(fstree_t *fs, tree_node_t *root, dir_iterator_t *dir,
 		}
 
 		if (S_ISLNK(ent->mode)) {
-			if (dir->read_link(dir, &extra)) {
+			ret = dir->read_link(dir, &extra);
+			if (ret) {
 				free(ent);
+				sqfs_perror("readlink", ent->name, ret);
 				return -1;
 			}
 		}
