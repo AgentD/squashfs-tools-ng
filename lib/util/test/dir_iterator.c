@@ -144,25 +144,31 @@ int main(int argc, char **argv)
 	TEST_EQUAL_I(ret, 0);
 
 	ret = dir->next(dir, &ent[5]);
-	TEST_NULL(ent[5]);
+	TEST_NOT_NULL(ent[5]);
+	TEST_EQUAL_I(ret, 0);
+
+	ret = dir->next(dir, &dent);
+	TEST_NULL(dent);
 	TEST_ASSERT(ret > 0);
 
 	dir = sqfs_drop(dir);
 
-	qsort(ent, 5, sizeof(ent[0]), compare_entries);
+	qsort(ent, 6, sizeof(ent[0]), compare_entries);
 
 	TEST_STR_EQUAL(ent[0]->name, ".");
 	TEST_ASSERT(S_ISDIR(ent[0]->mode));
 	TEST_STR_EQUAL(ent[1]->name, "..");
 	TEST_ASSERT(S_ISDIR(ent[1]->mode));
-	TEST_STR_EQUAL(ent[2]->name, "file_b0");
-	TEST_ASSERT(S_ISREG(ent[2]->mode));
-	TEST_STR_EQUAL(ent[3]->name, "file_b1");
+	TEST_STR_EQUAL(ent[2]->name, "dirx");
+	TEST_ASSERT(S_ISDIR(ent[2]->mode));
+	TEST_STR_EQUAL(ent[3]->name, "file_b0");
 	TEST_ASSERT(S_ISREG(ent[3]->mode));
-	TEST_STR_EQUAL(ent[4]->name, "file_b2");
+	TEST_STR_EQUAL(ent[4]->name, "file_b1");
 	TEST_ASSERT(S_ISREG(ent[4]->mode));
+	TEST_STR_EQUAL(ent[5]->name, "file_b2");
+	TEST_ASSERT(S_ISREG(ent[5]->mode));
 
-	for (i = 0; i < 5; ++i)
+	for (i = 0; i < 6; ++i)
 		free(ent[i]);
 
 	/* scan first sub hierarchy */
@@ -288,7 +294,7 @@ int main(int argc, char **argv)
 		free(ent[i]);
 
 	/* sub iterator b */
-	for (i = 0; i < 5; ++i) {
+	for (i = 0; i < 6; ++i) {
 		ret = subb->next(subb, &ent[i]);
 		TEST_NOT_NULL(ent[0]);
 		TEST_EQUAL_I(ret, 0);
@@ -305,20 +311,22 @@ int main(int argc, char **argv)
 	TEST_ASSERT(ret > 0);
 	subb = sqfs_drop(subb);
 
-	qsort(ent, 5, sizeof(ent[0]), compare_entries);
+	qsort(ent, 6, sizeof(ent[0]), compare_entries);
 
 	TEST_STR_EQUAL(ent[0]->name, ".");
 	TEST_ASSERT(S_ISDIR(ent[0]->mode));
 	TEST_STR_EQUAL(ent[1]->name, "..");
 	TEST_ASSERT(S_ISDIR(ent[1]->mode));
-	TEST_STR_EQUAL(ent[2]->name, "file_b0");
-	TEST_ASSERT(S_ISREG(ent[2]->mode));
-	TEST_STR_EQUAL(ent[3]->name, "file_b1");
+	TEST_STR_EQUAL(ent[2]->name, "dirx");
+	TEST_ASSERT(S_ISDIR(ent[2]->mode));
+	TEST_STR_EQUAL(ent[3]->name, "file_b0");
 	TEST_ASSERT(S_ISREG(ent[3]->mode));
-	TEST_STR_EQUAL(ent[4]->name, "file_b2");
+	TEST_STR_EQUAL(ent[4]->name, "file_b1");
 	TEST_ASSERT(S_ISREG(ent[4]->mode));
+	TEST_STR_EQUAL(ent[5]->name, "file_b2");
+	TEST_ASSERT(S_ISREG(ent[5]->mode));
 
-	for (i = 0; i < 5; ++i)
+	for (i = 0; i < 6; ++i)
 		free(ent[i]);
 
 	/* sub iterator c */

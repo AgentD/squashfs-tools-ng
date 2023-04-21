@@ -2,14 +2,15 @@ libutil_a_SOURCES = include/util/util.h include/util/str_table.h \
 	include/util/hash_table.h include/util/test.h include/util/rbtree.h \
 	include/util/array.h include/util/threadpool.h \
 	include/util/w32threadwrap.h include/util/mempool.h \
-	include/util/dir_iterator.h \
+	include/util/dir_iterator.h include/util/dir_tree_iterator.h \
 	lib/util/src/str_table.c lib/util/src/alloc.c lib/util/src/rbtree.c \
 	lib/util/src/array.c lib/util/src/xxhash.c lib/util/src/hash_table.c \
 	lib/util/src/fast_urem_by_const.h lib/util/src/threadpool_serial.c \
 	lib/util/src/is_memory_zero.c lib/util/src/mkdir_p.c \
 	lib/util/src/canonicalize_name.c lib/util/src/filename_sane.c \
 	lib/util/src/source_date_epoch.c lib/util/src/file_cmp.c \
-	lib/util/src/hex_decode.c lib/util/src/base64_decode.c
+	lib/util/src/hex_decode.c lib/util/src/base64_decode.c \
+	lib/util/src/dir_tree_iterator.c
 libutil_a_CFLAGS = $(AM_CFLAGS)
 libutil_a_CPPFLAGS = $(AM_CPPFLAGS)
 
@@ -85,10 +86,16 @@ test_dir_iterator_LDADD = libutil.a libcompat.a
 test_dir_iterator_CPPFLAGS = $(AM_CPPFLAGS)
 test_dir_iterator_CPPFLAGS += -DTESTPATH=$(top_srcdir)/lib/util/test/testdir
 
+test_dir_tree_iterator_SOURCES = lib/util/test/dir_tree_iterator.c
+test_dir_tree_iterator_LDADD = libutil.a libcompat.a
+test_dir_tree_iterator_CPPFLAGS = $(AM_CPPFLAGS)
+test_dir_tree_iterator_CPPFLAGS += -DTESTPATH=$(top_srcdir)/lib/util/test/testdir
+
 LIBUTIL_TESTS = \
 	test_str_table test_rbtree test_xxhash test_threadpool test_ismemzero \
 	test_canonicalize_name test_filename_sane test_filename_sane_w32 \
-	test_sdate_epoch test_hex_decode test_base64_decode test_dir_iterator
+	test_sdate_epoch test_hex_decode test_base64_decode test_dir_iterator \
+	test_dir_tree_iterator
 
 check_PROGRAMS += $(LIBUTIL_TESTS)
 TESTS += $(LIBUTIL_TESTS)
