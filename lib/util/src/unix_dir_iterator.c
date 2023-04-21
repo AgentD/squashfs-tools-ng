@@ -45,7 +45,7 @@ static int dir_read_link(dir_iterator_t *base, char **out)
 		return SQFS_ERROR_INTERNAL;
 	}
 
-	if (S_ISLNK(it->sb.st_mode)) {
+	if (!S_ISLNK(it->sb.st_mode)) {
 		fprintf(stderr, "[BUG] %s is not a symlink, cannot readlink\n",
 			it->ent->d_name);
 		it->state = SQFS_ERROR_INTERNAL;
