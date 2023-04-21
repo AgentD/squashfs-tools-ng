@@ -16,19 +16,13 @@
 #define UNIX_EPOCH_ON_W32 11644473600UL
 #define W32_TICS_PER_SEC 10000000UL
 
-enum {
-	STATE_HAVE_ENTRY = 0,
-	STATE_NEED_ENTRY = 1,
-	STATE_ERROR = 2,
-	STATE_EOF = 3,
-};
-
 typedef struct {
 	dir_iterator_t base;
 
 	WIN32_FIND_DATAW ent;
 	HANDLE dirhnd;
 	int state;
+	bool is_first;
 } dir_iterator_win32_t;
 
 static sqfs_s64 w32time_to_unix(const FILETIME *ft)
@@ -60,44 +54,34 @@ static int dir_iterator_next(dir_iterator_t *it, dir_entry_t **out)
 	dir_entry_t *ent = NULL;
 	DWORD length;
 
-	*out = NULL;
-
-	switch (w32->state) {
-	case STATE_HAVE_ENTRY:
-		break;
-	case STATE_NEED_ENTRY:
+	if (w32->state == 0 && !w32->is_first) {
 		if (!FindNextFileW(w32->dirhnd, &w32->ent)) {
 			if (GetLastError() == ERROR_NO_MORE_FILES) {
-				w32->state = STATE_EOF;
-				return 1;
+				w32->state = 1;
+			} else {
+				w32->state = SQFS_ERROR_IO;
 			}
-			w32->state = STATE_ERROR;
-			return SQFS_ERROR_INTERNAL;
 		}
-
-		w32->state = STATE_HAVE_ENTRY;
-		break;
-	case STATE_EOF:
-		return 1;
-	default:
-		return SQFS_ERROR_INTERNAL;
 	}
 
-	/* allocate */
+	w32->is_first = false;
+
+	if (w32->state != 0)
+		goto out;
+
 	length = WideCharToMultiByte(CP_UTF8, 0, w32->ent.cFileName,
 				     -1, NULL, 0, NULL, NULL);
 	if (length <= 0) {
-		w32->state = STATE_ERROR;
-		return SQFS_ERROR_ALLOC;
+		w32->state = SQFS_ERROR_ALLOC;
+		goto out;
 	}
 
 	ent = alloc_flex(sizeof(*ent), 1, length + 1);
 	if (ent == NULL) {
-		w32->state = STATE_ERROR;
-		return SQFS_ERROR_ALLOC;
+		w32->state = SQFS_ERROR_ALLOC;
+		goto out;
 	}
 
-	/* convert and fill entry fields */
 	WideCharToMultiByte(CP_UTF8, 0, w32->ent.cFileName, -1,
 			    ent->name, length + 1, NULL, NULL);
 
@@ -108,11 +92,9 @@ static int dir_iterator_next(dir_iterator_t *it, dir_entry_t **out)
 	}
 
 	ent->mtime = w32time_to_unix(&(w32->ent.ftLastWriteTime));
-
-	/* return and update state */
+out:
 	*out = ent;
-	w32->state = STATE_NEED_ENTRY;
-	return 0;
+	return w32->state;
 }
 
 static void dir_iterator_destroy(sqfs_object_t *obj)
@@ -186,7 +168,8 @@ dir_iterator_t *dir_iterator_create(const char *path)
 	((dir_iterator_t *)it)->next = dir_iterator_next;
 	((dir_iterator_t *)it)->read_link = dir_iterator_read_link;
 
-	it->state = STATE_HAVE_ENTRY;
+	it->is_first = true;
+	it->state = 0;
 	it->dirhnd = dirhnd;
 	it->ent = first_entry;
 	return (dir_iterator_t *)it;
