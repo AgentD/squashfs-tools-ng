@@ -69,15 +69,9 @@ static void discard_node(tree_node_t *root, tree_node_t *n)
 	free(n);
 }
 
-static int scan_dir(fstree_t *fs, tree_node_t *root, const char *path,
+static int scan_dir(fstree_t *fs, tree_node_t *root, dir_iterator_t *dir,
 		    scan_node_callback cb, void *user, unsigned int flags)
 {
-	dir_iterator_t *dir;
-
-	dir = dir_iterator_create(path);
-	if (dir == NULL)
-		return -1;
-
 	for (;;) {
 		dir_entry_t *ent = NULL;
 		tree_node_t *n = NULL;
@@ -87,7 +81,7 @@ static int scan_dir(fstree_t *fs, tree_node_t *root, const char *path,
 		if (ret > 0)
 			break;
 		if (ret < 0)
-			goto fail;
+			return -1;
 
 		if (should_skip(dir, ent, flags)) {
 			free(ent);
@@ -128,7 +122,7 @@ static int scan_dir(fstree_t *fs, tree_node_t *root, const char *path,
 				perror("creating tree node");
 				free(extra);
 				free(ent);
-				goto fail;
+				return -1;
 			}
 
 			ret = (cb == NULL) ? 0 : cb(user, fs, n);
@@ -138,7 +132,7 @@ static int scan_dir(fstree_t *fs, tree_node_t *root, const char *path,
 		free(extra);
 
 		if (ret < 0)
-			goto fail;
+			return -1;
 
 		if (ret > 0) {
 			discard_node(root, n);
@@ -146,18 +140,22 @@ static int scan_dir(fstree_t *fs, tree_node_t *root, const char *path,
 		}
 
 		if (!(flags & DIR_SCAN_NO_RECURSION) && S_ISDIR(n->mode)) {
-			if (fstree_from_subdir(fs, n, path, n->name,
-					       cb, user, flags)) {
-				goto fail;
+			dir_iterator_t *sub;
+
+			ret = dir->open_subdir(dir, &sub);
+			if (ret != 0) {
+				sqfs_perror(n->name, "opening directory", ret);
+				return -1;
 			}
+
+			ret = scan_dir(fs, n, sub, cb, user, flags);
+			sqfs_drop(sub);
+			if (ret)
+				return -1;
 		}
 	}
 
-	sqfs_drop(dir);
 	return 0;
-fail:
-	sqfs_drop(dir);
-	return -1;
 }
 
 int fstree_from_subdir(fstree_t *fs, tree_node_t *root,
@@ -165,6 +163,7 @@ int fstree_from_subdir(fstree_t *fs, tree_node_t *root,
 		       scan_node_callback cb, void *user,
 		       unsigned int flags)
 {
+	dir_iterator_t *dir;
 	size_t plen, slen;
 	char *temp = NULL;
 	int ret;
@@ -195,8 +194,13 @@ int fstree_from_subdir(fstree_t *fs, tree_node_t *root,
 		path = temp;
 	}
 
-	ret = scan_dir(fs, root, path, cb, user, flags);
+	dir = dir_iterator_create(path);
 	free(temp);
+	if (dir == NULL)
+		return -1;
+
+	ret = scan_dir(fs, root, dir, cb, user, flags);
+	sqfs_drop(dir);
 	return ret;
 }
 

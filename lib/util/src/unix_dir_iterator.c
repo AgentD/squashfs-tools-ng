@@ -136,6 +136,54 @@ static int dir_next(dir_iterator_t *base, dir_entry_t **out)
 	return it->state;
 }
 
+static int dir_open_subdir(dir_iterator_t *base, dir_iterator_t **out)
+{
+	const unix_dir_iterator_t *it = (const unix_dir_iterator_t *)base;
+	unix_dir_iterator_t *sub = NULL;
+	int fd;
+
+	*out = NULL;
+
+	if (it->state < 0)
+		return it->state;
+
+	if (it->state > 0 || it->ent == NULL)
+		return SQFS_ERROR_NO_ENTRY;
+
+	fd = openat(dirfd(it->dir), it->ent->d_name, O_RDONLY | O_DIRECTORY);
+	if (fd < 0) {
+		if (errno == ENOTDIR)
+			return SQFS_ERROR_NOT_DIR;
+		return SQFS_ERROR_IO;
+	}
+
+	sub = calloc(1, sizeof(*sub));
+	if (sub == NULL)
+		goto fail_alloc;
+
+	sub->dir = fdopendir(fd);
+	if (sub->dir == NULL)
+		goto fail_alloc;
+
+	if (fstat(dirfd(sub->dir), &sub->sb)) {
+		free(sub);
+		return SQFS_ERROR_IO;
+	}
+
+	sqfs_object_init(sub, dir_destroy, NULL);
+	((dir_iterator_t *)sub)->dev = sub->sb.st_dev;
+	((dir_iterator_t *)sub)->next = dir_next;
+	((dir_iterator_t *)sub)->read_link = dir_read_link;
+	((dir_iterator_t *)sub)->open_subdir = dir_open_subdir;
+
+	*out = (dir_iterator_t *)sub;
+	return 0;
+fail_alloc:
+	free(sub);
+	close(fd);
+	return SQFS_ERROR_ALLOC;
+}
+
 dir_iterator_t *dir_iterator_create(const char *path)
 {
 	unix_dir_iterator_t *it = calloc(1, sizeof(*it));
@@ -165,6 +213,7 @@ dir_iterator_t *dir_iterator_create(const char *path)
 	((dir_iterator_t *)it)->dev = it->sb.st_dev;
 	((dir_iterator_t *)it)->next = dir_next;
 	((dir_iterator_t *)it)->read_link = dir_read_link;
+	((dir_iterator_t *)it)->open_subdir = dir_open_subdir;
 
 	return (dir_iterator_t *)it;
 }

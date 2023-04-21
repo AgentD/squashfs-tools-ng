@@ -29,6 +29,9 @@ typedef struct dir_iterator_t {
 		    dir_entry_t **out);
 
 	int (*read_link)(struct dir_iterator_t *it, char **out);
+
+	int (*open_subdir)(struct dir_iterator_t *it,
+			   struct dir_iterator_t **out);
 } dir_iterator_t;
 
 dir_iterator_t *dir_iterator_create(const char *path);
