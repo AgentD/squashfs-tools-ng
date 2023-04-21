@@ -23,6 +23,8 @@ typedef struct {
 	HANDLE dirhnd;
 	int state;
 	bool is_first;
+
+	WCHAR path[];
 } dir_iterator_win32_t;
 
 static sqfs_s64 w32time_to_unix(const FILETIME *ft)
@@ -107,33 +109,25 @@ static void dir_iterator_destroy(sqfs_object_t *obj)
 
 dir_iterator_t *dir_iterator_create(const char *path)
 {
-	WCHAR *wpath = NULL, *new = NULL;
-	WIN32_FIND_DATAW first_entry;
 	dir_iterator_win32_t *it;
 	size_t len, newlen;
-	HANDLE dirhnd;
+	WCHAR *wpath = NULL;
+	void *new = NULL;
 
 	/* convert path to UTF-16, append "\\*" */
 	wpath = path_to_windows(path);
-	if (wpath == NULL) {
-		fprintf(stderr, "%s: allocation failure.\n", path);
-		return NULL;
-	}
+	if (wpath == NULL)
+		goto fail_alloc;
 
-	for (len = 0; wpath[len] != '\0'; ++len)
-		;
-
+	len = wcslen(wpath);
 	newlen = len + 1;
 
 	if (len > 0 && wpath[len - 1] != '\\')
 		newlen += 1;
 
 	new = realloc(wpath, sizeof(wpath[0]) * (newlen + 1));
-	if (new == NULL) {
-		fprintf(stderr, "%s: allocation failure.\n", path);
-		free(wpath);
-		return NULL;
-	}
+	if (new == NULL)
+		goto fail_alloc;
 
 	wpath = new;
 
@@ -143,34 +137,36 @@ dir_iterator_t *dir_iterator_create(const char *path)
 	wpath[len++] = '*';
 	wpath[len++] = '\0';
 
-	/* get the directory handle AND the first entry */
-	dirhnd = FindFirstFileW(wpath, &first_entry);
+	/* create the sourrounding iterator structure */
+	new = realloc(wpath, sizeof(*it) + len * sizeof(wpath[0]));
+	if (new == NULL)
+		goto fail_alloc;
 
-	if (dirhnd == INVALID_HANDLE_VALUE) {
-		w32_perror(path);
-		free(wpath);
-		return NULL;
-	}
-
-	free(wpath);
+	it = new;
 	wpath = NULL;
+	memmove(it->path, new, len * sizeof(wpath[0]));
 
-	/* wrap it up */
-	it = calloc(1, sizeof(*it));
-	if (it == NULL) {
-		fprintf(stderr, "%s: allocation failure.\n", path);
-		FindClose(dirhnd);
-		return NULL;
-	}
-
+	/* initialize */
+	memset(it, 0, offsetof(dir_iterator_win32_t, path));
 	sqfs_object_init(it, dir_iterator_destroy, NULL);
 
 	((dir_iterator_t *)it)->next = dir_iterator_next;
 	((dir_iterator_t *)it)->read_link = dir_iterator_read_link;
-
 	it->is_first = true;
 	it->state = 0;
-	it->dirhnd = dirhnd;
-	it->ent = first_entry;
+
+	/* get the directory handle AND the first entry */
+	it->dirhnd = FindFirstFileW(it->path, &it->ent);
+
+	if (it->dirhnd == INVALID_HANDLE_VALUE) {
+		w32_perror(path);
+		free(it);
+		return NULL;
+	}
+
 	return (dir_iterator_t *)it;
+fail_alloc:
+	fprintf(stderr, "%s: allocation failure.\n", path);
+	free(wpath);
+	return NULL;
 }
