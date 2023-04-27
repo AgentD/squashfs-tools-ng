@@ -160,6 +160,10 @@ tree_node_t *fstree_mknode(tree_node_t *parent, const char *name,
 tree_node_t *fstree_add_generic(fstree_t *fs, const char *path,
 				const struct stat *sb, const char *extra);
 
+tree_node_t *fstree_add_generic_at(fstree_t *fs, tree_node_t *root,
+				   const char *path, const struct stat *sb,
+				   const char *extra);
+
 /*
   This function performs all the necessary post processing steps on the file
   system tree, i.e. recursively sorting all directory entries by name,

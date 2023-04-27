@@ -15,16 +15,23 @@
 tree_node_t *fstree_add_generic(fstree_t *fs, const char *path,
 				const struct stat *sb, const char *extra)
 {
+	return fstree_add_generic_at(fs, fs->root, path, sb, extra);
+}
+
+tree_node_t *fstree_add_generic_at(fstree_t *fs, tree_node_t *root,
+				   const char *path, const struct stat *sb,
+				   const char *extra)
+{
 	tree_node_t *child, *parent;
 	const char *name;
 
 	if (*path == '\0') {
-		child = fs->root;
+		child = root;
 		assert(child != NULL);
 		goto out;
 	}
 
-	parent = fstree_get_node_by_path(fs, fs->root, path, true, true);
+	parent = fstree_get_node_by_path(fs, root, path, true, true);
 	if (parent == NULL)
 		return NULL;
 

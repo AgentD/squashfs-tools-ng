@@ -15,9 +15,6 @@
 static bool should_skip(const dir_iterator_t *dir, const dir_entry_t *ent,
 			unsigned int flags)
 {
-	if (!strcmp(ent->name, "..") || !strcmp(ent->name, "."))
-		return true;
-
 	if ((flags & DIR_SCAN_ONE_FILESYSTEM) && ent->dev != dir->dev)
 		return true;
 
@@ -107,6 +104,7 @@ static int scan_dir(fstree_t *fs, tree_node_t *root, dir_iterator_t *dir,
 						    false, false);
 			if (n == NULL) {
 				free(ent);
+				dir_tree_iterator_skip(dir);
 				continue;
 			}
 
@@ -120,8 +118,8 @@ static int scan_dir(fstree_t *fs, tree_node_t *root, dir_iterator_t *dir,
 			sb.st_mode = ent->mode;
 			sb.st_mtime = clamp_timestamp(ent->mtime);
 
-			n = fstree_mknode(root, ent->name,
-					  strlen(ent->name), extra, &sb);
+			n = fstree_add_generic_at(fs, root, ent->name,
+						  &sb, extra);
 			if (n == NULL) {
 				perror("creating tree node");
 				free(extra);
@@ -139,24 +137,14 @@ static int scan_dir(fstree_t *fs, tree_node_t *root, dir_iterator_t *dir,
 			return -1;
 
 		if (ret > 0) {
-			discard_node(root, n);
+			if (S_ISDIR(n->mode))
+				dir_tree_iterator_skip(dir);
+			discard_node(n->parent, n);
 			continue;
 		}
 
-		if (!(flags & DIR_SCAN_NO_RECURSION) && S_ISDIR(n->mode)) {
-			dir_iterator_t *sub;
-
-			ret = dir->open_subdir(dir, &sub);
-			if (ret != 0) {
-				sqfs_perror(n->name, "opening directory", ret);
-				return -1;
-			}
-
-			ret = scan_dir(fs, n, sub, cb, user, flags);
-			sqfs_drop(sub);
-			if (ret)
-				return -1;
-		}
+		if ((flags & DIR_SCAN_NO_RECURSION) && S_ISDIR(n->mode))
+			dir_tree_iterator_skip(dir);
 	}
 
 	return 0;
@@ -198,7 +186,7 @@ int fstree_from_subdir(fstree_t *fs, tree_node_t *root,
 		path = temp;
 	}
 
-	dir = dir_iterator_create(path);
+	dir = dir_tree_iterator_create(path);
 	free(temp);
 	if (dir == NULL)
 		return -1;
