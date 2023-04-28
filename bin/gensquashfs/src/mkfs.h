@@ -130,9 +130,8 @@ int fstree_from_file_stream(fstree_t *fs, istream_t *file,
 
   Returns 0 on success, prints to stderr on failure.
  */
-int fstree_from_dir(fstree_t *fs, tree_node_t *root,
-		    const char *path, scan_node_callback cb, void *user,
-		    unsigned int flags);
+int fstree_from_dir(fstree_t *fs, tree_node_t *root, dir_iterator_t *dir,
+		    scan_node_callback cb, void *user);
 
 int fstree_sort_files(fstree_t *fs, istream_t *sortfile);
 

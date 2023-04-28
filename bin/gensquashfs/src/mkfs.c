@@ -166,10 +166,22 @@ int main(int argc, char **argv)
 	}
 
 	if (opt.infile == NULL) {
-		if (fstree_from_dir(&sqfs.fs, sqfs.fs.root, opt.packdir,
-				    NULL, NULL, opt.dirscan_flags)) {
+		dir_iterator_t *dir = NULL;
+		dir_tree_cfg_t cfg;
+		int ret;
+
+		memset(&cfg, 0, sizeof(cfg));
+		cfg.flags = opt.dirscan_flags;
+		cfg.def_mtime = sqfs.fs.defaults.mtime;
+
+		dir = dir_tree_iterator_create(opt.packdir, &cfg);
+		if (dir == NULL)
 			goto out;
-		}
+
+		ret = fstree_from_dir(&sqfs.fs, sqfs.fs.root, dir, NULL, NULL);
+		sqfs_drop(dir);
+		if (ret != 0)
+			goto out;
 	} else {
 		if (read_fstree(&sqfs.fs, &opt, sqfs.xwr, sehnd))
 			goto out;

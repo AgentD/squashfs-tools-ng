@@ -21,7 +21,7 @@ static sqfs_u32 clamp_timestamp(sqfs_s64 ts)
 	return ts;
 }
 
-static int scan_dir(fstree_t *fs, tree_node_t *root, dir_iterator_t *dir,
+int fstree_from_dir(fstree_t *fs, tree_node_t *root, dir_iterator_t *dir,
 		    scan_node_callback cb, void *user)
 {
 	for (;;) {
@@ -83,24 +83,4 @@ static int scan_dir(fstree_t *fs, tree_node_t *root, dir_iterator_t *dir,
 	}
 
 	return 0;
-}
-
-int fstree_from_dir(fstree_t *fs, tree_node_t *root, const char *path,
-		    scan_node_callback cb, void *user, unsigned int flags)
-{
-	dir_iterator_t *dir;
-	dir_tree_cfg_t cfg;
-	int ret;
-
-	memset(&cfg, 0, sizeof(cfg));
-	cfg.flags = flags;
-	cfg.def_mtime = fs->defaults.mtime;
-
-	dir = dir_tree_iterator_create(path, &cfg);
-	if (dir == NULL)
-		return -1;
-
-	ret = scan_dir(fs, root, dir, cb, user);
-	sqfs_drop(dir);
-	return ret;
 }

@@ -245,9 +245,11 @@ static int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 		      const char *extra)
 {
 	unsigned int scan_flags = 0, all_flags;
+	dir_iterator_t *dir = NULL;
 	struct glob_context ctx;
 	bool first_clear_flag;
 	size_t i, count, len;
+	dir_tree_cfg_t cfg;
 	tree_node_t *root;
 	int ret;
 
@@ -362,15 +364,13 @@ static int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 		extra = NULL;
 
 	/* do the scan */
+	memset(&cfg, 0, sizeof(cfg));
+	cfg.flags = scan_flags;
+	cfg.def_mtime = fs->defaults.mtime;
+
 	if (basepath == NULL) {
-		if (extra == NULL) {
-			ret = fstree_from_dir(fs, root, ".", glob_node_callback,
-					      &ctx, scan_flags);
-		} else {
-			ret = fstree_from_dir(fs, root, extra,
-					      glob_node_callback,
-					      &ctx, scan_flags);
-		}
+		dir = dir_tree_iterator_create(extra == NULL ? "." : extra,
+					       &cfg);
 	} else {
 		size_t plen = strlen(basepath);
 		size_t slen = strlen(extra);
@@ -379,18 +379,24 @@ static int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 		if (temp == NULL) {
 			fprintf(stderr, "%s: " PRI_SZ ": allocation failure.\n",
 				filename, line_num);
-			ret = -1;
 		} else {
 			memcpy(temp, basepath, plen);
 			temp[plen] = '/';
 			memcpy(temp + plen + 1, extra, slen);
 			temp[plen + 1 + slen] = '\0';
 
-			ret = fstree_from_dir(fs, root, temp,
-					      glob_node_callback, &ctx,
-					      scan_flags);
-			free(temp);
+			dir = dir_tree_iterator_create(temp, &cfg);
 		}
+
+		free(temp);
+	}
+
+	if (dir != NULL) {
+		ret = fstree_from_dir(fs, root, dir,
+				      glob_node_callback, &ctx);
+		sqfs_drop(dir);
+	} else {
+		ret = -1;
 	}
 
 	free(ctx.name_pattern);
