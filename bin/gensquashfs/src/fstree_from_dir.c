@@ -41,12 +41,13 @@ static void discard_node(tree_node_t *root, tree_node_t *n)
 }
 
 static int scan_dir(fstree_t *fs, tree_node_t *root, dir_iterator_t *dir,
-		    scan_node_callback cb, void *user, unsigned int flags)
+		    scan_node_callback cb, void *user)
 {
 	for (;;) {
 		dir_entry_t *ent = NULL;
 		tree_node_t *n = NULL;
 		char *extra = NULL;
+		struct stat sb;
 
 		int ret = dir->next(dir, &ent);
 		if (ret > 0)
@@ -54,6 +55,14 @@ static int scan_dir(fstree_t *fs, tree_node_t *root, dir_iterator_t *dir,
 		if (ret < 0) {
 			sqfs_perror("readdir", NULL, ret);
 			return -1;
+		}
+
+		n = fstree_get_node_by_path(fs, root, ent->name, false, true);
+		if (n == NULL) {
+			if (S_ISDIR(ent->mode))
+				dir_tree_iterator_skip(dir);
+			free(ent);
+			continue;
 		}
 
 		if (S_ISLNK(ent->mode)) {
@@ -65,39 +74,22 @@ static int scan_dir(fstree_t *fs, tree_node_t *root, dir_iterator_t *dir,
 			}
 		}
 
-		if (S_ISDIR(ent->mode) && (flags & DIR_SCAN_NO_DIR)) {
-			n = fstree_get_node_by_path(fs, root, ent->name,
-						    false, false);
-			if (n == NULL) {
-				free(ent);
-				dir_tree_iterator_skip(dir);
-				continue;
-			}
+		memset(&sb, 0, sizeof(sb));
+		sb.st_uid = ent->uid;
+		sb.st_gid = ent->gid;
+		sb.st_mode = ent->mode;
+		sb.st_mtime = clamp_timestamp(ent->mtime);
 
-			ret = 0;
-		} else {
-			struct stat sb;
+		n = fstree_add_generic_at(fs, root, ent->name, &sb, extra);
+		free(extra);
+		free(ent);
 
-			memset(&sb, 0, sizeof(sb));
-			sb.st_uid = ent->uid;
-			sb.st_gid = ent->gid;
-			sb.st_mode = ent->mode;
-			sb.st_mtime = clamp_timestamp(ent->mtime);
-
-			n = fstree_add_generic_at(fs, root, ent->name,
-						  &sb, extra);
-			if (n == NULL) {
-				perror("creating tree node");
-				free(extra);
-				free(ent);
-				return -1;
-			}
-
-			ret = (cb == NULL) ? 0 : cb(user, fs, n);
+		if (n == NULL) {
+			perror("creating tree node");
+			return -1;
 		}
 
-		free(ent);
-		free(extra);
+		ret = (cb == NULL) ? 0 : cb(user, fs, n);
 
 		if (ret < 0)
 			return -1;
@@ -120,14 +112,14 @@ int fstree_from_dir(fstree_t *fs, tree_node_t *root, const char *path,
 	int ret;
 
 	memset(&cfg, 0, sizeof(cfg));
-	cfg.flags = flags & ~(DIR_SCAN_NO_DIR);
+	cfg.flags = flags;
 	cfg.def_mtime = fs->defaults.mtime;
 
 	dir = dir_tree_iterator_create(path, &cfg);
 	if (dir == NULL)
 		return -1;
 
-	ret = scan_dir(fs, root, dir, cb, user, flags);
+	ret = scan_dir(fs, root, dir, cb, user);
 	sqfs_drop(dir);
 	return ret;
 }
