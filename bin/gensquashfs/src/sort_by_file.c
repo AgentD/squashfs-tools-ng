@@ -211,40 +211,32 @@ static void sort_file_list(fstree_t *fs)
 	tree_node_t *out = NULL, *out_last = NULL;
 
 	while (fs->files != NULL) {
-		sqfs_s64 lowest = fs->files->data.file.priority;
-		tree_node_t *it, *prev;
-
-		for (it = fs->files; it != NULL; it = it->next_by_type) {
-			if (it->data.file.priority < lowest)
-				lowest = it->data.file.priority;
-		}
-
-		it = fs->files;
-		prev = NULL;
+		tree_node_t *low = fs->files, *low_prev = NULL;
+		tree_node_t *it = low->next_by_type, *prev = low;
 
 		while (it != NULL) {
-			if (it->data.file.priority != lowest) {
-				prev = it;
-				it = it->next_by_type;
-				continue;
+			if (it->data.file.priority < low->data.file.priority) {
+				low = it;
+				low_prev = prev;
 			}
-
-			if (prev == NULL) {
-				fs->files = it->next_by_type;
-			} else {
-				prev->next_by_type = it->next_by_type;
-			}
-
-			if (out == NULL) {
-				out = it;
-			} else {
-				out_last->next_by_type = it;
-			}
-
-			out_last = it;
+			prev = it;
 			it = it->next_by_type;
-			out_last->next_by_type = NULL;
 		}
+
+		if (low_prev == NULL) {
+			fs->files = low->next_by_type;
+		} else {
+			low_prev->next_by_type = low->next_by_type;
+		}
+
+		if (out == NULL) {
+			out = low;
+		} else {
+			out_last->next_by_type = low;
+		}
+
+		out_last = low;
+		low->next_by_type = NULL;
 	}
 
 	fs->files = out;
