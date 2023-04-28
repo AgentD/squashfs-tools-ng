@@ -243,7 +243,7 @@ static void sort_file_list(fstree_t *fs)
 
 			out_last = it;
 			it = it->next_by_type;
-			out_last->next = NULL;
+			out_last->next_by_type = NULL;
 		}
 	}
 
