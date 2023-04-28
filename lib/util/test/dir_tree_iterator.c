@@ -23,11 +23,14 @@ int main(int argc, char **argv)
 {
 	dir_entry_t *ent[17];
 	dir_iterator_t *dir;
+	dir_tree_cfg_t cfg;
 	size_t i;
 	int ret;
 	(void)argc; (void)argv;
 
-	dir = dir_tree_iterator_create(TEST_PATH);
+	memset(&cfg, 0, sizeof(cfg));
+
+	dir = dir_tree_iterator_create(TEST_PATH, &cfg);
 	TEST_NOT_NULL(dir);
 
 	for (i = 0; i < 16; ++i) {
@@ -88,7 +91,7 @@ int main(int argc, char **argv)
 	/* retry with skipping */
 	printf("**********\n");
 
-	dir = dir_tree_iterator_create(TEST_PATH);
+	dir = dir_tree_iterator_create(TEST_PATH, &cfg);
 	TEST_NOT_NULL(dir);
 
 	for (i = 0; i < 13; ++i) {
@@ -146,7 +149,7 @@ int main(int argc, char **argv)
 	/* retry with skipping */
 	printf("**********\n");
 
-	dir = dir_tree_iterator_create(TEST_PATH);
+	dir = dir_tree_iterator_create(TEST_PATH, &cfg);
 	TEST_NOT_NULL(dir);
 
 	for (i = 0; i < 9; ++i) {

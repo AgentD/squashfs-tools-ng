@@ -91,11 +91,16 @@ test_dir_tree_iterator_LDADD = libutil.a libcompat.a
 test_dir_tree_iterator_CPPFLAGS = $(AM_CPPFLAGS)
 test_dir_tree_iterator_CPPFLAGS += -DTESTPATH=$(top_srcdir)/lib/util/test/testdir
 
+test_dir_tree_iterator2_SOURCES = lib/util/test/dir_tree_iterator2.c
+test_dir_tree_iterator2_LDADD = libutil.a libcompat.a
+test_dir_tree_iterator2_CPPFLAGS = $(AM_CPPFLAGS)
+test_dir_tree_iterator2_CPPFLAGS += -DTESTPATH=$(top_srcdir)/lib/util/test/testdir
+
 LIBUTIL_TESTS = \
 	test_str_table test_rbtree test_xxhash test_threadpool test_ismemzero \
 	test_canonicalize_name test_filename_sane test_filename_sane_w32 \
 	test_sdate_epoch test_hex_decode test_base64_decode test_dir_iterator \
-	test_dir_tree_iterator
+	test_dir_tree_iterator test_dir_tree_iterator2
 
 check_PROGRAMS += $(LIBUTIL_TESTS)
 TESTS += $(LIBUTIL_TESTS)

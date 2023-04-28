@@ -21,6 +21,7 @@ typedef struct dir_stack_t {
 typedef struct {
 	dir_iterator_t base;
 
+	dir_tree_cfg_t cfg;
 	int state;
 	dir_stack_t *top;
 } dir_tree_iterator_t;
@@ -50,6 +51,36 @@ static int push(dir_tree_iterator_t *it, const char *name, dir_iterator_t *dir)
 	return 0;
 }
 
+static bool should_skip(const dir_tree_iterator_t *dir, const dir_entry_t *ent)
+{
+	if (!strcmp(ent->name, ".") || !strcmp(ent->name, ".."))
+		return true;
+
+	if ((dir->cfg.flags & DIR_SCAN_ONE_FILESYSTEM)) {
+		if (ent->dev != ((const dir_iterator_t *)dir)->dev)
+			return true;
+	}
+
+	switch (ent->mode & S_IFMT) {
+	case S_IFSOCK:
+		return (dir->cfg.flags & DIR_SCAN_NO_SOCK) != 0;
+	case S_IFLNK:
+		return (dir->cfg.flags & DIR_SCAN_NO_SLINK) != 0;
+	case S_IFREG:
+		return (dir->cfg.flags & DIR_SCAN_NO_FILE) != 0;
+	case S_IFBLK:
+		return (dir->cfg.flags & DIR_SCAN_NO_BLK) != 0;
+	case S_IFCHR:
+		return (dir->cfg.flags & DIR_SCAN_NO_CHR) != 0;
+	case S_IFIFO:
+		return (dir->cfg.flags & DIR_SCAN_NO_FIFO) != 0;
+	default:
+		break;
+	}
+
+	return false;
+}
+
 /*****************************************************************************/
 
 static void destroy(sqfs_object_t *obj)
@@ -65,13 +96,17 @@ static void destroy(sqfs_object_t *obj)
 static int next(dir_iterator_t *base, dir_entry_t **out)
 {
 	dir_tree_iterator_t *it = (dir_tree_iterator_t *)base;
-	dir_iterator_t *sub = NULL;
-	dir_entry_t *ent = NULL;
-	dir_stack_t *sit = NULL;
-	size_t plen = 0;
+	dir_iterator_t *sub;
+	dir_entry_t *ent;
+	dir_stack_t *sit;
+	size_t plen;
 	int ret;
-
+retry:
 	*out = NULL;
+	sub = NULL;
+	ent = NULL;
+	sit = NULL;
+	plen = 0;
 
 	if (it->state != 0)
 		return it->state;
@@ -91,7 +126,7 @@ static int next(dir_iterator_t *base, dir_entry_t **out)
 			continue;
 		}
 
-		if (!strcmp(ent->name, ".") || !strcmp(ent->name, "..")) {
+		if (should_skip(it, ent)) {
 			free(ent);
 			ent = NULL;
 			continue;
@@ -130,15 +165,26 @@ static int next(dir_iterator_t *base, dir_entry_t **out)
 		}
 	}
 
-	if (S_ISDIR(ent->mode)) {
-		ret = it->top->dir->open_subdir(it->top->dir, &sub);
-		if (ret != 0)
-			goto fail;
+	if (!(it->cfg.flags & DIR_SCAN_KEEP_TIME))
+		ent->mtime = it->cfg.def_mtime;
 
-		ret = push(it, ent->name + plen, sub);
-		sqfs_drop(sub);
-		if (ret != 0)
-			goto fail;
+	if (S_ISDIR(ent->mode)) {
+		if (!(it->cfg.flags & DIR_SCAN_NO_RECURSION)) {
+			ret = it->top->dir->open_subdir(it->top->dir, &sub);
+			if (ret != 0)
+				goto fail;
+
+			ret = push(it, ent->name + plen, sub);
+			sqfs_drop(sub);
+			if (ret != 0)
+				goto fail;
+		}
+
+		if (it->cfg.flags & DIR_SCAN_NO_DIR) {
+			free(ent);
+			ent = NULL;
+			goto retry;
+		}
 	}
 
 	*out = ent;
@@ -173,7 +219,8 @@ static int open_subdir(dir_iterator_t *base, dir_iterator_t **out)
 	return it->top->dir->open_subdir(it->top->dir, out);
 }
 
-dir_iterator_t *dir_tree_iterator_create(const char *path)
+dir_iterator_t *dir_tree_iterator_create(const char *path,
+					 const dir_tree_cfg_t *cfg)
 {
 	dir_tree_iterator_t *it = calloc(1, sizeof(*it));
 	dir_iterator_t *dir;
@@ -183,6 +230,8 @@ dir_iterator_t *dir_tree_iterator_create(const char *path)
 		perror(path);
 		return NULL;
 	}
+
+	it->cfg = *cfg;
 
 	dir = dir_iterator_create(path);
 	if (dir == NULL)

@@ -12,32 +12,6 @@
 #include <string.h>
 #include <errno.h>
 
-static bool should_skip(const dir_iterator_t *dir, const dir_entry_t *ent,
-			unsigned int flags)
-{
-	if ((flags & DIR_SCAN_ONE_FILESYSTEM) && ent->dev != dir->dev)
-		return true;
-
-	switch (ent->mode & S_IFMT) {
-	case S_IFSOCK:
-		return (flags & DIR_SCAN_NO_SOCK) != 0;
-	case S_IFLNK:
-		return (flags & DIR_SCAN_NO_SLINK) != 0;
-	case S_IFREG:
-		return (flags & DIR_SCAN_NO_FILE) != 0;
-	case S_IFBLK:
-		return (flags & DIR_SCAN_NO_BLK) != 0;
-	case S_IFCHR:
-		return (flags & DIR_SCAN_NO_CHR) != 0;
-	case S_IFIFO:
-		return (flags & DIR_SCAN_NO_FIFO) != 0;
-	default:
-		break;
-	}
-
-	return false;
-}
-
 static sqfs_u32 clamp_timestamp(sqfs_s64 ts)
 {
 	if (ts < 0)
@@ -82,11 +56,6 @@ static int scan_dir(fstree_t *fs, tree_node_t *root, dir_iterator_t *dir,
 			return -1;
 		}
 
-		if (should_skip(dir, ent, flags)) {
-			free(ent);
-			continue;
-		}
-
 		if (S_ISLNK(ent->mode)) {
 			ret = dir->read_link(dir, &extra);
 			if (ret) {
@@ -95,9 +64,6 @@ static int scan_dir(fstree_t *fs, tree_node_t *root, dir_iterator_t *dir,
 				return -1;
 			}
 		}
-
-		if (!(flags & DIR_SCAN_KEEP_TIME))
-			ent->mtime = fs->defaults.mtime;
 
 		if (S_ISDIR(ent->mode) && (flags & DIR_SCAN_NO_DIR)) {
 			n = fstree_get_node_by_path(fs, root, ent->name,
@@ -140,11 +106,7 @@ static int scan_dir(fstree_t *fs, tree_node_t *root, dir_iterator_t *dir,
 			if (S_ISDIR(n->mode))
 				dir_tree_iterator_skip(dir);
 			discard_node(n->parent, n);
-			continue;
 		}
-
-		if ((flags & DIR_SCAN_NO_RECURSION) && S_ISDIR(n->mode))
-			dir_tree_iterator_skip(dir);
 	}
 
 	return 0;
@@ -156,6 +118,7 @@ int fstree_from_subdir(fstree_t *fs, tree_node_t *root,
 		       unsigned int flags)
 {
 	dir_iterator_t *dir;
+	dir_tree_cfg_t cfg;
 	size_t plen, slen;
 	char *temp = NULL;
 	int ret;
@@ -186,7 +149,11 @@ int fstree_from_subdir(fstree_t *fs, tree_node_t *root,
 		path = temp;
 	}
 
-	dir = dir_tree_iterator_create(path);
+	memset(&cfg, 0, sizeof(cfg));
+	cfg.flags = flags & ~(DIR_SCAN_NO_DIR);
+	cfg.def_mtime = fs->defaults.mtime;
+
+	dir = dir_tree_iterator_create(path, &cfg);
 	free(temp);
 	if (dir == NULL)
 		return -1;
