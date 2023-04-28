@@ -26,6 +26,7 @@ enum {
 typedef struct {
 	sqfs_u32 flags;
 	sqfs_s64 def_mtime;
+	const char *prefix;
 } dir_tree_cfg_t;
 
 dir_iterator_t *dir_tree_iterator_create(const char *path,

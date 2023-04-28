@@ -165,6 +165,22 @@ retry:
 		}
 	}
 
+	if (it->cfg.prefix != NULL) {
+		size_t slen = strlen(ent->name), len = strlen(it->cfg.prefix);
+		void *new = realloc(ent, sizeof(*ent) + len + 1 + slen + 1);
+
+		if (new == NULL) {
+			ret = SQFS_ERROR_ALLOC;
+			goto fail;
+		}
+
+		ent = new;
+		memmove(ent->name + len + 1, ent->name, slen + 1);
+		memcpy(ent->name, it->cfg.prefix, len);
+		ent->name[len] = '/';
+		plen += len + 1;
+	}
+
 	if (!(it->cfg.flags & DIR_SCAN_KEEP_TIME))
 		ent->mtime = it->cfg.def_mtime;
 
