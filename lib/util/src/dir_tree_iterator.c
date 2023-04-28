@@ -53,6 +53,8 @@ static int push(dir_tree_iterator_t *it, const char *name, dir_iterator_t *dir)
 
 static bool should_skip(const dir_tree_iterator_t *dir, const dir_entry_t *ent)
 {
+	unsigned int type_mask;
+
 	if (!strcmp(ent->name, ".") || !strcmp(ent->name, ".."))
 		return true;
 
@@ -62,23 +64,60 @@ static bool should_skip(const dir_tree_iterator_t *dir, const dir_entry_t *ent)
 	}
 
 	switch (ent->mode & S_IFMT) {
-	case S_IFSOCK:
-		return (dir->cfg.flags & DIR_SCAN_NO_SOCK) != 0;
-	case S_IFLNK:
-		return (dir->cfg.flags & DIR_SCAN_NO_SLINK) != 0;
-	case S_IFREG:
-		return (dir->cfg.flags & DIR_SCAN_NO_FILE) != 0;
-	case S_IFBLK:
-		return (dir->cfg.flags & DIR_SCAN_NO_BLK) != 0;
-	case S_IFCHR:
-		return (dir->cfg.flags & DIR_SCAN_NO_CHR) != 0;
-	case S_IFIFO:
-		return (dir->cfg.flags & DIR_SCAN_NO_FIFO) != 0;
-	default:
-		break;
+	case S_IFSOCK: type_mask = DIR_SCAN_NO_SOCK;  break;
+	case S_IFLNK:  type_mask = DIR_SCAN_NO_SLINK; break;
+	case S_IFREG:  type_mask = DIR_SCAN_NO_FILE;  break;
+	case S_IFBLK:  type_mask = DIR_SCAN_NO_BLK;   break;
+	case S_IFCHR:  type_mask = DIR_SCAN_NO_CHR;   break;
+	case S_IFIFO:  type_mask = DIR_SCAN_NO_FIFO;  break;
+	default:       type_mask = 0;                 break;
 	}
 
-	return false;
+	return (dir->cfg.flags & type_mask) != 0;
+}
+
+static dir_entry_t *expand_path(const dir_tree_iterator_t *it, dir_entry_t *ent)
+{
+	size_t slen = strlen(ent->name) + 1, plen = 0;
+	dir_stack_t *sit;
+	char *dst;
+
+	for (sit = it->top; sit != NULL; sit = sit->next) {
+		if (sit->name[0] != '\0')
+			plen += strlen(sit->name) + 1;
+	}
+
+	if (it->cfg.prefix != NULL && it->cfg.prefix[0] != '\0')
+		plen += strlen(it->cfg.prefix) + 1;
+
+	if (plen > 0) {
+		void *new = realloc(ent, sizeof(*ent) + plen + slen);
+		if (new == NULL) {
+			free(ent);
+			return NULL;
+		}
+
+		ent = new;
+		memmove(ent->name + plen, ent->name, slen);
+		dst = ent->name + plen;
+
+		for (sit = it->top; sit != NULL; sit = sit->next) {
+			size_t len = strlen(sit->name);
+			if (len > 0) {
+				*(--dst) = '/';
+				dst -= len;
+				memcpy(dst, sit->name, len);
+			}
+		}
+
+		if (it->cfg.prefix != NULL && it->cfg.prefix[0] != '\0') {
+			size_t len = strlen(it->cfg.prefix);
+			memcpy(ent->name, it->cfg.prefix, len);
+			ent->name[len] = '/';
+		}
+	}
+
+	return ent;
 }
 
 /*****************************************************************************/
@@ -98,15 +137,11 @@ static int next(dir_iterator_t *base, dir_entry_t **out)
 	dir_tree_iterator_t *it = (dir_tree_iterator_t *)base;
 	dir_iterator_t *sub;
 	dir_entry_t *ent;
-	dir_stack_t *sit;
-	size_t plen;
 	int ret;
 retry:
 	*out = NULL;
 	sub = NULL;
 	ent = NULL;
-	sit = NULL;
-	plen = 0;
 
 	if (it->state != 0)
 		return it->state;
@@ -135,50 +170,10 @@ retry:
 		break;
 	}
 
-	for (sit = it->top; sit != NULL; sit = sit->next) {
-		size_t len = strlen(sit->name);
-		if (len > 0)
-			plen += len + 1;
-	}
-
-	if (plen > 0) {
-		size_t slen = strlen(ent->name) + 1;
-		void *new = realloc(ent, sizeof(*ent) + plen + slen);
-		char *dst;
-
-		if (new == NULL) {
-			ret = SQFS_ERROR_ALLOC;
-			goto fail;
-		}
-
-		ent = new;
-		memmove(ent->name + plen, ent->name, slen);
-		dst = ent->name + plen;
-
-		for (sit = it->top; sit != NULL; sit = sit->next) {
-			size_t len = strlen(sit->name);
-			if (len > 0) {
-				*(--dst) = '/';
-				dst -= len;
-				memcpy(dst, sit->name, len);
-			}
-		}
-	}
-
-	if (it->cfg.prefix != NULL) {
-		size_t slen = strlen(ent->name), len = strlen(it->cfg.prefix);
-		void *new = realloc(ent, sizeof(*ent) + len + 1 + slen + 1);
-
-		if (new == NULL) {
-			ret = SQFS_ERROR_ALLOC;
-			goto fail;
-		}
-
-		ent = new;
-		memmove(ent->name + len + 1, ent->name, slen + 1);
-		memcpy(ent->name, it->cfg.prefix, len);
-		ent->name[len] = '/';
-		plen += len + 1;
+	ent = expand_path(it, ent);
+	if (ent == NULL) {
+		it->state = SQFS_ERROR_ALLOC;
+		return it->state;
 	}
 
 	if (!(it->cfg.flags & DIR_SCAN_KEEP_TIME))
@@ -186,11 +181,14 @@ retry:
 
 	if (S_ISDIR(ent->mode)) {
 		if (!(it->cfg.flags & DIR_SCAN_NO_RECURSION)) {
+			const char *name = strrchr(ent->name, '/');
+			name = (name == NULL) ? ent->name : (name + 1);
+
 			ret = it->top->dir->open_subdir(it->top->dir, &sub);
 			if (ret != 0)
 				goto fail;
 
-			ret = push(it, ent->name + plen, sub);
+			ret = push(it, name, sub);
 			sqfs_drop(sub);
 			if (ret != 0)
 				goto fail;
@@ -198,7 +196,6 @@ retry:
 
 		if (it->cfg.flags & DIR_SCAN_NO_DIR) {
 			free(ent);
-			ent = NULL;
 			goto retry;
 		}
 	}
