@@ -232,6 +232,12 @@ static int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 		return -1;
 	}
 
+	if (!S_ISDIR(root->mode)) {
+		fprintf(stderr, "%s: " PRI_SZ ": %s is not a directoy!\n",
+			filename, line_num, path);
+		return -1;
+	}
+
 	/* process options */
 	first_clear_flag = true;
 
@@ -333,9 +339,25 @@ static int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 					      &ctx, scan_flags);
 		}
 	} else {
-		ret = fstree_from_subdir(fs, root, basepath, extra,
-					 glob_node_callback, &ctx,
-					 scan_flags);
+		size_t plen = strlen(basepath);
+		size_t slen = strlen(extra);
+		char *temp = calloc(1, plen + 1 + slen + 1);
+
+		if (temp == NULL) {
+			fprintf(stderr, "%s: " PRI_SZ ": allocation failure.\n",
+				filename, line_num);
+			ret = -1;
+		} else {
+			memcpy(temp, basepath, plen);
+			temp[plen] = '/';
+			memcpy(temp + plen + 1, extra, slen);
+			temp[plen + 1 + slen] = '\0';
+
+			ret = fstree_from_dir(fs, root, temp,
+					      glob_node_callback, &ctx,
+					      scan_flags);
+			free(temp);
+		}
 	}
 
 	free(ctx.name_pattern);

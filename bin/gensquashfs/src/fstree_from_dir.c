@@ -112,60 +112,22 @@ static int scan_dir(fstree_t *fs, tree_node_t *root, dir_iterator_t *dir,
 	return 0;
 }
 
-int fstree_from_subdir(fstree_t *fs, tree_node_t *root,
-		       const char *path, const char *subdir,
-		       scan_node_callback cb, void *user,
-		       unsigned int flags)
+int fstree_from_dir(fstree_t *fs, tree_node_t *root, const char *path,
+		    scan_node_callback cb, void *user, unsigned int flags)
 {
 	dir_iterator_t *dir;
 	dir_tree_cfg_t cfg;
-	size_t plen, slen;
-	char *temp = NULL;
 	int ret;
-
-	if (!S_ISDIR(root->mode)) {
-		fprintf(stderr,
-			"scanning %s/%s into %s: target is not a directory\n",
-			path, subdir == NULL ? "" : subdir, root->name);
-		return -1;
-	}
-
-	plen = strlen(path);
-	slen = subdir == NULL ? 0 : strlen(subdir);
-
-	if (slen > 0) {
-		temp = calloc(1, plen + 1 + slen + 1);
-		if (temp == NULL) {
-			fprintf(stderr, "%s/%s: allocation failure.\n",
-				path, subdir);
-			return -1;
-		}
-
-		memcpy(temp, path, plen);
-		temp[plen] = '/';
-		memcpy(temp + plen + 1, subdir, slen);
-		temp[plen + 1 + slen] = '\0';
-
-		path = temp;
-	}
 
 	memset(&cfg, 0, sizeof(cfg));
 	cfg.flags = flags & ~(DIR_SCAN_NO_DIR);
 	cfg.def_mtime = fs->defaults.mtime;
 
 	dir = dir_tree_iterator_create(path, &cfg);
-	free(temp);
 	if (dir == NULL)
 		return -1;
 
 	ret = scan_dir(fs, root, dir, cb, user, flags);
 	sqfs_drop(dir);
 	return ret;
-}
-
-int fstree_from_dir(fstree_t *fs, tree_node_t *root,
-		    const char *path, scan_node_callback cb,
-		    void *user, unsigned int flags)
-{
-	return fstree_from_subdir(fs, root, path, NULL, cb, user, flags);
 }

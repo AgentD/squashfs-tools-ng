@@ -43,8 +43,8 @@
 #include <ctype.h>
 
 /*
-  Optionally used by fstree_from_dir and fstree_from_subdir to
-  execute custom actions for each discovered node.
+  Optionally used by fstree_from_dir to execute custom actions for
+  each discovered node.
 
   If it returns a value > 0, the new node is discarded, if < 0, scanning is
   aborted and returns a failure status.
@@ -132,15 +132,6 @@ int fstree_from_file_stream(fstree_t *fs, istream_t *file,
 int fstree_from_dir(fstree_t *fs, tree_node_t *root,
 		    const char *path, scan_node_callback cb, void *user,
 		    unsigned int flags);
-
-/*
-  Same as fstree_from_dir, but scans a sub-directory inside the specified path.
-
-  Returns 0 on success, prints to stderr on failure.
- */
-int fstree_from_subdir(fstree_t *fs, tree_node_t *root,
-		       const char *path, const char *subdir,
-		       scan_node_callback cb, void *user, unsigned int flags);
 
 int fstree_sort_files(fstree_t *fs, istream_t *sortfile);
 
