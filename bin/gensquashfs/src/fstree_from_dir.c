@@ -21,25 +21,6 @@ static sqfs_u32 clamp_timestamp(sqfs_s64 ts)
 	return ts;
 }
 
-static void discard_node(tree_node_t *root, tree_node_t *n)
-{
-	tree_node_t *it;
-
-	if (n == root->data.children) {
-		root->data.children = n->next;
-	} else {
-		it = root->data.children;
-
-		while (it != NULL && it->next != n)
-			it = it->next;
-
-		if (it != NULL)
-			it->next = n->next;
-	}
-
-	free(n);
-}
-
 static int scan_dir(fstree_t *fs, tree_node_t *root, dir_iterator_t *dir,
 		    scan_node_callback cb, void *user)
 {
@@ -58,7 +39,18 @@ static int scan_dir(fstree_t *fs, tree_node_t *root, dir_iterator_t *dir,
 		}
 
 		n = fstree_get_node_by_path(fs, root, ent->name, false, true);
-		if (n == NULL) {
+		if (n == NULL)
+			ret = 1;
+
+		if (ret == 0 && cb != NULL)
+			ret = cb(user, root, ent);
+
+		if (ret < 0) {
+			free(ent);
+			return -1;
+		}
+
+		if (ret > 0) {
 			if (S_ISDIR(ent->mode))
 				dir_tree_iterator_skip(dir);
 			free(ent);
@@ -87,17 +79,6 @@ static int scan_dir(fstree_t *fs, tree_node_t *root, dir_iterator_t *dir,
 		if (n == NULL) {
 			perror("creating tree node");
 			return -1;
-		}
-
-		ret = (cb == NULL) ? 0 : cb(user, fs, n);
-
-		if (ret < 0)
-			return -1;
-
-		if (ret > 0) {
-			if (S_ISDIR(n->mode))
-				dir_tree_iterator_skip(dir);
-			discard_node(n->parent, n);
 		}
 	}
 

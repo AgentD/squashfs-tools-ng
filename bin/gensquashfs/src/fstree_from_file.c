@@ -126,41 +126,70 @@ static int add_hard_link(fstree_t *fs, const char *filename, size_t line_num,
 	return 0;
 }
 
-static int glob_node_callback(void *user, fstree_t *fs, tree_node_t *node)
+static char *full_path(tree_node_t *root, dir_entry_t *ent)
+{
+	char *path = NULL, *new = NULL;
+	size_t plen = 0, slen = 0;
+
+	if (root->parent == NULL)
+		return strdup(ent->name);
+
+	path = fstree_get_path(root);
+	if (path == NULL)
+		return NULL;
+
+	if (canonicalize_name(path) != 0)
+		goto fail;
+
+	plen = strlen(path);
+	slen = strlen(ent->name) + 1;
+
+	if (plen == 0) {
+		free(path);
+		return strdup(ent->name);
+	}
+
+	new = realloc(path, plen + 1 + slen + 1);
+	if (new == NULL)
+		goto fail;
+	path = new;
+
+	path[plen] = '/';
+	memcpy(path + plen + 1, ent->name, slen + 1);
+	return path;
+fail:
+	free(path);
+	return NULL;
+}
+
+static int glob_node_callback(void *user, tree_node_t *root, dir_entry_t *ent)
 {
 	struct glob_context *ctx = user;
-	char *path;
 	int ret;
-	(void)fs;
 
 	if (!(ctx->glob_flags & GLOB_MODE_FROM_SRC)) {
-		node->mode &= ~(07777);
-		node->mode |= ctx->basic->st_mode & 07777;
+		ent->mode &= ~(07777);
+		ent->mode |= ctx->basic->st_mode & 07777;
 	}
 
 	if (!(ctx->glob_flags & GLOB_UID_FROM_SRC))
-		node->uid = ctx->basic->st_uid;
+		ent->uid = ctx->basic->st_uid;
 
 	if (!(ctx->glob_flags & GLOB_GID_FROM_SRC))
-		node->gid = ctx->basic->st_gid;
+		ent->gid = ctx->basic->st_gid;
 
 	if (ctx->name_pattern != NULL) {
 		if (ctx->glob_flags & GLOB_FLAG_PATH) {
-			path = fstree_get_path(node);
-			if (path == NULL) {
-				fprintf(stderr, "%s: " PRI_SZ ": %s\n",
-					ctx->filename, ctx->line_num,
-					strerror(errno));
-				return -1;
-			}
-
-			ret = canonicalize_name(path);
-			assert(ret == 0);
-
+			char *path = full_path(root, ent);
+			if (path == NULL)
+				goto fail_alloc;
 			ret = fnmatch(ctx->name_pattern, path, FNM_PATHNAME);
 			free(path);
 		} else {
-			ret = fnmatch(ctx->name_pattern, node->name, 0);
+			const char *name = strrchr(ent->name, '/');
+			name = (name == NULL) ? ent->name : (name + 1);
+
+			ret = fnmatch(ctx->name_pattern, name, 0);
 		}
 
 		if (ret != 0)
@@ -168,6 +197,10 @@ static int glob_node_callback(void *user, fstree_t *fs, tree_node_t *node)
 	}
 
 	return 0;
+fail_alloc:
+	fprintf(stderr, "%s: " PRI_SZ ": allocation failure\n",
+		ctx->filename, ctx->line_num);
+	return -1;
 }
 
 static size_t name_string_length(const char *str)

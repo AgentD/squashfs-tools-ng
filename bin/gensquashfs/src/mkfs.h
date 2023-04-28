@@ -49,7 +49,8 @@
   If it returns a value > 0, the new node is discarded, if < 0, scanning is
   aborted and returns a failure status.
  */
-typedef int (*scan_node_callback)(void *user, fstree_t *fs, tree_node_t *node);
+typedef int (*scan_node_callback)(void *user, tree_node_t *root,
+				  dir_entry_t *ent);
 
 typedef struct {
 	sqfs_writer_cfg_t cfg;
