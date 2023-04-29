@@ -25,6 +25,7 @@ enum {
 
 	DIR_SCAN_ONE_FILESYSTEM = 0x1000,
 	DIR_SCAN_NO_RECURSION = 0x2000,
+	DIR_SCAN_MATCH_FULL_PATH = 0x4000,
 };
 
 typedef struct {
@@ -34,6 +35,7 @@ typedef struct {
 	sqfs_u32 def_mode;
 	sqfs_s64 def_mtime;
 	const char *prefix;
+	const char *name_pattern;
 } dir_tree_cfg_t;
 
 dir_iterator_t *dir_tree_iterator_create(const char *path,

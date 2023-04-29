@@ -216,6 +216,23 @@ retry:
 		}
 	}
 
+	if (it->cfg.name_pattern != NULL) {
+		if (it->cfg.flags & DIR_SCAN_MATCH_FULL_PATH) {
+			ret = fnmatch(it->cfg.name_pattern,
+				      ent->name, FNM_PATHNAME);
+		} else {
+			const char *name = strrchr(ent->name, '/');
+			name = (name == NULL) ? ent->name : (name + 1);
+
+			ret = fnmatch(it->cfg.name_pattern, name, 0);
+		}
+
+		if (ret != 0) {
+			free(ent);
+			goto retry;
+		}
+	}
+
 	*out = ent;
 	return it->state;
 fail:

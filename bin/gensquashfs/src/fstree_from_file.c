@@ -17,15 +17,6 @@
 #include <errno.h>
 #include <ctype.h>
 
-struct glob_context {
-	unsigned int glob_flags;
-	char *name_pattern;
-};
-
-enum {
-	GLOB_FLAG_PATH = 0x00010000,
-};
-
 static const struct {
 	const char *name;
 	unsigned int clear_flag;
@@ -118,29 +109,6 @@ static int add_hard_link(fstree_t *fs, const char *filename, size_t line_num,
 	return 0;
 }
 
-static int glob_node_callback(void *user, dir_entry_t *ent)
-{
-	struct glob_context *ctx = user;
-	int ret;
-
-	if (ctx->name_pattern != NULL) {
-		if (ctx->glob_flags & GLOB_FLAG_PATH) {
-			ret = fnmatch(ctx->name_pattern,
-				      ent->name, FNM_PATHNAME);
-		} else {
-			const char *name = strrchr(ent->name, '/');
-			name = (name == NULL) ? ent->name : (name + 1);
-
-			ret = fnmatch(ctx->name_pattern, name, 0);
-		}
-
-		if (ret != 0)
-			return 1;
-	}
-
-	return 0;
-}
-
 static size_t name_string_length(const char *str)
 {
 	size_t len = 0;
@@ -182,18 +150,14 @@ static int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 		      const char *basepath, unsigned int glob_flags,
 		      const char *extra)
 {
+	char *name_pattern = NULL, *prefix = NULL;
 	unsigned int scan_flags = 0, all_flags;
 	dir_iterator_t *dir = NULL;
-	struct glob_context ctx;
 	bool first_clear_flag;
 	size_t i, count, len;
 	dir_tree_cfg_t cfg;
 	tree_node_t *root;
-	char *prefix;
 	int ret;
-
-	memset(&ctx, 0, sizeof(ctx));
-	ctx.glob_flags = glob_flags;
 
 	/* fetch the actual target node */
 	root = fstree_get_node_by_path(fs, fs->root, path, true, false);
@@ -258,14 +222,14 @@ static int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 
 			len = name_string_length(extra);
 
-			free(ctx.name_pattern);
-			ctx.name_pattern = strndup(extra, len);
+			free(name_pattern);
+			name_pattern = strndup(extra, len);
 			extra += len;
 
 			while (isspace(*extra))
 				++extra;
 
-			quote_remove(ctx.name_pattern);
+			quote_remove(name_pattern);
 			continue;
 		}
 
@@ -275,15 +239,15 @@ static int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 
 			len = name_string_length(extra);
 
-			free(ctx.name_pattern);
-			ctx.name_pattern = strndup(extra, len);
+			free(name_pattern);
+			name_pattern = strndup(extra, len);
 			extra += len;
 
 			while (isspace(*extra))
 				++extra;
 
-			quote_remove(ctx.name_pattern);
-			ctx.glob_flags |= GLOB_FLAG_PATH;
+			quote_remove(name_pattern);
+			glob_flags |= DIR_SCAN_MATCH_FULL_PATH;
 			continue;
 		}
 
@@ -297,7 +261,7 @@ static int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 
 			fprintf(stderr, "%s: " PRI_SZ ": unknown option.\n",
 				filename, line_num);
-			free(ctx.name_pattern);
+			free(name_pattern);
 			free(prefix);
 			return -1;
 		} else {
@@ -316,6 +280,7 @@ static int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 	cfg.def_gid = basic->st_gid;
 	cfg.def_mode = basic->st_mode;
 	cfg.prefix = prefix;
+	cfg.name_pattern = name_pattern;
 
 	if (basepath == NULL) {
 		dir = dir_tree_iterator_create(extra == NULL ? "." : extra,
@@ -341,13 +306,13 @@ static int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 	}
 
 	if (dir != NULL) {
-		ret = fstree_from_dir(fs, dir, glob_node_callback, &ctx);
+		ret = fstree_from_dir(fs, dir);
 		sqfs_drop(dir);
 	} else {
 		ret = -1;
 	}
 
-	free(ctx.name_pattern);
+	free(name_pattern);
 	free(prefix);
 	return ret;
 }

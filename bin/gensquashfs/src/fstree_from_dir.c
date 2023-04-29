@@ -21,8 +21,7 @@ static sqfs_u32 clamp_timestamp(sqfs_s64 ts)
 	return ts;
 }
 
-int fstree_from_dir(fstree_t *fs, dir_iterator_t *dir,
-		    scan_node_callback cb, void *user)
+int fstree_from_dir(fstree_t *fs, dir_iterator_t *dir)
 {
 	for (;;) {
 		dir_entry_t *ent = NULL;
@@ -40,18 +39,7 @@ int fstree_from_dir(fstree_t *fs, dir_iterator_t *dir,
 
 		n = fstree_get_node_by_path(fs, fs->root, ent->name,
 					    false, true);
-		if (n == NULL)
-			ret = 1;
-
-		if (ret == 0 && cb != NULL)
-			ret = cb(user, ent);
-
-		if (ret < 0) {
-			free(ent);
-			return -1;
-		}
-
-		if (ret > 0) {
+		if (n == NULL) {
 			if (S_ISDIR(ent->mode))
 				dir_tree_iterator_skip(dir);
 			free(ent);
