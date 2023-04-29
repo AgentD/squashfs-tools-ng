@@ -171,7 +171,8 @@ int main(int argc, char **argv)
 		int ret;
 
 		memset(&cfg, 0, sizeof(cfg));
-		cfg.flags = opt.dirscan_flags;
+		cfg.flags = opt.dirscan_flags | DIR_SCAN_KEEP_UID |
+			DIR_SCAN_KEEP_GID | DIR_SCAN_KEEP_MODE;
 		cfg.def_mtime = sqfs.fs.defaults.mtime;
 
 		dir = dir_tree_iterator_create(opt.packdir, &cfg);

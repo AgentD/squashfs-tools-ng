@@ -120,6 +120,23 @@ static dir_entry_t *expand_path(const dir_tree_iterator_t *it, dir_entry_t *ent)
 	return ent;
 }
 
+static void apply_changes(const dir_tree_iterator_t *it, dir_entry_t *ent)
+{
+	if (!(it->cfg.flags & DIR_SCAN_KEEP_TIME))
+		ent->mtime = it->cfg.def_mtime;
+
+	if (!(it->cfg.flags & DIR_SCAN_KEEP_UID))
+		ent->uid = it->cfg.def_uid;
+
+	if (!(it->cfg.flags & DIR_SCAN_KEEP_GID))
+		ent->gid = it->cfg.def_gid;
+
+	if (!(it->cfg.flags & DIR_SCAN_KEEP_MODE)) {
+		ent->mode &= ~(07777);
+		ent->mode |= it->cfg.def_mode & 07777;
+	}
+}
+
 /*****************************************************************************/
 
 static void destroy(sqfs_object_t *obj)
@@ -176,8 +193,7 @@ retry:
 		return it->state;
 	}
 
-	if (!(it->cfg.flags & DIR_SCAN_KEEP_TIME))
-		ent->mtime = it->cfg.def_mtime;
+	apply_changes(it, ent);
 
 	if (S_ISDIR(ent->mode)) {
 		if (!(it->cfg.flags & DIR_SCAN_NO_RECURSION)) {

@@ -19,12 +19,19 @@ enum {
 	DIR_SCAN_NO_FIFO = 0x0040,
 
 	DIR_SCAN_KEEP_TIME = 0x0100,
-	DIR_SCAN_ONE_FILESYSTEM = 0x0200,
-	DIR_SCAN_NO_RECURSION = 0x0400,
+	DIR_SCAN_KEEP_UID = 0x0200,
+	DIR_SCAN_KEEP_GID = 0x0400,
+	DIR_SCAN_KEEP_MODE = 0x0800,
+
+	DIR_SCAN_ONE_FILESYSTEM = 0x1000,
+	DIR_SCAN_NO_RECURSION = 0x2000,
 };
 
 typedef struct {
 	sqfs_u32 flags;
+	sqfs_u32 def_uid;
+	sqfs_u32 def_gid;
+	sqfs_u32 def_mode;
 	sqfs_s64 def_mtime;
 	const char *prefix;
 } dir_tree_cfg_t;

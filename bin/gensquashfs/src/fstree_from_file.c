@@ -21,17 +21,13 @@ struct glob_context {
 	const char *filename;
 	size_t line_num;
 
-	struct stat *basic;
 	unsigned int glob_flags;
 
 	char *name_pattern;
 };
 
 enum {
-	GLOB_MODE_FROM_SRC = 0x01,
-	GLOB_UID_FROM_SRC = 0x02,
-	GLOB_GID_FROM_SRC = 0x04,
-	GLOB_FLAG_PATH = 0x08,
+	GLOB_FLAG_PATH = 0x00010000,
 };
 
 static const struct {
@@ -167,17 +163,6 @@ static int glob_node_callback(void *user, tree_node_t *root, dir_entry_t *ent)
 	struct glob_context *ctx = user;
 	int ret;
 
-	if (!(ctx->glob_flags & GLOB_MODE_FROM_SRC)) {
-		ent->mode &= ~(07777);
-		ent->mode |= ctx->basic->st_mode & 07777;
-	}
-
-	if (!(ctx->glob_flags & GLOB_UID_FROM_SRC))
-		ent->uid = ctx->basic->st_uid;
-
-	if (!(ctx->glob_flags & GLOB_GID_FROM_SRC))
-		ent->gid = ctx->basic->st_gid;
-
 	if (ctx->name_pattern != NULL) {
 		if (ctx->glob_flags & GLOB_FLAG_PATH) {
 			char *path = full_path(root, ent);
@@ -256,7 +241,6 @@ static int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 	memset(&ctx, 0, sizeof(ctx));
 	ctx.filename = filename;
 	ctx.line_num = line_num;
-	ctx.basic = basic;
 	ctx.glob_flags = glob_flags;
 
 	/* fetch the actual target node */
@@ -365,8 +349,11 @@ static int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 
 	/* do the scan */
 	memset(&cfg, 0, sizeof(cfg));
-	cfg.flags = scan_flags;
-	cfg.def_mtime = fs->defaults.mtime;
+	cfg.flags = scan_flags | glob_flags;
+	cfg.def_mtime = basic->st_mtime;
+	cfg.def_uid = basic->st_uid;
+	cfg.def_gid = basic->st_gid;
+	cfg.def_mode = basic->st_mode;
 
 	if (basepath == NULL) {
 		dir = dir_tree_iterator_create(extra == NULL ? "." : extra,
@@ -530,7 +517,7 @@ static int handle_line(fstree_t *fs, const char *filename,
 	if (cb->is_glob && *line == '*') {
 		++line;
 		mode = 0;
-		glob_flags |= GLOB_MODE_FROM_SRC;
+		glob_flags |= DIR_SCAN_KEEP_MODE;
 	} else {
 		if ((line = read_u32(line, &mode, 8)) == NULL || mode > 07777)
 			goto fail_mode;
@@ -542,7 +529,7 @@ static int handle_line(fstree_t *fs, const char *filename,
 	if (cb->is_glob && *line == '*') {
 		++line;
 		uid = 0;
-		glob_flags |= GLOB_UID_FROM_SRC;
+		glob_flags |= DIR_SCAN_KEEP_UID;
 	} else {
 		if ((line = read_u32(line, &uid, 10)) == NULL)
 			goto fail_uid_gid;
@@ -554,7 +541,7 @@ static int handle_line(fstree_t *fs, const char *filename,
 	if (cb->is_glob && *line == '*') {
 		++line;
 		gid = 0;
-		glob_flags |= GLOB_GID_FROM_SRC;
+		glob_flags |= DIR_SCAN_KEEP_GID;
 	} else {
 		if ((line = read_u32(line, &gid, 10)) == NULL)
 			goto fail_uid_gid;
