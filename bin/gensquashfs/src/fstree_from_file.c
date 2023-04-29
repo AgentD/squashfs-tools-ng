@@ -18,11 +18,7 @@
 #include <ctype.h>
 
 struct glob_context {
-	const char *filename;
-	size_t line_num;
-
 	unsigned int glob_flags;
-
 	char *name_pattern;
 };
 
@@ -122,54 +118,15 @@ static int add_hard_link(fstree_t *fs, const char *filename, size_t line_num,
 	return 0;
 }
 
-static char *full_path(tree_node_t *root, dir_entry_t *ent)
-{
-	char *path = NULL, *new = NULL;
-	size_t plen = 0, slen = 0;
-
-	if (root->parent == NULL)
-		return strdup(ent->name);
-
-	path = fstree_get_path(root);
-	if (path == NULL)
-		return NULL;
-
-	if (canonicalize_name(path) != 0)
-		goto fail;
-
-	plen = strlen(path);
-	slen = strlen(ent->name) + 1;
-
-	if (plen == 0) {
-		free(path);
-		return strdup(ent->name);
-	}
-
-	new = realloc(path, plen + 1 + slen + 1);
-	if (new == NULL)
-		goto fail;
-	path = new;
-
-	path[plen] = '/';
-	memcpy(path + plen + 1, ent->name, slen + 1);
-	return path;
-fail:
-	free(path);
-	return NULL;
-}
-
-static int glob_node_callback(void *user, tree_node_t *root, dir_entry_t *ent)
+static int glob_node_callback(void *user, dir_entry_t *ent)
 {
 	struct glob_context *ctx = user;
 	int ret;
 
 	if (ctx->name_pattern != NULL) {
 		if (ctx->glob_flags & GLOB_FLAG_PATH) {
-			char *path = full_path(root, ent);
-			if (path == NULL)
-				goto fail_alloc;
-			ret = fnmatch(ctx->name_pattern, path, FNM_PATHNAME);
-			free(path);
+			ret = fnmatch(ctx->name_pattern,
+				      ent->name, FNM_PATHNAME);
 		} else {
 			const char *name = strrchr(ent->name, '/');
 			name = (name == NULL) ? ent->name : (name + 1);
@@ -182,10 +139,6 @@ static int glob_node_callback(void *user, tree_node_t *root, dir_entry_t *ent)
 	}
 
 	return 0;
-fail_alloc:
-	fprintf(stderr, "%s: " PRI_SZ ": allocation failure\n",
-		ctx->filename, ctx->line_num);
-	return -1;
 }
 
 static size_t name_string_length(const char *str)
@@ -236,11 +189,10 @@ static int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 	size_t i, count, len;
 	dir_tree_cfg_t cfg;
 	tree_node_t *root;
+	char *prefix;
 	int ret;
 
 	memset(&ctx, 0, sizeof(ctx));
-	ctx.filename = filename;
-	ctx.line_num = line_num;
 	ctx.glob_flags = glob_flags;
 
 	/* fetch the actual target node */
@@ -254,6 +206,14 @@ static int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 	if (!S_ISDIR(root->mode)) {
 		fprintf(stderr, "%s: " PRI_SZ ": %s is not a directoy!\n",
 			filename, line_num, path);
+		return -1;
+	}
+
+	prefix = fstree_get_path(root);
+	if (canonicalize_name(prefix) != 0) {
+		fprintf(stderr, "%s: " PRI_SZ ": error cannonicalizing `%s`!\n",
+			filename, line_num, prefix);
+		free(prefix);
 		return -1;
 	}
 
@@ -338,6 +298,7 @@ static int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 			fprintf(stderr, "%s: " PRI_SZ ": unknown option.\n",
 				filename, line_num);
 			free(ctx.name_pattern);
+			free(prefix);
 			return -1;
 		} else {
 			break;
@@ -354,6 +315,7 @@ static int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 	cfg.def_uid = basic->st_uid;
 	cfg.def_gid = basic->st_gid;
 	cfg.def_mode = basic->st_mode;
+	cfg.prefix = prefix;
 
 	if (basepath == NULL) {
 		dir = dir_tree_iterator_create(extra == NULL ? "." : extra,
@@ -379,14 +341,14 @@ static int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 	}
 
 	if (dir != NULL) {
-		ret = fstree_from_dir(fs, root, dir,
-				      glob_node_callback, &ctx);
+		ret = fstree_from_dir(fs, dir, glob_node_callback, &ctx);
 		sqfs_drop(dir);
 	} else {
 		ret = -1;
 	}
 
 	free(ctx.name_pattern);
+	free(prefix);
 	return ret;
 }
 

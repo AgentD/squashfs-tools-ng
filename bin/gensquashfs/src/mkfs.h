@@ -49,8 +49,7 @@
   If it returns a value > 0, the new node is discarded, if < 0, scanning is
   aborted and returns a failure status.
  */
-typedef int (*scan_node_callback)(void *user, tree_node_t *root,
-				  dir_entry_t *ent);
+typedef int (*scan_node_callback)(void *user, dir_entry_t *ent);
 
 typedef struct {
 	sqfs_writer_cfg_t cfg;
@@ -130,7 +129,7 @@ int fstree_from_file_stream(fstree_t *fs, istream_t *file,
 
   Returns 0 on success, prints to stderr on failure.
  */
-int fstree_from_dir(fstree_t *fs, tree_node_t *root, dir_iterator_t *dir,
+int fstree_from_dir(fstree_t *fs, dir_iterator_t *dir,
 		    scan_node_callback cb, void *user);
 
 int fstree_sort_files(fstree_t *fs, istream_t *sortfile);
