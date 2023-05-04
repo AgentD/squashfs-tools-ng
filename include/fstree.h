@@ -127,22 +127,6 @@ int fstree_init(fstree_t *fs, const fstree_defaults_t *defaults);
 void fstree_cleanup(fstree_t *fs);
 
 /*
-  Create a tree node from a struct stat, node name and extra data.
-
-  For symlinks, the extra part is interpreted as target. For regular files, it
-  is interpreted as input path (can be NULL). The name doesn't have to be null
-  terminated, a length has to be specified.
-
-  This function does not print anything to stderr, instead it sets an
-  appropriate errno value.
-
-  The resulting node can be freed with a single free() call.
-*/
-tree_node_t *fstree_mknode(tree_node_t *parent, const char *name,
-			   size_t name_len, const char *extra,
-			   const struct stat *sb);
-
-/*
   Add a node to an fstree at a specific path.
 
   If some components of the path don't exist, they are created as directories

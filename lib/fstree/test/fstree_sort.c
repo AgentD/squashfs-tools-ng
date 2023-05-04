@@ -28,25 +28,25 @@ int main(int argc, char **argv)
 	ret = fstree_init(&fs, &fsd);
 	TEST_EQUAL_I(ret, 0);
 
-	a = fstree_mknode(fs.root, "a", 1, NULL, &sb);
+	a = fstree_add_generic(&fs, "a", &sb, NULL);
 	TEST_NOT_NULL(a);
 	TEST_ASSERT(fs.root->data.children == a);
 	TEST_NULL(a->next);
 
-	b = fstree_mknode(fs.root, "b", 1, NULL, &sb);
+	b = fstree_add_generic(&fs, "b", &sb, NULL);
 	TEST_NOT_NULL(a);
 	TEST_ASSERT(fs.root->data.children == a);
 	TEST_ASSERT(a->next == b);
 	TEST_NULL(b->next);
 
-	c = fstree_mknode(fs.root, "c", 1, NULL, &sb);
+	c = fstree_add_generic(&fs, "c", &sb, NULL);
 	TEST_NOT_NULL(c);
 	TEST_ASSERT(fs.root->data.children == a);
 	TEST_ASSERT(a->next == b);
 	TEST_ASSERT(b->next == c);
 	TEST_NULL(c->next);
 
-	d = fstree_mknode(fs.root, "d", 1, NULL, &sb);
+	d = fstree_add_generic(&fs, "d", &sb, NULL);
 	TEST_NOT_NULL(d);
 	TEST_ASSERT(fs.root->data.children == a);
 	TEST_ASSERT(a->next == b);
@@ -60,25 +60,25 @@ int main(int argc, char **argv)
 	ret = fstree_init(&fs, &fsd);
 	TEST_EQUAL_I(ret, 0);
 
-	d = fstree_mknode(fs.root, "d", 1, NULL, &sb);
+	d = fstree_add_generic(&fs, "d", &sb, NULL);
 	TEST_NOT_NULL(d);
 	TEST_ASSERT(fs.root->data.children == d);
 	TEST_NULL(d->next);
 
-	c = fstree_mknode(fs.root, "c", 1, NULL, &sb);
+	c = fstree_add_generic(&fs, "c", &sb, NULL);
 	TEST_NOT_NULL(c);
 	TEST_ASSERT(fs.root->data.children == c);
 	TEST_ASSERT(c->next == d);
 	TEST_NULL(d->next);
 
-	b = fstree_mknode(fs.root, "b", 1, NULL, &sb);
+	b = fstree_add_generic(&fs, "b", &sb, NULL);
 	TEST_NOT_NULL(b);
 	TEST_ASSERT(fs.root->data.children == b);
 	TEST_ASSERT(b->next == c);
 	TEST_ASSERT(c->next == d);
 	TEST_NULL(d->next);
 
-	a = fstree_mknode(fs.root, "a", 1, NULL, &sb);
+	a = fstree_add_generic(&fs, "a", &sb, NULL);
 	TEST_NOT_NULL(a);
 	TEST_ASSERT(fs.root->data.children == a);
 	TEST_ASSERT(a->next == b);
