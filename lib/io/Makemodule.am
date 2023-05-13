@@ -1,22 +1,26 @@
 libio_a_SOURCES = include/io/istream.h include/io/ostream.h include/io/xfrm.h \
 	include/io/file.h include/io/std.h \
+	include/io/dir_iterator.h include/io/dir_tree_iterator.h \
 	lib/io/src/internal.h lib/io/src/ostream.c \
 	lib/io/src/istream.c lib/io/src/get_line.c lib/io/src/xfrm/ostream.c \
-	lib/io/src/xfrm/istream.c
+	lib/io/src/xfrm/istream.c lib/io/src/dir_tree_iterator.c
 libio_a_CFLAGS = $(AM_CFLAGS) $(ZLIB_CFLAGS) $(XZ_CFLAGS)
 libio_a_CFLAGS += $(ZSTD_CFLAGS) $(BZIP2_CFLAGS)
 
 if WINDOWS
 libio_a_SOURCES += lib/io/src/win32/ostream.c lib/io/src/win32/istream.c
+libio_a_SOURCES += lib/io/src/win32/dir_iterator.c
 libio_a_CFLAGS += -DWINVER=0x0600 -D_WIN32_WINNT=0x0600
 else
 libio_a_SOURCES += lib/io/src/unix/ostream.c lib/io/src/unix/istream.c
+libio_a_SOURCES += lib/io/src/unix/dir_iterator.c
 endif
 
 noinst_LIBRARIES += libio.a
 
 LIBIO_TESTS = test_get_line test_sparse_fb test_istream_read \
-	test_istream_skip test_stream_splice
+	test_istream_skip test_stream_splice test_dir_iterator \
+	test_dir_tree_iterator test_dir_tree_iterator2 test_dir_tree_iterator3
 
 test_get_line_SOURCES = lib/io/test/get_line.c
 test_get_line_LDADD = libio.a libcompat.a
@@ -34,6 +38,26 @@ test_istream_skip_LDADD = libio.a libutil.a libcompat.a
 
 test_stream_splice_SOURCES = lib/io/test/stream_splice.c
 test_stream_splice_LDADD = libio.a libutil.a libcompat.a
+
+test_dir_iterator_SOURCES = lib/io/test/dir_iterator.c
+test_dir_iterator_LDADD = libio.a libutil.a libcompat.a
+test_dir_iterator_CPPFLAGS = $(AM_CPPFLAGS)
+test_dir_iterator_CPPFLAGS += -DTESTPATH=$(top_srcdir)/lib/io/test/testdir
+
+test_dir_tree_iterator_SOURCES = lib/io/test/dir_tree_iterator.c
+test_dir_tree_iterator_LDADD = libio.a libutil.a libcompat.a
+test_dir_tree_iterator_CPPFLAGS = $(AM_CPPFLAGS)
+test_dir_tree_iterator_CPPFLAGS += -DTESTPATH=$(top_srcdir)/lib/io/test/testdir
+
+test_dir_tree_iterator2_SOURCES = lib/io/test/dir_tree_iterator2.c
+test_dir_tree_iterator2_LDADD = libio.a libutil.a libcompat.a
+test_dir_tree_iterator2_CPPFLAGS = $(AM_CPPFLAGS)
+test_dir_tree_iterator2_CPPFLAGS += -DTESTPATH=$(top_srcdir)/lib/io/test/testdir
+
+test_dir_tree_iterator3_SOURCES = lib/io/test/dir_tree_iterator3.c
+test_dir_tree_iterator3_LDADD = libio.a libutil.a libcompat.a
+test_dir_tree_iterator3_CPPFLAGS = $(AM_CPPFLAGS)
+test_dir_tree_iterator3_CPPFLAGS += -DTESTPATH=$(top_srcdir)/lib/io/test/testdir
 
 if WITH_XZ
 test_io_xfrm_xz_SOURCES = lib/io/test/xfrm.c
@@ -73,3 +97,4 @@ check_PROGRAMS += $(LIBIO_TESTS)
 TESTS += $(LIBIO_TESTS)
 
 EXTRA_DIST += $(top_srcdir)/lib/io/test/get_line.txt
+EXTRA_DIST += $(top_srcdir)/lib/io/test/testdir

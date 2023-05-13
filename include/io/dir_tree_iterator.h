@@ -4,10 +4,10 @@
  *
  * Copyright (C) 2023 David Oberhollenzer <goliath@infraroot.at>
  */
-#ifndef UTIL_DIR_TREE_ITERATOR_H
-#define UTIL_DIR_TREE_ITERATOR_H
+#ifndef IO_DIR_TREE_ITERATOR_H
+#define IO_DIR_TREE_ITERATOR_H
 
-#include "util/dir_iterator.h"
+#include "io/dir_iterator.h"
 
 enum {
 	DIR_SCAN_NO_SOCK = 0x0001,
@@ -38,9 +38,17 @@ typedef struct {
 	const char *name_pattern;
 } dir_tree_cfg_t;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 dir_iterator_t *dir_tree_iterator_create(const char *path,
 					 const dir_tree_cfg_t *cfg);
 
 void dir_tree_iterator_skip(dir_iterator_t *it);
 
-#endif /* UTIL_DIR_TREE_ITERATOR_H */
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* IO_DIR_TREE_ITERATOR_H */

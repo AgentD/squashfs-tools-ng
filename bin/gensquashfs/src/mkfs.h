@@ -12,7 +12,7 @@
 
 #include "common.h"
 #include "fstree.h"
-#include "util/dir_tree_iterator.h"
+#include "io/dir_tree_iterator.h"
 #include "util/util.h"
 #include "io/file.h"
 

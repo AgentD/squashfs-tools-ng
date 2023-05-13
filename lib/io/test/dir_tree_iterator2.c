@@ -6,7 +6,7 @@
  */
 #include "config.h"
 
-#include "util/dir_tree_iterator.h"
+#include "io/dir_tree_iterator.h"
 #include "sqfs/error.h"
 #include "util/test.h"
 #include "compat.h"

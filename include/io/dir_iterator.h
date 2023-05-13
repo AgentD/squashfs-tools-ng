@@ -4,8 +4,8 @@
  *
  * Copyright (C) 2023 David Oberhollenzer <goliath@infraroot.at>
  */
-#ifndef UTIL_DIR_ITERATOR_H
-#define UTIL_DIR_ITERATOR_H
+#ifndef IO_DIR_ITERATOR_H
+#define IO_DIR_ITERATOR_H
 
 #include "sqfs/predef.h"
 
@@ -34,6 +34,14 @@ typedef struct dir_iterator_t {
 			   struct dir_iterator_t **out);
 } dir_iterator_t;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 dir_iterator_t *dir_iterator_create(const char *path);
 
-#endif /* UTIL_DIR_ITERATOR_H */
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* IO_DIR_ITERATOR_H */

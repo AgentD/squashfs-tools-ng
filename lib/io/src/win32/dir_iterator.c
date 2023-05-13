@@ -1,11 +1,11 @@
 /* SPDX-License-Identifier: LGPL-3.0-or-later */
 /*
- * w32_dir_iterator.c
+ * dir_iterator.c
  *
  * Copyright (C) 2023 David Oberhollenzer <goliath@infraroot.at>
  */
 #include "config.h"
-#include "util/dir_iterator.h"
+#include "io/dir_iterator.h"
 #include "util/util.h"
 #include "sqfs/error.h"
 
