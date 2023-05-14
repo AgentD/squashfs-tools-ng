@@ -8,6 +8,7 @@
 #define IO_DIR_ITERATOR_H
 
 #include "sqfs/predef.h"
+#include "io/istream.h"
 
 /**
  * @struct dir_entry_t
@@ -136,6 +137,19 @@ typedef struct dir_iterator_t {
 	 * @param it A pointer to the iterator itself.
 	 */
 	void (*ignore_subdir)(struct dir_iterator_t *it);
+
+	/**
+	 * @brief If the last entry was a regular file, open it.
+	 *
+	 * If next() returned a file, this can be used to create an istream
+	 * to read from it.
+	 *
+	 * @param it A pointer to the iterator itself.
+	 * @param out Returns a pointer to a @ref istream_t on success.
+	 *
+	 * @return Zero on success, negative @ref SQFS_ERROR value on failure.
+	 */
+	int (*open_file_ro)(struct dir_iterator_t *it, istream_t **out);
 } dir_iterator_t;
 
 enum {

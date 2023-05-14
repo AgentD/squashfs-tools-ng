@@ -272,6 +272,18 @@ static void ignore_subdir(dir_iterator_t *base)
 	pop(it);
 }
 
+static int open_file_ro(dir_iterator_t *base, istream_t **out)
+{
+	dir_tree_iterator_t *it = (dir_tree_iterator_t *)base;
+
+	if (it->top == NULL) {
+		*out = NULL;
+		return SQFS_ERROR_NO_ENTRY;
+	}
+
+	return it->top->dir->open_file_ro(it->top->dir, out);
+}
+
 dir_iterator_t *dir_tree_iterator_create(const char *path,
 					 const dir_tree_cfg_t *cfg)
 {
@@ -303,6 +315,7 @@ dir_iterator_t *dir_tree_iterator_create(const char *path,
 	((dir_iterator_t *)it)->read_link = read_link;
 	((dir_iterator_t *)it)->open_subdir = open_subdir;
 	((dir_iterator_t *)it)->ignore_subdir = ignore_subdir;
+	((dir_iterator_t *)it)->open_file_ro = open_file_ro;
 
 	return (dir_iterator_t *)it;
 fail:
