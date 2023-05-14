@@ -121,6 +121,11 @@ static int dir_next(dir_iterator_t *base, dir_entry_t **out)
 	return it->state;
 }
 
+static void dir_ignore_subdir(dir_iterator_t *it)
+{
+	(void)it;
+}
+
 static int dir_open_subdir(dir_iterator_t *base, dir_iterator_t **out)
 {
 	const unix_dir_iterator_t *it = (const unix_dir_iterator_t *)base;
@@ -160,6 +165,7 @@ static int dir_open_subdir(dir_iterator_t *base, dir_iterator_t **out)
 	((dir_iterator_t *)sub)->next = dir_next;
 	((dir_iterator_t *)sub)->read_link = dir_read_link;
 	((dir_iterator_t *)sub)->open_subdir = dir_open_subdir;
+	((dir_iterator_t *)sub)->ignore_subdir = dir_ignore_subdir;
 
 	*out = (dir_iterator_t *)sub;
 	return 0;
@@ -199,6 +205,7 @@ dir_iterator_t *dir_iterator_create(const char *path)
 	((dir_iterator_t *)it)->next = dir_next;
 	((dir_iterator_t *)it)->read_link = dir_read_link;
 	((dir_iterator_t *)it)->open_subdir = dir_open_subdir;
+	((dir_iterator_t *)it)->ignore_subdir = dir_ignore_subdir;
 
 	return (dir_iterator_t *)it;
 }

@@ -41,7 +41,7 @@ int fstree_from_dir(fstree_t *fs, dir_iterator_t *dir)
 					    false, true);
 		if (n == NULL) {
 			if (S_ISDIR(ent->mode))
-				dir_tree_iterator_skip(dir);
+				dir->ignore_subdir(dir);
 			free(ent);
 			continue;
 		}

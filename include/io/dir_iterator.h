@@ -125,6 +125,17 @@ typedef struct dir_iterator_t {
 	 */
 	int (*open_subdir)(struct dir_iterator_t *it,
 			   struct dir_iterator_t **out);
+
+	/**
+	 * @brief Skip a sub-hierarchy on a stacked iterator
+	 *
+	 * If an iterator would ordinarily recurse into a sub-directory,
+	 * tell it to skip those entries. On simple, flag iterators like the
+	 * one returned by @ref dir_iterator_create, this has no effect.
+	 *
+	 * @param it A pointer to the iterator itself.
+	 */
+	void (*ignore_subdir)(struct dir_iterator_t *it);
 } dir_iterator_t;
 
 enum {
@@ -214,16 +225,6 @@ SQFS_INTERNAL dir_iterator_t *dir_iterator_create(const char *path);
 SQFS_INTERNAL
 dir_iterator_t *dir_tree_iterator_create(const char *path,
 					 const dir_tree_cfg_t *cfg);
-
-/**
- * @brief Skip a sub-hierarchy on a stacked iterator
- *
- * For an iterator returned by @ref dir_tree_iterator_create, if the last entry
- * was a directory, do not recurse, but instead skip across the netire sub-tree.
- *
- * @param it A pointer to an iterator returned by @ref dir_tree_iterator_create
- */
-SQFS_INTERNAL void dir_tree_iterator_skip(dir_iterator_t *it);
 
 #ifdef __cplusplus
 }

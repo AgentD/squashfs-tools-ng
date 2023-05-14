@@ -152,7 +152,7 @@ int main(int argc, char **argv)
 		printf("READ %s\n", ent[i]->name);
 
 		if (!strcmp(ent[i]->name, "dirb/dirx"))
-			dir_tree_iterator_skip(dir);
+			dir->ignore_subdir(dir);
 	}
 
 	ret = dir->next(dir, &ent[13]);
@@ -210,7 +210,7 @@ int main(int argc, char **argv)
 		printf("READ %s\n", ent[i]->name);
 
 		if (!strcmp(ent[i]->name, "dirb"))
-			dir_tree_iterator_skip(dir);
+			dir->ignore_subdir(dir);
 	}
 
 	ret = dir->next(dir, &ent[9]);

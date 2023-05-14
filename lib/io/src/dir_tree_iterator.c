@@ -265,6 +265,13 @@ static int open_subdir(dir_iterator_t *base, dir_iterator_t **out)
 	return it->top->dir->open_subdir(it->top->dir, out);
 }
 
+static void ignore_subdir(dir_iterator_t *base)
+{
+	dir_tree_iterator_t *it = (dir_tree_iterator_t *)base;
+
+	pop(it);
+}
+
 dir_iterator_t *dir_tree_iterator_create(const char *path,
 					 const dir_tree_cfg_t *cfg)
 {
@@ -295,16 +302,10 @@ dir_iterator_t *dir_tree_iterator_create(const char *path,
 	((dir_iterator_t *)it)->next = next;
 	((dir_iterator_t *)it)->read_link = read_link;
 	((dir_iterator_t *)it)->open_subdir = open_subdir;
+	((dir_iterator_t *)it)->ignore_subdir = ignore_subdir;
 
 	return (dir_iterator_t *)it;
 fail:
 	free(it);
 	return NULL;
-}
-
-void dir_tree_iterator_skip(dir_iterator_t *base)
-{
-	dir_tree_iterator_t *it = (dir_tree_iterator_t *)base;
-
-	pop(it);
 }

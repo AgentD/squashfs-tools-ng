@@ -107,6 +107,11 @@ static void dir_iterator_destroy(sqfs_object_t *obj)
 	free(dir);
 }
 
+static void dir_iterator_ignore_subdir(dir_iterator_t *it)
+{
+	(void)it;
+}
+
 static int dir_iterator_open_subdir(dir_iterator_t *it, dir_iterator_t **out)
 {
 	const dir_iterator_win32_t *dir = (const dir_iterator_win32_t *)it;
@@ -139,6 +144,7 @@ static int dir_iterator_open_subdir(dir_iterator_t *it, dir_iterator_t **out)
 	((dir_iterator_t *)sub)->next = dir_iterator_next;
 	((dir_iterator_t *)sub)->read_link = dir_iterator_read_link;
 	((dir_iterator_t *)sub)->open_subdir = dir_iterator_open_subdir;
+	((dir_iterator_t *)sub)->ignore_subdir = dir_iterator_ignore_subdir;
 	sub->is_first = true;
 	sub->state = 0;
 
@@ -198,6 +204,7 @@ dir_iterator_t *dir_iterator_create(const char *path)
 	((dir_iterator_t *)it)->next = dir_iterator_next;
 	((dir_iterator_t *)it)->read_link = dir_iterator_read_link;
 	((dir_iterator_t *)it)->open_subdir = dir_iterator_open_subdir;
+	((dir_iterator_t *)it)->ignore_subdir = dir_iterator_ignore_subdir;
 	it->is_first = true;
 	it->state = 0;
 
