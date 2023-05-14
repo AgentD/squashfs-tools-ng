@@ -10,6 +10,12 @@
 #include "sqfs/predef.h"
 #include "io/istream.h"
 
+typedef enum {
+	DIR_ENTRY_FLAG_MOUNT_POINT = 0x0001,
+
+	DIR_ENTRY_FLAG_HARD_LINK = 0x0002,
+} DIR_ENTRY_FLAG;
+
 /**
  * @struct dir_entry_t
  *
@@ -61,6 +67,11 @@ typedef struct {
 	sqfs_u16 mode;
 
 	/**
+	 * @brief Combination of DIR_ENTRY_FLAG values
+	 */
+	sqfs_u16 flags;
+
+	/**
 	 * @brief Name of the entry
 	 *
 	 * On Unix-like OSes, the name is returned as-is. On systems like
@@ -76,19 +87,6 @@ typedef struct {
  */
 typedef struct dir_iterator_t {
 	sqfs_object_t obj;
-
-	/**
-	 * @brief A device number for detecting mount points and hard links.
-	 *
-	 * On Unix-like systems this exposes the underlying device number
-	 * backing this directory. Each entry returned by the iterator also
-	 * has a device number and if it is different, you found a mount point.
-	 *
-	 * The device number, combined with inode number, are also needed to
-	 * detect hard links. Entries with same device and inode number point
-	 * to the same file.
-	 */
-	sqfs_u64 dev;
 
 	/**
 	 * @brief Read the next entry and update internal state relating to it

@@ -59,7 +59,7 @@ static bool should_skip(const dir_tree_iterator_t *dir, const dir_entry_t *ent)
 		return true;
 
 	if ((dir->cfg.flags & DIR_SCAN_ONE_FILESYSTEM)) {
-		if (ent->dev != ((const dir_iterator_t *)dir)->dev)
+		if (ent->flags & DIR_ENTRY_FLAG_MOUNT_POINT)
 			return true;
 	}
 
@@ -310,7 +310,6 @@ dir_iterator_t *dir_tree_iterator_create(const char *path,
 	}
 
 	sqfs_object_init(it, destroy, NULL);
-	((dir_iterator_t *)it)->dev = it->top->dir->dev;
 	((dir_iterator_t *)it)->next = next;
 	((dir_iterator_t *)it)->read_link = read_link;
 	((dir_iterator_t *)it)->open_subdir = open_subdir;

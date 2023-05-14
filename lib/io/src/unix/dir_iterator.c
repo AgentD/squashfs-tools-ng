@@ -20,6 +20,7 @@ typedef struct {
 
 	struct dirent *ent;
 	struct stat sb;
+	dev_t device;
 	int state;
 	DIR *dir;
 } unix_dir_iterator_t;
@@ -117,6 +118,9 @@ static int dir_next(dir_iterator_t *base, dir_entry_t **out)
 	decoded->gid = it->sb.st_gid;
 	decoded->mode = it->sb.st_mode;
 
+	if (decoded->dev != it->device)
+		decoded->flags |= DIR_ENTRY_FLAG_MOUNT_POINT;
+
 	*out = decoded;
 	return it->state;
 }
@@ -168,7 +172,7 @@ static int dir_open_subdir(dir_iterator_t *base, dir_iterator_t **out)
 	}
 
 	sqfs_object_init(sub, dir_destroy, NULL);
-	((dir_iterator_t *)sub)->dev = sub->sb.st_dev;
+	sub->device = sub->sb.st_dev;
 	((dir_iterator_t *)sub)->next = dir_next;
 	((dir_iterator_t *)sub)->read_link = dir_read_link;
 	((dir_iterator_t *)sub)->open_subdir = dir_open_subdir;
@@ -209,7 +213,7 @@ dir_iterator_t *dir_iterator_create(const char *path)
 	}
 
 	sqfs_object_init(it, dir_destroy, NULL);
-	((dir_iterator_t *)it)->dev = it->sb.st_dev;
+	it->device = it->sb.st_dev;
 	((dir_iterator_t *)it)->next = dir_next;
 	((dir_iterator_t *)it)->read_link = dir_read_link;
 	((dir_iterator_t *)it)->open_subdir = dir_open_subdir;
