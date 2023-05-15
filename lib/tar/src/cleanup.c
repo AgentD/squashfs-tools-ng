@@ -21,20 +21,9 @@ void free_sparse_list(sparse_map_t *sparse)
 	}
 }
 
-void free_xattr_list(tar_xattr_t *list)
-{
-	tar_xattr_t *old;
-
-	while (list != NULL) {
-		old = list;
-		list = list->next;
-		free(old);
-	}
-}
-
 void clear_header(tar_header_decoded_t *hdr)
 {
-	free_xattr_list(hdr->xattr);
+	dir_entry_xattr_list_free(hdr->xattr);
 	free_sparse_list(hdr->sparse);
 	free(hdr->name);
 	free(hdr->link_target);

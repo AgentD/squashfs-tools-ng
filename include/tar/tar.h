@@ -11,6 +11,7 @@
 #include "compat.h"
 #include "io/istream.h"
 #include "io/ostream.h"
+#include "io/dir_iterator.h"
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -22,14 +23,6 @@ typedef struct sparse_map_t {
 	sqfs_u64 count;
 } sparse_map_t;
 
-typedef struct tar_xattr_t {
-	struct tar_xattr_t *next;
-	char *key;
-	sqfs_u8 *value;
-	size_t value_len;
-	char data[];
-} tar_xattr_t;
-
 typedef struct {
 	char *name;
 	char *link_target;
@@ -38,7 +31,7 @@ typedef struct {
 	sqfs_u64 record_size;
 	bool unknown_record;
 	bool is_hard_link;
-	tar_xattr_t *xattr;
+	dir_entry_xattr_t *xattr;
 
 	sqfs_u16 mode;
 	sqfs_u64 uid;
@@ -59,7 +52,7 @@ extern "C" {
   headers need to be generated.
 */
 int write_tar_header(ostream_t *fp, const struct stat *sb, const char *name,
-		     const char *slink_target, const tar_xattr_t *xattr,
+		     const char *slink_target, const dir_entry_xattr_t *xattr,
 		     unsigned int counter);
 
 int write_hard_link(ostream_t *fp, const struct stat *sb, const char *name,
@@ -82,8 +75,6 @@ istream_t *tar_record_istream_create(istream_t *parent,
 int padd_file(ostream_t *fp, sqfs_u64 size);
 
 void free_sparse_list(sparse_map_t *sparse);
-
-void free_xattr_list(tar_xattr_t *list);
 
 #ifdef __cplusplus
 }

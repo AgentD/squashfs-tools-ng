@@ -144,11 +144,11 @@ static size_t prefix_digit_len(size_t len)
 }
 
 static int write_schily_xattr(ostream_t *fp, const struct stat *orig,
-			      const char *name, const tar_xattr_t *xattr)
+			      const char *name, const dir_entry_xattr_t *xattr)
 {
 	static const char *prefix = "SCHILY.xattr.";
 	size_t len, total_size = 0;
-	const tar_xattr_t *it;
+	const dir_entry_xattr_t *it;
 	char *buffer, *ptr;
 	int ret;
 
@@ -184,7 +184,7 @@ static int write_schily_xattr(ostream_t *fp, const struct stat *orig,
 }
 
 int write_tar_header(ostream_t *fp, const struct stat *sb, const char *name,
-		     const char *slink_target, const tar_xattr_t *xattr,
+		     const char *slink_target, const dir_entry_xattr_t *xattr,
 		     unsigned int counter)
 {
 	const char *reason;

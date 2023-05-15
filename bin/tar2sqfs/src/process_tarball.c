@@ -41,7 +41,7 @@ static int write_file(istream_t *input_file, sqfs_writer_t *sqfs,
 static int copy_xattr(sqfs_writer_t *sqfs, tree_node_t *node,
 		      const tar_header_decoded_t *hdr)
 {
-	tar_xattr_t *xattr;
+	dir_entry_xattr_t *xattr;
 	int ret;
 
 	ret = sqfs_xattr_writer_begin(sqfs->xwr, 0);

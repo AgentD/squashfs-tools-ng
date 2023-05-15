@@ -68,7 +68,7 @@ static void inode_stat(const sqfs_tree_node_t *node, struct stat *sb)
 static int write_tree_dfs(const sqfs_tree_node_t *n)
 {
 	sqfs_hard_link_t *lnk = NULL;
-	tar_xattr_t *xattr = NULL;
+	dir_entry_xattr_t *xattr = NULL;
 	char *name, *target;
 	struct stat sb;
 	size_t len;
@@ -134,7 +134,7 @@ static int write_tree_dfs(const sqfs_tree_node_t *n)
 	target = S_ISLNK(sb.st_mode) ? (char *)n->inode->extra : NULL;
 	ret = write_tar_header(out_file, &sb, name, target, xattr,
 			       record_counter++);
-	free_xattr_list(xattr);
+	dir_entry_xattr_list_free(xattr);
 
 	if (ret > 0)
 		goto out_skip;

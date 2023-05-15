@@ -141,7 +141,7 @@ fail:
 }
 
 static int pax_xattr_schily(tar_header_decoded_t *out,
-			    tar_xattr_t *xattr)
+			    dir_entry_xattr_t *xattr)
 {
 	xattr->next = out->xattr;
 	out->xattr = xattr;
@@ -149,7 +149,7 @@ static int pax_xattr_schily(tar_header_decoded_t *out,
 }
 
 static int pax_xattr_libarchive(tar_header_decoded_t *out,
-				tar_xattr_t *xattr)
+				dir_entry_xattr_t *xattr)
 {
 	int ret;
 
@@ -184,7 +184,8 @@ static const struct pax_handler_t {
 		int (*uint)(tar_header_decoded_t *out, sqfs_u64 uval);
 		int (*str)(tar_header_decoded_t *out, char *str);
 		int (*cstr)(tar_header_decoded_t *out, const char *str);
-		int (*xattr)(tar_header_decoded_t *out, tar_xattr_t *xattr);
+		int (*xattr)(tar_header_decoded_t *out,
+			     dir_entry_xattr_t *xattr);
 	} cb;
 } pax_fields[] = {
 	{ "uid", PAX_UID, PAX_TYPE_UINT, { .uint = pax_uid } },
@@ -234,33 +235,11 @@ static const struct pax_handler_t *find_handler(const char *key)
 	return NULL;
 }
 
-static tar_xattr_t *mkxattr(const char *key,
-			    const char *value, size_t valuelen)
-{
-	size_t keylen = strlen(key);
-	tar_xattr_t *xattr;
-
-	xattr = calloc(1, sizeof(*xattr) + keylen + 1 + valuelen + 1);
-	if (xattr == NULL)
-		return NULL;
-
-	xattr->key = xattr->data;
-	memcpy(xattr->key, key, keylen);
-	xattr->key[keylen] = '\0';
-
-	xattr->value = (sqfs_u8 *)xattr->key + keylen + 1;
-	memcpy(xattr->value, value, valuelen);
-	xattr->value[valuelen] = '\0';
-
-	xattr->value_len = valuelen;
-	return xattr;
-}
-
 static int apply_handler(tar_header_decoded_t *out,
 			 const struct pax_handler_t *field, const char *key,
 			 const char *value, size_t valuelen)
 {
-	tar_xattr_t *xattr;
+	dir_entry_xattr_t *xattr;
 	sqfs_s64 s64val;
 	sqfs_u64 uval;
 	char *copy;
@@ -295,8 +274,9 @@ static int apply_handler(tar_header_decoded_t *out,
 		}
 		break;
 	case PAX_TYPE_PREFIXED_XATTR:
-		xattr = mkxattr(key + strlen(field->name) + 1,
-				value, valuelen);
+		xattr = dir_entry_xattr_create(key + strlen(field->name) + 1,
+					       (const sqfs_u8 *)value,
+					       valuelen);
 		if (xattr == NULL) {
 			perror("reading pax xattr field");
 			return -1;
