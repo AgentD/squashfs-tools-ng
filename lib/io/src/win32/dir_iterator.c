@@ -119,6 +119,13 @@ static int dir_iterator_open_file_ro(dir_iterator_t *it, istream_t **out)
 	return SQFS_ERROR_UNSUPPORTED;
 }
 
+static int dir_iterator_read_xattr(dir_iterator_t *it, dir_entry_xattr_t **out)
+{
+	(void)it;
+	*out = NULL;
+	return 0;
+}
+
 static int dir_iterator_open_subdir(dir_iterator_t *it, dir_iterator_t **out)
 {
 	const dir_iterator_win32_t *dir = (const dir_iterator_win32_t *)it;
@@ -153,6 +160,7 @@ static int dir_iterator_open_subdir(dir_iterator_t *it, dir_iterator_t **out)
 	((dir_iterator_t *)sub)->open_subdir = dir_iterator_open_subdir;
 	((dir_iterator_t *)sub)->ignore_subdir = dir_iterator_ignore_subdir;
 	((dir_iterator_t *)sub)->open_file_ro = dir_iterator_open_file_ro;
+	((dir_iterator_t *)sub)->read_xattr = dir_iterator_read_xattr;
 	sub->is_first = true;
 	sub->state = 0;
 
@@ -214,6 +222,7 @@ dir_iterator_t *dir_iterator_create(const char *path)
 	((dir_iterator_t *)it)->open_subdir = dir_iterator_open_subdir;
 	((dir_iterator_t *)it)->ignore_subdir = dir_iterator_ignore_subdir;
 	((dir_iterator_t *)it)->open_file_ro = dir_iterator_open_file_ro;
+	((dir_iterator_t *)it)->read_xattr = dir_iterator_read_xattr;
 	it->is_first = true;
 	it->state = 0;
 

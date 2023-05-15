@@ -9,6 +9,7 @@
 
 #include "sqfs/predef.h"
 #include "io/istream.h"
+#include "io/xattr.h"
 
 typedef enum {
 	DIR_ENTRY_FLAG_MOUNT_POINT = 0x0001,
@@ -148,6 +149,16 @@ typedef struct dir_iterator_t {
 	 * @return Zero on success, negative @ref SQFS_ERROR value on failure.
 	 */
 	int (*open_file_ro)(struct dir_iterator_t *it, istream_t **out);
+
+	/**
+	 * @brief Read extended attributes associated with the current entry
+	 *
+	 * @param it A pointer to the iterator itself.
+	 * @param out Returns a linked list of xattr entries.
+	 *
+	 * @return Zero on success, negative @ref SQFS_ERROR value on failure.
+	 */
+	int (*read_xattr)(struct dir_iterator_t *it, dir_entry_xattr_t **out);
 } dir_iterator_t;
 
 enum {

@@ -284,6 +284,18 @@ static int open_file_ro(dir_iterator_t *base, istream_t **out)
 	return it->top->dir->open_file_ro(it->top->dir, out);
 }
 
+static int read_xattr(dir_iterator_t *base, dir_entry_xattr_t **out)
+{
+	dir_tree_iterator_t *it = (dir_tree_iterator_t *)base;
+
+	if (it->top == NULL) {
+		*out = NULL;
+		return SQFS_ERROR_NO_ENTRY;
+	}
+
+	return it->top->dir->read_xattr(it->top->dir, out);
+}
+
 dir_iterator_t *dir_tree_iterator_create(const char *path,
 					 const dir_tree_cfg_t *cfg)
 {
@@ -315,6 +327,7 @@ dir_iterator_t *dir_tree_iterator_create(const char *path,
 	((dir_iterator_t *)it)->open_subdir = open_subdir;
 	((dir_iterator_t *)it)->ignore_subdir = ignore_subdir;
 	((dir_iterator_t *)it)->open_file_ro = open_file_ro;
+	((dir_iterator_t *)it)->read_xattr = read_xattr;
 
 	return (dir_iterator_t *)it;
 fail:
