@@ -28,6 +28,31 @@ dir_entry_xattr_t *dir_entry_xattr_create(const char *key, const sqfs_u8 *value,
 	return out;
 }
 
+dir_entry_xattr_t *dir_entry_xattr_list_copy(const dir_entry_xattr_t *list)
+{
+	dir_entry_xattr_t *new, *copy = NULL, *copy_last = NULL;
+	const dir_entry_xattr_t *it;
+
+	for (it = list; it != NULL; it = it->next) {
+		new = dir_entry_xattr_create(it->key, it->value,
+					     it->value_len);
+		if (new == NULL) {
+			dir_entry_xattr_list_free(copy);
+			return NULL;
+		}
+
+		if (copy_last == NULL) {
+			copy = new;
+			copy_last = new;
+		} else {
+			copy_last->next = new;
+			copy_last = new;
+		}
+	}
+
+	return copy;
+}
+
 void dir_entry_xattr_list_free(dir_entry_xattr_t *list)
 {
 	dir_entry_xattr_t *old;

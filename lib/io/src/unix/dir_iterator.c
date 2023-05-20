@@ -118,6 +118,9 @@ static int dir_next(dir_iterator_t *base, dir_entry_t **out)
 	decoded->gid = it->sb.st_gid;
 	decoded->mode = it->sb.st_mode;
 
+	if (S_ISREG(it->sb.st_mode))
+		decoded->size = it->sb.st_size;
+
 	if (decoded->dev != it->device)
 		decoded->flags |= DIR_ENTRY_FLAG_MOUNT_POINT;
 

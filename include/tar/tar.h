@@ -59,14 +59,11 @@ int write_hard_link(ostream_t *fp, const struct stat *sb, const char *name,
 		    const char *target, unsigned int counter);
 
 /* round up to block size and skip the entire entry */
-int skip_entry(istream_t *fp, sqfs_u64 size);
-
 int read_header(istream_t *fp, tar_header_decoded_t *out);
 
 void clear_header(tar_header_decoded_t *hdr);
 
-istream_t *tar_record_istream_create(istream_t *parent,
-				     const tar_header_decoded_t *hdr);
+dir_iterator_t *tar_open_stream(istream_t *stream);
 
 /*
   Write zero bytes to an output file to padd it to the tar record size.

@@ -33,9 +33,9 @@ The following addtional files have been added:
      Contributed in GitHub issue #64. A tar ball that contains a hard link
      where the 100 byte target field is completely filled without containing
      a null-terminator.
- - istream/sparse.tar
+ - iterator/sparse.tar
      Derived from sparse/gnu.tar and contains some test data for testing the
-     tar istream implementation.
+     tar iterator implementation.
  - write/simple.tar
      Created using the tar writer to verify that it works as intended. Used
      for testing the tar writer to check if it still produces identical

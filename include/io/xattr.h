@@ -24,6 +24,8 @@ extern "C" {
 dir_entry_xattr_t *dir_entry_xattr_create(const char *key, const sqfs_u8 *value,
 					  size_t value_len);
 
+dir_entry_xattr_t *dir_entry_xattr_list_copy(const dir_entry_xattr_t *list);
+
 void dir_entry_xattr_list_free(dir_entry_xattr_t *list);
 
 #ifdef __cplusplus

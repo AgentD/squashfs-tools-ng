@@ -91,6 +91,9 @@ static int dir_iterator_next(dir_iterator_t *it, dir_entry_t **out)
 		ent->mode = S_IFDIR | 0755;
 	} else {
 		ent->mode = S_IFREG | 0644;
+		ent->size = w32->ent.nFileSizeHigh;
+		ent->size <<= 32UL;
+		ent->size |= w32->ent.nFileSizeLow;
 	}
 
 	ent->mtime = w32time_to_unix(&(w32->ent.ftLastWriteTime));

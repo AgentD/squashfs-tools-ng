@@ -24,6 +24,11 @@ typedef enum {
  */
 typedef struct {
 	/**
+	 * @brief Total size of file entries
+	 */
+	sqfs_u64 size;
+
+	/**
 	 * @brief Unix time stamp when the entry was last modified.
 	 *
 	 * If necessary, the OS native time stamp is converted to Unix time.
@@ -49,14 +54,14 @@ typedef struct {
 	 *
 	 * On Windows and other non-Unix OSes, this always reports user 0.
 	 */
-	sqfs_u32 uid;
+	sqfs_u64 uid;
 
 	/**
 	 * @brief ID of the group that owns the entry.
 	 *
 	 * On Windows and other non-Unix OSes, this always reports group 0.
 	 */
-	sqfs_u32 gid;
+	sqfs_u64 gid;
 
 	/**
 	 * @brief Unix style permissions and entry type.

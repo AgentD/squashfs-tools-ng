@@ -224,7 +224,9 @@ int read_header(istream_t *fp, tar_header_decoded_t *out)
 		case TAR_TYPE_PAX_GLOBAL:
 			if (read_number(hdr.size, sizeof(hdr.size), &pax_size))
 				goto fail;
-			skip_entry(fp, pax_size);
+			if (pax_size % 512)
+				pax_size += 512 - (pax_size % 512);
+			istream_skip(fp, pax_size);
 			continue;
 		case TAR_TYPE_PAX:
 			clear_header(out);
@@ -290,11 +292,4 @@ fail_chksum:
 fail:
 	clear_header(out);
 	return -1;
-}
-
-int skip_entry(istream_t *fp, sqfs_u64 size)
-{
-	size_t tail = size % 512;
-
-	return istream_skip(fp, tail ? (size + 512 - tail) : size);
 }

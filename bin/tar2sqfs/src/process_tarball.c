@@ -6,26 +6,25 @@
  */
 #include "tar2sqfs.h"
 
-static int write_file(istream_t *input_file, sqfs_writer_t *sqfs,
-		      const tar_header_decoded_t *hdr, tree_node_t *n)
+static int write_file(sqfs_writer_t *sqfs, dir_iterator_t *it,
+		      const dir_entry_t *ent, tree_node_t *n)
 {
 	int flags = 0, ret = 0;
 	ostream_t *out;
 	istream_t *in;
 
-	if (no_tail_pack && hdr->actual_size > cfg.block_size)
+	if (no_tail_pack && ent->size > cfg.block_size)
 		flags |= SQFS_BLK_DONT_FRAGMENT;
 
-	out = data_writer_ostream_create(hdr->name, sqfs->data,
+	out = data_writer_ostream_create(ent->name, sqfs->data,
 					 &(n->data.file.inode), flags);
-
 	if (out == NULL)
 		return -1;
 
-	in = tar_record_istream_create(input_file, hdr);
-	if (in == NULL) {
+	ret = it->open_file_ro(it, &in);
+	if (ret != 0) {
 		sqfs_drop(out);
-		return -1;
+		return ret;
 	}
 
 	do {
@@ -38,19 +37,25 @@ static int write_file(istream_t *input_file, sqfs_writer_t *sqfs,
 	return ret;
 }
 
-static int copy_xattr(sqfs_writer_t *sqfs, tree_node_t *node,
-		      const tar_header_decoded_t *hdr)
+static int copy_xattr(sqfs_writer_t *sqfs, const char *filename,
+		      tree_node_t *node, dir_iterator_t *it)
 {
-	dir_entry_xattr_t *xattr;
+	dir_entry_xattr_t *xattr, *list;
 	int ret;
 
-	ret = sqfs_xattr_writer_begin(sqfs->xwr, 0);
+	ret = it->read_xattr(it, &list);
 	if (ret) {
-		sqfs_perror(hdr->name, "beginning xattr block", ret);
+		sqfs_perror(filename, "reading xattrs", ret);
 		return -1;
 	}
 
-	for (xattr = hdr->xattr; xattr != NULL; xattr = xattr->next) {
+	ret = sqfs_xattr_writer_begin(sqfs->xwr, 0);
+	if (ret) {
+		sqfs_perror(filename, "beginning xattr block", ret);
+		goto fail;
+	}
+
+	for (xattr = list; xattr != NULL; xattr = xattr->next) {
 		if (sqfs_get_xattr_prefix_id(xattr->key) < 0) {
 			fprintf(stderr, "%s: squashfs does not "
 				"support xattr prefix of %s\n",
@@ -58,101 +63,98 @@ static int copy_xattr(sqfs_writer_t *sqfs, tree_node_t *node,
 				xattr->key);
 
 			if (dont_skip)
-				return -1;
+				goto fail;
 			continue;
 		}
 
 		ret = sqfs_xattr_writer_add(sqfs->xwr, xattr->key, xattr->value,
 					    xattr->value_len);
 		if (ret) {
-			sqfs_perror(hdr->name, "storing xattr key-value pair",
+			sqfs_perror(filename, "storing xattr key-value pair",
 				    ret);
-			return -1;
+			goto fail;
 		}
 	}
 
 	ret = sqfs_xattr_writer_end(sqfs->xwr, &node->xattr_idx);
 	if (ret) {
-		sqfs_perror(hdr->name, "completing xattr block", ret);
-		return -1;
+		sqfs_perror(filename, "completing xattr block", ret);
+		goto fail;
 	}
 
+	dir_entry_xattr_list_free(list);
 	return 0;
+fail:
+	dir_entry_xattr_list_free(list);
+	return -1;
 }
 
-static int create_node_and_repack_data(istream_t *input_file,
-				       sqfs_writer_t *sqfs,
-				       tar_header_decoded_t *hdr)
+static int create_node_and_repack_data(sqfs_writer_t *sqfs, dir_iterator_t *it,
+				       const dir_entry_t *ent, const char *link)
 {
 	tree_node_t *node;
 	struct stat sb;
 
-	if (hdr->is_hard_link) {
-		node = fstree_add_hard_link(&sqfs->fs, hdr->name,
-					    hdr->link_target);
+	if (ent->flags & DIR_ENTRY_FLAG_HARD_LINK) {
+		node = fstree_add_hard_link(&sqfs->fs, ent->name, link);
 		if (node == NULL)
 			goto fail_errno;
 
-		if (!cfg.quiet) {
-			printf("Hard link %s -> %s\n", hdr->name,
-			       hdr->link_target);
-		}
+		if (!cfg.quiet)
+			printf("Hard link %s -> %s\n", ent->name, link);
 		return 0;
 	}
 
-	if (!keep_time) {
-		hdr->mtime = sqfs->fs.defaults.mtime;
-	}
-
 	memset(&sb, 0, sizeof(sb));
-	sb.st_mode = hdr->mode;
-	sb.st_uid = hdr->uid;
-	sb.st_gid = hdr->gid;
-	sb.st_rdev = hdr->devno;
-	sb.st_size = hdr->actual_size;
-	sb.st_mtime = hdr->mtime;
+	sb.st_mode = ent->mode;
+	sb.st_uid = ent->uid;
+	sb.st_gid = ent->gid;
+	sb.st_rdev = ent->rdev;
+	sb.st_mtime = keep_time ? ent->mtime : sqfs->fs.defaults.mtime;
 
-	node = fstree_add_generic(&sqfs->fs, hdr->name,
-				  &sb, hdr->link_target);
+	node = fstree_add_generic(&sqfs->fs, ent->name, &sb, link);
 	if (node == NULL)
 		goto fail_errno;
 
 	if (!cfg.quiet)
-		printf("Packing %s\n", hdr->name);
+		printf("Packing %s\n", ent->name);
 
 	if (!cfg.no_xattr) {
-		if (copy_xattr(sqfs, node, hdr))
+		if (copy_xattr(sqfs, ent->name, node, it))
 			return -1;
 	}
 
-	if (S_ISREG(hdr->mode)) {
-		if (write_file(input_file, sqfs, hdr, node))
+	if (S_ISREG(ent->mode)) {
+		int ret = write_file(sqfs, it, ent, node);
+		if (ret != 0) {
+			sqfs_perror(ent->name, "packing data", ret);
 			return -1;
+		}
 	}
 
 	return 0;
 fail_errno:
-	perror(hdr->name);
+	perror(ent->name);
 	return -1;
 }
 
-static int set_root_attribs(sqfs_writer_t *sqfs,
-			    const tar_header_decoded_t *hdr)
+static int set_root_attribs(sqfs_writer_t *sqfs, dir_iterator_t *it,
+			    const dir_entry_t *ent)
 {
-	if (hdr->is_hard_link || !S_ISDIR(hdr->mode)) {
-		fprintf(stderr, "'%s' is not a directory!\n", hdr->name);
+	if ((ent->flags & DIR_ENTRY_FLAG_HARD_LINK) || !S_ISDIR(ent->mode)) {
+		fprintf(stderr, "'%s' is not a directory!\n", ent->name);
 		return -1;
 	}
 
-	sqfs->fs.root->uid = hdr->uid;
-	sqfs->fs.root->gid = hdr->gid;
-	sqfs->fs.root->mode = hdr->mode;
+	sqfs->fs.root->uid = ent->uid;
+	sqfs->fs.root->gid = ent->gid;
+	sqfs->fs.root->mode = ent->mode;
 
 	if (keep_time)
-		sqfs->fs.root->mod_time = hdr->mtime;
+		sqfs->fs.root->mod_time = ent->mtime;
 
 	if (!cfg.no_xattr) {
-		if (copy_xattr(sqfs, sqfs->fs.root, hdr))
+		if (copy_xattr(sqfs, "/", sqfs->fs.root, it))
 			return -1;
 	}
 
@@ -161,141 +163,94 @@ static int set_root_attribs(sqfs_writer_t *sqfs,
 
 int process_tarball(istream_t *input_file, sqfs_writer_t *sqfs)
 {
-	bool skip, is_root, is_prefixed;
-	tar_header_decoded_t hdr;
-	sqfs_u64 offset, count;
-	sparse_map_t *m;
-	size_t rootlen;
-	char *target;
-	int ret;
+	dir_iterator_t *it = tar_open_stream(input_file);
+	size_t rootlen = root_becomes == NULL ? 0 : strlen(root_becomes);
 
-	rootlen = root_becomes == NULL ? 0 : strlen(root_becomes);
+	if (it == NULL) {
+		fputs("Creating tar stream: out-of-memory\n", stderr);
+		return -1;
+	}
 
 	for (;;) {
-		ret = read_header(input_file, &hdr);
+		bool skip = false, is_root = false, is_prefixed = true;
+		dir_entry_t *ent = NULL;
+		char *link = NULL;
+		int ret;
+
+		ret = it->next(it, &ent);
 		if (ret > 0)
 			break;
 		if (ret < 0)
-			return -1;
+			goto fail;
 
-		if (hdr.mtime < 0)
-			hdr.mtime = 0;
+		if (ent->mtime < 0)
+			ent->mtime = 0;
 
-		if ((sqfs_u64)hdr.mtime > 0x0FFFFFFFFUL)
-			hdr.mtime = 0x0FFFFFFFFUL;
+		if ((sqfs_u64)ent->mtime > 0x0FFFFFFFFUL)
+			ent->mtime = 0x0FFFFFFFFUL;
 
-		skip = false;
-		is_root = false;
-		is_prefixed = true;
+		if (S_ISLNK(ent->mode)) {
+			ret = it->read_link(it, &link);
+			if (ret != 0) {
+				sqfs_perror(ent->name, "read link", ret);
+				free(ent);
+				goto fail;
+			}
+		}
 
-		if (hdr.name == NULL || canonicalize_name(hdr.name) != 0) {
-			fprintf(stderr, "skipping '%s' (invalid name)\n",
-				hdr.name);
-			skip = true;
-		} else if (root_becomes != NULL) {
-			if (strncmp(hdr.name, root_becomes, rootlen) == 0) {
-				if (hdr.name[rootlen] == '\0') {
+		if (root_becomes != NULL) {
+			if (strncmp(ent->name, root_becomes, rootlen) == 0) {
+				if (ent->name[rootlen] == '\0') {
 					is_root = true;
-				} else if (hdr.name[rootlen] != '/') {
+				} else if (ent->name[rootlen] != '/') {
 					is_prefixed = false;
 				}
 			} else {
 				is_prefixed = false;
 			}
 
-			if (is_prefixed && !is_root) {
-				memmove(hdr.name, hdr.name + rootlen + 1,
-					strlen(hdr.name + rootlen + 1) + 1);
+			if (!is_prefixed) {
+				free(ent);
+				free(link);
+				continue;
 			}
 
-			if (is_prefixed && hdr.name[0] == '\0') {
-				fputs("skipping entry with empty name\n",
-				      stderr);
-				skip = true;
+			if (!is_root) {
+				memmove(ent->name, ent->name + rootlen + 1,
+					strlen(ent->name + rootlen + 1) + 1);
 			}
 
-			if (hdr.link_target != NULL &&
-			    (hdr.is_hard_link || !no_symlink_retarget)) {
-				target = strdup(hdr.link_target);
-				if (target == NULL) {
-					fprintf(stderr, "packing '%s': %s\n",
-						hdr.name, strerror(errno));
-					goto fail;
+			if (link != NULL &&
+			    ((ent->flags & DIR_ENTRY_FLAG_HARD_LINK) ||
+			     !no_symlink_retarget)) {
+				if (canonicalize_name(link) == 0 &&
+				    !strncmp(link, root_becomes, rootlen) &&
+				    link[rootlen] == '/') {
+					memmove(link, link + rootlen,
+						strlen(link + rootlen) + 1);
 				}
-
-				if (canonicalize_name(target) == 0 &&
-				    !strncmp(target, root_becomes, rootlen) &&
-				    target[rootlen] == '/') {
-					memmove(hdr.link_target,
-						target + rootlen,
-						strlen(target + rootlen) + 1);
-				}
-
-				free(target);
 			}
-		} else if (hdr.name[0] == '\0') {
+		} else if (ent->name[0] == '\0') {
 			is_root = true;
 		}
 
-		if (!is_prefixed) {
-			if (skip_entry(input_file, hdr.record_size))
-				goto fail;
-			clear_header(&hdr);
-			continue;
-		}
-
 		if (is_root) {
-			if (set_root_attribs(sqfs, &hdr))
-				goto fail;
-			clear_header(&hdr);
-			continue;
+			ret = set_root_attribs(sqfs, it, ent);
+		} else if (skip) {
+			ret = dont_skip ? -1 : 0;
+		} else {
+			ret = create_node_and_repack_data(sqfs, it, ent, link);
 		}
 
-		if (!skip && hdr.unknown_record) {
-			fprintf(stderr, "%s: unknown entry type\n", hdr.name);
-			skip = true;
-		}
-
-		if (!skip && hdr.sparse != NULL) {
-			offset = hdr.sparse->offset;
-			count = 0;
-
-			for (m = hdr.sparse; m != NULL; m = m->next) {
-				if (m->offset < offset) {
-					skip = true;
-					break;
-				}
-				offset = m->offset + m->count;
-				count += m->count;
-			}
-
-			if (count != hdr.record_size)
-				skip = true;
-
-			if (skip) {
-				fprintf(stderr, "%s: broken sparse "
-					"file layout\n", hdr.name);
-			}
-		}
-
-		if (skip) {
-			if (dont_skip)
-				goto fail;
-			if (skip_entry(input_file, hdr.record_size))
-				goto fail;
-
-			clear_header(&hdr);
-			continue;
-		}
-
-		if (create_node_and_repack_data(input_file, sqfs, &hdr))
+		free(ent);
+		free(link);
+		if (ret)
 			goto fail;
-
-		clear_header(&hdr);
 	}
 
+	sqfs_drop(it);
 	return 0;
 fail:
-	clear_header(&hdr);
+	sqfs_drop(it);
 	return -1;
 }

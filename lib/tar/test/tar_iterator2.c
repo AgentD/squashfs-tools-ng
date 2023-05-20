@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 /*
- * tar_istream3.c
+ * tar_iterator2.c
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
@@ -44,27 +44,34 @@ static int byte_from_offset(uint64_t offset)
 int main(int argc, char **argv)
 {
 	unsigned char buffer[941];
-	tar_header_decoded_t hdr;
+	dir_iterator_t *it;
 	istream_t *fp, *ti;
+	dir_entry_t *ent;
 	uint64_t offset;
 	sqfs_s32 i, ret;
 	(void)argc; (void)argv;
 
 	fp = istream_open_file(STRVALUE(TESTPATH) "/" STRVALUE(TESTFILE));
 	TEST_NOT_NULL(fp);
-	TEST_ASSERT(read_header(fp, &hdr) == 0);
-	TEST_EQUAL_UI(hdr.mode, S_IFREG | 0644);
-	TEST_EQUAL_UI(hdr.uid, 01750);
-	TEST_EQUAL_UI(hdr.gid, 01750);
-	TEST_EQUAL_UI(hdr.actual_size, 2097152);
-	TEST_EQUAL_UI(hdr.record_size, 32768);
-	TEST_STR_EQUAL(hdr.name, "input.bin");
-	TEST_ASSERT(!hdr.unknown_record);
+	it = tar_open_stream(fp);
+	TEST_NOT_NULL(it);
+	sqfs_drop(fp);
 
-	ti = tar_record_istream_create(fp, &hdr);
-	TEST_EQUAL_UI(((sqfs_object_t *)fp)->refcount, 2);
-	TEST_EQUAL_UI(((sqfs_object_t *)ti)->refcount, 1);
-	clear_header(&hdr);
+	ret = it->next(it, &ent);
+	TEST_EQUAL_I(ret, 0);
+	TEST_NOT_NULL(ent);
+
+	TEST_EQUAL_UI(ent->mode, S_IFREG | 0644);
+	TEST_EQUAL_UI(ent->uid, 01750);
+	TEST_EQUAL_UI(ent->gid, 01750);
+	TEST_EQUAL_UI(ent->size, 2097152);
+	//TEST_EQUAL_UI(ent->on_disk_size, 32768);
+	TEST_STR_EQUAL(ent->name, "input.bin");
+	free(ent);
+
+	ret = it->open_file_ro(it, &ti);
+	TEST_EQUAL_I(ret, 0);
+	TEST_NOT_NULL(ti);
 
 	offset = 0;
 
@@ -93,8 +100,7 @@ int main(int argc, char **argv)
 
 	TEST_EQUAL_UI(offset, 2097152);
 
+	sqfs_drop(it);
 	sqfs_drop(ti);
-	TEST_EQUAL_UI(((sqfs_object_t *)fp)->refcount, 1);
-	sqfs_drop(fp);
 	return EXIT_SUCCESS;
 }

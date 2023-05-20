@@ -3,7 +3,8 @@ libtar_a_SOURCES = lib/tar/src/read_header.c lib/tar/src/write_header.c \
 	lib/tar/src/read_sparse_map_old.c lib/tar/src/internal.h \
 	lib/tar/src/padd_file.c lib/tar/src/record_to_memory.c \
 	lib/tar/src/pax_header.c lib/tar/src/read_sparse_map_new.c \
-	lib/tar/src/istream.c include/tar/tar.h include/tar/format.h
+	lib/tar/src/iterator.c \
+	include/tar/tar.h include/tar/format.h
 
 noinst_LIBRARIES += libtar.a
 
@@ -162,19 +163,19 @@ test_tar_xattr_schily_bin_LDADD = libtar.a libio.a libutil.a libcompat.a
 test_tar_xattr_schily_bin_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(TARDATADIR)
 test_tar_xattr_schily_bin_CPPFLAGS += -DTESTFILE=xattr/xattr-schily-binary.tar
 
-test_tar_istream_SOURCES = lib/tar/test/tar_istream.c
-test_tar_istream_LDADD = libtar.a libio.a libutil.a libcompat.a
-test_tar_istream_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(TARDATADIR)
-test_tar_istream_CPPFLAGS += -DTESTFILE=format-acceptance/gnu.tar
+test_tar_iterator_SOURCES = lib/tar/test/tar_iterator.c
+test_tar_iterator_LDADD = libtar.a libio.a libutil.a libcompat.a
+test_tar_iterator_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(TARDATADIR)
+test_tar_iterator_CPPFLAGS += -DTESTFILE=format-acceptance/gnu.tar
 
-test_tar_istream2_SOURCES = lib/tar/test/tar_istream2.c
-test_tar_istream2_LDADD = libtar.a libio.a libutil.a libcompat.a
-test_tar_istream2_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(TARDATADIR)
+test_tar_iterator2_SOURCES = lib/tar/test/tar_iterator2.c
+test_tar_iterator2_LDADD = libtar.a libio.a libutil.a libcompat.a
+test_tar_iterator2_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(TARDATADIR)
+test_tar_iterator2_CPPFLAGS += -DTESTFILE=iterator/sparse.tar
 
-test_tar_istream3_SOURCES = lib/tar/test/tar_istream3.c
-test_tar_istream3_LDADD = libtar.a libio.a libutil.a libcompat.a
-test_tar_istream3_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(TARDATADIR)
-test_tar_istream3_CPPFLAGS += -DTESTFILE=istream/sparse.tar
+test_tar_iterator3_SOURCES = lib/tar/test/tar_iterator3.c
+test_tar_iterator3_LDADD = libtar.a libio.a libutil.a libcompat.a
+test_tar_iterator3_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(TARDATADIR)
 
 tar_fuzz_SOURCES = lib/tar/test/tar_fuzz.c
 tar_fuzz_LDADD = libtar.a libio.a libutil.a libcompat.a
@@ -195,7 +196,7 @@ LIBTAR_TESTS = \
 	test_tar_sparse_gnu2 test_tar_sparse_gnu3 \
 	test_tar_xattr_bsd test_tar_xattr_schily test_tar_xattr_schily_bin \
 	test_tar_target_filled \
-	test_tar_istream test_tar_istream2 test_tar_istream3 \
+	test_tar_iterator test_tar_iterator2 test_tar_iterator3 \
 	test_tar_write_simple
 
 check_PROGRAMS += $(LIBTAR_TESTS)
