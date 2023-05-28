@@ -124,4 +124,9 @@ int fstree_from_dir(fstree_t *fs, dir_iterator_t *dir);
 
 int fstree_sort_files(fstree_t *fs, istream_t *sortfile);
 
+int glob_files(fstree_t *fs, const char *filename, size_t line_num,
+	       const char *path, struct stat *basic,
+	       const char *basepath, unsigned int glob_flags,
+	       const char *extra);
+
 #endif /* MKFS_H */
