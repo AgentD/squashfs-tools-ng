@@ -60,6 +60,24 @@ static void quote_remove(char *str)
 	*(dst++) = '\0';
 }
 
+static const char *skip_space(const char *str)
+{
+	while (isspace(*str))
+		++str;
+	return str;
+}
+
+static bool match_option(const char **line, const char *candidate)
+{
+	size_t len = strlen(candidate);
+
+	if (strncmp(*line, candidate, len) != 0 || !isspace((*line)[len]))
+		return false;
+
+	*line = skip_space(*line + len);
+	return true;
+}
+
 int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 	       const char *path, struct stat *basic,
 	       const char *basepath, unsigned int glob_flags,
@@ -69,7 +87,6 @@ int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 	unsigned int scan_flags = 0, all_flags;
 	dir_iterator_t *dir = NULL;
 	bool first_clear_flag;
-	size_t i, count, len;
 	dir_tree_cfg_t cfg;
 	tree_node_t *root;
 	int ret;
@@ -96,82 +113,50 @@ int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 		DIR_SCAN_NO_FIFO | DIR_SCAN_NO_FILE | DIR_SCAN_NO_SLINK |
 		DIR_SCAN_NO_SOCK;
 
-	while (extra != NULL && *extra != '\0') {
-		count = sizeof(glob_scan_flags) / sizeof(glob_scan_flags[0]);
+	while (extra != NULL && *extra == '-' && !match_option(&extra, "--")) {
+		bool is_name = false, is_path = false, found = false;
+		size_t count = sizeof(glob_scan_flags) /
+			sizeof(glob_scan_flags[0]);
 
-		for (i = 0; i < count; ++i) {
-			len = strlen(glob_scan_flags[i].name);
-			if (strncmp(extra, glob_scan_flags[i].name, len) != 0)
-				continue;
+		for (size_t i = 0; i < count && !found; ++i) {
+			if (match_option(&extra, glob_scan_flags[i].name)) {
+				if (glob_scan_flags[i].clear_flag != 0 &&
+				    first_clear_flag) {
+					scan_flags |= all_flags;
+					first_clear_flag = false;
+				}
 
-			if (isspace(extra[len])) {
-				extra += len;
-				while (isspace(*extra))
-					++extra;
-				break;
+				scan_flags &= ~(glob_scan_flags[i].clear_flag);
+				scan_flags |= glob_scan_flags[i].set_flag;
+				found = true;
 			}
 		}
 
-		if (i < count) {
-			if (glob_scan_flags[i].clear_flag != 0 &&
-			    first_clear_flag) {
-				scan_flags |= all_flags;
-				first_clear_flag = false;
-			}
-
-			scan_flags &= ~(glob_scan_flags[i].clear_flag);
-			scan_flags |= glob_scan_flags[i].set_flag;
+		if (found)
 			continue;
+
+		if (match_option(&extra, "-name")) {
+			is_name = true;
+		} else if (match_option(&extra, "-path")) {
+			is_path = true;
 		}
 
-		if (strncmp(extra, "-name", 5) == 0 && isspace(extra[5])) {
-			for (extra += 5; isspace(*extra); ++extra)
-				;
-
-			len = name_string_length(extra);
+		if (is_name || is_path) {
+			size_t len = name_string_length(extra);
 			free(name_pattern);
 			name_pattern = strndup(extra, len);
 			if (name_pattern == NULL)
 				goto fail_alloc;
 
-			extra += len;
-			while (isspace(*extra))
-				++extra;
+			extra = skip_space(extra + len);
 
 			quote_remove(name_pattern);
+			if (is_path)
+				glob_flags |= DIR_SCAN_MATCH_FULL_PATH;
 			continue;
 		}
 
-		if (strncmp(extra, "-path", 5) == 0 && isspace(extra[5])) {
-			for (extra += 5; isspace(*extra); ++extra)
-				;
-
-			len = name_string_length(extra);
-			free(name_pattern);
-			name_pattern = strndup(extra, len);
-			if (name_pattern == NULL)
-				goto fail_alloc;
-
-			extra += len;
-			while (isspace(*extra))
-				++extra;
-
-			quote_remove(name_pattern);
-			glob_flags |= DIR_SCAN_MATCH_FULL_PATH;
-			continue;
-		}
-
-		if (extra[0] == '-') {
-			if (extra[1] == '-' && isspace(extra[2])) {
-				extra += 2;
-				while (isspace(*extra))
-					++extra;
-				break;
-			}
-			goto fail_unknown;
-		} else {
-			break;
-		}
+		goto fail_unknown;
 	}
 
 	if (extra != NULL && *extra == '\0')
