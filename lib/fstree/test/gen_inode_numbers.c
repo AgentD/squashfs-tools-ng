@@ -12,12 +12,16 @@
 
 static tree_node_t *gen_node(fstree_t *fs, const char *path)
 {
-	struct stat sb;
+	dir_entry_t *ent = calloc(1, sizeof(*ent) + strlen(path) + 1);
+	tree_node_t *ret;
 
-	memset(&sb, 0, sizeof(sb));
-	sb.st_mode = S_IFDIR | 0755;
+	TEST_NOT_NULL(ent);
+	strcpy(ent->name, path);
+	ent->mode = S_IFDIR | 0755;
 
-	return fstree_add_generic(fs, path, &sb, NULL);
+	ret = fstree_add_generic(fs, ent, NULL);
+	free(ent);
+	return ret;
 }
 
 static void check_children_before_root(tree_node_t *root)

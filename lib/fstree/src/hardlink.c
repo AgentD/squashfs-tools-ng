@@ -6,7 +6,6 @@
  */
 #include "config.h"
 
-#include "util/util.h"
 #include "fstree.h"
 
 #include <string.h>
@@ -52,32 +51,6 @@ static int resolve_link(fstree_t *fs, tree_node_t *node)
 
 	node->link_count++;
 	return 0;
-}
-
-tree_node_t *fstree_add_hard_link(fstree_t *fs, const char *path,
-				  const char *target)
-{
-	struct stat sb;
-	tree_node_t *n;
-
-	memset(&sb, 0, sizeof(sb));
-	sb.st_mode = S_IFLNK | 0777;
-
-	n = fstree_add_generic(fs, path, &sb, target);
-	if (n != NULL) {
-		if (canonicalize_name(n->data.target)) {
-			free(n);
-			errno = EINVAL;
-			return NULL;
-		}
-
-		n->flags |= FLAG_LINK_IS_HARD;
-	}
-
-	n->next_by_type = fs->links_unresolved;
-	fs->links_unresolved = n;
-
-	return n;
 }
 
 int fstree_resolve_hard_links(fstree_t *fs)

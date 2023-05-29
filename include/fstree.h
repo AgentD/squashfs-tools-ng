@@ -15,6 +15,7 @@
 #include <stdio.h>
 
 #include "sqfs/predef.h"
+#include "io/dir_iterator.h"
 #include "io/istream.h"
 #include "compat.h"
 
@@ -141,8 +142,8 @@ void fstree_cleanup(fstree_t *fs);
   This function does not print anything to stderr, instead it sets an
   appropriate errno value. Internally it uses fstree_mknode to create the node.
 */
-tree_node_t *fstree_add_generic(fstree_t *fs, const char *path,
-				const struct stat *sb, const char *extra);
+tree_node_t *fstree_add_generic(fstree_t *fs, const dir_entry_t *ent,
+				const char *extra);
 
 /*
   This function performs all the necessary post processing steps on the file
@@ -181,12 +182,6 @@ char *fstree_get_path(tree_node_t *node);
 tree_node_t *fstree_get_node_by_path(fstree_t *fs, tree_node_t *root,
 				     const char *path, bool create_implicitly,
 				     bool stop_at_parent);
-
-/*
-  Add a hard link node. Returns NULL on failure and sets errno.
- */
-tree_node_t *fstree_add_hard_link(fstree_t *fs, const char *path,
-				  const char *target);
 
 /*
   Try to resolve all hard links in the tree.

@@ -79,7 +79,7 @@ static bool match_option(const char **line, const char *candidate)
 }
 
 int glob_files(fstree_t *fs, const char *filename, size_t line_num,
-	       const char *path, struct stat *basic,
+	       const dir_entry_t *ent,
 	       const char *basepath, unsigned int glob_flags,
 	       const char *extra)
 {
@@ -92,7 +92,7 @@ int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 	int ret;
 
 	/* fetch the actual target node */
-	root = fstree_get_node_by_path(fs, fs->root, path, true, false);
+	root = fstree_get_node_by_path(fs, fs->root, ent->name, true, false);
 	if (root == NULL)
 		goto fail_path;
 
@@ -165,10 +165,10 @@ int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 	/* do the scan */
 	memset(&cfg, 0, sizeof(cfg));
 	cfg.flags = scan_flags | glob_flags;
-	cfg.def_mtime = basic->st_mtime;
-	cfg.def_uid = basic->st_uid;
-	cfg.def_gid = basic->st_gid;
-	cfg.def_mode = basic->st_mode;
+	cfg.def_mtime = ent->mtime;
+	cfg.def_uid = ent->uid;
+	cfg.def_gid = ent->gid;
+	cfg.def_mode = ent->mode;
 	cfg.prefix = prefix;
 	cfg.name_pattern = name_pattern;
 
@@ -207,11 +207,11 @@ fail_unknown:
 	goto fail;
 fail_path:
 	fprintf(stderr, "%s: " PRI_SZ ": %s: %s\n",
-		filename, line_num, path, strerror(errno));
+		filename, line_num, ent->name, strerror(errno));
 	goto fail;
 fail_not_dir:
 	fprintf(stderr, "%s: " PRI_SZ ": %s is not a directoy!\n",
-		filename, line_num, path);
+		filename, line_num, ent->name);
 	goto fail;
 fail_prefix:
 	fprintf(stderr, "%s: " PRI_SZ ": error cannonicalizing `%s`!\n",

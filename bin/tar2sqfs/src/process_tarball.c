@@ -93,31 +93,18 @@ static int create_node_and_repack_data(sqfs_writer_t *sqfs, dir_iterator_t *it,
 				       const dir_entry_t *ent, const char *link)
 {
 	tree_node_t *node;
-	struct stat sb;
 
-	if (ent->flags & DIR_ENTRY_FLAG_HARD_LINK) {
-		node = fstree_add_hard_link(&sqfs->fs, ent->name, link);
-		if (node == NULL)
-			goto fail_errno;
-
-		if (!cfg.quiet)
-			printf("Hard link %s -> %s\n", ent->name, link);
-		return 0;
-	}
-
-	memset(&sb, 0, sizeof(sb));
-	sb.st_mode = ent->mode;
-	sb.st_uid = ent->uid;
-	sb.st_gid = ent->gid;
-	sb.st_rdev = ent->rdev;
-	sb.st_mtime = keep_time ? ent->mtime : sqfs->fs.defaults.mtime;
-
-	node = fstree_add_generic(&sqfs->fs, ent->name, &sb, link);
+	node = fstree_add_generic(&sqfs->fs, ent, link);
 	if (node == NULL)
 		goto fail_errno;
 
-	if (!cfg.quiet)
-		printf("Packing %s\n", ent->name);
+	if (!cfg.quiet) {
+		if (ent->flags & DIR_ENTRY_FLAG_HARD_LINK) {
+			printf("Hard link %s -> %s\n", ent->name, link);
+		} else {
+			printf("Packing %s\n", ent->name);
+		}
+	}
 
 	if (!cfg.no_xattr) {
 		if (copy_xattr(sqfs, ent->name, node, it))
@@ -233,6 +220,9 @@ int process_tarball(istream_t *input_file, sqfs_writer_t *sqfs)
 		} else if (ent->name[0] == '\0') {
 			is_root = true;
 		}
+
+		if (!keep_time)
+			ent->mtime = sqfs->fs.defaults.mtime;
 
 		if (is_root) {
 			ret = set_root_attribs(sqfs, it, ent);

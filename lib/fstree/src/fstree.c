@@ -5,6 +5,7 @@
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
 #include "config.h"
+#include "util/util.h"
 #include "fstree.h"
 
 #include <string.h>
@@ -12,6 +13,15 @@
 #include <assert.h>
 #include <stdio.h>
 #include <errno.h>
+
+static sqfs_u32 clamp_timestamp(sqfs_s64 ts)
+{
+	if (ts < 0)
+		return 0;
+	if (ts > 0x0FFFFFFFFLL)
+		return 0xFFFFFFFF;
+	return ts;
+}
 
 static void free_recursive(tree_node_t *n)
 {
@@ -63,9 +73,9 @@ static void insert_sorted(tree_node_t *root, tree_node_t *n)
 	}
 }
 
-static tree_node_t *mknode(tree_node_t *parent, const char *name,
+static tree_node_t *mknode(fstree_t *fs, tree_node_t *parent, const char *name,
 			   size_t name_len, const char *extra,
-			   const struct stat *sb)
+			   const dir_entry_t *ent)
 {
 	tree_node_t *n;
 	size_t size;
@@ -80,10 +90,10 @@ static tree_node_t *mknode(tree_node_t *parent, const char *name,
 		return NULL;
 
 	n->xattr_idx = 0xFFFFFFFF;
-	n->uid = sb->st_uid;
-	n->gid = sb->st_gid;
-	n->mode = sb->st_mode;
-	n->mod_time = sb->st_mtime;
+	n->uid = ent->uid;
+	n->gid = ent->gid;
+	n->mode = ent->mode;
+	n->mod_time = clamp_timestamp(ent->mtime);
 	n->link_count = 1;
 	n->name = (char *)n->payload;
 	memcpy(n->name, name, name_len);
@@ -91,11 +101,24 @@ static tree_node_t *mknode(tree_node_t *parent, const char *name,
 	if (extra != NULL) {
 		ptr = n->name + name_len + 1;
 		strcpy(ptr, extra);
+
+		if (ent->flags & DIR_ENTRY_FLAG_HARD_LINK) {
+			if (canonicalize_name(ptr)) {
+				free(n);
+				errno = EINVAL;
+				return NULL;
+			}
+		}
 	} else {
 		ptr = NULL;
 	}
 
-	switch (sb->st_mode & S_IFMT) {
+	if (ent->flags & DIR_ENTRY_FLAG_HARD_LINK) {
+		n->mode = S_IFLNK | 0777;
+		n->flags |= FLAG_LINK_IS_HARD;
+	}
+
+	switch (n->mode & S_IFMT) {
 	case S_IFREG:
 		n->data.file.input_file = ptr;
 		break;
@@ -105,7 +128,7 @@ static tree_node_t *mknode(tree_node_t *parent, const char *name,
 		break;
 	case S_IFBLK:
 	case S_IFCHR:
-		n->data.devno = sb->st_rdev;
+		n->data.devno = ent->rdev;
 		break;
 	case S_IFDIR:
 		n->link_count = 2;
@@ -118,6 +141,11 @@ static tree_node_t *mknode(tree_node_t *parent, const char *name,
 		free(n);
 		errno = EMLINK;
 		return NULL;
+	}
+
+	if (ent->flags & DIR_ENTRY_FLAG_HARD_LINK) {
+		n->next_by_type = fs->links_unresolved;
+		fs->links_unresolved = n;
 	}
 
 	insert_sorted(parent, n);
@@ -184,20 +212,20 @@ tree_node_t *fstree_get_node_by_path(fstree_t *fs, tree_node_t *root,
 		n = child_by_name(root, path, len);
 
 		if (n == NULL) {
-			struct stat sb;
+			dir_entry_t ent;
 
 			if (!create_implicitly) {
 				errno = ENOENT;
 				return NULL;
 			}
 
-			memset(&sb, 0, sizeof(sb));
-			sb.st_mode = S_IFDIR | (fs->defaults.mode & 07777);
-			sb.st_uid = fs->defaults.uid;
-			sb.st_gid = fs->defaults.gid;
-			sb.st_mtime = fs->defaults.mtime;
+			memset(&ent, 0, sizeof(ent));
+			ent.mode = S_IFDIR | (fs->defaults.mode & 07777);
+			ent.uid = fs->defaults.uid;
+			ent.gid = fs->defaults.gid;
+			ent.mtime = fs->defaults.mtime;
 
-			n = mknode(root, path, len, NULL, &sb);
+			n = mknode(fs, root, path, len, NULL, &ent);
 			if (n == NULL)
 				return NULL;
 
@@ -211,46 +239,46 @@ tree_node_t *fstree_get_node_by_path(fstree_t *fs, tree_node_t *root,
 	return root;
 }
 
-tree_node_t *fstree_add_generic(fstree_t *fs, const char *path,
-				const struct stat *sb, const char *extra)
+tree_node_t *fstree_add_generic(fstree_t *fs, const dir_entry_t *ent,
+				const char *extra)
 {
 	tree_node_t *child, *parent;
 	const char *name;
 
-	if (S_ISLNK(sb->st_mode) && extra == NULL) {
+	if (S_ISLNK(ent->mode) && extra == NULL) {
 		errno = EINVAL;
 		return NULL;
 	}
 
-	if (*path == '\0') {
+	if (ent->name[0] == '\0') {
 		child = fs->root;
 		assert(child != NULL);
 		goto out;
 	}
 
-	parent = fstree_get_node_by_path(fs, fs->root, path, true, true);
+	parent = fstree_get_node_by_path(fs, fs->root, ent->name, true, true);
 	if (parent == NULL)
 		return NULL;
 
-	name = strrchr(path, '/');
-	name = (name == NULL ? path : (name + 1));
+	name = strrchr(ent->name, '/');
+	name = (name == NULL ? ent->name : (name + 1));
 
 	child = child_by_name(parent, name, strlen(name));
 out:
 	if (child != NULL) {
-		if (!S_ISDIR(child->mode) || !S_ISDIR(sb->st_mode) ||
+		if (!S_ISDIR(child->mode) || !S_ISDIR(ent->mode) ||
 		    !(child->flags & FLAG_DIR_CREATED_IMPLICITLY)) {
 			errno = EEXIST;
 			return NULL;
 		}
 
-		child->uid = sb->st_uid;
-		child->gid = sb->st_gid;
-		child->mode = sb->st_mode;
-		child->mod_time = sb->st_mtime;
+		child->uid = ent->uid;
+		child->gid = ent->gid;
+		child->mode = ent->mode;
+		child->mod_time = ent->mtime;
 		child->flags &= ~FLAG_DIR_CREATED_IMPLICITLY;
 		return child;
 	}
 
-	return mknode(parent, name, strlen(name), extra, sb);
+	return mknode(fs, parent, name, strlen(name), extra, ent);
 }

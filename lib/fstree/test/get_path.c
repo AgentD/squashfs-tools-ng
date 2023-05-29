@@ -10,11 +10,23 @@
 #include "common.h"
 #include "util/test.h"
 
+static dir_entry_t *mkentry(const char *name)
+{
+	dir_entry_t *ent = calloc(1, sizeof(*ent) + strlen(name) + 1);
+	TEST_NOT_NULL(ent);
+
+	strcpy(ent->name, name);
+	ent->mode = S_IFDIR | 0750;
+	ent->uid = 1000;
+	ent->gid = 100;
+	return ent;
+}
+
 int main(int argc, char **argv)
 {
 	tree_node_t *a, *b, *c, *d;
 	fstree_defaults_t fsd;
-	struct stat sb;
+	dir_entry_t *ent;
 	fstree_t fs;
 	char *str;
 	(void)argc; (void)argv;
@@ -22,15 +34,18 @@ int main(int argc, char **argv)
 	TEST_ASSERT(parse_fstree_defaults(&fsd, NULL) == 0);
 	TEST_ASSERT(fstree_init(&fs, &fsd) == 0);
 
-	memset(&sb, 0, sizeof(sb));
-	sb.st_mode = S_IFDIR | 0750;
-	sb.st_uid = 1000;
-	sb.st_gid = 100;
-
-	a = fstree_add_generic(&fs, "foo", &sb, NULL);
-	b = fstree_add_generic(&fs, "foo/bar", &sb, NULL);
-	c = fstree_add_generic(&fs, "foo/bar/baz", &sb, NULL);
-	d = fstree_add_generic(&fs, "foo/bar/baz/dir", &sb, NULL);
+	ent = mkentry("foo");
+	a = fstree_add_generic(&fs, ent, NULL);
+	free(ent);
+	ent = mkentry("foo/bar");
+	b = fstree_add_generic(&fs, ent, NULL);
+	free(ent);
+	ent = mkentry("foo/bar/baz");
+	c = fstree_add_generic(&fs, ent, NULL);
+	free(ent);
+	ent = mkentry("foo/bar/baz/dir");
+	d = fstree_add_generic(&fs, ent, NULL);
+	free(ent);
 
 	str = fstree_get_path(fs.root);
 	TEST_NOT_NULL(str);

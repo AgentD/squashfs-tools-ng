@@ -7,11 +7,11 @@
 #include "mkfs.h"
 
 static int add_generic(fstree_t *fs, const char *filename, size_t line_num,
-		       const char *path, struct stat *sb, const char *extra)
+		       dir_entry_t *ent, const char *extra)
 {
-	if (fstree_add_generic(fs, path, sb, extra) == NULL) {
+	if (fstree_add_generic(fs, ent, extra) == NULL) {
 		fprintf(stderr, "%s: " PRI_SZ ": %s: %s\n",
-			filename, line_num, path, strerror(errno));
+			filename, line_num, ent->name, strerror(errno));
 		return -1;
 	}
 
@@ -19,7 +19,7 @@ static int add_generic(fstree_t *fs, const char *filename, size_t line_num,
 }
 
 static int add_device(fstree_t *fs, const char *filename, size_t line_num,
-		      const char *path, struct stat *sb, const char *extra)
+		      dir_entry_t *ent, const char *extra)
 {
 	unsigned int maj, min;
 	char c;
@@ -32,57 +32,44 @@ static int add_device(fstree_t *fs, const char *filename, size_t line_num,
 	}
 
 	if (c == 'c' || c == 'C') {
-		sb->st_mode |= S_IFCHR;
+		ent->mode |= S_IFCHR;
 	} else if (c == 'b' || c == 'B') {
-		sb->st_mode |= S_IFBLK;
+		ent->mode |= S_IFBLK;
 	} else {
 		fprintf(stderr, "%s: " PRI_SZ ": unknown device type '%c'\n",
 			filename, line_num, c);
 		return -1;
 	}
 
-	sb->st_rdev = makedev(maj, min);
-	return add_generic(fs, filename, line_num, path, sb, NULL);
+	ent->rdev = makedev(maj, min);
+	return add_generic(fs, filename, line_num, ent, NULL);
 }
 
 static int add_file(fstree_t *fs, const char *filename, size_t line_num,
-		    const char *path, struct stat *basic, const char *extra)
+		    dir_entry_t *ent, const char *extra)
 {
 	if (extra == NULL || *extra == '\0')
-		extra = path;
+		extra = ent->name;
 
-	return add_generic(fs, filename, line_num, path, basic, extra);
-}
-
-static int add_hard_link(fstree_t *fs, const char *filename, size_t line_num,
-			 const char *path, struct stat *basic,
-			 const char *extra)
-{
-	(void)basic;
-
-	if (fstree_add_hard_link(fs, path, extra) == NULL) {
-		fprintf(stderr, "%s: " PRI_SZ ": %s\n",
-			filename, line_num, strerror(errno));
-		return -1;
-	}
-	return 0;
+	return add_generic(fs, filename, line_num, ent, extra);
 }
 
 static const struct callback_t {
 	const char *keyword;
 	unsigned int mode;
+	unsigned int flags;
 	bool need_extra;
 	bool allow_root;
 	int (*callback)(fstree_t *fs, const char *filename, size_t line_num,
-			const char *path, struct stat *sb, const char *extra);
+			dir_entry_t *ent, const char *extra);
 } file_list_hooks[] = {
-	{ "dir", S_IFDIR, false, true, add_generic },
-	{ "slink", S_IFLNK, true, false, add_generic },
-	{ "link", 0, true, false, add_hard_link },
-	{ "nod", 0, true,  false, add_device },
-	{ "pipe", S_IFIFO, false, false, add_generic },
-	{ "sock", S_IFSOCK, false, false, add_generic },
-	{ "file", S_IFREG, false, false, add_file },
+	{ "dir", S_IFDIR, 0, false, true, add_generic },
+	{ "slink", S_IFLNK, 0, true, false, add_generic },
+	{ "link", S_IFLNK, DIR_ENTRY_FLAG_HARD_LINK, true, false, add_generic },
+	{ "nod", 0, 0, true,  false, add_device },
+	{ "pipe", S_IFIFO, 0, false, false, add_generic },
+	{ "sock", S_IFSOCK, 0, false, false, add_generic },
+	{ "file", S_IFREG, 0, false, false, add_file },
 };
 
 #define NUM_HOOKS (sizeof(file_list_hooks) / sizeof(file_list_hooks[0]))
@@ -161,9 +148,10 @@ static int handle_line(fstree_t *fs, const char *filename,
 	const struct callback_t *cb = NULL;
 	unsigned int glob_flags = 0;
 	sqfs_u32 uid, gid, mode;
+	dir_entry_t *ent = NULL;
 	bool is_glob = false;
-	struct stat sb;
 	char *path;
+	int ret;
 
 	for (size_t i = 0; i < NUM_HOOKS; ++i) {
 		size_t len = strlen(file_list_hooks[i].keyword);
@@ -235,18 +223,29 @@ static int handle_line(fstree_t *fs, const char *filename,
 		goto fail_no_extra;
 
 	/* forward to callback */
-	memset(&sb, 0, sizeof(sb));
-	sb.st_mtime = fs->defaults.mtime;
-	sb.st_mode = mode | (is_glob ? 0 : cb->mode);
-	sb.st_uid = uid;
-	sb.st_gid = gid;
+	ent = alloc_flex(sizeof(*ent), 1, strlen(path) + 1);
+	if (ent == NULL)
+		goto fail_alloc;
+
+	strcpy(ent->name, path);
+	ent->mtime = fs->defaults.mtime;
+	ent->mode = mode | (is_glob ? 0 : cb->mode);
+	ent->uid = uid;
+	ent->gid = gid;
 
 	if (is_glob) {
-		return glob_files(fs, filename, line_num, path, &sb,
-				  basepath, glob_flags, extra);
+		ret = glob_files(fs, filename, line_num, ent,
+				 basepath, glob_flags, extra);
+	} else {
+		ret = cb->callback(fs, filename, line_num, ent, extra);
 	}
 
-	return cb->callback(fs, filename, line_num, path, &sb, extra);
+	free(ent);
+	return ret;
+fail_alloc:
+	fprintf(stderr, "%s: " PRI_SZ ": out of memory\n",
+		filename, line_num);
+	return -1;
 fail_root:
 	fprintf(stderr, "%s: " PRI_SZ ": cannot use / as argument for %s.\n",
 		filename, line_num, is_glob ? "glob" : cb->keyword);

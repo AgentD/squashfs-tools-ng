@@ -12,22 +12,12 @@
 #include <string.h>
 #include <errno.h>
 
-static sqfs_u32 clamp_timestamp(sqfs_s64 ts)
-{
-	if (ts < 0)
-		return 0;
-	if (ts > 0x0FFFFFFFFLL)
-		return 0xFFFFFFFF;
-	return ts;
-}
-
 int fstree_from_dir(fstree_t *fs, dir_iterator_t *dir)
 {
 	for (;;) {
 		dir_entry_t *ent = NULL;
 		tree_node_t *n = NULL;
 		char *extra = NULL;
-		struct stat sb;
 
 		int ret = dir->next(dir, &ent);
 		if (ret > 0)
@@ -55,13 +45,7 @@ int fstree_from_dir(fstree_t *fs, dir_iterator_t *dir)
 			}
 		}
 
-		memset(&sb, 0, sizeof(sb));
-		sb.st_uid = ent->uid;
-		sb.st_gid = ent->gid;
-		sb.st_mode = ent->mode;
-		sb.st_mtime = clamp_timestamp(ent->mtime);
-
-		n = fstree_add_generic(fs, ent->name, &sb, extra);
+		n = fstree_add_generic(fs, ent, extra);
 		free(extra);
 		free(ent);
 

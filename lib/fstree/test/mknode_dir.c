@@ -9,11 +9,25 @@
 #include "fstree.h"
 #include "util/test.h"
 
+static dir_entry_t *mkentry(const char *name)
+{
+	dir_entry_t *ent = calloc(1, sizeof(*ent) + strlen(name) + 1);
+
+	TEST_NOT_NULL(ent);
+	strcpy(ent->name, name);
+	ent->mode = S_IFDIR | 0654;
+	ent->uid = 123;
+	ent->gid = 456;
+	ent->rdev = 789;
+	ent->size = 4096;
+	return ent;
+}
+
 int main(int argc, char **argv)
 {
 	fstree_defaults_t defaults;
 	tree_node_t *root, *a, *b;
-	struct stat sb;
+	dir_entry_t *ent;
 	fstree_t fs;
 	int ret;
 	(void)argc; (void)argv;
@@ -22,26 +36,23 @@ int main(int argc, char **argv)
 	ret = fstree_init(&fs, &defaults);
 	TEST_EQUAL_I(ret, 0);
 
-	memset(&sb, 0, sizeof(sb));
-	sb.st_mode = S_IFDIR | 0654;
-	sb.st_uid = 123;
-	sb.st_gid = 456;
-	sb.st_rdev = 789;
-	sb.st_size = 4096;
-
-	root = fstree_add_generic(&fs, "rootdir", &sb, NULL);
+	ent = mkentry("rootdir");
+	root = fstree_add_generic(&fs, ent, NULL);
+	free(ent);
 	TEST_NOT_NULL(root);
 	TEST_ASSERT(root->parent == fs.root);
-	TEST_EQUAL_UI(root->uid, sb.st_uid);
-	TEST_EQUAL_UI(root->gid, sb.st_gid);
-	TEST_EQUAL_UI(root->mode, sb.st_mode);
+	TEST_EQUAL_UI(root->uid, 123);
+	TEST_EQUAL_UI(root->gid, 456);
+	TEST_EQUAL_UI(root->mode, (S_IFDIR | 0654));
 	TEST_EQUAL_UI(root->link_count, 2);
 	TEST_ASSERT(root->name >= (char *)root->payload);
 	TEST_STR_EQUAL(root->name, "rootdir");
 	TEST_NULL(root->data.children);
 	TEST_NULL(root->next);
 
-	a = fstree_add_generic(&fs, "rootdir/adir", &sb, NULL);
+	ent = mkentry("rootdir/adir");
+	a = fstree_add_generic(&fs, ent, NULL);
+	free(ent);
 	TEST_NOT_NULL(a);
 	TEST_ASSERT(a->parent == root);
 	TEST_NULL(a->next);
@@ -51,7 +62,9 @@ int main(int argc, char **argv)
 	TEST_ASSERT(root->parent == fs.root);
 	TEST_NULL(root->next);
 
-	b = fstree_add_generic(&fs, "rootdir/bdir", &sb, NULL);
+	ent = mkentry("rootdir/bdir");
+	b = fstree_add_generic(&fs, ent, NULL);
+	free(ent);
 	TEST_NOT_NULL(b);
 	TEST_ASSERT(a->parent == root);
 	TEST_ASSERT(b->parent == root);
