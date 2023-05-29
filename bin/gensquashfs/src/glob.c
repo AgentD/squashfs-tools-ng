@@ -76,25 +76,18 @@ int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 
 	/* fetch the actual target node */
 	root = fstree_get_node_by_path(fs, fs->root, path, true, false);
-	if (root == NULL) {
-		fprintf(stderr, "%s: " PRI_SZ ": %s: %s\n",
-			filename, line_num, path, strerror(errno));
-		return -1;
-	}
+	if (root == NULL)
+		goto fail_path;
 
-	if (!S_ISDIR(root->mode)) {
-		fprintf(stderr, "%s: " PRI_SZ ": %s is not a directoy!\n",
-			filename, line_num, path);
-		return -1;
-	}
+	if (!S_ISDIR(root->mode))
+		goto fail_not_dir;
 
 	prefix = fstree_get_path(root);
-	if (canonicalize_name(prefix) != 0) {
-		fprintf(stderr, "%s: " PRI_SZ ": error cannonicalizing `%s`!\n",
-			filename, line_num, prefix);
-		free(prefix);
-		return -1;
-	}
+	if (prefix == NULL)
+		goto fail_alloc;
+
+	if (canonicalize_name(prefix) != 0)
+		goto fail_prefix;
 
 	/* process options */
 	first_clear_flag = true;
@@ -136,11 +129,12 @@ int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 				;
 
 			len = name_string_length(extra);
-
 			free(name_pattern);
 			name_pattern = strndup(extra, len);
-			extra += len;
+			if (name_pattern == NULL)
+				goto fail_alloc;
 
+			extra += len;
 			while (isspace(*extra))
 				++extra;
 
@@ -153,11 +147,12 @@ int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 				;
 
 			len = name_string_length(extra);
-
 			free(name_pattern);
 			name_pattern = strndup(extra, len);
-			extra += len;
+			if (name_pattern == NULL)
+				goto fail_alloc;
 
+			extra += len;
 			while (isspace(*extra))
 				++extra;
 
@@ -173,12 +168,7 @@ int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 					++extra;
 				break;
 			}
-
-			fprintf(stderr, "%s: " PRI_SZ ": unknown option.\n",
-				filename, line_num);
-			free(name_pattern);
-			free(prefix);
-			return -1;
+			goto fail_unknown;
 		} else {
 			break;
 		}
@@ -205,29 +195,49 @@ int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 		size_t slen = strlen(extra);
 		char *temp = calloc(1, plen + 1 + slen + 1);
 
-		if (temp == NULL) {
-			fprintf(stderr, "%s: " PRI_SZ ": allocation failure.\n",
-				filename, line_num);
-		} else {
-			memcpy(temp, basepath, plen);
-			temp[plen] = '/';
-			memcpy(temp + plen + 1, extra, slen);
-			temp[plen + 1 + slen] = '\0';
+		if (temp == NULL)
+			goto fail_alloc;
 
-			dir = dir_tree_iterator_create(temp, &cfg);
-		}
+		memcpy(temp, basepath, plen);
+		temp[plen] = '/';
+		memcpy(temp + plen + 1, extra, slen);
+		temp[plen + 1 + slen] = '\0';
 
+		dir = dir_tree_iterator_create(temp, &cfg);
 		free(temp);
 	}
 
-	if (dir != NULL) {
-		ret = fstree_from_dir(fs, dir);
-		sqfs_drop(dir);
-	} else {
-		ret = -1;
-	}
+	if (dir == NULL)
+		goto fail;
+
+	ret = fstree_from_dir(fs, dir);
+	sqfs_drop(dir);
 
 	free(name_pattern);
 	free(prefix);
 	return ret;
+fail_unknown:
+	fprintf(stderr, "%s: " PRI_SZ ": unknown glob option: %s.\n",
+		filename, line_num, extra);
+	goto fail;
+fail_path:
+	fprintf(stderr, "%s: " PRI_SZ ": %s: %s\n",
+		filename, line_num, path, strerror(errno));
+	goto fail;
+fail_not_dir:
+	fprintf(stderr, "%s: " PRI_SZ ": %s is not a directoy!\n",
+		filename, line_num, path);
+	goto fail;
+fail_prefix:
+	fprintf(stderr, "%s: " PRI_SZ ": error cannonicalizing `%s`!\n",
+		filename, line_num, prefix);
+	goto fail;
+fail_alloc:
+	fprintf(stderr, "%s: " PRI_SZ ": out of memory\n",
+		filename, line_num);
+	goto fail;
+fail:
+	free(name_pattern);
+	free(prefix);
+	return -1;
 }
