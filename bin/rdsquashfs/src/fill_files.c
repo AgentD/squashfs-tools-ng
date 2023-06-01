@@ -4,7 +4,6 @@
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
-#include "config.h"
 #include "rdsquashfs.h"
 
 static struct file_ent {

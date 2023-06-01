@@ -4,17 +4,7 @@
  *
  * Copyright (C) 2021 David Oberhollenzer <goliath@infraroot.at>
  */
-#include "config.h"
-
-#include "util/util.h"
-#include "fstree.h"
 #include "mkfs.h"
-
-#include "sqfs/block.h"
-
-#include <string.h>
-#include <stdlib.h>
-#include <ctype.h>
 
 static int decode_priority(const char *filename, size_t line_no,
 			   char *line, sqfs_s64 *priority)

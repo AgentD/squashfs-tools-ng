@@ -4,13 +4,7 @@
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
-#include "config.h"
 #include "mkfs.h"
-
-#include <dirent.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
 
 int fstree_from_dir(fstree_t *fs, dir_iterator_t *dir)
 {

@@ -11,7 +11,6 @@
 #include "config.h"
 
 #include "common.h"
-#include "fstree.h"
 #include "io/dir_iterator.h"
 #include "util/util.h"
 #include "io/file.h"

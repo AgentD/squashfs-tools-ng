@@ -4,9 +4,7 @@
  *
  * Copyright (C) 2022 Enno Boland <mail@eboland.de>
  */
-#include "fstree.h"
 #include "mkfs.h"
-#include <stdio.h>
 
 #define NEW_FILE_START "# file: "
 

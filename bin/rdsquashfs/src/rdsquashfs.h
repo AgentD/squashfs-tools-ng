@@ -9,7 +9,6 @@
 
 #include "config.h"
 #include "common.h"
-#include "fstree.h"
 #include "util/util.h"
 
 #ifdef _WIN32
