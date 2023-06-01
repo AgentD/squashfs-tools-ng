@@ -158,7 +158,6 @@ static void strm_destroy(sqfs_object_t *obj)
 static int it_next(dir_iterator_t *it, dir_entry_t **out)
 {
 	tar_iterator_t *tar = (tar_iterator_t *)it;
-	dir_entry_t *ent;
 	int ret;
 
 	*out = NULL;
@@ -202,28 +201,26 @@ retry:
 		return tar->state;
 	}
 
-	ent = calloc(1, sizeof(*ent) + strlen(tar->current.name) + 1);
-	if (ent == NULL) {
+	*out = dir_entry_create(tar->current.name);
+	if ((*out) == NULL) {
 		tar->state = SQFS_ERROR_ALLOC;
 		return tar->state;
 	}
 
-	ent->mtime = tar->current.mtime;
-	ent->rdev = tar->current.devno;
-	ent->uid = tar->current.uid;
-	ent->gid = tar->current.gid;
-	ent->mode = tar->current.mode;
-	strcpy(ent->name, tar->current.name);
+	(*out)->mtime = tar->current.mtime;
+	(*out)->rdev = tar->current.devno;
+	(*out)->uid = tar->current.uid;
+	(*out)->gid = tar->current.gid;
+	(*out)->mode = tar->current.mode;
 
 	if (tar->current.is_hard_link) {
-		ent->mode = (S_IFLNK | 0777);
-		ent->flags |= DIR_ENTRY_FLAG_HARD_LINK;
+		(*out)->mode = (S_IFLNK | 0777);
+		(*out)->flags |= DIR_ENTRY_FLAG_HARD_LINK;
 	}
 
-	if (S_ISREG(ent->mode))
-		ent->size = tar->current.actual_size;
+	if (S_ISREG((*out)->mode))
+		(*out)->size = tar->current.actual_size;
 
-	*out = ent;
 	return 0;
 fail:
 	tar->state = ret < 0 ? SQFS_ERROR_IO : 1;

@@ -76,8 +76,6 @@ static int dir_read_link(dir_iterator_t *base, char **out)
 static int dir_next(dir_iterator_t *base, dir_entry_t **out)
 {
 	unix_dir_iterator_t *it = (unix_dir_iterator_t *)base;
-	dir_entry_t *decoded;
-	size_t len;
 
 	*out = NULL;
 	if (it->state != 0)
@@ -102,29 +100,25 @@ static int dir_next(dir_iterator_t *base, dir_entry_t **out)
 		return it->state;
 	}
 
-	len = strlen(it->ent->d_name);
-
-	decoded = alloc_flex(sizeof(*decoded), 1, len + 1);
-	if (decoded == NULL) {
+	*out = dir_entry_create(it->ent->d_name);
+	if ((*out) == NULL) {
 		it->state = SQFS_ERROR_ALLOC;
 		return it->state;
 	}
 
-	memcpy(decoded->name, it->ent->d_name, len);
-	decoded->mtime = it->sb.st_mtime;
-	decoded->dev = it->sb.st_dev;
-	decoded->rdev = it->sb.st_rdev;
-	decoded->uid = it->sb.st_uid;
-	decoded->gid = it->sb.st_gid;
-	decoded->mode = it->sb.st_mode;
+	(*out)->mtime = it->sb.st_mtime;
+	(*out)->dev = it->sb.st_dev;
+	(*out)->rdev = it->sb.st_rdev;
+	(*out)->uid = it->sb.st_uid;
+	(*out)->gid = it->sb.st_gid;
+	(*out)->mode = it->sb.st_mode;
 
 	if (S_ISREG(it->sb.st_mode))
-		decoded->size = it->sb.st_size;
+		(*out)->size = it->sb.st_size;
 
-	if (decoded->dev != it->device)
-		decoded->flags |= DIR_ENTRY_FLAG_MOUNT_POINT;
+	if ((*out)->dev != it->device)
+		(*out)->flags |= DIR_ENTRY_FLAG_MOUNT_POINT;
 
-	*out = decoded;
 	return it->state;
 }
 

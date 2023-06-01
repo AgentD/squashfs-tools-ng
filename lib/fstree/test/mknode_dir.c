@@ -11,10 +11,8 @@
 
 static dir_entry_t *mkentry(const char *name)
 {
-	dir_entry_t *ent = calloc(1, sizeof(*ent) + strlen(name) + 1);
-
+	dir_entry_t *ent = dir_entry_create(name);
 	TEST_NOT_NULL(ent);
-	strcpy(ent->name, name);
 	ent->mode = S_IFDIR | 0654;
 	ent->uid = 123;
 	ent->gid = 456;

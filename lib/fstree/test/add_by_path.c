@@ -13,10 +13,9 @@
 static dir_entry_t *mkentry(const char *name, sqfs_u16 mode, sqfs_u32 uid,
 			    sqfs_u32 gid)
 {
-	dir_entry_t *ent = calloc(1, sizeof(*ent) + strlen(name) + 1);
+	dir_entry_t *ent = dir_entry_create(name);
 
 	TEST_NOT_NULL(ent);
-	strcpy(ent->name, name);
 	ent->mode = mode;
 	ent->uid = uid;
 	ent->gid = gid;

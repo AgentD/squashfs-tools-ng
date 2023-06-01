@@ -15,7 +15,7 @@
 #include <stdio.h>
 
 #include "sqfs/predef.h"
-#include "io/dir_iterator.h"
+#include "io/dir_entry.h"
 #include "io/istream.h"
 #include "compat.h"
 

@@ -12,11 +12,10 @@
 
 static tree_node_t *mkentry(fstree_t *fs, const char *name)
 {
-	dir_entry_t *ent = calloc(1, sizeof(*ent) + strlen(name) + 1);
+	dir_entry_t *ent = dir_entry_create(name);
 	tree_node_t *out;
 
 	TEST_NOT_NULL(ent);
-	strcpy(ent->name, name);
 	ent->mode = S_IFBLK | 0600;
 	ent->rdev = 1337;
 

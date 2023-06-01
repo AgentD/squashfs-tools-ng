@@ -12,11 +12,10 @@
 
 static tree_node_t *gen_node(fstree_t *fs, const char *path)
 {
-	dir_entry_t *ent = calloc(1, sizeof(*ent) + strlen(path) + 1);
+	dir_entry_t *ent = dir_entry_create(path);
 	tree_node_t *ret;
 
 	TEST_NOT_NULL(ent);
-	strcpy(ent->name, path);
 	ent->mode = S_IFDIR | 0755;
 
 	ret = fstree_add_generic(fs, ent, NULL);
