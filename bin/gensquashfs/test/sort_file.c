@@ -9,6 +9,7 @@
 #include "sqfs/block.h"
 #include "util/test.h"
 #include "util/util.h"
+#include "io/mem.h"
 #include "mkfs.h"
 
 static const char *listing =
@@ -108,62 +109,23 @@ static int flags[] = {
 	0,
 };
 
-/*****************************************************************************/
-
-static sqfs_u8 temp_buffer[2048];
-static const char *input_file = NULL;
-
-static void destroy_noop(sqfs_object_t *obj)
-{
-	(void)obj;
-}
-
-static int memfile_load(istream_t *strm)
-{
-	strcpy((char *)temp_buffer, input_file);
-	strm->eof = true;
-	strm->buffer_used = strlen(input_file);
-	return 0;
-}
-
-static const char *get_filename(istream_t *strm)
-{
-	(void)strm;
-	return "memstream";
-}
-
-static istream_t memstream = {
-	.base = {
-		.destroy = destroy_noop,
-	},
-
-	.buffer_used = 0,
-	.buffer_offset = 0,
-	.eof = false,
-	.buffer = temp_buffer,
-
-	.precache = memfile_load,
-	.get_filename = get_filename,
-};
-
-/*****************************************************************************/
-
 int main(int argc, char **argv)
 {
 	fstree_defaults_t fsd;
+	istream_t *memstream;
 	tree_node_t *n;
 	fstree_t fs;
 	size_t i;
 	(void)argc; (void)argv;
 
-	input_file = listing;
-	memstream.buffer_used = 0;
-	memstream.buffer_offset = 0;
-	memstream.eof = false;
+	memstream = istream_memory_create("listing.txt", 1024,
+					  listing, strlen(listing));
+	TEST_NOT_NULL(memstream);
 
 	TEST_ASSERT(parse_fstree_defaults(&fsd, NULL) == 0);
 	TEST_ASSERT(fstree_init(&fs, &fsd) == 0);
-	TEST_ASSERT(fstree_from_file_stream(&fs, &memstream, NULL) == 0);
+	TEST_ASSERT(fstree_from_file_stream(&fs, memstream, NULL) == 0);
+	sqfs_drop(memstream);
 
 	fstree_post_process(&fs);
 
@@ -186,12 +148,11 @@ int main(int argc, char **argv)
 	TEST_EQUAL_UI(i, sizeof(initial_order) / sizeof(initial_order[0]));
 
 
-	input_file = sort_file;
-	memstream.buffer_used = 0;
-	memstream.buffer_offset = 0;
-	memstream.eof = false;
-
-	TEST_ASSERT(fstree_sort_files(&fs, &memstream) == 0);
+	memstream = istream_memory_create("sortfile.txt", 1024,
+					  sort_file, strlen(sort_file));
+	TEST_NOT_NULL(memstream);
+	TEST_ASSERT(fstree_sort_files(&fs, memstream) == 0);
+	sqfs_drop(memstream);
 
 	for (i = 0, n = fs.files; n != NULL; n = n->next_by_type, ++i) {
 		char *path = fstree_get_path(n);

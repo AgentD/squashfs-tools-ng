@@ -35,7 +35,6 @@ test_fstree_from_file_SOURCES = bin/gensquashfs/test/fstree_from_file.c \
 				bin/gensquashfs/src/mkfs.h
 test_fstree_from_file_CPPFLAGS = $(AM_CPPFLAGS)
 test_fstree_from_file_CPPFLAGS += -I$(top_srcdir)/bin/gensquashfs/src
-test_fstree_from_file_CPPFLAGS += -DTESTPATH=$(GENDATADIR)/fstree1.txt
 test_fstree_from_file_LDADD = libcommon.a libfstree.a libio.a libutil.a \
 			libcompat.a
 
@@ -74,6 +73,6 @@ noinst_PROGRAMS += fstree_fuzz
 check_PROGRAMS += $(GENSQUASHFS_TESTS)
 TESTS += $(GENSQUASHFS_TESTS)
 
-EXTRA_DIST += $(GENDATADIR)/xattr1.txt $(GENDATADIR)/fstree1.txt
+EXTRA_DIST += $(GENDATADIR)/xattr1.txt
 EXTRA_DIST += $(GENDATADIR)/fstree_glob1.txt $(GENDATADIR)/fstree_glob2.txt
 EXTRA_DIST += $(GENDATADIR)/fstree_glob3.txt

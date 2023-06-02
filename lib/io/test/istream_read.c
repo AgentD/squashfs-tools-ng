@@ -8,72 +8,40 @@
 
 #include "io/istream.h"
 #include "util/test.h"
+#include "io/mem.h"
 
 static const sqfs_u64 end0 = 449;	/* region 1: filled with 'A' */
 static const sqfs_u64 end1 = 521;	/* region 2: filled with 'B' */
 static const sqfs_u64 end2 = 941;	/* region 3: filled with 'C' */
 
-static sqfs_u8 buffer[103];		/* sliding window into the file */
-static sqfs_u64 offset = 0;		/* byte offset into the "file" */
+static sqfs_u8 rd_buffer[941];
 
-static int dummy_precache(istream_t *strm);
-static const char *dummy_get_filename(istream_t *strm);
-
-static istream_t dummy = {
-	{
-		1,
-		NULL,
-		NULL,
-	},
-	0,
-	0,
-	false,
-	buffer,
-	dummy_precache,
-	dummy_get_filename,
-};
-
-static int dummy_precache(istream_t *strm)
+static sqfs_u8 byte_at_offset(sqfs_u64 off)
 {
-	sqfs_u8 x;
-
-	TEST_ASSERT(strm == &dummy);
-
-	while (strm->buffer_used < sizeof(buffer)) {
-		if (offset < end0) {
-			x = 'A';
-		} else if (offset < end1) {
-			x = 'B';
-		} else if (offset < end2) {
-			x = 'C';
-		} else {
-			strm->eof = true;
-			break;
-		}
-
-		strm->buffer[strm->buffer_used++] = x;
-		++offset;
-	}
-
-	return 0;
+	if (off < end0)
+		return 'A';
+	if (off < end1)
+		return 'B';
+	return 'C';
 }
 
-static const char *dummy_get_filename(istream_t *strm)
+static void init_rd_buffer(void)
 {
-	TEST_ASSERT(strm == &dummy);
-	return "dummy file";
+	for (size_t i = 0; i < end2; ++i)
+		rd_buffer[i] = byte_at_offset(i);
 }
 
 int main(int argc, char **argv)
 {
 	sqfs_u8 read_buffer[61];
 	sqfs_u64 read_off = 0;
-	const char *name;
+	istream_t *dummy;
 	(void)argc; (void)argv;
 
-	name = istream_get_filename(&dummy);
-	TEST_NOT_NULL(name);
-	TEST_STR_EQUAL(name, "dummy file");
+	init_rd_buffer();
+	dummy = istream_memory_create("dummy file", 103,
+				      rd_buffer, sizeof(rd_buffer));
+	TEST_NOT_NULL(dummy);
 
 	/* region 1 */
 	while (read_off < end0) {
@@ -82,7 +50,7 @@ int main(int argc, char **argv)
 		if (read_diff > sizeof(read_buffer))
 			read_diff = sizeof(read_buffer);
 
-		int ret = istream_read(&dummy, read_buffer, read_diff);
+		int ret = istream_read(dummy, read_buffer, read_diff);
 		TEST_ASSERT(ret > 0);
 		TEST_ASSERT((size_t)ret <= read_diff);
 
@@ -100,7 +68,7 @@ int main(int argc, char **argv)
 		if (read_diff > sizeof(read_buffer))
 			read_diff = sizeof(read_buffer);
 
-		int ret = istream_read(&dummy, read_buffer, read_diff);
+		int ret = istream_read(dummy, read_buffer, read_diff);
 		TEST_ASSERT(ret > 0);
 		TEST_ASSERT((size_t)ret <= read_diff);
 
@@ -115,7 +83,7 @@ int main(int argc, char **argv)
 	for (;;) {
 		size_t read_diff = sizeof(read_buffer);
 
-		int ret = istream_read(&dummy, read_buffer, read_diff);
+		int ret = istream_read(dummy, read_buffer, read_diff);
 		TEST_ASSERT(ret >= 0);
 		TEST_ASSERT((size_t)ret <= read_diff);
 
@@ -132,5 +100,8 @@ int main(int argc, char **argv)
 		TEST_ASSERT(read_off <= end2);
 	}
 
+	TEST_ASSERT(dummy->eof);
+	TEST_ASSERT(dummy->buffer_offset >= dummy->buffer_used);
+	sqfs_drop(dummy);
 	return EXIT_SUCCESS;
 }

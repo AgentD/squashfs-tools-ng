@@ -8,6 +8,7 @@
 #include "xfrm/stream.h"
 #include "util/test.h"
 #include "io/xfrm.h"
+#include "io/mem.h"
 
 static const sqfs_u8 blob_in[] = {
 #if defined(DO_XZ)
@@ -363,57 +364,6 @@ static const char orig[] =
 
 /*****************************************************************************/
 
-static const sqfs_u8 *rd_buffer;
-static size_t rd_offset;
-static size_t rd_size;
-static sqfs_u8 mi_buffer[7];
-
-static int mem_precache(istream_t *strm);
-static const char *mem_get_filename(istream_t *strm);
-
-static istream_t mem_istream = {
-	{ 1, NULL, NULL, },
-	0,
-	0,
-	false,
-	mi_buffer,
-	mem_precache,
-	mem_get_filename,
-};
-
-static int mem_precache(istream_t *strm)
-{
-	size_t spc_in, spc_out, diff;
-
-	TEST_ASSERT(strm == &mem_istream);
-	TEST_ASSERT(!strm->eof);
-	TEST_ASSERT(rd_offset < rd_size);
-
-	spc_in = rd_size - rd_offset;
-	spc_out = sizeof(mi_buffer) - strm->buffer_used;
-	diff = spc_in < spc_out ? spc_in : spc_out;
-
-	memcpy(mi_buffer + strm->buffer_used, rd_buffer + rd_offset, diff);
-	strm->buffer_used += diff;
-	rd_offset += diff;
-
-	TEST_ASSERT(strm->buffer_used <= sizeof(mi_buffer));
-	TEST_ASSERT(rd_offset <= rd_size);
-
-	if (rd_offset == rd_size)
-		strm->eof = true;
-
-	return 0;
-}
-
-static const char *mem_get_filename(istream_t *strm)
-{
-	TEST_ASSERT(strm == &mem_istream);
-	return "memory stream";
-}
-
-/*****************************************************************************/
-
 static size_t mo_written = 0;
 static sqfs_u8 mo_buffer[1024];
 static bool mo_flushed = false;
@@ -454,25 +404,28 @@ static int mem_flush(ostream_t *strm)
 
 /*****************************************************************************/
 
-static void run_unpack_test(void)
+static void run_unpack_test(const void *blob, size_t size)
 {
+	istream_t *istream, *mem_istream;
 	xfrm_stream_t *xfrm;
-	istream_t *istream;
 	sqfs_s32 ret;
 	size_t i;
 	char c;
 
+	mem_istream = istream_memory_create("memstream", 7, blob, size);
+	TEST_NOT_NULL(mem_istream);
+
 	xfrm = mkdecompressor();
 	TEST_NOT_NULL(xfrm);
 	TEST_EQUAL_UI(((sqfs_object_t *)xfrm)->refcount, 1);
-	TEST_EQUAL_UI(((sqfs_object_t *)&mem_istream)->refcount, 1);
+	TEST_EQUAL_UI(((sqfs_object_t *)mem_istream)->refcount, 1);
 
-	istream = istream_xfrm_create(&mem_istream, xfrm);
+	istream = istream_xfrm_create(mem_istream, xfrm);
 
 	TEST_NOT_NULL(istream);
 	TEST_EQUAL_UI(((sqfs_object_t *)istream)->refcount, 1);
 	TEST_EQUAL_UI(((sqfs_object_t *)xfrm)->refcount, 2);
-	TEST_EQUAL_UI(((sqfs_object_t *)&mem_istream)->refcount, 2);
+	TEST_EQUAL_UI(((sqfs_object_t *)mem_istream)->refcount, 2);
 
 	for (i = 0; i < (sizeof(orig) - 1); ++i) {
 		ret = istream_read(istream, &c, 1);
@@ -486,14 +439,15 @@ static void run_unpack_test(void)
 	ret = istream_read(istream, &c, 1);
 	TEST_EQUAL_I(ret, 0);
 
-	TEST_EQUAL_UI(mem_istream.buffer_used, 0);
-	TEST_EQUAL_UI(mem_istream.buffer_offset, 0);
-	TEST_EQUAL_UI(rd_offset, rd_size);
+	TEST_EQUAL_UI(mem_istream->buffer_used, 0);
+	TEST_EQUAL_UI(mem_istream->buffer_offset, 0);
+	TEST_ASSERT(mem_istream->eof);
 
 	sqfs_drop(istream);
-	TEST_EQUAL_UI(((sqfs_object_t *)&mem_istream)->refcount, 1);
+	TEST_EQUAL_UI(((sqfs_object_t *)mem_istream)->refcount, 1);
 	TEST_EQUAL_UI(((sqfs_object_t *)xfrm)->refcount, 1);
 	sqfs_drop(xfrm);
+	sqfs_drop(mem_istream);
 }
 
 static void run_pack_test(void)
@@ -542,25 +496,11 @@ int main(int argc, char **argv)
 	(void)argc; (void)argv;
 
 	/* normal stream */
-	rd_buffer = blob_in;
-	rd_offset = 0;
-	rd_size = sizeof(blob_in);
-	mem_istream.buffer_offset = 0;
-	mem_istream.buffer_used = 0;
-	mem_istream.eof = false;
-
-	run_unpack_test();
+	run_unpack_test(blob_in, sizeof(blob_in));
 
 	/* concatenated streams */
 #if !defined(DO_GZIP)
-	rd_buffer = blob_in_concat;
-	rd_offset = 0;
-	rd_size = sizeof(blob_in_concat);
-	mem_istream.buffer_offset = 0;
-	mem_istream.buffer_used = 0;
-	mem_istream.eof = false;
-
-	run_unpack_test();
+	run_unpack_test(blob_in_concat, sizeof(blob_in_concat));
 #else
 	(void)blob_in_concat;
 #endif
@@ -568,13 +508,6 @@ int main(int argc, char **argv)
 	run_pack_test();
 
 	/* restore from compressed */
-	rd_buffer = mo_buffer;
-	rd_offset = 0;
-	rd_size = mo_written;
-	mem_istream.buffer_offset = 0;
-	mem_istream.buffer_used = 0;
-	mem_istream.eof = false;
-
-	run_unpack_test();
+	run_unpack_test(mo_buffer, mo_written);
 	return EXIT_SUCCESS;
 }

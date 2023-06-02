@@ -7,18 +7,36 @@
 #include "config.h"
 
 #include "util/test.h"
+#include "io/mem.h"
 #include "mkfs.h"
+
+const char *listing =
+"# comment line\n"
+"slink /slink 0644 2 3 slinktarget\n"
+"dir /dir 0755 4 5\n"
+"nod /chardev 0600 6 7 c 13 37\n"
+"nod /blkdev 0600 8 9 b 42 21\n"
+"pipe /pipe 0644 10 11\n"
+"dir / 0755 1000 100\n"
+"dir \"/foo bar\" 0755 0 0\n"
+"dir \"/foo bar/ test \\\"/\" 0755 0 0\n"
+"  sock  /sock  0555  12  13  ";
 
 int main(int argc, char **argv)
 {
 	fstree_defaults_t fsd;
+	istream_t *file;
 	tree_node_t *n;
 	fstree_t fs;
 	(void)argc; (void)argv;
 
+	file = istream_memory_create("memfile", 7, listing, strlen(listing));
+	TEST_NOT_NULL(file);
+
 	TEST_ASSERT(parse_fstree_defaults(&fsd, NULL) == 0);
 	TEST_ASSERT(fstree_init(&fs, &fsd) == 0);
-	TEST_ASSERT(fstree_from_file(&fs, TEST_PATH, NULL) == 0);
+	TEST_ASSERT(fstree_from_file_stream(&fs, file, NULL) == 0);
+	sqfs_drop(file);
 
 	fstree_post_process(&fs);
 	n = fs.root->data.children;
