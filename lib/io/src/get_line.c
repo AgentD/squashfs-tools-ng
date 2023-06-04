@@ -41,13 +41,13 @@ static size_t trim(char *buffer, int flags)
 int istream_get_line(istream_t *strm, char **out,
 		     size_t *line_num, int flags)
 {
-	size_t i, count, line_len = 0;
 	char *line = NULL, *new;
-	bool have_line = false;
-
-	*out = NULL;
+	size_t line_len = 0;
 
 	for (;;) {
+		bool have_line = false;
+		size_t i, count;
+
 		if (istream_precache(strm))
 			goto fail_free;
 
@@ -56,12 +56,10 @@ int istream_get_line(istream_t *strm, char **out,
 				goto out_eof;
 
 			line_len = trim(line, flags);
+			if (line_len > 0 ||!(flags & ISTREAM_LINE_SKIP_EMPTY))
+				break;
 
-			if (line_len == 0 &&
-			    (flags & ISTREAM_LINE_SKIP_EMPTY)) {
-				goto out_eof;
-			}
-			break;
+			goto out_eof;
 		}
 
 		for (i = 0; i < strm->buffer_used; ++i) {
@@ -93,18 +91,18 @@ int istream_get_line(istream_t *strm, char **out,
 				line[--line_len] = '\0';
 
 			line_len = trim(line, flags);
+			if (line_len > 0 || !(flags & ISTREAM_LINE_SKIP_EMPTY))
+				break;
 
-			if (line_len == 0 &&
-			    (flags & ISTREAM_LINE_SKIP_EMPTY)) {
-				free(line);
-				line = NULL;
-				have_line = false;
-				*line_num += 1;
-				continue;
-			}
-			break;
+			free(line);
+			line = NULL;
+			*line_num += 1;
 		}
 	}
+
+	new = realloc(line, line_len + 1);
+	if (new != NULL)
+		line = new;
 
 	*out = line;
 	return 0;
