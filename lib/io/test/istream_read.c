@@ -101,7 +101,7 @@ int main(int argc, char **argv)
 	}
 
 	TEST_ASSERT(dummy->eof);
-	TEST_ASSERT(dummy->buffer_offset >= dummy->buffer_used);
+	TEST_ASSERT(dummy->buffer_used == 0);
 	sqfs_drop(dummy);
 	return EXIT_SUCCESS;
 }

@@ -71,10 +71,7 @@ static bool is_sparse_region(const tar_iterator_t *tar, sqfs_u64 *count)
 
 static int data_available(tar_iterator_t *tar, sqfs_u64 want, sqfs_u64 *out)
 {
-	sqfs_u64 avail = tar->stream->buffer_used - tar->stream->buffer_offset;
-
-	if ((want > avail) &&
-	    ((tar->stream->buffer_offset > 0) || avail == 0)) {
+	if (want > tar->stream->buffer_used) {
 		if (istream_precache(tar->stream)) {
 			tar->state = SQFS_ERROR_IO;
 			return -1;
@@ -84,11 +81,10 @@ static int data_available(tar_iterator_t *tar, sqfs_u64 want, sqfs_u64 *out)
 			tar->state = SQFS_ERROR_CORRUPTED;
 			return -1;
 		}
-
-		avail = tar->stream->buffer_used;
 	}
 
-	*out = avail <= want ? avail : want;
+	*out = tar->stream->buffer_used <= want ?
+		tar->stream->buffer_used : want;
 	return 0;
 }
 
@@ -104,43 +100,36 @@ static int strm_precache(istream_t *strm)
 	tar_istream_t *tar = (tar_istream_t *)strm;
 	sqfs_u64 diff;
 
-	strm->buffer_used -= strm->buffer_offset;
-	strm->buffer_offset = 0;
-
 	if (strm->eof)
-		return 0;
-
-	tar->parent->offset += tar->parent->last_chunk;
+		goto out_eof;
 
 	if (!tar->parent->last_sparse) {
-		tar->parent->stream->buffer_offset += tar->parent->last_chunk;
+		tar->parent->stream->buffer += tar->parent->last_chunk;
+		tar->parent->stream->buffer_used -= tar->parent->last_chunk;
 		tar->parent->record_size -= tar->parent->last_chunk;
 	}
 
+	tar->parent->offset += tar->parent->last_chunk;
 	if (tar->parent->offset >= tar->parent->file_size)
 		goto out_eof;
 
-	if (is_sparse_region(tar->parent, &diff)) {
+	tar->parent->last_sparse = is_sparse_region(tar->parent, &diff);
+
+	if (tar->parent->last_sparse) {
 		if (diff > sizeof(tar->buffer))
 			diff = sizeof(tar->buffer);
 
 		strm->buffer = tar->buffer;
-		strm->buffer_used = diff;
-		tar->parent->last_chunk = diff;
-		tar->parent->last_sparse = true;
-
 		memset(tar->buffer, 0, diff);
 	} else {
 		if (data_available(tar->parent, diff, &diff))
 			goto out_eof;
 
-		strm->buffer = tar->parent->stream->buffer +
-			tar->parent->stream->buffer_offset;
-		strm->buffer_used = diff;
-		tar->parent->last_chunk = diff;
-		tar->parent->last_sparse = false;
+		strm->buffer = tar->parent->stream->buffer;
 	}
 
+	strm->buffer_used = diff;
+	tar->parent->last_chunk = diff;
 	return 0;
 out_eof:
 	strm->eof = true;

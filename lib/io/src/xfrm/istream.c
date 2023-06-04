@@ -20,28 +20,25 @@ static int xfrm_precache(istream_t *base)
 	istream_xfrm_t *xfrm = (istream_xfrm_t *)base;
 	int ret;
 
-	if (base->buffer_offset >= base->buffer_used) {
-		base->buffer_offset = 0;
-		base->buffer_used = 0;
-	} else if (base->buffer_offset > 0) {
-		memmove(base->buffer,
-			base->buffer + base->buffer_offset,
-			base->buffer_used - base->buffer_offset);
-
-		base->buffer_used -= base->buffer_offset;
-		base->buffer_offset = 0;
-	}
-
 	if (base->eof)
 		return 0;
+
+	assert(base->buffer >= xfrm->uncompressed);
+	assert(base->buffer <= (xfrm->uncompressed + BUFSZ));
+	assert(base->buffer_used <= BUFSZ);
+	assert((size_t)(base->buffer - xfrm->uncompressed) <=
+	       (BUFSZ - base->buffer_used));
+
+	if (base->buffer_used > 0)
+		memmove(xfrm->uncompressed, base->buffer, base->buffer_used);
+
+	base->buffer = xfrm->uncompressed;
 
 	ret = istream_precache(xfrm->wrapped);
 	if (ret != 0)
 		return ret;
 
 	for (;;) {
-		const sqfs_u32 in_sz = xfrm->wrapped->buffer_used;
-		const sqfs_u32 out_sz = sizeof(xfrm->uncompressed);
 		sqfs_u32 in_off = 0, out_off = base->buffer_used;
 		int mode = XFRM_STREAM_FLUSH_NONE;
 
@@ -49,9 +46,10 @@ static int xfrm_precache(istream_t *base)
 			mode = XFRM_STREAM_FLUSH_FULL;
 
 		ret = xfrm->xfrm->process_data(xfrm->xfrm,
-					       xfrm->wrapped->buffer, in_sz,
-					       base->buffer + out_off,
-					       out_sz - out_off,
+					       xfrm->wrapped->buffer,
+					       xfrm->wrapped->buffer_used,
+					       xfrm->uncompressed + out_off,
+					       BUFSZ - out_off,
 					       &in_off, &out_off, mode);
 
 		if (ret == XFRM_STREAM_ERROR) {
@@ -61,9 +59,10 @@ static int xfrm_precache(istream_t *base)
 		}
 
 		base->buffer_used = out_off;
-		xfrm->wrapped->buffer_offset = in_off;
+		xfrm->wrapped->buffer += in_off;
+		xfrm->wrapped->buffer_used -= in_off;
 
-		if (ret == XFRM_STREAM_BUFFER_FULL || out_off >= out_sz)
+		if (ret == XFRM_STREAM_BUFFER_FULL || out_off >= BUFSZ)
 			break;
 
 		ret = istream_precache(xfrm->wrapped);

@@ -21,10 +21,9 @@ typedef struct istream_t {
 	sqfs_object_t base;
 
 	size_t buffer_used;
-	size_t buffer_offset;
 	bool eof;
 
-	sqfs_u8 *buffer;
+	const sqfs_u8 *buffer;
 
 	int (*precache)(struct istream_t *strm);
 

@@ -10,6 +10,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 typedef struct {
 	istream_t base;
@@ -28,17 +29,16 @@ static int mem_in_precache(istream_t *strm)
 	mem_istream_t *mem = (mem_istream_t *)strm;
 	size_t diff;
 
-	if (strm->buffer_offset >= strm->buffer_used) {
-		strm->buffer_offset = 0;
-		strm->buffer_used = 0;
-	} else if (strm->buffer_offset > 0) {
-		memmove(strm->buffer,
-			strm->buffer + strm->buffer_offset,
-			strm->buffer_used - strm->buffer_offset);
+	assert(strm->buffer >= mem->buffer);
+	assert(strm->buffer <= (mem->buffer + mem->bufsz));
+	assert(strm->buffer_used <= mem->bufsz);
+	assert((size_t)(strm->buffer - mem->buffer) <=
+	       (mem->bufsz - strm->buffer_used));
 
-		strm->buffer_used -= strm->buffer_offset;
-		strm->buffer_offset = 0;
-	}
+	if (strm->buffer_used > 0)
+		memmove(mem->buffer, strm->buffer, strm->buffer_used);
+
+	strm->buffer = mem->buffer;
 
 	diff = mem->bufsz - strm->buffer_used;
 	if (diff > mem->size)

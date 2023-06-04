@@ -36,22 +36,17 @@ static istream_t *magic_autowrap(istream_t *strm)
 {
 	xfrm_stream_t *xfrm = NULL;
 	istream_t *wrapper = NULL;
-	const sqfs_u8 *data;
-	size_t avail;
 	int ret;
 
 	ret = istream_precache(strm);
 	if (ret != 0)
 		goto out;
 
-	data = strm->buffer + strm->buffer_offset;
-	avail = strm->buffer_used - strm->buffer_offset;
-
-	ret = tar_probe(data, avail);
+	ret = tar_probe(strm->buffer, strm->buffer_used);
 	if (ret > 0)
 		return strm;
 
-	ret = xfrm_compressor_id_from_magic(data, avail);
+	ret = xfrm_compressor_id_from_magic(strm->buffer, strm->buffer_used);
 	if (ret <= 0)
 		return strm;
 

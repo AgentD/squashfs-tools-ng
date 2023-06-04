@@ -17,25 +17,21 @@ typedef struct {
 static int file_precache(istream_t *strm)
 {
 	file_istream_t *file = (file_istream_t *)strm;
-	ssize_t ret;
-	size_t diff;
 
-	if (strm->buffer_offset >= strm->buffer_used) {
-		strm->buffer_offset = 0;
-		strm->buffer_used = 0;
-	} else if (strm->buffer_offset > 0) {
-		memmove(strm->buffer,
-			strm->buffer + strm->buffer_offset,
-			strm->buffer_used - strm->buffer_offset);
+	assert(strm->buffer >= file->buffer);
+	assert(strm->buffer <= (file->buffer + BUFSZ));
+	assert(strm->buffer_used <= BUFSZ);
+	assert((size_t)(strm->buffer - file->buffer) <=
+	       (BUFSZ - strm->buffer_used));
 
-		strm->buffer_used -= strm->buffer_offset;
-		strm->buffer_offset = 0;
-	}
+	if (strm->buffer_used > 0)
+		memmove(file->buffer, strm->buffer, strm->buffer_used);
 
-	while (!strm->eof && strm->buffer_used < sizeof(file->buffer)) {
-		diff = sizeof(file->buffer) - strm->buffer_used;
+	strm->buffer = file->buffer;
 
-		ret = read(file->fd, strm->buffer + strm->buffer_used, diff);
+	while (!strm->eof && strm->buffer_used < BUFSZ) {
+		ssize_t ret = read(file->fd, file->buffer + strm->buffer_used,
+				   BUFSZ - strm->buffer_used);
 
 		if (ret == 0)
 			strm->eof = true;

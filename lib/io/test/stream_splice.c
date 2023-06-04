@@ -92,7 +92,7 @@ int main(int argc, char **argv)
 	}
 
 	TEST_ASSERT(in->eof);
-	TEST_ASSERT(in->buffer_offset >= in->buffer_used);
+	TEST_ASSERT(in->buffer_used == 0);
 	TEST_EQUAL_UI(total, end2);
 	TEST_EQUAL_UI(out_offset, end2);
 	sqfs_drop(in);

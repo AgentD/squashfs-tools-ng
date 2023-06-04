@@ -16,7 +16,7 @@ sqfs_s32 istream_read(istream_t *strm, void *data, size_t size)
 		size = 0x7FFFFFFF;
 
 	while (size > 0) {
-		if (strm->buffer_offset >= strm->buffer_used) {
+		if (strm->buffer_used == 0) {
 			if (istream_precache(strm))
 				return -1;
 
@@ -24,13 +24,14 @@ sqfs_s32 istream_read(istream_t *strm, void *data, size_t size)
 				break;
 		}
 
-		diff = strm->buffer_used - strm->buffer_offset;
+		diff = strm->buffer_used;
 		if (diff > size)
 			diff = size;
 
-		memcpy(data, strm->buffer + strm->buffer_offset, diff);
+		memcpy(data, strm->buffer, diff);
 		data = (char *)data + diff;
-		strm->buffer_offset += diff;
+		strm->buffer += diff;
+		strm->buffer_used -= diff;
 		size -= diff;
 		total += diff;
 	}
@@ -43,7 +44,7 @@ int istream_skip(istream_t *strm, sqfs_u64 size)
 	size_t diff;
 
 	while (size > 0) {
-		if (strm->buffer_offset >= strm->buffer_used) {
+		if (strm->buffer_used == 0) {
 			if (istream_precache(strm))
 				return -1;
 
@@ -54,11 +55,12 @@ int istream_skip(istream_t *strm, sqfs_u64 size)
 			}
 		}
 
-		diff = strm->buffer_used - strm->buffer_offset;
+		diff = strm->buffer_used;
 		if ((sqfs_u64)diff > size)
 			diff = size;
 
-		strm->buffer_offset += diff;
+		strm->buffer += diff;
+		strm->buffer_used -= diff;
 		size -= diff;
 	}
 
@@ -74,7 +76,7 @@ sqfs_s32 istream_splice(istream_t *in, ostream_t *out, sqfs_u32 size)
 		size = 0x7FFFFFFF;
 
 	while (size > 0) {
-		if (in->buffer_offset >= in->buffer_used) {
+		if (in->buffer_used == 0) {
 			if (istream_precache(in))
 				return -1;
 
@@ -82,14 +84,15 @@ sqfs_s32 istream_splice(istream_t *in, ostream_t *out, sqfs_u32 size)
 				break;
 		}
 
-		diff = in->buffer_used - in->buffer_offset;
+		diff = in->buffer_used;
 		if (diff > size)
 			diff = size;
 
-		if (ostream_append(out, in->buffer + in->buffer_offset, diff))
+		if (ostream_append(out, in->buffer, diff))
 			return -1;
 
-		in->buffer_offset += diff;
+		in->buffer += diff;
+		in->buffer_used -= diff;
 		size -= diff;
 		total += diff;
 	}

@@ -41,8 +41,8 @@ static size_t trim(char *buffer, int flags)
 int istream_get_line(istream_t *strm, char **out,
 		     size_t *line_num, int flags)
 {
+	size_t i, count, line_len = 0;
 	char *line = NULL, *new;
-	size_t i, line_len = 0;
 	bool have_line = false;
 
 	*out = NULL;
@@ -70,23 +70,27 @@ int istream_get_line(istream_t *strm, char **out,
 		}
 
 		if (i < strm->buffer_used) {
-			have_line = true;
-			strm->buffer_offset = i + 1;
+			count = i++;
 
-			if (i > 0 && strm->buffer[i - 1] == '\r')
-				--i;
+			if (count > 0 && strm->buffer[count - 1] == '\r')
+				--count;
+
+			have_line = true;
 		} else {
-			strm->buffer_offset = i;
+			count = i;
 		}
 
-		new = realloc(line, line_len + i + 1);
+		new = realloc(line, line_len + count + 1);
 		if (new == NULL)
 			goto fail_errno;
 
 		line = new;
-		memcpy(line + line_len, strm->buffer, i);
-		line_len += i;
+		memcpy(line + line_len, strm->buffer, count);
+		line_len += count;
 		line[line_len] = '\0';
+
+		strm->buffer += i;
+		strm->buffer_used -= i;
 
 		if (have_line) {
 			line_len = trim(line, flags);
