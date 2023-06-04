@@ -19,9 +19,13 @@ endif
 
 noinst_LIBRARIES += libio.a
 
-LIBIO_TESTS = test_get_line test_sparse_fb test_istream_read \
+LIBIO_TESTS = test_istream_mem test_get_line test_sparse_fb test_istream_read \
 	test_istream_skip test_stream_splice test_dir_iterator \
 	test_dir_tree_iterator test_dir_tree_iterator2 test_dir_tree_iterator3
+
+test_istream_mem_SOURCES = lib/io/test/istream_mem.c
+test_istream_mem_LDADD = libio.a libcompat.a
+test_istream_mem_CPPFLAGS = $(AM_CPPFLAGS)
 
 test_get_line_SOURCES = lib/io/test/get_line.c
 test_get_line_LDADD = libio.a libcompat.a
