@@ -79,7 +79,7 @@ int main(int argc, char **argv)
 	TEST_NOT_NULL(in);
 
 	for (;;) {
-		ret = ostream_append_from_istream(&out, in, 211);
+		ret = istream_splice(in, &out, 211);
 		TEST_ASSERT(ret >= 0);
 
 		if (ret == 0)

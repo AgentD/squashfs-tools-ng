@@ -8,6 +8,7 @@
 #define IO_ISTREAM_H
 
 #include "sqfs/predef.h"
+#include "io/ostream.h"
 
 /**
  * @struct istream_t
@@ -126,6 +127,21 @@ SQFS_INLINE const char *istream_get_filename(istream_t *strm)
  * @return Zero on success, -1 on failure.
  */
 SQFS_INTERNAL int istream_skip(istream_t *strm, sqfs_u64 size);
+
+/**
+ * @brief Dump data from an input stream to an output stream
+ *
+ * @memberof istream_t
+ *
+ * @param in A pointer to an input stream to read from.
+ * @param out A pointer to an output stream to append to.
+ * @param size The number of bytes to copy over.
+ *
+ * @return The number of bytes copied on success, -1 on failure,
+ *         0 on end-of-file.
+ */
+SQFS_INTERNAL sqfs_s32 istream_splice(istream_t *in, ostream_t *out,
+				      sqfs_u32 size);
 
 #ifdef __cplusplus
 }

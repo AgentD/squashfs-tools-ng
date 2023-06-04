@@ -8,7 +8,6 @@
 #define IO_OSTREAM_H
 
 #include "sqfs/predef.h"
-#include "io/istream.h"
 
 /**
  * @struct ostream_t
@@ -103,22 +102,6 @@ SQFS_INLINE const char *ostream_get_filename(ostream_t *strm)
 {
 	return strm->get_filename(strm);
 }
-
-/**
- * @brief Read data from an input stream and append it to an output stream
- *
- * @memberof ostream_t
- *
- * @param out A pointer to an output stream to append to.
- * @param in A pointer to an input stream to read from.
- * @param size The number of bytes to copy over.
- *
- * @return The number of bytes copied on success, -1 on failure,
- *         0 on end-of-file.
- */
-SQFS_INTERNAL sqfs_s32 ostream_append_from_istream(ostream_t *out,
-						   istream_t *in,
-						   sqfs_u32 size);
 
 #ifdef __cplusplus
 }
