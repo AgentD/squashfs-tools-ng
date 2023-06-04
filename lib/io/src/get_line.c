@@ -49,7 +49,7 @@ int istream_get_line(istream_t *strm, char **out,
 
 	for (;;) {
 		if (istream_precache(strm))
-			return -1;
+			goto fail_free;
 
 		if (strm->buffer_used == 0) {
 			if (line_len == 0)
@@ -111,6 +111,7 @@ int istream_get_line(istream_t *strm, char **out,
 fail_errno:
 	fprintf(stderr, "%s: " PRI_SZ ": %s.\n", strm->get_filename(strm),
 		*line_num, strerror(errno));
+fail_free:
 	free(line);
 	*out = NULL;
 	return -1;
