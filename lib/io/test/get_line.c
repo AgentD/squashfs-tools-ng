@@ -20,7 +20,7 @@ static void run_test_case(const char *raw, const line_t *lines, size_t count,
 	char *line;
 	int ret;
 
-	fp = istream_memory_create("lines.txt", 512, raw, strlen(raw));
+	fp = istream_memory_create("lines.txt", 2, raw, strlen(raw));
 	TEST_NOT_NULL(fp);
 
 	line_num = 1;

@@ -71,10 +71,6 @@ int istream_get_line(istream_t *strm, char **out,
 
 		if (i < strm->buffer_used) {
 			count = i++;
-
-			if (count > 0 && strm->buffer[count - 1] == '\r')
-				--count;
-
 			have_line = true;
 		} else {
 			count = i;
@@ -93,6 +89,9 @@ int istream_get_line(istream_t *strm, char **out,
 		strm->buffer_used -= i;
 
 		if (have_line) {
+			if (line_len > 0 && line[line_len - 1] == '\r')
+				line[--line_len] = '\0';
+
 			line_len = trim(line, flags);
 
 			if (line_len == 0 &&
