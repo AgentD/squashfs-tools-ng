@@ -96,7 +96,10 @@ SQFS_INTERNAL sqfs_s32 istream_read(istream_t *strm, void *data, size_t size);
  *
  * @return 0 on success, -1 on failure.
  */
-SQFS_INTERNAL int istream_precache(istream_t *strm);
+SQFS_INLINE int istream_precache(istream_t *strm)
+{
+	return strm->precache(strm);
+}
 
 /**
  * @brief Get the underlying filename of an input stream.

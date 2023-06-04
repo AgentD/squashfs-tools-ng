@@ -104,6 +104,12 @@ static int strm_precache(istream_t *strm)
 	tar_istream_t *tar = (tar_istream_t *)strm;
 	sqfs_u64 diff;
 
+	strm->buffer_used -= strm->buffer_offset;
+	strm->buffer_offset = 0;
+
+	if (strm->eof)
+		return 0;
+
 	tar->parent->offset += tar->parent->last_chunk;
 
 	if (!tar->parent->last_sparse) {

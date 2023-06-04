@@ -23,6 +23,21 @@ static int file_precache(istream_t *strm)
 	DWORD diff, actual;
 	HANDLE hnd;
 
+	if (strm->buffer_offset >= strm->buffer_used) {
+		strm->buffer_offset = 0;
+		strm->buffer_used = 0;
+	} else if (strm->buffer_offset > 0) {
+		memmove(strm->buffer,
+			strm->buffer + strm->buffer_offset,
+			strm->buffer_used - strm->buffer_offset);
+
+		strm->buffer_used -= strm->buffer_offset;
+		strm->buffer_offset = 0;
+	}
+
+	if (strm->eof)
+		return 0;
+
 	hnd = file->path == NULL ? GetStdHandle(STD_INPUT_HANDLE) : file->hnd;
 
 	while (strm->buffer_used < sizeof(file->buffer)) {

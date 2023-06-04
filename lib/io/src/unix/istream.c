@@ -20,15 +20,25 @@ static int file_precache(istream_t *strm)
 	ssize_t ret;
 	size_t diff;
 
-	while (strm->buffer_used < sizeof(file->buffer)) {
+	if (strm->buffer_offset >= strm->buffer_used) {
+		strm->buffer_offset = 0;
+		strm->buffer_used = 0;
+	} else if (strm->buffer_offset > 0) {
+		memmove(strm->buffer,
+			strm->buffer + strm->buffer_offset,
+			strm->buffer_used - strm->buffer_offset);
+
+		strm->buffer_used -= strm->buffer_offset;
+		strm->buffer_offset = 0;
+	}
+
+	while (!strm->eof && strm->buffer_used < sizeof(file->buffer)) {
 		diff = sizeof(file->buffer) - strm->buffer_used;
 
 		ret = read(file->fd, strm->buffer + strm->buffer_used, diff);
 
-		if (ret == 0) {
+		if (ret == 0)
 			strm->eof = true;
-			break;
-		}
 
 		if (ret < 0) {
 			if (errno == EINTR)

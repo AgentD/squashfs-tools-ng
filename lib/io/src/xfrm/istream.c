@@ -20,6 +20,21 @@ static int xfrm_precache(istream_t *base)
 	istream_xfrm_t *xfrm = (istream_xfrm_t *)base;
 	int ret;
 
+	if (base->buffer_offset >= base->buffer_used) {
+		base->buffer_offset = 0;
+		base->buffer_used = 0;
+	} else if (base->buffer_offset > 0) {
+		memmove(base->buffer,
+			base->buffer + base->buffer_offset,
+			base->buffer_used - base->buffer_offset);
+
+		base->buffer_used -= base->buffer_offset;
+		base->buffer_offset = 0;
+	}
+
+	if (base->eof)
+		return 0;
+
 	ret = istream_precache(xfrm->wrapped);
 	if (ret != 0)
 		return ret;

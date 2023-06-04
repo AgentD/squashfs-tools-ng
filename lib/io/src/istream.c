@@ -38,26 +38,6 @@ sqfs_s32 istream_read(istream_t *strm, void *data, size_t size)
 	return total;
 }
 
-int istream_precache(istream_t *strm)
-{
-	if (strm->buffer_offset >= strm->buffer_used) {
-		strm->buffer_offset = 0;
-		strm->buffer_used = 0;
-	} else if (strm->buffer_offset > 0) {
-		memmove(strm->buffer,
-			strm->buffer + strm->buffer_offset,
-			strm->buffer_used - strm->buffer_offset);
-
-		strm->buffer_used -= strm->buffer_offset;
-		strm->buffer_offset = 0;
-	}
-
-	if (strm->eof)
-		return 0;
-
-	return strm->precache(strm);
-}
-
 int istream_skip(istream_t *strm, sqfs_u64 size)
 {
 	size_t diff;

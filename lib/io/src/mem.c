@@ -26,8 +26,21 @@ typedef struct {
 static int mem_in_precache(istream_t *strm)
 {
 	mem_istream_t *mem = (mem_istream_t *)strm;
-	size_t diff = mem->bufsz - strm->buffer_used;
+	size_t diff;
 
+	if (strm->buffer_offset >= strm->buffer_used) {
+		strm->buffer_offset = 0;
+		strm->buffer_used = 0;
+	} else if (strm->buffer_offset > 0) {
+		memmove(strm->buffer,
+			strm->buffer + strm->buffer_offset,
+			strm->buffer_used - strm->buffer_offset);
+
+		strm->buffer_used -= strm->buffer_offset;
+		strm->buffer_offset = 0;
+	}
+
+	diff = mem->bufsz - strm->buffer_used;
 	if (diff > mem->size)
 		diff = mem->size;
 
