@@ -56,7 +56,9 @@ static int copy_xattr(sqfs_writer_t *sqfs, const char *filename,
 	}
 
 	for (xattr = list; xattr != NULL; xattr = xattr->next) {
-		if (sqfs_get_xattr_prefix_id(xattr->key) < 0) {
+		ret = sqfs_xattr_writer_add(sqfs->xwr, xattr);
+
+		if (ret == SQFS_ERROR_UNSUPPORTED) {
 			fprintf(stderr, "%s: squashfs does not "
 				"support xattr prefix of %s\n",
 				dont_skip ? "ERROR" : "WARNING",
@@ -67,8 +69,6 @@ static int copy_xattr(sqfs_writer_t *sqfs, const char *filename,
 			continue;
 		}
 
-		ret = sqfs_xattr_writer_add(sqfs->xwr, xattr->key, xattr->value,
-					    xattr->value_len);
 		if (ret) {
 			sqfs_perror(filename, "storing xattr key-value pair",
 				    ret);

@@ -95,10 +95,10 @@ int main(int argc, char **argv)
 	ret = sqfs_xattr_writer_begin(xwr, 0);
 	TEST_EQUAL_I(ret, 0);
 
-	ret = sqfs_xattr_writer_add(xwr, "user.foobar", "test", 4);
+	ret = sqfs_xattr_writer_add_kv(xwr, "user.foobar", "test", 4);
 	TEST_EQUAL_I(ret, 0);
 
-	ret = sqfs_xattr_writer_add(xwr, "security.selinux", "Xwhatever", 9);
+	ret = sqfs_xattr_writer_add_kv(xwr, "security.selinux", "Xwhatever", 9);
 	TEST_EQUAL_I(ret, 0);
 
 	ret = sqfs_xattr_writer_end(xwr, &id);
@@ -109,10 +109,10 @@ int main(int argc, char **argv)
 	ret = sqfs_xattr_writer_begin(xwr, 0);
 	TEST_EQUAL_I(ret, 0);
 
-	ret = sqfs_xattr_writer_add(xwr, "user.foobar", "bla", 3);
+	ret = sqfs_xattr_writer_add_kv(xwr, "user.foobar", "bla", 3);
 	TEST_EQUAL_I(ret, 0);
 
-	ret = sqfs_xattr_writer_add(xwr, "security.selinux", "blub", 4);
+	ret = sqfs_xattr_writer_add_kv(xwr, "security.selinux", "blub", 4);
 	TEST_EQUAL_I(ret, 0);
 
 	ret = sqfs_xattr_writer_end(xwr, &id);
@@ -123,10 +123,10 @@ int main(int argc, char **argv)
 	ret = sqfs_xattr_writer_begin(xwr, 0);
 	TEST_EQUAL_I(ret, 0);
 
-	ret = sqfs_xattr_writer_add(xwr, "security.selinux", "Xwhatever", 9);
+	ret = sqfs_xattr_writer_add_kv(xwr, "security.selinux", "Xwhatever", 9);
 	TEST_EQUAL_I(ret, 0);
 
-	ret = sqfs_xattr_writer_add(xwr, "user.foobar", "test", 4);
+	ret = sqfs_xattr_writer_add_kv(xwr, "user.foobar", "test", 4);
 	TEST_EQUAL_I(ret, 0);
 
 	ret = sqfs_xattr_writer_end(xwr, &id);
@@ -138,13 +138,13 @@ int main(int argc, char **argv)
 	ret = sqfs_xattr_writer_begin(xwr, 0);
 	TEST_EQUAL_I(ret, 0);
 
-	ret = sqfs_xattr_writer_add(xwr, "user.foobar", "mimimi", 6);
+	ret = sqfs_xattr_writer_add_kv(xwr, "user.foobar", "mimimi", 6);
 	TEST_EQUAL_I(ret, 0);
 
-	ret = sqfs_xattr_writer_add(xwr, "security.selinux", "blub", 4);
+	ret = sqfs_xattr_writer_add_kv(xwr, "security.selinux", "blub", 4);
 	TEST_EQUAL_I(ret, 0);
 
-	ret = sqfs_xattr_writer_add(xwr, "user.foobar", "bla", 3);
+	ret = sqfs_xattr_writer_add_kv(xwr, "user.foobar", "bla", 3);
 	TEST_EQUAL_I(ret, 0);
 
 	ret = sqfs_xattr_writer_end(xwr, &id);
@@ -155,7 +155,7 @@ int main(int argc, char **argv)
 	ret = sqfs_xattr_writer_begin(xwr, 0);
 	TEST_EQUAL_I(ret, 0);
 
-	ret = sqfs_xattr_writer_add(xwr, "security.selinux", "Xwhatever", 9);
+	ret = sqfs_xattr_writer_add_kv(xwr, "security.selinux", "Xwhatever", 9);
 	TEST_EQUAL_I(ret, 0);
 
 	ret = sqfs_xattr_writer_end(xwr, &id);

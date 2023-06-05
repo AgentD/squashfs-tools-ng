@@ -96,8 +96,8 @@ int main(int argc, char **argv)
 			snprintf(value, sizeof(value), "group%ld/value%ld",
 				 blkidx, grpidx);
 
-			ret = sqfs_xattr_writer_add(xwr, key, value,
-						    strlen(value));
+			ret = sqfs_xattr_writer_add_kv(xwr, key, value,
+						       strlen(value));
 
 			if (ret < 0) {
 				sqfs_perror(NULL, "add to xattr block", ret);

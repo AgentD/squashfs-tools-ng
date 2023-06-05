@@ -94,8 +94,24 @@ SQFS_API int sqfs_xattr_writer_begin(sqfs_xattr_writer_t *xwr, sqfs_u32 flags);
  *
  * @return Zero on success, a negative @ref SQFS_ERROR value on failure.
  */
-SQFS_API int sqfs_xattr_writer_add(sqfs_xattr_writer_t *xwr, const char *key,
-				   const void *value, size_t size);
+SQFS_API int sqfs_xattr_writer_add_kv(sqfs_xattr_writer_t *xwr,
+				      const char *key,
+				      const void *value, size_t size);
+
+/**
+ * @brief Add a key-value struct to the current block.
+ *
+ * @memberof sqfs_xattr_writer_t
+ *
+ * To add a key string and value blob, use @ref sqfs_xattr_writer_add_kv
+ *
+ * @param xwr A pointer to an xattr writer instance.
+ * @param ent A pointer to a combined key-value pair.
+ *
+ * @return Zero on success, a negative @ref SQFS_ERROR value on failure.
+ */
+SQFS_API int sqfs_xattr_writer_add(sqfs_xattr_writer_t *xwr,
+				   const sqfs_xattr_t *ent);
 
 /**
  * @brief Finish a generating a key-value block.

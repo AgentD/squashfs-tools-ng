@@ -46,8 +46,8 @@ int sqfs_xattr_writer_begin(sqfs_xattr_writer_t *xwr, sqfs_u32 flags)
 	return 0;
 }
 
-int sqfs_xattr_writer_add(sqfs_xattr_writer_t *xwr, const char *key,
-			  const void *value, size_t size)
+int sqfs_xattr_writer_add_kv(sqfs_xattr_writer_t *xwr, const char *key,
+			     const void *value, size_t size)
 {
 	size_t i, key_index, old_value_index, value_index;
 	sqfs_u64 kv_pair;
@@ -96,6 +96,12 @@ int sqfs_xattr_writer_add(sqfs_xattr_writer_t *xwr, const char *key,
 	}
 
 	return array_append(&xwr->kv_pairs, &kv_pair);
+}
+
+int sqfs_xattr_writer_add(sqfs_xattr_writer_t *xwr, const sqfs_xattr_t *ent)
+{
+	return sqfs_xattr_writer_add_kv(xwr, ent->key,
+					ent->value, ent->value_len);
 }
 
 int sqfs_xattr_writer_end(sqfs_xattr_writer_t *xwr, sqfs_u32 *out)

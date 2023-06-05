@@ -240,7 +240,7 @@ xattr_apply_map_file(char *path, void *map, sqfs_xattr_writer_t *xwr) {
 				printf("  %s = \n", entry->key);
 				fwrite(entry->value, entry->value_len, 1, stdout);
 				puts("\n");
-				ret = sqfs_xattr_writer_add(
+				ret = sqfs_xattr_writer_add_kv(
 						xwr, entry->key, entry->value, entry->value_len);
 				if (ret < 0) {
 					return ret;

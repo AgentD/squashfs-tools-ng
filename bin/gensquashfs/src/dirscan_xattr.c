@@ -95,7 +95,7 @@ static int xattr_from_path(sqfs_xattr_writer_t *xwr, const char *path)
 				goto fail;
 			}
 
-			ret = sqfs_xattr_writer_add(xwr, key, value, vallen);
+			ret = sqfs_xattr_writer_add_kv(xwr, key, value, vallen);
 			if (ret) {
 				sqfs_perror(path,
 					    "storing xattr key-value pairs",

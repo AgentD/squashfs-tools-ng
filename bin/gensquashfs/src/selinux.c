@@ -22,8 +22,8 @@ int selinux_relable_node(void *sehnd, sqfs_xattr_writer_t *xwr,
 			goto fail;
 	}
 
-	ret = sqfs_xattr_writer_add(xwr, XATTR_NAME_SELINUX,
-				    context, strlen(context));
+	ret = sqfs_xattr_writer_add_kv(xwr, XATTR_NAME_SELINUX,
+				       context, strlen(context));
 	free(context);
 
 	if (ret)
