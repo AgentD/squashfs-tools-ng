@@ -25,8 +25,8 @@ static const sqfs_u8 rfkill_acl[] = {
 int main(int argc, char **argv)
 {
 	struct XattrMapPattern *pat;
-	struct XattrMapEntry *ent;
 	struct XattrMap *map;
+	sqfs_xattr_t *ent;
 	int ret;
 	(void)argc; (void)argv;
 

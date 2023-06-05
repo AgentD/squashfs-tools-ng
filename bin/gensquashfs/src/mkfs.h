@@ -62,16 +62,9 @@ typedef struct {
 	bool scan_xattr;
 } options_t;
 
-struct XattrMapEntry {
-	char *key;
-	sqfs_u8 *value;
-	size_t value_len;
-	struct XattrMapEntry *next;
-};
-
 struct XattrMapPattern {
 	char *path;
-	struct XattrMapEntry *entries;
+	sqfs_xattr_t *entries;
 	struct XattrMapPattern *next;
 };
 

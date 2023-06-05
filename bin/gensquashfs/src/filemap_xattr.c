@@ -128,24 +128,28 @@ static int parse_xattr(const char *filename, size_t line_num, char *key_start,
 {
 	size_t len;
 	struct XattrMapPattern *current_pattern = map->patterns;
-	struct XattrMapEntry *current_entry;
+	sqfs_xattr_t *current_entry;
+	sqfs_u8 *value;
 
 	if (current_pattern == NULL) {
 		print_error(filename, line_num, "no file specified yet");
 		return -1;
 	}
 
-	current_entry = calloc(1, sizeof(struct XattrMapEntry));
+	len = strlen(value_start);
+	value = decode(filename, line_num, value_start, &len);
+	if (value == NULL)
+		return -1;
+
+	current_entry = sqfs_xattr_create(key_start, value, len);
+	free(value);
 	if (current_entry == NULL) {
+		print_error(filename, line_num, "out-of-memory");
 		return -1;
 	}
+
 	current_entry->next = current_pattern->entries;
 	current_pattern->entries = current_entry;
-
-	current_entry->key = strdup(key_start);
-	len = strlen(value_start);
-	current_entry->value = decode(filename, line_num, value_start, &len);
-	current_entry->value_len = len;
 
 	return 0;
 }
@@ -206,13 +210,8 @@ xattr_close_map_file(void *xattr_map) {
 	while (map->patterns != NULL) {
 		struct XattrMapPattern *file = map->patterns;
 		map->patterns = file->next;
-		while (file->entries != NULL) {
-			struct XattrMapEntry *entry = file->entries;
-			file->entries = entry->next;
-			free(entry->key);
-			free(entry->value);
-			free(entry);
-		}
+
+		sqfs_xattr_list_free(file->entries);
 		free(file->path);
 		free(file);
 	}
@@ -224,7 +223,7 @@ xattr_apply_map_file(char *path, void *map, sqfs_xattr_writer_t *xwr) {
 	struct XattrMap *xattr_map = map;
 	int ret = 0;
 	const struct XattrMapPattern *pat;
-	const struct XattrMapEntry *entry;
+	const sqfs_xattr_t *entry;
 
 	for (pat = xattr_map->patterns; pat != NULL; pat = pat->next) {
 		char *patstr = pat->path;
@@ -240,8 +239,7 @@ xattr_apply_map_file(char *path, void *map, sqfs_xattr_writer_t *xwr) {
 				printf("  %s = \n", entry->key);
 				fwrite(entry->value, entry->value_len, 1, stdout);
 				puts("\n");
-				ret = sqfs_xattr_writer_add_kv(
-						xwr, entry->key, entry->value, entry->value_len);
+				ret = sqfs_xattr_writer_add(xwr, entry);
 				if (ret < 0) {
 					return ret;
 				}
