@@ -148,6 +148,36 @@ struct sqfs_xattr_id_table_t {
 	sqfs_u64 locations[];
 };
 
+/**
+ * @brief sqsf_xattr_t
+ *
+ * @brief Represents a decoded xattr key-value pair
+ *
+ * On disk, xattr key and value are stored separately with respective headers,
+ * partially ID-encoded key and special encoding for back references. This
+ * struct and associated helper functions combine the fully decoded key-value
+ * pair for convenience.
+ */
+struct sqfs_xattr_t {
+	/**
+	 * @brief A pointer for arranging multiple entries in a lined list
+	 */
+	sqfs_xattr_t *next;
+
+	const char *key;
+	const sqfs_u8 *value;
+
+	/**
+	 * @brief The size of the value blob in bytes
+	 */
+	size_t value_len;
+
+	/**
+	 * @brief Flexible array member that holds the key & value data
+	 */
+	sqfs_u8 data[];
+};
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -177,6 +207,63 @@ SQFS_API const char *sqfs_get_xattr_prefix(SQFS_XATTR_TYPE id);
  *         @ref SQFS_ERROR_UNSUPPORTED error code.
  */
 SQFS_API int sqfs_get_xattr_prefix_id(const char *key);
+
+/**
+ * @brief Create a combined xattr pair struct from a key string and a value blob
+ *
+ * @memberof sqfs_xattr_t
+ *
+ * The returned struct can be released with @ref sqfs_xattr_list_free
+ *
+ * @param key A pointer to the key string
+ * @param value A pointer to the value blob
+ * @param value_len The size of the value blob in bytes
+ *
+ * @return A pointer to an sqfs_xattr_t on success, NULL on allocation failure
+ */
+SQFS_API sqfs_xattr_t *sqfs_xattr_create(const char *key, const sqfs_u8 *value,
+					 size_t value_len);
+
+/**
+ * @brief Create an xattr pair struct from a key ID, key string, a value blob
+ *
+ * @memberof sqfs_xattr_t
+ *
+ * Basically does the same as @ref sqfs_xattr_create, but automatically adds
+ * a prefix to the key, based on an xattr ID type. The returned struct can be
+ * released with @ref sqfs_xattr_list_free
+ *
+ * @param out Returns a pointer ot  an sqfs_xattr_t on success
+ * @param id An @ref SQFS_XATTR_TYPE enumerator
+ * @param key A pointer to the key string
+ * @param value A pointer to the value blob
+ * @param value_len The size of the value blob in bytes
+ *
+ * @return A pointer to , NULL on allocation failure
+ */
+SQFS_API int sqfs_xattr_create_prefixed(sqfs_xattr_t **out, sqfs_u16 id,
+					const char *key, const sqfs_u8 *value,
+					size_t value_len);
+
+/**
+ * @brief Create a copy of a linked list of xattr pairs
+ *
+ * @memberof sqfs_xattr_t
+ *
+ * @param list A pointer to a list of xattr entries
+ *
+ * @return A duplicate list on success, NULL on allocation failure
+ */
+SQFS_API sqfs_xattr_t *sqfs_xattr_list_copy(const sqfs_xattr_t *list);
+
+/**
+ * @brief Free a linked list of xattr pairs
+ *
+ * @memberof sqfs_xattr_t
+ *
+ * @param list A pointer to a list of xattr entries
+ */
+SQFS_API void sqfs_xattr_list_free(sqfs_xattr_t *list);
 
 #ifdef __cplusplus
 }

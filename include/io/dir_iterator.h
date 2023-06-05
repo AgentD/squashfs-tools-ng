@@ -87,7 +87,7 @@ typedef struct dir_iterator_t {
 	 *
 	 * @return Zero on success, negative @ref SQFS_ERROR value on failure.
 	 */
-	int (*read_xattr)(struct dir_iterator_t *it, dir_entry_xattr_t **out);
+	int (*read_xattr)(struct dir_iterator_t *it, sqfs_xattr_t **out);
 } dir_iterator_t;
 
 enum {

@@ -6,13 +6,13 @@
  */
 #include "sqfs2tar.h"
 
-static dir_entry_xattr_t *mkxattr(const sqfs_xattr_entry_t *key,
-				  const sqfs_xattr_value_t *value)
+static sqfs_xattr_t *mkxattr(const sqfs_xattr_entry_t *key,
+			     const sqfs_xattr_value_t *value)
 {
-	dir_entry_xattr_t *ent;
+	sqfs_xattr_t *ent;
 
-	ent = dir_entry_xattr_create((const char *)key->key,
-				     value->value, value->size);
+	ent = sqfs_xattr_create((const char *)key->key,
+				value->value, value->size);
 	if (ent == NULL) {
 		perror("creating xattr entry");
 		return NULL;
@@ -22,9 +22,9 @@ static dir_entry_xattr_t *mkxattr(const sqfs_xattr_entry_t *key,
 }
 
 int get_xattrs(const char *name, const sqfs_inode_generic_t *inode,
-	       dir_entry_xattr_t **out)
+	       sqfs_xattr_t **out)
 {
-	dir_entry_xattr_t *list = NULL, *ent;
+	sqfs_xattr_t *list = NULL, *ent;
 	sqfs_xattr_value_t *value;
 	sqfs_xattr_entry_t *key;
 	sqfs_xattr_id_t desc;
@@ -79,6 +79,6 @@ int get_xattrs(const char *name, const sqfs_inode_generic_t *inode,
 	*out = list;
 	return 0;
 fail:
-	dir_entry_xattr_list_free(list);
+	sqfs_xattr_list_free(list);
 	return -1;
 }

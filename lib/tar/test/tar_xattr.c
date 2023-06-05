@@ -8,6 +8,7 @@
 #include "io/file.h"
 #include "tar/tar.h"
 #include "util/test.h"
+#include "sqfs/xattr.h"
 
 int main(int argc, char **argv)
 {

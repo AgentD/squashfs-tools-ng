@@ -134,7 +134,7 @@ static int dir_open_file_ro(dir_iterator_t *it, istream_t **out)
 	return SQFS_ERROR_UNSUPPORTED;
 }
 
-static int dir_read_xattr(dir_iterator_t *it, dir_entry_xattr_t **out)
+static int dir_read_xattr(dir_iterator_t *it, sqfs_xattr_t **out)
 {
 	(void)it;
 	*out = NULL;

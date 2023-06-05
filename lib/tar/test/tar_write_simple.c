@@ -9,6 +9,7 @@
 #include "io/ostream.h"
 #include "io/file.h"
 #include "util/test.h"
+#include "sqfs/xattr.h"
 #include "compat.h"
 
 /*****************************************************************************/
@@ -52,7 +53,7 @@ static const char *buffer_get_filename(ostream_t *strm)
 
 #define TIME_STAMP (1057296600)
 
-static dir_entry_xattr_t *mkxattr_chain(void)
+static sqfs_xattr_t *mkxattr_chain(void)
 {
 	static const uint8_t value[] = {
 		0x00, 0x00, 0x00, 0x02,
@@ -61,20 +62,20 @@ static dir_entry_xattr_t *mkxattr_chain(void)
 		0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00,
 	};
-	dir_entry_xattr_t *list;
+	sqfs_xattr_t *list;
 
-	list = dir_entry_xattr_create("user.mime_type",
-				      (const sqfs_u8 *)"blob/magic", 10);
+	list = sqfs_xattr_create("user.mime_type",
+				 (const sqfs_u8 *)"blob/magic", 10);
 	TEST_NOT_NULL(list);
-	list->next = dir_entry_xattr_create("security.capability",
-					    value, sizeof(value));
+	list->next = sqfs_xattr_create("security.capability",
+				       value, sizeof(value));
 	TEST_NOT_NULL(list->next);
 	return list;
 }
 
 int main(int argc, char **argv)
 {
-	dir_entry_xattr_t *xattr;
+	sqfs_xattr_t *xattr;
 	struct stat sb;
 	istream_t *fp;
 	int ret;
@@ -154,7 +155,7 @@ int main(int argc, char **argv)
 	ret = write_tar_header(&mem_stream, &sb, "home/goliath/test.exe",
 			       NULL, xattr, 11);
 	TEST_EQUAL_I(ret, 0);
-	dir_entry_xattr_list_free(xattr);
+	sqfs_xattr_list_free(xattr);
 
 	ret = ostream_append(&mem_stream, ":-)\n", 4);
 	TEST_EQUAL_I(ret, 0);

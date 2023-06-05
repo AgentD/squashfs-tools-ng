@@ -7,6 +7,7 @@
 #include "config.h"
 
 #include "internal.h"
+#include "sqfs/xattr.h"
 #include <ctype.h>
 #include <string.h>
 #include <stdlib.h>
@@ -140,27 +141,27 @@ fail:
 	return -1;
 }
 
-static int pax_xattr_schily(tar_header_decoded_t *out,
-			    dir_entry_xattr_t *xattr)
+static int pax_xattr_schily(tar_header_decoded_t *out, sqfs_xattr_t *xattr)
 {
 	xattr->next = out->xattr;
 	out->xattr = xattr;
 	return 0;
 }
 
-static int pax_xattr_libarchive(tar_header_decoded_t *out,
-				dir_entry_xattr_t *xattr)
+static int pax_xattr_libarchive(tar_header_decoded_t *out, sqfs_xattr_t *xattr)
 {
+	char *key = (char *)xattr->data;
+	sqfs_u8 *value = xattr->data + (size_t)(xattr->value - xattr->data);
 	int ret;
 
 	ret = base64_decode((const char *)xattr->value, xattr->value_len,
-			    xattr->value, &xattr->value_len);
+			    value, &xattr->value_len);
 	if (ret)
 		return -1;
 
-	urldecode(xattr->key);
+	urldecode(key);
+	value[xattr->value_len] = '\0';
 
-	xattr->value[xattr->value_len] = '\0';
 	xattr->next = out->xattr;
 	out->xattr = xattr;
 	return 0;
@@ -184,8 +185,7 @@ static const struct pax_handler_t {
 		int (*uint)(tar_header_decoded_t *out, sqfs_u64 uval);
 		int (*str)(tar_header_decoded_t *out, char *str);
 		int (*cstr)(tar_header_decoded_t *out, const char *str);
-		int (*xattr)(tar_header_decoded_t *out,
-			     dir_entry_xattr_t *xattr);
+		int (*xattr)(tar_header_decoded_t *out, sqfs_xattr_t *xattr);
 	} cb;
 } pax_fields[] = {
 	{ "uid", PAX_UID, PAX_TYPE_UINT, { .uint = pax_uid } },
@@ -239,7 +239,7 @@ static int apply_handler(tar_header_decoded_t *out,
 			 const struct pax_handler_t *field, const char *key,
 			 const char *value, size_t valuelen)
 {
-	dir_entry_xattr_t *xattr;
+	sqfs_xattr_t *xattr;
 	sqfs_s64 s64val;
 	sqfs_u64 uval;
 	char *copy;
@@ -274,9 +274,9 @@ static int apply_handler(tar_header_decoded_t *out,
 		}
 		break;
 	case PAX_TYPE_PREFIXED_XATTR:
-		xattr = dir_entry_xattr_create(key + strlen(field->name) + 1,
-					       (const sqfs_u8 *)value,
-					       valuelen);
+		xattr = sqfs_xattr_create(key + strlen(field->name) + 1,
+					  (const sqfs_u8 *)value,
+					  valuelen);
 		if (xattr == NULL) {
 			perror("reading pax xattr field");
 			return -1;

@@ -284,7 +284,7 @@ static int open_file_ro(dir_iterator_t *base, istream_t **out)
 	return it->top->dir->open_file_ro(it->top->dir, out);
 }
 
-static int read_xattr(dir_iterator_t *base, dir_entry_xattr_t **out)
+static int read_xattr(dir_iterator_t *base, sqfs_xattr_t **out)
 {
 	dir_tree_iterator_t *it = (dir_tree_iterator_t *)base;
 

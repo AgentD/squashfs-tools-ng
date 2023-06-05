@@ -6,6 +6,7 @@
  */
 #include "tar/tar.h"
 #include "sqfs/error.h"
+#include "sqfs/xattr.h"
 #include "util/util.h"
 
 #include <stdlib.h>
@@ -281,7 +282,7 @@ static int it_open_file_ro(dir_iterator_t *it, istream_t **out)
 	return 0;
 }
 
-static int it_read_xattr(dir_iterator_t *it, dir_entry_xattr_t **out)
+static int it_read_xattr(dir_iterator_t *it, sqfs_xattr_t **out)
 {
 	tar_iterator_t *tar = (tar_iterator_t *)it;
 
@@ -293,7 +294,7 @@ static int it_read_xattr(dir_iterator_t *it, dir_entry_xattr_t **out)
 		return tar->state < 0 ? tar->state : SQFS_ERROR_NO_ENTRY;
 
 	if (tar->current.xattr != NULL) {
-		*out = dir_entry_xattr_list_copy(tar->current.xattr);
+		*out = sqfs_xattr_list_copy(tar->current.xattr);
 		if (*out == NULL)
 			return SQFS_ERROR_ALLOC;
 	}

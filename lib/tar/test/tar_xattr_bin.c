@@ -8,6 +8,7 @@
 #include "io/file.h"
 #include "tar/tar.h"
 #include "util/test.h"
+#include "sqfs/xattr.h"
 
 static const uint8_t value[] = {
 	0x00, 0x00, 0x00, 0x02,

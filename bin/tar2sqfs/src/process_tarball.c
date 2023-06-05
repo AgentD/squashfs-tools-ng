@@ -40,7 +40,7 @@ static int write_file(sqfs_writer_t *sqfs, dir_iterator_t *it,
 static int copy_xattr(sqfs_writer_t *sqfs, const char *filename,
 		      tree_node_t *node, dir_iterator_t *it)
 {
-	dir_entry_xattr_t *xattr, *list;
+	sqfs_xattr_t *xattr, *list;
 	int ret;
 
 	ret = it->read_xattr(it, &list);
@@ -82,10 +82,10 @@ static int copy_xattr(sqfs_writer_t *sqfs, const char *filename,
 		goto fail;
 	}
 
-	dir_entry_xattr_list_free(list);
+	sqfs_xattr_list_free(list);
 	return 0;
 fail:
-	dir_entry_xattr_list_free(list);
+	sqfs_xattr_list_free(list);
 	return -1;
 }
 

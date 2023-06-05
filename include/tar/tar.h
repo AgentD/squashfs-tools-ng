@@ -31,7 +31,7 @@ typedef struct {
 	sqfs_u64 record_size;
 	bool unknown_record;
 	bool is_hard_link;
-	dir_entry_xattr_t *xattr;
+	sqfs_xattr_t *xattr;
 
 	sqfs_u16 mode;
 	sqfs_u64 uid;
@@ -52,7 +52,7 @@ extern "C" {
   headers need to be generated.
 */
 int write_tar_header(ostream_t *fp, const struct stat *sb, const char *name,
-		     const char *slink_target, const dir_entry_xattr_t *xattr,
+		     const char *slink_target, const sqfs_xattr_t *xattr,
 		     unsigned int counter);
 
 int write_hard_link(ostream_t *fp, const struct stat *sb, const char *name,

@@ -84,26 +84,11 @@ typedef struct {
 	char name[];
 } dir_entry_t;
 
-typedef struct dir_entry_xattr_t {
-	struct dir_entry_xattr_t *next;
-	char *key;
-	sqfs_u8 *value;
-	size_t value_len;
-	char data[];
-} dir_entry_xattr_t;
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 dir_entry_t *dir_entry_create(const char *name);
-
-dir_entry_xattr_t *dir_entry_xattr_create(const char *key, const sqfs_u8 *value,
-					  size_t value_len);
-
-dir_entry_xattr_t *dir_entry_xattr_list_copy(const dir_entry_xattr_t *list);
-
-void dir_entry_xattr_list_free(dir_entry_xattr_t *list);
 
 #ifdef __cplusplus
 }

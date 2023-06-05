@@ -7,6 +7,7 @@
 #include "config.h"
 
 #include "internal.h"
+#include "sqfs/xattr.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -23,7 +24,7 @@ void free_sparse_list(sparse_map_t *sparse)
 
 void clear_header(tar_header_decoded_t *hdr)
 {
-	dir_entry_xattr_list_free(hdr->xattr);
+	sqfs_xattr_list_free(hdr->xattr);
 	free_sparse_list(hdr->sparse);
 	free(hdr->name);
 	free(hdr->link_target);

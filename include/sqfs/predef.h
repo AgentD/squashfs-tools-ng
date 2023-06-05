@@ -95,6 +95,7 @@ typedef struct sqfs_block_writer_stats_t sqfs_block_writer_stats_t;
 typedef struct sqfs_block_processor_stats_t sqfs_block_processor_stats_t;
 typedef struct sqfs_block_processor_desc_t sqfs_block_processor_desc_t;
 typedef struct sqfs_readdir_state_t sqfs_readdir_state_t;
+typedef struct sqfs_xattr_t sqfs_xattr_t;
 
 typedef struct sqfs_fragment_t sqfs_fragment_t;
 typedef struct sqfs_dir_header_t sqfs_dir_header_t;

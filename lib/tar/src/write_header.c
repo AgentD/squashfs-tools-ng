@@ -7,6 +7,7 @@
 #include "config.h"
 
 #include "internal.h"
+#include "sqfs/xattr.h"
 #include <string.h>
 #include <stdlib.h>
 
@@ -144,15 +145,14 @@ static size_t prefix_digit_len(size_t len)
 }
 
 static int write_schily_xattr(ostream_t *fp, const struct stat *orig,
-			      const char *name, const dir_entry_xattr_t *xattr)
+			      const char *name, const sqfs_xattr_t *xattr)
 {
 	static const char *prefix = "SCHILY.xattr.";
 	size_t len, total_size = 0;
-	const dir_entry_xattr_t *it;
 	char *buffer, *ptr;
 	int ret;
 
-	for (it = xattr; it != NULL; it = it->next) {
+	for (const sqfs_xattr_t *it = xattr; it != NULL; it = it->next) {
 		len = strlen(prefix) + strlen(it->key) + it->value_len + 3;
 
 		total_size += len + prefix_digit_len(len);
@@ -167,7 +167,7 @@ static int write_schily_xattr(ostream_t *fp, const struct stat *orig,
 
 	ptr = buffer;
 
-	for (it = xattr; it != NULL; it = it->next) {
+	for (const sqfs_xattr_t *it = xattr; it != NULL; it = it->next) {
 		len = strlen(prefix) + strlen(it->key) + it->value_len + 3;
 		len += prefix_digit_len(len);
 
@@ -184,7 +184,7 @@ static int write_schily_xattr(ostream_t *fp, const struct stat *orig,
 }
 
 int write_tar_header(ostream_t *fp, const struct stat *sb, const char *name,
-		     const char *slink_target, const dir_entry_xattr_t *xattr,
+		     const char *slink_target, const sqfs_xattr_t *xattr,
 		     unsigned int counter)
 {
 	const char *reason;
