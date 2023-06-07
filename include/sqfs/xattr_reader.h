@@ -190,6 +190,42 @@ int sqfs_xattr_reader_read_value(sqfs_xattr_reader_t *xr,
 				 const sqfs_xattr_entry_t *key,
 				 sqfs_xattr_value_t **val_out);
 
+/**
+ * @brief Read a combined key-value pair into an @ref sqfs_xattr_t struct
+ *
+ * @memberof sqfs_xattr_reader_t
+ *
+ * @param xr A pointer to an xattr reader instance.
+ * @param out Returns a pointer to a combined key-value struct.
+ *
+ * @return Zero on success, a negative @ref SQFS_ERROR value on failure.
+ */
+SQFS_API
+int sqfs_xattr_reader_read(sqfs_xattr_reader_t *xr, sqfs_xattr_t **out);
+
+/**
+ * @brief Read all xattrs associated with an ID into memory
+ *
+ * @memberof sqfs_xattr_reader_t
+ *
+ * This is a convenience function that internally resolves the xattr index
+ * using @ref sqfs_xattr_reader_get_desc, seeks to the key-value list using
+ * @ref sqfs_xattr_reader_seek_kv and reads all the entries into a liked
+ * list of @ref sqfs_xattr_t structs.
+ *
+ * If the index is the special value 0xFFFFFFFF, the function successfully
+ * returns an empty list.
+ *
+ * @param xr A pointer to an xattr reader instance.
+ * @param idx An xattr index.
+ * @param out Returns a linked list to key-value pairs on success.
+ *
+ * @return Zero on success, a negative @ref SQFS_ERROR value on failure.
+ */
+SQFS_API int sqfs_xattr_reader_read_all(sqfs_xattr_reader_t *xr, sqfs_u32 idx,
+					sqfs_xattr_t **out);
+
+
 #ifdef __cplusplus
 }
 #endif

@@ -63,58 +63,37 @@ static bool is_printable(const sqfs_u8 *value, size_t len)
 
 int dump_xattrs(sqfs_xattr_reader_t *xattr, const sqfs_inode_generic_t *inode)
 {
-	sqfs_xattr_value_t *value;
-	sqfs_xattr_entry_t *key;
-	sqfs_xattr_id_t desc;
+	sqfs_xattr_t *list;
 	sqfs_u32 index;
-	size_t i;
 
 	if (xattr == NULL)
 		return 0;
 
 	sqfs_inode_get_xattr_index(inode, &index);
 
-	if (index == 0xFFFFFFFF)
-		return 0;
-
-	if (sqfs_xattr_reader_get_desc(xattr, index, &desc)) {
-		fputs("Error resolving xattr index\n", stderr);
+	if (sqfs_xattr_reader_read_all(xattr, index, &list)) {
+		fprintf(stderr, "Error loading xattr entries list #%08X\n",
+			index);
 		return -1;
 	}
 
-	if (sqfs_xattr_reader_seek_kv(xattr, &desc)) {
-		fputs("Error locating xattr key-value pairs\n", stderr);
-		return -1;
-	}
+	for (const sqfs_xattr_t *ent = list; ent != NULL; ent = ent->next) {
+		size_t key_len = strlen(ent->key);
 
-	for (i = 0; i < desc.count; ++i) {
-		if (sqfs_xattr_reader_read_key(xattr, &key)) {
-			fputs("Error reading xattr key\n", stderr);
-			return -1;
-		}
-
-		if (sqfs_xattr_reader_read_value(xattr, key, &value)) {
-			fputs("Error reading xattr value\n", stderr);
-			sqfs_free(key);
-			return -1;
-		}
-
-		if (is_printable(key->key, key->size)) {
-			printf("%s=", key->key);
+		if (is_printable((const sqfs_u8 *)ent->key, key_len)) {
+			printf("%s=", ent->key);
 		} else {
-			print_hex(key->key, key->size);
+			print_hex((const sqfs_u8 *)ent->key, key_len);
 		}
 
-		if (is_printable(value->value, value->size)) {
-			printf("%s\n", value->value);
+		if (is_printable(ent->value, ent->value_len)) {
+			printf("%s\n", ent->value);
 		} else {
-			print_hex(value->value, value->size);
+			print_hex(ent->value, ent->value_len);
 			printf("\n");
 		}
-
-		sqfs_free(key);
-		sqfs_free(value);
 	}
 
+	sqfs_xattr_list_free(list);
 	return 0;
 }

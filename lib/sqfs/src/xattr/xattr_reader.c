@@ -166,6 +166,66 @@ fail_blocks:
 	return err;
 }
 
+static int read_key_hdr(sqfs_xattr_reader_t *xr, sqfs_xattr_entry_t *key,
+			const char **prefix)
+{
+	int ret;
+
+	ret = sqfs_meta_reader_read(xr->kvrd, key, sizeof(*key));
+	if (ret)
+		return ret;
+
+	key->type = le16toh(key->type);
+	key->size = le16toh(key->size);
+
+	*prefix = sqfs_get_xattr_prefix(key->type & SQFS_XATTR_PREFIX_MASK);
+	if ((*prefix) == NULL)
+		return SQFS_ERROR_UNSUPPORTED;
+
+	return 0;
+}
+
+static int read_value_hdr(sqfs_xattr_reader_t *xr,
+			  const sqfs_xattr_entry_t *key, sqfs_u64 *start,
+			  size_t *offset, sqfs_xattr_value_t *value)
+{
+	sqfs_u64 ref, new_start;
+	size_t new_offset;
+	int ret;
+
+	ret = sqfs_meta_reader_read(xr->kvrd, value, sizeof(*value));
+	if (ret)
+		return ret;
+
+	if (key->type & SQFS_XATTR_FLAG_OOL) {
+		ret = sqfs_meta_reader_read(xr->kvrd, &ref, sizeof(ref));
+		if (ret)
+			return ret;
+
+		ref = le64toh(ref);
+		new_start = xr->xattr_start + (ref >> 16);
+		new_offset = ref & 0xFFFF;
+
+		if (new_start >= xr->xattr_end ||
+		    new_offset >= SQFS_META_BLOCK_SIZE) {
+			return SQFS_ERROR_OUT_OF_BOUNDS;
+		}
+
+		sqfs_meta_reader_get_position(xr->kvrd, start, offset);
+
+		ret = sqfs_meta_reader_seek(xr->kvrd, new_start, new_offset);
+		if (ret)
+			return ret;
+
+		ret = sqfs_meta_reader_read(xr->kvrd, value, sizeof(*value));
+		if (ret)
+			return ret;
+	}
+
+	value->size = le32toh(value->size);
+	return 0;
+}
+
 int sqfs_xattr_reader_read_key(sqfs_xattr_reader_t *xr,
 			       sqfs_xattr_entry_t **key_out)
 {
@@ -174,16 +234,9 @@ int sqfs_xattr_reader_read_key(sqfs_xattr_reader_t *xr,
 	size_t plen, total;
 	int ret;
 
-	ret = sqfs_meta_reader_read(xr->kvrd, &key, sizeof(key));
+	ret = read_key_hdr(xr, &key, &prefix);
 	if (ret)
 		return ret;
-
-	key.type = le16toh(key.type);
-	key.size = le16toh(key.size);
-
-	prefix = sqfs_get_xattr_prefix(key.type & SQFS_XATTR_PREFIX_MASK);
-	if (prefix == NULL)
-		return SQFS_ERROR_UNSUPPORTED;
 
 	plen = strlen(prefix);
 
@@ -213,45 +266,18 @@ int sqfs_xattr_reader_read_value(sqfs_xattr_reader_t *xr,
 				 const sqfs_xattr_entry_t *key,
 				 sqfs_xattr_value_t **val_out)
 {
-	size_t offset, new_offset, size;
-	sqfs_xattr_value_t value, *out;
-	sqfs_u64 ref, start, new_start;
+	sqfs_xattr_value_t value, *out = NULL;
+	size_t size, offset = 0;
+	sqfs_u64 start = 0;
 	int ret;
 
-	ret = sqfs_meta_reader_read(xr->kvrd, &value, sizeof(value));
+	ret = read_value_hdr(xr, key, &start, &offset, &value);
 	if (ret)
 		return ret;
 
-	if (key->type & SQFS_XATTR_FLAG_OOL) {
-		ret = sqfs_meta_reader_read(xr->kvrd, &ref, sizeof(ref));
-		if (ret)
-			return ret;
-
-		sqfs_meta_reader_get_position(xr->kvrd, &start, &offset);
-
-		new_start = xr->xattr_start + (ref >> 16);
-		if (new_start >= xr->xattr_end)
-			return SQFS_ERROR_OUT_OF_BOUNDS;
-
-		new_offset = ref & 0xFFFF;
-		if (new_offset >= SQFS_META_BLOCK_SIZE)
-			return SQFS_ERROR_OUT_OF_BOUNDS;
-
-		ret = sqfs_meta_reader_seek(xr->kvrd, new_start, new_offset);
-		if (ret)
-			return ret;
-
-		ret = sqfs_meta_reader_read(xr->kvrd, &value, sizeof(value));
-		if (ret)
-			return ret;
-	}
-
-	value.size = le32toh(value.size);
-
-	if (SZ_ADD_OV(sizeof(*out), value.size, &size) ||
-	    SZ_ADD_OV(size, 1, &size)) {
+	size = sizeof(*out) + 1;
+	if (SZ_ADD_OV(size, value.size, &size))
 		return SQFS_ERROR_OVERFLOW;
-	}
 
 	out = calloc(1, size);
 	if (out == NULL)
@@ -273,6 +299,74 @@ int sqfs_xattr_reader_read_value(sqfs_xattr_reader_t *xr,
 	return 0;
 fail:
 	free(out);
+	return ret;
+}
+
+int sqfs_xattr_reader_read(sqfs_xattr_reader_t *xr, sqfs_xattr_t **out)
+{
+	sqfs_xattr_t *kv = NULL, *new = NULL;
+	size_t plen, total = 0, offset = 0;
+	sqfs_xattr_value_t value;
+	sqfs_xattr_entry_t key;
+	const char *prefix;
+	sqfs_u64 start = 0;
+	int ret;
+
+	/* read and decode the key */
+	ret = read_key_hdr(xr, &key, &prefix);
+	if (ret)
+		return ret;
+
+	plen = strlen(prefix);
+	total = sizeof(*kv) + plen + 1;
+
+	if (SZ_ADD_OV(total, key.size, &total))
+		return SQFS_ERROR_OVERFLOW;
+
+	kv = calloc(1, total);
+	if (kv == NULL)
+		return SQFS_ERROR_ALLOC;
+
+	memcpy(kv->data, prefix, plen);
+	ret = sqfs_meta_reader_read(xr->kvrd, kv->data + plen, key.size);
+	if (ret)
+		goto fail;
+
+	/* read and decode the value */
+	ret = read_value_hdr(xr, &key, &start, &offset, &value);
+	if (ret)
+		goto fail;
+
+	ret = SQFS_ERROR_OVERFLOW;
+	if (SZ_ADD_OV(total, value.size, &total) || SZ_ADD_OV(total, 1, &total))
+		goto fail;
+
+	ret = SQFS_ERROR_ALLOC;
+	new = realloc(kv, total);
+	if (new == NULL)
+		goto fail;
+	kv = new;
+
+	ret = sqfs_meta_reader_read(xr->kvrd, kv->data + plen + key.size + 1,
+				    value.size);
+	if (ret)
+		goto fail;
+
+	if (key.type & SQFS_XATTR_FLAG_OOL) {
+		ret = sqfs_meta_reader_seek(xr->kvrd, start, offset);
+		if (ret)
+			goto fail;
+	}
+
+	/* prefix with the kv struct */
+	kv->value_len = value.size;
+	kv->key = (const char *)kv->data;
+	kv->value = kv->data + plen + key.size + 1;
+	kv->data[plen + key.size + 1 + value.size] = '\0';
+	*out = kv;
+	return 0;
+fail:
+	free(kv);
 	return ret;
 }
 
@@ -318,6 +412,48 @@ int sqfs_xattr_reader_get_desc(sqfs_xattr_reader_t *xr, sqfs_u32 idx,
 	desc->count = le32toh(desc->count);
 	desc->size = le32toh(desc->size);
 	return 0;
+}
+
+int sqfs_xattr_reader_read_all(sqfs_xattr_reader_t *xr, sqfs_u32 idx,
+			       sqfs_xattr_t **out)
+{
+	sqfs_xattr_t *head = NULL, *tail = NULL;
+	sqfs_xattr_id_t desc;
+	int ret;
+
+	*out = NULL;
+	if (idx == 0xFFFFFFFF)
+		return 0;
+
+	ret = sqfs_xattr_reader_get_desc(xr, idx, &desc);
+	if (ret)
+		return ret;
+
+	ret = sqfs_xattr_reader_seek_kv(xr, &desc);
+	if (ret)
+		return ret;
+
+	for (size_t i = 0; i < desc.count; ++i) {
+		sqfs_xattr_t *ent;
+
+		ret = sqfs_xattr_reader_read(xr, &ent);
+		if (ret)
+			goto fail;
+
+		if (tail == NULL) {
+			head = ent;
+			tail = ent;
+		} else {
+			tail->next = ent;
+			tail = ent;
+		}
+	}
+
+	*out = head;
+	return 0;
+fail:
+	sqfs_xattr_list_free(head);
+	return ret;
 }
 
 sqfs_xattr_reader_t *sqfs_xattr_reader_create(sqfs_u32 flags)

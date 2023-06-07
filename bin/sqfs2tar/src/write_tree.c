@@ -124,8 +124,15 @@ static int write_tree_dfs(const sqfs_tree_node_t *n)
 		}
 	}
 
-	if (!no_xattr) {
-		if (get_xattrs(name, n->inode, &xattr)) {
+	if (!no_xattr && xr != NULL) {
+		sqfs_u32 index;
+		int ret;
+
+		sqfs_inode_get_xattr_index(n->inode, &index);
+
+		ret = sqfs_xattr_reader_read_all(xr, index, &xattr);
+		if (ret) {
+			sqfs_perror(name, "resolving xattr index", ret);
 			sqfs_free(name);
 			return -1;
 		}
