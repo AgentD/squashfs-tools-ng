@@ -4,10 +4,13 @@
  *
  * Copyright (C) 2023 David Oberhollenzer <goliath@infraroot.at>
  */
+#include "xfrm/compress.h"
+#include "tar/format.h"
 #include "tar/tar.h"
 #include "sqfs/error.h"
 #include "sqfs/xattr.h"
 #include "util/util.h"
+#include "io/xfrm.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -311,16 +314,45 @@ static void it_destroy(sqfs_object_t *obj)
 	free(tar);
 }
 
-dir_iterator_t *tar_open_stream(istream_t *stream)
+/*****************************************************************************/
+
+static int tar_probe(const sqfs_u8 *data, size_t size)
+{
+	size_t i, offset;
+
+	if (size >= TAR_RECORD_SIZE) {
+		for (i = 0; i < TAR_RECORD_SIZE; ++i) {
+			if (data[i] != 0x00)
+				break;
+		}
+
+		if (i == TAR_RECORD_SIZE) {
+			data += TAR_RECORD_SIZE;
+			size -= TAR_RECORD_SIZE;
+		}
+	}
+
+	offset = offsetof(tar_header_t, magic);
+
+	if (offset + 5 <= size) {
+		if (memcmp(data + offset, "ustar", 5) == 0)
+			return 1;
+	}
+
+	return 0;
+}
+
+dir_iterator_t *tar_open_stream(istream_t *strm)
 {
 	tar_iterator_t *tar = calloc(1, sizeof(*tar));
 	dir_iterator_t *it = (dir_iterator_t *)tar;
+	xfrm_stream_t *xfrm = NULL;
+	int ret;
 
 	if (tar == NULL)
 		return NULL;
 
 	sqfs_object_init(it, it_destroy, NULL);
-	tar->stream = sqfs_grab(stream);
 	it->next = it_next;
 	it->read_link = it_read_link;
 	it->open_subdir = it_open_subdir;
@@ -328,5 +360,35 @@ dir_iterator_t *tar_open_stream(istream_t *stream)
 	it->open_file_ro = it_open_file_ro;
 	it->read_xattr = it_read_xattr;
 
+	/* proble if the stream is compressed */
+	ret = istream_precache(strm);
+	if (ret != 0)
+		goto out_strm;
+
+	ret = tar_probe(strm->buffer, strm->buffer_used);
+	if (ret > 0)
+		goto out_strm;
+
+	ret = xfrm_compressor_id_from_magic(strm->buffer, strm->buffer_used);
+	if (ret <= 0)
+		goto out_strm;
+
+	/* auto-wrap a compressed source stream */
+	xfrm = decompressor_stream_create(ret);
+	if (xfrm == NULL) {
+		sqfs_drop(it);
+		return NULL;
+	}
+
+	tar->stream = istream_xfrm_create(strm, xfrm);
+	if (tar->stream == NULL) {
+		sqfs_drop(xfrm);
+		sqfs_drop(it);
+		return NULL;
+	}
+
+	return it;
+out_strm:
+	tar->stream = sqfs_grab(strm);
 	return it;
 }

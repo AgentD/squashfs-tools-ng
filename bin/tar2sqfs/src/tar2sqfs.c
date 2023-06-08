@@ -6,65 +6,11 @@
  */
 #include "tar2sqfs.h"
 
-static int tar_probe(const sqfs_u8 *data, size_t size)
-{
-	size_t i, offset;
-
-	if (size >= TAR_RECORD_SIZE) {
-		for (i = 0; i < TAR_RECORD_SIZE; ++i) {
-			if (data[i] != 0x00)
-				break;
-		}
-
-		if (i == TAR_RECORD_SIZE) {
-			data += TAR_RECORD_SIZE;
-			size -= TAR_RECORD_SIZE;
-		}
-	}
-
-	offset = offsetof(tar_header_t, magic);
-
-	if (offset + 5 <= size) {
-		if (memcmp(data + offset, "ustar", 5) == 0)
-			return 1;
-	}
-
-	return 0;
-}
-
-static istream_t *magic_autowrap(istream_t *strm)
-{
-	xfrm_stream_t *xfrm = NULL;
-	istream_t *wrapper = NULL;
-	int ret;
-
-	ret = istream_precache(strm);
-	if (ret != 0)
-		goto out;
-
-	ret = tar_probe(strm->buffer, strm->buffer_used);
-	if (ret > 0)
-		return strm;
-
-	ret = xfrm_compressor_id_from_magic(strm->buffer, strm->buffer_used);
-	if (ret <= 0)
-		return strm;
-
-	xfrm = decompressor_stream_create(ret);
-	if (xfrm == NULL)
-		goto out;
-
-	wrapper = istream_xfrm_create(strm, xfrm);
-out:
-	sqfs_drop(strm);
-	sqfs_drop(xfrm);
-	return wrapper;
-}
-
 int main(int argc, char **argv)
 {
 	int status = EXIT_FAILURE;
 	istream_t *input_file = NULL;
+	dir_iterator_t *tar = NULL;
 	sqfs_writer_t sqfs;
 
 	process_args(argc, argv);
@@ -73,15 +19,18 @@ int main(int argc, char **argv)
 	if (input_file == NULL)
 		return EXIT_FAILURE;
 
-	input_file = magic_autowrap(input_file);
-	if (input_file == NULL)
+	tar = tar_open_stream(input_file);
+	sqfs_drop(input_file);
+	if (tar == NULL) {
+		fputs("Creating tar stream: out-of-memory\n", stderr);
 		return EXIT_FAILURE;
+	}
 
 	memset(&sqfs, 0, sizeof(sqfs));
 	if (sqfs_writer_init(&sqfs, &cfg))
-		goto out_if;
+		goto out_it;
 
-	if (process_tarball(input_file, &sqfs))
+	if (process_tarball(tar, &sqfs))
 		goto out;
 
 	if (fstree_post_process(&sqfs.fs))
@@ -93,7 +42,7 @@ int main(int argc, char **argv)
 	status = EXIT_SUCCESS;
 out:
 	sqfs_writer_cleanup(&sqfs, status);
-out_if:
-	sqfs_drop(input_file);
+out_it:
+	sqfs_drop(tar);
 	return status;
 }

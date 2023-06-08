@@ -173,17 +173,23 @@ test_tar_xattr_schily_bin_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(TARDATADIR)
 test_tar_xattr_schily_bin_CPPFLAGS += -DTESTFILE=xattr/xattr-schily-binary.tar
 
 test_tar_iterator_SOURCES = lib/tar/test/tar_iterator.c
-test_tar_iterator_LDADD = libtar.a libsquashfs.la libio.a libutil.a libcompat.a
+test_tar_iterator_LDADD = libtar.a libsquashfs.la libxfrm.a libio.a \
+		libutil.a libcompat.a $(XZ_LIBS) $(BZIP2_LIBS) \
+		$(ZLIB_LIBS) $(ZSTD_LIBS)
 test_tar_iterator_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(TARDATADIR)
 test_tar_iterator_CPPFLAGS += -DTESTFILE=format-acceptance/gnu.tar
 
 test_tar_iterator2_SOURCES = lib/tar/test/tar_iterator2.c
-test_tar_iterator2_LDADD = libtar.a libsquashfs.la libio.a libutil.a libcompat.a
+test_tar_iterator2_LDADD = libtar.a libsquashfs.la libio.a libxfrm.a \
+		libutil.a libcompat.a $(XZ_LIBS) $(BZIP2_LIBS) \
+		$(ZLIB_LIBS) $(ZSTD_LIBS)
 test_tar_iterator2_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(TARDATADIR)
 test_tar_iterator2_CPPFLAGS += -DTESTFILE=iterator/sparse.tar
 
 test_tar_iterator3_SOURCES = lib/tar/test/tar_iterator3.c
-test_tar_iterator3_LDADD = libtar.a libsquashfs.la libio.a libutil.a libcompat.a
+test_tar_iterator3_LDADD = libtar.a libsquashfs.la libio.a libxfrm.a \
+		libutil.a libcompat.a $(XZ_LIBS) $(BZIP2_LIBS) \
+		$(ZLIB_LIBS) $(ZSTD_LIBS)
 test_tar_iterator3_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(TARDATADIR)
 
 tar_fuzz_SOURCES = lib/tar/test/tar_fuzz.c

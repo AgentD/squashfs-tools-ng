@@ -148,15 +148,9 @@ static int set_root_attribs(sqfs_writer_t *sqfs, dir_iterator_t *it,
 	return 0;
 }
 
-int process_tarball(istream_t *input_file, sqfs_writer_t *sqfs)
+int process_tarball(dir_iterator_t *it, sqfs_writer_t *sqfs)
 {
-	dir_iterator_t *it = tar_open_stream(input_file);
 	size_t rootlen = root_becomes == NULL ? 0 : strlen(root_becomes);
-
-	if (it == NULL) {
-		fputs("Creating tar stream: out-of-memory\n", stderr);
-		return -1;
-	}
 
 	for (;;) {
 		bool skip = false, is_root = false, is_prefixed = true;
@@ -168,7 +162,7 @@ int process_tarball(istream_t *input_file, sqfs_writer_t *sqfs)
 		if (ret > 0)
 			break;
 		if (ret < 0)
-			goto fail;
+			return -1;
 
 		if (ent->mtime < 0)
 			ent->mtime = 0;
@@ -181,7 +175,7 @@ int process_tarball(istream_t *input_file, sqfs_writer_t *sqfs)
 			if (ret != 0) {
 				sqfs_perror(ent->name, "read link", ret);
 				free(ent);
-				goto fail;
+				return -1;
 			}
 		}
 
@@ -235,12 +229,8 @@ int process_tarball(istream_t *input_file, sqfs_writer_t *sqfs)
 		free(ent);
 		free(link);
 		if (ret)
-			goto fail;
+			return -1;
 	}
 
-	sqfs_drop(it);
 	return 0;
-fail:
-	sqfs_drop(it);
-	return -1;
 }

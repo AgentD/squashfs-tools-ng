@@ -15,7 +15,6 @@
 #include "tar/tar.h"
 #include "tar/format.h"
 #include "xfrm/compress.h"
-#include "io/xfrm.h"
 
 #include <stdlib.h>
 #include <getopt.h>
@@ -34,6 +33,6 @@ extern char *root_becomes;
 void process_args(int argc, char **argv);
 
 /* process_tarball.c */
-int process_tarball(istream_t *input_file, sqfs_writer_t *sqfs);
+int process_tarball(dir_iterator_t *it, sqfs_writer_t *sqfs);
 
 #endif /* TAR2SQFS_H */
