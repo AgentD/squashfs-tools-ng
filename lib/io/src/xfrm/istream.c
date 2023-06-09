@@ -18,7 +18,7 @@ typedef struct istream_xfrm_t {
 static int xfrm_precache(istream_t *base)
 {
 	istream_xfrm_t *xfrm = (istream_xfrm_t *)base;
-	int ret;
+	int ret, sret;
 
 	if (base->eof)
 		return 0;
@@ -34,20 +34,26 @@ static int xfrm_precache(istream_t *base)
 
 	base->buffer = xfrm->uncompressed;
 
-	ret = istream_precache(xfrm->wrapped);
-	if (ret != 0)
-		return ret;
-
 	for (;;) {
 		sqfs_u32 in_off = 0, out_off = base->buffer_used;
 		int mode = XFRM_STREAM_FLUSH_NONE;
+		const sqfs_u8 *ptr;
+		size_t avail;
 
-		if (xfrm->wrapped->eof)
+		ret = istream_precache(xfrm->wrapped);
+		if (ret != 0)
+			return ret;
+
+		ret = istream_get_buffered_data(xfrm->wrapped, &ptr, &avail);
+		if (ret < 0)
+			return ret;
+		if (ret > 0) {
 			mode = XFRM_STREAM_FLUSH_FULL;
+			avail = 0;
+		}
 
 		ret = xfrm->xfrm->process_data(xfrm->xfrm,
-					       xfrm->wrapped->buffer,
-					       xfrm->wrapped->buffer_used,
+					       ptr, avail,
 					       xfrm->uncompressed + out_off,
 					       BUFSZ - out_off,
 					       &in_off, &out_off, mode);
@@ -59,17 +65,15 @@ static int xfrm_precache(istream_t *base)
 		}
 
 		base->buffer_used = out_off;
-		xfrm->wrapped->buffer += in_off;
-		xfrm->wrapped->buffer_used -= in_off;
+
+		sret = istream_advance_buffer(xfrm->wrapped, in_off);
+		if (sret != 0)
+			return sret;
 
 		if (ret == XFRM_STREAM_BUFFER_FULL || out_off >= BUFSZ)
 			break;
 
-		ret = istream_precache(xfrm->wrapped);
-		if (ret != 0)
-			return ret;
-
-		if (xfrm->wrapped->eof && xfrm->wrapped->buffer_used == 0) {
+		if (mode == XFRM_STREAM_FLUSH_FULL) {
 			if (base->buffer_used == 0)
 				base->eof = true;
 			break;

@@ -73,25 +73,6 @@ static bool is_sparse_region(const tar_iterator_t *tar, sqfs_u64 *count)
 	return true;
 }
 
-static int data_available(tar_iterator_t *tar, sqfs_u64 want, sqfs_u64 *out)
-{
-	if (want > tar->stream->buffer_used) {
-		if (istream_precache(tar->stream)) {
-			tar->state = SQFS_ERROR_IO;
-			return -1;
-		}
-
-		if (tar->stream->buffer_used == 0 && tar->stream->eof) {
-			tar->state = SQFS_ERROR_CORRUPTED;
-			return -1;
-		}
-	}
-
-	*out = tar->stream->buffer_used <= want ?
-		tar->stream->buffer_used : want;
-	return 0;
-}
-
 /*****************************************************************************/
 
 static const char *strm_get_filename(istream_t *strm)
@@ -108,8 +89,10 @@ static int strm_precache(istream_t *strm)
 		goto out_eof;
 
 	if (!tar->parent->last_sparse) {
-		tar->parent->stream->buffer += tar->parent->last_chunk;
-		tar->parent->stream->buffer_used -= tar->parent->last_chunk;
+		int ret = istream_advance_buffer(tar->parent->stream,
+						 tar->parent->last_chunk);
+		if (ret != 0)
+			return ret;
 		tar->parent->record_size -= tar->parent->last_chunk;
 	}
 
@@ -118,6 +101,8 @@ static int strm_precache(istream_t *strm)
 		goto out_eof;
 
 	tar->parent->last_sparse = is_sparse_region(tar->parent, &diff);
+	if (diff == 0)
+		goto out_eof;
 
 	if (tar->parent->last_sparse) {
 		if (diff > sizeof(tar->buffer))
@@ -126,15 +111,40 @@ static int strm_precache(istream_t *strm)
 		strm->buffer = tar->buffer;
 		memset(tar->buffer, 0, diff);
 	} else {
-		if (data_available(tar->parent, diff, &diff))
-			goto out_eof;
+		const sqfs_u8 *ptr;
+		size_t avail;
+		int ret;
 
-		strm->buffer = tar->parent->stream->buffer;
+		for (int i = 0; i < 2; ++i) {
+			ret = istream_get_buffered_data(tar->parent->stream,
+							&ptr, &avail);
+			if (ret > 0)
+				goto fail_borked;
+			if (ret < 0)
+				goto fail_io;
+
+			if (diff <= avail)
+				break;
+			ret = istream_precache(tar->parent->stream);
+			if (ret)
+				goto fail_io;
+		}
+
+		if (diff > avail)
+			diff = avail;
+
+		strm->buffer = ptr;
 	}
 
 	strm->buffer_used = diff;
 	tar->parent->last_chunk = diff;
 	return 0;
+fail_borked:
+	tar->parent->state = SQFS_ERROR_CORRUPTED;
+	return -1;
+fail_io:
+	tar->parent->state = SQFS_ERROR_IO;
+	return -1;
 out_eof:
 	strm->eof = true;
 	strm->buffer_used = 0;
@@ -347,6 +357,8 @@ dir_iterator_t *tar_open_stream(istream_t *strm)
 	tar_iterator_t *tar = calloc(1, sizeof(*tar));
 	dir_iterator_t *it = (dir_iterator_t *)tar;
 	xfrm_stream_t *xfrm = NULL;
+	const sqfs_u8 *ptr;
+	size_t size;
 	int ret;
 
 	if (tar == NULL)
@@ -365,11 +377,15 @@ dir_iterator_t *tar_open_stream(istream_t *strm)
 	if (ret != 0)
 		goto out_strm;
 
-	ret = tar_probe(strm->buffer, strm->buffer_used);
+	ret = istream_get_buffered_data(strm, &ptr, &size);
+	if (ret != 0)
+		goto out_strm;
+
+	ret = tar_probe(ptr, size);
 	if (ret > 0)
 		goto out_strm;
 
-	ret = xfrm_compressor_id_from_magic(strm->buffer, strm->buffer_used);
+	ret = xfrm_compressor_id_from_magic(ptr, size);
 	if (ret <= 0)
 		goto out_strm;
 

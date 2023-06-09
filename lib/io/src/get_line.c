@@ -46,12 +46,14 @@ int istream_get_line(istream_t *strm, char **out,
 
 	for (;;) {
 		bool have_line = false;
-		size_t i, count;
+		size_t i, count, avail;
+		const sqfs_u8 *ptr;
+		int ret;
 
-		if (istream_precache(strm))
+		ret = istream_get_buffered_data(strm, &ptr, &avail);
+		if (ret < 0)
 			goto fail_free;
-
-		if (strm->buffer_used == 0) {
+		if (ret > 0) {
 			if (line_len == 0)
 				goto out_eof;
 
@@ -62,12 +64,12 @@ int istream_get_line(istream_t *strm, char **out,
 			goto out_eof;
 		}
 
-		for (i = 0; i < strm->buffer_used; ++i) {
-			if (strm->buffer[i] == '\n')
+		for (i = 0; i < avail; ++i) {
+			if (ptr[i] == '\n')
 				break;
 		}
 
-		if (i < strm->buffer_used) {
+		if (i < avail) {
 			count = i++;
 			have_line = true;
 		} else {
@@ -79,12 +81,12 @@ int istream_get_line(istream_t *strm, char **out,
 			goto fail_errno;
 
 		line = new;
-		memcpy(line + line_len, strm->buffer, count);
+		memcpy(line + line_len, ptr, count);
 		line_len += count;
 		line[line_len] = '\0';
 
-		strm->buffer += i;
-		strm->buffer_used -= i;
+		if (istream_advance_buffer(strm, i))
+			goto fail_free;
 
 		if (have_line) {
 			if (line_len > 0 && line[line_len - 1] == '\r')

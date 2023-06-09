@@ -116,6 +116,69 @@ SQFS_INLINE const char *istream_get_filename(istream_t *strm)
 }
 
 /**
+ * @brief Peek into the data buffered in an istream
+ *
+ * @memberof istream_t
+ *
+ * If the internal buffer is empty, the function tries to fetch more, which can
+ * block, and returns a positive return code if there is no more data to be
+ * read. Since this and other functions can alter the buffer pointer and
+ * contents, do not store the pointers returned here across function calls.
+ *
+ * Higher level functions like @ref istream_read, providing a Unix read() style
+ * API are built on top of this primitive.
+ *
+ * @param strm A pointer to an istream_t implementation.
+ * @param out Returns a pointer into an internal buffer on success.
+ * @param size Returns the number of bytes available in the buffer.
+ *
+ * @return Zero on success, a negative error code on failure,
+ *         a postive number on EOF.
+ */
+SQFS_INLINE int istream_get_buffered_data(istream_t *strm, const sqfs_u8 **out,
+					  size_t *size)
+{
+	if (strm->buffer_used == 0) {
+		int ret = strm->precache(strm);
+		if (ret)
+			return ret;
+		if (strm->buffer_used == 0)
+			return 1;
+	}
+
+	*out = strm->buffer;
+	*size = strm->buffer_used;
+	return 0;
+}
+
+/**
+ * @brief Mark a section of the internal buffer of an istream as used
+ *
+ * @memberof istream_t
+ *
+ * This marks the first `count` bytes of the internal buffer as used,
+ * forcing @ref istream_get_buffered_data to return data afterwards
+ * and potentially to load more data.
+ *
+ * @param strm A pointer to an istream_t implementation.
+ * @param count The number of bytes used up.
+ *
+ * @return Zero on success, a negative error code on failure.
+ */
+SQFS_INLINE int istream_advance_buffer(istream_t *strm, size_t count)
+{
+	if (count >= strm->buffer_used) {
+		strm->buffer += strm->buffer_used;
+		strm->buffer_used = 0;
+		return strm->precache(strm);
+	}
+
+	strm->buffer += count;
+	strm->buffer_used -= count;
+	return 0;
+}
+
+/**
  * @brief Skip over a number of bytes in an input stream.
  *
  * @memberof istream_t
