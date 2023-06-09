@@ -39,6 +39,7 @@ typedef struct {
 
 	tar_iterator_t *parent;
 
+	bool eof;
 	sqfs_u8 buffer[4096];
 } tar_istream_t;
 
@@ -85,7 +86,7 @@ static int strm_precache(istream_t *strm)
 	tar_istream_t *tar = (tar_istream_t *)strm;
 	sqfs_u64 diff;
 
-	if (strm->eof)
+	if (tar->eof)
 		goto out_eof;
 
 	if (!tar->parent->last_sparse) {
@@ -146,7 +147,7 @@ fail_io:
 	tar->parent->state = SQFS_ERROR_IO;
 	return -1;
 out_eof:
-	strm->eof = true;
+	tar->eof = true;
 	strm->buffer_used = 0;
 	strm->buffer = tar->buffer;
 	tar->parent->locked = false;

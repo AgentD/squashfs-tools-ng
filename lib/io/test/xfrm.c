@@ -440,7 +440,6 @@ static void run_unpack_test(const void *blob, size_t size)
 	TEST_EQUAL_I(ret, 0);
 
 	TEST_EQUAL_UI(mem_istream->buffer_used, 0);
-	TEST_ASSERT(mem_istream->eof);
 
 	sqfs_drop(istream);
 	TEST_EQUAL_UI(((sqfs_object_t *)mem_istream)->refcount, 1);

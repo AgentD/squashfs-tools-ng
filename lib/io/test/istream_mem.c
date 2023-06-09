@@ -72,7 +72,6 @@ int main(int argc, char **argv)
 	}
 
 	TEST_EQUAL_UI(in->buffer_used, 0);
-	TEST_ASSERT(in->eof);
 	sqfs_drop(in);
 	return EXIT_SUCCESS;
 }

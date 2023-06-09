@@ -20,9 +20,6 @@ static int xfrm_precache(istream_t *base)
 	istream_xfrm_t *xfrm = (istream_xfrm_t *)base;
 	int ret, sret;
 
-	if (base->eof)
-		return 0;
-
 	assert(base->buffer >= xfrm->uncompressed);
 	assert(base->buffer <= (xfrm->uncompressed + BUFSZ));
 	assert(base->buffer_used <= BUFSZ);
@@ -73,11 +70,8 @@ static int xfrm_precache(istream_t *base)
 		if (ret == XFRM_STREAM_BUFFER_FULL || out_off >= BUFSZ)
 			break;
 
-		if (mode == XFRM_STREAM_FLUSH_FULL) {
-			if (base->buffer_used == 0)
-				base->eof = true;
+		if (mode == XFRM_STREAM_FLUSH_FULL)
 			break;
-		}
 	}
 
 	return 0;
@@ -115,7 +109,6 @@ istream_t *istream_xfrm_create(istream_t *strm, xfrm_stream_t *xfrm)
 	base->precache = xfrm_precache;
 	base->get_filename = xfrm_get_filename;
 	base->buffer = stream->uncompressed;
-	base->eof = false;
 	return base;
 fail:
 	fprintf(stderr, "%s: error initializing decompressor stream.\n",

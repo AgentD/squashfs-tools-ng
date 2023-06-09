@@ -51,9 +51,6 @@ static int mem_in_precache(istream_t *strm)
 		mem->size -= diff;
 	}
 
-	if (mem->size == 0)
-		strm->eof = true;
-
 	return 0;
 }
 

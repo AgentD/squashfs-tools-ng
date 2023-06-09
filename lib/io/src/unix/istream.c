@@ -11,6 +11,7 @@ typedef struct {
 	char *path;
 	int fd;
 
+	bool eof;
 	sqfs_u8 buffer[BUFSZ];
 } file_istream_t;
 
@@ -29,12 +30,12 @@ static int file_precache(istream_t *strm)
 
 	strm->buffer = file->buffer;
 
-	while (!strm->eof && strm->buffer_used < BUFSZ) {
+	while (!file->eof && strm->buffer_used < BUFSZ) {
 		ssize_t ret = read(file->fd, file->buffer + strm->buffer_used,
 				   BUFSZ - strm->buffer_used);
 
 		if (ret == 0)
-			strm->eof = true;
+			file->eof = true;
 
 		if (ret < 0) {
 			if (errno == EINTR)

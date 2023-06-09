@@ -14,6 +14,7 @@ typedef struct {
 	char *path;
 	HANDLE hnd;
 
+	bool eof;
 	sqfs_u8 buffer[BUFSZ];
 } file_istream_t;
 
@@ -23,7 +24,7 @@ static int file_precache(istream_t *strm)
 	DWORD diff, actual;
 	HANDLE hnd;
 
-	if (strm->eof)
+	if (file->eof)
 		return 0;
 
 	assert(strm->buffer >= file->buffer);
@@ -47,7 +48,7 @@ static int file_precache(istream_t *strm)
 
 			if (error == ERROR_HANDLE_EOF ||
 			    error == ERROR_BROKEN_PIPE) {
-				strm->eof = true;
+				file->eof = true;
 				break;
 			}
 
@@ -58,7 +59,7 @@ static int file_precache(istream_t *strm)
 		}
 
 		if (actual == 0) {
-			strm->eof = true;
+			file->eof = true;
 			break;
 		}
 
