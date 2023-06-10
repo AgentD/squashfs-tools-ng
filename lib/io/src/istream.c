@@ -19,7 +19,7 @@ sqfs_s32 istream_read(istream_t *strm, void *data, size_t size)
 		size_t diff;
 		int ret;
 
-		ret = istream_get_buffered_data(strm, &ptr, &diff);
+		ret = istream_get_buffered_data(strm, &ptr, &diff, size);
 		if (ret > 0)
 			break;
 		if (ret < 0)
@@ -48,7 +48,7 @@ int istream_skip(istream_t *strm, sqfs_u64 size)
 		size_t diff;
 		int ret;
 
-		ret = istream_get_buffered_data(strm, &ptr, &diff);
+		ret = istream_get_buffered_data(strm, &ptr, &diff, size);
 		if (ret < 0)
 			return ret;
 		if (ret > 0) {
@@ -81,7 +81,7 @@ sqfs_s32 istream_splice(istream_t *in, ostream_t *out, sqfs_u32 size)
 		size_t diff;
 		int ret;
 
-		ret = istream_get_buffered_data(in, &ptr, &diff);
+		ret = istream_get_buffered_data(in, &ptr, &diff, size);
 		if (ret < 0)
 			return ret;
 		if (ret > 0)

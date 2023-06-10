@@ -32,8 +32,9 @@ static void init_buffer(void)
 
 int main(int argc, char **argv)
 {
+	size_t i, diff, size;
 	bool eat_all = true;
-	size_t i, diff;
+	const sqfs_u8 *ptr;
 	istream_t *in;
 	int ret;
 	(void)argc; (void)argv;
@@ -45,33 +46,30 @@ int main(int argc, char **argv)
 	TEST_EQUAL_UI(((sqfs_object_t *)in)->refcount, 1);
 
 	TEST_STR_EQUAL(istream_get_filename(in), "memstream.txt");
-	TEST_NOT_NULL(in->buffer);
-	TEST_EQUAL_UI(in->buffer_used, 0);
 
 	for (i = 0; i < end2; i += diff) {
-		ret = istream_precache(in);
+		ret = istream_get_buffered_data(in, &ptr, &size, 61);
 		TEST_EQUAL_I(ret, 0);
 
 		if ((end2 - i) >= 61) {
-			TEST_NOT_NULL(in->buffer);
-			TEST_EQUAL_UI(in->buffer_used, 61);
+			TEST_NOT_NULL(ptr);
+			TEST_EQUAL_UI(size, 61);
 		} else {
-			TEST_NOT_NULL(in->buffer);
-			TEST_EQUAL_UI(in->buffer_used, (end2 - i));
+			TEST_NOT_NULL(ptr);
+			TEST_EQUAL_UI(size, (end2 - i));
 		}
 
-		for (size_t j = 0; j < in->buffer_used; ++j) {
-			TEST_EQUAL_UI(in->buffer[j], byte_at_offset(i + j));
+		for (size_t j = 0; j < size; ++j) {
+			TEST_EQUAL_UI(ptr[j], byte_at_offset(i + j));
 		}
 
-		diff = eat_all ? in->buffer_used : (in->buffer_used / 2);
+		diff = eat_all ? size : (size / 2);
 		eat_all = !eat_all;
 
-		in->buffer += diff;
-		in->buffer_used -= diff;
+		ret = istream_advance_buffer(in, diff);
+		TEST_EQUAL_I(ret, 0);
 	}
 
-	TEST_EQUAL_UI(in->buffer_used, 0);
 	sqfs_drop(in);
 	return EXIT_SUCCESS;
 }

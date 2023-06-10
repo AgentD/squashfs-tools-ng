@@ -132,7 +132,7 @@ static int strm_precache(istream_t *strm)
 		int ret;
 
 		ret = istream_get_buffered_data(tar->parent->stream,
-						&strm->buffer, &avail);
+						&strm->buffer, &avail, diff);
 		if (ret > 0)
 			goto fail_borked;
 		if (ret < 0)
@@ -373,11 +373,8 @@ dir_iterator_t *tar_open_stream(istream_t *strm)
 	it->read_xattr = it_read_xattr;
 
 	/* proble if the stream is compressed */
-	ret = istream_precache(strm);
-	if (ret != 0)
-		goto out_strm;
-
-	ret = istream_get_buffered_data(strm, &ptr, &size);
+	ret = istream_get_buffered_data(strm, &ptr, &size,
+					sizeof(tar_header_t));
 	if (ret != 0)
 		goto out_strm;
 

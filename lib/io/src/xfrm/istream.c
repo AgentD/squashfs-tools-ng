@@ -37,11 +37,8 @@ static int xfrm_precache(istream_t *base)
 		const sqfs_u8 *ptr;
 		size_t avail;
 
-		ret = istream_precache(xfrm->wrapped);
-		if (ret != 0)
-			return ret;
-
-		ret = istream_get_buffered_data(xfrm->wrapped, &ptr, &avail);
+		ret = istream_get_buffered_data(xfrm->wrapped, &ptr, &avail,
+						sizeof(xfrm->uncompressed));
 		if (ret < 0)
 			return ret;
 		if (ret > 0) {

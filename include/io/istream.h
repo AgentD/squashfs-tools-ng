@@ -82,24 +82,6 @@ SQFS_INTERNAL int istream_get_line(istream_t *strm, char **out,
 SQFS_INTERNAL sqfs_s32 istream_read(istream_t *strm, void *data, size_t size);
 
 /**
- * @brief Adjust and refill the internal buffer of an input stream
- *
- * @memberof istream_t
- *
- * This function resets the buffer offset of an input stream (moving any unread
- * data up front if it has to) and calls an internal callback of the input
- * stream to fill the rest of the buffer to the extent possible.
- *
- * @param strm A pointer to an input stream.
- *
- * @return 0 on success, -1 on failure.
- */
-SQFS_INLINE int istream_precache(istream_t *strm)
-{
-	return strm->precache(strm);
-}
-
-/**
  * @brief Get the underlying filename of an input stream.
  *
  * @memberof istream_t
@@ -129,14 +111,17 @@ SQFS_INLINE const char *istream_get_filename(istream_t *strm)
  * @param strm A pointer to an istream_t implementation.
  * @param out Returns a pointer into an internal buffer on success.
  * @param size Returns the number of bytes available in the buffer.
+ * @param want A number of bytes that the reader would like to have. If there is
+ *             less than this available, the implementation can choose to do a
+ *             blocking precache.
  *
  * @return Zero on success, a negative error code on failure,
  *         a postive number on EOF.
  */
 SQFS_INLINE int istream_get_buffered_data(istream_t *strm, const sqfs_u8 **out,
-					  size_t *size)
+					  size_t *size, size_t want)
 {
-	if (strm->buffer_used == 0) {
+	if (strm->buffer_used == 0 || strm->buffer_used < want) {
 		int ret = strm->precache(strm);
 		if (ret)
 			return ret;
