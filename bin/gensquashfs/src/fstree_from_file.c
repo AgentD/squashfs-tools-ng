@@ -280,7 +280,7 @@ int fstree_from_file_stream(fstree_t *fs, istream_t *fp, const char *basepath)
 	char *line;
 	int ret;
 
-	filename = istream_get_filename(fp);
+	filename = fp->get_filename(fp);
 
 	for (;;) {
 		ret = istream_get_line(fp, &line, &line_num,

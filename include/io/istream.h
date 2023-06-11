@@ -20,11 +20,50 @@
 typedef struct istream_t {
 	sqfs_object_t base;
 
+	/**
+	 * @brief Peek into the data buffered in an istream
+	 *
+	 * If the internal buffer is empty, the function tries to fetch more,
+	 * which can block. It returns a positive return code if there is no
+	 * more data to be read, a negative error code if reading failed. Since
+	 * this and other functions can alter the buffer pointer and contents,
+	 * do not store the pointers returned here across function calls.
+	 *
+	 * Higher level functions like @ref istream_read (providing a
+	 * Unix read() style API) are built on top of this primitive.
+	 *
+	 * @param strm A pointer to an istream_t implementation.
+	 * @param out Returns a pointer into an internal buffer on success.
+	 * @param size Returns the number of bytes available in the buffer.
+	 * @param want A number of bytes that the reader would like to have.
+	 *             If there is less than this available, the implementation
+	 *             can choose to do a blocking precache.
+	 *
+	 * @return Zero on success, a negative error code on failure,
+	 *         a postive number on EOF.
+	 */
 	int (*get_buffered_data)(struct istream_t *strm, const sqfs_u8 **out,
 				 size_t *size, size_t want);
 
+	/**
+	 * @brief Mark a section of the internal buffer of an istream as used
+	 *
+	 * This marks the first `count` bytes of the internal buffer as used,
+	 * forcing get_buffered_data to return data afterwards and potentially
+	 * try to load more data.
+	 *
+	 * @param strm A pointer to an istream_t implementation.
+	 * @param count The number of bytes used up.
+	 */
 	void (*advance_buffer)(struct istream_t *strm, size_t count);
 
+	/**
+	 * @brief Get the underlying filename of an input stream.
+	 *
+	 * @param strm The input stream to get the filename from.
+	 *
+	 * @return A string holding the underlying filename.
+	 */
 	const char *(*get_filename)(struct istream_t *strm);
 } istream_t;
 
@@ -80,66 +119,6 @@ SQFS_INTERNAL int istream_get_line(istream_t *strm, char **out,
  *         0 on end-of-file.
  */
 SQFS_INTERNAL sqfs_s32 istream_read(istream_t *strm, void *data, size_t size);
-
-/**
- * @brief Get the underlying filename of an input stream.
- *
- * @memberof istream_t
- *
- * @param strm The input stream to get the filename from.
- *
- * @return A string holding the underlying filename.
- */
-SQFS_INLINE const char *istream_get_filename(istream_t *strm)
-{
-	return strm->get_filename(strm);
-}
-
-/**
- * @brief Peek into the data buffered in an istream
- *
- * @memberof istream_t
- *
- * If the internal buffer is empty, the function tries to fetch more, which can
- * block, and returns a positive return code if there is no more data to be
- * read. Since this and other functions can alter the buffer pointer and
- * contents, do not store the pointers returned here across function calls.
- *
- * Higher level functions like @ref istream_read, providing a Unix read() style
- * API are built on top of this primitive.
- *
- * @param strm A pointer to an istream_t implementation.
- * @param out Returns a pointer into an internal buffer on success.
- * @param size Returns the number of bytes available in the buffer.
- * @param want A number of bytes that the reader would like to have. If there is
- *             less than this available, the implementation can choose to do a
- *             blocking precache.
- *
- * @return Zero on success, a negative error code on failure,
- *         a postive number on EOF.
- */
-SQFS_INLINE int istream_get_buffered_data(istream_t *strm, const sqfs_u8 **out,
-					  size_t *size, size_t want)
-{
-	return strm->get_buffered_data(strm, out, size, want);
-}
-
-/**
- * @brief Mark a section of the internal buffer of an istream as used
- *
- * @memberof istream_t
- *
- * This marks the first `count` bytes of the internal buffer as used,
- * forcing @ref istream_get_buffered_data to return data afterwards
- * and potentially try to load more data.
- *
- * @param strm A pointer to an istream_t implementation.
- * @param count The number of bytes used up.
- */
-SQFS_INLINE void istream_advance_buffer(istream_t *strm, size_t count)
-{
-	strm->advance_buffer(strm, count);
-}
 
 /**
  * @brief Skip over a number of bytes in an input stream.

@@ -98,7 +98,7 @@ static int write_header(ostream_t *fp, const struct stat *sb, const char *name,
 
 	update_checksum(&hdr);
 
-	return ostream_append(fp, &hdr, sizeof(hdr));
+	return fp->append(fp, &hdr, sizeof(hdr));
 }
 
 static int write_ext_header(ostream_t *fp, const struct stat *orig,
@@ -114,7 +114,7 @@ static int write_ext_header(ostream_t *fp, const struct stat *orig,
 	if (write_header(fp, &sb, name, NULL, type))
 		return -1;
 
-	if (ostream_append(fp, payload, payload_len))
+	if (fp->append(fp, payload, payload_len))
 		return -1;
 
 	return padd_file(fp, payload_len);
@@ -288,5 +288,5 @@ int write_hard_link(ostream_t *fp, const struct stat *sb, const char *name,
 	write_number(hdr.devminor, 0, sizeof(hdr.devminor));
 
 	update_checksum(&hdr);
-	return ostream_append(fp, &hdr, sizeof(hdr));
+	return fp->append(fp, &hdr, sizeof(hdr));
 }

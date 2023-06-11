@@ -42,7 +42,7 @@ static int flush_inbuf(ostream_xfrm_t *xfrm, bool finish)
 			return -1;
 		}
 
-		if (ostream_append(xfrm->wrapped, xfrm->outbuf, off_out))
+		if (xfrm->wrapped->append(xfrm->wrapped, xfrm->outbuf, off_out))
 			return -1;
 
 		off_out = 0;
@@ -52,7 +52,7 @@ static int flush_inbuf(ostream_xfrm_t *xfrm, bool finish)
 	}
 
 	if (off_out > 0) {
-		if (ostream_append(xfrm->wrapped, xfrm->outbuf, off_out))
+		if (xfrm->wrapped->append(xfrm->wrapped, xfrm->outbuf, off_out))
 			return -1;
 	}
 

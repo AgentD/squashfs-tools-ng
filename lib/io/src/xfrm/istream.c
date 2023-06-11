@@ -38,8 +38,8 @@ static int precache(istream_t *base)
 		const sqfs_u8 *ptr;
 		size_t avail;
 
-		ret = istream_get_buffered_data(xfrm->wrapped, &ptr, &avail,
-						sizeof(xfrm->uncompressed));
+		ret = xfrm->wrapped->get_buffered_data(xfrm->wrapped, &ptr,
+						       &avail, BUFSZ);
 		if (ret < 0)
 			return ret;
 		if (ret > 0)
@@ -58,7 +58,7 @@ static int precache(istream_t *base)
 		}
 
 		xfrm->buffer_used = out_off;
-		istream_advance_buffer(xfrm->wrapped, in_off);
+		xfrm->wrapped->advance_buffer(xfrm->wrapped, in_off);
 
 		if (ret == XFRM_STREAM_BUFFER_FULL || out_off >= BUFSZ)
 			break;

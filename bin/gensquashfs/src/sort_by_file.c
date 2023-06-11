@@ -244,7 +244,7 @@ int fstree_sort_files(fstree_t *fs, istream_t *sortfile)
 		node->flags &= ~FLAG_FILE_ALREADY_MATCHED;
 	}
 
-	filename = istream_get_filename(sortfile);
+	filename = sortfile->get_filename(sortfile);
 
 	for (;;) {
 		bool do_glob, path_glob, have_match;

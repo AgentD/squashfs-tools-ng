@@ -63,7 +63,7 @@ static int terminate_archive(void)
 
 	memset(buffer, '\0', sizeof(buffer));
 
-	return ostream_append(out_file, buffer, sizeof(buffer));
+	return out_file->append(out_file, buffer, sizeof(buffer));
 }
 
 static sqfs_tree_node_t *tree_merge(sqfs_tree_node_t *lhs,
@@ -253,7 +253,7 @@ int main(int argc, char **argv)
 	if (terminate_archive())
 		goto out;
 
-	if (ostream_flush(out_file))
+	if (out_file->flush(out_file))
 		goto out;
 
 	status = EXIT_SUCCESS;

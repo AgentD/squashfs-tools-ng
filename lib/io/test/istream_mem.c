@@ -45,10 +45,10 @@ int main(int argc, char **argv)
 	TEST_NOT_NULL(in);
 	TEST_EQUAL_UI(((sqfs_object_t *)in)->refcount, 1);
 
-	TEST_STR_EQUAL(istream_get_filename(in), "memstream.txt");
+	TEST_STR_EQUAL(in->get_filename(in), "memstream.txt");
 
 	for (i = 0; i < end2; i += diff) {
-		ret = istream_get_buffered_data(in, &ptr, &size, 61);
+		ret = in->get_buffered_data(in, &ptr, &size, 61);
 		TEST_EQUAL_I(ret, 0);
 
 		if ((end2 - i) >= 61) {
@@ -65,7 +65,7 @@ int main(int argc, char **argv)
 
 		diff = eat_all ? size : (size / 2);
 		eat_all = !eat_all;
-		istream_advance_buffer(in, diff);
+		in->advance_buffer(in, diff);
 	}
 
 	sqfs_drop(in);

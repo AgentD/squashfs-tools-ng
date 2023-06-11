@@ -36,7 +36,7 @@ int sqfs_data_reader_dump(const char *name, sqfs_data_reader_t *data,
 				return -1;
 			}
 
-			err = ostream_append(fp, chunk, chunk_size);
+			err = fp->append(fp, chunk, chunk_size);
 			free(chunk);
 
 			if (err)
@@ -54,7 +54,7 @@ int sqfs_data_reader_dump(const char *name, sqfs_data_reader_t *data,
 			return -1;
 		}
 
-		err = ostream_append(fp, chunk, chunk_size);
+		err = fp->append(fp, chunk, chunk_size);
 		free(chunk);
 
 		if (err)

@@ -138,7 +138,7 @@ int main(int argc, char **argv)
 			       NULL, NULL, 9);
 	TEST_EQUAL_I(ret, 0);
 
-	ret = ostream_append(&mem_stream, "Hello, World!\n", 14);
+	ret = mem_stream.append(&mem_stream, "Hello, World!\n", 14);
 	TEST_EQUAL_I(ret, 0);
 	ret = padd_file(&mem_stream, 14);
 	TEST_EQUAL_I(ret, 0);
@@ -157,7 +157,7 @@ int main(int argc, char **argv)
 	TEST_EQUAL_I(ret, 0);
 	sqfs_xattr_list_free(xattr);
 
-	ret = ostream_append(&mem_stream, ":-)\n", 4);
+	ret = mem_stream.append(&mem_stream, ":-)\n", 4);
 	TEST_EQUAL_I(ret, 0);
 	ret = padd_file(&mem_stream, 4);
 	TEST_EQUAL_I(ret, 0);
@@ -174,9 +174,9 @@ int main(int argc, char **argv)
 			       NULL, NULL, 12);
 	TEST_EQUAL_I(ret, 0);
 
-	ret = ostream_append(&mem_stream,
-			     "Annoy people with really long file paths!\n",
-			     42);
+	ret = mem_stream.append(&mem_stream,
+				"Annoy people with really long file paths!\n",
+				42);
 	TEST_EQUAL_I(ret, 0);
 	ret = padd_file(&mem_stream, 42);
 	TEST_EQUAL_I(ret, 0);

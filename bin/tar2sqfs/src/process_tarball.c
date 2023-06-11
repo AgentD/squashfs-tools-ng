@@ -31,7 +31,7 @@ static int write_file(sqfs_writer_t *sqfs, dir_iterator_t *it,
 		ret = istream_splice(in, out, cfg.block_size);
 	} while (ret > 0);
 
-	ostream_flush(out);
+	out->flush(out);
 	sqfs_drop(out);
 	sqfs_drop(in);
 	return ret;

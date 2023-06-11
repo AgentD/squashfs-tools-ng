@@ -58,7 +58,7 @@ int main(int argc, char **argv)
 	ret = ostream_append_sparse(&dummy, ref);
 	TEST_EQUAL_I(ret, 0);
 
-	ret = ostream_flush(&dummy);
+	ret = dummy.flush(&dummy);
 	TEST_EQUAL_I(ret, 0);
 
 	TEST_EQUAL_UI(ref, total);

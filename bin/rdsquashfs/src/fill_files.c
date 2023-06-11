@@ -155,7 +155,7 @@ static int fill_files(sqfs_data_reader_t *data, int flags)
 		ret = sqfs_data_reader_dump(files[i].path, data, files[i].inode,
 					    fp, block_size);
 		if (ret == 0)
-			ret = ostream_flush(fp);
+			ret = fp->flush(fp);
 
 		sqfs_drop(fp);
 		if (ret)

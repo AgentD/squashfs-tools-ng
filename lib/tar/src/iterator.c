@@ -118,8 +118,9 @@ static int strm_get_buffered_data(istream_t *strm, const sqfs_u8 **out,
 		*size = (diff <= sizeof(tar->buffer)) ?
 			diff : sizeof(tar->buffer);
 	} else {
-		ret = istream_get_buffered_data(tar->parent->stream,
-						out, size, diff);
+		ret = tar->parent->stream->
+			get_buffered_data(tar->parent->stream,
+					  out, size, diff);
 		if (ret > 0)
 			goto fail_borked;
 		if (ret < 0)
@@ -146,7 +147,7 @@ static void strm_advance_buffer(istream_t *strm, size_t count)
 	tar_istream_t *tar = (tar_istream_t *)strm;
 
 	if (!tar->parent->last_sparse) {
-		istream_advance_buffer(tar->parent->stream, count);
+		tar->parent->stream->advance_buffer(tar->parent->stream, count);
 		tar->parent->record_size -= count;
 	}
 
@@ -371,8 +372,8 @@ dir_iterator_t *tar_open_stream(istream_t *strm)
 	it->read_xattr = it_read_xattr;
 
 	/* proble if the stream is compressed */
-	ret = istream_get_buffered_data(strm, &ptr, &size,
-					sizeof(tar_header_t));
+	ret = strm->get_buffered_data(strm, &ptr, &size,
+				      sizeof(tar_header_t));
 	if (ret != 0)
 		goto out_strm;
 

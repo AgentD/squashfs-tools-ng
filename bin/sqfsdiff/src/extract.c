@@ -33,7 +33,7 @@ static int extract(sqfs_data_reader_t *data, const sqfs_inode_generic_t *inode,
 		return -1;
 	}
 
-	ostream_flush(fp);
+	fp->flush(fp);
 	sqfs_drop(fp);
 	return 0;
 }

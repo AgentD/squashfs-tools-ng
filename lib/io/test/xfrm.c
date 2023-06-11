@@ -469,11 +469,11 @@ static void run_pack_test(void)
 	TEST_EQUAL_UI(((sqfs_object_t *)&mem_ostream)->refcount, 2);
 
 	for (i = 0; i < (sizeof(orig) - 1); ++i) {
-		ret = ostream_append(ostream, orig + i, 1);
+		ret = ostream->append(ostream, orig + i, 1);
 		TEST_EQUAL_I(ret, 0);
 	}
 
-	ret = ostream_flush(ostream);
+	ret = ostream->flush(ostream);
 	TEST_EQUAL_I(ret, 0);
 
 	TEST_ASSERT(mo_flushed);

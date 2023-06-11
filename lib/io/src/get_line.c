@@ -50,7 +50,7 @@ int istream_get_line(istream_t *strm, char **out,
 		const sqfs_u8 *ptr;
 		int ret;
 
-		ret = istream_get_buffered_data(strm, &ptr, &avail, 0);
+		ret = strm->get_buffered_data(strm, &ptr, &avail, 0);
 		if (ret < 0)
 			goto fail_free;
 		if (ret > 0) {
@@ -85,7 +85,7 @@ int istream_get_line(istream_t *strm, char **out,
 		line_len += count;
 		line[line_len] = '\0';
 
-		istream_advance_buffer(strm, i);
+		strm->advance_buffer(strm, i);
 
 		if (have_line) {
 			if (line_len > 0 && line[line_len - 1] == '\r')
