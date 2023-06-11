@@ -90,9 +90,7 @@ static void file_destroy(sqfs_object_t *obj)
 {
 	file_ostream_t *file = (file_ostream_t *)obj;
 
-	if (file->fd != STDOUT_FILENO)
-		close(file->fd);
-
+	close(file->fd);
 	free(file->path);
 	free(file);
 }
@@ -104,7 +102,7 @@ static const char *file_get_filename(ostream_t *strm)
 	return file->path;
 }
 
-ostream_t *ostream_open_file(const char *path, int flags)
+ostream_t *ostream_open_handle(const char *path, int fd, int flags)
 {
 	file_ostream_t *file = calloc(1, sizeof(*file));
 	ostream_t *strm = (ostream_t *)file;
@@ -122,16 +120,13 @@ ostream_t *ostream_open_file(const char *path, int flags)
 		goto fail_free;
 	}
 
-	if (flags & OSTREAM_OPEN_OVERWRITE) {
-		file->fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-	} else {
-		file->fd = open(path, O_WRONLY | O_CREAT | O_EXCL, 0644);
-	}
-
+	file->fd = dup(fd);
 	if (file->fd < 0) {
 		perror(path);
 		goto fail_path;
 	}
+
+	close(fd);
 
 	if (flags & OSTREAM_OPEN_SPARSE)
 		strm->append_sparse = file_append_sparse;
@@ -147,27 +142,25 @@ fail_free:
 	return NULL;
 }
 
+ostream_t *ostream_open_file(const char *path, int flags)
+{
+	ostream_t *out;
+	int fd;
+
+	if (flags & OSTREAM_OPEN_OVERWRITE) {
+		fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+	} else {
+		fd = open(path, O_WRONLY | O_CREAT | O_EXCL, 0644);
+	}
+
+	out = ostream_open_handle(path, fd, flags);
+	if (out == NULL)
+		close(fd);
+
+	return out;
+}
+
 ostream_t *ostream_open_stdout(void)
 {
-	file_ostream_t *file = calloc(1, sizeof(*file));
-	ostream_t *strm = (ostream_t *)file;
-
-	if (file == NULL)
-		goto fail;
-
-	file->path = strdup("stdout");
-	if (file->path == NULL)
-		goto fail;
-
-	file->fd = STDOUT_FILENO;
-	strm->append = file_append;
-	strm->flush = file_flush;
-	strm->get_filename = file_get_filename;
-
-	sqfs_object_init(file, file_destroy, NULL);
-	return strm;
-fail:
-	perror("creating file wrapper for stdout");
-	free(file);
-	return NULL;
+	return ostream_open_handle("stdout", STDOUT_FILENO, 0);
 }

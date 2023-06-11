@@ -15,14 +15,14 @@ typedef struct {
 	HANDLE hnd;
 } file_ostream_t;
 
-static int w32_append(HANDLE hnd, const char *filename,
-		      const void *data, size_t size)
+static int file_append(ostream_t *strm, const void *data, size_t size)
 {
+	file_ostream_t *file = (file_ostream_t *)strm;
 	DWORD diff;
 
 	while (size > 0) {
-		if (!WriteFile(hnd, data, size, &diff, NULL)) {
-			w32_perror(filename);
+		if (!WriteFile(file->hnd, data, size, &diff, NULL)) {
+			w32_perror(file->path);
 			return -1;
 		}
 
@@ -31,25 +31,6 @@ static int w32_append(HANDLE hnd, const char *filename,
 	}
 
 	return 0;
-}
-
-static int w32_flush(HANDLE hnd, const char *filename)
-{
-	if (!FlushFileBuffers(hnd)) {
-		w32_perror(filename);
-		return -1;
-	}
-
-	return 0;
-}
-
-/*****************************************************************************/
-
-static int file_append(ostream_t *strm, const void *data, size_t size)
-{
-	file_ostream_t *file = (file_ostream_t *)strm;
-
-	return w32_append(file->hnd, file->path, data, size);
 }
 
 static int file_append_sparse(ostream_t *strm, size_t size)
@@ -75,7 +56,12 @@ static int file_flush(ostream_t *strm)
 {
 	file_ostream_t *file = (file_ostream_t *)strm;
 
-	return w32_flush(file->hnd, file->path);
+	if (!FlushFileBuffers(file->hnd)) {
+		w32_perror(file->path);
+		return -1;
+	}
+
+	return 0;
 }
 
 static void file_destroy(sqfs_object_t *obj)
@@ -94,41 +80,11 @@ static const char *file_get_filename(ostream_t *strm)
 	return file->path;
 }
 
-/*****************************************************************************/
-
-static int stdout_append(ostream_t *strm, const void *data, size_t size)
-{
-	(void)strm;
-	return w32_append(GetStdHandle(STD_OUTPUT_HANDLE), "stdout",
-			  data, size);
-}
-
-static int stdout_flush(ostream_t *strm)
-{
-	(void)strm;
-	return w32_flush(GetStdHandle(STD_OUTPUT_HANDLE), "stdout");
-}
-
-static void stdout_destroy(sqfs_object_t *obj)
-{
-	free(obj);
-}
-
-static const char *stdout_get_filename(ostream_t *strm)
-{
-	(void)strm;
-	return "stdout";
-}
-
-/*****************************************************************************/
-
-ostream_t *ostream_open_file(const char *path, int flags)
+ostream_t *ostream_open_handle(const char *path, HANDLE hnd, int flags)
 {
 	file_ostream_t *file = calloc(1, sizeof(*file));
-	sqfs_object_t *obj = (sqfs_object_t *)file;
 	ostream_t *strm = (ostream_t *)file;
-	int access_flags, creation_mode;
-	WCHAR *wpath = NULL;
+	BOOL ret;
 
 	if (file == NULL) {
 		perror(path);
@@ -137,33 +93,21 @@ ostream_t *ostream_open_file(const char *path, int flags)
 
 	sqfs_object_init(file, file_destroy, NULL);
 
-	wpath = path_to_windows(path);
-	if (wpath == NULL)
-		goto fail_free;
-
 	file->path = strdup(path);
 	if (file->path == NULL) {
 		perror(path);
 		goto fail_free;
 	}
 
-	access_flags = GENERIC_WRITE;
-
-	if (flags & OSTREAM_OPEN_OVERWRITE) {
-		creation_mode = CREATE_ALWAYS;
-	} else {
-		creation_mode = CREATE_NEW;
-	}
-
-	file->hnd = CreateFileW(wpath, access_flags, 0, NULL, creation_mode,
-				FILE_ATTRIBUTE_NORMAL, NULL);
-
-	if (file->hnd == INVALID_HANDLE_VALUE) {
+	ret = DuplicateHandle(GetCurrentProcess(), hnd,
+			      GetCurrentProcess(), &file->hnd,
+			      0, FALSE, DUPLICATE_SAME_ACCESS);
+	if (!ret) {
 		w32_perror(path);
 		goto fail_path;
 	}
 
-	free(wpath);
+	CloseHandle(hnd);
 
 	if (flags & OSTREAM_OPEN_SPARSE)
 		strm->append_sparse = file_append_sparse;
@@ -176,24 +120,48 @@ fail_path:
 	free(file->path);
 fail_free:
 	free(file);
-	free(wpath);
 	return NULL;
+}
+
+ostream_t *ostream_open_file(const char *path, int flags)
+{
+	WCHAR *wpath = path_to_windows(path);
+	int access_flags, creation_mode;
+	ostream_t *out;
+	HANDLE hnd;
+
+	if (wpath == NULL)
+		return NULL;
+
+	access_flags = GENERIC_WRITE;
+
+	if (flags & OSTREAM_OPEN_OVERWRITE) {
+		creation_mode = CREATE_ALWAYS;
+	} else {
+		creation_mode = CREATE_NEW;
+	}
+
+	hnd = CreateFileW(wpath, access_flags, 0, NULL, creation_mode,
+			  FILE_ATTRIBUTE_NORMAL, NULL);
+
+	if (hnd == INVALID_HANDLE_VALUE) {
+		w32_perror(path);
+		free(wpath);
+		return NULL;
+	}
+
+	free(wpath);
+
+	out = ostream_open_handle(path, hnd, flags);
+	if (out == NULL)
+		CloseHandle(hnd);
+
+	return out;
 }
 
 ostream_t *ostream_open_stdout(void)
 {
-	ostream_t *strm = calloc(1, sizeof(*strm));
-	sqfs_object_t *obj = (sqfs_object_t *)strm;
+	HANDLE hnd = GetStdHandle(STD_OUTPUT_HANDLE);
 
-	if (strm == NULL) {
-		perror("creating stdout file wrapper");
-		return NULL;
-	}
-
-	sqfs_object_init(strm, stdout_destroy, NULL);
-
-	strm->append = stdout_append;
-	strm->flush = stdout_flush;
-	strm->get_filename = stdout_get_filename;
-	return strm;
+	return ostream_open_handle("stdout", hnd, 0);
 }

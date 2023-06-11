@@ -24,7 +24,6 @@ static int precache(istream_t *strm)
 {
 	file_istream_t *file = (file_istream_t *)strm;
 	DWORD diff, actual;
-	HANDLE hnd;
 
 	if (file->eof)
 		return 0;
@@ -38,12 +37,10 @@ static int precache(istream_t *strm)
 	file->buffer_used -= file->buffer_offset;
 	file->buffer_offset = 0;
 
-	hnd = file->path == NULL ? GetStdHandle(STD_INPUT_HANDLE) : file->hnd;
-
 	while (file->buffer_used < sizeof(file->buffer)) {
 		diff = sizeof(file->buffer) - file->buffer_used;
 
-		if (!ReadFile(hnd, file->buffer + file->buffer_used,
+		if (!ReadFile(file->hnd, file->buffer + file->buffer_used,
 			      diff, &actual, NULL)) {
 			DWORD error = GetLastError();
 
@@ -54,8 +51,7 @@ static int precache(istream_t *strm)
 			}
 
 			SetLastError(error);
-
-			w32_perror(file->path == NULL ? "stdin" : file->path);
+			w32_perror(file->path);
 			return -1;
 		}
 
@@ -103,28 +99,23 @@ static void file_advance_buffer(istream_t *strm, size_t count)
 
 static const char *file_get_filename(istream_t *strm)
 {
-	file_istream_t *file = (file_istream_t *)strm;
-
-	return file->path == NULL ? "stdin" : file->path;
+	return ((file_istream_t *)strm)->path;
 }
 
 static void file_destroy(sqfs_object_t *obj)
 {
 	file_istream_t *file = (file_istream_t *)obj;
 
-	if (file->path != NULL) {
-		CloseHandle(file->hnd);
-		free(file->path);
-	}
-
+	CloseHandle(file->hnd);
+	free(file->path);
 	free(file);
 }
 
-istream_t *istream_open_file(const char *path)
+istream_t *istream_open_handle(const char *path, HANDLE hnd)
 {
 	file_istream_t *file = calloc(1, sizeof(*file));
 	istream_t *strm = (istream_t *)file;
-	WCHAR *wpath = NULL;
+	BOOL ret;
 
 	if (file == NULL) {
 		perror(path);
@@ -133,25 +124,21 @@ istream_t *istream_open_file(const char *path)
 
 	sqfs_object_init(file, file_destroy, NULL);
 
-	wpath = path_to_windows(path);
-	if (wpath == NULL)
-		goto fail_free;
-
 	file->path = strdup(path);
 	if (file->path == NULL) {
 		perror(path);
 		goto fail_free;
 	}
 
-	file->hnd = CreateFileW(wpath, GENERIC_READ, FILE_SHARE_READ, NULL,
-			       OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-
-	if (file->hnd == INVALID_HANDLE_VALUE) {
-		perror(path);
+	ret = DuplicateHandle(GetCurrentProcess(), hnd,
+			      GetCurrentProcess(), &file->hnd,
+			      0, FALSE, DUPLICATE_SAME_ACCESS);
+	if (!ret) {
+		w32_perror(path);
 		goto fail_path;
 	}
 
-	free(wpath);
+	CloseHandle(hnd);
 
 	strm->get_buffered_data = file_get_buffered_data;
 	strm->advance_buffer = file_advance_buffer;
@@ -160,25 +147,40 @@ istream_t *istream_open_file(const char *path)
 fail_path:
 	free(file->path);
 fail_free:
-	free(wpath);
 	free(file);
 	return NULL;
 }
 
-istream_t *istream_open_stdin(void)
+istream_t *istream_open_file(const char *path)
 {
-	file_istream_t *file = calloc(1, sizeof(*file));
-	istream_t *strm = (istream_t *)file;
+	WCHAR *wpath = path_to_windows(path);
+	istream_t *out;
+	HANDLE hnd;
 
-	if (file == NULL) {
-		perror("stdin");
+	if (wpath == NULL)
+		return NULL;
+
+	hnd = CreateFileW(wpath, GENERIC_READ, FILE_SHARE_READ, NULL,
+			  OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+
+	if (hnd == INVALID_HANDLE_VALUE) {
+		w32_perror(path);
+		free(wpath);
 		return NULL;
 	}
 
-	sqfs_object_init(file, file_destroy, NULL);
+	free(wpath);
 
-	strm->get_buffered_data = file_get_buffered_data;
-	strm->advance_buffer = file_advance_buffer;
-	strm->get_filename = file_get_filename;
-	return strm;
+	out = istream_open_handle(path, hnd);
+	if (out == NULL)
+		CloseHandle(hnd);
+
+	return out;
+}
+
+istream_t *istream_open_stdin(void)
+{
+	HANDLE hnd = GetStdHandle(STD_INPUT_HANDLE);
+
+	return istream_open_handle("stdin", hnd);
 }

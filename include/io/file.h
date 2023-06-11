@@ -10,9 +10,51 @@
 #include "io/istream.h"
 #include "io/ostream.h"
 
+#if defined(_WIN32) || defined(__WINDOWS__)
+#include <handleapi.h>
+
+typedef HANDLE os_file_t;
+#else
+typedef int os_file_t;
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @brief Create an input stream for an OS native file handle.
+ *
+ * @memberof istream_t
+ *
+ * The functions takes up ownership of the file handle and takes care
+ * of cleaning it up. On failure, the handle remains usable, and ownership
+ * remains with the caller.
+ *
+ * @param path The name to associate with the handle.
+ * @param fd A native file handle.
+ *
+ * @return A pointer to an output stream on success, NULL on failure.
+ */
+SQFS_INTERNAL istream_t *istream_open_handle(const char *path, os_file_t fd);
+
+/**
+ * @brief Create an output stream that writes to an OS native file handle.
+ *
+ * @memberof ostream_t
+ *
+ * If the flag OSTREAM_OPEN_SPARSE is set, the underlying implementation tries
+ * to use seek/truncate style API to create sparse output files. If the flag
+ * is not set, holes will always be filled with zero bytes.
+ *
+ * @param path The name to associate with the handle.
+ * @param fd A native file handle.
+ * @param flags A combination of flags.
+ *
+ * @return A pointer to an output stream on success, NULL on failure.
+ */
+SQFS_INTERNAL ostream_t *ostream_open_handle(const char *path, os_file_t hnd,
+					     int flags);
 
 /**
  * @brief Create an input stream that reads from a file.

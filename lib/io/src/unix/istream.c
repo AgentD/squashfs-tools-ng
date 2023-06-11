@@ -105,7 +105,7 @@ static void file_destroy(sqfs_object_t *obj)
 	free(file);
 }
 
-istream_t *istream_open_file(const char *path)
+istream_t *istream_open_handle(const char *path, int fd)
 {
 	file_istream_t *file = calloc(1, sizeof(*file));
 	istream_t *strm = (istream_t *)file;
@@ -123,11 +123,12 @@ istream_t *istream_open_file(const char *path)
 		goto fail_free;
 	}
 
-	file->fd = open(path, O_RDONLY);
+	file->fd = dup(fd);
 	if (file->fd < 0) {
 		perror(path);
 		goto fail_path;
 	}
+	close(fd);
 
 	strm->get_buffered_data = file_get_buffered_data;
 	strm->advance_buffer = file_advance_buffer;
@@ -140,27 +141,25 @@ fail_free:
 	return NULL;
 }
 
+istream_t *istream_open_file(const char *path)
+{
+	istream_t *out;
+	int fd;
+
+	fd = open(path, O_RDONLY);
+	if (fd < 0) {
+		perror(path);
+		return NULL;
+	}
+
+	out = istream_open_handle(path, fd);
+	if (out == NULL)
+		close(fd);
+
+	return out;
+}
+
 istream_t *istream_open_stdin(void)
 {
-	file_istream_t *file = calloc(1, sizeof(*file));
-	istream_t *strm = (istream_t *)file;
-
-	if (file == NULL)
-		goto fail;
-
-	sqfs_object_init(file, file_destroy, NULL);
-
-	file->path = strdup("stdin");
-	if (file->path == NULL)
-		goto fail;
-
-	file->fd = STDIN_FILENO;
-	strm->get_buffered_data = file_get_buffered_data;
-	strm->advance_buffer = file_advance_buffer;
-	strm->get_filename = file_get_filename;
-	return strm;
-fail:
-	perror("creating file wrapper for stdin");
-	free(file);
-	return NULL;
+	return istream_open_handle("stdin", STDIN_FILENO);
 }
