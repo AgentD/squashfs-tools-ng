@@ -439,8 +439,6 @@ static void run_unpack_test(const void *blob, size_t size)
 	ret = istream_read(istream, &c, 1);
 	TEST_EQUAL_I(ret, 0);
 
-	TEST_EQUAL_UI(mem_istream->buffer_used, 0);
-
 	sqfs_drop(istream);
 	TEST_EQUAL_UI(((sqfs_object_t *)mem_istream)->refcount, 1);
 	TEST_EQUAL_UI(((sqfs_object_t *)xfrm)->refcount, 1);

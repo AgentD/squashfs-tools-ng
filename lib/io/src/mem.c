@@ -20,38 +20,52 @@ typedef struct {
 
 	const void *data;
 	size_t size;
+	size_t offset;
+	size_t visible;
 
 	char *name;
 } mem_istream_t;
 
-static int mem_in_precache(istream_t *strm)
+static int mem_get_buffered_data(istream_t *strm, const sqfs_u8 **out,
+				 size_t *size, size_t want)
 {
 	mem_istream_t *mem = (mem_istream_t *)strm;
-	size_t diff;
+	size_t have = mem->size - mem->offset;
 
-	assert(strm->buffer >= mem->buffer);
-	assert(strm->buffer <= (mem->buffer + mem->bufsz));
-	assert(strm->buffer_used <= mem->bufsz);
-	assert((size_t)(strm->buffer - mem->buffer) <=
-	       (mem->bufsz - strm->buffer_used));
+	if (have > mem->bufsz)
+		have = mem->bufsz;
 
-	if (strm->buffer_used > 0)
-		memmove(mem->buffer, strm->buffer, strm->buffer_used);
+	if (want > have)
+		want = have;
 
-	strm->buffer = mem->buffer;
-
-	diff = mem->bufsz - strm->buffer_used;
-	if (diff > mem->size)
-		diff = mem->size;
-
-	if (diff > 0) {
-		memcpy(mem->buffer + strm->buffer_used, mem->data, diff);
-		strm->buffer_used += diff;
-		mem->data = (const char *)mem->data + diff;
-		mem->size -= diff;
+	if (mem->visible == 0 || mem->visible < want) {
+		memcpy(mem->buffer + mem->visible,
+		       (const char *)mem->data + mem->offset + mem->visible,
+		       have - mem->visible);
+		mem->visible = have;
 	}
 
-	return 0;
+	*out = mem->buffer;
+	*size = mem->visible;
+	return (mem->visible == 0) ? 1 : 0;
+}
+
+static void mem_advance_buffer(istream_t *strm, size_t count)
+{
+	mem_istream_t *mem = (mem_istream_t *)strm;
+
+	assert(count <= mem->visible);
+
+	if (count > 0 && count < mem->visible)
+		memmove(mem->buffer, mem->buffer + count, mem->visible - count);
+
+	mem->offset += count;
+	mem->visible -= count;
+
+	if (mem->visible < mem->bufsz) {
+		memset(mem->buffer + mem->visible, 0,
+		       mem->bufsz - mem->visible);
+	}
 }
 
 static const char *mem_in_get_filename(istream_t *strm)
@@ -88,8 +102,8 @@ istream_t *istream_memory_create(const char *name, size_t bufsz,
 	mem->data = data;
 	mem->size = size;
 	mem->bufsz = bufsz;
-	strm->buffer = mem->buffer;
-	strm->precache = mem_in_precache;
+	strm->get_buffered_data = mem_get_buffered_data;
+	strm->advance_buffer = mem_advance_buffer;
 	strm->get_filename = mem_in_get_filename;
 	return strm;
 }

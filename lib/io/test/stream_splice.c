@@ -91,7 +91,6 @@ int main(int argc, char **argv)
 		TEST_EQUAL_UI(total, out_offset);
 	}
 
-	TEST_ASSERT(in->buffer_used == 0);
 	TEST_EQUAL_UI(total, end2);
 	TEST_EQUAL_UI(out_offset, end2);
 	sqfs_drop(in);

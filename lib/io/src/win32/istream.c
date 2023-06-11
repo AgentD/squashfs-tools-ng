@@ -15,10 +15,12 @@ typedef struct {
 	HANDLE hnd;
 
 	bool eof;
+	size_t buffer_offset;
+	size_t buffer_used;
 	sqfs_u8 buffer[BUFSZ];
 } file_istream_t;
 
-static int file_precache(istream_t *strm)
+static int precache(istream_t *strm)
 {
 	file_istream_t *file = (file_istream_t *)strm;
 	DWORD diff, actual;
@@ -27,22 +29,21 @@ static int file_precache(istream_t *strm)
 	if (file->eof)
 		return 0;
 
-	assert(strm->buffer >= file->buffer);
-	assert(strm->buffer <= (file->buffer + BUFSZ));
-	assert(strm->buffer_used <= BUFSZ);
-	assert((size_t)(strm->buffer - file->buffer) <=
-	       (BUFSZ - strm->buffer_used));
+	if (file->buffer_offset > 0 &&
+	    file->buffer_offset < file->buffer_used) {
+		memmove(file->buffer, file->buffer + file->buffer_offset,
+			file->buffer_used - file->buffer_offset);
+	}
 
-	if (strm->buffer_used > 0)
-		memmove(file->buffer, strm->buffer, strm->buffer_used);
+	file->buffer_used -= file->buffer_offset;
+	file->buffer_offset = 0;
 
-	strm->buffer = file->buffer;
 	hnd = file->path == NULL ? GetStdHandle(STD_INPUT_HANDLE) : file->hnd;
 
-	while (strm->buffer_used < sizeof(file->buffer)) {
-		diff = sizeof(file->buffer) - strm->buffer_used;
+	while (file->buffer_used < sizeof(file->buffer)) {
+		diff = sizeof(file->buffer) - file->buffer_used;
 
-		if (!ReadFile(hnd, file->buffer + strm->buffer_used,
+		if (!ReadFile(hnd, file->buffer + file->buffer_used,
 			      diff, &actual, NULL)) {
 			DWORD error = GetLastError();
 
@@ -63,10 +64,41 @@ static int file_precache(istream_t *strm)
 			break;
 		}
 
-		strm->buffer_used += actual;
+		file->buffer_used += actual;
 	}
 
 	return 0;
+}
+
+static int file_get_buffered_data(istream_t *strm, const sqfs_u8 **out,
+				  size_t *size, size_t want)
+{
+	file_istream_t *file = (file_istream_t *)strm;
+
+	if (want > BUFSZ)
+		want = BUFSZ;
+
+	if (file->buffer_used == 0 ||
+	    (file->buffer_used - file->buffer_offset) < want) {
+		int ret = precache(strm);
+		if (ret)
+			return ret;
+	}
+
+	*out = file->buffer + file->buffer_offset;
+	*size = file->buffer_used - file->buffer_offset;
+	return (file->eof && *size == 0) ? 1 : 0;
+}
+
+static void file_advance_buffer(istream_t *strm, size_t count)
+{
+	file_istream_t *file = (file_istream_t *)strm;
+
+	assert(count <= file->buffer_used);
+
+	file->buffer_offset += count;
+
+	assert(file->buffer_offset <= file->buffer_used);
 }
 
 static const char *file_get_filename(istream_t *strm)
@@ -122,7 +154,8 @@ istream_t *istream_open_file(const char *path)
 	free(wpath);
 
 	strm->buffer = file->buffer;
-	strm->precache = file_precache;
+	strm->get_buffered_data = file_get_buffered_data;
+	strm->advance_buffer = file_advance_buffer;
 	strm->get_filename = file_get_filename;
 	return strm;
 fail_path:
@@ -146,7 +179,8 @@ istream_t *istream_open_stdin(void)
 	sqfs_object_init(file, file_destroy, NULL);
 
 	strm->buffer = file->buffer;
-	strm->precache = file_precache;
+	strm->get_buffered_data = file_get_buffered_data;
+	strm->advance_buffer = file_advance_buffer;
 	strm->get_filename = file_get_filename;
 	return strm;
 }

@@ -14,6 +14,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #include <stdbool.h>
 
 typedef struct {
@@ -30,7 +31,6 @@ typedef struct {
 	sqfs_u64 offset;
 
 	size_t padding;
-	size_t last_chunk;
 	bool last_sparse;
 } tar_iterator_t;
 
@@ -86,8 +86,6 @@ static void drop_parent(tar_istream_t *tar, int state)
 			tar->parent->state = state;
 	}
 
-	((istream_t *)tar)->buffer_used = 0;
-	((istream_t *)tar)->buffer = tar->buffer;
 	tar->state = state;
 }
 
@@ -96,60 +94,63 @@ static const char *strm_get_filename(istream_t *strm)
 	return ((tar_istream_t *)strm)->parent->current.name;
 }
 
-static int strm_precache(istream_t *strm)
+static int strm_get_buffered_data(istream_t *strm, const sqfs_u8 **out,
+				  size_t *size, size_t want)
 {
 	tar_istream_t *tar = (tar_istream_t *)strm;
 	sqfs_u64 diff;
+	int ret;
 
 	if (tar->parent == NULL)
 		return tar->state;
 
-	diff = (tar->parent->last_chunk - strm->buffer_used);
-	if (diff == 0 && strm->buffer_used > 0)
-		return tar->state;
-
-	if (!tar->parent->last_sparse) {
-		istream_advance_buffer(tar->parent->stream, diff);
-		tar->parent->record_size -= diff;
-	}
-
-	tar->parent->offset += diff;
 	if (tar->parent->offset >= tar->parent->file_size)
 		goto out_eof;
 
 	tar->parent->last_sparse = is_sparse_region(tar->parent, &diff);
 	if (diff == 0)
 		goto out_eof;
+	if (diff > want)
+		diff = want;
 
 	if (tar->parent->last_sparse) {
-		strm->buffer = tar->buffer;
-		strm->buffer_used = (diff <= sizeof(tar->buffer)) ?
+		*out = tar->buffer;
+		*size = (diff <= sizeof(tar->buffer)) ?
 			diff : sizeof(tar->buffer);
 	} else {
-		size_t avail;
-		int ret;
-
 		ret = istream_get_buffered_data(tar->parent->stream,
-						&strm->buffer, &avail, diff);
+						out, size, diff);
 		if (ret > 0)
 			goto fail_borked;
 		if (ret < 0)
 			goto fail_io;
-
-		strm->buffer_used = (diff <= avail) ? diff : avail;
+		if (*size > diff)
+			*size = diff;
 	}
 
-	tar->parent->last_chunk = strm->buffer_used;
-	return tar->state;
+	return 0;
 fail_io:
-	drop_parent(tar, SQFS_ERROR_IO);
+	drop_parent(tar, ret);
 	return tar->state;
 fail_borked:
 	drop_parent(tar, SQFS_ERROR_CORRUPTED);
 	return tar->state;
 out_eof:
 	drop_parent(tar, 0);
-	return tar->state;
+	tar->state = 1;
+	return 1;
+}
+
+static void strm_advance_buffer(istream_t *strm, size_t count)
+{
+	tar_istream_t *tar = (tar_istream_t *)strm;
+
+	if (!tar->parent->last_sparse) {
+		istream_advance_buffer(tar->parent->stream, count);
+		tar->parent->record_size -= count;
+	}
+
+	tar->parent->offset += count;
 }
 
 static void strm_destroy(sqfs_object_t *obj)
@@ -192,7 +193,6 @@ retry:
 		goto fail;
 
 	tar->offset = 0;
-	tar->last_chunk = 0;
 	tar->last_sparse = false;
 	tar->record_size = tar->current.record_size;
 	tar->file_size = tar->current.actual_size;
@@ -284,9 +284,9 @@ static int it_open_file_ro(dir_iterator_t *it, istream_t **out)
 	sqfs_object_init(strm, strm_destroy, NULL);
 	strm->parent = sqfs_grab(tar);
 
-	((istream_t *)strm)->precache = strm_precache;
+	((istream_t *)strm)->get_buffered_data = strm_get_buffered_data;
+	((istream_t *)strm)->advance_buffer = strm_advance_buffer;
 	((istream_t *)strm)->get_filename = strm_get_filename;
-	((istream_t *)strm)->buffer = strm->buffer;
 
 	tar->locked = true;
 	*out = (istream_t *)strm;

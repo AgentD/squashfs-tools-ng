@@ -100,7 +100,6 @@ int main(int argc, char **argv)
 		TEST_ASSERT(read_off <= end2);
 	}
 
-	TEST_ASSERT(dummy->buffer_used == 0);
 	sqfs_drop(dummy);
 	return EXIT_SUCCESS;
 }

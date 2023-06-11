@@ -12,30 +12,35 @@ typedef struct {
 	int fd;
 
 	bool eof;
+	size_t buffer_offset;
+	size_t buffer_used;
 	sqfs_u8 buffer[BUFSZ];
 } file_istream_t;
 
-static int file_precache(istream_t *strm)
+static int precache(istream_t *strm)
 {
 	file_istream_t *file = (file_istream_t *)strm;
 
-	assert(strm->buffer >= file->buffer);
-	assert(strm->buffer <= (file->buffer + BUFSZ));
-	assert(strm->buffer_used <= BUFSZ);
-	assert((size_t)(strm->buffer - file->buffer) <=
-	       (BUFSZ - strm->buffer_used));
+	if (file->eof)
+		return 0;
 
-	if (strm->buffer_used > 0)
-		memmove(file->buffer, strm->buffer, strm->buffer_used);
+	if (file->buffer_offset > 0 &&
+	    file->buffer_offset < file->buffer_used) {
+		memmove(file->buffer, file->buffer + file->buffer_offset,
+			file->buffer_used - file->buffer_offset);
+	}
 
-	strm->buffer = file->buffer;
+	file->buffer_used -= file->buffer_offset;
+	file->buffer_offset = 0;
 
-	while (!file->eof && strm->buffer_used < BUFSZ) {
-		ssize_t ret = read(file->fd, file->buffer + strm->buffer_used,
-				   BUFSZ - strm->buffer_used);
+	while (file->buffer_used < BUFSZ) {
+		ssize_t ret = read(file->fd, file->buffer + file->buffer_used,
+				   BUFSZ - file->buffer_used);
 
-		if (ret == 0)
+		if (ret == 0) {
 			file->eof = true;
+			break;
+		}
 
 		if (ret < 0) {
 			if (errno == EINTR)
@@ -45,10 +50,41 @@ static int file_precache(istream_t *strm)
 			return -1;
 		}
 
-		strm->buffer_used += ret;
+		file->buffer_used += ret;
 	}
 
 	return 0;
+}
+
+static int file_get_buffered_data(istream_t *strm, const sqfs_u8 **out,
+				  size_t *size, size_t want)
+{
+	file_istream_t *file = (file_istream_t *)strm;
+
+	if (want > BUFSZ)
+		want = BUFSZ;
+
+	if (file->buffer_used == 0 ||
+	    (file->buffer_used - file->buffer_offset) < want) {
+		int ret = precache(strm);
+		if (ret)
+			return ret;
+	}
+
+	*out = file->buffer + file->buffer_offset;
+	*size = file->buffer_used - file->buffer_offset;
+	return (file->eof && *size == 0) ? 1 : 0;
+}
+
+static void file_advance_buffer(istream_t *strm, size_t count)
+{
+	file_istream_t *file = (file_istream_t *)strm;
+
+	assert(count <= file->buffer_used);
+
+	file->buffer_offset += count;
+
+	assert(file->buffer_offset <= file->buffer_used);
 }
 
 static const char *file_get_filename(istream_t *strm)
@@ -93,8 +129,8 @@ istream_t *istream_open_file(const char *path)
 		goto fail_path;
 	}
 
-	strm->buffer = file->buffer;
-	strm->precache = file_precache;
+	strm->get_buffered_data = file_get_buffered_data;
+	strm->advance_buffer = file_advance_buffer;
 	strm->get_filename = file_get_filename;
 	return strm;
 fail_path:
@@ -119,8 +155,8 @@ istream_t *istream_open_stdin(void)
 		goto fail;
 
 	file->fd = STDIN_FILENO;
-	strm->buffer = file->buffer;
-	strm->precache = file_precache;
+	strm->get_buffered_data = file_get_buffered_data;
+	strm->advance_buffer = file_advance_buffer;
 	strm->get_filename = file_get_filename;
 	return strm;
 fail:
