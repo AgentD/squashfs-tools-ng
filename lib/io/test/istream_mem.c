@@ -63,11 +63,8 @@ int main(int argc, char **argv)
 			TEST_EQUAL_UI(ptr[j], byte_at_offset(i + j));
 		}
 
-		diff = eat_all ? size : (size / 2);
+		istream_advance_buffer(in, eat_all ? size : (size / 2));
 		eat_all = !eat_all;
-
-		ret = istream_advance_buffer(in, diff);
-		TEST_EQUAL_I(ret, 0);
 	}
 
 	sqfs_drop(in);

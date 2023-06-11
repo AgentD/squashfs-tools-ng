@@ -85,8 +85,7 @@ int istream_get_line(istream_t *strm, char **out,
 		line_len += count;
 		line[line_len] = '\0';
 
-		if (istream_advance_buffer(strm, i))
-			goto fail_free;
+		istream_advance_buffer(strm, i);
 
 		if (have_line) {
 			if (line_len > 0 && line[line_len - 1] == '\r')

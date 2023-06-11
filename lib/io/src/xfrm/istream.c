@@ -18,7 +18,7 @@ typedef struct istream_xfrm_t {
 static int xfrm_precache(istream_t *base)
 {
 	istream_xfrm_t *xfrm = (istream_xfrm_t *)base;
-	int ret, sret;
+	int ret;
 
 	assert(base->buffer >= xfrm->uncompressed);
 	assert(base->buffer <= (xfrm->uncompressed + BUFSZ));
@@ -59,10 +59,7 @@ static int xfrm_precache(istream_t *base)
 		}
 
 		base->buffer_used = out_off;
-
-		sret = istream_advance_buffer(xfrm->wrapped, in_off);
-		if (sret != 0)
-			return sret;
+		istream_advance_buffer(xfrm->wrapped, in_off);
 
 		if (ret == XFRM_STREAM_BUFFER_FULL || out_off >= BUFSZ)
 			break;

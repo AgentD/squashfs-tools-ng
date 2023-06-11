@@ -109,9 +109,7 @@ static int strm_precache(istream_t *strm)
 		return tar->state;
 
 	if (!tar->parent->last_sparse) {
-		int ret = istream_advance_buffer(tar->parent->stream, diff);
-		if (ret != 0)
-			return ret;
+		istream_advance_buffer(tar->parent->stream, diff);
 		tar->parent->record_size -= diff;
 	}
 

@@ -141,24 +141,15 @@ SQFS_INLINE int istream_get_buffered_data(istream_t *strm, const sqfs_u8 **out,
  *
  * This marks the first `count` bytes of the internal buffer as used,
  * forcing @ref istream_get_buffered_data to return data afterwards
- * and potentially to load more data.
+ * and potentially try to load more data.
  *
  * @param strm A pointer to an istream_t implementation.
  * @param count The number of bytes used up.
- *
- * @return Zero on success, a negative error code on failure.
  */
-SQFS_INLINE int istream_advance_buffer(istream_t *strm, size_t count)
+SQFS_INLINE void istream_advance_buffer(istream_t *strm, size_t count)
 {
-	if (count >= strm->buffer_used) {
-		strm->buffer += strm->buffer_used;
-		strm->buffer_used = 0;
-		return strm->precache(strm);
-	}
-
 	strm->buffer += count;
 	strm->buffer_used -= count;
-	return 0;
 }
 
 /**
