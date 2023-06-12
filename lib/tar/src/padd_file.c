@@ -15,5 +15,5 @@ int padd_file(ostream_t *fp, sqfs_u64 size)
 	if (padd_sz == 0)
 		return 0;
 
-	return ostream_append_sparse(fp, TAR_RECORD_SIZE - padd_sz);
+	return fp->append(fp, NULL, TAR_RECORD_SIZE - padd_sz);
 }

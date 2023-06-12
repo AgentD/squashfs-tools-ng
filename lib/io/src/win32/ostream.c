@@ -11,13 +11,14 @@
 
 typedef struct {
 	ostream_t base;
+	sqfs_u64 sparse_count;
 	char *path;
 	HANDLE hnd;
+	int flags;
 } file_ostream_t;
 
-static int file_append(ostream_t *strm, const void *data, size_t size)
+static int write_data(file_ostream_t *file, const void *data, size_t size)
 {
-	file_ostream_t *file = (file_ostream_t *)strm;
 	DWORD diff;
 
 	while (size > 0) {
@@ -33,18 +34,48 @@ static int file_append(ostream_t *strm, const void *data, size_t size)
 	return 0;
 }
 
-static int file_append_sparse(ostream_t *strm, size_t size)
+static int realize_sparse(file_ostream_t *file)
 {
-	file_ostream_t *file = (file_ostream_t *)strm;
+	size_t bufsz, diff;
 	LARGE_INTEGER pos;
+	void *buffer;
 
-	pos.QuadPart = size;
+	if (file->sparse_count == 0)
+		return 0;
 
-	if (!SetFilePointerEx(file->hnd, pos, NULL, FILE_CURRENT))
-		goto fail;
+	if (file->flags & OSTREAM_OPEN_SPARSE) {
+		pos.QuadPart = file->sparse_count;
 
-	if (!SetEndOfFile(file->hnd))
-		goto fail;
+		if (!SetFilePointerEx(file->hnd, pos, NULL, FILE_CURRENT))
+			goto fail;
+
+		if (!SetEndOfFile(file->hnd))
+			goto fail;
+
+		file->sparse_count = 0;
+	} else {
+		bufsz = file->sparse_count > 1024 ? 1024 : file->sparse_count;
+		buffer = calloc(1, bufsz);
+
+		if (buffer == NULL) {
+			fputs("out-of-memory\n", stderr);
+			return -1;
+		}
+
+		while (file->sparse_count > 0) {
+			diff = file->sparse_count > bufsz ?
+				bufsz : file->sparse_count;
+
+			if (write_data(file, buffer, diff)) {
+				free(buffer);
+				return -1;
+			}
+
+			file->sparse_count -= diff;
+		}
+
+		free(buffer);
+	}
 
 	return 0;
 fail:
@@ -52,9 +83,30 @@ fail:
 	return -1;
 }
 
+static int file_append(ostream_t *strm, const void *data, size_t size)
+{
+	file_ostream_t *file = (file_ostream_t *)strm;
+
+	if (size == 0)
+		return 0;
+
+	if (data == NULL) {
+		file->sparse_count += size;
+		return 0;
+	}
+
+	if (realize_sparse(file))
+		return -1;
+
+	return write_data(file, data, size);
+}
+
 static int file_flush(ostream_t *strm)
 {
 	file_ostream_t *file = (file_ostream_t *)strm;
+
+	if (realize_sparse(file))
+		return -1;
 
 	if (!FlushFileBuffers(file->hnd)) {
 		w32_perror(file->path);
@@ -109,9 +161,7 @@ ostream_t *ostream_open_handle(const char *path, HANDLE hnd, int flags)
 
 	CloseHandle(hnd);
 
-	if (flags & OSTREAM_OPEN_SPARSE)
-		strm->append_sparse = file_append_sparse;
-
+	file->flags = flags;
 	strm->append = file_append;
 	strm->flush = file_flush;
 	strm->get_filename = file_get_filename;

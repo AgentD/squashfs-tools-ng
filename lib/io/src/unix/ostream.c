@@ -9,81 +9,115 @@
 typedef struct {
 	ostream_t base;
 	char *path;
+	int flags;
 	int fd;
 
 	off_t sparse_count;
 	off_t size;
 } file_ostream_t;
 
-static int file_append(ostream_t *strm, const void *data, size_t size)
+static int write_all(file_ostream_t *file, const sqfs_u8 *data, size_t size)
 {
-	file_ostream_t *file = (file_ostream_t *)strm;
-	ssize_t ret;
-
-	if (size == 0)
-		return 0;
-
-	if (file->sparse_count > 0) {
-		if (lseek(file->fd, file->sparse_count, SEEK_CUR) == (off_t)-1)
-			goto fail_errno;
-
-		file->sparse_count = 0;
-	}
-
 	while (size > 0) {
-		ret = write(file->fd, data, size);
+		ssize_t ret = write(file->fd, data, size);
 
 		if (ret == 0) {
-			fprintf(stderr, "%s: truncated data write.\n",
-				file->path);
+			fprintf(stderr, "%s: truncated write.\n", file->path);
 			return -1;
 		}
 
 		if (ret < 0) {
 			if (errno == EINTR)
 				continue;
-			goto fail_errno;
+			perror(file->path);
+			return -1;
 		}
 
 		file->size += ret;
 		size -= ret;
-		data = (const char *)data + ret;
+		data += ret;
 	}
 
 	return 0;
-fail_errno:
-	perror(file->path);
-	return -1;
 }
 
-static int file_append_sparse(ostream_t *strm, size_t size)
+static int realize_sparse(file_ostream_t *file)
 {
-	file_ostream_t *file = (file_ostream_t *)strm;
+	unsigned char *buffer;
+	size_t diff, bufsz;
 
-	file->sparse_count += size;
-	file->size += size;
-	return 0;
-}
+	if (file->sparse_count == 0)
+		return 0;
 
-static int file_flush(ostream_t *strm)
-{
-	file_ostream_t *file = (file_ostream_t *)strm;
+	if (file->flags & OSTREAM_OPEN_SPARSE) {
+		if (lseek(file->fd, file->sparse_count, SEEK_CUR) == (off_t)-1)
+			goto fail;
 
-	if (file->sparse_count > 0) {
 		if (ftruncate(file->fd, file->size) != 0)
 			goto fail;
-	}
 
-	if (fsync(file->fd) != 0) {
-		if (errno == EINVAL)
-			return 0;
-		goto fail;
+		file->sparse_count = 0;
+	} else {
+		bufsz = file->sparse_count > 1024 ? 1024 : file->sparse_count;
+		buffer = calloc(1, bufsz);
+		if (buffer == NULL)
+			goto fail;
+
+		while (file->sparse_count > 0) {
+			diff = file->sparse_count > (off_t)bufsz ?
+				bufsz : (size_t)file->sparse_count;
+
+			if (write_all(file, buffer, diff)) {
+				free(buffer);
+				return -1;
+			}
+
+			file->sparse_count -= diff;
+		}
+
+		free(buffer);
 	}
 
 	return 0;
 fail:
 	perror(file->path);
 	return -1;
+}
+
+static int file_append(ostream_t *strm, const void *data, size_t size)
+{
+	file_ostream_t *file = (file_ostream_t *)strm;
+
+	if (size == 0)
+		return 0;
+
+	if (data == NULL) {
+		file->sparse_count += size;
+		file->size += size;
+		return 0;
+	}
+
+	if (realize_sparse(file))
+		return -1;
+
+	return write_all(file, data, size);
+}
+
+static int file_flush(ostream_t *strm)
+{
+	file_ostream_t *file = (file_ostream_t *)strm;
+
+	if (realize_sparse(file))
+		return -1;
+
+	if (fsync(file->fd) != 0) {
+		if (errno == EINVAL)
+			return 0;
+		perror(file->path);
+		return -1;
+	}
+
+	return 0;
 }
 
 static void file_destroy(sqfs_object_t *obj)
@@ -128,9 +162,7 @@ ostream_t *ostream_open_handle(const char *path, int fd, int flags)
 
 	close(fd);
 
-	if (flags & OSTREAM_OPEN_SPARSE)
-		strm->append_sparse = file_append_sparse;
-
+	file->flags = flags;
 	strm->append = file_append;
 	strm->flush = file_flush;
 	strm->get_filename = file_get_filename;

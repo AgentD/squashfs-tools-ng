@@ -18,6 +18,11 @@ typedef HANDLE os_file_t;
 typedef int os_file_t;
 #endif
 
+enum {
+	OSTREAM_OPEN_OVERWRITE = 0x01,
+	OSTREAM_OPEN_SPARSE = 0x02,
+};
+
 #ifdef __cplusplus
 extern "C" {
 #endif

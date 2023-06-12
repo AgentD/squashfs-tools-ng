@@ -374,7 +374,6 @@ static int mem_flush(ostream_t *strm);
 static ostream_t mem_ostream = {
 	{ 1, NULL, NULL, },
 	mem_append,
-	NULL,
 	mem_flush,
 	NULL,
 };
@@ -382,15 +381,18 @@ static ostream_t mem_ostream = {
 static int mem_append(ostream_t *strm, const void *data, size_t size)
 {
 	TEST_ASSERT(strm == &mem_ostream);
-	TEST_NOT_NULL(data);
 	TEST_ASSERT(size > 0);
 
 	TEST_ASSERT(mo_written <= sizeof(mo_buffer));
 	TEST_ASSERT(size <= (sizeof(mo_buffer) - mo_written));
 
-	memcpy(mo_buffer + mo_written, data, size);
-	mo_written += size;
+	if (data == NULL) {
+		memset(mo_buffer + mo_written, 0, size);
+	} else {
+		memcpy(mo_buffer + mo_written, data, size);
+	}
 
+	mo_written += size;
 	return 0;
 }
 

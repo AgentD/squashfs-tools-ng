@@ -26,7 +26,7 @@ int sqfs_data_reader_dump(const char *name, sqfs_data_reader_t *data,
 		diff = (filesz < block_size) ? filesz : block_size;
 
 		if (SQFS_IS_SPARSE_BLOCK(inode->extra[i])) {
-			if (ostream_append_sparse(fp, diff))
+			if (fp->append(fp, NULL, diff))
 				return -1;
 		} else {
 			err = sqfs_data_reader_get_block(data, inode, i,

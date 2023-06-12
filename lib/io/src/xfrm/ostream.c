@@ -82,10 +82,14 @@ static int xfrm_append(ostream_t *strm, const void *data, size_t size)
 		if (diff > size)
 			diff = size;
 
-		memcpy(xfrm->inbuf + xfrm->inbuf_used, data, diff);
+		if (data == NULL) {
+			memset(xfrm->inbuf + xfrm->inbuf_used, 0, diff);
+		} else {
+			memcpy(xfrm->inbuf + xfrm->inbuf_used, data, diff);
+			data = (const char *)data + diff;
+		}
 
 		xfrm->inbuf_used += diff;
-		data = (const char *)data + diff;
 		size -= diff;
 	}
 

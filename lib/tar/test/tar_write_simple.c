@@ -21,7 +21,6 @@ static ostream_t mem_stream = {
 	{ 1, NULL, NULL },
 	buffer_append,
 	NULL,
-	NULL,
 	buffer_get_filename,
 };
 
@@ -33,12 +32,16 @@ static sqfs_u8 rd_buffer[1024 * 10];
 static int buffer_append(ostream_t *strm, const void *data, size_t size)
 {
 	TEST_ASSERT(strm == &mem_stream);
-	TEST_NOT_NULL(data);
 	TEST_ASSERT(wr_offset < sizeof(wr_buffer));
 	TEST_ASSERT(size > 0);
 	TEST_ASSERT((sizeof(wr_buffer) - wr_offset) >= size);
 
-	memcpy(wr_buffer + wr_offset, data, size);
+	if (data == NULL) {
+		memset(wr_buffer + wr_offset, 0, size);
+	} else {
+		memcpy(wr_buffer + wr_offset, data, size);
+	}
+
 	wr_offset += size;
 	return 0;
 }

@@ -114,6 +114,7 @@ int sqfs_block_processor_append(sqfs_block_processor_t *proc, const void *data,
 	sqfs_block_t *new;
 	sqfs_u64 filesize;
 	size_t diff;
+	void *dst;
 	int err;
 
 	if (!proc->begin_called)
@@ -152,12 +153,17 @@ int sqfs_block_processor_append(sqfs_block_processor_t *proc, const void *data,
 		if (diff > size)
 			diff = size;
 
-		memcpy(proc->blk_current->data + proc->blk_current->size,
-		       data, diff);
+		dst = proc->blk_current->data + proc->blk_current->size;
+
+		if (data == NULL) {
+			memset(dst, 0, diff);
+		} else {
+			memcpy(dst, data, diff);
+			data = (const char *)data + diff;
+		}
 
 		size -= diff;
 		proc->blk_current->size += diff;
-		data = (const char *)data + diff;
 
 		proc->stats.input_bytes_read += diff;
 	}
