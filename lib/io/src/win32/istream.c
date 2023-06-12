@@ -153,10 +153,11 @@ fail_free:
 
 istream_t *istream_open_file(const char *path)
 {
-	WCHAR *wpath = path_to_windows(path);
+	WCHAR *wpath = NULL;
 	istream_t *out;
 	HANDLE hnd;
 
+	wpath = path_to_windows(path);
 	if (wpath == NULL)
 		return NULL;
 

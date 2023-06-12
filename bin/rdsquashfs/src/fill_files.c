@@ -139,10 +139,10 @@ static int fill_files(sqfs_data_reader_t *data, int flags)
 	ostream_t *fp;
 	size_t i;
 
-	openflags = OSTREAM_OPEN_OVERWRITE;
+	openflags = SQFS_FILE_OPEN_OVERWRITE;
 
 	if (flags & UNPACK_NO_SPARSE)
-		openflags |= OSTREAM_OPEN_NO_SPARSE;
+		openflags |= SQFS_FILE_OPEN_NO_SPARSE;
 
 	for (i = 0; i < num_files; ++i) {
 		fp = ostream_open_file(files[i].path, openflags);

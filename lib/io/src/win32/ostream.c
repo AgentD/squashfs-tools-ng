@@ -5,6 +5,7 @@
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
 #include "../internal.h"
+#include "sqfs/io.h"
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -43,7 +44,7 @@ static int realize_sparse(file_ostream_t *file)
 	if (file->sparse_count == 0)
 		return 0;
 
-	if (file->flags & OSTREAM_OPEN_NO_SPARSE) {
+	if (file->flags & SQFS_FILE_OPEN_NO_SPARSE) {
 		bufsz = file->sparse_count > 1024 ? 1024 : file->sparse_count;
 		buffer = calloc(1, bufsz);
 
@@ -175,24 +176,30 @@ fail_free:
 
 ostream_t *ostream_open_file(const char *path, int flags)
 {
-	WCHAR *wpath = path_to_windows(path);
 	int access_flags, creation_mode;
+	WCHAR *wpath = NULL;
 	ostream_t *out;
 	HANDLE hnd;
 
-	if (wpath == NULL)
-		return NULL;
-
 	access_flags = GENERIC_WRITE;
 
-	if (flags & OSTREAM_OPEN_OVERWRITE) {
+	if (flags & SQFS_FILE_OPEN_OVERWRITE) {
 		creation_mode = CREATE_ALWAYS;
 	} else {
 		creation_mode = CREATE_NEW;
 	}
 
-	hnd = CreateFileW(wpath, access_flags, 0, NULL, creation_mode,
-			  FILE_ATTRIBUTE_NORMAL, NULL);
+	if (flags & SQFS_FILE_OPEN_NO_CHARSET_XFRM) {
+		hnd = CreateFileA(path, access_flags, 0, NULL, creation_mode,
+				  FILE_ATTRIBUTE_NORMAL, NULL);
+	} else {
+		wpath = path_to_windows(path);
+		if (wpath == NULL)
+			return NULL;
+
+		hnd = CreateFileW(wpath, access_flags, 0, NULL, creation_mode,
+				  FILE_ATTRIBUTE_NORMAL, NULL);
+	}
 
 	if (hnd == INVALID_HANDLE_VALUE) {
 		w32_perror(path);
@@ -213,5 +220,5 @@ ostream_t *ostream_open_stdout(void)
 {
 	HANDLE hnd = GetStdHandle(STD_OUTPUT_HANDLE);
 
-	return ostream_open_handle("stdout", hnd, OSTREAM_OPEN_NO_SPARSE);
+	return ostream_open_handle("stdout", hnd, SQFS_FILE_OPEN_NO_SPARSE);
 }

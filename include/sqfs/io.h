@@ -76,7 +76,14 @@ typedef enum {
 	 */
 	SQFS_FILE_OPEN_NO_CHARSET_XFRM = 0x04,
 
-	SQFS_FILE_OPEN_ALL_FLAGS = 0x07,
+	/**
+	 * @brief Do not use sparse file I/O APIs, always fill in zero bytes
+	 *
+	 * This flag currently has no effect on @ref sqfs_open_file.
+	 */
+	SQFS_FILE_OPEN_NO_SPARSE = 0x08,
+
+	SQFS_FILE_OPEN_ALL_FLAGS = 0x0F,
 } SQFS_FILE_OPEN_FLAGS;
 
 /**

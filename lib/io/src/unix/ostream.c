@@ -5,6 +5,7 @@
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
 #include "../internal.h"
+#include "sqfs/io.h"
 
 typedef struct {
 	ostream_t base;
@@ -49,7 +50,7 @@ static int realize_sparse(file_ostream_t *file)
 	if (file->sparse_count == 0)
 		return 0;
 
-	if (file->flags & OSTREAM_OPEN_NO_SPARSE) {
+	if (file->flags & SQFS_FILE_OPEN_NO_SPARSE) {
 		bufsz = file->sparse_count > 1024 ? 1024 : file->sparse_count;
 		buffer = calloc(1, bufsz);
 		if (buffer == NULL)
@@ -179,7 +180,7 @@ ostream_t *ostream_open_file(const char *path, int flags)
 	ostream_t *out;
 	int fd;
 
-	if (flags & OSTREAM_OPEN_OVERWRITE) {
+	if (flags & SQFS_FILE_OPEN_OVERWRITE) {
 		fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
 	} else {
 		fd = open(path, O_WRONLY | O_CREAT | O_EXCL, 0644);
@@ -195,5 +196,5 @@ ostream_t *ostream_open_file(const char *path, int flags)
 ostream_t *ostream_open_stdout(void)
 {
 	return ostream_open_handle("stdout", STDOUT_FILENO,
-				   OSTREAM_OPEN_NO_SPARSE);
+				   SQFS_FILE_OPEN_NO_SPARSE);
 }

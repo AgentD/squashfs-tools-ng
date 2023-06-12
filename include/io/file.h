@@ -18,11 +18,6 @@ typedef HANDLE os_file_t;
 typedef int os_file_t;
 #endif
 
-enum {
-	OSTREAM_OPEN_OVERWRITE = 0x01,
-	OSTREAM_OPEN_NO_SPARSE = 0x02,
-};
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -48,7 +43,7 @@ SQFS_INTERNAL istream_t *istream_open_handle(const char *path, os_file_t fd);
  *
  * @memberof ostream_t
  *
- * If the flag OSTREAM_OPEN_NO_SPARSE is set, the underlying implementation
+ * If the flag SQFS_FILE_OPEN_NO_SPARSE is set, the underlying implementation
  * always writes chunks of zero bytes when passing a NULL pointer to append.
  * Otherwise, it tries to use seek/truncate style APIs to create sparse output
  * files.
@@ -79,10 +74,10 @@ SQFS_INTERNAL istream_t *istream_open_file(const char *path);
  * @memberof ostream_t
  *
  * If the file does not yet exist, it is created. If it does exist this
- * function fails, unless the flag OSTREAM_OPEN_OVERWRITE is set, in which
+ * function fails, unless the flag SQFS_FILE_OPEN_OVERWRITE is set, in which
  * case the file is opened and its contents are discarded.
  *
- * If the flag OSTREAM_OPEN_NO_SPARSE is set, the underlying implementation
+ * If the flag SQFS_FILE_OPEN_NO_SPARSE is set, the underlying implementation
  * always writes chunks of zero bytes when passing a NULL pointer to append.
  * Otherwise, it tries to use seek/truncate style APIs to create sparse output
  * files.

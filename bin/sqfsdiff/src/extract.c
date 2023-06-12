@@ -21,7 +21,7 @@ static int extract(sqfs_data_reader_t *data, const sqfs_inode_generic_t *inode,
 		return -1;
 	*ptr = '/';
 
-	fp = ostream_open_file(temp, OSTREAM_OPEN_OVERWRITE);
+	fp = ostream_open_file(temp, SQFS_FILE_OPEN_OVERWRITE);
 	if (fp == NULL) {
 		perror(temp);
 		return -1;
