@@ -153,7 +153,6 @@ istream_t *istream_open_file(const char *path)
 
 	free(wpath);
 
-	strm->buffer = file->buffer;
 	strm->get_buffered_data = file_get_buffered_data;
 	strm->advance_buffer = file_advance_buffer;
 	strm->get_filename = file_get_filename;
@@ -178,7 +177,6 @@ istream_t *istream_open_stdin(void)
 
 	sqfs_object_init(file, file_destroy, NULL);
 
-	strm->buffer = file->buffer;
 	strm->get_buffered_data = file_get_buffered_data;
 	strm->advance_buffer = file_advance_buffer;
 	strm->get_filename = file_get_filename;
