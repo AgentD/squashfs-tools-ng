@@ -10,8 +10,8 @@ static int write_file(sqfs_writer_t *sqfs, dir_iterator_t *it,
 		      const dir_entry_t *ent, tree_node_t *n)
 {
 	int flags = 0, ret = 0;
-	ostream_t *out;
-	istream_t *in;
+	sqfs_ostream_t *out;
+	sqfs_istream_t *in;
 
 	if (no_tail_pack && ent->size > cfg.block_size)
 		flags |= SQFS_BLK_DONT_FRAGMENT;

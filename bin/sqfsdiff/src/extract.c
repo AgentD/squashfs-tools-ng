@@ -10,7 +10,7 @@ static int extract(sqfs_data_reader_t *data, const sqfs_inode_generic_t *inode,
 		   const char *prefix, const char *path, size_t block_size)
 {
 	char *ptr, *temp;
-	ostream_t *fp;
+	sqfs_ostream_t *fp;
 
 	temp = alloca(strlen(prefix) + strlen(path) + 2);
 	sprintf(temp, "%s/%s", prefix, path);

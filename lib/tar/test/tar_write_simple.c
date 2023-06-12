@@ -14,10 +14,10 @@
 
 /*****************************************************************************/
 
-static int buffer_append(ostream_t *strm, const void *data, size_t size);
-static const char *buffer_get_filename(ostream_t *strm);
+static int buffer_append(sqfs_ostream_t *strm, const void *data, size_t size);
+static const char *buffer_get_filename(sqfs_ostream_t *strm);
 
-static ostream_t mem_stream = {
+static sqfs_ostream_t mem_stream = {
 	{ 1, NULL, NULL },
 	buffer_append,
 	NULL,
@@ -29,7 +29,7 @@ static size_t wr_offset = 0;
 
 static sqfs_u8 rd_buffer[1024 * 10];
 
-static int buffer_append(ostream_t *strm, const void *data, size_t size)
+static int buffer_append(sqfs_ostream_t *strm, const void *data, size_t size)
 {
 	TEST_ASSERT(strm == &mem_stream);
 	TEST_ASSERT(wr_offset < sizeof(wr_buffer));
@@ -46,7 +46,7 @@ static int buffer_append(ostream_t *strm, const void *data, size_t size)
 	return 0;
 }
 
-static const char *buffer_get_filename(ostream_t *strm)
+static const char *buffer_get_filename(sqfs_ostream_t *strm)
 {
 	TEST_ASSERT(strm == &mem_stream);
 	return "dummy";
@@ -79,8 +79,8 @@ static sqfs_xattr_t *mkxattr_chain(void)
 int main(int argc, char **argv)
 {
 	sqfs_xattr_t *xattr;
+	sqfs_istream_t *fp;
 	struct stat sb;
-	istream_t *fp;
 	int ret;
 	(void)argc; (void)argv;
 

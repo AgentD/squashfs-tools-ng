@@ -7,9 +7,9 @@
 #include "../internal.h"
 
 typedef struct istream_xfrm_t {
-	istream_t base;
+	sqfs_istream_t base;
 
-	istream_t *wrapped;
+	sqfs_istream_t *wrapped;
 	xfrm_stream_t *xfrm;
 
 	size_t buffer_offset;
@@ -17,7 +17,7 @@ typedef struct istream_xfrm_t {
 	sqfs_u8 uncompressed[BUFSZ];
 } istream_xfrm_t;
 
-static int precache(istream_t *base)
+static int precache(sqfs_istream_t *base)
 {
 	istream_xfrm_t *xfrm = (istream_xfrm_t *)base;
 	int ret;
@@ -70,7 +70,7 @@ static int precache(istream_t *base)
 	return 0;
 }
 
-static int xfrm_get_buffered_data(istream_t *strm, const sqfs_u8 **out,
+static int xfrm_get_buffered_data(sqfs_istream_t *strm, const sqfs_u8 **out,
 				  size_t *size, size_t want)
 {
 	istream_xfrm_t *xfrm = (istream_xfrm_t *)strm;
@@ -90,7 +90,7 @@ static int xfrm_get_buffered_data(istream_t *strm, const sqfs_u8 **out,
 	return (*size == 0) ? 1 : 0;
 }
 
-static void xfrm_advance_buffer(istream_t *strm, size_t count)
+static void xfrm_advance_buffer(sqfs_istream_t *strm, size_t count)
 {
 	istream_xfrm_t *xfrm = (istream_xfrm_t *)strm;
 
@@ -101,7 +101,7 @@ static void xfrm_advance_buffer(istream_t *strm, size_t count)
 	assert(xfrm->buffer_offset <= xfrm->buffer_used);
 }
 
-static const char *xfrm_get_filename(istream_t *strm)
+static const char *xfrm_get_filename(sqfs_istream_t *strm)
 {
 	istream_xfrm_t *xfrm = (istream_xfrm_t *)strm;
 
@@ -117,10 +117,10 @@ static void xfrm_destroy(sqfs_object_t *obj)
 	free(xfrm);
 }
 
-istream_t *istream_xfrm_create(istream_t *strm, xfrm_stream_t *xfrm)
+sqfs_istream_t *istream_xfrm_create(sqfs_istream_t *strm, xfrm_stream_t *xfrm)
 {
 	istream_xfrm_t *stream = calloc(1, sizeof(*stream));
-	istream_t *base = (istream_t *)stream;
+	sqfs_istream_t *base = (sqfs_istream_t *)stream;
 
 	if (stream == NULL)
 		goto fail;

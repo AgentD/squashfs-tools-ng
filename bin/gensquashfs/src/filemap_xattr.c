@@ -159,7 +159,7 @@ xattr_open_map_file(const char *path) {
 	struct XattrMap *map;
 	size_t line_num = 1;
 	char *p = NULL;
-	istream_t *file = istream_open_file(path);
+	sqfs_istream_t *file = istream_open_file(path);
 	if (file == NULL) {
 		return NULL;
 	}

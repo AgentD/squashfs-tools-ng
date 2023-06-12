@@ -7,7 +7,7 @@
 #include "internal.h"
 
 
-sqfs_s32 istream_read(istream_t *strm, void *data, size_t size)
+sqfs_s32 istream_read(sqfs_istream_t *strm, void *data, size_t size)
 {
 	sqfs_s32 total = 0;
 
@@ -38,7 +38,7 @@ sqfs_s32 istream_read(istream_t *strm, void *data, size_t size)
 	return total;
 }
 
-int istream_skip(istream_t *strm, sqfs_u64 size)
+int istream_skip(sqfs_istream_t *strm, sqfs_u64 size)
 {
 	while (size > 0) {
 		const sqfs_u8 *ptr;
@@ -64,7 +64,7 @@ int istream_skip(istream_t *strm, sqfs_u64 size)
 	return 0;
 }
 
-sqfs_s32 istream_splice(istream_t *in, ostream_t *out, sqfs_u32 size)
+sqfs_s32 istream_splice(sqfs_istream_t *in, sqfs_ostream_t *out, sqfs_u32 size)
 {
 	sqfs_s32 total = 0;
 

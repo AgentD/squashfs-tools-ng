@@ -15,7 +15,7 @@ static char *strings[1000];
 
 static int read_strings(void)
 {
-	istream_t *fp;
+	sqfs_istream_t *fp;
 	ssize_t ret;
 	char *line;
 	int i;

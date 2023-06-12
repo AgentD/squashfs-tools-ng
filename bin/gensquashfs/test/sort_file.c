@@ -111,8 +111,8 @@ static int flags[] = {
 
 int main(int argc, char **argv)
 {
+	sqfs_istream_t *memstream;
 	fstree_defaults_t fsd;
-	istream_t *memstream;
 	tree_node_t *n;
 	fstree_t fs;
 	size_t i;

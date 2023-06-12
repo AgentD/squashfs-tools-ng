@@ -11,7 +11,7 @@
 #include <windows.h>
 
 typedef struct {
-	ostream_t base;
+	sqfs_ostream_t base;
 	sqfs_u64 sparse_count;
 	char *path;
 	HANDLE hnd;
@@ -84,7 +84,7 @@ fail:
 	return -1;
 }
 
-static int file_append(ostream_t *strm, const void *data, size_t size)
+static int file_append(sqfs_ostream_t *strm, const void *data, size_t size)
 {
 	file_ostream_t *file = (file_ostream_t *)strm;
 
@@ -102,7 +102,7 @@ static int file_append(ostream_t *strm, const void *data, size_t size)
 	return write_data(file, data, size);
 }
 
-static int file_flush(ostream_t *strm)
+static int file_flush(sqfs_ostream_t *strm)
 {
 	file_ostream_t *file = (file_ostream_t *)strm;
 
@@ -126,17 +126,17 @@ static void file_destroy(sqfs_object_t *obj)
 	free(file);
 }
 
-static const char *file_get_filename(ostream_t *strm)
+static const char *file_get_filename(sqfs_ostream_t *strm)
 {
 	file_ostream_t *file = (file_ostream_t *)strm;
 
 	return file->path;
 }
 
-ostream_t *ostream_open_handle(const char *path, HANDLE hnd, int flags)
+sqfs_ostream_t *ostream_open_handle(const char *path, HANDLE hnd, int flags)
 {
 	file_ostream_t *file = calloc(1, sizeof(*file));
-	ostream_t *strm = (ostream_t *)file;
+	sqfs_ostream_t *strm = (sqfs_ostream_t *)file;
 	BOOL ret;
 
 	if (file == NULL) {
@@ -174,11 +174,11 @@ fail_free:
 	return NULL;
 }
 
-ostream_t *ostream_open_file(const char *path, int flags)
+sqfs_ostream_t *ostream_open_file(const char *path, int flags)
 {
 	int access_flags, creation_mode;
 	WCHAR *wpath = NULL;
-	ostream_t *out;
+	sqfs_ostream_t *out;
 	HANDLE hnd;
 
 	access_flags = GENERIC_WRITE;
@@ -216,7 +216,7 @@ ostream_t *ostream_open_file(const char *path, int flags)
 	return out;
 }
 
-ostream_t *ostream_open_stdout(void)
+sqfs_ostream_t *ostream_open_stdout(void)
 {
 	HANDLE hnd = GetStdHandle(STD_OUTPUT_HANDLE);
 

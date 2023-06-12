@@ -368,17 +368,17 @@ static size_t mo_written = 0;
 static sqfs_u8 mo_buffer[1024];
 static bool mo_flushed = false;
 
-static int mem_append(ostream_t *strm, const void *data, size_t size);
-static int mem_flush(ostream_t *strm);
+static int mem_append(sqfs_ostream_t *strm, const void *data, size_t size);
+static int mem_flush(sqfs_ostream_t *strm);
 
-static ostream_t mem_ostream = {
+static sqfs_ostream_t mem_ostream = {
 	{ 1, NULL, NULL, },
 	mem_append,
 	mem_flush,
 	NULL,
 };
 
-static int mem_append(ostream_t *strm, const void *data, size_t size)
+static int mem_append(sqfs_ostream_t *strm, const void *data, size_t size)
 {
 	TEST_ASSERT(strm == &mem_ostream);
 	TEST_ASSERT(size > 0);
@@ -396,7 +396,7 @@ static int mem_append(ostream_t *strm, const void *data, size_t size)
 	return 0;
 }
 
-static int mem_flush(ostream_t *strm)
+static int mem_flush(sqfs_ostream_t *strm)
 {
 	TEST_ASSERT(strm == &mem_ostream);
 	TEST_ASSERT(!mo_flushed);
@@ -408,7 +408,7 @@ static int mem_flush(ostream_t *strm)
 
 static void run_unpack_test(const void *blob, size_t size)
 {
-	istream_t *istream, *mem_istream;
+	sqfs_istream_t *istream, *mem_istream;
 	xfrm_stream_t *xfrm;
 	sqfs_s32 ret;
 	size_t i;
@@ -450,8 +450,8 @@ static void run_unpack_test(const void *blob, size_t size)
 
 static void run_pack_test(void)
 {
+	sqfs_ostream_t *ostream;
 	xfrm_stream_t *xfrm;
-	ostream_t *ostream;
 	size_t i;
 	int ret;
 

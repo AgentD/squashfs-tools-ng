@@ -9,14 +9,16 @@
 
 #include "sqfs/predef.h"
 
+typedef struct sqfs_ostream_t sqfs_ostream_t;
+
 /**
- * @struct ostream_t
+ * @interface sqfs_ostream_t
  *
  * @extends sqfs_object_t
  *
  * @brief An append-only data stream.
  */
-typedef struct ostream_t {
+struct sqfs_ostream_t {
 	sqfs_object_t base;
 
 	/**
@@ -29,7 +31,7 @@ typedef struct ostream_t {
 	 *
 	 * @return Zero on success, -1 on failure.
 	 */
-	int (*append)(struct ostream_t *strm, const void *data, size_t size);
+	int (*append)(sqfs_ostream_t *strm, const void *data, size_t size);
 
 	/**
 	 * @brief Process all pending, buffered data and flush it to disk.
@@ -43,7 +45,7 @@ typedef struct ostream_t {
 	 *
 	 * @return Zero on success, -1 on failure.
 	 */
-	int (*flush)(struct ostream_t *strm);
+	int (*flush)(sqfs_ostream_t *strm);
 
 	/**
 	 * @brief Get the underlying filename of a output stream.
@@ -52,7 +54,7 @@ typedef struct ostream_t {
 	 *
 	 * @return A string holding the underlying filename.
 	 */
-	const char *(*get_filename)(struct ostream_t *strm);
-} ostream_t;
+	const char *(*get_filename)(sqfs_ostream_t *strm);
+};
 
 #endif /* IO_OSTREAM_H */

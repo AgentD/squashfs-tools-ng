@@ -38,7 +38,7 @@ static size_t trim(char *buffer, int flags)
 	return strlen(buffer);
 }
 
-int istream_get_line(istream_t *strm, char **out,
+int istream_get_line(sqfs_istream_t *strm, char **out,
 		     size_t *line_num, int flags)
 {
 	char *line = NULL, *new;

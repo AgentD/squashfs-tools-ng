@@ -207,7 +207,7 @@ int main(int argc, char **argv)
 			goto out;
 		break;
 	case OP_CAT: {
-		ostream_t *fp;
+		sqfs_ostream_t *fp;
 
 		if (!S_ISREG(n->inode->base.mode)) {
 			fprintf(stderr, "/%s: not a regular file\n",

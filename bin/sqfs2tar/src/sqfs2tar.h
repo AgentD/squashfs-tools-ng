@@ -42,7 +42,7 @@ void process_args(int argc, char **argv);
 extern sqfs_xattr_reader_t *xr;
 extern sqfs_data_reader_t *data;
 extern sqfs_super_t super;
-extern ostream_t *out_file;
+extern sqfs_ostream_t *out_file;
 
 char *assemble_tar_path(char *name, bool is_dir);
 

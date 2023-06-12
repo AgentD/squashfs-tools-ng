@@ -34,13 +34,15 @@ enum {
 	ETV_POSIX,
 };
 
-sparse_map_t *read_gnu_old_sparse(istream_t *fp, tar_header_t *hdr);
+sparse_map_t *read_gnu_old_sparse(sqfs_istream_t *fp, tar_header_t *hdr);
 
-sparse_map_t *read_gnu_new_sparse(istream_t *fp, tar_header_decoded_t *out);
+sparse_map_t *read_gnu_new_sparse(sqfs_istream_t *fp,
+				  tar_header_decoded_t *out);
 
-char *record_to_memory(istream_t *fp, size_t size);
+char *record_to_memory(sqfs_istream_t *fp, size_t size);
 
-int read_pax_header(istream_t *fp, sqfs_u64 entsize, unsigned int *set_by_pax,
+int read_pax_header(sqfs_istream_t *fp, sqfs_u64 entsize,
+		    unsigned int *set_by_pax,
 		    tar_header_decoded_t *out);
 
 #endif /* INTERNAL_H */

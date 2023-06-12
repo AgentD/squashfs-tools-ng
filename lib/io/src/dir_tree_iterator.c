@@ -272,7 +272,7 @@ static void ignore_subdir(dir_iterator_t *base)
 	pop(it);
 }
 
-static int open_file_ro(dir_iterator_t *base, istream_t **out)
+static int open_file_ro(dir_iterator_t *base, sqfs_istream_t **out)
 {
 	dir_tree_iterator_t *it = (dir_tree_iterator_t *)base;
 

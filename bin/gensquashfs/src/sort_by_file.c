@@ -232,7 +232,7 @@ static void sort_file_list(fstree_t *fs)
 	fs->files = out;
 }
 
-int fstree_sort_files(fstree_t *fs, istream_t *sortfile)
+int fstree_sort_files(fstree_t *fs, sqfs_istream_t *sortfile)
 {
 	const char *filename;
 	size_t line_num = 1;

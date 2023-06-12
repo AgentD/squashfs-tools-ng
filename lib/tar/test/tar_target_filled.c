@@ -12,8 +12,8 @@
 int main(int argc, char **argv)
 {
 	tar_header_decoded_t hdr;
+	sqfs_istream_t *fp;
 	char buffer[16];
-	istream_t *fp;
 	(void)argc; (void)argv;
 
 	TEST_ASSERT(chdir(TEST_PATH) == 0);

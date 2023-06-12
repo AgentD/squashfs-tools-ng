@@ -8,7 +8,7 @@
 #include "sqfs/io.h"
 
 typedef struct {
-	ostream_t base;
+	sqfs_ostream_t base;
 	char *path;
 	int flags;
 	int fd;
@@ -85,7 +85,7 @@ fail:
 	return -1;
 }
 
-static int file_append(ostream_t *strm, const void *data, size_t size)
+static int file_append(sqfs_ostream_t *strm, const void *data, size_t size)
 {
 	file_ostream_t *file = (file_ostream_t *)strm;
 
@@ -104,7 +104,7 @@ static int file_append(ostream_t *strm, const void *data, size_t size)
 	return write_all(file, data, size);
 }
 
-static int file_flush(ostream_t *strm)
+static int file_flush(sqfs_ostream_t *strm)
 {
 	file_ostream_t *file = (file_ostream_t *)strm;
 
@@ -130,17 +130,17 @@ static void file_destroy(sqfs_object_t *obj)
 	free(file);
 }
 
-static const char *file_get_filename(ostream_t *strm)
+static const char *file_get_filename(sqfs_ostream_t *strm)
 {
 	file_ostream_t *file = (file_ostream_t *)strm;
 
 	return file->path;
 }
 
-ostream_t *ostream_open_handle(const char *path, int fd, int flags)
+sqfs_ostream_t *ostream_open_handle(const char *path, int fd, int flags)
 {
 	file_ostream_t *file = calloc(1, sizeof(*file));
-	ostream_t *strm = (ostream_t *)file;
+	sqfs_ostream_t *strm = (sqfs_ostream_t *)file;
 
 	if (file == NULL) {
 		perror(path);
@@ -175,9 +175,9 @@ fail_free:
 	return NULL;
 }
 
-ostream_t *ostream_open_file(const char *path, int flags)
+sqfs_ostream_t *ostream_open_file(const char *path, int flags)
 {
-	ostream_t *out;
+	sqfs_ostream_t *out;
 	int fd;
 
 	if (flags & SQFS_FILE_OPEN_OVERWRITE) {
@@ -193,7 +193,7 @@ ostream_t *ostream_open_file(const char *path, int flags)
 	return out;
 }
 
-ostream_t *ostream_open_stdout(void)
+sqfs_ostream_t *ostream_open_stdout(void)
 {
 	return ostream_open_handle("stdout", STDOUT_FILENO,
 				   SQFS_FILE_OPEN_NO_SPARSE);

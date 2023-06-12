@@ -273,7 +273,8 @@ out_desc:
 	return -1;
 }
 
-int fstree_from_file_stream(fstree_t *fs, istream_t *fp, const char *basepath)
+int fstree_from_file_stream(fstree_t *fs, sqfs_istream_t *fp,
+			    const char *basepath)
 {
 	const char *filename;
 	size_t line_num = 1;
@@ -309,7 +310,7 @@ fail_line:
 
 int fstree_from_file(fstree_t *fs, const char *filename, const char *basepath)
 {
-	istream_t *fp;
+	sqfs_istream_t *fp;
 	int ret;
 
 	fp = istream_open_file(filename);

@@ -10,7 +10,7 @@
 #include <windows.h>
 
 typedef struct {
-	istream_t base;
+	sqfs_istream_t base;
 	char *path;
 	HANDLE hnd;
 
@@ -20,7 +20,7 @@ typedef struct {
 	sqfs_u8 buffer[BUFSZ];
 } file_istream_t;
 
-static int precache(istream_t *strm)
+static int precache(sqfs_istream_t *strm)
 {
 	file_istream_t *file = (file_istream_t *)strm;
 	DWORD diff, actual;
@@ -66,7 +66,7 @@ static int precache(istream_t *strm)
 	return 0;
 }
 
-static int file_get_buffered_data(istream_t *strm, const sqfs_u8 **out,
+static int file_get_buffered_data(sqfs_istream_t *strm, const sqfs_u8 **out,
 				  size_t *size, size_t want)
 {
 	file_istream_t *file = (file_istream_t *)strm;
@@ -86,7 +86,7 @@ static int file_get_buffered_data(istream_t *strm, const sqfs_u8 **out,
 	return (file->eof && *size == 0) ? 1 : 0;
 }
 
-static void file_advance_buffer(istream_t *strm, size_t count)
+static void file_advance_buffer(sqfs_istream_t *strm, size_t count)
 {
 	file_istream_t *file = (file_istream_t *)strm;
 
@@ -97,7 +97,7 @@ static void file_advance_buffer(istream_t *strm, size_t count)
 	assert(file->buffer_offset <= file->buffer_used);
 }
 
-static const char *file_get_filename(istream_t *strm)
+static const char *file_get_filename(sqfs_istream_t *strm)
 {
 	return ((file_istream_t *)strm)->path;
 }
@@ -111,10 +111,10 @@ static void file_destroy(sqfs_object_t *obj)
 	free(file);
 }
 
-istream_t *istream_open_handle(const char *path, HANDLE hnd)
+sqfs_istream_t *istream_open_handle(const char *path, HANDLE hnd)
 {
 	file_istream_t *file = calloc(1, sizeof(*file));
-	istream_t *strm = (istream_t *)file;
+	sqfs_istream_t *strm = (sqfs_istream_t *)file;
 	BOOL ret;
 
 	if (file == NULL) {
@@ -151,10 +151,10 @@ fail_free:
 	return NULL;
 }
 
-istream_t *istream_open_file(const char *path)
+sqfs_istream_t *istream_open_file(const char *path)
 {
 	WCHAR *wpath = NULL;
-	istream_t *out;
+	sqfs_istream_t *out;
 	HANDLE hnd;
 
 	wpath = path_to_windows(path);
@@ -179,7 +179,7 @@ istream_t *istream_open_file(const char *path)
 	return out;
 }
 
-istream_t *istream_open_stdin(void)
+sqfs_istream_t *istream_open_stdin(void)
 {
 	HANDLE hnd = GetStdHandle(STD_INPUT_HANDLE);
 

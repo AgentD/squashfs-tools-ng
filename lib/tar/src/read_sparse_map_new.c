@@ -31,7 +31,7 @@ static int decode(const char *str, size_t len, size_t *out)
 	return (*str == '\n') ? ((int)count + 1) : -1;
 }
 
-sparse_map_t *read_gnu_new_sparse(istream_t *fp, tar_header_decoded_t *out)
+sparse_map_t *read_gnu_new_sparse(sqfs_istream_t *fp, tar_header_decoded_t *out)
 {
 	sparse_map_t *last = NULL, *list = NULL, *ent = NULL;
 	size_t i, count, value;

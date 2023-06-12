@@ -73,11 +73,11 @@ typedef struct dir_iterator_t {
 	 * to read from it.
 	 *
 	 * @param it A pointer to the iterator itself.
-	 * @param out Returns a pointer to a @ref istream_t on success.
+	 * @param out Returns a pointer to a @ref sqfs_istream_t on success.
 	 *
 	 * @return Zero on success, negative @ref SQFS_ERROR value on failure.
 	 */
-	int (*open_file_ro)(struct dir_iterator_t *it, istream_t **out);
+	int (*open_file_ro)(struct dir_iterator_t *it, sqfs_istream_t **out);
 
 	/**
 	 * @brief Read extended attributes associated with the current entry

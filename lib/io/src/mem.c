@@ -13,7 +13,7 @@
 #include <assert.h>
 
 typedef struct {
-	istream_t base;
+	sqfs_istream_t base;
 
 	sqfs_u8 *buffer;
 	size_t bufsz;
@@ -26,7 +26,7 @@ typedef struct {
 	char *name;
 } mem_istream_t;
 
-static int mem_get_buffered_data(istream_t *strm, const sqfs_u8 **out,
+static int mem_get_buffered_data(sqfs_istream_t *strm, const sqfs_u8 **out,
 				 size_t *size, size_t want)
 {
 	mem_istream_t *mem = (mem_istream_t *)strm;
@@ -50,7 +50,7 @@ static int mem_get_buffered_data(istream_t *strm, const sqfs_u8 **out,
 	return (mem->visible == 0) ? 1 : 0;
 }
 
-static void mem_advance_buffer(istream_t *strm, size_t count)
+static void mem_advance_buffer(sqfs_istream_t *strm, size_t count)
 {
 	mem_istream_t *mem = (mem_istream_t *)strm;
 
@@ -68,7 +68,7 @@ static void mem_advance_buffer(istream_t *strm, size_t count)
 	}
 }
 
-static const char *mem_in_get_filename(istream_t *strm)
+static const char *mem_in_get_filename(sqfs_istream_t *strm)
 {
 	return ((mem_istream_t *)strm)->name;
 }
@@ -80,11 +80,11 @@ static void mem_in_destroy(sqfs_object_t *obj)
 	free(obj);
 }
 
-istream_t *istream_memory_create(const char *name, size_t bufsz,
-				 const void *data, size_t size)
+sqfs_istream_t *istream_memory_create(const char *name, size_t bufsz,
+				      const void *data, size_t size)
 {
 	mem_istream_t *mem = calloc(1, sizeof(*mem));
-	istream_t *strm = (istream_t *)mem;
+	sqfs_istream_t *strm = (sqfs_istream_t *)mem;
 
 	if (mem == NULL)
 		return NULL;

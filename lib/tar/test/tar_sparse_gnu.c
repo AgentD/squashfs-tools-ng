@@ -13,7 +13,7 @@ int main(int argc, char **argv)
 {
 	tar_header_decoded_t hdr;
 	sparse_map_t *sparse;
-	istream_t *fp;
+	sqfs_istream_t *fp;
 	(void)argc; (void)argv;
 
 	TEST_ASSERT(chdir(TEST_PATH) == 0);

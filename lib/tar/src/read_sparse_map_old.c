@@ -45,7 +45,7 @@ static int parse(const gnu_old_sparse_t *in, size_t count,
 	return 0;
 }
 
-sparse_map_t *read_gnu_old_sparse(istream_t *fp, tar_header_t *hdr)
+sparse_map_t *read_gnu_old_sparse(sqfs_istream_t *fp, tar_header_t *hdr)
 {
 	sparse_map_t *list = NULL, *end = NULL;
 	gnu_old_sparse_record_t sph;

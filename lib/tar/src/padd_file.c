@@ -8,7 +8,7 @@
 #include "tar/tar.h"
 #include "tar/format.h"
 
-int padd_file(ostream_t *fp, sqfs_u64 size)
+int padd_file(sqfs_ostream_t *fp, sqfs_u64 size)
 {
 	size_t padd_sz = size % TAR_RECORD_SIZE;
 

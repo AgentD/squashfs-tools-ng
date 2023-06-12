@@ -35,7 +35,7 @@ int main(int argc, char **argv)
 	size_t i, diff, size;
 	bool eat_all = true;
 	const sqfs_u8 *ptr;
-	istream_t *in;
+	sqfs_istream_t *in;
 	int ret;
 	(void)argc; (void)argv;
 

@@ -25,7 +25,7 @@ const char *listing =
 int main(int argc, char **argv)
 {
 	fstree_defaults_t fsd;
-	istream_t *file;
+	sqfs_istream_t *file;
 	tree_node_t *n;
 	fstree_t fs;
 	(void)argc; (void)argv;

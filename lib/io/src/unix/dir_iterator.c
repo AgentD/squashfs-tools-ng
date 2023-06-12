@@ -127,7 +127,7 @@ static void dir_ignore_subdir(dir_iterator_t *it)
 	(void)it;
 }
 
-static int dir_open_file_ro(dir_iterator_t *it, istream_t **out)
+static int dir_open_file_ro(dir_iterator_t *it, sqfs_istream_t **out)
 {
 	(void)it;
 	*out = NULL;

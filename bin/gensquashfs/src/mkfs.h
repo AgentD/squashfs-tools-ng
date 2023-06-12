@@ -104,7 +104,7 @@ void selinux_close_context_file(void *sehnd);
 int fstree_from_file(fstree_t *fs, const char *filename,
 		     const char *basepath);
 
-int fstree_from_file_stream(fstree_t *fs, istream_t *file,
+int fstree_from_file_stream(fstree_t *fs, sqfs_istream_t *file,
 			    const char *basepath);
 
 /*
@@ -114,7 +114,7 @@ int fstree_from_file_stream(fstree_t *fs, istream_t *file,
  */
 int fstree_from_dir(fstree_t *fs, dir_iterator_t *dir);
 
-int fstree_sort_files(fstree_t *fs, istream_t *sortfile);
+int fstree_sort_files(fstree_t *fs, sqfs_istream_t *sortfile);
 
 int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 	       const dir_entry_t *ent,

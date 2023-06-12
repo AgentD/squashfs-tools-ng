@@ -51,25 +51,26 @@ extern "C" {
   The counter is an incremental record counter used if additional
   headers need to be generated.
 */
-int write_tar_header(ostream_t *fp, const struct stat *sb, const char *name,
+int write_tar_header(sqfs_ostream_t *fp,
+		     const struct stat *sb, const char *name,
 		     const char *slink_target, const sqfs_xattr_t *xattr,
 		     unsigned int counter);
 
-int write_hard_link(ostream_t *fp, const struct stat *sb, const char *name,
+int write_hard_link(sqfs_ostream_t *fp, const struct stat *sb, const char *name,
 		    const char *target, unsigned int counter);
 
 /* round up to block size and skip the entire entry */
-int read_header(istream_t *fp, tar_header_decoded_t *out);
+int read_header(sqfs_istream_t *fp, tar_header_decoded_t *out);
 
 void clear_header(tar_header_decoded_t *hdr);
 
-dir_iterator_t *tar_open_stream(istream_t *stream);
+dir_iterator_t *tar_open_stream(sqfs_istream_t *stream);
 
 /*
   Write zero bytes to an output file to padd it to the tar record size.
   Returns 0 on success. On failure, prints error message to stderr.
 */
-int padd_file(ostream_t *fp, sqfs_u64 size);
+int padd_file(sqfs_ostream_t *fp, sqfs_u64 size);
 
 void free_sparse_list(sparse_map_t *sparse);
 

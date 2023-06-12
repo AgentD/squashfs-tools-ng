@@ -18,7 +18,7 @@ extern "C" {
 /**
  * @brief Create an input stream that transparently decodes data.
  *
- * @memberof istream_t
+ * @memberof sqfs_istream_t
  *
  * This function creates an input stream that wraps an underlying input stream
  * that is encoded/compressed and transparently decodes the data when reading
@@ -29,13 +29,13 @@ extern "C" {
  *
  * @return A pointer to an input stream on success, NULL on failure.
  */
-SQFS_INTERNAL istream_t *istream_xfrm_create(istream_t *strm,
-					     xfrm_stream_t *xfrm);
+SQFS_INTERNAL sqfs_istream_t *istream_xfrm_create(sqfs_istream_t *strm,
+						  xfrm_stream_t *xfrm);
 
 /**
  * @brief Create an output stream that transparently encodes data.
  *
- * @memberof ostream_t
+ * @memberof sqfs_ostream_t
  *
  * This function creates an output stream that transparently encodes
  * (e.g. compresses) all data appended to it and writes it to an
@@ -46,8 +46,8 @@ SQFS_INTERNAL istream_t *istream_xfrm_create(istream_t *strm,
  *
  * @return A pointer to an output stream on success, NULL on failure.
  */
-SQFS_INTERNAL ostream_t *ostream_xfrm_create(ostream_t *strm,
-					     xfrm_stream_t *xfrm);
+SQFS_INTERNAL sqfs_ostream_t *ostream_xfrm_create(sqfs_ostream_t *strm,
+						  xfrm_stream_t *xfrm);
 
 #ifdef __cplusplus
 }

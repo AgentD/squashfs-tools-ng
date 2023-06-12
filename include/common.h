@@ -36,7 +36,7 @@ typedef struct sqfs_hard_link_t {
 
 int sqfs_data_reader_dump(const char *name, sqfs_data_reader_t *data,
 			  const sqfs_inode_generic_t *inode,
-			  ostream_t *fp, size_t block_size);
+			  sqfs_ostream_t *fp, size_t block_size);
 
 int write_data_from_file(const char *filename, sqfs_block_processor_t *data,
 			 sqfs_inode_generic_t **inode,
@@ -64,10 +64,10 @@ int parse_size(const char *what, size_t *out, const char *str,
 
 void print_size(sqfs_u64 size, char *buffer, bool round_to_int);
 
-ostream_t *data_writer_ostream_create(const char *filename,
-				      sqfs_block_processor_t *proc,
-				      sqfs_inode_generic_t **inode,
-				      int flags);
+sqfs_ostream_t *data_writer_ostream_create(const char *filename,
+					   sqfs_block_processor_t *proc,
+					   sqfs_inode_generic_t **inode,
+					   int flags);
 
 /*
   Parse a comma separated list (e.g. "uid=...,gid=..." of defaults for

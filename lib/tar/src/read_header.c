@@ -164,7 +164,7 @@ static int decode_header(const tar_header_t *hdr, unsigned int set_by_pax,
 	return 0;
 }
 
-int read_header(istream_t *fp, tar_header_decoded_t *out)
+int read_header(sqfs_istream_t *fp, tar_header_decoded_t *out)
 {
 	unsigned int set_by_pax = 0;
 	bool prev_was_zero = false;

@@ -13,7 +13,7 @@
 
 int sqfs_data_reader_dump(const char *name, sqfs_data_reader_t *data,
 			  const sqfs_inode_generic_t *inode,
-			  ostream_t *fp, size_t block_size)
+			  sqfs_ostream_t *fp, size_t block_size)
 {
 	size_t i, diff, chunk_size;
 	sqfs_u64 filesz;

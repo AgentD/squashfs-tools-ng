@@ -13,7 +13,7 @@ static void test_case_sparse(const char *path)
 {
 	tar_header_decoded_t hdr;
 	sparse_map_t *sparse;
-	istream_t *fp;
+	sqfs_istream_t *fp;
 
 	fp = istream_open_file(path);
 	TEST_NOT_NULL(fp);

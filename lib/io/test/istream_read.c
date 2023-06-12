@@ -35,7 +35,7 @@ int main(int argc, char **argv)
 {
 	sqfs_u8 read_buffer[61];
 	sqfs_u64 read_off = 0;
-	istream_t *dummy;
+	sqfs_istream_t *dummy;
 	(void)argc; (void)argv;
 
 	init_rd_buffer();

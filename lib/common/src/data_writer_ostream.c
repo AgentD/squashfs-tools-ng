@@ -10,13 +10,13 @@
 #include <stdlib.h>
 
 typedef struct{
-	ostream_t base;
+	sqfs_ostream_t base;
 
 	sqfs_block_processor_t *proc;
 	const char *filename;
 } data_writer_ostream_t;
 
-static int stream_append(ostream_t *base, const void *data, size_t size)
+static int stream_append(sqfs_ostream_t *base, const void *data, size_t size)
 {
 	data_writer_ostream_t *strm = (data_writer_ostream_t *)base;
 	int ret;
@@ -31,7 +31,7 @@ static int stream_append(ostream_t *base, const void *data, size_t size)
 	return 0;
 }
 
-static int stream_flush(ostream_t *base)
+static int stream_flush(sqfs_ostream_t *base)
 {
 	data_writer_ostream_t *strm = (data_writer_ostream_t *)base;
 	int ret;
@@ -46,7 +46,7 @@ static int stream_flush(ostream_t *base)
 	return 0;
 }
 
-static const char *stream_get_filename(ostream_t *base)
+static const char *stream_get_filename(sqfs_ostream_t *base)
 {
 	data_writer_ostream_t *strm = (data_writer_ostream_t *)base;
 
@@ -58,13 +58,13 @@ static void stream_destroy(sqfs_object_t *base)
 	free(base);
 }
 
-ostream_t *data_writer_ostream_create(const char *filename,
-				      sqfs_block_processor_t *proc,
-				      sqfs_inode_generic_t **inode,
-				      int flags)
+sqfs_ostream_t *data_writer_ostream_create(const char *filename,
+					   sqfs_block_processor_t *proc,
+					   sqfs_inode_generic_t **inode,
+					   int flags)
 {
 	data_writer_ostream_t *strm = calloc(1, sizeof(*strm));
-	ostream_t *base = (ostream_t *)strm;
+	sqfs_ostream_t *base = (sqfs_ostream_t *)strm;
 	int ret;
 
 	if (strm == NULL) {

@@ -16,7 +16,7 @@ static void run_test_case(const char *raw, const line_t *lines, size_t count,
 			  int flags)
 {
 	size_t i, line_num, old_line_num;
-	istream_t *fp;
+	sqfs_istream_t *fp;
 	char *line;
 	int ret;
 

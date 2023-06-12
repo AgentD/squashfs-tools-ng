@@ -10,7 +10,7 @@
 #include "internal.h"
 #include <stdlib.h>
 
-char *record_to_memory(istream_t *fp, size_t size)
+char *record_to_memory(sqfs_istream_t *fp, size_t size)
 {
 	char *buffer = malloc(size + 1);
 	int ret;

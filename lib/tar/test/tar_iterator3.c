@@ -13,8 +13,8 @@
 
 int main(int argc, char **argv)
 {
+	sqfs_istream_t *fp, *ti;
 	dir_iterator_t *it;
-	istream_t *fp, *ti;
 	char buffer[100];
 	dir_entry_t *ent;
 	char *link;

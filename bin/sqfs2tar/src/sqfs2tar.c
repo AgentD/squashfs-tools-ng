@@ -9,7 +9,7 @@
 sqfs_xattr_reader_t *xr;
 sqfs_data_reader_t *data;
 sqfs_super_t super;
-ostream_t *out_file = NULL;
+sqfs_ostream_t *out_file = NULL;
 
 static sqfs_file_t *file;
 
@@ -125,7 +125,7 @@ int main(int argc, char **argv)
 
 	if (compressor > 0) {
 		xfrm_stream_t *xfrm = compressor_stream_create(compressor,NULL);
-		ostream_t *strm;
+		sqfs_ostream_t *strm;
 
 		if (xfrm == NULL)
 			goto out;

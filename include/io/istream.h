@@ -10,14 +10,16 @@
 #include "sqfs/predef.h"
 #include "io/ostream.h"
 
+typedef struct sqfs_istream_t sqfs_istream_t;
+
 /**
- * @struct istream_t
+ * @interface sqfs_istream_t
  *
  * @extends sqfs_object_t
  *
  * @brief A sequential, read-only data stream.
  */
-typedef struct istream_t {
+struct sqfs_istream_t {
 	sqfs_object_t base;
 
 	/**
@@ -32,7 +34,7 @@ typedef struct istream_t {
 	 * Higher level functions like @ref istream_read (providing a
 	 * Unix read() style API) are built on top of this primitive.
 	 *
-	 * @param strm A pointer to an istream_t implementation.
+	 * @param strm A pointer to an sqfs_istream_t implementation.
 	 * @param out Returns a pointer into an internal buffer on success.
 	 * @param size Returns the number of bytes available in the buffer.
 	 * @param want A number of bytes that the reader would like to have.
@@ -42,7 +44,7 @@ typedef struct istream_t {
 	 * @return Zero on success, a negative error code on failure,
 	 *         a postive number on EOF.
 	 */
-	int (*get_buffered_data)(struct istream_t *strm, const sqfs_u8 **out,
+	int (*get_buffered_data)(sqfs_istream_t *strm, const sqfs_u8 **out,
 				 size_t *size, size_t want);
 
 	/**
@@ -52,10 +54,10 @@ typedef struct istream_t {
 	 * forcing get_buffered_data to return data afterwards and potentially
 	 * try to load more data.
 	 *
-	 * @param strm A pointer to an istream_t implementation.
+	 * @param strm A pointer to an sqfs_istream_t implementation.
 	 * @param count The number of bytes used up.
 	 */
-	void (*advance_buffer)(struct istream_t *strm, size_t count);
+	void (*advance_buffer)(sqfs_istream_t *strm, size_t count);
 
 	/**
 	 * @brief Get the underlying filename of an input stream.
@@ -64,8 +66,8 @@ typedef struct istream_t {
 	 *
 	 * @return A string holding the underlying filename.
 	 */
-	const char *(*get_filename)(struct istream_t *strm);
-} istream_t;
+	const char *(*get_filename)(sqfs_istream_t *strm);
+};
 
 enum {
 	ISTREAM_LINE_LTRIM = 0x01,
@@ -80,7 +82,7 @@ extern "C" {
 /**
  * @brief Read a line of text from an input stream
  *
- * @memberof istream_t
+ * @memberof sqfs_istream_t
  *
  * The line returned is allocated using malloc and must subsequently be
  * freed when it is no longer needed. The line itself is always null-terminated
@@ -103,13 +105,13 @@ extern "C" {
  * @return Zero on success, a negative value on error, a positive value if
  *         end-of-file was reached without reading any data.
  */
-SQFS_INTERNAL int istream_get_line(istream_t *strm, char **out,
+SQFS_INTERNAL int istream_get_line(sqfs_istream_t *strm, char **out,
 				   size_t *line_num, int flags);
 
 /**
  * @brief Read data from an input stream
  *
- * @memberof istream_t
+ * @memberof sqfs_istream_t
  *
  * @param strm A pointer to an input stream.
  * @param data A buffer to read into.
@@ -118,24 +120,25 @@ SQFS_INTERNAL int istream_get_line(istream_t *strm, char **out,
  * @return The number of bytes actually read on success, -1 on failure,
  *         0 on end-of-file.
  */
-SQFS_INTERNAL sqfs_s32 istream_read(istream_t *strm, void *data, size_t size);
+SQFS_INTERNAL sqfs_s32 istream_read(sqfs_istream_t *strm,
+				    void *data, size_t size);
 
 /**
  * @brief Skip over a number of bytes in an input stream.
  *
- * @memberof istream_t
+ * @memberof sqfs_istream_t
  *
  * @param strm A pointer to an input stream.
  * @param size The number of bytes to seek forward.
  *
  * @return Zero on success, -1 on failure.
  */
-SQFS_INTERNAL int istream_skip(istream_t *strm, sqfs_u64 size);
+SQFS_INTERNAL int istream_skip(sqfs_istream_t *strm, sqfs_u64 size);
 
 /**
  * @brief Dump data from an input stream to an output stream
  *
- * @memberof istream_t
+ * @memberof sqfs_istream_t
  *
  * @param in A pointer to an input stream to read from.
  * @param out A pointer to an output stream to append to.
@@ -144,7 +147,7 @@ SQFS_INTERNAL int istream_skip(istream_t *strm, sqfs_u64 size);
  * @return The number of bytes copied on success, -1 on failure,
  *         0 on end-of-file.
  */
-SQFS_INTERNAL sqfs_s32 istream_splice(istream_t *in, ostream_t *out,
+SQFS_INTERNAL sqfs_s32 istream_splice(sqfs_istream_t *in, sqfs_ostream_t *out,
 				      sqfs_u32 size);
 
 #ifdef __cplusplus

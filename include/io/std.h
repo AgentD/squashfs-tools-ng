@@ -17,20 +17,20 @@ extern "C" {
 /**
  * @brief Create an input stream that reads from standard input.
  *
- * @memberof istream_t
+ * @memberof sqfs_istream_t
  *
  * @return A pointer to an input stream on success, NULL on failure.
  */
-SQFS_INTERNAL istream_t *istream_open_stdin(void);
+SQFS_INTERNAL sqfs_istream_t *istream_open_stdin(void);
 
 /**
  * @brief Create an output stream that writes to standard output.
  *
- * @memberof ostream_t
+ * @memberof sqfs_ostream_t
  *
  * @return A pointer to an output stream on success, NULL on failure.
  */
-SQFS_INTERNAL ostream_t *ostream_open_stdout(void);
+SQFS_INTERNAL sqfs_ostream_t *ostream_open_stdout(void);
 
 #ifdef __cplusplus
 }

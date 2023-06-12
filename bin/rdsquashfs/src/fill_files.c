@@ -136,7 +136,7 @@ static int gen_file_list_dfs(const sqfs_tree_node_t *n)
 static int fill_files(sqfs_data_reader_t *data, int flags)
 {
 	int ret, openflags;
-	ostream_t *fp;
+	sqfs_ostream_t *fp;
 	size_t i;
 
 	openflags = SQFS_FILE_OPEN_OVERWRITE;

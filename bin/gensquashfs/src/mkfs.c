@@ -137,7 +137,7 @@ static void override_owner_dfs(const options_t *opt, tree_node_t *n)
 int main(int argc, char **argv)
 {
 	int status = EXIT_FAILURE;
-	istream_t *sortfile = NULL;
+	sqfs_istream_t *sortfile = NULL;
 	void *sehnd = NULL;
 	void *xattrmap = NULL;
 	sqfs_writer_t sqfs;

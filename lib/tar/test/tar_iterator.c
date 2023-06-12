@@ -30,7 +30,7 @@ static const char *fname = STRVALUE(TESTFNAME);
 
 int main(int argc, char **argv)
 {
-	istream_t *fp, *ti, *ti2;
+	sqfs_istream_t *fp, *ti, *ti2;
 	dir_iterator_t *it;
 	dir_entry_t *ent;
 	char buffer[100];

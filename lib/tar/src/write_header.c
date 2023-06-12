@@ -63,8 +63,8 @@ static void write_number_signed(char *dst, sqfs_s64 value, int digits)
 	}
 }
 
-static int write_header(ostream_t *fp, const struct stat *sb, const char *name,
-			const char *slink_target, int type)
+static int write_header(sqfs_ostream_t *fp, const struct stat *sb,
+			const char *name, const char *slink_target, int type)
 {
 	int maj = 0, min = 0;
 	sqfs_u64 size = 0;
@@ -101,7 +101,7 @@ static int write_header(ostream_t *fp, const struct stat *sb, const char *name,
 	return fp->append(fp, &hdr, sizeof(hdr));
 }
 
-static int write_ext_header(ostream_t *fp, const struct stat *orig,
+static int write_ext_header(sqfs_ostream_t *fp, const struct stat *orig,
 			    const char *payload, size_t payload_len,
 			    int type, const char *name)
 {
@@ -144,7 +144,7 @@ static size_t prefix_digit_len(size_t len)
 	return ndigit;
 }
 
-static int write_schily_xattr(ostream_t *fp, const struct stat *orig,
+static int write_schily_xattr(sqfs_ostream_t *fp, const struct stat *orig,
 			      const char *name, const sqfs_xattr_t *xattr)
 {
 	static const char *prefix = "SCHILY.xattr.";
@@ -183,7 +183,8 @@ static int write_schily_xattr(ostream_t *fp, const struct stat *orig,
 	return ret;
 }
 
-int write_tar_header(ostream_t *fp, const struct stat *sb, const char *name,
+int write_tar_header(sqfs_ostream_t *fp,
+		     const struct stat *sb, const char *name,
 		     const char *slink_target, const sqfs_xattr_t *xattr,
 		     unsigned int counter)
 {
@@ -242,7 +243,7 @@ out_skip:
 	return 1;
 }
 
-int write_hard_link(ostream_t *fp, const struct stat *sb, const char *name,
+int write_hard_link(sqfs_ostream_t *fp, const struct stat *sb, const char *name,
 		    const char *target, unsigned int counter)
 {
 	tar_header_t hdr;

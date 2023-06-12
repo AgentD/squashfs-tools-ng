@@ -15,7 +15,7 @@
 int main(int argc, char **argv)
 {
 	tar_header_decoded_t hdr;
-	istream_t *fp;
+	sqfs_istream_t *fp;
 	int ret;
 
 	if (argc != 2) {

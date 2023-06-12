@@ -37,9 +37,9 @@ static const char *fname = STRVALUE(TESTFNAME);
 int main(int argc, char **argv)
 {
 	tar_header_decoded_t hdr;
+	sqfs_istream_t *fp;
 	char buffer[6];
 	sqfs_s64 ts;
-	istream_t *fp;
 	(void)argc; (void)argv;
 
 	fp = istream_open_file(STRVALUE(TESTPATH) "/" STRVALUE(TESTFILE));

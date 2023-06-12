@@ -25,7 +25,7 @@ extern "C" {
 /**
  * @brief Create an input stream for an OS native file handle.
  *
- * @memberof istream_t
+ * @memberof sqfs_istream_t
  *
  * The functions takes up ownership of the file handle and takes care
  * of cleaning it up. On failure, the handle remains usable, and ownership
@@ -36,12 +36,13 @@ extern "C" {
  *
  * @return A pointer to an output stream on success, NULL on failure.
  */
-SQFS_INTERNAL istream_t *istream_open_handle(const char *path, os_file_t fd);
+SQFS_INTERNAL
+sqfs_istream_t *istream_open_handle(const char *path, os_file_t fd);
 
 /**
  * @brief Create an output stream that writes to an OS native file handle.
  *
- * @memberof ostream_t
+ * @memberof sqfs_ostream_t
  *
  * If the flag SQFS_FILE_OPEN_NO_SPARSE is set, the underlying implementation
  * always writes chunks of zero bytes when passing a NULL pointer to append.
@@ -54,24 +55,25 @@ SQFS_INTERNAL istream_t *istream_open_handle(const char *path, os_file_t fd);
  *
  * @return A pointer to an output stream on success, NULL on failure.
  */
-SQFS_INTERNAL ostream_t *ostream_open_handle(const char *path, os_file_t hnd,
-					     int flags);
+SQFS_INTERNAL sqfs_ostream_t *ostream_open_handle(const char *path,
+						  os_file_t hnd,
+						  int flags);
 
 /**
  * @brief Create an input stream that reads from a file.
  *
- * @memberof istream_t
+ * @memberof sqfs_istream_t
  *
  * @param path A path to the file to open or create.
  *
  * @return A pointer to an output stream on success, NULL on failure.
  */
-SQFS_INTERNAL istream_t *istream_open_file(const char *path);
+SQFS_INTERNAL sqfs_istream_t *istream_open_file(const char *path);
 
 /**
  * @brief Create an output stream that writes to a file.
  *
- * @memberof ostream_t
+ * @memberof sqfs_ostream_t
  *
  * If the file does not yet exist, it is created. If it does exist this
  * function fails, unless the flag SQFS_FILE_OPEN_OVERWRITE is set, in which
@@ -87,7 +89,7 @@ SQFS_INTERNAL istream_t *istream_open_file(const char *path);
  *
  * @return A pointer to an output stream on success, NULL on failure.
  */
-SQFS_INTERNAL ostream_t *ostream_open_file(const char *path, int flags);
+SQFS_INTERNAL sqfs_ostream_t *ostream_open_file(const char *path, int flags);
 
 #ifdef __cplusplus
 }

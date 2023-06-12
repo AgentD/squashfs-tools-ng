@@ -34,11 +34,11 @@ static void init_rd_buffer(void)
 
 /*****************************************************************************/
 
-static int out_append(ostream_t *strm, const void *data, size_t size);
+static int out_append(sqfs_ostream_t *strm, const void *data, size_t size);
 
 static sqfs_u64 out_offset = 0;
 
-static ostream_t out = {
+static sqfs_ostream_t out = {
 	{ 1, NULL, NULL },
 	out_append,
 	NULL,
@@ -46,7 +46,7 @@ static ostream_t out = {
 	NULL,
 };
 
-static int out_append(ostream_t *strm, const void *data, size_t size)
+static int out_append(sqfs_ostream_t *strm, const void *data, size_t size)
 {
 	const sqfs_u8 *ptr = data;
 
@@ -69,7 +69,7 @@ static int out_append(ostream_t *strm, const void *data, size_t size)
 int main(int argc, char **argv)
 {
 	sqfs_u64 total = 0;
-	istream_t *in;
+	sqfs_istream_t *in;
 	sqfs_s32 ret;
 	(void)argc; (void)argv;
 

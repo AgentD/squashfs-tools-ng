@@ -12,7 +12,7 @@
 int main(int argc, char **argv)
 {
 	tar_header_decoded_t hdr;
-	istream_t *fp;
+	sqfs_istream_t *fp;
 	(void)argc; (void)argv;
 
 	fp = istream_open_file(STRVALUE(TESTPATH) "/" STRVALUE(TESTFILE));

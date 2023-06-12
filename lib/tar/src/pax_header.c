@@ -293,8 +293,8 @@ static int apply_handler(tar_header_decoded_t *out,
 	return 0;
 }
 
-int read_pax_header(istream_t *fp, sqfs_u64 entsize, unsigned int *set_by_pax,
-		    tar_header_decoded_t *out)
+int read_pax_header(sqfs_istream_t *fp, sqfs_u64 entsize,
+		    unsigned int *set_by_pax, tar_header_decoded_t *out)
 {
 	char *buffer, *line, *key, *ptr, *value, *end;
 	sparse_map_t *sparse_last = NULL, *sparse;

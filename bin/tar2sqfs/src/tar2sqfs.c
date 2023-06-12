@@ -9,7 +9,7 @@
 int main(int argc, char **argv)
 {
 	int status = EXIT_FAILURE;
-	istream_t *input_file = NULL;
+	sqfs_istream_t *input_file = NULL;
 	dir_iterator_t *tar = NULL;
 	sqfs_writer_t sqfs;
 

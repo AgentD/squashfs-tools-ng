@@ -20,7 +20,7 @@
 typedef struct {
 	dir_iterator_t base;
 	tar_header_decoded_t current;
-	istream_t *stream;
+	sqfs_istream_t *stream;
 	int state;
 
 	/* File I/O wrapper related */
@@ -35,7 +35,7 @@ typedef struct {
 } tar_iterator_t;
 
 typedef struct {
-	istream_t base;
+	sqfs_istream_t base;
 
 	tar_iterator_t *parent;
 	int state;
@@ -89,12 +89,12 @@ static void drop_parent(tar_istream_t *tar, int state)
 	tar->state = state;
 }
 
-static const char *strm_get_filename(istream_t *strm)
+static const char *strm_get_filename(sqfs_istream_t *strm)
 {
 	return ((tar_istream_t *)strm)->parent->current.name;
 }
 
-static int strm_get_buffered_data(istream_t *strm, const sqfs_u8 **out,
+static int strm_get_buffered_data(sqfs_istream_t *strm, const sqfs_u8 **out,
 				  size_t *size, size_t want)
 {
 	tar_istream_t *tar = (tar_istream_t *)strm;
@@ -142,7 +142,7 @@ out_eof:
 	return 1;
 }
 
-static void strm_advance_buffer(istream_t *strm, size_t count)
+static void strm_advance_buffer(sqfs_istream_t *strm, size_t count)
 {
 	tar_istream_t *tar = (tar_istream_t *)strm;
 
@@ -263,7 +263,7 @@ static void it_ignore_subdir(dir_iterator_t *it)
 	/* TODO: skip list */
 }
 
-static int it_open_file_ro(dir_iterator_t *it, istream_t **out)
+static int it_open_file_ro(dir_iterator_t *it, sqfs_istream_t **out)
 {
 	tar_iterator_t *tar = (tar_iterator_t *)it;
 	tar_istream_t *strm;
@@ -285,12 +285,12 @@ static int it_open_file_ro(dir_iterator_t *it, istream_t **out)
 	sqfs_object_init(strm, strm_destroy, NULL);
 	strm->parent = sqfs_grab(tar);
 
-	((istream_t *)strm)->get_buffered_data = strm_get_buffered_data;
-	((istream_t *)strm)->advance_buffer = strm_advance_buffer;
-	((istream_t *)strm)->get_filename = strm_get_filename;
+	((sqfs_istream_t *)strm)->get_buffered_data = strm_get_buffered_data;
+	((sqfs_istream_t *)strm)->advance_buffer = strm_advance_buffer;
+	((sqfs_istream_t *)strm)->get_filename = strm_get_filename;
 
 	tar->locked = true;
-	*out = (istream_t *)strm;
+	*out = (sqfs_istream_t *)strm;
 	return 0;
 }
 
@@ -351,7 +351,7 @@ static int tar_probe(const sqfs_u8 *data, size_t size)
 	return 0;
 }
 
-dir_iterator_t *tar_open_stream(istream_t *strm)
+dir_iterator_t *tar_open_stream(sqfs_istream_t *strm)
 {
 	tar_iterator_t *tar = calloc(1, sizeof(*tar));
 	dir_iterator_t *it = (dir_iterator_t *)tar;

@@ -7,9 +7,9 @@
 #include "../internal.h"
 
 typedef struct ostream_xfrm_t {
-	ostream_t base;
+	sqfs_ostream_t base;
 
-	ostream_t *wrapped;
+	sqfs_ostream_t *wrapped;
 	xfrm_stream_t *xfrm;
 
 	size_t inbuf_used;
@@ -66,7 +66,7 @@ static int flush_inbuf(ostream_xfrm_t *xfrm, bool finish)
 	return 0;
 }
 
-static int xfrm_append(ostream_t *strm, const void *data, size_t size)
+static int xfrm_append(sqfs_ostream_t *strm, const void *data, size_t size)
 {
 	ostream_xfrm_t *xfrm = (ostream_xfrm_t *)strm;
 	size_t diff;
@@ -96,7 +96,7 @@ static int xfrm_append(ostream_t *strm, const void *data, size_t size)
 	return 0;
 }
 
-static int xfrm_flush(ostream_t *strm)
+static int xfrm_flush(sqfs_ostream_t *strm)
 {
 	ostream_xfrm_t *xfrm = (ostream_xfrm_t *)strm;
 
@@ -108,7 +108,7 @@ static int xfrm_flush(ostream_t *strm)
 	return xfrm->wrapped->flush(xfrm->wrapped);
 }
 
-static const char *xfrm_get_filename(ostream_t *strm)
+static const char *xfrm_get_filename(sqfs_ostream_t *strm)
 {
 	ostream_xfrm_t *xfrm = (ostream_xfrm_t *)strm;
 
@@ -124,10 +124,10 @@ static void xfrm_destroy(sqfs_object_t *obj)
 	free(xfrm);
 }
 
-ostream_t *ostream_xfrm_create(ostream_t *strm, xfrm_stream_t *xfrm)
+sqfs_ostream_t *ostream_xfrm_create(sqfs_ostream_t *strm, xfrm_stream_t *xfrm)
 {
 	ostream_xfrm_t *stream = calloc(1, sizeof(*stream));
-	ostream_t *base = (ostream_t *)stream;
+	sqfs_ostream_t *base = (sqfs_ostream_t *)stream;
 
 	if (stream == NULL)
 		goto fail;

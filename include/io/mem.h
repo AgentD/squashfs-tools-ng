@@ -13,8 +13,9 @@
 extern "C" {
 #endif
 
-SQFS_INTERNAL istream_t *istream_memory_create(const char *name, size_t bufsz,
-					       const void *data, size_t size);
+SQFS_INTERNAL
+sqfs_istream_t *istream_memory_create(const char *name, size_t bufsz,
+				      const void *data, size_t size);
 
 #ifdef __cplusplus
 }
