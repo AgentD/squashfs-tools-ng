@@ -49,15 +49,7 @@ static int realize_sparse(file_ostream_t *file)
 	if (file->sparse_count == 0)
 		return 0;
 
-	if (file->flags & OSTREAM_OPEN_SPARSE) {
-		if (lseek(file->fd, file->sparse_count, SEEK_CUR) == (off_t)-1)
-			goto fail;
-
-		if (ftruncate(file->fd, file->size) != 0)
-			goto fail;
-
-		file->sparse_count = 0;
-	} else {
+	if (file->flags & OSTREAM_OPEN_NO_SPARSE) {
 		bufsz = file->sparse_count > 1024 ? 1024 : file->sparse_count;
 		buffer = calloc(1, bufsz);
 		if (buffer == NULL)
@@ -76,6 +68,14 @@ static int realize_sparse(file_ostream_t *file)
 		}
 
 		free(buffer);
+	} else {
+		if (lseek(file->fd, file->sparse_count, SEEK_CUR) == (off_t)-1)
+			goto fail;
+
+		if (ftruncate(file->fd, file->size) != 0)
+			goto fail;
+
+		file->sparse_count = 0;
 	}
 
 	return 0;
@@ -194,5 +194,6 @@ ostream_t *ostream_open_file(const char *path, int flags)
 
 ostream_t *ostream_open_stdout(void)
 {
-	return ostream_open_handle("stdout", STDOUT_FILENO, 0);
+	return ostream_open_handle("stdout", STDOUT_FILENO,
+				   OSTREAM_OPEN_NO_SPARSE);
 }

@@ -20,7 +20,7 @@ typedef int os_file_t;
 
 enum {
 	OSTREAM_OPEN_OVERWRITE = 0x01,
-	OSTREAM_OPEN_SPARSE = 0x02,
+	OSTREAM_OPEN_NO_SPARSE = 0x02,
 };
 
 #ifdef __cplusplus
@@ -48,9 +48,10 @@ SQFS_INTERNAL istream_t *istream_open_handle(const char *path, os_file_t fd);
  *
  * @memberof ostream_t
  *
- * If the flag OSTREAM_OPEN_SPARSE is set, the underlying implementation tries
- * to use seek/truncate style API to create sparse output files. If the flag
- * is not set, holes will always be filled with zero bytes.
+ * If the flag OSTREAM_OPEN_NO_SPARSE is set, the underlying implementation
+ * always writes chunks of zero bytes when passing a NULL pointer to append.
+ * Otherwise, it tries to use seek/truncate style APIs to create sparse output
+ * files.
  *
  * @param path The name to associate with the handle.
  * @param fd A native file handle.
@@ -81,9 +82,10 @@ SQFS_INTERNAL istream_t *istream_open_file(const char *path);
  * function fails, unless the flag OSTREAM_OPEN_OVERWRITE is set, in which
  * case the file is opened and its contents are discarded.
  *
- * If the flag OSTREAM_OPEN_SPARSE is set, the underlying implementation tries
- * to support sparse output files. If the flag is not set, holes will always
- * be filled with zero bytes.
+ * If the flag OSTREAM_OPEN_NO_SPARSE is set, the underlying implementation
+ * always writes chunks of zero bytes when passing a NULL pointer to append.
+ * Otherwise, it tries to use seek/truncate style APIs to create sparse output
+ * files.
  *
  * @param path A path to the file to open or create.
  * @param flags A combination of flags controling how to open/create the file.

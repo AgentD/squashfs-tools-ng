@@ -43,17 +43,7 @@ static int realize_sparse(file_ostream_t *file)
 	if (file->sparse_count == 0)
 		return 0;
 
-	if (file->flags & OSTREAM_OPEN_SPARSE) {
-		pos.QuadPart = file->sparse_count;
-
-		if (!SetFilePointerEx(file->hnd, pos, NULL, FILE_CURRENT))
-			goto fail;
-
-		if (!SetEndOfFile(file->hnd))
-			goto fail;
-
-		file->sparse_count = 0;
-	} else {
+	if (file->flags & OSTREAM_OPEN_NO_SPARSE) {
 		bufsz = file->sparse_count > 1024 ? 1024 : file->sparse_count;
 		buffer = calloc(1, bufsz);
 
@@ -75,6 +65,16 @@ static int realize_sparse(file_ostream_t *file)
 		}
 
 		free(buffer);
+	} else {
+		pos.QuadPart = file->sparse_count;
+
+		if (!SetFilePointerEx(file->hnd, pos, NULL, FILE_CURRENT))
+			goto fail;
+
+		if (!SetEndOfFile(file->hnd))
+			goto fail;
+
+		file->sparse_count = 0;
 	}
 
 	return 0;
@@ -213,5 +213,5 @@ ostream_t *ostream_open_stdout(void)
 {
 	HANDLE hnd = GetStdHandle(STD_OUTPUT_HANDLE);
 
-	return ostream_open_handle("stdout", hnd, 0);
+	return ostream_open_handle("stdout", hnd, OSTREAM_OPEN_NO_SPARSE);
 }
