@@ -154,24 +154,13 @@ fail_free:
 
 sqfs_istream_t *istream_open_file(const char *path)
 {
-	WCHAR *wpath = NULL;
+	sqfs_file_handle_t hnd;
 	sqfs_istream_t *out;
-	HANDLE hnd;
 
-	wpath = path_to_windows(path);
-	if (wpath == NULL)
-		return NULL;
-
-	hnd = CreateFileW(wpath, GENERIC_READ, FILE_SHARE_READ, NULL,
-			  OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-
-	if (hnd == INVALID_HANDLE_VALUE) {
+	if (sqfs_open_native_file(&hnd, path, SQFS_FILE_OPEN_READ_ONLY)) {
 		w32_perror(path);
-		free(wpath);
 		return NULL;
 	}
-
-	free(wpath);
 
 	out = istream_open_handle(path, hnd);
 	if (out == NULL)

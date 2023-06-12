@@ -24,7 +24,7 @@ typedef struct {
 
 	bool readonly;
 	sqfs_u64 size;
-	int fd;
+	sqfs_file_handle_t fd;
 
 	char name[];
 } sqfs_file_stdio_t;
@@ -146,18 +146,40 @@ static const char *stdio_get_filename(sqfs_file_t *file)
 	return ((sqfs_file_stdio_t *)file)->name;
 }
 
+int sqfs_open_native_file(sqfs_file_handle_t *out, const char *filename,
+			  sqfs_u32 flags)
+{
+	int open_mode;
+
+	*out = -1;
+
+	if (flags & ~SQFS_FILE_OPEN_ALL_FLAGS)
+		return SQFS_ERROR_UNSUPPORTED;
+
+	if (flags & SQFS_FILE_OPEN_READ_ONLY) {
+		open_mode = O_RDONLY;
+	} else {
+		open_mode = O_CREAT | O_RDWR;
+
+		if (flags & SQFS_FILE_OPEN_OVERWRITE) {
+			open_mode |= O_TRUNC;
+		} else {
+			open_mode |= O_EXCL;
+		}
+	}
+
+	*out = open(filename, open_mode, 0644);
+
+	return (*out < 0) ? SQFS_ERROR_IO : 0;
+}
+
 sqfs_file_t *sqfs_open_file(const char *filename, sqfs_u32 flags)
 {
 	sqfs_file_stdio_t *file;
 	size_t size, namelen;
-	int open_mode, temp;
 	sqfs_file_t *base;
 	struct stat sb;
-
-	if (flags & ~SQFS_FILE_OPEN_ALL_FLAGS) {
-		errno = EINVAL;
-		return NULL;
-	}
+	int temp;
 
 	namelen = strlen(filename);
 	size = sizeof(*file) + 1;
@@ -175,37 +197,14 @@ sqfs_file_t *sqfs_open_file(const char *filename, sqfs_u32 flags)
 	sqfs_object_init(file, stdio_destroy, stdio_copy);
 	memcpy(file->name, filename, namelen);
 
-	if (flags & SQFS_FILE_OPEN_READ_ONLY) {
-		file->readonly = true;
-		open_mode = O_RDONLY;
-	} else {
-		file->readonly = false;
-		open_mode = O_CREAT | O_RDWR;
+	if (sqfs_open_native_file(&file->fd, filename, flags))
+		goto fail;
 
-		if (flags & SQFS_FILE_OPEN_OVERWRITE) {
-			open_mode |= O_TRUNC;
-		} else {
-			open_mode |= O_EXCL;
-		}
-	}
-
-	file->fd = open(filename, open_mode, 0644);
-	if (file->fd < 0) {
-		temp = errno;
-		free(file);
-		errno = temp;
-		return NULL;
-	}
-
-	if (fstat(file->fd, &sb)) {
-		temp = errno;
-		close(file->fd);
-		free(file);
-		errno = temp;
-		return NULL;
-	}
+	if (fstat(file->fd, &sb))
+		goto fail;
 
 	file->size = sb.st_size;
+	file->readonly = (flags & SQFS_FILE_OPEN_READ_ONLY) != 0;
 
 	base->read_at = stdio_read_at;
 	base->write_at = stdio_write_at;
@@ -213,4 +212,11 @@ sqfs_file_t *sqfs_open_file(const char *filename, sqfs_u32 flags)
 	base->truncate = stdio_truncate;
 	base->get_filename = stdio_get_filename;
 	return base;
+fail:
+	temp = errno;
+	if (file->fd >= 0)
+		close(file->fd);
+	free(file);
+	errno = temp;
+	return NULL;
 }

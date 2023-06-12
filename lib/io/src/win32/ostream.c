@@ -176,38 +176,18 @@ fail_free:
 
 sqfs_ostream_t *ostream_open_file(const char *path, int flags)
 {
-	int access_flags, creation_mode;
-	WCHAR *wpath = NULL;
+	sqfs_file_handle_t hnd;
 	sqfs_ostream_t *out;
-	HANDLE hnd;
 
-	access_flags = GENERIC_WRITE;
-
-	if (flags & SQFS_FILE_OPEN_OVERWRITE) {
-		creation_mode = CREATE_ALWAYS;
-	} else {
-		creation_mode = CREATE_NEW;
-	}
-
-	if (flags & SQFS_FILE_OPEN_NO_CHARSET_XFRM) {
-		hnd = CreateFileA(path, access_flags, 0, NULL, creation_mode,
-				  FILE_ATTRIBUTE_NORMAL, NULL);
-	} else {
-		wpath = path_to_windows(path);
-		if (wpath == NULL)
-			return NULL;
-
-		hnd = CreateFileW(wpath, access_flags, 0, NULL, creation_mode,
-				  FILE_ATTRIBUTE_NORMAL, NULL);
+	if (sqfs_open_native_file(&hnd, path, flags)) {
+		w32_perror(path);
+		return NULL;
 	}
 
 	if (hnd == INVALID_HANDLE_VALUE) {
 		w32_perror(path);
-		free(wpath);
 		return NULL;
 	}
-
-	free(wpath);
 
 	out = ostream_open_handle(path, hnd, flags);
 	if (out == NULL)

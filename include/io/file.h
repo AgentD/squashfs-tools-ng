@@ -7,15 +7,7 @@
 #ifndef IO_FILE_H
 #define IO_FILE_H
 
-#include "io/istream.h"
-
-#if defined(_WIN32) || defined(__WINDOWS__)
-#include <handleapi.h>
-
-typedef HANDLE os_file_t;
-#else
-typedef int os_file_t;
-#endif
+#include "sqfs/io.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,7 +28,7 @@ extern "C" {
  * @return A pointer to an output stream on success, NULL on failure.
  */
 SQFS_INTERNAL
-sqfs_istream_t *istream_open_handle(const char *path, os_file_t fd);
+sqfs_istream_t *istream_open_handle(const char *path, sqfs_file_handle_t fd);
 
 /**
  * @brief Create an output stream that writes to an OS native file handle.
@@ -55,7 +47,7 @@ sqfs_istream_t *istream_open_handle(const char *path, os_file_t fd);
  * @return A pointer to an output stream on success, NULL on failure.
  */
 SQFS_INTERNAL sqfs_ostream_t *ostream_open_handle(const char *path,
-						  os_file_t hnd,
+						  sqfs_file_handle_t hnd,
 						  int flags);
 
 /**

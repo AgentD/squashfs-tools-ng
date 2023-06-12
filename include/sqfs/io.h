@@ -34,6 +34,20 @@
  */
 
 /**
+ * @typedef sqfs_file_handle_t
+ *
+ * @brief Native handle type for file I/O
+ */
+
+#if defined(_WIN32) || defined(__WINDOWS__)
+#include <handleapi.h>
+
+typedef HANDLE sqfs_file_handle_t;
+#else
+typedef int sqfs_file_handle_t;
+#endif
+
+/**
  * @enum SQFS_FILE_OPEN_FLAGS
  *
  * @brief Flags for @ref sqfs_open_file
@@ -271,6 +285,30 @@ struct sqfs_ostream_t {
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @brief Open a native file handle
+ *
+ * On Unix-like systems, this generates a file descriptor that needs to be
+ * closed with close(). If opening fails, errno is preseved.
+ *
+ * On Windows, a HANDLE is created that needs to be disposed of
+ * using CloseHandle(). If opening fails, GetLastError() is preseved.
+ * If @ref SQFS_FILE_OPEN_NO_CHARSET_XFRM is set, the given string is passed
+ * to the ANSI API that interprets the string according to the the currently
+ * set codepage. If the flag is not present, the string is assumed to be UTF-8,
+ * the function internally converts it to UTF-16 and uses the wide char API.
+ *
+ * @param out Returns a native file handle on success
+ * @param filename The path to the file to open
+ * @param flags A set of @ref SQFS_FILE_OPEN_FLAGS controlling how the
+ *              file is opened.
+ *
+ * @return Zero on success, a negative @ref SQFS_ERROR code on failure.
+ *         If an unknown flag was used, @ref SQFS_ERROR_UNSUPPORTED is returned.
+ */
+SQFS_API int sqfs_open_native_file(sqfs_file_handle_t *out,
+				   const char *filename, sqfs_u32 flags);
 
 /**
  * @brief Open a file through the operating systems filesystem API

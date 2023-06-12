@@ -22,7 +22,7 @@ typedef struct {
 
 	bool readonly;
 	sqfs_u64 size;
-	HANDLE fd;
+	sqfs_file_handle_t fd;
 
 	char name[];
 } sqfs_file_stdio_t;
@@ -158,63 +158,25 @@ static const char *stdio_get_filename(sqfs_file_t *file)
 	return ((sqfs_file_stdio_t *)file)->name;
 }
 
-sqfs_file_t *sqfs_open_file(const char *filename, sqfs_u32 flags)
+int sqfs_open_native_file(sqfs_file_handle_t *out, const char *filename,
+			  sqfs_u32 flags)
 {
 	int access_flags, creation_mode, share_mode;
-	sqfs_file_stdio_t *file;
-	size_t namelen, total;
-	LARGE_INTEGER size;
-	sqfs_file_t *base;
 	WCHAR *wpath = NULL;
-	DWORD length;
+	DWORD length, err;
+
+	*out = INVALID_HANDLE_VALUE;
 
 	if (flags & ~SQFS_FILE_OPEN_ALL_FLAGS) {
 		SetLastError(ERROR_INVALID_PARAMETER);
-		return NULL;
+		return SQFS_ERROR_UNSUPPORTED;
 	}
-
-	namelen = strlen(filename);
-	total = sizeof(*file) + 1;
-
-	if (SZ_ADD_OV(total, namelen, &total)) {
-		SetLastError(ERROR_NOT_ENOUGH_MEMORY);
-		return NULL;
-	}
-
-	if (!(flags & SQFS_FILE_OPEN_NO_CHARSET_XFRM)) {
-		length = MultiByteToWideChar(CP_UTF8, 0, filename, -1, NULL, 0);
-		if (length <= 0)
-			return NULL;
-
-		wpath = calloc(sizeof(wpath[0]), length + 1);
-		if (wpath == NULL) {
-			SetLastError(ERROR_NOT_ENOUGH_MEMORY);
-			return NULL;
-		}
-
-		MultiByteToWideChar(CP_UTF8, 0, filename, -1,
-				    wpath, length + 1);
-		wpath[length] = '\0';
-	}
-
-	file = calloc(1, total);
-	base = (sqfs_file_t *)file;
-	if (file == NULL) {
-		free(wpath);
-		SetLastError(ERROR_NOT_ENOUGH_MEMORY);
-		return NULL;
-	}
-
-	sqfs_object_init(file, stdio_destroy, stdio_copy);
-	memcpy(file->name, filename, namelen);
 
 	if (flags & SQFS_FILE_OPEN_READ_ONLY) {
-		file->readonly = true;
 		access_flags = GENERIC_READ;
 		creation_mode = OPEN_EXISTING;
 		share_mode = FILE_SHARE_READ;
 	} else {
-		file->readonly = false;
 		access_flags = GENERIC_READ | GENERIC_WRITE;
 		share_mode = 0;
 
@@ -226,32 +188,81 @@ sqfs_file_t *sqfs_open_file(const char *filename, sqfs_u32 flags)
 	}
 
 	if (flags & SQFS_FILE_OPEN_NO_CHARSET_XFRM) {
-		file->fd = CreateFileA(filename, access_flags, share_mode, NULL,
-				       creation_mode, FILE_ATTRIBUTE_NORMAL,
-				       NULL);
+		*out = CreateFileA(filename, access_flags, share_mode, NULL,
+				   creation_mode, FILE_ATTRIBUTE_NORMAL, NULL);
 	} else {
-		file->fd = CreateFileW(wpath, access_flags, share_mode, NULL,
-				       creation_mode, FILE_ATTRIBUTE_NORMAL,
-				       NULL);
+		length = MultiByteToWideChar(CP_UTF8, 0, filename, -1, NULL, 0);
+		if (length <= 0)
+			return SQFS_ERROR_INTERNAL;
+
+		wpath = calloc(sizeof(wpath[0]), length + 1);
+		if (wpath == NULL) {
+			SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+			return SQFS_ERROR_ALLOC;
+		}
+
+		MultiByteToWideChar(CP_UTF8, 0, filename, -1,
+				    wpath, length + 1);
+		wpath[length] = '\0';
+
+		*out = CreateFileW(wpath, access_flags, share_mode, NULL,
+				   creation_mode, FILE_ATTRIBUTE_NORMAL,
+				   NULL);
+
+		err = GetLastError();
+		free(wpath);
+		SetLastError(err);
 	}
 
-	free(wpath);
+	return (*out == INVALID_HANDLE_VALUE) ? SQFS_ERROR_IO : 0;
+}
 
-	if (file->fd == INVALID_HANDLE_VALUE) {
-		free(file);
+sqfs_file_t *sqfs_open_file(const char *filename, sqfs_u32 flags)
+{
+	sqfs_file_stdio_t *file;
+	size_t namelen, total;
+	LARGE_INTEGER size;
+	sqfs_file_t *base;
+	DWORD err;
+
+	namelen = strlen(filename);
+	total = sizeof(*file) + 1;
+
+	if (SZ_ADD_OV(total, namelen, &total)) {
+		SetLastError(ERROR_NOT_ENOUGH_MEMORY);
 		return NULL;
 	}
 
-	if (!GetFileSizeEx(file->fd, &size)) {
-		free(file);
+	file = calloc(1, total);
+	base = (sqfs_file_t *)file;
+	if (file == NULL) {
+		SetLastError(ERROR_NOT_ENOUGH_MEMORY);
 		return NULL;
 	}
+
+	sqfs_object_init(file, stdio_destroy, stdio_copy);
+	memcpy(file->name, filename, namelen);
+
+	if (sqfs_open_native_file(&file->fd, filename, flags))
+		goto fail;
+
+	if (!GetFileSizeEx(file->fd, &size))
+		goto fail;
 
 	file->size = size.QuadPart;
+	file->readonly = (flags & SQFS_FILE_OPEN_READ_ONLY) != 0;
+
 	base->read_at = stdio_read_at;
 	base->write_at = stdio_write_at;
 	base->get_size = stdio_get_size;
 	base->truncate = stdio_truncate;
 	base->get_filename = stdio_get_filename;
 	return base;
+fail:
+	err = GetLastError();
+	if (file->fd != INVALID_HANDLE_VALUE)
+		CloseHandle(file->fd);
+	free(file);
+	SetLastError(err);
+	return NULL;
 }

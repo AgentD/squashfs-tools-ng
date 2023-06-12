@@ -177,13 +177,12 @@ fail_free:
 
 sqfs_ostream_t *ostream_open_file(const char *path, int flags)
 {
+	sqfs_file_handle_t fd;
 	sqfs_ostream_t *out;
-	int fd;
 
-	if (flags & SQFS_FILE_OPEN_OVERWRITE) {
-		fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-	} else {
-		fd = open(path, O_WRONLY | O_CREAT | O_EXCL, 0644);
+	if (sqfs_open_native_file(&fd, path, flags)) {
+		perror(path);
+		return NULL;
 	}
 
 	out = ostream_open_handle(path, fd, flags);

@@ -144,11 +144,10 @@ fail_free:
 
 sqfs_istream_t *istream_open_file(const char *path)
 {
+	sqfs_file_handle_t fd;
 	sqfs_istream_t *out;
-	int fd;
 
-	fd = open(path, O_RDONLY);
-	if (fd < 0) {
+	if (sqfs_open_native_file(&fd, path, SQFS_FILE_OPEN_READ_ONLY)) {
 		perror(path);
 		return NULL;
 	}
