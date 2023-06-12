@@ -59,7 +59,7 @@ sparse_map_t *read_gnu_old_sparse(sqfs_istream_t *fp, tar_header_t *hdr)
 		return list;
 
 	do {
-		ret = istream_read(fp, &sph, sizeof(sph));
+		ret = sqfs_istream_read(fp, &sph, sizeof(sph));
 		if (ret < 0)
 			goto fail;
 

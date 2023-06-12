@@ -6,10 +6,9 @@
  */
 #include "config.h"
 
-#include "io/istream.h"
-#include "io/ostream.h"
 #include "io/mem.h"
 #include "util/test.h"
+#include "sqfs/io.h"
 
 static const sqfs_u64 end0 = 449;	/* region 1: filled with 'A' */
 static const sqfs_u64 end1 = 521;	/* region 2: filled with 'B' */
@@ -41,7 +40,6 @@ static sqfs_u64 out_offset = 0;
 static sqfs_ostream_t out = {
 	{ 1, NULL, NULL },
 	out_append,
-	NULL,
 	NULL,
 	NULL,
 };
@@ -79,7 +77,7 @@ int main(int argc, char **argv)
 	TEST_NOT_NULL(in);
 
 	for (;;) {
-		ret = istream_splice(in, &out, 211);
+		ret = sqfs_istream_splice(in, &out, 211);
 		TEST_ASSERT(ret >= 0);
 
 		if (ret == 0)

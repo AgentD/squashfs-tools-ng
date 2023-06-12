@@ -5,6 +5,7 @@
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
 #include "../internal.h"
+#include "sqfs/io.h"
 
 typedef struct istream_xfrm_t {
 	sqfs_istream_t base;

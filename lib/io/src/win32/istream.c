@@ -5,6 +5,7 @@
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
 #include "../internal.h"
+#include "sqfs/io.h"
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>

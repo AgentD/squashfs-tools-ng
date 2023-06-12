@@ -35,7 +35,7 @@ int main(int argc, char **argv)
 	TEST_EQUAL_UI(hdr.mtime, 1543094477);
 	TEST_STR_EQUAL(hdr.name, "input.txt");
 	TEST_ASSERT(!hdr.unknown_record);
-	TEST_ASSERT(istream_read(fp, buffer, 5) == 5);
+	TEST_ASSERT(sqfs_istream_read(fp, buffer, 5) == 5);
 	buffer[5] = '\0';
 	TEST_STR_EQUAL(buffer, "test\n");
 

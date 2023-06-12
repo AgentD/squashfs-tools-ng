@@ -86,10 +86,10 @@ int main(int argc, char **argv)
 	TEST_EQUAL_I(ret, 0);
 	TEST_NOT_NULL(ti);
 
-	TEST_ASSERT(istream_read(ti, buffer, sizeof(buffer)) == 5);
+	TEST_ASSERT(sqfs_istream_read(ti, buffer, sizeof(buffer)) == 5);
 	buffer[5] = '\0';
 	TEST_STR_EQUAL(buffer, "test\n");
-	TEST_ASSERT(istream_read(ti, buffer, sizeof(buffer)) == 0);
+	TEST_ASSERT(sqfs_istream_read(ti, buffer, sizeof(buffer)) == 0);
 	ti = sqfs_drop(ti);
 
 	ret = it->next(it, &ent);
@@ -105,10 +105,10 @@ int main(int argc, char **argv)
 	TEST_EQUAL_I(ret, 0);
 	TEST_NOT_NULL(ti);
 
-	TEST_ASSERT(istream_read(ti, buffer, sizeof(buffer)) == 5);
+	TEST_ASSERT(sqfs_istream_read(ti, buffer, sizeof(buffer)) == 5);
 	buffer[5] = '\0';
 	TEST_STR_EQUAL(buffer, "test\n");
-	TEST_ASSERT(istream_read(ti, buffer, sizeof(buffer)) == 0);
+	TEST_ASSERT(sqfs_istream_read(ti, buffer, sizeof(buffer)) == 0);
 	ti = sqfs_drop(ti);
 
 	/* "deep" directory hierarchy containg a hard link */

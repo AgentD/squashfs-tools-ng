@@ -30,7 +30,7 @@ libsquashfs_la_SOURCES = $(LIBSQFS_HEARDS) lib/sqfs/src/id_table.c \
 	lib/sqfs/src/block_processor/block_processor.c \
 	lib/sqfs/src/block_processor/backend.c \
 	lib/sqfs/src/frag_table.c lib/sqfs/src/block_writer.c \
-	lib/sqfs/src/misc.c
+	lib/sqfs/src/misc.c lib/sqfs/src/istream.c
 libsquashfs_la_CPPFLAGS = $(AM_CPPFLAGS)
 libsquashfs_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBSQUASHFS_SO_VERSION)
 libsquashfs_la_CFLAGS = $(AM_CFLAGS) $(PTHREAD_CFLAGS) $(ZLIB_CFLAGS)
@@ -122,9 +122,18 @@ xattr_benchmark_LDADD = libcommon.a libsquashfs.la libcompat.a
 test_get_node_path_SOURCES = lib/sqfs/test/get_node_path.c
 test_get_node_path_LDADD = libcommon.a libsquashfs.la libcompat.a
 
-LIBSQFS_TESTS = \
-	test_abi test_xattr test_table test_xattr_writer test_get_node_path
+test_istream_read_SOURCES = lib/sqfs/test/istream_read.c
+test_istream_read_LDADD = libio.a libsquashfs.la libutil.a libcompat.a
 
+test_istream_skip_SOURCES = lib/sqfs/test/istream_skip.c
+test_istream_skip_LDADD = libsquashfs.la libio.a libutil.a libcompat.a
+
+test_stream_splice_SOURCES = lib/sqfs/test/stream_splice.c
+test_stream_splice_LDADD = libsquashfs.la libio.a libutil.a libcompat.a
+
+LIBSQFS_TESTS = \
+	test_abi test_xattr test_table test_xattr_writer test_get_node_path \
+	test_istream_read test_istream_skip test_stream_splice
 noinst_PROGRAMS += xattr_benchmark
 
 check_PROGRAMS += $(LIBSQFS_TESTS)

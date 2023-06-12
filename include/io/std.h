@@ -8,7 +8,6 @@
 #define IO_STD_H
 
 #include "io/istream.h"
-#include "io/ostream.h"
 
 #ifdef __cplusplus
 extern "C" {

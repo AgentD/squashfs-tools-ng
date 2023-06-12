@@ -7,6 +7,7 @@
 #include "xfrm/compress.h"
 #include "xfrm/stream.h"
 #include "util/test.h"
+#include "sqfs/io.h"
 #include "io/xfrm.h"
 #include "io/mem.h"
 
@@ -430,15 +431,15 @@ static void run_unpack_test(const void *blob, size_t size)
 	TEST_EQUAL_UI(((sqfs_object_t *)mem_istream)->refcount, 2);
 
 	for (i = 0; i < (sizeof(orig) - 1); ++i) {
-		ret = istream_read(istream, &c, 1);
+		ret = sqfs_istream_read(istream, &c, 1);
 		TEST_EQUAL_I(ret, 1);
 		TEST_EQUAL_I(c, orig[i]);
 	}
 
-	ret = istream_read(istream, &c, 1);
+	ret = sqfs_istream_read(istream, &c, 1);
 	TEST_EQUAL_I(ret, 0);
 
-	ret = istream_read(istream, &c, 1);
+	ret = sqfs_istream_read(istream, &c, 1);
 	TEST_EQUAL_I(ret, 0);
 
 	sqfs_drop(istream);

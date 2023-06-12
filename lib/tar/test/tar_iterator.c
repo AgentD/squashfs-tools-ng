@@ -83,12 +83,12 @@ int main(int argc, char **argv)
 	TEST_EQUAL_UI(((sqfs_object_t *)ti)->refcount, 1);
 
 	/* read the data from the stream */
-	ret = istream_read(ti, buffer, sizeof(buffer));
+	ret = sqfs_istream_read(ti, buffer, sizeof(buffer));
 	TEST_EQUAL_I(ret, 5);
 	buffer[5] = '\0';
 	TEST_STR_EQUAL(buffer, "test\n");
 
-	ret = istream_read(ti, buffer, sizeof(buffer));
+	ret = sqfs_istream_read(ti, buffer, sizeof(buffer));
 	TEST_EQUAL_I(ret, 0);
 
 	sqfs_drop(ti);

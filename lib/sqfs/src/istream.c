@@ -1,13 +1,17 @@
-/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* SPDX-License-Identifier: LGPL-3.0-or-later */
 /*
  * istream.c
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
-#include "internal.h"
+#define SQFS_BUILDING_DLL
+#include "config.h"
 
+#include "sqfs/io.h"
 
-sqfs_s32 istream_read(sqfs_istream_t *strm, void *data, size_t size)
+#include <string.h>
+
+sqfs_s32 sqfs_istream_read(sqfs_istream_t *strm, void *data, size_t size)
 {
 	sqfs_s32 total = 0;
 
@@ -38,7 +42,7 @@ sqfs_s32 istream_read(sqfs_istream_t *strm, void *data, size_t size)
 	return total;
 }
 
-int istream_skip(sqfs_istream_t *strm, sqfs_u64 size)
+int sqfs_istream_skip(sqfs_istream_t *strm, sqfs_u64 size)
 {
 	while (size > 0) {
 		const sqfs_u8 *ptr;
@@ -48,11 +52,8 @@ int istream_skip(sqfs_istream_t *strm, sqfs_u64 size)
 		ret = strm->get_buffered_data(strm, &ptr, &diff, size);
 		if (ret < 0)
 			return ret;
-		if (ret > 0) {
-			fprintf(stderr, "%s: unexpected end-of-file\n",
-				strm->get_filename(strm));
-			return -1;
-		}
+		if (ret > 0)
+			break;
 
 		if ((sqfs_u64)diff > size)
 			diff = size;
@@ -64,7 +65,8 @@ int istream_skip(sqfs_istream_t *strm, sqfs_u64 size)
 	return 0;
 }
 
-sqfs_s32 istream_splice(sqfs_istream_t *in, sqfs_ostream_t *out, sqfs_u32 size)
+sqfs_s32 sqfs_istream_splice(sqfs_istream_t *in, sqfs_ostream_t *out,
+			     sqfs_u32 size)
 {
 	sqfs_s32 total = 0;
 
@@ -85,8 +87,9 @@ sqfs_s32 istream_splice(sqfs_istream_t *in, sqfs_ostream_t *out, sqfs_u32 size)
 		if (diff > size)
 			diff = size;
 
-		if (out->append(out, ptr, diff))
-			return -1;
+		ret = out->append(out, ptr, diff);
+		if (ret)
+			return ret;
 
 		total += diff;
 		size -= diff;

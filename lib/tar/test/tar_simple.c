@@ -55,7 +55,7 @@ int main(int argc, char **argv)
 	TEST_STR_EQUAL(hdr.name, fname);
 	TEST_ASSERT(!hdr.unknown_record);
 
-	TEST_ASSERT(istream_read(fp, buffer, 5) == 5);
+	TEST_ASSERT(sqfs_istream_read(fp, buffer, 5) == 5);
 	buffer[5] = '\0';
 	TEST_STR_EQUAL(buffer, "test\n");
 	clear_header(&hdr);

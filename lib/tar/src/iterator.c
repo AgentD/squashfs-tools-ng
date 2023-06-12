@@ -177,13 +177,13 @@ static int it_next(dir_iterator_t *it, dir_entry_t **out)
 		return tar->state;
 retry:
 	if (tar->record_size > 0) {
-		ret = istream_skip(tar->stream, tar->record_size);
+		ret = sqfs_istream_skip(tar->stream, tar->record_size);
 		if (ret)
 			goto fail;
 	}
 
 	if (tar->padding > 0) {
-		ret = istream_skip(tar->stream, tar->padding);
+		ret = sqfs_istream_skip(tar->stream, tar->padding);
 		if (ret)
 			goto fail;
 	}

@@ -8,6 +8,7 @@
 
 #include "util/test.h"
 #include "io/mem.h"
+#include "sqfs/io.h"
 
 static const size_t end0 = 449;	/* region 1: filled with 'A' */
 static const size_t end1 = 521;	/* region 2: filled with 'B' */

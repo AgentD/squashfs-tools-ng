@@ -50,10 +50,10 @@ int main(int argc, char **argv)
 		       "20_characters_here03/20_characters_here04/"
 		       "errored_file_tst");
 	TEST_EQUAL_UI(hdr.actual_size, 5);
-	TEST_ASSERT(istream_read(fp, buffer, 5) == 5);
+	TEST_ASSERT(sqfs_istream_read(fp, buffer, 5) == 5);
 	buffer[5] = '\0';
 	TEST_STR_EQUAL(buffer, "test\n");
-	TEST_ASSERT(istream_skip(fp, 512 - 5) == 0);
+	TEST_ASSERT(sqfs_istream_skip(fp, 512 - 5) == 0);
 	clear_header(&hdr);
 
 	TEST_ASSERT(read_header(fp, &hdr) == 0);
@@ -62,10 +62,10 @@ int main(int argc, char **argv)
 		       "20_characters_here03/20_characters_here04/"
 		       "some_test_file");
 	TEST_EQUAL_UI(hdr.actual_size, 5);
-	TEST_ASSERT(istream_read(fp, buffer, 5) == 5);
+	TEST_ASSERT(sqfs_istream_read(fp, buffer, 5) == 5);
 	buffer[5] = '\0';
 	TEST_STR_EQUAL(buffer, "test\n");
-	TEST_ASSERT(istream_skip(fp, 512 - 5) == 0);
+	TEST_ASSERT(sqfs_istream_skip(fp, 512 - 5) == 0);
 	clear_header(&hdr);
 
 	/* "deep" directory hierarchy containg a hard link */

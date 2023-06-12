@@ -175,7 +175,7 @@ int read_header(sqfs_istream_t *fp, tar_header_decoded_t *out)
 	memset(out, 0, sizeof(*out));
 
 	for (;;) {
-		ret = istream_read(fp, &hdr, sizeof(hdr));
+		ret = sqfs_istream_read(fp, &hdr, sizeof(hdr));
 		if (ret < 0)
 			goto fail;
 
@@ -226,7 +226,7 @@ int read_header(sqfs_istream_t *fp, tar_header_decoded_t *out)
 				goto fail;
 			if (pax_size % 512)
 				pax_size += 512 - (pax_size % 512);
-			istream_skip(fp, pax_size);
+			sqfs_istream_skip(fp, pax_size);
 			continue;
 		case TAR_TYPE_PAX:
 			clear_header(out);

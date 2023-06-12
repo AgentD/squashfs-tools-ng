@@ -6,7 +6,7 @@
  */
 #include "config.h"
 
-#include "io/istream.h"
+#include "sqfs/io.h"
 #include "util/test.h"
 #include "io/mem.h"
 
@@ -50,7 +50,7 @@ int main(int argc, char **argv)
 		if (read_diff > sizeof(read_buffer))
 			read_diff = sizeof(read_buffer);
 
-		int ret = istream_read(dummy, read_buffer, read_diff);
+		int ret = sqfs_istream_read(dummy, read_buffer, read_diff);
 		TEST_ASSERT(ret > 0);
 		TEST_ASSERT((size_t)ret <= read_diff);
 
@@ -63,7 +63,7 @@ int main(int argc, char **argv)
 
 	/* region 2 */
 	{
-		int ret = istream_skip(dummy, end2 - end1);
+		int ret = sqfs_istream_skip(dummy, end2 - end1);
 		TEST_EQUAL_I(ret, 0);
 		read_off += (end2 - end1);
 	}
@@ -72,7 +72,7 @@ int main(int argc, char **argv)
 	for (;;) {
 		size_t read_diff = sizeof(read_buffer);
 
-		int ret = istream_read(dummy, read_buffer, read_diff);
+		int ret = sqfs_istream_read(dummy, read_buffer, read_diff);
 		TEST_ASSERT(ret >= 0);
 		TEST_ASSERT((size_t)ret <= read_diff);
 

@@ -25,7 +25,12 @@
 /**
  * @file io.h
  *
- * @brief Contains the @ref sqfs_file_t interface for abstracting file I/O
+ * @brief Contains low-level interfaces for abstracting file I/O
+ *
+ * The @ref sqfs_file_t interface abstracts I/O on a random-acces sread/write
+ * file, @ref sqfs_ostream_t represents a buffered, sequential, append only
+ * data stream, @ref sqfs_istream_t represents a buffered, sequential, read only
+ * data stream.
  */
 
 /**
@@ -151,6 +156,109 @@ struct sqfs_file_t {
 	int (*truncate)(sqfs_file_t *file, sqfs_u64 size);
 };
 
+/**
+ * @interface sqfs_istream_t
+ *
+ * @extends sqfs_object_t
+ *
+ * @brief A sequential, read-only data stream.
+ */
+struct sqfs_istream_t {
+	sqfs_object_t base;
+
+	/**
+	 * @brief Peek into the data buffered in an istream
+	 *
+	 * If the internal buffer is empty, the function tries to fetch more,
+	 * which can block. It returns a positive return code if there is no
+	 * more data to be read, a negative error code if reading failed. Since
+	 * this and other functions can alter the buffer pointer and contents,
+	 * do not store the pointers returned here across function calls.
+	 *
+	 * Higher level functions like @ref sqfs_istream_read (providing a
+	 * Unix read() style API) are built on top of this primitive.
+	 *
+	 * @param strm A pointer to an sqfs_istream_t implementation.
+	 * @param out Returns a pointer into an internal buffer on success.
+	 * @param size Returns the number of bytes available in the buffer.
+	 * @param want A number of bytes that the reader would like to have.
+	 *             If there is less than this available, the implementation
+	 *             can choose to do a blocking precache.
+	 *
+	 * @return Zero on success, a negative error code on failure,
+	 *         a postive number on EOF.
+	 */
+	int (*get_buffered_data)(sqfs_istream_t *strm, const sqfs_u8 **out,
+				 size_t *size, size_t want);
+
+	/**
+	 * @brief Mark a section of the internal buffer of an istream as used
+	 *
+	 * This marks the first `count` bytes of the internal buffer as used,
+	 * forcing get_buffered_data to return data afterwards and potentially
+	 * try to load more data.
+	 *
+	 * @param strm A pointer to an sqfs_istream_t implementation.
+	 * @param count The number of bytes used up.
+	 */
+	void (*advance_buffer)(sqfs_istream_t *strm, size_t count);
+
+	/**
+	 * @brief Get the underlying filename of an input stream.
+	 *
+	 * @param strm The input stream to get the filename from.
+	 *
+	 * @return A string holding the underlying filename.
+	 */
+	const char *(*get_filename)(sqfs_istream_t *strm);
+};
+
+/**
+ * @interface sqfs_ostream_t
+ *
+ * @extends sqfs_object_t
+ *
+ * @brief An append-only data stream.
+ */
+struct sqfs_ostream_t {
+	sqfs_object_t base;
+
+	/**
+	 * @brief Append a block of data to an output stream.
+	 *
+	 * @param strm A pointer to an output stream.
+	 * @param data A pointer to the data block to append. If NULL,
+	 *             synthesize a chunk of zero bytes.
+	 * @param size The number of bytes to append.
+	 *
+	 * @return Zero on success, -1 on failure.
+	 */
+	int (*append)(sqfs_ostream_t *strm, const void *data, size_t size);
+
+	/**
+	 * @brief Process all pending, buffered data and flush it to disk.
+	 *
+	 * If the stream performs some kind of transformation (e.g. transparent
+	 * data compression), flushing caues the wrapped format to insert a
+	 * termination token. Only call this function when you are absolutely
+	 * DONE appending data, shortly before destroying the stream.
+	 *
+	 * @param strm A pointer to an output stream.
+	 *
+	 * @return Zero on success, -1 on failure.
+	 */
+	int (*flush)(sqfs_ostream_t *strm);
+
+	/**
+	 * @brief Get the underlying filename of a output stream.
+	 *
+	 * @param strm The output stream to get the filename from.
+	 *
+	 * @return A string holding the underlying filename.
+	 */
+	const char *(*get_filename)(sqfs_ostream_t *strm);
+};
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -173,6 +281,50 @@ extern "C" {
  *         failure to open the file or if an unknown flag was set.
  */
 SQFS_API sqfs_file_t *sqfs_open_file(const char *filename, sqfs_u32 flags);
+
+/**
+ * @brief Read data from an input stream
+ *
+ * @memberof sqfs_istream_t
+ *
+ * This function implements a Unix-style read() function on top of
+ * an @ref sqfs_istream_t, taking care of buffer management internally.
+ *
+ * @param strm A pointer to an input stream.
+ * @param data A buffer to read into.
+ * @param size The number of bytes to read into the buffer.
+ *
+ * @return The number of bytes actually read on success, a
+ *         negative @ref SQFS_ERROR code on failure, 0 on end-of-file.
+ */
+SQFS_API sqfs_s32 sqfs_istream_read(sqfs_istream_t *strm,
+				    void *data, size_t size);
+
+/**
+ * @brief Skip over a number of bytes in an input stream.
+ *
+ * @memberof sqfs_istream_t
+ *
+ * @param strm A pointer to an input stream.
+ * @param size The number of bytes to seek forward.
+ *
+ * @return Zero on success, a negative @ref SQFS_ERROR code on failure.
+ */
+SQFS_API int sqfs_istream_skip(sqfs_istream_t *strm, sqfs_u64 size);
+
+/**
+ * @brief Dump data from an input stream to an output stream
+ *
+ * @memberof sqfs_istream_t
+ *
+ * @param in A pointer to an input stream to read from.
+ * @param out A pointer to an output stream to append to.
+ * @param size The number of bytes to copy over.
+ *
+ * @return Zero on success, a negative @ref SQFS_ERROR code on failure.
+ */
+SQFS_API sqfs_s32 sqfs_istream_splice(sqfs_istream_t *in, sqfs_ostream_t *out,
+				      sqfs_u32 size);
 
 #ifdef __cplusplus
 }

@@ -17,10 +17,10 @@
 #include "sqfs/block.h"
 #include "sqfs/xattr.h"
 #include "sqfs/dir.h"
+#include "sqfs/io.h"
 
 #include "simple_writer.h"
 #include "compress_cli.h"
-#include "io/ostream.h"
 #include "io/file.h"
 #include "io/std.h"
 #include "compat.h"

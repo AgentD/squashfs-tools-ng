@@ -28,7 +28,7 @@ static int write_file(sqfs_writer_t *sqfs, dir_iterator_t *it,
 	}
 
 	do {
-		ret = istream_splice(in, out, cfg.block_size);
+		ret = sqfs_istream_splice(in, out, cfg.block_size);
 	} while (ret > 0);
 
 	out->flush(out);

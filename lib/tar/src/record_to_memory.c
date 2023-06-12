@@ -18,7 +18,7 @@ char *record_to_memory(sqfs_istream_t *fp, size_t size)
 	if (buffer == NULL)
 		goto fail_errno;
 
-	ret = istream_read(fp, buffer, size);
+	ret = sqfs_istream_read(fp, buffer, size);
 	if (ret < 0)
 		goto fail;
 
@@ -28,7 +28,7 @@ char *record_to_memory(sqfs_istream_t *fp, size_t size)
 	}
 
 	if (size % 512) {
-		if (istream_skip(fp, 512 - (size % 512)))
+		if (sqfs_istream_skip(fp, 512 - (size % 512)))
 			goto fail;
 	}
 

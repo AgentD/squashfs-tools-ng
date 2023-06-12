@@ -7,6 +7,7 @@
 #include "config.h"
 #include "io/mem.h"
 #include "compat.h"
+#include "sqfs/io.h"
 
 #include <stdlib.h>
 #include <string.h>

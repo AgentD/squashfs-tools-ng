@@ -41,7 +41,7 @@ sparse_map_t *read_gnu_new_sparse(sqfs_istream_t *fp, tar_header_decoded_t *out)
 	if (out->record_size < 512)
 		goto fail_format;
 
-	ret = istream_read(fp, buffer, 512);
+	ret = sqfs_istream_read(fp, buffer, 512);
 	if (ret < 0)
 		goto fail;
 
@@ -68,7 +68,7 @@ sparse_map_t *read_gnu_new_sparse(sqfs_istream_t *fp, tar_header_decoded_t *out)
 			if (out->record_size < 512)
 				goto fail_format;
 
-			ret = istream_read(fp, buffer + 512, 512);
+			ret = sqfs_istream_read(fp, buffer + 512, 512);
 			if (ret < 0)
 				goto fail;
 

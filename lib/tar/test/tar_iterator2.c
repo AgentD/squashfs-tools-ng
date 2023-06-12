@@ -76,7 +76,7 @@ int main(int argc, char **argv)
 	offset = 0;
 
 	for (;;) {
-		ret = istream_read(ti, buffer, sizeof(buffer));
+		ret = sqfs_istream_read(ti, buffer, sizeof(buffer));
 		TEST_ASSERT(ret >= 0);
 
 		if (ret == 0)

@@ -6,7 +6,7 @@
  */
 #include "config.h"
 #include "tar/tar.h"
-#include "io/ostream.h"
+#include "sqfs/io.h"
 #include "io/file.h"
 #include "util/test.h"
 #include "sqfs/xattr.h"
@@ -191,11 +191,11 @@ int main(int argc, char **argv)
 	fp = istream_open_file(STRVALUE(TESTPATH) "/" STRVALUE(TESTFILE));
 	TEST_NOT_NULL(fp);
 
-	ret = istream_read(fp, rd_buffer, sizeof(rd_buffer));
+	ret = sqfs_istream_read(fp, rd_buffer, sizeof(rd_buffer));
 	TEST_ASSERT(ret > 0);
 	TEST_EQUAL_UI(ret, sizeof(rd_buffer));
 
-	ret = istream_read(fp, rd_buffer, sizeof(rd_buffer));
+	ret = sqfs_istream_read(fp, rd_buffer, sizeof(rd_buffer));
 	TEST_EQUAL_I(ret, 0);
 
 	sqfs_drop(fp);

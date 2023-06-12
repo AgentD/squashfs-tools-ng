@@ -8,7 +8,6 @@
 #define IO_XFRM_H
 
 #include "io/istream.h"
-#include "io/ostream.h"
 #include "xfrm/stream.h"
 
 #ifdef __cplusplus

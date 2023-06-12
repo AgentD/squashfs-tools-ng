@@ -8,7 +8,6 @@
 #define IO_FILE_H
 
 #include "io/istream.h"
-#include "io/ostream.h"
 
 #if defined(_WIN32) || defined(__WINDOWS__)
 #include <handleapi.h>
