@@ -59,6 +59,7 @@ static sqfs_file_t dummy_file = {
 	dummy_write_at,
 	dummy_get_size,
 	NULL,
+	NULL,
 };
 
 static sqfs_compressor_t dummy_compressor = {

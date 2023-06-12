@@ -9,6 +9,7 @@
 
 #include "sqfs/io.h"
 #include "sqfs/error.h"
+#include "compat.h"
 
 #include <stdlib.h>
 
@@ -22,6 +23,8 @@ typedef struct {
 	bool readonly;
 	sqfs_u64 size;
 	HANDLE fd;
+
+	char name[];
 } sqfs_file_stdio_t;
 
 
@@ -37,6 +40,7 @@ static sqfs_object_t *stdio_copy(const sqfs_object_t *base)
 {
 	const sqfs_file_stdio_t *file = (const sqfs_file_stdio_t *)base;
 	sqfs_file_stdio_t *copy;
+	size_t size;
 	BOOL ret;
 
 	if (!file->readonly) {
@@ -44,11 +48,12 @@ static sqfs_object_t *stdio_copy(const sqfs_object_t *base)
 		return NULL;
 	}
 
-	copy = calloc(1, sizeof(*copy));
+	size = sizeof(*file) + strlen(file->name) + 1;
+	copy = calloc(1, size);
 	if (copy == NULL)
 		return NULL;
 
-	memcpy(copy, file, sizeof(*file));
+	memcpy(copy, file, size);
 
 	ret = DuplicateHandle(GetCurrentProcess(), file->fd,
 			      GetCurrentProcess(), &copy->fd,
@@ -148,11 +153,16 @@ static int stdio_truncate(sqfs_file_t *base, sqfs_u64 size)
 	return 0;
 }
 
+static const char *stdio_get_filename(sqfs_file_t *file)
+{
+	return ((sqfs_file_stdio_t *)file)->name;
+}
 
 sqfs_file_t *sqfs_open_file(const char *filename, sqfs_u32 flags)
 {
 	int access_flags, creation_mode, share_mode;
 	sqfs_file_stdio_t *file;
+	size_t namelen, total;
 	LARGE_INTEGER size;
 	sqfs_file_t *base;
 	WCHAR *wpath = NULL;
@@ -160,6 +170,14 @@ sqfs_file_t *sqfs_open_file(const char *filename, sqfs_u32 flags)
 
 	if (flags & ~SQFS_FILE_OPEN_ALL_FLAGS) {
 		SetLastError(ERROR_INVALID_PARAMETER);
+		return NULL;
+	}
+
+	namelen = strlen(filename);
+	total = sizeof(*file) + 1;
+
+	if (SZ_ADD_OV(total, namelen, &total)) {
+		SetLastError(ERROR_NOT_ENOUGH_MEMORY);
 		return NULL;
 	}
 
@@ -179,7 +197,7 @@ sqfs_file_t *sqfs_open_file(const char *filename, sqfs_u32 flags)
 		wpath[length] = '\0';
 	}
 
-	file = calloc(1, sizeof(*file));
+	file = calloc(1, total);
 	base = (sqfs_file_t *)file;
 	if (file == NULL) {
 		free(wpath);
@@ -188,6 +206,7 @@ sqfs_file_t *sqfs_open_file(const char *filename, sqfs_u32 flags)
 	}
 
 	sqfs_object_init(file, stdio_destroy, stdio_copy);
+	memcpy(file->name, filename, namelen);
 
 	if (flags & SQFS_FILE_OPEN_READ_ONLY) {
 		file->readonly = true;
@@ -233,5 +252,6 @@ sqfs_file_t *sqfs_open_file(const char *filename, sqfs_u32 flags)
 	base->write_at = stdio_write_at;
 	base->get_size = stdio_get_size;
 	base->truncate = stdio_truncate;
+	base->get_filename = stdio_get_filename;
 	return base;
 }

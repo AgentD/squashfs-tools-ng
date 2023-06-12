@@ -154,6 +154,15 @@ struct sqfs_file_t {
 	 *         directly to the caller.
 	 */
 	int (*truncate)(sqfs_file_t *file, sqfs_u64 size);
+
+	/**
+	 * @brief Get the original name of the file used for opening it.
+	 *
+	 * @param file A pointer to the file object.
+	 *
+	 * @return A pointer to a string representing the file name.
+	 */
+	const char *(*get_filename)(sqfs_file_t *file);
 };
 
 /**
