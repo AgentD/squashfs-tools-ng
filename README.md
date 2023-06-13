@@ -165,7 +165,7 @@ the `libsquashfs` library does not.
 The GitHub project for squashfs-tools-ng is registered with Travis-CI and
 Coverity Scan.
 
-The [Travis-CI](https://travis-ci.com/github/AgentD/squashfs-tools-ng]) page
+The [Travis-CI](https://travis-ci.com/github/AgentD/squashfs-tools-ng) page
 shows the current build status for various system configurations for the
 latest commit on master, as well as pull requests on the GitHub project page.
 
@@ -189,5 +189,5 @@ https://infraroot.at/projects/squashfs-tools-ng/index.html
 This location also hosts the Doxygen reference manual for the latest release.
 
 There is currently no official mailing list. So far I used the squashfs-tools
-mailing list on SourceForge for announcments and I will continue to do so
+mailing list on SourceForge for announcements and I will continue to do so
 until I am booted off.
