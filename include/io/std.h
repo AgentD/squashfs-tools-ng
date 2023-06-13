@@ -18,18 +18,22 @@ extern "C" {
  *
  * @memberof sqfs_istream_t
  *
- * @return A pointer to an input stream on success, NULL on failure.
+ * @param out Returns a pointer to an input stream on success.
+ *
+ * @return Zero on success, a negative @ref SQFS_ERROR number on failure
  */
-SQFS_INTERNAL sqfs_istream_t *istream_open_stdin(void);
+SQFS_INTERNAL int istream_open_stdin(sqfs_istream_t **out);
 
 /**
  * @brief Create an output stream that writes to standard output.
  *
  * @memberof sqfs_ostream_t
  *
- * @return A pointer to an output stream on success, NULL on failure.
+ * @param out Returns a pointer to an output stream on success.
+ *
+ * @return Zero on success, a negative @ref SQFS_ERROR number on failure
  */
-SQFS_INTERNAL sqfs_ostream_t *ostream_open_stdout(void);
+SQFS_INTERNAL int ostream_open_stdout(sqfs_ostream_t **out);
 
 #ifdef __cplusplus
 }

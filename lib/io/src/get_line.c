@@ -6,6 +6,7 @@
  */
 #include "internal.h"
 #include "sqfs/io.h"
+#include "sqfs/error.h"
 
 static void ltrim(char *buffer)
 {
@@ -44,17 +45,17 @@ int istream_get_line(sqfs_istream_t *strm, char **out,
 {
 	char *line = NULL, *new;
 	size_t line_len = 0;
+	int err;
 
 	for (;;) {
 		bool have_line = false;
 		size_t i, count, avail;
 		const sqfs_u8 *ptr;
-		int ret;
 
-		ret = strm->get_buffered_data(strm, &ptr, &avail, 0);
-		if (ret < 0)
-			goto fail_free;
-		if (ret > 0) {
+		err = strm->get_buffered_data(strm, &ptr, &avail, 0);
+		if (err < 0)
+			goto fail;
+		if (err > 0) {
 			if (line_len == 0)
 				goto out_eof;
 
@@ -78,8 +79,10 @@ int istream_get_line(sqfs_istream_t *strm, char **out,
 		}
 
 		new = realloc(line, line_len + count + 1);
-		if (new == NULL)
-			goto fail_errno;
+		if (new == NULL) {
+			err = SQFS_ERROR_ALLOC;
+			goto fail;
+		}
 
 		line = new;
 		memcpy(line + line_len, ptr, count);
@@ -108,13 +111,13 @@ int istream_get_line(sqfs_istream_t *strm, char **out,
 
 	*out = line;
 	return 0;
-fail_errno:
-	fprintf(stderr, "%s: " PRI_SZ ": %s.\n", strm->get_filename(strm),
-		*line_num, strerror(errno));
-fail_free:
+fail: {
+	int temp = errno;
 	free(line);
 	*out = NULL;
-	return -1;
+	errno = temp;
+	return err;
+}
 out_eof:
 	free(line);
 	*out = NULL;

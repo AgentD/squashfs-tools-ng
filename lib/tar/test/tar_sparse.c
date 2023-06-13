@@ -14,8 +14,10 @@ static void test_case_sparse(const char *path)
 	tar_header_decoded_t hdr;
 	sparse_map_t *sparse;
 	sqfs_istream_t *fp;
+	int ret;
 
-	fp = istream_open_file(path);
+	ret = istream_open_file(&fp, path);
+	TEST_EQUAL_I(ret, 0);
 	TEST_NOT_NULL(fp);
 	TEST_ASSERT(read_header(fp, &hdr) == 0);
 	TEST_EQUAL_UI(hdr.mode, S_IFREG | 0644);

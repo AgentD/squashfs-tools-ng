@@ -119,6 +119,8 @@ static int write_tree_dfs(const sqfs_tree_node_t *n)
 		if (lnk != NULL) {
 			ret = write_hard_link(out_file, &sb, name, lnk->target,
 					      record_counter++);
+			if (ret != 0)
+				sqfs_perror(name, "writing hard link", ret);
 			sqfs_free(name);
 			return ret;
 		}
@@ -143,10 +145,13 @@ static int write_tree_dfs(const sqfs_tree_node_t *n)
 			       record_counter++);
 	sqfs_xattr_list_free(xattr);
 
-	if (ret > 0)
+	if (ret == SQFS_ERROR_UNSUPPORTED) {
+		fprintf(stderr, "WARNING: %s: unsupported file type\n", name);
 		goto out_skip;
+	}
 
 	if (ret < 0) {
+		sqfs_perror(name, "writing tar header", ret);
 		sqfs_free(name);
 		return -1;
 	}
@@ -158,7 +163,9 @@ static int write_tree_dfs(const sqfs_tree_node_t *n)
 			return -1;
 		}
 
-		if (padd_file(out_file, sb.st_size)) {
+		ret = padd_file(out_file, sb.st_size);
+		if (ret) {
+			sqfs_perror(name, NULL, ret);
 			sqfs_free(name);
 			return -1;
 		}

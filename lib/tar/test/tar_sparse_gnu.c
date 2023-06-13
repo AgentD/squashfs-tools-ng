@@ -14,11 +14,13 @@ int main(int argc, char **argv)
 	tar_header_decoded_t hdr;
 	sparse_map_t *sparse;
 	sqfs_istream_t *fp;
+	int ret;
 	(void)argc; (void)argv;
 
 	TEST_ASSERT(chdir(TEST_PATH) == 0);
 
-	fp = istream_open_file("sparse-files/gnu-small.tar");
+	ret = istream_open_file(&fp, "sparse-files/gnu-small.tar");
+	TEST_EQUAL_I(ret, 0);
 	TEST_NOT_NULL(fp);
 	TEST_ASSERT(read_header(fp, &hdr) == 0);
 	TEST_EQUAL_UI(hdr.mode, S_IFREG | 0644);

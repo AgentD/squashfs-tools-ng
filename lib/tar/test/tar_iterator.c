@@ -36,10 +36,13 @@ int main(int argc, char **argv)
 	char buffer[100];
 	sqfs_s32 ret;
 	sqfs_s64 ts;
+	int iret;
 	(void)argc; (void)argv;
 
 	/* Open the file, create an iterator */
-	fp = istream_open_file(STRVALUE(TESTPATH) "/" STRVALUE(TESTFILE));
+	iret = istream_open_file(&fp,
+				 STRVALUE(TESTPATH) "/" STRVALUE(TESTFILE));
+	TEST_EQUAL_I(iret, 0);
 	TEST_NOT_NULL(fp);
 	TEST_EQUAL_UI(((sqfs_object_t *)fp)->refcount, 1);
 	it = tar_open_stream(fp);
@@ -106,7 +109,9 @@ int main(int argc, char **argv)
 	sqfs_drop(fp);
 
 	/* re-open the tar iterator */
-	fp = istream_open_file(STRVALUE(TESTPATH) "/" STRVALUE(TESTFILE));
+	iret = istream_open_file(&fp,
+				 STRVALUE(TESTPATH) "/" STRVALUE(TESTFILE));
+	TEST_EQUAL_I(iret, 0);
 	TEST_NOT_NULL(fp);
 	it = tar_open_stream(fp);
 	TEST_NOT_NULL(it);

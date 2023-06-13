@@ -22,13 +22,15 @@ extern "C" {
  * of cleaning it up. On failure, the handle remains usable, and ownership
  * remains with the caller.
  *
+ * @param out Returns a pointer to an input stream on success.
  * @param path The name to associate with the handle.
  * @param fd A native file handle.
  *
- * @return A pointer to an output stream on success, NULL on failure.
+ * @return Zero on success, a negative @ref SQFS_ERROR number on failure
  */
 SQFS_INTERNAL
-sqfs_istream_t *istream_open_handle(const char *path, sqfs_file_handle_t fd);
+int istream_open_handle(sqfs_istream_t **out, const char *path,
+			sqfs_file_handle_t fd);
 
 /**
  * @brief Create an output stream that writes to an OS native file handle.
@@ -40,26 +42,27 @@ sqfs_istream_t *istream_open_handle(const char *path, sqfs_file_handle_t fd);
  * Otherwise, it tries to use seek/truncate style APIs to create sparse output
  * files.
  *
+ * @param out Returns a pointer to an output stream on success.
  * @param path The name to associate with the handle.
  * @param fd A native file handle.
  * @param flags A combination of flags.
  *
- * @return A pointer to an output stream on success, NULL on failure.
+ * @return Zero on success, a negative @ref SQFS_ERROR number on failure
  */
-SQFS_INTERNAL sqfs_ostream_t *ostream_open_handle(const char *path,
-						  sqfs_file_handle_t hnd,
-						  int flags);
+SQFS_INTERNAL int ostream_open_handle(sqfs_ostream_t **out, const char *path,
+				      sqfs_file_handle_t hnd, int flags);
 
 /**
  * @brief Create an input stream that reads from a file.
  *
  * @memberof sqfs_istream_t
  *
+ * @param out Returns a pointer to an input stream on success.
  * @param path A path to the file to open or create.
  *
- * @return A pointer to an output stream on success, NULL on failure.
+ * @return Zero on success, a negative @ref SQFS_ERROR number on failure
  */
-SQFS_INTERNAL sqfs_istream_t *istream_open_file(const char *path);
+SQFS_INTERNAL int istream_open_file(sqfs_istream_t **out, const char *path);
 
 /**
  * @brief Create an output stream that writes to a file.
@@ -75,12 +78,14 @@ SQFS_INTERNAL sqfs_istream_t *istream_open_file(const char *path);
  * Otherwise, it tries to use seek/truncate style APIs to create sparse output
  * files.
  *
+ * @param out Returns a pointer to an output stream on success.
  * @param path A path to the file to open or create.
  * @param flags A combination of flags controling how to open/create the file.
  *
- * @return A pointer to an output stream on success, NULL on failure.
+ * @return Zero on success, a negative @ref SQFS_ERROR number on failure
  */
-SQFS_INTERNAL sqfs_ostream_t *ostream_open_file(const char *path, int flags);
+SQFS_INTERNAL int ostream_open_file(sqfs_ostream_t **out,
+				    const char *path, int flags);
 
 #ifdef __cplusplus
 }

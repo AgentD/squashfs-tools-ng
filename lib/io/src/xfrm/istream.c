@@ -6,6 +6,7 @@
  */
 #include "../internal.h"
 #include "sqfs/io.h"
+#include "sqfs/error.h"
 
 typedef struct istream_xfrm_t {
 	sqfs_istream_t base;
@@ -52,11 +53,8 @@ static int precache(sqfs_istream_t *base)
 					       BUFSZ - out_off,
 					       &in_off, &out_off, mode);
 
-		if (ret == XFRM_STREAM_ERROR) {
-			fprintf(stderr, "%s: internal error in decompressor.\n",
-				base->get_filename(base));
-			return -1;
-		}
+		if (ret == XFRM_STREAM_ERROR)
+			return SQFS_ERROR_COMPRESSOR;
 
 		xfrm->buffer_used = out_off;
 		xfrm->wrapped->advance_buffer(xfrm->wrapped, in_off);

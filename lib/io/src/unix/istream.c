@@ -6,6 +6,7 @@
  */
 #include "../internal.h"
 #include "sqfs/io.h"
+#include "sqfs/error.h"
 
 typedef struct {
 	sqfs_istream_t base;
@@ -46,9 +47,7 @@ static int precache(sqfs_istream_t *strm)
 		if (ret < 0) {
 			if (errno == EINTR)
 				continue;
-
-			perror(file->path);
-			return -1;
+			return SQFS_ERROR_IO;
 		}
 
 		file->buffer_used += ret;
@@ -90,76 +89,72 @@ static void file_advance_buffer(sqfs_istream_t *strm, size_t count)
 
 static const char *file_get_filename(sqfs_istream_t *strm)
 {
-	file_istream_t *file = (file_istream_t *)strm;
-
-	return file->path;
+	return ((file_istream_t *)strm)->path;
 }
 
 static void file_destroy(sqfs_object_t *obj)
 {
 	file_istream_t *file = (file_istream_t *)obj;
 
-	if (file->fd != STDIN_FILENO)
-		close(file->fd);
-
+	close(file->fd);
 	free(file->path);
 	free(file);
 }
 
-sqfs_istream_t *istream_open_handle(const char *path, int fd)
+int istream_open_handle(sqfs_istream_t **out, const char *path,
+			sqfs_file_handle_t fd)
 {
 	file_istream_t *file = calloc(1, sizeof(*file));
 	sqfs_istream_t *strm = (sqfs_istream_t *)file;
 
-	if (file == NULL) {
-		perror(path);
-		return NULL;
-	}
+	if (file == NULL)
+		return SQFS_ERROR_ALLOC;
 
 	sqfs_object_init(file, file_destroy, NULL);
 
 	file->path = strdup(path);
 	if (file->path == NULL) {
-		perror(path);
-		goto fail_free;
+		int temp = errno;
+		free(file);
+		errno = temp;
+		return SQFS_ERROR_ALLOC;
 	}
 
 	file->fd = dup(fd);
 	if (file->fd < 0) {
-		perror(path);
-		goto fail_path;
+		int temp = errno;
+		free(file->path);
+		free(file);
+		errno = temp;
+		return SQFS_ERROR_IO;
 	}
 	close(fd);
 
 	strm->get_buffered_data = file_get_buffered_data;
 	strm->advance_buffer = file_advance_buffer;
 	strm->get_filename = file_get_filename;
-	return strm;
-fail_path:
-	free(file->path);
-fail_free:
-	free(file);
-	return NULL;
+
+	*out = strm;
+	return 0;
 }
 
-sqfs_istream_t *istream_open_file(const char *path)
+int istream_open_file(sqfs_istream_t **out, const char *path)
 {
 	sqfs_file_handle_t fd;
-	sqfs_istream_t *out;
+	int ret;
 
-	if (sqfs_open_native_file(&fd, path, SQFS_FILE_OPEN_READ_ONLY)) {
-		perror(path);
-		return NULL;
-	}
+	ret = sqfs_open_native_file(&fd, path, SQFS_FILE_OPEN_READ_ONLY);
+	if (ret)
+		return ret;
 
-	out = istream_open_handle(path, fd);
-	if (out == NULL)
+	ret = istream_open_handle(out, path, fd);
+	if (ret != 0)
 		close(fd);
 
-	return out;
+	return ret;
 }
 
-sqfs_istream_t *istream_open_stdin(void)
+int istream_open_stdin(sqfs_istream_t **out)
 {
-	return istream_open_handle("stdin", STDIN_FILENO);
+	return istream_open_handle(out, "stdin", STDIN_FILENO);
 }

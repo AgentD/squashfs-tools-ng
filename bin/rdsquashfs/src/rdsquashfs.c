@@ -208,6 +208,7 @@ int main(int argc, char **argv)
 		break;
 	case OP_CAT: {
 		sqfs_ostream_t *fp;
+		int ret;
 
 		if (!S_ISREG(n->inode->base.mode)) {
 			fprintf(stderr, "/%s: not a regular file\n",
@@ -215,9 +216,11 @@ int main(int argc, char **argv)
 			goto out;
 		}
 
-		fp = ostream_open_stdout();
-		if (fp == NULL)
+		ret = ostream_open_stdout(&fp);
+		if (ret) {
+			sqfs_perror("stdout", "creating stream wrapper", ret);
 			goto out;
+		}
 
 		ret = sqfs_data_reader_dump(opt.cmdpath, data, n->inode,
 					    fp, super.block_size);

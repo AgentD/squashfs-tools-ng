@@ -8,9 +8,22 @@
 
 #include <stdio.h>
 
+#if defined(_WIN32) || defined(__WINDOWS__)
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#else
+#include <errno.h>
+#include <string.h>
+#endif
+
 void sqfs_perror(const char *file, const char *action, int error_code)
 {
 	const char *errstr;
+#if defined(_WIN32) || defined(__WINDOWS__)
+	DWORD syserror = GetLastError();
+#else
+	int syserror = errno;
+#endif
 
 	switch (error_code) {
 	case SQFS_ERROR_ALLOC:
@@ -76,4 +89,24 @@ void sqfs_perror(const char *file, const char *action, int error_code)
 		fprintf(stderr, "%s: ", action);
 
 	fprintf(stderr, "%s.\n", errstr);
+
+	if (error_code == SQFS_ERROR_IO) {
+#if defined(_WIN32) || defined(__WINDOWS__)
+		LPVOID msg = NULL;
+
+		FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+			       FORMAT_MESSAGE_FROM_SYSTEM |
+			       FORMAT_MESSAGE_IGNORE_INSERTS,
+			       NULL, syserror,
+			       MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+			       (LPTSTR)&msg, 0, NULL);
+
+		fprintf(stderr, "OS error: %s\n", (const char *)msg);
+
+		if (msg != NULL)
+			LocalFree(msg);
+#else
+		fprintf(stderr, "OS error: %s\n", strerror(syserror));
+#endif
+	}
 }

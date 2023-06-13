@@ -8,6 +8,7 @@
 
 #include "internal.h"
 #include "sqfs/xattr.h"
+#include "sqfs/error.h"
 #include <string.h>
 #include <stdlib.h>
 
@@ -106,16 +107,19 @@ static int write_ext_header(sqfs_ostream_t *fp, const struct stat *orig,
 			    int type, const char *name)
 {
 	struct stat sb;
+	int ret;
 
 	sb = *orig;
 	sb.st_mode = S_IFREG | 0644;
 	sb.st_size = payload_len;
 
-	if (write_header(fp, &sb, name, NULL, type))
-		return -1;
+	ret = write_header(fp, &sb, name, NULL, type);
+	if (ret)
+		return ret;
 
-	if (fp->append(fp, payload, payload_len))
-		return -1;
+	ret = fp->append(fp, payload, payload_len);
+	if (ret)
+		return ret;
 
 	return padd_file(fp, payload_len);
 }
@@ -159,11 +163,8 @@ static int write_schily_xattr(sqfs_ostream_t *fp, const struct stat *orig,
 	}
 
 	buffer = calloc(1, total_size + 1);
-	if (buffer == NULL) {
-		fprintf(stderr, "%s: generating xattr header: "
-			"out-of-memory\n", name);
-		return -1;
-	}
+	if (buffer == NULL)
+		return SQFS_ERROR_ALLOC;
 
 	ptr = buffer;
 
@@ -188,15 +189,15 @@ int write_tar_header(sqfs_ostream_t *fp,
 		     const char *slink_target, const sqfs_xattr_t *xattr,
 		     unsigned int counter)
 {
-	const char *reason;
 	char buffer[64];
-	int type;
+	int type, ret;
 
 	if (xattr != NULL) {
 		sprintf(buffer, "pax/xattr%u", counter);
 
-		if (write_schily_xattr(fp, sb, buffer, xattr))
-			return -1;
+		ret = write_schily_xattr(fp, sb, buffer, xattr);
+		if (ret)
+			return ret;
 	}
 
 	if (!S_ISLNK(sb->st_mode))
@@ -204,19 +205,20 @@ int write_tar_header(sqfs_ostream_t *fp,
 
 	if (S_ISLNK(sb->st_mode) && sb->st_size >= 100) {
 		sprintf(buffer, "gnu/target%u", counter);
-		if (write_ext_header(fp, sb, slink_target, sb->st_size,
-				     TAR_TYPE_GNU_SLINK, buffer))
-			return -1;
+		ret = write_ext_header(fp, sb, slink_target, sb->st_size,
+				       TAR_TYPE_GNU_SLINK, buffer);
+		if (ret)
+			return ret;
 		slink_target = NULL;
 	}
 
 	if (strlen(name) >= 100) {
 		sprintf(buffer, "gnu/name%u", counter);
 
-		if (write_ext_header(fp, sb, name, strlen(name),
-				     TAR_TYPE_GNU_PATH, buffer)) {
-			return -1;
-		}
+		ret = write_ext_header(fp, sb, name, strlen(name),
+				       TAR_TYPE_GNU_PATH, buffer);
+		if (ret)
+			return ret;
 
 		sprintf(buffer, "gnu/data%u", counter);
 		name = buffer;
@@ -229,18 +231,11 @@ int write_tar_header(sqfs_ostream_t *fp,
 	case S_IFREG: type = TAR_TYPE_FILE; break;
 	case S_IFDIR: type = TAR_TYPE_DIR; break;
 	case S_IFIFO: type = TAR_TYPE_FIFO; break;
-	case S_IFSOCK:
-		reason = "cannot pack socket";
-		goto out_skip;
 	default:
-		reason = "unknown type";
-		goto out_skip;
+		return SQFS_ERROR_UNSUPPORTED;
 	}
 
 	return write_header(fp, sb, name, slink_target, type);
-out_skip:
-	fprintf(stderr, "WARNING: %s: %s\n", name, reason);
-	return 1;
 }
 
 int write_hard_link(sqfs_ostream_t *fp, const struct stat *sb, const char *name,
@@ -249,15 +244,17 @@ int write_hard_link(sqfs_ostream_t *fp, const struct stat *sb, const char *name,
 	tar_header_t hdr;
 	char buffer[64];
 	size_t len;
+	int ret;
 
 	memset(&hdr, 0, sizeof(hdr));
 
 	len = strlen(target);
 	if (len >= 100) {
 		sprintf(buffer, "gnu/target%u", counter);
-		if (write_ext_header(fp, sb, target, len,
-				     TAR_TYPE_GNU_SLINK, buffer))
-			return -1;
+		ret = write_ext_header(fp, sb, target, len,
+				       TAR_TYPE_GNU_SLINK, buffer);
+		if (ret)
+			return ret;
 		sprintf(hdr.linkname, "hardlink_%u", counter);
 	} else {
 		memcpy(hdr.linkname, target, len);
@@ -266,10 +263,10 @@ int write_hard_link(sqfs_ostream_t *fp, const struct stat *sb, const char *name,
 	len = strlen(name);
 	if (len >= 100) {
 		sprintf(buffer, "gnu/name%u", counter);
-		if (write_ext_header(fp, sb, name, len,
-				     TAR_TYPE_GNU_PATH, buffer)) {
-			return -1;
-		}
+		ret = write_ext_header(fp, sb, name, len,
+				       TAR_TYPE_GNU_PATH, buffer);
+		if (ret)
+			return ret;
 		sprintf(hdr.name, "gnu/data%u", counter);
 	} else {
 		memcpy(hdr.name, name, len);

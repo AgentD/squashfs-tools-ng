@@ -188,7 +188,8 @@ int main(int argc, char **argv)
 	TEST_EQUAL_UI(wr_offset, sizeof(wr_buffer));
 	TEST_EQUAL_UI(sizeof(rd_buffer), sizeof(wr_buffer));
 
-	fp = istream_open_file(STRVALUE(TESTPATH) "/" STRVALUE(TESTFILE));
+	ret = istream_open_file(&fp, STRVALUE(TESTPATH) "/" STRVALUE(TESTFILE));
+	TEST_EQUAL_I(ret, 0);
 	TEST_NOT_NULL(fp);
 
 	ret = sqfs_istream_read(fp, rd_buffer, sizeof(rd_buffer));

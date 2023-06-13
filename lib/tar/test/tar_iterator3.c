@@ -23,7 +23,8 @@ int main(int argc, char **argv)
 
 	TEST_ASSERT(chdir(TEST_PATH) == 0);
 
-	fp = istream_open_file("format-acceptance/link_filled.tar");
+	ret = istream_open_file(&fp, "format-acceptance/link_filled.tar");
+	TEST_EQUAL_I(ret, 0);
 	TEST_NOT_NULL(fp);
 	TEST_EQUAL_UI(((sqfs_object_t *)fp)->refcount, 1);
 	it = tar_open_stream(fp);

@@ -8,6 +8,7 @@
 
 #include "io/file.h"
 #include "tar/tar.h"
+#include "common.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -23,9 +24,11 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	fp = istream_open_file(argv[1]);
-	if (fp == NULL)
+	ret = istream_open_file(&fp, argv[1]);
+	if (ret) {
+		sqfs_perror("stdint", NULL, ret);
 		return EXIT_FAILURE;
+	}
 
 	for (;;) {
 		ret = read_header(fp, &hdr);

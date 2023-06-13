@@ -42,8 +42,10 @@ sparse_map_t *read_gnu_new_sparse(sqfs_istream_t *fp, tar_header_decoded_t *out)
 		goto fail_format;
 
 	ret = sqfs_istream_read(fp, buffer, 512);
-	if (ret < 0)
+	if (ret < 0) {
+		sqfs_perror(fp->get_filename(fp), "reading sparse list", ret);
 		goto fail;
+	}
 
 	if (ret < 512)
 		goto fail_format;
@@ -69,8 +71,11 @@ sparse_map_t *read_gnu_new_sparse(sqfs_istream_t *fp, tar_header_decoded_t *out)
 				goto fail_format;
 
 			ret = sqfs_istream_read(fp, buffer + 512, 512);
-			if (ret < 0)
+			if (ret < 0) {
+				sqfs_perror(fp->get_filename(fp),
+					    "reading sparse list", ret);
 				goto fail;
+			}
 
 			if (ret < 512)
 				goto fail_format;

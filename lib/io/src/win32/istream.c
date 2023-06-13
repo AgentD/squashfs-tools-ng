@@ -6,6 +6,7 @@
  */
 #include "../internal.h"
 #include "sqfs/io.h"
+#include "sqfs/error.h"
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -52,8 +53,7 @@ static int precache(sqfs_istream_t *strm)
 			}
 
 			SetLastError(error);
-			w32_perror(file->path);
-			return -1;
+			return SQFS_ERROR_IO;
 		}
 
 		if (actual == 0) {
@@ -112,31 +112,34 @@ static void file_destroy(sqfs_object_t *obj)
 	free(file);
 }
 
-sqfs_istream_t *istream_open_handle(const char *path, HANDLE hnd)
+int istream_open_handle(sqfs_istream_t **out, const char *path, HANDLE hnd)
 {
 	file_istream_t *file = calloc(1, sizeof(*file));
 	sqfs_istream_t *strm = (sqfs_istream_t *)file;
 	BOOL ret;
 
-	if (file == NULL) {
-		perror(path);
-		return NULL;
-	}
+	if (file == NULL)
+		return SQFS_ERROR_ALLOC;
 
 	sqfs_object_init(file, file_destroy, NULL);
 
 	file->path = strdup(path);
 	if (file->path == NULL) {
-		perror(path);
-		goto fail_free;
+		DWORD temp = GetLastError();
+		free(file);
+		SetLastError(temp);
+		return SQFS_ERROR_ALLOC;
 	}
 
 	ret = DuplicateHandle(GetCurrentProcess(), hnd,
 			      GetCurrentProcess(), &file->hnd,
 			      0, FALSE, DUPLICATE_SAME_ACCESS);
 	if (!ret) {
-		w32_perror(path);
-		goto fail_path;
+		DWORD temp = GetLastError();
+		free(file->path);
+		free(file);
+		SetLastError(temp);
+		return SQFS_ERROR_IO;
 	}
 
 	CloseHandle(hnd);
@@ -144,34 +147,34 @@ sqfs_istream_t *istream_open_handle(const char *path, HANDLE hnd)
 	strm->get_buffered_data = file_get_buffered_data;
 	strm->advance_buffer = file_advance_buffer;
 	strm->get_filename = file_get_filename;
-	return strm;
-fail_path:
-	free(file->path);
-fail_free:
-	free(file);
-	return NULL;
+
+	*out = strm;
+	return 0;
 }
 
-sqfs_istream_t *istream_open_file(const char *path)
+int istream_open_file(sqfs_istream_t **out, const char *path)
 {
 	sqfs_file_handle_t hnd;
-	sqfs_istream_t *out;
+	int ret;
 
-	if (sqfs_open_native_file(&hnd, path, SQFS_FILE_OPEN_READ_ONLY)) {
-		w32_perror(path);
-		return NULL;
+	ret = sqfs_open_native_file(&hnd, path, SQFS_FILE_OPEN_READ_ONLY);
+	if (ret)
+		return ret;
+
+	ret = istream_open_handle(out, path, hnd);
+	if (ret) {
+		DWORD temp = GetLastError();
+		CloseHandle(hnd);
+		SetLastError(temp);
+		return ret;
 	}
 
-	out = istream_open_handle(path, hnd);
-	if (out == NULL)
-		CloseHandle(hnd);
-
-	return out;
+	return 0;
 }
 
-sqfs_istream_t *istream_open_stdin(void)
+int istream_open_stdin(sqfs_istream_t **out)
 {
 	HANDLE hnd = GetStdHandle(STD_INPUT_HANDLE);
 
-	return istream_open_handle("stdin", hnd);
+	return istream_open_handle(out, "stdin", hnd);
 }

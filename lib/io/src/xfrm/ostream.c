@@ -6,6 +6,7 @@
  */
 #include "../internal.h"
 #include "sqfs/io.h"
+#include "sqfs/error.h"
 
 typedef struct ostream_xfrm_t {
 	sqfs_ostream_t base;
@@ -26,7 +27,7 @@ static int flush_inbuf(ostream_xfrm_t *xfrm, bool finish)
 	const int mode = finish ? XFRM_STREAM_FLUSH_FULL :
 		XFRM_STREAM_FLUSH_NONE;
 	sqfs_u32 off_in = 0, off_out = 0;
-	int ret;
+	int ret, ioret;
 
 	while (finish || off_in < avail_in) {
 		ret = xfrm->xfrm->process_data(xfrm->xfrm,
@@ -36,15 +37,13 @@ static int flush_inbuf(ostream_xfrm_t *xfrm, bool finish)
 					       avail_out - off_out,
 					       &off_in, &off_out, mode);
 
-		if (ret == XFRM_STREAM_ERROR) {
-			fprintf(stderr,
-				"%s: internal error in compressor.\n",
-				xfrm->wrapped->get_filename(xfrm->wrapped));
-			return -1;
-		}
+		if (ret == XFRM_STREAM_ERROR)
+			return SQFS_ERROR_COMPRESSOR;
 
-		if (xfrm->wrapped->append(xfrm->wrapped, xfrm->outbuf, off_out))
-			return -1;
+		ioret = xfrm->wrapped->append(xfrm->wrapped,
+					      xfrm->outbuf, off_out);
+		if (ioret)
+			return ioret;
 
 		off_out = 0;
 
@@ -53,8 +52,10 @@ static int flush_inbuf(ostream_xfrm_t *xfrm, bool finish)
 	}
 
 	if (off_out > 0) {
-		if (xfrm->wrapped->append(xfrm->wrapped, xfrm->outbuf, off_out))
-			return -1;
+		ret = xfrm->wrapped->append(xfrm->wrapped,
+					    xfrm->outbuf, off_out);
+		if (ret)
+			return ret;
 	}
 
 	if (off_in < avail_in) {
@@ -74,8 +75,9 @@ static int xfrm_append(sqfs_ostream_t *strm, const void *data, size_t size)
 
 	while (size > 0) {
 		if (xfrm->inbuf_used >= BUFSZ) {
-			if (flush_inbuf(xfrm, false))
-				return -1;
+			int ret = flush_inbuf(xfrm, false);
+			if (ret)
+				return ret;
 		}
 
 		diff = BUFSZ - xfrm->inbuf_used;
@@ -102,8 +104,9 @@ static int xfrm_flush(sqfs_ostream_t *strm)
 	ostream_xfrm_t *xfrm = (ostream_xfrm_t *)strm;
 
 	if (xfrm->inbuf_used > 0) {
-		if (flush_inbuf(xfrm, true))
-			return -1;
+		int ret = flush_inbuf(xfrm, true);
+		if (ret)
+			return ret;
 	}
 
 	return xfrm->wrapped->flush(xfrm->wrapped);

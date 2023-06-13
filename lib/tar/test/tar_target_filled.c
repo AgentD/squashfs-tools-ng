@@ -14,11 +14,13 @@ int main(int argc, char **argv)
 	tar_header_decoded_t hdr;
 	sqfs_istream_t *fp;
 	char buffer[16];
+	int ret;
 	(void)argc; (void)argv;
 
 	TEST_ASSERT(chdir(TEST_PATH) == 0);
 
-	fp = istream_open_file("format-acceptance/link_filled.tar");
+	ret = istream_open_file(&fp, "format-acceptance/link_filled.tar");
+	TEST_EQUAL_I(ret, 0);
 	TEST_NOT_NULL(fp);
 
 	/* "deep" directory hierarchy containg 2 files */

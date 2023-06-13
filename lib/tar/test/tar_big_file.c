@@ -13,9 +13,11 @@ int main(int argc, char **argv)
 {
 	tar_header_decoded_t hdr;
 	sqfs_istream_t *fp;
+	int ret;
 	(void)argc; (void)argv;
 
-	fp = istream_open_file(STRVALUE(TESTPATH) "/" STRVALUE(TESTFILE));
+	ret = istream_open_file(&fp, STRVALUE(TESTPATH) "/" STRVALUE(TESTFILE));
+	TEST_EQUAL_I(ret, 0);
 	TEST_NOT_NULL(fp);
 	TEST_ASSERT(read_header(fp, &hdr) == 0);
 	TEST_EQUAL_UI(hdr.mode, S_IFREG | 0644);

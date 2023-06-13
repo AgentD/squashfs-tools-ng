@@ -231,7 +231,7 @@ retry:
 
 	return 0;
 fail:
-	tar->state = ret < 0 ? SQFS_ERROR_IO : 1;
+	tar->state = ret < 0 ? ret : 1;
 	return tar->state;
 }
 

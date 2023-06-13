@@ -313,9 +313,11 @@ int fstree_from_file(fstree_t *fs, const char *filename, const char *basepath)
 	sqfs_istream_t *fp;
 	int ret;
 
-	fp = istream_open_file(filename);
-	if (fp == NULL)
+	ret = istream_open_file(&fp, filename);
+	if (ret) {
+		sqfs_perror(filename, NULL, ret);
 		return -1;
+	}
 
 	ret = fstree_from_file_stream(fs, fp, basepath);
 

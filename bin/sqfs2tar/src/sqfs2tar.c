@@ -117,9 +117,9 @@ int main(int argc, char **argv)
 
 	process_args(argc, argv);
 
-	out_file = ostream_open_stdout();
-	if (out_file == NULL) {
-		perror("changing stdout to binary mode");
+	ret = ostream_open_stdout(&out_file);
+	if (ret) {
+		sqfs_perror("stdout", "creating stream wrapper", ret);
 		goto out;
 	}
 
@@ -253,8 +253,11 @@ int main(int argc, char **argv)
 	if (terminate_archive())
 		goto out;
 
-	if (out_file->flush(out_file))
+	ret = out_file->flush(out_file);
+	if (ret) {
+		sqfs_perror(out_file->get_filename(out_file), NULL, ret);
 		goto out;
+	}
 
 	status = EXIT_SUCCESS;
 out:

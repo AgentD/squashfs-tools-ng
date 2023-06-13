@@ -19,8 +19,10 @@ char *record_to_memory(sqfs_istream_t *fp, size_t size)
 		goto fail_errno;
 
 	ret = sqfs_istream_read(fp, buffer, size);
-	if (ret < 0)
+	if (ret < 0) {
+		sqfs_perror(fp->get_filename(fp), "reading tar record", ret);
 		goto fail;
+	}
 
 	if ((size_t)ret < size) {
 		fputs("Reading tar record: unexpected end-of-file.\n", stderr);
@@ -28,8 +30,12 @@ char *record_to_memory(sqfs_istream_t *fp, size_t size)
 	}
 
 	if (size % 512) {
-		if (sqfs_istream_skip(fp, 512 - (size % 512)))
+		ret = sqfs_istream_skip(fp, 512 - (size % 512));
+		if (ret) {
+			sqfs_perror(fp->get_filename(fp),
+				    "skipping tar padding", ret);
 			goto fail;
+		}
 	}
 
 	buffer[size] = '\0';

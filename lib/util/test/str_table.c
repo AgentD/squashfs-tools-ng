@@ -21,7 +21,8 @@ static int read_strings(void)
 	char *line;
 	int i;
 
-	fp = istream_open_file("words.txt");
+	i = istream_open_file(&fp, "words.txt");
+	TEST_EQUAL_I(i, 0);
 	TEST_NOT_NULL(fp);
 
 	for (i = 0; i < 1000; ++i) {

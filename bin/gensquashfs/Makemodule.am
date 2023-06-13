@@ -26,7 +26,7 @@ test_filemap_xattr_SOURCES = bin/gensquashfs/test/filemap_xattr.c \
 test_filemap_xattr_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/bin/gensquashfs/src
 test_filemap_xattr_CPPFLAGS += -DTESTPATH=$(GENDATADIR)/xattr1.txt
 test_filemap_xattr_LDADD = libio.a libsquashfs.la libfstree.a libutil.a
-test_filemap_xattr_LDADD += libcompat.a
+test_filemap_xattr_LDADD += libcommon.a libcompat.a
 
 test_fstree_from_file_SOURCES = bin/gensquashfs/test/fstree_from_file.c \
 				bin/gensquashfs/src/fstree_from_file.c \

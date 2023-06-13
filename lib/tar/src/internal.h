@@ -12,6 +12,8 @@
 #include "tar/tar.h"
 #include "tar/format.h"
 #include "util/util.h"
+#include "sqfs/error.h"
+#include "common.h"
 
 enum {
 	PAX_SIZE = 0x001,

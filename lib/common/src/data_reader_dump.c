@@ -26,8 +26,7 @@ int sqfs_data_reader_dump(const char *name, sqfs_data_reader_t *data,
 		diff = (filesz < block_size) ? filesz : block_size;
 
 		if (SQFS_IS_SPARSE_BLOCK(inode->extra[i])) {
-			if (fp->append(fp, NULL, diff))
-				return -1;
+			err = fp->append(fp, NULL, diff);
 		} else {
 			err = sqfs_data_reader_get_block(data, inode, i,
 							 &chunk_size, &chunk);
@@ -38,10 +37,10 @@ int sqfs_data_reader_dump(const char *name, sqfs_data_reader_t *data,
 
 			err = fp->append(fp, chunk, chunk_size);
 			free(chunk);
-
-			if (err)
-				return -1;
 		}
+
+		if (err)
+			goto fail_io;
 
 		filesz -= diff;
 	}
@@ -58,8 +57,11 @@ int sqfs_data_reader_dump(const char *name, sqfs_data_reader_t *data,
 		free(chunk);
 
 		if (err)
-			return -1;
+			goto fail_io;
 	}
 
 	return 0;
+fail_io:
+	sqfs_perror(fp->get_filename(fp), "writing data block", err);
+	return -1;
 }

@@ -6,6 +6,7 @@
  */
 #include "../internal.h"
 #include "sqfs/io.h"
+#include "sqfs/error.h"
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -23,10 +24,8 @@ static int write_data(file_ostream_t *file, const void *data, size_t size)
 	DWORD diff;
 
 	while (size > 0) {
-		if (!WriteFile(file->hnd, data, size, &diff, NULL)) {
-			w32_perror(file->path);
-			return -1;
-		}
+		if (!WriteFile(file->hnd, data, size, &diff, NULL))
+			return SQFS_ERROR_IO;
 
 		size -= diff;
 		data = (const char *)data + diff;
@@ -40,6 +39,7 @@ static int realize_sparse(file_ostream_t *file)
 	size_t bufsz, diff;
 	LARGE_INTEGER pos;
 	void *buffer;
+	int ret;
 
 	if (file->sparse_count == 0)
 		return 0;
@@ -48,18 +48,19 @@ static int realize_sparse(file_ostream_t *file)
 		bufsz = file->sparse_count > 1024 ? 1024 : file->sparse_count;
 		buffer = calloc(1, bufsz);
 
-		if (buffer == NULL) {
-			fputs("out-of-memory\n", stderr);
-			return -1;
-		}
+		if (buffer == NULL)
+			return SQFS_ERROR_ALLOC;
 
 		while (file->sparse_count > 0) {
 			diff = file->sparse_count > bufsz ?
 				bufsz : file->sparse_count;
 
-			if (write_data(file, buffer, diff)) {
+			ret = write_data(file, buffer, diff);
+			if (ret) {
+				DWORD temp = GetLastError();
 				free(buffer);
-				return -1;
+				SetLastError(temp);
+				return ret;
 			}
 
 			file->sparse_count -= diff;
@@ -70,34 +71,30 @@ static int realize_sparse(file_ostream_t *file)
 		pos.QuadPart = file->sparse_count;
 
 		if (!SetFilePointerEx(file->hnd, pos, NULL, FILE_CURRENT))
-			goto fail;
+			return SQFS_ERROR_IO;
 
 		if (!SetEndOfFile(file->hnd))
-			goto fail;
+			return SQFS_ERROR_IO;
 
 		file->sparse_count = 0;
 	}
 
 	return 0;
-fail:
-	w32_perror(file->path);
-	return -1;
 }
 
 static int file_append(sqfs_ostream_t *strm, const void *data, size_t size)
 {
 	file_ostream_t *file = (file_ostream_t *)strm;
+	int ret;
 
-	if (size == 0)
-		return 0;
-
-	if (data == NULL) {
+	if (size == 0 || data == NULL) {
 		file->sparse_count += size;
 		return 0;
 	}
 
-	if (realize_sparse(file))
-		return -1;
+	ret = realize_sparse(file);
+	if (ret)
+		return ret;
 
 	return write_data(file, data, size);
 }
@@ -105,14 +102,14 @@ static int file_append(sqfs_ostream_t *strm, const void *data, size_t size)
 static int file_flush(sqfs_ostream_t *strm)
 {
 	file_ostream_t *file = (file_ostream_t *)strm;
+	int ret;
 
-	if (realize_sparse(file))
-		return -1;
+	ret = realize_sparse(file);
+	if (ret)
+		return ret;
 
-	if (!FlushFileBuffers(file->hnd)) {
-		w32_perror(file->path);
-		return -1;
-	}
+	if (!FlushFileBuffers(file->hnd))
+		return SQFS_ERROR_IO;
 
 	return 0;
 }
@@ -128,36 +125,36 @@ static void file_destroy(sqfs_object_t *obj)
 
 static const char *file_get_filename(sqfs_ostream_t *strm)
 {
-	file_ostream_t *file = (file_ostream_t *)strm;
-
-	return file->path;
+	return ((file_ostream_t *)strm)->path;
 }
 
-sqfs_ostream_t *ostream_open_handle(const char *path, HANDLE hnd, int flags)
+int ostream_open_handle(sqfs_ostream_t **out, const char *path,
+			sqfs_file_handle_t hnd, int flags)
 {
 	file_ostream_t *file = calloc(1, sizeof(*file));
 	sqfs_ostream_t *strm = (sqfs_ostream_t *)file;
 	BOOL ret;
 
-	if (file == NULL) {
-		perror(path);
-		return NULL;
-	}
+	if (file == NULL)
+		return SQFS_ERROR_ALLOC;
 
 	sqfs_object_init(file, file_destroy, NULL);
 
 	file->path = strdup(path);
 	if (file->path == NULL) {
-		perror(path);
-		goto fail_free;
+		free(file);
+		return SQFS_ERROR_ALLOC;
 	}
 
 	ret = DuplicateHandle(GetCurrentProcess(), hnd,
 			      GetCurrentProcess(), &file->hnd,
 			      0, FALSE, DUPLICATE_SAME_ACCESS);
 	if (!ret) {
-		w32_perror(path);
-		goto fail_path;
+		DWORD temp = GetLastError();
+		free(file->path);
+		free(file);
+		SetLastError(temp);
+		return SQFS_ERROR_IO;
 	}
 
 	CloseHandle(hnd);
@@ -166,39 +163,36 @@ sqfs_ostream_t *ostream_open_handle(const char *path, HANDLE hnd, int flags)
 	strm->append = file_append;
 	strm->flush = file_flush;
 	strm->get_filename = file_get_filename;
-	return strm;
-fail_path:
-	free(file->path);
-fail_free:
-	free(file);
-	return NULL;
+
+	*out = strm;
+	return 0;
 }
 
-sqfs_ostream_t *ostream_open_file(const char *path, int flags)
+int ostream_open_file(sqfs_ostream_t **out, const char *path, int flags)
 {
 	sqfs_file_handle_t hnd;
-	sqfs_ostream_t *out;
+	int ret;
 
-	if (sqfs_open_native_file(&hnd, path, flags)) {
-		w32_perror(path);
-		return NULL;
-	}
+	*out = NULL;
+	ret = sqfs_open_native_file(&hnd, path, flags);
+	if (ret)
+		return ret;
 
-	if (hnd == INVALID_HANDLE_VALUE) {
-		w32_perror(path);
-		return NULL;
-	}
-
-	out = ostream_open_handle(path, hnd, flags);
-	if (out == NULL)
+	ret = ostream_open_handle(out, path, hnd, flags);
+	if (ret) {
+		DWORD temp = GetLastError();
 		CloseHandle(hnd);
+		SetLastError(temp);
+		return SQFS_ERROR_IO;
+	}
 
-	return out;
+	return 0;
 }
 
-sqfs_ostream_t *ostream_open_stdout(void)
+int ostream_open_stdout(sqfs_ostream_t **out)
 {
 	HANDLE hnd = GetStdHandle(STD_OUTPUT_HANDLE);
 
-	return ostream_open_handle("stdout", hnd, SQFS_FILE_OPEN_NO_SPARSE);
+	return ostream_open_handle(out, "stdout", hnd,
+				   SQFS_FILE_OPEN_NO_SPARSE);
 }

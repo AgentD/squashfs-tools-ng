@@ -49,9 +49,12 @@ int main(int argc, char **argv)
 	dir_entry_t *ent;
 	uint64_t offset;
 	sqfs_s32 i, ret;
+	int iret;
 	(void)argc; (void)argv;
 
-	fp = istream_open_file(STRVALUE(TESTPATH) "/" STRVALUE(TESTFILE));
+	iret = istream_open_file(&fp,
+				 STRVALUE(TESTPATH) "/" STRVALUE(TESTFILE));
+	TEST_EQUAL_I(iret, 0);
 	TEST_NOT_NULL(fp);
 	it = tar_open_stream(fp);
 	TEST_NOT_NULL(it);

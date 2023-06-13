@@ -12,12 +12,15 @@ int main(int argc, char **argv)
 	sqfs_istream_t *input_file = NULL;
 	dir_iterator_t *tar = NULL;
 	sqfs_writer_t sqfs;
+	int ret;
 
 	process_args(argc, argv);
 
-	input_file = istream_open_stdin();
-	if (input_file == NULL)
+	ret = istream_open_stdin(&input_file);
+	if (ret) {
+		sqfs_perror("stdint", "creating stream wrapper", ret);
 		return EXIT_FAILURE;
+	}
 
 	tar = tar_open_stream(input_file);
 	sqfs_drop(input_file);

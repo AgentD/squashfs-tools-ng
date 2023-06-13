@@ -11,6 +11,7 @@ static int extract(sqfs_data_reader_t *data, const sqfs_inode_generic_t *inode,
 {
 	char *ptr, *temp;
 	sqfs_ostream_t *fp;
+	int ret;
 
 	temp = alloca(strlen(prefix) + strlen(path) + 2);
 	sprintf(temp, "%s/%s", prefix, path);
@@ -21,9 +22,9 @@ static int extract(sqfs_data_reader_t *data, const sqfs_inode_generic_t *inode,
 		return -1;
 	*ptr = '/';
 
-	fp = ostream_open_file(temp, SQFS_FILE_OPEN_OVERWRITE);
-	if (fp == NULL) {
-		perror(temp);
+	ret = ostream_open_file(&fp, temp, SQFS_FILE_OPEN_OVERWRITE);
+	if (ret) {
+		sqfs_perror(temp, NULL, ret);
 		return -1;
 	}
 
@@ -32,7 +33,13 @@ static int extract(sqfs_data_reader_t *data, const sqfs_inode_generic_t *inode,
 		return -1;
 	}
 
-	fp->flush(fp);
+	ret = fp->flush(fp);
+	if (ret) {
+		sqfs_perror(fp->get_filename(fp), NULL, ret);
+		sqfs_drop(fp);
+		return -1;
+	}
+
 	sqfs_drop(fp);
 	return 0;
 }

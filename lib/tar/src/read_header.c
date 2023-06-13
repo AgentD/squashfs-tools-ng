@@ -176,8 +176,11 @@ int read_header(sqfs_istream_t *fp, tar_header_decoded_t *out)
 
 	for (;;) {
 		ret = sqfs_istream_read(fp, &hdr, sizeof(hdr));
-		if (ret < 0)
+		if (ret < 0) {
+			sqfs_perror(fp->get_filename(fp),
+				    "reading raw tar header", ret);
 			goto fail;
+		}
 
 		if ((size_t)ret < sizeof(hdr))
 			goto out_eof;
@@ -226,7 +229,12 @@ int read_header(sqfs_istream_t *fp, tar_header_decoded_t *out)
 				goto fail;
 			if (pax_size % 512)
 				pax_size += 512 - (pax_size % 512);
-			sqfs_istream_skip(fp, pax_size);
+			ret = sqfs_istream_skip(fp, pax_size);
+			if (ret) {
+				sqfs_perror(fp->get_filename(fp),
+					    "skipping padding", ret);
+				goto fail;
+			}
 			continue;
 		case TAR_TYPE_PAX:
 			clear_header(out);
