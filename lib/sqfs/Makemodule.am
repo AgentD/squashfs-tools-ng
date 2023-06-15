@@ -30,7 +30,8 @@ libsquashfs_la_SOURCES = $(LIBSQFS_HEARDS) lib/sqfs/src/id_table.c \
 	lib/sqfs/src/block_processor/block_processor.c \
 	lib/sqfs/src/block_processor/backend.c \
 	lib/sqfs/src/frag_table.c lib/sqfs/src/block_writer.c \
-	lib/sqfs/src/misc.c lib/sqfs/src/istream.c
+	lib/sqfs/src/misc.c lib/sqfs/src/istream.c lib/sqfs/src/io/istream.c \
+	lib/sqfs/src/io/ostream.c lib/sqfs/src/io/file.c
 libsquashfs_la_CPPFLAGS = $(AM_CPPFLAGS)
 libsquashfs_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBSQUASHFS_SO_VERSION)
 libsquashfs_la_CFLAGS = $(AM_CFLAGS) $(PTHREAD_CFLAGS) $(ZLIB_CFLAGS)
@@ -57,15 +58,13 @@ libsquashfs_la_SOURCES += lib/util/src/mempool.c include/util/mempool.h
 endif
 
 if WINDOWS
-libsquashfs_la_SOURCES += lib/sqfs/src/win32/io_file.c \
-		lib/sqfs/src/win32/ostream.c lib/sqfs/src/win32/istream.c
+libsquashfs_la_SOURCES += lib/sqfs/src/io/win32.c
 
 libsquashfs_la_CFLAGS += -DWINVER=0x0600 -D_WIN32_WINNT=0x0600
 libsquashfs_la_CFLAGS += -Wc,-static-libgcc
 libsquashfs_la_LDFLAGS += -no-undefined -avoid-version
 else
-libsquashfs_la_SOURCES += lib/sqfs/src/unix/io_file.c \
-		lib/sqfs/src/unix/ostream.c lib/sqfs/src/unix/istream.c
+libsquashfs_la_SOURCES += lib/sqfs/src/io/unix.c
 endif
 
 if HAVE_PTHREAD

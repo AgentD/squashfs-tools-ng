@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: LGPL-3.0-or-later */
 /*
- * io_file.c
+ * file.c
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
@@ -11,13 +11,32 @@
 #include "sqfs/error.h"
 #include "compat.h"
 
-#include <sys/stat.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
-#include <errno.h>
-#include <fcntl.h>
 
+#if defined(_WIN32) || defined(__WINDOWS__)
+static int get_file_size(HANDLE fd, sqfs_u64 *out)
+{
+	LARGE_INTEGER size;
+	if (!GetFileSizeEx(fd, &size))
+		return -1;
+	*out = size.QuadPart;
+	return 0;
+}
+#else
+#include <sys/stat.h>
+#include <unistd.h>
+#include <errno.h>
+
+static int get_file_size(int fd, sqfs_u64 *out)
+{
+	struct stat sb;
+	if (fstat(fd, &sb))
+		return -1;
+	*out = sb.st_size;
+	return 0;
+}
+#endif
 
 typedef struct {
 	sqfs_file_t base;
@@ -34,7 +53,7 @@ static void stdio_destroy(sqfs_object_t *base)
 {
 	sqfs_file_stdio_t *file = (sqfs_file_stdio_t *)base;
 
-	close(file->fd);
+	sqfs_close_native_file(file->fd);
 	free(file);
 }
 
@@ -43,10 +62,13 @@ static sqfs_object_t *stdio_copy(const sqfs_object_t *base)
 	const sqfs_file_stdio_t *file = (const sqfs_file_stdio_t *)base;
 	sqfs_file_stdio_t *copy;
 	size_t size;
-	int err;
 
 	if (!file->readonly) {
+#if defined(_WIN32) || defined(__WINDOWS__)
+		SetLastError(ERROR_NOT_SUPPORTED);
+#else
 		errno = ENOTSUP;
+#endif
 		return NULL;
 	}
 
@@ -57,17 +79,77 @@ static sqfs_object_t *stdio_copy(const sqfs_object_t *base)
 
 	memcpy(copy, file, size);
 
-	copy->fd = dup(file->fd);
-	if (copy->fd < 0) {
-		err = errno;
+	if (sqfs_duplicate_native_file(file->fd, &copy->fd)) {
+		os_error_t error = get_os_error_state();
 		free(copy);
 		copy = NULL;
-		errno = err;
+		set_os_error_state(error);
 	}
 
 	return (sqfs_object_t *)copy;
 }
 
+#if defined(_WIN32) || defined(__WINDOWS__)
+static int stdio_read_at(sqfs_file_t *base, sqfs_u64 offset,
+			 void *buffer, size_t size)
+{
+	sqfs_file_stdio_t *file = (sqfs_file_stdio_t *)base;
+	DWORD actually_read;
+	int ret;
+
+	if (offset >= file->size)
+		return SQFS_ERROR_OUT_OF_BOUNDS;
+
+	if (size == 0)
+		return 0;
+
+	if ((offset + size - 1) >= file->size)
+		return SQFS_ERROR_OUT_OF_BOUNDS;
+
+	ret = sqfs_seek_native_file(file->fd, offset, SQFS_FILE_SEEK_START);
+	if (ret)
+		return ret;
+
+	while (size > 0) {
+		if (!ReadFile(file->fd, buffer, size, &actually_read, NULL))
+			return SQFS_ERROR_IO;
+
+		size -= actually_read;
+		buffer = (char *)buffer + actually_read;
+	}
+
+	return 0;
+}
+
+static int stdio_write_at(sqfs_file_t *base, sqfs_u64 offset,
+			  const void *buffer, size_t size)
+{
+	sqfs_file_stdio_t *file = (sqfs_file_stdio_t *)base;
+	DWORD actually_read;
+	int ret;
+
+	if (size == 0)
+		return 0;
+
+	ret = sqfs_seek_native_file(file->fd, offset, SQFS_FILE_SEEK_START);
+	if (ret)
+		return ret;
+
+	while (size > 0) {
+		if (!WriteFile(file->fd, buffer, size, &actually_read, NULL))
+			return SQFS_ERROR_IO;
+
+		size -= actually_read;
+		buffer = (char *)buffer + actually_read;
+		offset += actually_read;
+
+		if (offset > file->size)
+			file->size = offset;
+	}
+
+	return 0;
+}
+#else
 static int stdio_read_at(sqfs_file_t *base, sqfs_u64 offset,
 			 void *buffer, size_t size)
 {
@@ -122,6 +204,7 @@ static int stdio_write_at(sqfs_file_t *base, sqfs_u64 offset,
 
 	return 0;
 }
+#endif
 
 static sqfs_u64 stdio_get_size(const sqfs_file_t *base)
 {
@@ -133,9 +216,12 @@ static sqfs_u64 stdio_get_size(const sqfs_file_t *base)
 static int stdio_truncate(sqfs_file_t *base, sqfs_u64 size)
 {
 	sqfs_file_stdio_t *file = (sqfs_file_stdio_t *)base;
+	int ret;
 
-	if (ftruncate(file->fd, size))
-		return SQFS_ERROR_IO;
+	ret = sqfs_seek_native_file(file->fd, size, SQFS_FILE_SEEK_START |
+				    SQFS_FILE_SEEK_TRUNCATE);
+	if (ret)
+		return ret;
 
 	file->size = size;
 	return 0;
@@ -146,53 +232,24 @@ static const char *stdio_get_filename(sqfs_file_t *file)
 	return ((sqfs_file_stdio_t *)file)->name;
 }
 
-int sqfs_open_native_file(sqfs_file_handle_t *out, const char *filename,
-			  sqfs_u32 flags)
-{
-	int open_mode;
-
-	*out = -1;
-
-	if (flags & ~SQFS_FILE_OPEN_ALL_FLAGS)
-		return SQFS_ERROR_UNSUPPORTED;
-
-	if (flags & SQFS_FILE_OPEN_READ_ONLY) {
-		open_mode = O_RDONLY;
-	} else {
-		open_mode = O_CREAT | O_RDWR;
-
-		if (flags & SQFS_FILE_OPEN_OVERWRITE) {
-			open_mode |= O_TRUNC;
-		} else {
-			open_mode |= O_EXCL;
-		}
-	}
-
-	*out = open(filename, open_mode, 0644);
-
-	return (*out < 0) ? SQFS_ERROR_IO : 0;
-}
-
 sqfs_file_t *sqfs_open_file(const char *filename, sqfs_u32 flags)
 {
+	bool file_opened = false;
 	sqfs_file_stdio_t *file;
 	size_t size, namelen;
 	sqfs_file_t *base;
-	struct stat sb;
-	int temp;
+	os_error_t err;
 
 	namelen = strlen(filename);
 	size = sizeof(*file) + 1;
 
-	if (SZ_ADD_OV(size, namelen, &size)) {
-		errno = EOVERFLOW;
-		return NULL;
-	}
+	if (SZ_ADD_OV(size, namelen, &size))
+		goto fail_no_mem;
 
 	file = calloc(1, size);
 	base = (sqfs_file_t *)file;
 	if (file == NULL)
-		return NULL;
+		goto fail_no_mem;
 
 	sqfs_object_init(file, stdio_destroy, stdio_copy);
 	memcpy(file->name, filename, namelen);
@@ -200,10 +257,10 @@ sqfs_file_t *sqfs_open_file(const char *filename, sqfs_u32 flags)
 	if (sqfs_open_native_file(&file->fd, filename, flags))
 		goto fail;
 
-	if (fstat(file->fd, &sb))
+	file_opened = true;
+	if (get_file_size(file->fd, &file->size))
 		goto fail;
 
-	file->size = sb.st_size;
 	file->readonly = (flags & SQFS_FILE_OPEN_READ_ONLY) != 0;
 
 	base->read_at = stdio_read_at;
@@ -213,10 +270,17 @@ sqfs_file_t *sqfs_open_file(const char *filename, sqfs_u32 flags)
 	base->get_filename = stdio_get_filename;
 	return base;
 fail:
-	temp = errno;
-	if (file->fd >= 0)
-		close(file->fd);
+	err = get_os_error_state();
+	if (file_opened)
+		sqfs_close_native_file(file->fd);
 	free(file);
-	errno = temp;
+	set_os_error_state(err);
+	return NULL;
+fail_no_mem:
+#if defined(_WIN32) || defined(__WINDOWS__)
+	SetLastError(ERROR_NOT_ENOUGH_MEMORY);
+#else
+	errno = ENOMEM;
+#endif
 	return NULL;
 }

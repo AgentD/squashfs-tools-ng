@@ -9,20 +9,40 @@
 
 #include "sqfs/io.h"
 #include "sqfs/error.h"
+#include "compat.h"
 
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
-#include <fcntl.h>
+
+#if defined(_WIN32) || defined(__WINDOWS__)
+static SSIZE_T read(HANDLE fd, void *ptr, size_t size)
+{
+	DWORD ret;
+
+	if (!ReadFile(fd, ptr, size, &ret, NULL)) {
+		os_error_t error = get_os_error_state();
+		set_os_error_state(error);
+
+		if (error.w32_errno == ERROR_HANDLE_EOF ||
+		    error.w32_errno == ERROR_BROKEN_PIPE) {
+			return 0;
+		}
+
+		return -1;
+	}
+
+	return ret;
+}
+#endif
 
 #define BUFSZ (131072)
 
 typedef struct {
 	sqfs_istream_t base;
 	char *path;
-	int fd;
+	sqfs_file_handle_t fd;
 
 	bool eof;
 	size_t buffer_offset;
@@ -56,8 +76,10 @@ static int precache(sqfs_istream_t *strm)
 		}
 
 		if (ret < 0) {
+#if !defined(_WIN32) && !defined(__WINDOWS__)
 			if (errno == EINTR)
 				continue;
+#endif
 			return SQFS_ERROR_IO;
 		}
 
@@ -107,7 +129,7 @@ static void file_destroy(sqfs_object_t *obj)
 {
 	file_istream_t *file = (file_istream_t *)obj;
 
-	close(file->fd);
+	sqfs_close_native_file(file->fd);
 	free(file->path);
 	free(file);
 }
@@ -117,6 +139,7 @@ int sqfs_istream_open_handle(sqfs_istream_t **out, const char *path,
 {
 	file_istream_t *file;
 	sqfs_istream_t *strm;
+	int ret;
 
 	if (flags & ~(SQFS_FILE_OPEN_ALL_FLAGS))
 		return SQFS_ERROR_UNSUPPORTED;
@@ -130,21 +153,21 @@ int sqfs_istream_open_handle(sqfs_istream_t **out, const char *path,
 
 	file->path = strdup(path);
 	if (file->path == NULL) {
-		int temp = errno;
+		os_error_t err = get_os_error_state();
 		free(file);
-		errno = temp;
+		set_os_error_state(err);
 		return SQFS_ERROR_ALLOC;
 	}
 
-	file->fd = dup(fd);
-	if (file->fd < 0) {
-		int temp = errno;
+	ret = sqfs_duplicate_native_file(fd, &file->fd);
+	if (ret) {
+		os_error_t err = get_os_error_state();
 		free(file->path);
 		free(file);
-		errno = temp;
-		return SQFS_ERROR_IO;
+		set_os_error_state(err);
+		return ret;
 	}
-	close(fd);
+	sqfs_close_native_file(fd);
 
 	strm->get_buffered_data = file_get_buffered_data;
 	strm->advance_buffer = file_advance_buffer;
@@ -171,9 +194,9 @@ int sqfs_istream_open_file(sqfs_istream_t **out, const char *path,
 
 	ret = sqfs_istream_open_handle(out, path, fd, flags);
 	if (ret != 0) {
-		int temp = errno;
-		close(fd);
-		errno = temp;
+		os_error_t err = get_os_error_state();
+		sqfs_close_native_file(fd);
+		set_os_error_state(err);
 	}
 
 	return ret;

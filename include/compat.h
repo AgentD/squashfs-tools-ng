@@ -240,6 +240,8 @@ char *strchrnul(const char *s, int c);
 #define AT_FDCWD ((int)0xDEADBEEF)
 #define AT_SYMLINK_NOFOLLOW (0x01)
 
+typedef SSIZE_T ssize_t;
+
 int fchownat(int dirfd, const char *path, int uid, int gid, int flags);
 
 int fchmodat(int dirfd, const char *path, int mode, int flags);

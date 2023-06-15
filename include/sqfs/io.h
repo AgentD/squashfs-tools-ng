@@ -101,6 +101,21 @@ typedef enum {
 } SQFS_FILE_OPEN_FLAGS;
 
 /**
+ * @enum SQFS_FILE_SEEK_FLAGS
+ *
+ * @brief Controls the behavior of @ref sqfs_seek_native_file
+ */
+typedef enum {
+	SQFS_FILE_SEEK_CURRENT = 0x00,
+	SQFS_FILE_SEEK_START = 0x01,
+	SQFS_FILE_SEEK_END = 0x02,
+	SQFS_FILE_SEEK_TRUNCATE = 0x10,
+
+	SQFS_FILE_SEEK_TYPE_MASK = 0x03,
+	SQFS_FILE_SEEK_FLAG_MASK = 0x10,
+} SQFS_FILE_SEEK_FLAGS;
+
+/**
  * @interface sqfs_file_t
  *
  * @extends sqfs_object_t
@@ -304,6 +319,36 @@ extern "C" {
  */
 SQFS_API int sqfs_open_native_file(sqfs_file_handle_t *out,
 				   const char *filename, sqfs_u32 flags);
+
+/**
+ * @brief Despose of a file handle returned by @ref sqfs_open_native_file
+ *
+ * @param fd A native OS file handle
+ */
+SQFS_API void sqfs_close_native_file(sqfs_file_handle_t fd);
+
+/**
+ * @brief Duplicate a file handle returned by @ref sqfs_open_native_file
+ *
+ * @param in A native OS file handle
+ * @param out A new file handle pointing to the same kernel object
+ *
+ * @return Zero on success, a negative @ref SQFS_ERROR code on failure.
+ */
+SQFS_API int sqfs_duplicate_native_file(sqfs_file_handle_t in,
+					sqfs_file_handle_t *out);
+
+/**
+ * @brief Set the file read/write pointer on a native file handle
+ *
+ * @param in A native OS file handle
+ * @param offset A relative offset to seek to
+ * @param flags A combination of @ref SQFS_FILE_SEEK_FLAGS flags
+ *
+ * @return Zero on success, a negative @ref SQFS_ERROR code on failure.
+ */
+SQFS_API int sqfs_seek_native_file(sqfs_file_handle_t hnd,
+				   sqfs_s64 offset, sqfs_u32 flags);
 
 /**
  * @brief Open a file through the operating systems filesystem API
