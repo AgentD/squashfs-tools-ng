@@ -79,11 +79,11 @@ static bool is_sparse_region(const tar_iterator_t *tar, sqfs_u64 *count)
 static void drop_parent(tar_istream_t *tar, int state)
 {
 	if (tar->parent != NULL) {
-		tar->parent->locked = false;
-		tar->parent = sqfs_drop(tar->parent);
-
 		if (state != 0 && tar->parent->state == 0)
 			tar->parent->state = state;
+
+		tar->parent->locked = false;
+		tar->parent = sqfs_drop(tar->parent);
 	}
 
 	tar->state = state;
