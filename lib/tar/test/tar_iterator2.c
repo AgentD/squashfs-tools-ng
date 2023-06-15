@@ -5,9 +5,9 @@
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
 #include "config.h"
-#include "io/file.h"
 #include "tar/tar.h"
 #include "util/test.h"
+#include "sqfs/io.h"
 
 static const struct {
 	uint64_t offset;
@@ -52,7 +52,7 @@ int main(int argc, char **argv)
 	int iret;
 	(void)argc; (void)argv;
 
-	iret = istream_open_file(&fp,
+	iret = sqfs_istream_open_file(&fp,
 				 STRVALUE(TESTPATH) "/" STRVALUE(TESTFILE));
 	TEST_EQUAL_I(iret, 0);
 	TEST_NOT_NULL(fp);

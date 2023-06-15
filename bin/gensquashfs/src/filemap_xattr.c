@@ -162,7 +162,7 @@ xattr_open_map_file(const char *path) {
 	sqfs_istream_t *file = NULL;
 	int ret;
 
-	ret = istream_open_file(&file, path);
+	ret = sqfs_istream_open_file(&file, path);
 	if (ret) {
 		sqfs_perror(path, NULL, ret);
 		return NULL;

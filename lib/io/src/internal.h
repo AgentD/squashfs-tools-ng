@@ -10,7 +10,6 @@
 #include "config.h"
 #include "compat.h"
 #include "io/istream.h"
-#include "io/file.h"
 #include "io/xfrm.h"
 #include "io/std.h"
 #include "xfrm/compress.h"

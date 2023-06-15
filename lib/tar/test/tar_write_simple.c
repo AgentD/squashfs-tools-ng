@@ -7,7 +7,6 @@
 #include "config.h"
 #include "tar/tar.h"
 #include "sqfs/io.h"
-#include "io/file.h"
 #include "util/test.h"
 #include "sqfs/xattr.h"
 #include "compat.h"
@@ -188,7 +187,8 @@ int main(int argc, char **argv)
 	TEST_EQUAL_UI(wr_offset, sizeof(wr_buffer));
 	TEST_EQUAL_UI(sizeof(rd_buffer), sizeof(wr_buffer));
 
-	ret = istream_open_file(&fp, STRVALUE(TESTPATH) "/" STRVALUE(TESTFILE));
+	ret = sqfs_istream_open_file(&fp,
+				STRVALUE(TESTPATH) "/" STRVALUE(TESTFILE));
 	TEST_EQUAL_I(ret, 0);
 	TEST_NOT_NULL(fp);
 

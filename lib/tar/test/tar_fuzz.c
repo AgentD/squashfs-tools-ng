@@ -6,7 +6,7 @@
  */
 #include "config.h"
 
-#include "io/file.h"
+#include "sqfs/io.h"
 #include "tar/tar.h"
 #include "common.h"
 
@@ -24,7 +24,7 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	ret = istream_open_file(&fp, argv[1]);
+	ret = sqfs_istream_open_file(&fp, argv[1]);
 	if (ret) {
 		sqfs_perror("stdint", NULL, ret);
 		return EXIT_FAILURE;

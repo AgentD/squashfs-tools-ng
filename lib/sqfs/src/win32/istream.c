@@ -1,17 +1,25 @@
-/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* SPDX-License-Identifier: LGPL-3.0-or-later */
 /*
  * istream.c
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
-#include "../internal.h"
+#define SQFS_BUILDING_DLL
+#include "config.h"
+
 #include "sqfs/io.h"
 #include "sqfs/error.h"
+
+#define BUFSZ (131072)
+
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#include <assert.h>
 
 typedef struct {
 	sqfs_istream_t base;
 	char *path;
-	int fd;
+	HANDLE hnd;
 
 	bool eof;
 	size_t buffer_offset;
@@ -22,6 +30,7 @@ typedef struct {
 static int precache(sqfs_istream_t *strm)
 {
 	file_istream_t *file = (file_istream_t *)strm;
+	DWORD diff, actual;
 
 	if (file->eof)
 		return 0;
@@ -35,22 +44,29 @@ static int precache(sqfs_istream_t *strm)
 	file->buffer_used -= file->buffer_offset;
 	file->buffer_offset = 0;
 
-	while (file->buffer_used < BUFSZ) {
-		ssize_t ret = read(file->fd, file->buffer + file->buffer_used,
-				   BUFSZ - file->buffer_used);
+	while (file->buffer_used < sizeof(file->buffer)) {
+		diff = sizeof(file->buffer) - file->buffer_used;
 
-		if (ret == 0) {
+		if (!ReadFile(file->hnd, file->buffer + file->buffer_used,
+			      diff, &actual, NULL)) {
+			DWORD error = GetLastError();
+
+			if (error == ERROR_HANDLE_EOF ||
+			    error == ERROR_BROKEN_PIPE) {
+				file->eof = true;
+				break;
+			}
+
+			SetLastError(error);
+			return SQFS_ERROR_IO;
+		}
+
+		if (actual == 0) {
 			file->eof = true;
 			break;
 		}
 
-		if (ret < 0) {
-			if (errno == EINTR)
-				continue;
-			return SQFS_ERROR_IO;
-		}
-
-		file->buffer_used += ret;
+		file->buffer_used += actual;
 	}
 
 	return 0;
@@ -96,16 +112,17 @@ static void file_destroy(sqfs_object_t *obj)
 {
 	file_istream_t *file = (file_istream_t *)obj;
 
-	close(file->fd);
+	CloseHandle(file->hnd);
 	free(file->path);
 	free(file);
 }
 
-int istream_open_handle(sqfs_istream_t **out, const char *path,
-			sqfs_file_handle_t fd)
+int sqfs_istream_open_handle(sqfs_istream_t **out, const char *path,
+			     sqfs_file_handle_t hnd)
 {
 	file_istream_t *file = calloc(1, sizeof(*file));
 	sqfs_istream_t *strm = (sqfs_istream_t *)file;
+	BOOL ret;
 
 	if (file == NULL)
 		return SQFS_ERROR_ALLOC;
@@ -114,21 +131,24 @@ int istream_open_handle(sqfs_istream_t **out, const char *path,
 
 	file->path = strdup(path);
 	if (file->path == NULL) {
-		int temp = errno;
+		DWORD temp = GetLastError();
 		free(file);
-		errno = temp;
+		SetLastError(temp);
 		return SQFS_ERROR_ALLOC;
 	}
 
-	file->fd = dup(fd);
-	if (file->fd < 0) {
-		int temp = errno;
+	ret = DuplicateHandle(GetCurrentProcess(), hnd,
+			      GetCurrentProcess(), &file->hnd,
+			      0, FALSE, DUPLICATE_SAME_ACCESS);
+	if (!ret) {
+		DWORD temp = GetLastError();
 		free(file->path);
 		free(file);
-		errno = temp;
+		SetLastError(temp);
 		return SQFS_ERROR_IO;
 	}
-	close(fd);
+
+	CloseHandle(hnd);
 
 	strm->get_buffered_data = file_get_buffered_data;
 	strm->advance_buffer = file_advance_buffer;
@@ -138,18 +158,22 @@ int istream_open_handle(sqfs_istream_t **out, const char *path,
 	return 0;
 }
 
-int istream_open_file(sqfs_istream_t **out, const char *path)
+int sqfs_istream_open_file(sqfs_istream_t **out, const char *path)
 {
-	sqfs_file_handle_t fd;
+	sqfs_file_handle_t hnd;
 	int ret;
 
-	ret = sqfs_open_native_file(&fd, path, SQFS_FILE_OPEN_READ_ONLY);
+	ret = sqfs_open_native_file(&hnd, path, SQFS_FILE_OPEN_READ_ONLY);
 	if (ret)
 		return ret;
 
-	ret = istream_open_handle(out, path, fd);
-	if (ret != 0)
-		close(fd);
+	ret = sqfs_istream_open_handle(out, path, hnd);
+	if (ret) {
+		DWORD temp = GetLastError();
+		CloseHandle(hnd);
+		SetLastError(temp);
+		return ret;
+	}
 
-	return ret;
+	return 0;
 }

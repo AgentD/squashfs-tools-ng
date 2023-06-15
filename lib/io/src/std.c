@@ -6,7 +6,6 @@
  */
 #include "config.h"
 #include "compat.h"
-#include "io/file.h"
 #include "io/std.h"
 #include "sqfs/io.h"
 
@@ -24,13 +23,13 @@ int istream_open_stdin(sqfs_istream_t **out)
 {
 	sqfs_file_handle_t hnd = GetStdHandle(STD_INPUT_HANDLE);
 
-	return istream_open_handle(out, "stdin", hnd);
+	return sqfs_istream_open_handle(out, "stdin", hnd);
 }
 
 int ostream_open_stdout(sqfs_ostream_t **out)
 {
 	sqfs_file_handle_t hnd = GetStdHandle(STD_OUTPUT_HANDLE);
 
-	return ostream_open_handle(out, "stdout", hnd,
-				   SQFS_FILE_OPEN_NO_SPARSE);
+	return sqfs_ostream_open_handle(out, "stdout", hnd,
+					SQFS_FILE_OPEN_NO_SPARSE);
 }

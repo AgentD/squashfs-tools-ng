@@ -145,7 +145,7 @@ static int fill_files(sqfs_data_reader_t *data, int flags)
 		openflags |= SQFS_FILE_OPEN_NO_SPARSE;
 
 	for (i = 0; i < num_files; ++i) {
-		ret = ostream_open_file(&fp, files[i].path, openflags);
+		ret = sqfs_ostream_open_file(&fp, files[i].path, openflags);
 		if (ret) {
 			sqfs_perror(files[i].path, NULL, ret);
 			return -1;

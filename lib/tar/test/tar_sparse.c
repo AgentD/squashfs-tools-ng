@@ -5,9 +5,9 @@
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
 #include "config.h"
-#include "io/file.h"
 #include "tar/tar.h"
 #include "util/test.h"
+#include "sqfs/io.h"
 
 static void test_case_sparse(const char *path)
 {
@@ -16,7 +16,7 @@ static void test_case_sparse(const char *path)
 	sqfs_istream_t *fp;
 	int ret;
 
-	ret = istream_open_file(&fp, path);
+	ret = sqfs_istream_open_file(&fp, path);
 	TEST_EQUAL_I(ret, 0);
 	TEST_NOT_NULL(fp);
 	TEST_ASSERT(read_header(fp, &hdr) == 0);

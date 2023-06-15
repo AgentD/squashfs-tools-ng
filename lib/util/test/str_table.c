@@ -7,10 +7,10 @@
 #include "config.h"
 
 #include "util/str_table.h"
-#include "io/istream.h"
-#include "io/file.h"
 #include "compat.h"
+#include "io/istream.h"
 #include "util/test.h"
+#include "sqfs/io.h"
 
 static char *strings[1000];
 
@@ -21,7 +21,7 @@ static int read_strings(void)
 	char *line;
 	int i;
 
-	i = istream_open_file(&fp, "words.txt");
+	i = sqfs_istream_open_file(&fp, "words.txt");
 	TEST_EQUAL_I(i, 0);
 	TEST_NOT_NULL(fp);
 

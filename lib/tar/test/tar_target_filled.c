@@ -5,9 +5,9 @@
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
 #include "config.h"
-#include "io/file.h"
 #include "tar/tar.h"
 #include "util/test.h"
+#include "sqfs/io.h"
 
 int main(int argc, char **argv)
 {
@@ -19,7 +19,7 @@ int main(int argc, char **argv)
 
 	TEST_ASSERT(chdir(TEST_PATH) == 0);
 
-	ret = istream_open_file(&fp, "format-acceptance/link_filled.tar");
+	ret = sqfs_istream_open_file(&fp, "format-acceptance/link_filled.tar");
 	TEST_EQUAL_I(ret, 0);
 	TEST_NOT_NULL(fp);
 

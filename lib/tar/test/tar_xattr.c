@@ -5,10 +5,10 @@
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
 #include "config.h"
-#include "io/file.h"
 #include "tar/tar.h"
 #include "util/test.h"
 #include "sqfs/xattr.h"
+#include "sqfs/io.h"
 
 int main(int argc, char **argv)
 {
@@ -18,7 +18,8 @@ int main(int argc, char **argv)
 	int ret;
 	(void)argc; (void)argv;
 
-	ret = istream_open_file(&fp, STRVALUE(TESTPATH) "/" STRVALUE(TESTFILE));
+	ret = sqfs_istream_open_file(&fp,
+				STRVALUE(TESTPATH) "/" STRVALUE(TESTFILE));
 	TEST_EQUAL_I(ret, 0);
 	TEST_NOT_NULL(fp);
 	TEST_ASSERT(read_header(fp, &hdr) == 0);

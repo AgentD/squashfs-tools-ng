@@ -5,10 +5,10 @@
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
 #include "config.h"
-#include "io/file.h"
 #include "tar/tar.h"
 #include "util/test.h"
 #include "sqfs/error.h"
+#include "sqfs/io.h"
 
 #ifndef TESTUID
 #define TESTUID 1000
@@ -40,7 +40,7 @@ int main(int argc, char **argv)
 	(void)argc; (void)argv;
 
 	/* Open the file, create an iterator */
-	iret = istream_open_file(&fp,
+	iret = sqfs_istream_open_file(&fp,
 				 STRVALUE(TESTPATH) "/" STRVALUE(TESTFILE));
 	TEST_EQUAL_I(iret, 0);
 	TEST_NOT_NULL(fp);
@@ -109,7 +109,7 @@ int main(int argc, char **argv)
 	sqfs_drop(fp);
 
 	/* re-open the tar iterator */
-	iret = istream_open_file(&fp,
+	iret = sqfs_istream_open_file(&fp,
 				 STRVALUE(TESTPATH) "/" STRVALUE(TESTFILE));
 	TEST_EQUAL_I(iret, 0);
 	TEST_NOT_NULL(fp);
