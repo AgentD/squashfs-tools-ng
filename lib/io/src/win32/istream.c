@@ -171,10 +171,3 @@ int istream_open_file(sqfs_istream_t **out, const char *path)
 
 	return 0;
 }
-
-int istream_open_stdin(sqfs_istream_t **out)
-{
-	HANDLE hnd = GetStdHandle(STD_INPUT_HANDLE);
-
-	return istream_open_handle(out, "stdin", hnd);
-}

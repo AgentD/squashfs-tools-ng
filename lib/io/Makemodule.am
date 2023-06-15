@@ -3,7 +3,7 @@ libio_a_SOURCES = include/io/istream.h include/io/xfrm.h \
 	include/io/dir_iterator.h include/io/mem.h lib/io/src/internal.h \
 	lib/io/src/get_line.c lib/io/src/xfrm/ostream.c \
 	lib/io/src/xfrm/istream.c lib/io/src/dir_tree_iterator.c \
-	lib/io/src/dir_entry.c lib/io/src/mem.c
+	lib/io/src/dir_entry.c lib/io/src/mem.c lib/io/src/std.c
 libio_a_CFLAGS = $(AM_CFLAGS) $(ZLIB_CFLAGS) $(XZ_CFLAGS)
 libio_a_CFLAGS += $(ZSTD_CFLAGS) $(BZIP2_CFLAGS)
 

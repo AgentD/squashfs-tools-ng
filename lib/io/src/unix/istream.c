@@ -153,8 +153,3 @@ int istream_open_file(sqfs_istream_t **out, const char *path)
 
 	return ret;
 }
-
-int istream_open_stdin(sqfs_istream_t **out)
-{
-	return istream_open_handle(out, "stdin", STDIN_FILENO);
-}

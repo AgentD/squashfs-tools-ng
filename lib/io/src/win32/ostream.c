@@ -188,11 +188,3 @@ int ostream_open_file(sqfs_ostream_t **out, const char *path, int flags)
 
 	return 0;
 }
-
-int ostream_open_stdout(sqfs_ostream_t **out)
-{
-	HANDLE hnd = GetStdHandle(STD_OUTPUT_HANDLE);
-
-	return ostream_open_handle(out, "stdout", hnd,
-				   SQFS_FILE_OPEN_NO_SPARSE);
-}
