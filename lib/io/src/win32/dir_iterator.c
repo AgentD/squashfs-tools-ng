@@ -58,11 +58,15 @@ static int dir_iterator_next(dir_iterator_t *it, dir_entry_t **out)
 
 	if (w32->state == 0 && !w32->is_first) {
 		if (!FindNextFileW(w32->dirhnd, &w32->ent)) {
-			if (GetLastError() == ERROR_NO_MORE_FILES) {
+			os_error_t err = get_os_error_state();
+
+			if (err.w32_errno == ERROR_NO_MORE_FILES) {
 				w32->state = 1;
 			} else {
 				w32->state = SQFS_ERROR_IO;
 			}
+
+			set_os_error_state(err);
 		}
 	}
 

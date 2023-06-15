@@ -265,4 +265,32 @@ int sqfs_tools_fprintf(FILE *strm, const char *fmt, ...) PRINTF_ATTRIB(2, 3);
 #define putc sqfs_tools_fputc
 #endif
 
+/****************************** error handling ******************************/
+
+#if defined(_WIN32) || defined(__WINDOWS__)
+typedef struct {
+	int unix_errno;
+	DWORD w32_errno;
+} os_error_t;
+
+static SQFS_INLINE os_error_t get_os_error_state(void)
+{
+	os_error_t out = { errno, GetLastError() };
+	return out;
+}
+
+static SQFS_INLINE void set_os_error_state(os_error_t err)
+{
+	SetLastError(err.w32_errno);
+	errno = err.unix_errno;
+}
+#else
+#include <errno.h>
+
+typedef int os_error_t;
+
+#define get_os_error_state() errno
+#define set_os_error_state(err) errno = (err)
+#endif
+
 #endif /* COMPAT_H */

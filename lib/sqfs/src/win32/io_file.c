@@ -60,7 +60,9 @@ static sqfs_object_t *stdio_copy(const sqfs_object_t *base)
 			      0, FALSE, DUPLICATE_SAME_ACCESS);
 
 	if (!ret) {
+		os_error_t err = get_os_error_state();
 		free(copy);
+		set_os_error_state(err);
 		return NULL;
 	}
 
@@ -163,7 +165,8 @@ int sqfs_open_native_file(sqfs_file_handle_t *out, const char *filename,
 {
 	int access_flags, creation_mode, share_mode;
 	WCHAR *wpath = NULL;
-	DWORD length, err;
+	os_error_t err;
+	DWORD length;
 
 	*out = INVALID_HANDLE_VALUE;
 
@@ -209,9 +212,9 @@ int sqfs_open_native_file(sqfs_file_handle_t *out, const char *filename,
 				   creation_mode, FILE_ATTRIBUTE_NORMAL,
 				   NULL);
 
-		err = GetLastError();
+		err = get_os_error_state();
 		free(wpath);
-		SetLastError(err);
+		set_os_error_state(err);
 	}
 
 	return (*out == INVALID_HANDLE_VALUE) ? SQFS_ERROR_IO : 0;
@@ -223,7 +226,7 @@ sqfs_file_t *sqfs_open_file(const char *filename, sqfs_u32 flags)
 	size_t namelen, total;
 	LARGE_INTEGER size;
 	sqfs_file_t *base;
-	DWORD err;
+	os_error_t err;
 
 	namelen = strlen(filename);
 	total = sizeof(*file) + 1;
@@ -259,10 +262,10 @@ sqfs_file_t *sqfs_open_file(const char *filename, sqfs_u32 flags)
 	base->get_filename = stdio_get_filename;
 	return base;
 fail:
-	err = GetLastError();
+	err = get_os_error_state();
 	if (file->fd != INVALID_HANDLE_VALUE)
 		CloseHandle(file->fd);
 	free(file);
-	SetLastError(err);
+	set_os_error_state(err);
 	return NULL;
 }

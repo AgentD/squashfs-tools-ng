@@ -59,9 +59,9 @@ static int realize_sparse(file_ostream_t *file)
 
 			ret = write_data(file, buffer, diff);
 			if (ret) {
-				DWORD temp = GetLastError();
+				os_error_t err = get_os_error_state();
 				free(buffer);
-				SetLastError(temp);
+				set_os_error_state(err);
 				return ret;
 			}
 
@@ -157,10 +157,10 @@ int sqfs_ostream_open_handle(sqfs_ostream_t **out, const char *path,
 			      GetCurrentProcess(), &file->hnd,
 			      0, FALSE, DUPLICATE_SAME_ACCESS);
 	if (!ret) {
-		DWORD temp = GetLastError();
+		os_error_t err = get_os_error_state();
 		free(file->path);
 		free(file);
-		SetLastError(temp);
+		set_os_error_state(err);
 		return SQFS_ERROR_IO;
 	}
 
@@ -191,9 +191,9 @@ int sqfs_ostream_open_file(sqfs_ostream_t **out, const char *path,
 
 	ret = sqfs_ostream_open_handle(out, path, hnd, flags);
 	if (ret) {
-		DWORD temp = GetLastError();
+		os_error_t err = get_os_error_state();
 		CloseHandle(hnd);
-		SetLastError(temp);
+		set_os_error_state(err);
 		return SQFS_ERROR_IO;
 	}
 

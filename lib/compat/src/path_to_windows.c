@@ -18,8 +18,7 @@ WCHAR *path_to_windows(const char *input)
 
 	length = MultiByteToWideChar(CP_UTF8, 0, input, -1, NULL, 0);
 	if (length <= 0) {
-		fprintf(stderr, "Converting UTF-8 path to UTF-16: %ld\n",
-			GetLastError());
+		w32_perror("Converting UTF-8 path to UTF-16");
 		return NULL;
 	}
 

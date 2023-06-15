@@ -49,15 +49,15 @@ static int precache(sqfs_istream_t *strm)
 
 		if (!ReadFile(file->hnd, file->buffer + file->buffer_used,
 			      diff, &actual, NULL)) {
-			DWORD error = GetLastError();
+			os_error_t error = get_os_error_state();
 
-			if (error == ERROR_HANDLE_EOF ||
-			    error == ERROR_BROKEN_PIPE) {
+			if (error.w32_errno == ERROR_HANDLE_EOF ||
+			    error.w32_errno == ERROR_BROKEN_PIPE) {
 				file->eof = true;
 				break;
 			}
 
-			SetLastError(error);
+			set_os_error_state(error);
 			return SQFS_ERROR_IO;
 		}
 
@@ -136,9 +136,9 @@ int sqfs_istream_open_handle(sqfs_istream_t **out, const char *path,
 
 	file->path = strdup(path);
 	if (file->path == NULL) {
-		DWORD temp = GetLastError();
+		os_error_t err = get_os_error_state();
 		free(file);
-		SetLastError(temp);
+		set_os_error_state(err);
 		return SQFS_ERROR_ALLOC;
 	}
 
@@ -146,10 +146,10 @@ int sqfs_istream_open_handle(sqfs_istream_t **out, const char *path,
 			      GetCurrentProcess(), &file->hnd,
 			      0, FALSE, DUPLICATE_SAME_ACCESS);
 	if (!ret) {
-		DWORD temp = GetLastError();
+		os_error_t err = get_os_error_state();
 		free(file->path);
 		free(file);
-		SetLastError(temp);
+		set_os_error_state(err);
 		return SQFS_ERROR_IO;
 	}
 
@@ -180,9 +180,9 @@ int sqfs_istream_open_file(sqfs_istream_t **out, const char *path,
 
 	ret = sqfs_istream_open_handle(out, path, hnd, flags);
 	if (ret) {
-		DWORD temp = GetLastError();
+		os_error_t err = get_os_error_state();
 		CloseHandle(hnd);
-		SetLastError(temp);
+		set_os_error_state(err);
 		return ret;
 	}
 

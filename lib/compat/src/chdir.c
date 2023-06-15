@@ -21,8 +21,7 @@ int chdir(const char *path)
 		return -1;
 
 	if (!SetCurrentDirectoryW(wpath)) {
-		fprintf(stderr, "Switching to directory '%s': %ld\n",
-			path, GetLastError());
+		w32_perror(path);
 		ret = -1;
 	} else {
 		ret = 0;

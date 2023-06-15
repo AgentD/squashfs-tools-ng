@@ -20,7 +20,10 @@ static int create_node(const sqfs_tree_node_t *n, const char *name, int flags)
 	switch (n->inode->base.mode & S_IFMT) {
 	case S_IFDIR:
 		if (!CreateDirectoryW(wpath, NULL)) {
-			if (GetLastError() != ERROR_ALREADY_EXISTS)
+			os_error_t err = get_os_error_state();
+			set_os_error_state(err);
+
+			if (err.w32_errno != ERROR_ALREADY_EXISTS)
 				goto fail;
 		}
 		break;
@@ -41,12 +44,12 @@ static int create_node(const sqfs_tree_node_t *n, const char *name, int flags)
 	free(wpath);
 	return 0;
 fail: {
-	DWORD err = GetLastError();
+	os_error_t err = get_os_error_state();
 	free(wpath);
-	SetLastError(err);
+	set_os_error_state(err);
 	w32_perror(name);
 
-	if (err == ERROR_FILE_EXISTS) {
+	if (err.w32_errno == ERROR_FILE_EXISTS) {
 		fputs("\nHINT: this could be caused by case "
 		      "sensitivity on Windows.\n", stderr);
 	}

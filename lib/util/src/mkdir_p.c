@@ -113,11 +113,11 @@ int mkdir_p(const char *path)
 		}
 
 		if (!CreateDirectoryW(wpath, NULL)) {
-			error = GetLastError();
+			os_error_t err = get_os_error_state();
+			set_os_error_state(err);
 
-			if (error != ERROR_ALREADY_EXISTS) {
-				fprintf(stderr, "Creating %s: %ld\n",
-					path, error);
+			if (err.w32_errno != ERROR_ALREADY_EXISTS) {
+				w32_perror(path);
 				goto fail;
 			}
 		}
