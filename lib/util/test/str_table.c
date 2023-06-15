@@ -21,7 +21,7 @@ static int read_strings(void)
 	char *line;
 	int i;
 
-	i = sqfs_istream_open_file(&fp, "words.txt");
+	i = sqfs_istream_open_file(&fp, "words.txt", 0);
 	TEST_EQUAL_I(i, 0);
 	TEST_NOT_NULL(fp);
 

@@ -16,7 +16,7 @@ static void test_case_sparse(const char *path)
 	sqfs_istream_t *fp;
 	int ret;
 
-	ret = sqfs_istream_open_file(&fp, path);
+	ret = sqfs_istream_open_file(&fp, path, 0);
 	TEST_EQUAL_I(ret, 0);
 	TEST_NOT_NULL(fp);
 	TEST_ASSERT(read_header(fp, &hdr) == 0);

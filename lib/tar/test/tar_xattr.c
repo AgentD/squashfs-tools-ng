@@ -19,7 +19,8 @@ int main(int argc, char **argv)
 	(void)argc; (void)argv;
 
 	ret = sqfs_istream_open_file(&fp,
-				STRVALUE(TESTPATH) "/" STRVALUE(TESTFILE));
+				     STRVALUE(TESTPATH) "/" STRVALUE(TESTFILE),
+				     0);
 	TEST_EQUAL_I(ret, 0);
 	TEST_NOT_NULL(fp);
 	TEST_ASSERT(read_header(fp, &hdr) == 0);

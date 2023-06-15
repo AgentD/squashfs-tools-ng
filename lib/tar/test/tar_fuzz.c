@@ -24,7 +24,7 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	ret = sqfs_istream_open_file(&fp, argv[1]);
+	ret = sqfs_istream_open_file(&fp, argv[1], 0);
 	if (ret) {
 		sqfs_perror("stdint", NULL, ret);
 		return EXIT_FAILURE;

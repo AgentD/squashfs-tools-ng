@@ -144,7 +144,7 @@ static const char *file_get_filename(sqfs_ostream_t *strm)
 }
 
 int sqfs_ostream_open_handle(sqfs_ostream_t **out, const char *path,
-			     sqfs_file_handle_t fd, int flags)
+			     sqfs_file_handle_t fd, sqfs_u32 flags)
 {
 	file_ostream_t *file = calloc(1, sizeof(*file));
 	sqfs_ostream_t *strm = (sqfs_ostream_t *)file;
@@ -183,12 +183,16 @@ int sqfs_ostream_open_handle(sqfs_ostream_t **out, const char *path,
 	return 0;
 }
 
-int sqfs_ostream_open_file(sqfs_ostream_t **out, const char *path, int flags)
+int sqfs_ostream_open_file(sqfs_ostream_t **out, const char *path,
+			   sqfs_u32 flags)
 {
 	sqfs_file_handle_t fd;
 	int ret;
 
 	*out = NULL;
+	if (flags & SQFS_FILE_OPEN_READ_ONLY)
+		return SQFS_ERROR_ARG_INVALID;
+
 	ret = sqfs_open_native_file(&fd, path, flags);
 	if (ret)
 		return ret;

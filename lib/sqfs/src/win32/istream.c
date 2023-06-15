@@ -118,12 +118,17 @@ static void file_destroy(sqfs_object_t *obj)
 }
 
 int sqfs_istream_open_handle(sqfs_istream_t **out, const char *path,
-			     sqfs_file_handle_t hnd)
+			     sqfs_file_handle_t hnd, sqfs_u32 flags)
 {
-	file_istream_t *file = calloc(1, sizeof(*file));
-	sqfs_istream_t *strm = (sqfs_istream_t *)file;
+	file_istream_t *file;
+	sqfs_istream_t *strm;
 	BOOL ret;
 
+	if (flags & ~(SQFS_FILE_OPEN_ALL_FLAGS))
+		return SQFS_ERROR_UNSUPPORTED;
+
+	file = calloc(1, sizeof(*file));
+	strm = (sqfs_istream_t *)file;
 	if (file == NULL)
 		return SQFS_ERROR_ALLOC;
 
@@ -158,16 +163,22 @@ int sqfs_istream_open_handle(sqfs_istream_t **out, const char *path,
 	return 0;
 }
 
-int sqfs_istream_open_file(sqfs_istream_t **out, const char *path)
+int sqfs_istream_open_file(sqfs_istream_t **out, const char *path,
+			   sqfs_u32 flags)
 {
 	sqfs_file_handle_t hnd;
 	int ret;
 
-	ret = sqfs_open_native_file(&hnd, path, SQFS_FILE_OPEN_READ_ONLY);
+	flags |= SQFS_FILE_OPEN_READ_ONLY;
+
+	if (flags & (SQFS_FILE_OPEN_OVERWRITE | SQFS_FILE_OPEN_NO_SPARSE))
+		return SQFS_ERROR_ARG_INVALID;
+
+	ret = sqfs_open_native_file(&hnd, path, flags);
 	if (ret)
 		return ret;
 
-	ret = sqfs_istream_open_handle(out, path, hnd);
+	ret = sqfs_istream_open_handle(out, path, hnd, flags);
 	if (ret) {
 		DWORD temp = GetLastError();
 		CloseHandle(hnd);

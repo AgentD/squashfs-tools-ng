@@ -53,7 +53,8 @@ int main(int argc, char **argv)
 	(void)argc; (void)argv;
 
 	iret = sqfs_istream_open_file(&fp,
-				 STRVALUE(TESTPATH) "/" STRVALUE(TESTFILE));
+				      STRVALUE(TESTPATH) "/" STRVALUE(TESTFILE),
+				      0);
 	TEST_EQUAL_I(iret, 0);
 	TEST_NOT_NULL(fp);
 	it = tar_open_stream(fp);

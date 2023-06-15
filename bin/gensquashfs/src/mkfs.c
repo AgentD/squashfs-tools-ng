@@ -160,7 +160,7 @@ int main(int argc, char **argv)
 	}
 
 	if (opt.sortfile != NULL) {
-		int ret = sqfs_istream_open_file(&sortfile, opt.sortfile);
+		int ret = sqfs_istream_open_file(&sortfile, opt.sortfile, 0);
 		if (ret) {
 			sqfs_perror(opt.sortfile, NULL, ret);
 			goto out;

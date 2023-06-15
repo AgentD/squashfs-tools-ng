@@ -77,28 +77,23 @@ typedef enum {
 	 * @brief If set, do not try to apply any character set transformations
 	 *        to the file path.
 	 *
-	 * This flag instructs the @ref sqfs_open_file API to pass the file
-	 * path to the OS dependent API as-is and not to attempt any character
-	 * set transformation. By default, if the underlying OS has a concept
-	 * of locale dependent file paths, the input path is UTF-8 and it is
-	 * transformed as needed, in order to retain a level of portabillity
-	 * and sanity.
-	 *
 	 * This flag currently only affects the Windows implementation. On
 	 * Unix-like systems, the path is always passed to the OS API as-is
 	 * and this flag has no effect.
 	 *
-	 * On Windows, the input path is converted from UTF-8 to UTF-16 and
-	 * then passed on to the wide-char based file API. If this flag is set,
-	 * the path is used as-is and passed on to the 8-bit codepage-whatever
-	 * API instead.
+	 * On Windows, the file paths are converted from UTF-8 to UTF-16 and
+	 * then passed on to the wide-char API. If this flag is set, the path
+	 * is used as-is and passed on to the 8-bit ANSI API instead, letting
+	 * the OS decide how to convert and interpret the path.
 	 */
 	SQFS_FILE_OPEN_NO_CHARSET_XFRM = 0x04,
 
 	/**
 	 * @brief Do not use sparse file I/O APIs, always fill in zero bytes
 	 *
-	 * This flag currently has no effect on @ref sqfs_open_file.
+	 * This flag currently has no effect on @ref sqfs_open_file, it changes
+	 * the behavior of @ref sqfs_ostream_open_file and
+	 * @ref sqfs_ostream_open_handle.
 	 */
 	SQFS_FILE_OPEN_NO_SPARSE = 0x08,
 
@@ -341,12 +336,13 @@ SQFS_API sqfs_file_t *sqfs_open_file(const char *filename, sqfs_u32 flags);
  * @param out Returns a pointer to an input stream on success.
  * @param path The name to associate with the handle.
  * @param fd A native file handle.
+ * @param flags A combination of @ref SQFS_FILE_OPEN_FLAGS flags.
  *
  * @return Zero on success, a negative @ref SQFS_ERROR number on failure
  */
 SQFS_API
 int sqfs_istream_open_handle(sqfs_istream_t **out, const char *path,
-			     sqfs_file_handle_t fd);
+			     sqfs_file_handle_t fd, sqfs_u32 flags);
 
 /**
  * @brief Create an output stream that writes to an OS native file handle.
@@ -361,24 +357,31 @@ int sqfs_istream_open_handle(sqfs_istream_t **out, const char *path,
  * @param out Returns a pointer to an output stream on success.
  * @param path The name to associate with the handle.
  * @param fd A native file handle.
- * @param flags A combination of flags.
+ * @param flags A combination of @ref SQFS_FILE_OPEN_FLAGS flags.
  *
  * @return Zero on success, a negative @ref SQFS_ERROR number on failure
  */
 SQFS_API int sqfs_ostream_open_handle(sqfs_ostream_t **out, const char *path,
-				      sqfs_file_handle_t hnd, int flags);
+				      sqfs_file_handle_t hnd, sqfs_u32 flags);
 
 /**
  * @brief Create an input stream that reads from a file.
  *
  * @memberof sqfs_istream_t
  *
+ * The flag @ref SQFS_FILE_OPEN_READ_ONLY is implicitly assumed to be set,
+ * since the function constructs a read-only primitive. If either the flags
+ * @ref SQFS_FILE_OPEN_OVERWRITE or @ref SQFS_FILE_OPEN_NO_SPARSE are set,
+ * an error is returend.
+ *
  * @param out Returns a pointer to an input stream on success.
  * @param path A path to the file to open or create.
+ * @param flags A combination of @ref SQFS_FILE_OPEN_FLAGS flags.
  *
  * @return Zero on success, a negative @ref SQFS_ERROR number on failure
  */
-SQFS_API int sqfs_istream_open_file(sqfs_istream_t **out, const char *path);
+SQFS_API int sqfs_istream_open_file(sqfs_istream_t **out, const char *path,
+				    sqfs_u32 flags);
 
 /**
  * @brief Create an output stream that writes to a file.
@@ -396,12 +399,12 @@ SQFS_API int sqfs_istream_open_file(sqfs_istream_t **out, const char *path);
  *
  * @param out Returns a pointer to an output stream on success.
  * @param path A path to the file to open or create.
- * @param flags A combination of flags controling how to open/create the file.
+ * @param flags A combination of @ref SQFS_FILE_OPEN_FLAGS flags.
  *
  * @return Zero on success, a negative @ref SQFS_ERROR number on failure
  */
 SQFS_API int sqfs_ostream_open_file(sqfs_ostream_t **out,
-				    const char *path, int flags);
+				    const char *path, sqfs_u32 flags);
 
 /**
  * @brief Read data from an input stream

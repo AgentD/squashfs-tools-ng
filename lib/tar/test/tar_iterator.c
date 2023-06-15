@@ -41,7 +41,8 @@ int main(int argc, char **argv)
 
 	/* Open the file, create an iterator */
 	iret = sqfs_istream_open_file(&fp,
-				 STRVALUE(TESTPATH) "/" STRVALUE(TESTFILE));
+				      STRVALUE(TESTPATH) "/" STRVALUE(TESTFILE),
+				      0);
 	TEST_EQUAL_I(iret, 0);
 	TEST_NOT_NULL(fp);
 	TEST_EQUAL_UI(((sqfs_object_t *)fp)->refcount, 1);
@@ -110,7 +111,8 @@ int main(int argc, char **argv)
 
 	/* re-open the tar iterator */
 	iret = sqfs_istream_open_file(&fp,
-				 STRVALUE(TESTPATH) "/" STRVALUE(TESTFILE));
+				      STRVALUE(TESTPATH) "/" STRVALUE(TESTFILE),
+				      0);
 	TEST_EQUAL_I(iret, 0);
 	TEST_NOT_NULL(fp);
 	it = tar_open_stream(fp);

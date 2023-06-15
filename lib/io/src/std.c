@@ -23,7 +23,7 @@ int istream_open_stdin(sqfs_istream_t **out)
 {
 	sqfs_file_handle_t hnd = GetStdHandle(STD_INPUT_HANDLE);
 
-	return sqfs_istream_open_handle(out, "stdin", hnd);
+	return sqfs_istream_open_handle(out, "stdin", hnd, 0);
 }
 
 int ostream_open_stdout(sqfs_ostream_t **out)
