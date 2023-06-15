@@ -13,12 +13,7 @@
 #include <limits.h>
 #include <stdio.h>
 
-#if defined(__GNUC__) || defined(__clang__)
-#	define PRINTF_ATTRIB(fmt, elipsis)			\
-		__attribute__ ((format (printf, fmt, elipsis)))
-#else
-#	define PRINTF_ATTRIB(fmt, elipsis)
-#endif
+/****************************** safe arithmetic ******************************/
 
 #if defined(__GNUC__) && __GNUC__ >= 5
 #	define SZ_ADD_OV __builtin_add_overflow
@@ -52,6 +47,15 @@ static inline int _sz_mul_overflow(size_t a, size_t b, size_t *res)
 #	define SZ_MUL_OV _sz_mul_overflow
 #endif
 
+/********************* printf macros & format specifiers *********************/
+
+#if defined(__GNUC__) || defined(__clang__)
+#	define PRINTF_ATTRIB(fmt, elipsis)			\
+		__attribute__ ((format (printf, fmt, elipsis)))
+#else
+#	define PRINTF_ATTRIB(fmt, elipsis)
+#endif
+
 #if defined(_WIN32) || defined(__WINDOWS__)
 #	define PRI_U64 "%I64u"
 #	define PRI_U32 "%I32u"
@@ -70,6 +74,8 @@ static inline int _sz_mul_overflow(size_t a, size_t b, size_t *res)
 #else
 #	error Cannot figure out propper printf specifier for size_t
 #endif
+
+/***************************** endian conversion *****************************/
 
 #if defined(__APPLE__)
 #include <libkern/OSByteOrder.h>
@@ -91,12 +97,11 @@ static inline int _sz_mul_overflow(size_t a, size_t b, size_t *res)
 #define le16toh(x) (x)
 #define le32toh(x) (x)
 #define le64toh(x) (x)
-
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
 #else
 #include <endian.h>
 #endif
+
+/**************************** struct stat related ****************************/
 
 #if defined(_WIN32) || defined(__WINDOWS__)
 #include "sqfs/inode.h"
@@ -165,17 +170,6 @@ struct stat {
 	(((x)&0x00000fffULL) << 8) | \
         (((y)&0xffffff00ULL) << 12) | \
 	(((y)&0x000000ffULL)) )
-
-#define AT_FDCWD ((int)0xDEADBEEF)
-#define AT_SYMLINK_NOFOLLOW (0x01)
-
-int fchownat(int dirfd, const char *path, int uid, int gid, int flags);
-
-int fchmodat(int dirfd, const char *path, int mode, int flags);
-
-int chdir(const char *path);
-
-void w32_perror(const char *str);
 #else
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -186,6 +180,8 @@ void w32_perror(const char *str);
 #include <sys/sysmacros.h>
 #endif
 #endif
+
+/***************************** missing functions *****************************/
 
 #ifndef HAVE_STRNDUP
 char *strndup(const char *str, size_t max_len);
@@ -220,10 +216,6 @@ int getopt_long(int, char *const *, const char *,
 int getsubopt(char **opt, char *const *keys, char **val);
 #endif
 
-#if defined(_WIN32) || defined(__WINDOWS__)
-WCHAR *path_to_windows(const char *input);
-#endif
-
 #ifdef HAVE_FNMATCH
 #include <fnmatch.h>
 #else
@@ -235,7 +227,29 @@ WCHAR *path_to_windows(const char *input);
 int fnmatch(const char *, const char *, int);
 #endif
 
+#ifndef HAVE_STRCHRNUL
+char *strchrnul(const char *s, int c);
+#endif
+
+/************************** Windows related madness **************************/
+
 #if defined(_WIN32) || defined(__WINDOWS__)
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+
+#define AT_FDCWD ((int)0xDEADBEEF)
+#define AT_SYMLINK_NOFOLLOW (0x01)
+
+int fchownat(int dirfd, const char *path, int uid, int gid, int flags);
+
+int fchmodat(int dirfd, const char *path, int mode, int flags);
+
+int chdir(const char *path);
+
+void w32_perror(const char *str);
+
+WCHAR *path_to_windows(const char *input);
+
 extern int sqfs_tools_main(int argc, char **argv);
 
 int sqfs_tools_fputc(int c, FILE *strm);
@@ -249,10 +263,6 @@ int sqfs_tools_fprintf(FILE *strm, const char *fmt, ...) PRINTF_ATTRIB(2, 3);
 #define fputs sqfs_tools_fputs
 #define fputc sqfs_tools_fputc
 #define putc sqfs_tools_fputc
-#endif
-
-#ifndef HAVE_STRCHRNUL
-char *strchrnul(const char *s, int c);
 #endif
 
 #endif /* COMPAT_H */
