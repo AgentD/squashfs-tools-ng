@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: LGPL-3.0-or-later */
 /*
- * istream.c
+ * stream_api.c
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */

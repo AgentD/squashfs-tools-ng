@@ -30,8 +30,9 @@ libsquashfs_la_SOURCES = $(LIBSQFS_HEARDS) lib/sqfs/src/id_table.c \
 	lib/sqfs/src/block_processor/block_processor.c \
 	lib/sqfs/src/block_processor/backend.c \
 	lib/sqfs/src/frag_table.c lib/sqfs/src/block_writer.c \
-	lib/sqfs/src/misc.c lib/sqfs/src/istream.c lib/sqfs/src/io/istream.c \
-	lib/sqfs/src/io/ostream.c lib/sqfs/src/io/file.c
+	lib/sqfs/src/misc.c lib/sqfs/src/io/istream.c \
+	lib/sqfs/src/io/ostream.c lib/sqfs/src/io/file.c \
+	lib/sqfs/src/io/stream_api.c
 libsquashfs_la_CPPFLAGS = $(AM_CPPFLAGS)
 libsquashfs_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBSQUASHFS_SO_VERSION)
 libsquashfs_la_CFLAGS = $(AM_CFLAGS) $(PTHREAD_CFLAGS) $(ZLIB_CFLAGS)
