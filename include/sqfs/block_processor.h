@@ -381,6 +381,27 @@ SQFS_API int sqfs_block_processor_finish(sqfs_block_processor_t *proc);
 SQFS_API const sqfs_block_processor_stats_t
 *sqfs_block_processor_get_stats(const sqfs_block_processor_t *proc);
 
+/**
+ * @brief Create an @ref sqfs_ostream_t that writes to a data writer
+ *
+ * @memberof sqfs_block_processor_t
+ *
+ * @param out Receives a pointer to an @ref sqfs_ostream_t on success
+ * @param filename A filename that the ostream returns when queried.
+ * @param proc A pointer to a data writer object.
+ * @param inode An optional pointer to a pointer to an inode. If not NULL, the
+ *              block processor creates a file inode and stores a pointer to
+ *              it here and keeps updating the inode as the file grows.
+ * @param flags A combination of @ref SQFS_BLK_FLAGS that can be used to
+ *              micro manage how the data is processed.
+ *
+ * @return Zero on sucess, a negative @ref SQFS_ERROR value on failure.
+ */
+SQFS_API int sqfs_block_processor_create_ostream(sqfs_ostream_t **out,
+						 const char *filename,
+						 sqfs_block_processor_t *proc,
+						 sqfs_inode_generic_t **inode,
+						 sqfs_u32 flags);
 #ifdef __cplusplus
 }
 #endif

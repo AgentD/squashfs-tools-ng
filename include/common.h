@@ -63,11 +63,6 @@ int parse_size(const char *what, size_t *out, const char *str,
 
 void print_size(sqfs_u64 size, char *buffer, bool round_to_int);
 
-sqfs_ostream_t *data_writer_ostream_create(const char *filename,
-					   sqfs_block_processor_t *proc,
-					   sqfs_inode_generic_t **inode,
-					   int flags);
-
 /*
   Parse a comma separated list (e.g. "uid=...,gid=..." of defaults for
   fstree nodes. Used for command line parsing. Returns 0 on success,

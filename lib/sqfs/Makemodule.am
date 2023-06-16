@@ -29,6 +29,7 @@ libsquashfs_la_SOURCES = $(LIBSQFS_HEARDS) lib/sqfs/src/id_table.c \
 	lib/sqfs/src/block_processor/frontend.c \
 	lib/sqfs/src/block_processor/block_processor.c \
 	lib/sqfs/src/block_processor/backend.c \
+	lib/sqfs/src/block_processor/ostream.c \
 	lib/sqfs/src/frag_table.c lib/sqfs/src/block_writer.c \
 	lib/sqfs/src/misc.c lib/sqfs/src/io/istream.c \
 	lib/sqfs/src/io/ostream.c lib/sqfs/src/io/file.c \

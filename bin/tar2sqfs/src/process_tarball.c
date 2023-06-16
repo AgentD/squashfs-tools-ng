@@ -16,10 +16,10 @@ static int write_file(sqfs_writer_t *sqfs, dir_iterator_t *it,
 	if (no_tail_pack && ent->size > cfg.block_size)
 		flags |= SQFS_BLK_DONT_FRAGMENT;
 
-	out = data_writer_ostream_create(ent->name, sqfs->data,
-					 &(n->data.file.inode), flags);
-	if (out == NULL)
-		return -1;
+	ret = sqfs_block_processor_create_ostream(&out, ent->name, sqfs->data,
+						  &(n->data.file.inode), flags);
+	if (ret)
+		return ret;
 
 	ret = it->open_file_ro(it, &in);
 	if (ret != 0) {
@@ -31,7 +31,9 @@ static int write_file(sqfs_writer_t *sqfs, dir_iterator_t *it,
 		ret = sqfs_istream_splice(in, out, cfg.block_size);
 	} while (ret > 0);
 
-	out->flush(out);
+	if (ret == 0)
+		ret = out->flush(out);
+
 	sqfs_drop(out);
 	sqfs_drop(in);
 	return ret;

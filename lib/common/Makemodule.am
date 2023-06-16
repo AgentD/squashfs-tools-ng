@@ -3,11 +3,10 @@ libcommon_a_SOURCES = include/common.h include/simple_writer.h \
 	lib/common/src/hardlink.c lib/common/src/print_version.c \
 	lib/common/src/data_reader_dump.c lib/common/src/compress.c \
 	lib/common/src/comp_opt.c lib/common/src/data_writer.c \
-	lib/common/src/data_writer_ostream.c lib/common/src/perror.c \
 	lib/common/src/parse_size.c lib/common/src/print_size.c \
 	lib/common/src/writer/init.c lib/common/src/writer/cleanup.c \
 	lib/common/src/writer/serialize_fstree.c lib/common/src/writer/finish.c\
-	lib/common/src/fstree_cli.c
+	lib/common/src/fstree_cli.c lib/common/src/perror.c
 libcommon_a_CFLAGS = $(AM_CFLAGS) $(LZO_CFLAGS)
 
 if WITH_LZO
