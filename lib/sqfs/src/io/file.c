@@ -53,7 +53,7 @@ static void stdio_destroy(sqfs_object_t *base)
 {
 	sqfs_file_stdio_t *file = (sqfs_file_stdio_t *)base;
 
-	sqfs_close_native_file(file->fd);
+	sqfs_native_file_close(file->fd);
 	free(file);
 }
 
@@ -79,7 +79,7 @@ static sqfs_object_t *stdio_copy(const sqfs_object_t *base)
 
 	memcpy(copy, file, size);
 
-	if (sqfs_duplicate_native_file(file->fd, &copy->fd)) {
+	if (sqfs_native_file_duplicate(file->fd, &copy->fd)) {
 		os_error_t error = get_os_error_state();
 		free(copy);
 		copy = NULL;
@@ -106,7 +106,7 @@ static int stdio_read_at(sqfs_file_t *base, sqfs_u64 offset,
 	if ((offset + size - 1) >= file->size)
 		return SQFS_ERROR_OUT_OF_BOUNDS;
 
-	ret = sqfs_seek_native_file(file->fd, offset, SQFS_FILE_SEEK_START);
+	ret = sqfs_native_file_seek(file->fd, offset, SQFS_FILE_SEEK_START);
 	if (ret)
 		return ret;
 
@@ -131,7 +131,7 @@ static int stdio_write_at(sqfs_file_t *base, sqfs_u64 offset,
 	if (size == 0)
 		return 0;
 
-	ret = sqfs_seek_native_file(file->fd, offset, SQFS_FILE_SEEK_START);
+	ret = sqfs_native_file_seek(file->fd, offset, SQFS_FILE_SEEK_START);
 	if (ret)
 		return ret;
 
@@ -218,7 +218,7 @@ static int stdio_truncate(sqfs_file_t *base, sqfs_u64 size)
 	sqfs_file_stdio_t *file = (sqfs_file_stdio_t *)base;
 	int ret;
 
-	ret = sqfs_seek_native_file(file->fd, size, SQFS_FILE_SEEK_START |
+	ret = sqfs_native_file_seek(file->fd, size, SQFS_FILE_SEEK_START |
 				    SQFS_FILE_SEEK_TRUNCATE);
 	if (ret)
 		return ret;
@@ -254,7 +254,7 @@ sqfs_file_t *sqfs_open_file(const char *filename, sqfs_u32 flags)
 	sqfs_object_init(file, stdio_destroy, stdio_copy);
 	memcpy(file->name, filename, namelen);
 
-	if (sqfs_open_native_file(&file->fd, filename, flags))
+	if (sqfs_native_file_open(&file->fd, filename, flags))
 		goto fail;
 
 	file_opened = true;
@@ -272,7 +272,7 @@ sqfs_file_t *sqfs_open_file(const char *filename, sqfs_u32 flags)
 fail:
 	err = get_os_error_state();
 	if (file_opened)
-		sqfs_close_native_file(file->fd);
+		sqfs_native_file_close(file->fd);
 	free(file);
 	set_os_error_state(err);
 	return NULL;

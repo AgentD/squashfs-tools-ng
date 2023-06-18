@@ -86,7 +86,7 @@ static int realize_sparse(file_ostream_t *file)
 
 		free(buffer);
 	} else {
-		ret = sqfs_seek_native_file(file->fd, file->sparse_count,
+		ret = sqfs_native_file_seek(file->fd, file->sparse_count,
 					    SQFS_FILE_SEEK_CURRENT |
 					    SQFS_FILE_SEEK_TRUNCATE);
 		if (ret)
@@ -139,7 +139,7 @@ static void file_destroy(sqfs_object_t *obj)
 {
 	file_ostream_t *file = (file_ostream_t *)obj;
 
-	sqfs_close_native_file(file->fd);
+	sqfs_native_file_close(file->fd);
 	free(file->path);
 	free(file);
 }
@@ -175,7 +175,7 @@ int sqfs_ostream_open_handle(sqfs_ostream_t **out, const char *path,
 		return SQFS_ERROR_ALLOC;
 	}
 
-	ret = sqfs_duplicate_native_file(fd, &file->fd);
+	ret = sqfs_native_file_duplicate(fd, &file->fd);
 	if (ret) {
 		os_error_t err = get_os_error_state();
 		free(file->path);
@@ -184,7 +184,7 @@ int sqfs_ostream_open_handle(sqfs_ostream_t **out, const char *path,
 		return ret;
 	}
 
-	sqfs_close_native_file(fd);
+	sqfs_native_file_close(fd);
 
 	file->flags = flags;
 	strm->append = file_append;
@@ -205,14 +205,14 @@ int sqfs_ostream_open_file(sqfs_ostream_t **out, const char *path,
 	if (flags & SQFS_FILE_OPEN_READ_ONLY)
 		return SQFS_ERROR_ARG_INVALID;
 
-	ret = sqfs_open_native_file(&fd, path, flags);
+	ret = sqfs_native_file_open(&fd, path, flags);
 	if (ret)
 		return ret;
 
 	ret = sqfs_ostream_open_handle(out, path, fd, flags);
 	if (ret) {
 		os_error_t err = get_os_error_state();
-		sqfs_close_native_file(fd);
+		sqfs_native_file_close(fd);
 		set_os_error_state(err);
 		return ret;
 	}

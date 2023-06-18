@@ -300,14 +300,18 @@ extern "C" {
  * @brief Open a native file handle
  *
  * On Unix-like systems, this generates a file descriptor that needs to be
- * closed with close(). If opening fails, errno is preseved.
+ * closed with close() (or @ref sqfs_native_file_close). If opening fails,
+ * errno is preseved.
  *
  * On Windows, a HANDLE is created that needs to be disposed of
- * using CloseHandle(). If opening fails, GetLastError() is preseved.
- * If @ref SQFS_FILE_OPEN_NO_CHARSET_XFRM is set, the given string is passed
- * to the ANSI API that interprets the string according to the the currently
- * set codepage. If the flag is not present, the string is assumed to be UTF-8,
- * the function internally converts it to UTF-16 and uses the wide char API.
+ * using CloseHandle(), or alternatively through @ref sqfs_native_file_close.
+ * If opening fails, GetLastError() is preseved.
+ *
+ * On Windows, if @ref SQFS_FILE_OPEN_NO_CHARSET_XFRM is set, the given string
+ * is passed to the ANSI API that interprets the string according to the the
+ * currently set codepage. If the flag is not present, the string is assumed
+ * to be UTF-8,the function internally converts it to UTF-16 and uses the wide
+ * char API.
  *
  * @param out Returns a native file handle on success
  * @param filename The path to the file to open
@@ -317,25 +321,25 @@ extern "C" {
  * @return Zero on success, a negative @ref SQFS_ERROR code on failure.
  *         If an unknown flag was used, @ref SQFS_ERROR_UNSUPPORTED is returned.
  */
-SQFS_API int sqfs_open_native_file(sqfs_file_handle_t *out,
+SQFS_API int sqfs_native_file_open(sqfs_file_handle_t *out,
 				   const char *filename, sqfs_u32 flags);
 
 /**
- * @brief Despose of a file handle returned by @ref sqfs_open_native_file
+ * @brief Despose of a file handle returned by @ref sqfs_native_file_open
  *
  * @param fd A native OS file handle
  */
-SQFS_API void sqfs_close_native_file(sqfs_file_handle_t fd);
+SQFS_API void sqfs_native_file_close(sqfs_file_handle_t fd);
 
 /**
- * @brief Duplicate a file handle returned by @ref sqfs_open_native_file
+ * @brief Duplicate a file handle returned by @ref sqfs_native_file_open
  *
  * @param in A native OS file handle
  * @param out A new file handle pointing to the same kernel object
  *
  * @return Zero on success, a negative @ref SQFS_ERROR code on failure.
  */
-SQFS_API int sqfs_duplicate_native_file(sqfs_file_handle_t in,
+SQFS_API int sqfs_native_file_duplicate(sqfs_file_handle_t in,
 					sqfs_file_handle_t *out);
 
 /**
@@ -347,7 +351,7 @@ SQFS_API int sqfs_duplicate_native_file(sqfs_file_handle_t in,
  *
  * @return Zero on success, a negative @ref SQFS_ERROR code on failure.
  */
-SQFS_API int sqfs_seek_native_file(sqfs_file_handle_t hnd,
+SQFS_API int sqfs_native_file_seek(sqfs_file_handle_t hnd,
 				   sqfs_s64 offset, sqfs_u32 flags);
 
 /**

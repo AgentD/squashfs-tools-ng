@@ -14,7 +14,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
-int sqfs_open_native_file(sqfs_file_handle_t *out, const char *filename,
+int sqfs_native_file_open(sqfs_file_handle_t *out, const char *filename,
 			  sqfs_u32 flags)
 {
 	int access_flags, creation_mode, share_mode;
@@ -74,12 +74,12 @@ int sqfs_open_native_file(sqfs_file_handle_t *out, const char *filename,
 	return (*out == INVALID_HANDLE_VALUE) ? SQFS_ERROR_IO : 0;
 }
 
-void sqfs_close_native_file(sqfs_file_handle_t hnd)
+void sqfs_native_file_close(sqfs_file_handle_t hnd)
 {
 	CloseHandle(hnd);
 }
 
-int sqfs_duplicate_native_file(sqfs_file_handle_t in, sqfs_file_handle_t *out)
+int sqfs_native_file_duplicate(sqfs_file_handle_t in, sqfs_file_handle_t *out)
 {
 	HANDLE hProc = GetCurrentProcess();
 	BOOL ret = DuplicateHandle(hProc, in, hProc, out, 0,
@@ -88,7 +88,7 @@ int sqfs_duplicate_native_file(sqfs_file_handle_t in, sqfs_file_handle_t *out)
 	return ret ? 0 : SQFS_ERROR_IO;
 }
 
-int sqfs_seek_native_file(sqfs_file_handle_t fd,
+int sqfs_native_file_seek(sqfs_file_handle_t fd,
 			  sqfs_s64 offset, sqfs_u32 flags)
 {
 	LARGE_INTEGER pos;

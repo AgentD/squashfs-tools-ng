@@ -14,7 +14,7 @@
 #include <fcntl.h>
 #include <errno.h>
 
-int sqfs_open_native_file(sqfs_file_handle_t *out, const char *filename,
+int sqfs_native_file_open(sqfs_file_handle_t *out, const char *filename,
 			  sqfs_u32 flags)
 {
 	int open_mode;
@@ -41,19 +41,19 @@ int sqfs_open_native_file(sqfs_file_handle_t *out, const char *filename,
 	return (*out < 0) ? SQFS_ERROR_IO : 0;
 }
 
-void sqfs_close_native_file(sqfs_file_handle_t fd)
+void sqfs_native_file_close(sqfs_file_handle_t fd)
 {
 	while (close(fd) != 0 && errno == EINTR)
 		;
 }
 
-int sqfs_duplicate_native_file(sqfs_file_handle_t in, sqfs_file_handle_t *out)
+int sqfs_native_file_duplicate(sqfs_file_handle_t in, sqfs_file_handle_t *out)
 {
 	*out = dup(in);
 	return (*out < 0) ? SQFS_ERROR_IO : 0;
 }
 
-int sqfs_seek_native_file(sqfs_file_handle_t fd,
+int sqfs_native_file_seek(sqfs_file_handle_t fd,
 			  sqfs_s64 offset, sqfs_u32 flags)
 {
 	int whence;
