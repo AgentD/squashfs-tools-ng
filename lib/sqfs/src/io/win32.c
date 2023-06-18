@@ -94,7 +94,7 @@ int sqfs_native_file_seek(sqfs_file_handle_t fd,
 	LARGE_INTEGER pos;
 	DWORD whence;
 
-	switch (type & SQFS_FILE_SEEK_TYPE_MASK) {
+	switch (flags & SQFS_FILE_SEEK_TYPE_MASK) {
 	case SQFS_FILE_SEEK_START:   whence = FILE_BEGIN; break;
 	case SQFS_FILE_SEEK_CURRENT: whence = FILE_CURRENT; break;
 	case SQFS_FILE_SEEK_END:     whence = FILE_END; break;
