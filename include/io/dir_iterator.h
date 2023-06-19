@@ -8,7 +8,7 @@
 #define IO_DIR_ITERATOR_H
 
 #include "io/dir_entry.h"
-#include "io/istream.h"
+#include "sqfs/predef.h"
 
 /**
  * @interface dir_iterator_t

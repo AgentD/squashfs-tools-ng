@@ -4,6 +4,7 @@
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
+#include "util/parse.h"
 #include "io/mem.h"
 #include "util/test.h"
 

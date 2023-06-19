@@ -7,7 +7,7 @@
 #ifndef IO_XFRM_H
 #define IO_XFRM_H
 
-#include "io/istream.h"
+#include "sqfs/predef.h"
 #include "xfrm/stream.h"
 
 #ifdef __cplusplus

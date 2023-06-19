@@ -1,11 +1,11 @@
-/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* SPDX-License-Identifier: LGPL-3.0-or-later */
 /*
- * istream.h
+ * parse.h
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
-#ifndef IO_ISTREAM_H
-#define IO_ISTREAM_H
+#ifndef UTIL_PARSE_H
+#define UTIL_PARSE_H
 
 #include "sqfs/predef.h"
 
@@ -52,4 +52,4 @@ SQFS_INTERNAL int istream_get_line(sqfs_istream_t *strm, char **out,
 }
 #endif
 
-#endif /* IO_ISTREAM_H */
+#endif /* UTIL_PARSE_H */

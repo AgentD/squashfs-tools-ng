@@ -1,6 +1,6 @@
 libutil_a_SOURCES = include/util/util.h include/util/str_table.h \
 	include/util/hash_table.h include/util/test.h include/util/rbtree.h \
-	include/util/array.h include/util/threadpool.h \
+	include/util/array.h include/util/threadpool.h include/util/parse.h \
 	include/util/w32threadwrap.h include/util/mempool.h \
 	lib/util/src/str_table.c lib/util/src/alloc.c lib/util/src/rbtree.c \
 	lib/util/src/array.c lib/util/src/xxhash.c lib/util/src/hash_table.c \
@@ -8,7 +8,8 @@ libutil_a_SOURCES = include/util/util.h include/util/str_table.h \
 	lib/util/src/is_memory_zero.c lib/util/src/mkdir_p.c \
 	lib/util/src/canonicalize_name.c lib/util/src/filename_sane.c \
 	lib/util/src/source_date_epoch.c lib/util/src/file_cmp.c \
-	lib/util/src/hex_decode.c lib/util/src/base64_decode.c
+	lib/util/src/hex_decode.c lib/util/src/base64_decode.c \
+	lib/util/src/get_line.c
 libutil_a_CFLAGS = $(AM_CFLAGS)
 libutil_a_CPPFLAGS = $(AM_CPPFLAGS)
 
@@ -76,10 +77,13 @@ test_hex_decode_LDADD = libutil.a libcompat.a
 test_base64_decode_SOURCES = lib/util/test/base64_decode.c
 test_base64_decode_LDADD = libutil.a libcompat.a
 
+test_get_line_SOURCES = lib/util/test/get_line.c
+test_get_line_LDADD = libutil.a libio.a libcompat.a
+
 LIBUTIL_TESTS = \
 	test_str_table test_rbtree test_xxhash test_threadpool test_ismemzero \
 	test_canonicalize_name test_filename_sane test_filename_sane_w32 \
-	test_sdate_epoch test_hex_decode test_base64_decode
+	test_sdate_epoch test_hex_decode test_base64_decode test_get_line
 
 check_PROGRAMS += $(LIBUTIL_TESTS)
 TESTS += $(LIBUTIL_TESTS)

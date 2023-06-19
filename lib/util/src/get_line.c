@@ -1,12 +1,17 @@
-/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* SPDX-License-Identifier: LGPL-3.0-or-later */
 /*
  * get_line.c
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
-#include "internal.h"
+#include "util/parse.h"
 #include "sqfs/io.h"
 #include "sqfs/error.h"
+#include "compat.h"
+
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
 
 static void ltrim(char *buffer)
 {
@@ -112,10 +117,10 @@ int istream_get_line(sqfs_istream_t *strm, char **out,
 	*out = line;
 	return 0;
 fail: {
-	int temp = errno;
+	os_error_t temp = get_os_error_state();
 	free(line);
 	*out = NULL;
-	errno = temp;
+	set_os_error_state(temp);
 	return err;
 }
 out_eof:

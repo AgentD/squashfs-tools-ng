@@ -9,7 +9,6 @@
 
 #include "config.h"
 #include "compat.h"
-#include "io/istream.h"
 #include "io/dir_iterator.h"
 #include "sqfs/io.h"
 

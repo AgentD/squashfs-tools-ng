@@ -7,7 +7,7 @@
 #ifndef IO_STD_H
 #define IO_STD_H
 
-#include "io/istream.h"
+#include "sqfs/io.h"
 
 #ifdef __cplusplus
 extern "C" {

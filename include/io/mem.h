@@ -7,7 +7,7 @@
 #ifndef IO_MEM_STREAM_H
 #define IO_MEM_STREAM_H
 
-#include "io/istream.h"
+#include "sqfs/predef.h"
 
 #ifdef __cplusplus
 extern "C" {

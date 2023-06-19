@@ -7,8 +7,8 @@
 #include "config.h"
 
 #include "util/str_table.h"
+#include "util/parse.h"
 #include "compat.h"
-#include "io/istream.h"
 #include "util/test.h"
 #include "sqfs/io.h"
 

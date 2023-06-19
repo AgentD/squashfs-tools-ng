@@ -13,6 +13,7 @@
 #include "common.h"
 #include "io/dir_iterator.h"
 #include "util/util.h"
+#include "util/parse.h"
 
 #ifdef HAVE_SYS_XATTR_H
 #include <sys/xattr.h>
