@@ -15,6 +15,18 @@ enum {
 	ISTREAM_LINE_SKIP_EMPTY = 0x04,
 };
 
+enum {
+	SPLIT_LINE_OK = 0,
+	SPLIT_LINE_ALLOC = -1,
+	SPLIT_LINE_UNMATCHED_QUOTE = -2,
+	SPLIT_LINE_ESCAPE = -3,
+};
+
+typedef struct {
+	size_t count;
+	char *args[];
+} split_line_t;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -47,6 +59,31 @@ extern "C" {
  */
 SQFS_INTERNAL int istream_get_line(sqfs_istream_t *strm, char **out,
 				   size_t *line_num, int flags);
+
+/**
+ * @brief Split a line of special character separated tokens
+ *
+ * The underlying string is modified, replacing sequences of separator
+ * characters with a single null byte and compacting the string. Every
+ * occourance of a termianted string is recorded in the returned structure.
+ *
+ * @param line A modifyable buffer holding a line
+ * @param len The maximum length of the string in the buffer to process
+ * @param sep A string of valid separator caracaters
+ * @param out Returns the token list, free this with free()
+ *
+ * @return Zero on success, a negative SPLIT_LINE_* error code on failure
+ */
+SQFS_INTERNAL int split_line(char *line, size_t len,
+			     const char *sep, split_line_t **out);
+
+/**
+ * @brief Remove the first N components of a tokenized line
+ *
+ * @param sep A successfully split up line
+ * @param count Number of components to remove from the front
+ */
+SQFS_INTERNAL void split_line_remove_front(split_line_t *sep, size_t count);
 
 #ifdef __cplusplus
 }

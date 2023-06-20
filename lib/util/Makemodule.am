@@ -9,7 +9,7 @@ libutil_a_SOURCES = include/util/util.h include/util/str_table.h \
 	lib/util/src/canonicalize_name.c lib/util/src/filename_sane.c \
 	lib/util/src/source_date_epoch.c lib/util/src/file_cmp.c \
 	lib/util/src/hex_decode.c lib/util/src/base64_decode.c \
-	lib/util/src/get_line.c
+	lib/util/src/get_line.c lib/util/src/split_line.c
 libutil_a_CFLAGS = $(AM_CFLAGS)
 libutil_a_CPPFLAGS = $(AM_CPPFLAGS)
 
@@ -80,10 +80,14 @@ test_base64_decode_LDADD = libutil.a libcompat.a
 test_get_line_SOURCES = lib/util/test/get_line.c
 test_get_line_LDADD = libutil.a libio.a libcompat.a
 
+test_split_line_SOURCES = lib/util/test/split_line.c
+test_split_line_LDADD = libutil.a libcompat.a
+
 LIBUTIL_TESTS = \
 	test_str_table test_rbtree test_xxhash test_threadpool test_ismemzero \
 	test_canonicalize_name test_filename_sane test_filename_sane_w32 \
-	test_sdate_epoch test_hex_decode test_base64_decode test_get_line
+	test_sdate_epoch test_hex_decode test_base64_decode test_get_line \
+	test_split_line
 
 check_PROGRAMS += $(LIBUTIL_TESTS)
 TESTS += $(LIBUTIL_TESTS)
