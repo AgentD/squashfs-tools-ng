@@ -121,6 +121,8 @@ static int decode_flags(const char *filename, size_t line_no, bool *do_glob,
 			bool *path_glob, int *flags, char *line)
 {
 	char *start = line;
+	split_line_t *sep;
+	const char *end;
 
 	*do_glob = false;
 	*path_glob = false;
@@ -129,71 +131,63 @@ static int decode_flags(const char *filename, size_t line_no, bool *do_glob,
 	if (*(line++) != '[')
 		return 0;
 
-	for (;;) {
-		while (isspace(*line))
-			++line;
-
-		if (*line == ']') {
-			++line;
-			break;
-		}
-
-		if (strncmp(line, "glob_no_path", 12) == 0) {
-			line += 12;
-			*do_glob = true;
-			*path_glob = false;
-		} else if (strncmp(line, "glob", 4) == 0) {
-			line += 4;
-			*do_glob = true;
-			*path_glob = true;
-		} else if (strncmp(line, "dont_fragment", 13) == 0) {
-			line += 13;
-			(*flags) |= SQFS_BLK_DONT_FRAGMENT;
-		} else if (strncmp(line, "dont_compress", 13) == 0) {
-			line += 13;
-			(*flags) |= SQFS_BLK_DONT_COMPRESS;
-		} else if (strncmp(line, "dont_deduplicate", 16) == 0) {
-			line += 16;
-			(*flags) |= SQFS_BLK_DONT_DEDUPLICATE;
-		} else if (strncmp(line, "nosparse", 8) == 0) {
-			line += 8;
-			(*flags) |= SQFS_BLK_IGNORE_SPARSE;
-		} else {
-			goto fail_flag;
-		}
-
-		while (isspace(*line))
-			++line;
-
-		if (*line == ']') {
-			++line;
-			break;
-		}
-
-		if (*(line++) != ',')
-			goto fail_sep;
+	end = strchr(line, ']');
+	if (end == NULL) {
+		fprintf(stderr, "%s: " PRI_SZ ": Missing `]`.\n",
+			filename, line_no);
+		return -1;
 	}
 
-	if (!isspace(*line))
-		goto fail_fname;
+	switch (split_line(line, end - line, ",", &sep)) {
+	case SPLIT_LINE_OK:
+		break;
+	case SPLIT_LINE_ALLOC:
+		fputs("out-of-memory.\n", stderr);
+		return -1;
+	default:
+		fprintf(stderr, "%s: " PRI_SZ ": Malformed flag list.\n",
+			filename, line_no);
+		return -1;
+	}
 
-	while (isspace(*line))
-		++line;
+	++end;
+	if (!isspace(*end)) {
+		fprintf(stderr, "%s: " PRI_SZ ": Expected `<space> <filename>` "
+			"after flag list.\n", filename, line_no);
+		return -1;
+	}
 
-	memmove(start, line, strlen(line) + 1);
+	while (isspace(*end))
+		++end;
+
+	for (size_t i = 0; i < sep->count; ++i) {
+		trim(sep->args[i]);
+
+		if (strcmp(sep->args[i], "glob_no_path") == 0) {
+			*do_glob = true;
+			*path_glob = false;
+		} else if (strcmp(sep->args[i], "glob") == 0) {
+			*do_glob = true;
+			*path_glob = true;
+		} else if (strcmp(sep->args[i], "dont_fragment") == 0) {
+			(*flags) |= SQFS_BLK_DONT_FRAGMENT;
+		} else if (strcmp(sep->args[i], "dont_compress") == 0) {
+			(*flags) |= SQFS_BLK_DONT_COMPRESS;
+		} else if (strcmp(sep->args[i], "dont_deduplicate") == 0) {
+			(*flags) |= SQFS_BLK_DONT_DEDUPLICATE;
+		} else if (strcmp(sep->args[i], "nosparse") == 0) {
+			(*flags) |= SQFS_BLK_IGNORE_SPARSE;
+		} else {
+			fprintf(stderr, "%s: " PRI_SZ ": Unknown flag `%s`.\n",
+				filename, line_no, sep->args[i]);
+			free(sep);
+			return -1;
+		}
+	}
+
+	free(sep);
+	memmove(start, end, strlen(end) + 1);
 	return 0;
-fail_fname:
-	fprintf(stderr, "%s: " PRI_SZ ": Expected `<space> <filename>` "
-		"after flag list.\n", filename, line_no);
-	return -1;
-fail_sep:
-	fprintf(stderr, "%s: " PRI_SZ ": Unexpected '%c' after flag.\n",
-		filename, line_no, *line);
-	return -1;
-fail_flag:
-	fprintf(stderr, "%s: " PRI_SZ ": Unknown flag `%.3s...`.\n",
-		filename, line_no, line);
-	return -1;
 }
 
 static void sort_file_list(fstree_t *fs)
