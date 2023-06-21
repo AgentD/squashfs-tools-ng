@@ -31,6 +31,12 @@ typedef struct {
 extern "C" {
 #endif
 
+SQFS_INTERNAL void ltrim(char *buffer);
+
+SQFS_INTERNAL void rtrim(char *buffer);
+
+SQFS_INTERNAL void trim(char *buffer);
+
 /**
  * @brief Read a line of text from an input stream
  *

@@ -13,7 +13,7 @@
 #include <string.h>
 #include <ctype.h>
 
-static void ltrim(char *buffer)
+void ltrim(char *buffer)
 {
 	size_t i = 0;
 
@@ -24,7 +24,7 @@ static void ltrim(char *buffer)
 		memmove(buffer, buffer + i, strlen(buffer + i) + 1);
 }
 
-static void rtrim(char *buffer)
+void rtrim(char *buffer)
 {
 	size_t i = strlen(buffer);
 
@@ -34,7 +34,13 @@ static void rtrim(char *buffer)
 	buffer[i] = '\0';
 }
 
-static size_t trim(char *buffer, int flags)
+void trim(char *buffer)
+{
+	ltrim(buffer);
+	rtrim(buffer);
+}
+
+static size_t trim_flags(char *buffer, int flags)
 {
 	if (flags & ISTREAM_LINE_LTRIM)
 		ltrim(buffer);
@@ -64,7 +70,7 @@ int istream_get_line(sqfs_istream_t *strm, char **out,
 			if (line_len == 0)
 				goto out_eof;
 
-			line_len = trim(line, flags);
+			line_len = trim_flags(line, flags);
 			if (line_len > 0 ||!(flags & ISTREAM_LINE_SKIP_EMPTY))
 				break;
 
@@ -100,7 +106,7 @@ int istream_get_line(sqfs_istream_t *strm, char **out,
 			if (line_len > 0 && line[line_len - 1] == '\r')
 				line[--line_len] = '\0';
 
-			line_len = trim(line, flags);
+			line_len = trim_flags(line, flags);
 			if (line_len > 0 || !(flags & ISTREAM_LINE_SKIP_EMPTY))
 				break;
 
