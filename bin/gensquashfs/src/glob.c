@@ -7,22 +7,35 @@
 #include "mkfs.h"
 
 static const struct {
-	const char *name;
-	unsigned int clear_flag;
-	unsigned int set_flag;
-} glob_scan_flags[] = {
-	{ "-type b", DIR_SCAN_NO_BLK, 0 },
-	{ "-type c", DIR_SCAN_NO_CHR, 0 },
-	{ "-type d", DIR_SCAN_NO_DIR, 0 },
-	{ "-type p", DIR_SCAN_NO_FIFO, 0 },
-	{ "-type f", DIR_SCAN_NO_FILE, 0 },
-	{ "-type l", DIR_SCAN_NO_SLINK, 0 },
-	{ "-type s", DIR_SCAN_NO_SOCK, 0 },
-	{ "-xdev", 0, DIR_SCAN_ONE_FILESYSTEM },
-	{ "-mount", 0, DIR_SCAN_ONE_FILESYSTEM },
-	{ "-keeptime", 0, DIR_SCAN_KEEP_TIME },
-	{ "-nonrecursive", 0, DIR_SCAN_NO_RECURSION },
+	char c;
+	unsigned int flag;
+} glob_types[] = {
+	{ 'b', DIR_SCAN_NO_BLK },   { 'B', DIR_SCAN_NO_BLK },
+	{ 'c', DIR_SCAN_NO_CHR },   { 'C', DIR_SCAN_NO_CHR },
+	{ 'd', DIR_SCAN_NO_DIR },   { 'D', DIR_SCAN_NO_DIR },
+	{ 'p', DIR_SCAN_NO_FIFO },  { 'P', DIR_SCAN_NO_FIFO },
+	{ 'f', DIR_SCAN_NO_FILE },  { 'F', DIR_SCAN_NO_FILE },
+	{ 'l', DIR_SCAN_NO_SLINK }, { 'L', DIR_SCAN_NO_SLINK },
+	{ 's', DIR_SCAN_NO_SOCK },  { 'S', DIR_SCAN_NO_SOCK },
 };
+
+static const struct {
+	const char *name;
+	unsigned int flag;
+} glob_scan_flags[] = {
+	{ "-xdev", DIR_SCAN_ONE_FILESYSTEM },
+	{ "-mount", DIR_SCAN_ONE_FILESYSTEM },
+	{ "-keeptime", DIR_SCAN_KEEP_TIME },
+	{ "-nonrecursive", DIR_SCAN_NO_RECURSION },
+};
+
+static void set_all_type_flags(unsigned int *flags)
+{
+	size_t count = sizeof(glob_types) / sizeof(glob_types[0]);
+
+	for (size_t i = 0; i < count; ++i)
+		*flags |= glob_types[i].flag;
+}
 
 static size_t name_string_length(const char *str)
 {
@@ -84,7 +97,7 @@ int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 	       const char *extra)
 {
 	char *name_pattern = NULL, *prefix = NULL;
-	unsigned int scan_flags = 0, all_flags;
+	unsigned int scan_flags = 0;
 	dir_iterator_t *dir = NULL;
 	bool first_clear_flag;
 	dir_tree_cfg_t cfg;
@@ -109,10 +122,6 @@ int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 	/* process options */
 	first_clear_flag = true;
 
-	all_flags = DIR_SCAN_NO_BLK | DIR_SCAN_NO_CHR | DIR_SCAN_NO_DIR |
-		DIR_SCAN_NO_FIFO | DIR_SCAN_NO_FILE | DIR_SCAN_NO_SLINK |
-		DIR_SCAN_NO_SOCK;
-
 	while (extra != NULL && *extra == '-' && !match_option(&extra, "--")) {
 		bool is_name = false, is_path = false, found = false;
 		size_t count = sizeof(glob_scan_flags) /
@@ -120,20 +129,42 @@ int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 
 		for (size_t i = 0; i < count && !found; ++i) {
 			if (match_option(&extra, glob_scan_flags[i].name)) {
-				if (glob_scan_flags[i].clear_flag != 0 &&
-				    first_clear_flag) {
-					scan_flags |= all_flags;
-					first_clear_flag = false;
-				}
-
-				scan_flags &= ~(glob_scan_flags[i].clear_flag);
-				scan_flags |= glob_scan_flags[i].set_flag;
+				scan_flags |= glob_scan_flags[i].flag;
 				found = true;
 			}
 		}
 
 		if (found)
 			continue;
+
+		if (match_option(&extra, "-type")) {
+			char c = *extra;
+
+			if (!isalpha(c))
+				goto fail_type;
+			if (!isspace(extra[1]) && extra[1] != '\0')
+				goto fail_type;
+
+			count = sizeof(glob_types) / sizeof(glob_types[0]);
+
+			if (first_clear_flag) {
+				set_all_type_flags(&scan_flags);
+				first_clear_flag = false;
+			}
+
+			for (size_t i = 0; i < count && !found; ++i) {
+				if (glob_types[i].c == c) {
+					scan_flags &= ~(glob_types[i].flag);
+					found = true;
+				}
+			}
+
+			if (!found)
+				goto fail_type;
+
+			extra = skip_space(extra + 1);
+			continue;
+		}
 
 		if (match_option(&extra, "-name")) {
 			is_name = true;
@@ -220,6 +251,10 @@ fail_prefix:
 fail_alloc:
 	fprintf(stderr, "%s: " PRI_SZ ": out of memory\n",
 		filename, line_num);
+	goto fail;
+fail_type:
+	fprintf(stderr, "%s: " PRI_SZ ": unknown file type `%.3s...`\n",
+		filename, line_num, extra);
 	goto fail;
 fail:
 	free(name_pattern);
