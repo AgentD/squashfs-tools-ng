@@ -19,6 +19,26 @@ static const struct {
 	{ "s", DIR_SCAN_NO_SOCK },  { "S", DIR_SCAN_NO_SOCK },
 };
 
+static bool apply_type_flag(bool is_first, const char *arg,
+			    unsigned int *flags)
+{
+	size_t count = sizeof(glob_types) / sizeof(glob_types[0]);
+
+	if (is_first) {
+		for (size_t i = 0; i < count; ++i)
+			(*flags) |= glob_types[i].flag;
+	}
+
+	for (size_t i = 0; i < count; ++i) {
+		if (!strcmp(glob_types[i].name, arg)) {
+			(*flags) &= ~(glob_types[i].flag);
+			return true;
+		}
+	}
+
+	return false;
+}
+
 static const struct {
 	const char *name;
 	unsigned int flag;
@@ -29,12 +49,18 @@ static const struct {
 	{ "-nonrecursive", DIR_SCAN_NO_RECURSION },
 };
 
-static void set_all_type_flags(unsigned int *flags)
+static bool set_scan_flag(const char *arg, dir_tree_cfg_t *cfg)
 {
-	size_t count = sizeof(glob_types) / sizeof(glob_types[0]);
+	size_t count = sizeof(glob_scan_flags) / sizeof(glob_scan_flags[0]);
 
-	for (size_t i = 0; i < count; ++i)
-		*flags |= glob_types[i].flag;
+	for (size_t i = 0; i < count; ++i) {
+		if (!strcmp(arg, glob_scan_flags[i].name)) {
+			cfg->flags |= glob_scan_flags[i].flag;
+			return true;
+		}
+	}
+
+	return false;
 }
 
 int glob_files(fstree_t *fs, const char *filename, size_t line_num,
@@ -42,11 +68,9 @@ int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 	       const char *basepath, unsigned int glob_flags,
 	       split_line_t *sep)
 {
-	const char *name_pattern = NULL;
-	char *prefix = NULL;
-	unsigned int scan_flags = 0;
+	bool first_type_flag = true;
 	dir_iterator_t *dir = NULL;
-	bool first_clear_flag;
+	char *prefix = NULL;
 	dir_tree_cfg_t cfg;
 	tree_node_t *root;
 	int ret;
@@ -67,12 +91,15 @@ int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 		goto fail_prefix;
 
 	/* process options */
-	first_clear_flag = true;
+	memset(&cfg, 0, sizeof(cfg));
+	cfg.def_mtime = ent->mtime;
+	cfg.def_uid = ent->uid;
+	cfg.def_gid = ent->gid;
+	cfg.def_mode = ent->mode;
+	cfg.prefix = prefix;
+	cfg.flags = glob_flags;
 
 	while (sep->count != 0) {
-		bool is_name = false, is_path = false, found = false;
-		size_t count;
-
 		if (sep->args[0][0] != '-')
 			break;
 
@@ -81,82 +108,38 @@ int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 			break;
 		}
 
-		count = sizeof(glob_scan_flags) / sizeof(glob_scan_flags[0]);
-
-		for (size_t i = 0; i < count && !found; ++i) {
-			if (!strcmp(sep->args[0], glob_scan_flags[i].name)) {
-				scan_flags |= glob_scan_flags[i].flag;
-				found = true;
-			}
-		}
-
-		if (found) {
+		if (set_scan_flag(sep->args[0], &cfg)) {
 			split_line_remove_front(sep, 1);
-			continue;
-		}
-
-		if (!strcmp(sep->args[0], "-type")) {
+		} else if (!strcmp(sep->args[0], "-type")) {
 			if (sep->count < 2)
 				goto fail_no_arg;
 
-			if (first_clear_flag) {
-				set_all_type_flags(&scan_flags);
-				first_clear_flag = false;
-			}
-
-			count = sizeof(glob_types) / sizeof(glob_types[0]);
-
-			for (size_t i = 0; i < count && !found; ++i) {
-				if (!strcmp(glob_types[i].name, sep->args[1])) {
-					scan_flags &= ~(glob_types[i].flag);
-					found = true;
-				}
-			}
-
-			if (!found)
+			if (!apply_type_flag(first_type_flag, sep->args[1],
+					     &cfg.flags)) {
 				goto fail_type;
+			}
 
+			first_type_flag = false;
 			split_line_remove_front(sep, 2);
-			continue;
-		}
-
-		if (!strcmp(sep->args[0], "-name")) {
-			is_name = true;
-		} else if (!strcmp(sep->args[0], "-path")) {
-			is_path = true;
-		}
-
-		if (is_name || is_path) {
+		} else if (!strcmp(sep->args[0], "-name")) {
 			if (sep->count < 2)
 				goto fail_no_arg;
-
-			name_pattern = sep->args[1];
-			if (is_path)
-				glob_flags |= DIR_SCAN_MATCH_FULL_PATH;
-
+			cfg.name_pattern = sep->args[1];
 			split_line_remove_front(sep, 2);
-			continue;
+		} else if (!strcmp(sep->args[0], "-path")) {
+			if (sep->count < 2)
+				goto fail_no_arg;
+			cfg.name_pattern = sep->args[1];
+			cfg.flags |= DIR_SCAN_MATCH_FULL_PATH;
+			split_line_remove_front(sep, 2);
+		} else {
+			goto fail_unknown;
 		}
-
-		goto fail_unknown;
 	}
 
 	/* do the scan */
-	memset(&cfg, 0, sizeof(cfg));
-	cfg.flags = scan_flags | glob_flags;
-	cfg.def_mtime = ent->mtime;
-	cfg.def_uid = ent->uid;
-	cfg.def_gid = ent->gid;
-	cfg.def_mode = ent->mode;
-	cfg.prefix = prefix;
-	cfg.name_pattern = name_pattern;
-
-	if (basepath == NULL && sep->count == 0) {
-		dir = dir_tree_iterator_create(".", &cfg);
-	} else if (basepath != NULL && sep->count == 0) {
+	if (sep->count == 0) {
 		dir = dir_tree_iterator_create(basepath, &cfg);
-	} else if (basepath == NULL && sep->count != 0) {
-		dir = dir_tree_iterator_create(sep->args[0], &cfg);
 	} else {
 		size_t plen = strlen(basepath);
 		size_t slen = strlen(sep->args[0]);
