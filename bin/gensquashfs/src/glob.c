@@ -40,7 +40,7 @@ static void set_all_type_flags(unsigned int *flags)
 int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 	       const dir_entry_t *ent,
 	       const char *basepath, unsigned int glob_flags,
-	       char *extra)
+	       split_line_t *sep)
 {
 	const char *name_pattern = NULL;
 	char *prefix = NULL;
@@ -49,7 +49,6 @@ int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 	bool first_clear_flag;
 	dir_tree_cfg_t cfg;
 	tree_node_t *root;
-	split_line_t *sep;
 	int ret;
 
 	/* fetch the actual target node */
@@ -68,14 +67,6 @@ int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 		goto fail_prefix;
 
 	/* process options */
-	switch (split_line(extra, strlen(extra), " \t", &sep)) {
-	case SPLIT_LINE_OK:              break;
-	case SPLIT_LINE_ALLOC:           goto fail_alloc;
-	case SPLIT_LINE_UNMATCHED_QUOTE: goto fail_quote;
-	case SPLIT_LINE_ESCAPE:          goto fail_esc;
-	default:                         goto fail_split;
-	}
-
 	first_clear_flag = true;
 
 	while (sep->count != 0) {
@@ -190,20 +181,7 @@ int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 	sqfs_drop(dir);
 
 	free(prefix);
-	free(sep);
 	return ret;
-fail_quote:
-	fprintf(stderr, "%s: " PRI_SZ ": unmatched `\"`.\n",
-		filename, line_num);
-	goto fail;
-fail_esc:
-	fprintf(stderr, "%s: " PRI_SZ ": broken escape sequence.\n",
-		filename, line_num);
-	goto fail;
-fail_split:
-	fprintf(stderr, "[BUG] %s: " PRI_SZ ": unknown error parsing line.\n",
-		filename, line_num);
-	goto fail;
 fail_unknown:
 	fprintf(stderr, "%s: " PRI_SZ ": unknown glob option: %s.\n",
 		filename, line_num, sep->args[0]);
@@ -233,7 +211,6 @@ fail_no_arg:
 		filename, line_num, sep->args[0]);
 	goto fail;
 fail:
-	free(sep);
 	free(prefix);
 	return -1;
 }

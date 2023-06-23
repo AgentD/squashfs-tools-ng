@@ -6,52 +6,99 @@
  */
 #include "mkfs.h"
 
-static int add_generic(fstree_t *fs, const char *filename, size_t line_num,
-		       dir_entry_t *ent, const char *extra)
+static int read_u32(const char *str, sqfs_u32 *out, sqfs_u32 base)
 {
-	if (fstree_add_generic(fs, ent, extra) == NULL) {
-		fprintf(stderr, "%s: " PRI_SZ ": %s: %s\n",
-			filename, line_num, ent->name, strerror(errno));
+	*out = 0;
+
+	if (!isdigit(*str))
 		return -1;
+
+	while (isdigit(*str)) {
+		sqfs_u32 x = *(str++) - '0';
+
+		if (x >= base || (*out) > (0xFFFFFFFF - x) / base)
+			return -1;
+
+		(*out) = (*out) * base + x;
 	}
+
+	if (*str != '\0')
+		return -1;
 
 	return 0;
 }
 
-static int add_device(fstree_t *fs, const char *filename, size_t line_num,
-		      dir_entry_t *ent, const char *extra)
+static int add_generic(fstree_t *fs, const char *filename, size_t line_num,
+		       dir_entry_t *ent, split_line_t *line)
 {
-	unsigned int maj, min;
-	char c;
+	const char *msg = NULL, *arg = line->count > 0 ? line->args[0] : NULL;
 
-	if (sscanf(extra, "%c %u %u", &c, &maj, &min) != 3) {
-		fprintf(stderr, "%s: " PRI_SZ ": "
-			"expected '<c|b> major minor'\n",
-			filename, line_num);
-		return -1;
+	if (line->count > 1) {
+		msg = "too many arguments";
+		goto fail;
 	}
 
-	if (c == 'c' || c == 'C') {
+	if (fstree_add_generic(fs, ent, arg) == NULL) {
+		msg = strerror(errno);
+		goto fail;
+	}
+
+	return 0;
+fail:
+	fprintf(stderr, "%s: " PRI_SZ ": %s: %s\n",
+		filename, line_num, ent->name, msg);
+	return -1;
+}
+
+static int add_device(fstree_t *fs, const char *filename, size_t line_num,
+		      dir_entry_t *ent, split_line_t *line)
+{
+	sqfs_u32 maj, min;
+
+	if (line->count != 3)
+		goto fail_args;
+
+	if (!strcmp(line->args[0], "c") || !strcmp(line->args[0], "C")) {
 		ent->mode |= S_IFCHR;
-	} else if (c == 'b' || c == 'B') {
+	} else if (!strcmp(line->args[0], "b") || !strcmp(line->args[0], "B")) {
 		ent->mode |= S_IFBLK;
 	} else {
-		fprintf(stderr, "%s: " PRI_SZ ": unknown device type '%c'\n",
-			filename, line_num, c);
-		return -1;
+		goto fail_type;
 	}
 
+	if (read_u32(line->args[1], &maj, 10))
+		goto fail_num;
+	if (read_u32(line->args[2], &min, 10))
+		goto fail_num;
+
 	ent->rdev = makedev(maj, min);
-	return add_generic(fs, filename, line_num, ent, NULL);
+
+	split_line_remove_front(line, 3);
+	return add_generic(fs, filename, line_num, ent, line);
+fail_args:
+	fprintf(stderr, "%s: " PRI_SZ ": wrong number of arguments.\n",
+		filename, line_num);
+	goto fail_generic;
+fail_type:
+	fprintf(stderr, "%s: " PRI_SZ ": unknown device type `%s`\n",
+		filename, line_num, line->args[0]);
+	goto fail_generic;
+fail_num:
+	fprintf(stderr, "%s: " PRI_SZ ": error parsing device number\n",
+		filename, line_num);
+	goto fail_generic;
+fail_generic:
+	fputs("expected syntax: `nod <c|b> <major> <minor>`\n", stderr);
+	return -1;
 }
 
 static int add_file(fstree_t *fs, const char *filename, size_t line_num,
-		    dir_entry_t *ent, const char *extra)
+		    dir_entry_t *ent, split_line_t *line)
 {
-	if (extra == NULL || *extra == '\0')
-		extra = ent->name;
+	if (line->count == 0)
+		line->args[line->count++] = ent->name;
 
-	return add_generic(fs, filename, line_num, ent, extra);
+	return add_generic(fs, filename, line_num, ent, line);
 }
 
 static const struct callback_t {
@@ -61,7 +108,7 @@ static const struct callback_t {
 	bool need_extra;
 	bool allow_root;
 	int (*callback)(fstree_t *fs, const char *filename, size_t line_num,
-			dir_entry_t *ent, const char *extra);
+			dir_entry_t *ent, split_line_t *line);
 } file_list_hooks[] = {
 	{ "dir", S_IFDIR, 0, false, true, add_generic },
 	{ "slink", S_IFLNK, 0, true, false, add_generic },
@@ -74,153 +121,71 @@ static const struct callback_t {
 
 #define NUM_HOOKS (sizeof(file_list_hooks) / sizeof(file_list_hooks[0]))
 
-static char *skip_space(char *str)
+static int handle_line(fstree_t *fs, const char *filename, size_t line_num,
+		       split_line_t *line, const char *basepath)
 {
-	if (!isspace(*str))
-		return NULL;
-	while (isspace(*str))
-		++str;
-	return str;
-}
-
-static char *read_u32(char *str, sqfs_u32 *out, sqfs_u32 base)
-{
-	*out = 0;
-
-	if (!isdigit(*str))
-		return NULL;
-
-	while (isdigit(*str)) {
-		sqfs_u32 x = *(str++) - '0';
-
-		if (x >= base || (*out) > (0xFFFFFFFF - x) / base)
-			return NULL;
-
-		(*out) = (*out) * base + x;
-	}
-
-	return str;
-}
-
-static char *read_str(char *str, char **out)
-{
-	*out = str;
-
-	if (*str == '"') {
-		char *ptr = str++;
-
-		while (*str != '\0' && *str != '"') {
-			if (str[0] == '\\' &&
-			    (str[1] == '"' || str[1] == '\\')) {
-				*(ptr++) = str[1];
-				str += 2;
-			} else {
-				*(ptr++) = *(str++);
-			}
-		}
-
-		if (str[0] != '"' || !isspace(str[1]))
-			return NULL;
-
-		*ptr = '\0';
-		++str;
-	} else {
-		while (*str != '\0' && !isspace(*str))
-			++str;
-
-		if (!isspace(*str))
-			return NULL;
-
-		*(str++) = '\0';
-	}
-
-	while (isspace(*str))
-		++str;
-
-	return str;
-}
-
-static int handle_line(fstree_t *fs, const char *filename,
-		       size_t line_num, char *line,
-		       const char *basepath)
-{
-	const char *extra = NULL, *msg = NULL;
 	const struct callback_t *cb = NULL;
 	unsigned int glob_flags = 0;
 	sqfs_u32 uid, gid, mode;
 	dir_entry_t *ent = NULL;
+	const char *msg = NULL;
 	bool is_glob = false;
 	char *path;
 	int ret;
 
-	for (size_t i = 0; i < NUM_HOOKS; ++i) {
-		size_t len = strlen(file_list_hooks[i].keyword);
-		if (strncmp(file_list_hooks[i].keyword, line, len) != 0)
-			continue;
+	if (line->count < 5)
+		goto fail_ent;
 
-		if (isspace(line[len])) {
+	for (size_t i = 0; i < NUM_HOOKS; ++i) {
+		if (!strcmp(file_list_hooks[i].keyword, line->args[0])) {
 			cb = file_list_hooks + i;
-			line = skip_space(line + len);
 			break;
 		}
 	}
 
 	if (cb == NULL) {
-		if (strncmp("glob", line, 4) == 0 && isspace(line[4])) {
-			line = skip_space(line + 4);
+		if (!strcmp("glob", line->args[0])) {
 			is_glob = true;
 		} else {
 			goto fail_kw;
 		}
 	}
 
-	if ((line = read_str(line, &path)) == NULL)
-		goto fail_ent;
-
+	path = line->args[1];
 	if (canonicalize_name(path))
 		goto fail_ent;
 
 	if (*path == '\0' && !(is_glob || cb->allow_root))
 		goto fail_root;
 
-	if (is_glob && *line == '*') {
-		++line;
+	if (is_glob && !strcmp(line->args[2], "*")) {
 		mode = 0;
 		glob_flags |= DIR_SCAN_KEEP_MODE;
 	} else {
-		if ((line = read_u32(line, &mode, 8)) == NULL || mode > 07777)
+		if (read_u32(line->args[2], &mode, 8) || mode > 07777)
 			goto fail_mode;
 	}
 
-	if ((line = skip_space(line)) == NULL)
-		goto fail_ent;
-
-	if (is_glob && *line == '*') {
-		++line;
+	if (is_glob && !strcmp(line->args[3], "*")) {
 		uid = 0;
 		glob_flags |= DIR_SCAN_KEEP_UID;
 	} else {
-		if ((line = read_u32(line, &uid, 10)) == NULL)
+		if (read_u32(line->args[3], &uid, 10))
 			goto fail_uid_gid;
 	}
 
-	if ((line = skip_space(line)) == NULL)
-		goto fail_ent;
-
-	if (is_glob && *line == '*') {
-		++line;
+	if (is_glob && !strcmp(line->args[4], "*")) {
 		gid = 0;
 		glob_flags |= DIR_SCAN_KEEP_GID;
 	} else {
-		if ((line = read_u32(line, &gid, 10)) == NULL)
+		if (read_u32(line->args[4], &gid, 10))
 			goto fail_uid_gid;
 	}
 
-	if ((line = skip_space(line)) != NULL && *line != '\0')
-		extra = line;
-
-	if (!is_glob && cb->need_extra && extra == NULL)
+	if (!is_glob && cb->need_extra && line->count <= 5)
 		goto fail_no_extra;
+
+	split_line_remove_front(line, 5);
 
 	/* forward to callback */
 	ent = alloc_flex(sizeof(*ent), 1, strlen(path) + 1);
@@ -235,9 +200,9 @@ static int handle_line(fstree_t *fs, const char *filename,
 
 	if (is_glob) {
 		ret = glob_files(fs, filename, line_num, ent,
-				 basepath, glob_flags, extra);
+				 basepath, glob_flags, line);
 	} else {
-		ret = cb->callback(fs, filename, line_num, ent, extra);
+		ret = cb->callback(fs, filename, line_num, ent, line);
 	}
 
 	free(ent);
@@ -278,6 +243,7 @@ int fstree_from_file_stream(fstree_t *fs, sqfs_istream_t *fp,
 {
 	const char *filename;
 	size_t line_num = 1;
+	split_line_t *sep;
 	char *line;
 	int ret;
 
@@ -291,18 +257,44 @@ int fstree_from_file_stream(fstree_t *fs, sqfs_istream_t *fp,
 		if (ret > 0)
 			break;
 
-		if (line[0] != '#') {
-			if (handle_line(fs, filename, line_num,
-					line, basepath)) {
-				goto fail_line;
-			}
+		if (line[0] == '#') {
+			free(line);
+			++line_num;
+			continue;
 		}
 
+		switch (split_line(line, strlen(line), " \t", &sep)) {
+		case SPLIT_LINE_OK:              break;
+		case SPLIT_LINE_ALLOC:           goto fail_alloc;
+		case SPLIT_LINE_UNMATCHED_QUOTE: goto fail_quote;
+		case SPLIT_LINE_ESCAPE:          goto fail_esc;
+		default:                         goto fail_split;
+		}
+
+		ret = handle_line(fs, filename, line_num, sep, basepath);
+		free(sep);
 		free(line);
 		++line_num;
+
+		if (ret)
+			return -1;
 	}
 
 	return 0;
+fail_alloc:
+	fprintf(stderr, "%s: " PRI_SZ ": out of memory\n", filename, line_num);
+	goto fail_line;
+fail_quote:
+	fprintf(stderr, "%s: " PRI_SZ ": missing `\"`.\n", filename, line_num);
+	goto fail_line;
+fail_esc:
+	fprintf(stderr, "%s: " PRI_SZ ": broken escape sequence.\n",
+		filename, line_num);
+	goto fail_line;
+fail_split:
+	fprintf(stderr, "[BUG] %s: " PRI_SZ ": unknown error parsing line.\n",
+		filename, line_num);
+	goto fail_line;
 fail_line:
 	free(line);
 	return -1;
