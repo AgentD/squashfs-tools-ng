@@ -119,6 +119,6 @@ int fstree_sort_files(fstree_t *fs, sqfs_istream_t *sortfile);
 int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 	       const dir_entry_t *ent,
 	       const char *basepath, unsigned int glob_flags,
-	       const char *extra);
+	       char *extra);
 
 #endif /* MKFS_H */

@@ -7,16 +7,16 @@
 #include "mkfs.h"
 
 static const struct {
-	char c;
+	const char *name;
 	unsigned int flag;
 } glob_types[] = {
-	{ 'b', DIR_SCAN_NO_BLK },   { 'B', DIR_SCAN_NO_BLK },
-	{ 'c', DIR_SCAN_NO_CHR },   { 'C', DIR_SCAN_NO_CHR },
-	{ 'd', DIR_SCAN_NO_DIR },   { 'D', DIR_SCAN_NO_DIR },
-	{ 'p', DIR_SCAN_NO_FIFO },  { 'P', DIR_SCAN_NO_FIFO },
-	{ 'f', DIR_SCAN_NO_FILE },  { 'F', DIR_SCAN_NO_FILE },
-	{ 'l', DIR_SCAN_NO_SLINK }, { 'L', DIR_SCAN_NO_SLINK },
-	{ 's', DIR_SCAN_NO_SOCK },  { 'S', DIR_SCAN_NO_SOCK },
+	{ "b", DIR_SCAN_NO_BLK },   { "B", DIR_SCAN_NO_BLK },
+	{ "c", DIR_SCAN_NO_CHR },   { "C", DIR_SCAN_NO_CHR },
+	{ "d", DIR_SCAN_NO_DIR },   { "D", DIR_SCAN_NO_DIR },
+	{ "p", DIR_SCAN_NO_FIFO },  { "P", DIR_SCAN_NO_FIFO },
+	{ "f", DIR_SCAN_NO_FILE },  { "F", DIR_SCAN_NO_FILE },
+	{ "l", DIR_SCAN_NO_SLINK }, { "L", DIR_SCAN_NO_SLINK },
+	{ "s", DIR_SCAN_NO_SOCK },  { "S", DIR_SCAN_NO_SOCK },
 };
 
 static const struct {
@@ -37,71 +37,19 @@ static void set_all_type_flags(unsigned int *flags)
 		*flags |= glob_types[i].flag;
 }
 
-static size_t name_string_length(const char *str)
-{
-	size_t len = 0;
-	int start;
-
-	if (*str == '"' || *str == '\'') {
-		start = *str;
-		++len;
-
-		while (str[len] != '\0' && str[len] != start)
-			++len;
-
-		if (str[len] == start)
-			++len;
-	} else {
-		while (str[len] != '\0' && !isspace(str[len]))
-			++len;
-	}
-
-	return len;
-}
-
-static void quote_remove(char *str)
-{
-	char *dst = str;
-	int start = *(str++);
-
-	if (start != '\'' && start != '"')
-		return;
-
-	while (*str != start && *str != '\0')
-		*(dst++) = *(str++);
-
-	*(dst++) = '\0';
-}
-
-static const char *skip_space(const char *str)
-{
-	while (isspace(*str))
-		++str;
-	return str;
-}
-
-static bool match_option(const char **line, const char *candidate)
-{
-	size_t len = strlen(candidate);
-
-	if (strncmp(*line, candidate, len) != 0 || !isspace((*line)[len]))
-		return false;
-
-	*line = skip_space(*line + len);
-	return true;
-}
-
 int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 	       const dir_entry_t *ent,
 	       const char *basepath, unsigned int glob_flags,
-	       const char *extra)
+	       char *extra)
 {
-	char *name_pattern = NULL, *prefix = NULL;
+	const char *name_pattern = NULL;
+	char *prefix = NULL;
 	unsigned int scan_flags = 0;
 	dir_iterator_t *dir = NULL;
 	bool first_clear_flag;
 	dir_tree_cfg_t cfg;
 	tree_node_t *root;
+	split_line_t *sep;
 	int ret;
 
 	/* fetch the actual target node */
@@ -120,40 +68,55 @@ int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 		goto fail_prefix;
 
 	/* process options */
+	switch (split_line(extra, strlen(extra), " \t", &sep)) {
+	case SPLIT_LINE_OK:              break;
+	case SPLIT_LINE_ALLOC:           goto fail_alloc;
+	case SPLIT_LINE_UNMATCHED_QUOTE: goto fail_quote;
+	case SPLIT_LINE_ESCAPE:          goto fail_esc;
+	default:                         goto fail_split;
+	}
+
 	first_clear_flag = true;
 
-	while (extra != NULL && *extra == '-' && !match_option(&extra, "--")) {
+	while (sep->count != 0) {
 		bool is_name = false, is_path = false, found = false;
-		size_t count = sizeof(glob_scan_flags) /
-			sizeof(glob_scan_flags[0]);
+		size_t count;
+
+		if (sep->args[0][0] != '-')
+			break;
+
+		if (!strcmp(sep->args[0], "--")) {
+			split_line_remove_front(sep, 1);
+			break;
+		}
+
+		count = sizeof(glob_scan_flags) / sizeof(glob_scan_flags[0]);
 
 		for (size_t i = 0; i < count && !found; ++i) {
-			if (match_option(&extra, glob_scan_flags[i].name)) {
+			if (!strcmp(sep->args[0], glob_scan_flags[i].name)) {
 				scan_flags |= glob_scan_flags[i].flag;
 				found = true;
 			}
 		}
 
-		if (found)
+		if (found) {
+			split_line_remove_front(sep, 1);
 			continue;
+		}
 
-		if (match_option(&extra, "-type")) {
-			char c = *extra;
-
-			if (!isalpha(c))
-				goto fail_type;
-			if (!isspace(extra[1]) && extra[1] != '\0')
-				goto fail_type;
-
-			count = sizeof(glob_types) / sizeof(glob_types[0]);
+		if (!strcmp(sep->args[0], "-type")) {
+			if (sep->count < 2)
+				goto fail_no_arg;
 
 			if (first_clear_flag) {
 				set_all_type_flags(&scan_flags);
 				first_clear_flag = false;
 			}
 
+			count = sizeof(glob_types) / sizeof(glob_types[0]);
+
 			for (size_t i = 0; i < count && !found; ++i) {
-				if (glob_types[i].c == c) {
+				if (!strcmp(glob_types[i].name, sep->args[1])) {
 					scan_flags &= ~(glob_types[i].flag);
 					found = true;
 				}
@@ -162,36 +125,30 @@ int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 			if (!found)
 				goto fail_type;
 
-			extra = skip_space(extra + 1);
+			split_line_remove_front(sep, 2);
 			continue;
 		}
 
-		if (match_option(&extra, "-name")) {
+		if (!strcmp(sep->args[0], "-name")) {
 			is_name = true;
-		} else if (match_option(&extra, "-path")) {
+		} else if (!strcmp(sep->args[0], "-path")) {
 			is_path = true;
 		}
 
 		if (is_name || is_path) {
-			size_t len = name_string_length(extra);
-			free(name_pattern);
-			name_pattern = strndup(extra, len);
-			if (name_pattern == NULL)
-				goto fail_alloc;
+			if (sep->count < 2)
+				goto fail_no_arg;
 
-			extra = skip_space(extra + len);
-
-			quote_remove(name_pattern);
+			name_pattern = sep->args[1];
 			if (is_path)
 				glob_flags |= DIR_SCAN_MATCH_FULL_PATH;
+
+			split_line_remove_front(sep, 2);
 			continue;
 		}
 
 		goto fail_unknown;
 	}
-
-	if (extra != NULL && *extra == '\0')
-		extra = NULL;
 
 	/* do the scan */
 	memset(&cfg, 0, sizeof(cfg));
@@ -203,12 +160,15 @@ int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 	cfg.prefix = prefix;
 	cfg.name_pattern = name_pattern;
 
-	if (basepath == NULL) {
-		dir = dir_tree_iterator_create(extra == NULL ? "." : extra,
-					       &cfg);
+	if (basepath == NULL && sep->count == 0) {
+		dir = dir_tree_iterator_create(".", &cfg);
+	} else if (basepath != NULL && sep->count == 0) {
+		dir = dir_tree_iterator_create(basepath, &cfg);
+	} else if (basepath == NULL && sep->count != 0) {
+		dir = dir_tree_iterator_create(sep->args[0], &cfg);
 	} else {
 		size_t plen = strlen(basepath);
-		size_t slen = strlen(extra);
+		size_t slen = strlen(sep->args[0]);
 		char *temp = calloc(1, plen + 1 + slen + 1);
 
 		if (temp == NULL)
@@ -216,7 +176,7 @@ int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 
 		memcpy(temp, basepath, plen);
 		temp[plen] = '/';
-		memcpy(temp + plen + 1, extra, slen);
+		memcpy(temp + plen + 1, sep->args[0], slen);
 		temp[plen + 1 + slen] = '\0';
 
 		dir = dir_tree_iterator_create(temp, &cfg);
@@ -229,12 +189,24 @@ int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 	ret = fstree_from_dir(fs, dir);
 	sqfs_drop(dir);
 
-	free(name_pattern);
 	free(prefix);
+	free(sep);
 	return ret;
+fail_quote:
+	fprintf(stderr, "%s: " PRI_SZ ": unmatched `\"`.\n",
+		filename, line_num);
+	goto fail;
+fail_esc:
+	fprintf(stderr, "%s: " PRI_SZ ": broken escape sequence.\n",
+		filename, line_num);
+	goto fail;
+fail_split:
+	fprintf(stderr, "[BUG] %s: " PRI_SZ ": unknown error parsing line.\n",
+		filename, line_num);
+	goto fail;
 fail_unknown:
 	fprintf(stderr, "%s: " PRI_SZ ": unknown glob option: %s.\n",
-		filename, line_num, extra);
+		filename, line_num, sep->args[0]);
 	goto fail;
 fail_path:
 	fprintf(stderr, "%s: " PRI_SZ ": %s: %s\n",
@@ -253,11 +225,15 @@ fail_alloc:
 		filename, line_num);
 	goto fail;
 fail_type:
-	fprintf(stderr, "%s: " PRI_SZ ": unknown file type `%.3s...`\n",
-		filename, line_num, extra);
+	fprintf(stderr, "%s: " PRI_SZ ": unknown file type `%s`\n",
+		filename, line_num, sep->args[1]);
+	goto fail;
+fail_no_arg:
+	fprintf(stderr, "%s: " PRI_SZ ": missing argument for `%s`\n",
+		filename, line_num, sep->args[0]);
 	goto fail;
 fail:
-	free(name_pattern);
+	free(sep);
 	free(prefix);
 	return -1;
 }
