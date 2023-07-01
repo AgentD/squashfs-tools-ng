@@ -8,26 +8,10 @@
 
 #include "internal.h"
 #include "sqfs/xattr.h"
+#include "util/parse.h"
 #include <ctype.h>
 #include <string.h>
 #include <stdlib.h>
-
-static int pax_read_decimal(const char *str, sqfs_u64 *out)
-{
-	sqfs_u64 result = 0;
-
-	while (*str >= '0' && *str <= '9') {
-		if (result > 0xFFFFFFFFFFFFFFFFUL / 10) {
-			fputs("numeric overflow parsing pax header\n", stderr);
-			return -1;
-		}
-
-		result = (result * 10) + (*(str++) - '0');
-	}
-
-	*out = result;
-	return 0;
-}
 
 static void urldecode(char *str)
 {
@@ -95,6 +79,7 @@ static int pax_slink(tar_header_decoded_t *out, char *path)
 static int pax_sparse_map(tar_header_decoded_t *out, const char *line)
 {
 	sparse_map_t *last = NULL, *list = NULL, *ent = NULL;
+	size_t diff;
 
 	free_sparse_list(out->sparse);
 	out->sparse = NULL;
@@ -104,20 +89,17 @@ static int pax_sparse_map(tar_header_decoded_t *out, const char *line)
 		if (ent == NULL)
 			goto fail_errno;
 
-		if (pax_read_decimal(line, &ent->offset))
+		if (parse_uint(line, -1, &diff, 0, 0, &ent->offset))
 			goto fail_format;
 
-		while (isdigit(*line))
-			++line;
-
-		if (*(line++) != ',')
+		if (line[diff] != ',')
 			goto fail_format;
 
-		if (pax_read_decimal(line, &ent->count))
+		line += diff + 1;
+		if (parse_uint(line, -1, &diff, 0, 0, &ent->count))
 			goto fail_format;
 
-		while (isdigit(*line))
-			++line;
+		line += diff;
 
 		if (last == NULL) {
 			list = last = ent;
@@ -242,23 +224,17 @@ static int apply_handler(tar_header_decoded_t *out,
 	sqfs_xattr_t *xattr;
 	sqfs_s64 s64val;
 	sqfs_u64 uval;
+	size_t diff;
 	char *copy;
 
 	switch (field->type) {
 	case PAX_TYPE_SINT:
-		if (value[0] == '-') {
-			if (pax_read_decimal(value + 1, &uval))
-				return -1;
-			s64val = -((sqfs_s64)uval);
-		} else {
-			if (pax_read_decimal(value, &uval))
-				return -1;
-			s64val = (sqfs_s64)uval;
-		}
+		if (parse_int(value, -1, &diff, 0, 0, &s64val))
+			goto fail_numeric;
 		return field->cb.sint(out, s64val);
 	case PAX_TYPE_UINT:
-		if (pax_read_decimal(value, &uval))
-			return -1;
+		if (parse_uint(value, -1, &diff, 0, 0, &uval))
+			goto fail_numeric;
 		return field->cb.uint(out, uval);
 	case PAX_TYPE_CONST_STRING:
 		return field->cb.cstr(out, value);
@@ -291,6 +267,9 @@ static int apply_handler(tar_header_decoded_t *out,
 	}
 
 	return 0;
+fail_numeric:
+	fputs("Malformed decimal value in pax header\n", stderr);
+	return -1;
 }
 
 int read_pax_header(sqfs_istream_t *fp, sqfs_u64 entsize,
@@ -300,6 +279,7 @@ int read_pax_header(sqfs_istream_t *fp, sqfs_u64 entsize,
 	sparse_map_t *sparse_last = NULL, *sparse;
 	sqfs_u64 offset = 0, num_bytes = 0;
 	const struct pax_handler_t *field;
+	size_t diff;
 	long len;
 
 	buffer = record_to_memory(fp, entsize);
@@ -345,11 +325,11 @@ int read_pax_header(sqfs_istream_t *fp, sqfs_u64 entsize,
 
 			*set_by_pax |= field->flag;
 		} else if (!strcmp(key, "GNU.sparse.offset")) {
-			if (pax_read_decimal(value, &offset))
-				goto fail;
+			if (parse_uint(value, -1, &diff, 0, 0, &offset))
+				goto fail_malformed;
 		} else if (!strcmp(key, "GNU.sparse.numbytes")) {
-			if (pax_read_decimal(value, &num_bytes))
-				goto fail;
+			if (parse_uint(value, -1, &diff, 0, 0, &num_bytes))
+				goto fail_malformed;
 			sparse = calloc(1, sizeof(*sparse));
 			if (sparse == NULL)
 				goto fail_errno;

@@ -5,6 +5,7 @@
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
 #include "common.h"
+#include "util/parse.h"
 
 #include <ctype.h>
 #include <limits.h>
@@ -12,49 +13,45 @@
 int parse_size(const char *what, size_t *out, const char *str,
 	       size_t reference)
 {
-	const char *in = str;
-	size_t acc = 0, x;
+	sqfs_u64 val;
+	size_t diff;
+	int ret;
 
-	if (!isdigit(*in))
+	ret = parse_uint(str, -1, &diff, 0, SIZE_MAX, &val);
+	if (ret == SQFS_ERROR_OVERFLOW)
+		goto fail_ov;
+	if (ret != 0)
 		goto fail_nan;
 
-	while (isdigit(*in)) {
-		x = *(in++) - '0';
+	*out = val;
 
-		if (SZ_MUL_OV(acc, 10, &acc))
-			goto fail_ov;
-
-		if (SZ_ADD_OV(acc, x, &acc))
-			goto fail_ov;
-	}
-
-	switch (*in) {
+	switch (str[diff]) {
 	case 'k':
 	case 'K':
-		if (SZ_MUL_OV(acc, 1024, &acc))
+		if (SZ_MUL_OV(*out, 1024, out))
 			goto fail_ov;
-		++in;
+		++diff;
 		break;
 	case 'm':
 	case 'M':
-		if (SZ_MUL_OV(acc, 1048576, &acc))
+		if (SZ_MUL_OV(*out, 1048576, out))
 			goto fail_ov;
-		++in;
+		++diff;
 		break;
 	case 'g':
 	case 'G':
-		if (SZ_MUL_OV(acc, 1073741824, &acc))
+		if (SZ_MUL_OV(*out, 1073741824, out))
 			goto fail_ov;
-		++in;
+		++diff;
 		break;
 	case '%':
 		if (reference == 0)
 			goto fail_suffix;
 
-		if (SZ_MUL_OV(acc, reference, &acc))
+		if (SZ_MUL_OV(*out, reference, out))
 			goto fail_ov;
 
-		acc /= 100;
+		*out /= 100;
 		break;
 	case '\0':
 		break;
@@ -62,10 +59,9 @@ int parse_size(const char *what, size_t *out, const char *str,
 		goto fail_suffix;
 	}
 
-	if (*in != '\0')
+	if (str[diff] != '\0')
 		goto fail_suffix;
 
-	*out = acc;
 	return 0;
 fail_nan:
 	fprintf(stderr, "%s: '%s' is not a number.\n", what, str);

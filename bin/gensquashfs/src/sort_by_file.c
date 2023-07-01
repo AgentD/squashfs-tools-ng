@@ -9,27 +9,14 @@
 static int decode_priority(const char *filename, size_t line_no,
 			   char *line, sqfs_s64 *priority)
 {
-	bool negative = false;
-	size_t i = 0;
+	size_t i;
+	int ret;
 
-	if (line[0] == '-') {
-		negative = true;
-		i = 1;
-	}
-
-	if (!isdigit(line[i]))
+	ret = parse_int(line, strlen(line), &i, 0, 0, priority);
+	if (ret == SQFS_ERROR_CORRUPTED)
 		goto fail_number;
-
-	*priority = 0;
-
-	for (; isdigit(line[i]); ++i) {
-		sqfs_s64 x = line[i] - '0';
-
-		if ((*priority) >= ((0x7FFFFFFFFFFFFFFFL - x) / 10L))
-			goto fail_ov;
-
-		(*priority) = (*priority) * 10 + x;
-	}
+	if (ret != 0)
+		goto fail_ov;
 
 	if (!isspace(line[i]))
 		goto fail_filename;
@@ -39,9 +26,6 @@ static int decode_priority(const char *filename, size_t line_no,
 
 	if (line[i] == '\0')
 		goto fail_filename;
-
-	if (negative)
-		(*priority) = -(*priority);
 
 	memmove(line, line + i, strlen(line + i) + 1);
 	return 0;

@@ -66,6 +66,12 @@ SQFS_INTERNAL void trim(char *buffer);
 SQFS_INTERNAL int istream_get_line(sqfs_istream_t *strm, char **out,
 				   size_t *line_num, int flags);
 
+SQFS_INTERNAL int parse_int(const char *in, size_t len, size_t *diff,
+			    sqfs_s64 vmin, sqfs_s64 vmax, sqfs_s64 *out);
+
+SQFS_INTERNAL int parse_uint(const char *in, size_t len, size_t *diff,
+			     sqfs_u64 vmin, sqfs_u64 vmax, sqfs_u64 *out);
+
 /**
  * @brief Split a line of special character separated tokens
  *
