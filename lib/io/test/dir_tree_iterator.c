@@ -13,15 +13,15 @@
 
 static int compare_entries(const void *a, const void *b)
 {
-	const dir_entry_t *const *lhs = a;
-	const dir_entry_t *const *rhs = b;
+	const sqfs_dir_entry_t *const *lhs = a;
+	const sqfs_dir_entry_t *const *rhs = b;
 
 	return strcmp((*lhs)->name, (*rhs)->name);
 }
 
 int main(int argc, char **argv)
 {
-	dir_entry_t *ent[17];
+	sqfs_dir_entry_t *ent[17];
 	dir_iterator_t *dir;
 	dir_tree_cfg_t cfg;
 	size_t i;

@@ -10,10 +10,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-dir_entry_t *dir_entry_create(const char *name)
+sqfs_dir_entry_t *dir_entry_create(const char *name)
 {
 	size_t len, name_len;
-	dir_entry_t *out;
+	sqfs_dir_entry_t *out;
 
 	name_len = strlen(name);
 	if (SZ_ADD_OV(name_len, 1, &name_len))

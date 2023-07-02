@@ -12,7 +12,7 @@
 
 static tree_node_t *gen_node(fstree_t *fs, const char *path)
 {
-	dir_entry_t *ent = dir_entry_create(path);
+	sqfs_dir_entry_t *ent = dir_entry_create(path);
 	tree_node_t *ret;
 
 	TEST_NOT_NULL(ent);

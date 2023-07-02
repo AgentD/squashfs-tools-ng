@@ -23,18 +23,18 @@
 
 #define DIR_INDEX_THRESHOLD (256)
 
-typedef struct dir_entry_t {
-	struct dir_entry_t *next;
+typedef struct sqfs_dir_entry_t {
+	struct sqfs_dir_entry_t *next;
 	sqfs_u64 inode_ref;
 	sqfs_u32 inode_num;
 	sqfs_u16 type;
 	size_t name_len;
 	char name[];
-} dir_entry_t;
+} sqfs_dir_entry_t;
 
 typedef struct index_ent_t {
 	struct index_ent_t *next;
-	dir_entry_t *ent;
+	sqfs_dir_entry_t *ent;
 	sqfs_u64 block;
 	sqfs_u32 index;
 } index_ent_t;
@@ -42,8 +42,8 @@ typedef struct index_ent_t {
 struct sqfs_dir_writer_t {
 	sqfs_object_t base;
 
-	dir_entry_t *list;
-	dir_entry_t *list_end;
+	sqfs_dir_entry_t *list;
+	sqfs_dir_entry_t *list_end;
 
 	index_ent_t *idx;
 	index_ent_t *idx_end;
@@ -75,7 +75,7 @@ static int get_type(sqfs_u16 mode)
 
 static void writer_reset(sqfs_dir_writer_t *writer)
 {
-	dir_entry_t *ent;
+	sqfs_dir_entry_t *ent;
 	index_ent_t *idx;
 
 	while (writer->idx != NULL) {
@@ -183,7 +183,7 @@ int sqfs_dir_writer_add_entry(sqfs_dir_writer_t *writer, const char *name,
 			      sqfs_u32 inode_num, sqfs_u64 inode_ref,
 			      sqfs_u16 mode)
 {
-	dir_entry_t *ent;
+	sqfs_dir_entry_t *ent;
 	int type, err;
 
 	type = get_type(mode);
@@ -218,10 +218,10 @@ int sqfs_dir_writer_add_entry(sqfs_dir_writer_t *writer, const char *name,
 	return 0;
 }
 
-static size_t get_conseq_entry_count(sqfs_u32 offset, dir_entry_t *head)
+static size_t get_conseq_entry_count(sqfs_u32 offset, sqfs_dir_entry_t *head)
 {
 	size_t size, count = 0;
-	dir_entry_t *it;
+	sqfs_dir_entry_t *it;
 	sqfs_s32 diff;
 
 	size = (offset + sizeof(sqfs_dir_header_t)) % SQFS_META_BLOCK_SIZE;
@@ -250,7 +250,7 @@ static size_t get_conseq_entry_count(sqfs_u32 offset, dir_entry_t *head)
 }
 
 static int add_header(sqfs_dir_writer_t *writer, size_t count,
-		      dir_entry_t *ref, sqfs_u64 block)
+		      sqfs_dir_entry_t *ref, sqfs_u64 block)
 {
 	sqfs_dir_header_t hdr;
 	index_ent_t *idx;
@@ -285,7 +285,7 @@ static int add_header(sqfs_dir_writer_t *writer, size_t count,
 
 int sqfs_dir_writer_end(sqfs_dir_writer_t *writer)
 {
-	dir_entry_t *it, *first;
+	sqfs_dir_entry_t *it, *first;
 	sqfs_dir_node_t ent;
 	sqfs_u16 *diff_u16;
 	size_t i, count;

@@ -9,7 +9,7 @@
 int fstree_from_dir(fstree_t *fs, dir_iterator_t *dir)
 {
 	for (;;) {
-		dir_entry_t *ent = NULL;
+		sqfs_dir_entry_t *ent = NULL;
 		tree_node_t *n = NULL;
 		char *extra = NULL;
 

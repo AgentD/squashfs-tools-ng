@@ -51,7 +51,7 @@ static int push(dir_tree_iterator_t *it, const char *name, dir_iterator_t *dir)
 	return 0;
 }
 
-static bool should_skip(const dir_tree_iterator_t *dir, const dir_entry_t *ent)
+static bool should_skip(const dir_tree_iterator_t *dir, const sqfs_dir_entry_t *ent)
 {
 	unsigned int type_mask;
 
@@ -76,7 +76,7 @@ static bool should_skip(const dir_tree_iterator_t *dir, const dir_entry_t *ent)
 	return (dir->cfg.flags & type_mask) != 0;
 }
 
-static dir_entry_t *expand_path(const dir_tree_iterator_t *it, dir_entry_t *ent)
+static sqfs_dir_entry_t *expand_path(const dir_tree_iterator_t *it, sqfs_dir_entry_t *ent)
 {
 	size_t slen = strlen(ent->name) + 1, plen = 0;
 	dir_stack_t *sit;
@@ -120,7 +120,7 @@ static dir_entry_t *expand_path(const dir_tree_iterator_t *it, dir_entry_t *ent)
 	return ent;
 }
 
-static void apply_changes(const dir_tree_iterator_t *it, dir_entry_t *ent)
+static void apply_changes(const dir_tree_iterator_t *it, sqfs_dir_entry_t *ent)
 {
 	if (!(it->cfg.flags & DIR_SCAN_KEEP_TIME))
 		ent->mtime = it->cfg.def_mtime;
@@ -149,11 +149,11 @@ static void destroy(sqfs_object_t *obj)
 	free(it);
 }
 
-static int next(dir_iterator_t *base, dir_entry_t **out)
+static int next(dir_iterator_t *base, sqfs_dir_entry_t **out)
 {
 	dir_tree_iterator_t *it = (dir_tree_iterator_t *)base;
 	dir_iterator_t *sub;
-	dir_entry_t *ent;
+	sqfs_dir_entry_t *ent;
 	int ret;
 retry:
 	*out = NULL;

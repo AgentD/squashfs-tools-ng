@@ -50,10 +50,10 @@ static int dir_iterator_read_link(dir_iterator_t *it, char **out)
 	return SQFS_ERROR_UNSUPPORTED;
 }
 
-static int dir_iterator_next(dir_iterator_t *it, dir_entry_t **out)
+static int dir_iterator_next(dir_iterator_t *it, sqfs_dir_entry_t **out)
 {
 	dir_iterator_win32_t *w32 = (dir_iterator_win32_t *)it;
-	dir_entry_t *ent = NULL;
+	sqfs_dir_entry_t *ent = NULL;
 	DWORD length;
 
 	if (w32->state == 0 && !w32->is_first) {

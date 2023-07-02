@@ -117,7 +117,7 @@ int fstree_from_dir(fstree_t *fs, dir_iterator_t *dir);
 int fstree_sort_files(fstree_t *fs, sqfs_istream_t *sortfile);
 
 int glob_files(fstree_t *fs, const char *filename, size_t line_num,
-	       const dir_entry_t *ent,
+	       const sqfs_dir_entry_t *ent,
 	       const char *basepath, unsigned int glob_flags,
 	       split_line_t *extra);
 

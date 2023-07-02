@@ -27,7 +27,7 @@ typedef struct dir_iterator_t {
 	 * @return Zero on success, postivie value if the end of the list was
 	 *         reached, negative @ref SQFS_ERROR value on failure.
 	 */
-	int (*next)(struct dir_iterator_t *it, dir_entry_t **out);
+	int (*next)(struct dir_iterator_t *it, sqfs_dir_entry_t **out);
 
 	/**
 	 * @brief If the last entry was a symlink, extract the target path

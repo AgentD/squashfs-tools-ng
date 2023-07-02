@@ -64,7 +64,7 @@ static bool set_scan_flag(const char *arg, dir_tree_cfg_t *cfg)
 }
 
 int glob_files(fstree_t *fs, const char *filename, size_t line_num,
-	       const dir_entry_t *ent,
+	       const sqfs_dir_entry_t *ent,
 	       const char *basepath, unsigned int glob_flags,
 	       split_line_t *sep)
 {

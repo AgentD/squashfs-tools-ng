@@ -7,7 +7,7 @@
 #include "tar2sqfs.h"
 
 static int write_file(sqfs_writer_t *sqfs, dir_iterator_t *it,
-		      const dir_entry_t *ent, tree_node_t *n)
+		      const sqfs_dir_entry_t *ent, tree_node_t *n)
 {
 	int flags = 0, ret = 0;
 	sqfs_ostream_t *out;
@@ -92,7 +92,7 @@ fail:
 }
 
 static int create_node_and_repack_data(sqfs_writer_t *sqfs, dir_iterator_t *it,
-				       const dir_entry_t *ent, const char *link)
+				       const sqfs_dir_entry_t *ent, const char *link)
 {
 	tree_node_t *node;
 
@@ -128,7 +128,7 @@ fail_errno:
 }
 
 static int set_root_attribs(sqfs_writer_t *sqfs, dir_iterator_t *it,
-			    const dir_entry_t *ent)
+			    const sqfs_dir_entry_t *ent)
 {
 	if ((ent->flags & DIR_ENTRY_FLAG_HARD_LINK) || !S_ISDIR(ent->mode)) {
 		fprintf(stderr, "'%s' is not a directory!\n", ent->name);
@@ -156,7 +156,7 @@ int process_tarball(dir_iterator_t *it, sqfs_writer_t *sqfs)
 
 	for (;;) {
 		bool skip = false, is_root = false, is_prefixed = true;
-		dir_entry_t *ent = NULL;
+		sqfs_dir_entry_t *ent = NULL;
 		char *link = NULL;
 		int ret;
 

@@ -46,7 +46,7 @@ int main(int argc, char **argv)
 	unsigned char buffer[941];
 	sqfs_istream_t *fp, *ti;
 	dir_iterator_t *it;
-	dir_entry_t *ent;
+	sqfs_dir_entry_t *ent;
 	uint64_t offset;
 	sqfs_s32 i, ret;
 	int iret;

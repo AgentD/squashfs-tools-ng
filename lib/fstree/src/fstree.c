@@ -75,7 +75,7 @@ static void insert_sorted(tree_node_t *root, tree_node_t *n)
 
 static tree_node_t *mknode(fstree_t *fs, tree_node_t *parent, const char *name,
 			   size_t name_len, const char *extra,
-			   const dir_entry_t *ent)
+			   const sqfs_dir_entry_t *ent)
 {
 	tree_node_t *n;
 	size_t size;
@@ -212,7 +212,7 @@ tree_node_t *fstree_get_node_by_path(fstree_t *fs, tree_node_t *root,
 		n = child_by_name(root, path, len);
 
 		if (n == NULL) {
-			dir_entry_t ent;
+			sqfs_dir_entry_t ent;
 
 			if (!create_implicitly) {
 				errno = ENOENT;
@@ -239,7 +239,7 @@ tree_node_t *fstree_get_node_by_path(fstree_t *fs, tree_node_t *root,
 	return root;
 }
 
-tree_node_t *fstree_add_generic(fstree_t *fs, const dir_entry_t *ent,
+tree_node_t *fstree_add_generic(fstree_t *fs, const sqfs_dir_entry_t *ent,
 				const char *extra)
 {
 	tree_node_t *child, *parent;

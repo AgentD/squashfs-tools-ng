@@ -141,7 +141,7 @@ void fstree_cleanup(fstree_t *fs);
   This function does not print anything to stderr, instead it sets an
   appropriate errno value. Internally it uses fstree_mknode to create the node.
 */
-tree_node_t *fstree_add_generic(fstree_t *fs, const dir_entry_t *ent,
+tree_node_t *fstree_add_generic(fstree_t *fs, const sqfs_dir_entry_t *ent,
 				const char *extra);
 
 /*

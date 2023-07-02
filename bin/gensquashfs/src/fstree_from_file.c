@@ -29,7 +29,7 @@ static int read_u32(const char *str, sqfs_u32 *out, sqfs_u32 base)
 }
 
 static int add_generic(fstree_t *fs, const char *filename, size_t line_num,
-		       dir_entry_t *ent, split_line_t *line)
+		       sqfs_dir_entry_t *ent, split_line_t *line)
 {
 	const char *msg = NULL, *arg = line->count > 0 ? line->args[0] : NULL;
 
@@ -51,7 +51,7 @@ fail:
 }
 
 static int add_device(fstree_t *fs, const char *filename, size_t line_num,
-		      dir_entry_t *ent, split_line_t *line)
+		      sqfs_dir_entry_t *ent, split_line_t *line)
 {
 	sqfs_u32 maj, min;
 
@@ -93,7 +93,7 @@ fail_generic:
 }
 
 static int add_file(fstree_t *fs, const char *filename, size_t line_num,
-		    dir_entry_t *ent, split_line_t *line)
+		    sqfs_dir_entry_t *ent, split_line_t *line)
 {
 	if (line->count == 0)
 		line->args[line->count++] = ent->name;
@@ -108,7 +108,7 @@ static const struct callback_t {
 	bool need_extra;
 	bool allow_root;
 	int (*callback)(fstree_t *fs, const char *filename, size_t line_num,
-			dir_entry_t *ent, split_line_t *line);
+			sqfs_dir_entry_t *ent, split_line_t *line);
 } file_list_hooks[] = {
 	{ "dir", S_IFDIR, 0, false, true, add_generic },
 	{ "slink", S_IFLNK, 0, true, false, add_generic },
@@ -127,7 +127,7 @@ static int handle_line(fstree_t *fs, const char *filename, size_t line_num,
 	const struct callback_t *cb = NULL;
 	unsigned int glob_flags = 0;
 	sqfs_u32 uid, gid, mode;
-	dir_entry_t *ent = NULL;
+	sqfs_dir_entry_t *ent = NULL;
 	const char *msg = NULL;
 	bool is_glob = false;
 	char *path;

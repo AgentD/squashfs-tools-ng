@@ -73,7 +73,7 @@ static int dir_read_link(dir_iterator_t *base, char **out)
 	return 0;
 }
 
-static int dir_next(dir_iterator_t *base, dir_entry_t **out)
+static int dir_next(dir_iterator_t *base, sqfs_dir_entry_t **out)
 {
 	unix_dir_iterator_t *it = (unix_dir_iterator_t *)base;
 

@@ -32,7 +32,7 @@ int main(int argc, char **argv)
 {
 	sqfs_istream_t *fp, *ti, *ti2;
 	dir_iterator_t *it;
-	dir_entry_t *ent;
+	sqfs_dir_entry_t *ent;
 	char buffer[100];
 	sqfs_s32 ret;
 	sqfs_s64 ts;

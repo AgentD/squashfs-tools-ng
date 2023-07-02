@@ -16,7 +16,7 @@ typedef enum {
 } DIR_ENTRY_FLAG;
 
 /**
- * @struct dir_entry_t
+ * @struct sqfs_dir_entry_t
  *
  * @brief A directory entry returned by a @ref dir_iterator_t
  */
@@ -82,13 +82,13 @@ typedef struct {
 	 * Windows with encoding-aware APIs, the name is converted to UTF-8.
 	 */
 	char name[];
-} dir_entry_t;
+} sqfs_dir_entry_t;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-dir_entry_t *dir_entry_create(const char *name);
+sqfs_dir_entry_t *dir_entry_create(const char *name);
 
 #ifdef __cplusplus
 }

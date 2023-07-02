@@ -164,7 +164,7 @@ static void strm_destroy(sqfs_object_t *obj)
 
 /*****************************************************************************/
 
-static int it_next(dir_iterator_t *it, dir_entry_t **out)
+static int it_next(dir_iterator_t *it, sqfs_dir_entry_t **out)
 {
 	tar_iterator_t *tar = (tar_iterator_t *)it;
 	int ret;

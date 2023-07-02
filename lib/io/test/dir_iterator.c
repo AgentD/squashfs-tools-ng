@@ -13,8 +13,8 @@
 
 static int compare_entries(const void *a, const void *b)
 {
-	const dir_entry_t *const *lhs = a;
-	const dir_entry_t *const *rhs = b;
+	const sqfs_dir_entry_t *const *lhs = a;
+	const sqfs_dir_entry_t *const *rhs = b;
 
 	return strcmp((*lhs)->name, (*rhs)->name);
 }
@@ -22,7 +22,7 @@ static int compare_entries(const void *a, const void *b)
 int main(int argc, char **argv)
 {
 	dir_iterator_t *dir, *suba, *subb, *subc, *sub;
-	dir_entry_t *dent, *ent[6];
+	sqfs_dir_entry_t *dent, *ent[6];
 	size_t i;
 	int ret;
 	(void)argc; (void)argv;

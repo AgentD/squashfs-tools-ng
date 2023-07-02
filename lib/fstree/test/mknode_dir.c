@@ -9,9 +9,9 @@
 #include "fstree.h"
 #include "util/test.h"
 
-static dir_entry_t *mkentry(const char *name)
+static sqfs_dir_entry_t *mkentry(const char *name)
 {
-	dir_entry_t *ent = dir_entry_create(name);
+	sqfs_dir_entry_t *ent = dir_entry_create(name);
 	TEST_NOT_NULL(ent);
 	ent->mode = S_IFDIR | 0654;
 	ent->uid = 123;
@@ -25,7 +25,7 @@ int main(int argc, char **argv)
 {
 	fstree_defaults_t defaults;
 	tree_node_t *root, *a, *b;
-	dir_entry_t *ent;
+	sqfs_dir_entry_t *ent;
 	fstree_t fs;
 	int ret;
 	(void)argc; (void)argv;
