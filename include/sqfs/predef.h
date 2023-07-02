@@ -101,7 +101,7 @@ typedef struct sqfs_ostream_t sqfs_ostream_t;
 
 typedef struct sqfs_fragment_t sqfs_fragment_t;
 typedef struct sqfs_dir_header_t sqfs_dir_header_t;
-typedef struct sqfs_dir_entry_t sqfs_dir_entry_t;
+typedef struct sqfs_dir_node_t sqfs_dir_node_t;
 typedef struct sqfs_dir_index_t sqfs_dir_index_t;
 typedef struct sqfs_inode_t sqfs_inode_t;
 typedef struct sqfs_inode_dev_t sqfs_inode_dev_t;

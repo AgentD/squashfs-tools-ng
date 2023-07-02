@@ -182,7 +182,7 @@ SQFS_API int sqfs_meta_reader_read_dir_header(sqfs_meta_reader_t *m,
  * @return Zero on success, an @ref SQFS_ERROR value on failure.
  */
 SQFS_API int sqfs_meta_reader_read_dir_ent(sqfs_meta_reader_t *m,
-					   sqfs_dir_entry_t **ent);
+					   sqfs_dir_node_t **ent);
 
 /**
  * @brief Initialize a state object for reading a directory
@@ -232,7 +232,7 @@ int sqfs_readdir_state_init(sqfs_readdir_state_t *s, const sqfs_super_t *super,
  */
 SQFS_API int sqfs_meta_reader_readdir(sqfs_meta_reader_t *m,
 				      sqfs_readdir_state_t *s,
-				      sqfs_dir_entry_t **ent,
+				      sqfs_dir_node_t **ent,
 				      sqfs_u32 *inum, sqfs_u64 *iref);
 
 /**

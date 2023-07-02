@@ -64,7 +64,7 @@ static int fill_dir(sqfs_dir_reader_t *dr, sqfs_tree_node_t *root,
 {
 	sqfs_tree_node_t *n, *prev, **tail;
 	sqfs_inode_generic_t *inode;
-	sqfs_dir_entry_t *ent;
+	sqfs_dir_node_t *ent;
 	int err;
 
 	tail = &root->children;
@@ -188,7 +188,7 @@ int sqfs_dir_reader_get_full_hierarchy(sqfs_dir_reader_t *rd,
 {
 	sqfs_tree_node_t *root, *tail, *new;
 	sqfs_inode_generic_t *inode;
-	sqfs_dir_entry_t *ent;
+	sqfs_dir_node_t *ent;
 	const char *ptr;
 	int ret;
 

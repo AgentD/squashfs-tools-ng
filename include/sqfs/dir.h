@@ -41,7 +41,7 @@
  */
 struct sqfs_dir_header_t {
 	/**
-	 * @brief The number of @ref sqfs_dir_entry_t entries that are
+	 * @brief The number of @ref sqfs_dir_node_t entries that are
 	 *        following.
 	 *
 	 * This value is stored off by one and the total count must not
@@ -63,7 +63,7 @@ struct sqfs_dir_header_t {
 };
 
 /**
- * @struct sqfs_dir_entry_t
+ * @struct sqfs_dir_node_t
  *
  * @brief On-disk data structure of a directory entry. Many of these
  *        follow a single @ref sqfs_dir_header_t.
@@ -71,7 +71,7 @@ struct sqfs_dir_header_t {
  * See @ref sqfs_dir_writer_t for an overview on how SquashFS stores
  * directories on disk.
  */
-struct sqfs_dir_entry_t {
+struct sqfs_dir_node_t {
 	/**
 	 * @brief An offset into the uncompressed meta data block containing
 	 *        the coresponding inode.

@@ -296,7 +296,7 @@ SQFS_API int sqfs_dir_reader_find(sqfs_dir_reader_t *rd, const char *name);
  *         number if the end of the current directory listing has been reached.
  */
 SQFS_API int sqfs_dir_reader_read(sqfs_dir_reader_t *rd,
-				  sqfs_dir_entry_t **out);
+				  sqfs_dir_node_t **out);
 
 /**
  * @brief Read the inode that the current directory entry points to.

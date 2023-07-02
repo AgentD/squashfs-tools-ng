@@ -65,7 +65,7 @@ static void list_directory(const char *dirname)
 {
 	sqfs_inode_generic_t *root, *inode;
 	size_t i, max_len, len, col_count;
-	sqfs_dir_entry_t *ent;
+	sqfs_dir_node_t *ent;
 	int ret;
 
 	/* Get the directory inode we want to dump and open the directory */

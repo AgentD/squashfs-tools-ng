@@ -206,12 +206,12 @@ int sqfs_dir_reader_open_dir(sqfs_dir_reader_t *rd,
 	return 0;
 }
 
-static int mk_dummy_entry(const char *str, sqfs_dir_entry_t **out)
+static int mk_dummy_entry(const char *str, sqfs_dir_node_t **out)
 {
 	size_t len = strlen(str);
-	sqfs_dir_entry_t *ent;
+	sqfs_dir_node_t *ent;
 
-	ent = calloc(1, sizeof(sqfs_dir_entry_t) + len + 1);
+	ent = calloc(1, sizeof(sqfs_dir_node_t) + len + 1);
 	if (ent == NULL)
 		return SQFS_ERROR_ALLOC;
 
@@ -224,7 +224,7 @@ static int mk_dummy_entry(const char *str, sqfs_dir_entry_t **out)
 	return 0;
 }
 
-int sqfs_dir_reader_read(sqfs_dir_reader_t *rd, sqfs_dir_entry_t **out)
+int sqfs_dir_reader_read(sqfs_dir_reader_t *rd, sqfs_dir_node_t **out)
 {
 	int err;
 
@@ -265,7 +265,7 @@ int sqfs_dir_reader_rewind(sqfs_dir_reader_t *rd)
 
 int sqfs_dir_reader_find(sqfs_dir_reader_t *rd, const char *name)
 {
-	sqfs_dir_entry_t *ent;
+	sqfs_dir_node_t *ent;
 	int ret;
 
 	ret = sqfs_dir_reader_rewind(rd);

@@ -235,7 +235,7 @@ static size_t get_conseq_entry_count(sqfs_u32 offset, dir_entry_t *head)
 		if (diff > 32767 || diff < -32767)
 			break;
 
-		size += sizeof(sqfs_dir_entry_t) + it->name_len;
+		size += sizeof(sqfs_dir_node_t) + it->name_len;
 
 		if (count > 0 && size > SQFS_META_BLOCK_SIZE)
 			break;
@@ -286,7 +286,7 @@ static int add_header(sqfs_dir_writer_t *writer, size_t count,
 int sqfs_dir_writer_end(sqfs_dir_writer_t *writer)
 {
 	dir_entry_t *it, *first;
-	sqfs_dir_entry_t ent;
+	sqfs_dir_node_t ent;
 	sqfs_u16 *diff_u16;
 	size_t i, count;
 	sqfs_u32 offset;
