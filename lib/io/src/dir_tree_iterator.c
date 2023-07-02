@@ -59,7 +59,7 @@ static bool should_skip(const dir_tree_iterator_t *dir, const sqfs_dir_entry_t *
 		return true;
 
 	if ((dir->cfg.flags & DIR_SCAN_ONE_FILESYSTEM)) {
-		if (ent->flags & DIR_ENTRY_FLAG_MOUNT_POINT)
+		if (ent->flags & SQFS_DIR_ENTRY_FLAG_MOUNT_POINT)
 			return true;
 	}
 

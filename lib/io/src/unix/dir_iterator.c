@@ -100,7 +100,7 @@ static int dir_next(dir_iterator_t *base, sqfs_dir_entry_t **out)
 		return it->state;
 	}
 
-	*out = dir_entry_create(it->ent->d_name);
+	*out = sqfs_dir_entry_create(it->ent->d_name, it->sb.st_mode, 0);
 	if ((*out) == NULL) {
 		it->state = SQFS_ERROR_ALLOC;
 		return it->state;
@@ -111,13 +111,12 @@ static int dir_next(dir_iterator_t *base, sqfs_dir_entry_t **out)
 	(*out)->rdev = it->sb.st_rdev;
 	(*out)->uid = it->sb.st_uid;
 	(*out)->gid = it->sb.st_gid;
-	(*out)->mode = it->sb.st_mode;
 
 	if (S_ISREG(it->sb.st_mode))
 		(*out)->size = it->sb.st_size;
 
 	if ((*out)->dev != it->device)
-		(*out)->flags |= DIR_ENTRY_FLAG_MOUNT_POINT;
+		(*out)->flags |= SQFS_DIR_ENTRY_FLAG_MOUNT_POINT;
 
 	return it->state;
 }

@@ -12,11 +12,10 @@
 
 static tree_node_t *mkentry(fstree_t *fs, const char *name)
 {
-	sqfs_dir_entry_t *ent = dir_entry_create(name);
+	sqfs_dir_entry_t *ent = sqfs_dir_entry_create(name, S_IFBLK | 0600, 0);
 	tree_node_t *out;
 
 	TEST_NOT_NULL(ent);
-	ent->mode = S_IFBLK | 0600;
 	ent->rdev = 1337;
 
 	out = fstree_add_generic(fs, ent, NULL);

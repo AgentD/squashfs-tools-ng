@@ -209,7 +209,7 @@ retry:
 		return tar->state;
 	}
 
-	*out = dir_entry_create(tar->current.name);
+	*out = sqfs_dir_entry_create(tar->current.name, tar->current.mode, 0);
 	if ((*out) == NULL) {
 		tar->state = SQFS_ERROR_ALLOC;
 		return tar->state;
@@ -219,11 +219,10 @@ retry:
 	(*out)->rdev = tar->current.devno;
 	(*out)->uid = tar->current.uid;
 	(*out)->gid = tar->current.gid;
-	(*out)->mode = tar->current.mode;
 
 	if (tar->current.is_hard_link) {
 		(*out)->mode = (S_IFLNK | 0777);
-		(*out)->flags |= DIR_ENTRY_FLAG_HARD_LINK;
+		(*out)->flags |= SQFS_DIR_ENTRY_FLAG_HARD_LINK;
 	}
 
 	if (S_ISREG((*out)->mode))

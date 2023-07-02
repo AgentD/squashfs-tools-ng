@@ -7,7 +7,7 @@
 #ifndef IO_DIR_ITERATOR_H
 #define IO_DIR_ITERATOR_H
 
-#include "io/dir_entry.h"
+#include "sqfs/dir_entry.h"
 #include "sqfs/predef.h"
 
 /**

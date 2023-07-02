@@ -1,8 +1,8 @@
-libio_a_SOURCES = include/io/xfrm.h include/io/std.h include/io/dir_entry.h \
+libio_a_SOURCES = include/io/xfrm.h include/io/std.h \
 	include/io/dir_iterator.h include/io/mem.h lib/io/src/internal.h \
 	lib/io/src/xfrm/ostream.c \
 	lib/io/src/xfrm/istream.c lib/io/src/dir_tree_iterator.c \
-	lib/io/src/dir_entry.c lib/io/src/mem.c lib/io/src/std.c
+	lib/io/src/mem.c lib/io/src/std.c
 libio_a_CFLAGS = $(AM_CFLAGS) $(ZLIB_CFLAGS) $(XZ_CFLAGS)
 libio_a_CFLAGS += $(ZSTD_CFLAGS) $(BZIP2_CFLAGS)
 
@@ -23,22 +23,22 @@ test_istream_mem_LDADD = libio.a libcompat.a
 test_istream_mem_CPPFLAGS = $(AM_CPPFLAGS)
 
 test_dir_iterator_SOURCES = lib/io/test/dir_iterator.c
-test_dir_iterator_LDADD = libio.a libutil.a libcompat.a
+test_dir_iterator_LDADD = libio.a libsquashfs.la libutil.a libcompat.a
 test_dir_iterator_CPPFLAGS = $(AM_CPPFLAGS)
 test_dir_iterator_CPPFLAGS += -DTESTPATH=$(top_srcdir)/lib/io/test/testdir
 
 test_dir_tree_iterator_SOURCES = lib/io/test/dir_tree_iterator.c
-test_dir_tree_iterator_LDADD = libio.a libutil.a libcompat.a
+test_dir_tree_iterator_LDADD = libio.a libsquashfs.la libutil.a libcompat.a
 test_dir_tree_iterator_CPPFLAGS = $(AM_CPPFLAGS)
 test_dir_tree_iterator_CPPFLAGS += -DTESTPATH=$(top_srcdir)/lib/io/test/testdir
 
 test_dir_tree_iterator2_SOURCES = lib/io/test/dir_tree_iterator2.c
-test_dir_tree_iterator2_LDADD = libio.a libutil.a libcompat.a
+test_dir_tree_iterator2_LDADD = libio.a libsquashfs.la libutil.a libcompat.a
 test_dir_tree_iterator2_CPPFLAGS = $(AM_CPPFLAGS)
 test_dir_tree_iterator2_CPPFLAGS += -DTESTPATH=$(top_srcdir)/lib/io/test/testdir
 
 test_dir_tree_iterator3_SOURCES = lib/io/test/dir_tree_iterator3.c
-test_dir_tree_iterator3_LDADD = libio.a libutil.a libcompat.a
+test_dir_tree_iterator3_LDADD = libio.a libsquashfs.la libutil.a libcompat.a
 test_dir_tree_iterator3_CPPFLAGS = $(AM_CPPFLAGS)
 test_dir_tree_iterator3_CPPFLAGS += -DTESTPATH=$(top_srcdir)/lib/io/test/testdir
 

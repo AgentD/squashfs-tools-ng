@@ -12,9 +12,8 @@
 
 static sqfs_dir_entry_t *mkentry(const char *name)
 {
-	sqfs_dir_entry_t *ent = dir_entry_create(name);
+	sqfs_dir_entry_t *ent = sqfs_dir_entry_create(name, S_IFDIR | 0750, 0);
 	TEST_NOT_NULL(ent);
-	ent->mode = S_IFDIR | 0750;
 	ent->uid = 1000;
 	ent->gid = 100;
 	return ent;

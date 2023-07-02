@@ -151,7 +151,7 @@ int main(int argc, char **argv)
 		       "20CharsForLnkTest003/20CharsForLnkTest004/"
 		       "01234567890123456789");
 	TEST_EQUAL_UI(ent->mode, S_IFLNK | 0777);
-	TEST_ASSERT((ent->flags & DIR_ENTRY_FLAG_HARD_LINK) != 0);
+	TEST_ASSERT((ent->flags & SQFS_DIR_ENTRY_FLAG_HARD_LINK) != 0);
 	free(ent);
 
 	ret = it->read_link(it, &link);

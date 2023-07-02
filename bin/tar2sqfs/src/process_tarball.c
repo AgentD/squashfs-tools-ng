@@ -101,7 +101,7 @@ static int create_node_and_repack_data(sqfs_writer_t *sqfs, dir_iterator_t *it,
 		goto fail_errno;
 
 	if (!cfg.quiet) {
-		if (ent->flags & DIR_ENTRY_FLAG_HARD_LINK) {
+		if (ent->flags & SQFS_DIR_ENTRY_FLAG_HARD_LINK) {
 			printf("Hard link %s -> %s\n", ent->name, link);
 		} else {
 			printf("Packing %s\n", ent->name);
@@ -130,7 +130,7 @@ fail_errno:
 static int set_root_attribs(sqfs_writer_t *sqfs, dir_iterator_t *it,
 			    const sqfs_dir_entry_t *ent)
 {
-	if ((ent->flags & DIR_ENTRY_FLAG_HARD_LINK) || !S_ISDIR(ent->mode)) {
+	if ((ent->flags & SQFS_DIR_ENTRY_FLAG_HARD_LINK) || !S_ISDIR(ent->mode)) {
 		fprintf(stderr, "'%s' is not a directory!\n", ent->name);
 		return -1;
 	}
@@ -204,7 +204,7 @@ int process_tarball(dir_iterator_t *it, sqfs_writer_t *sqfs)
 			}
 
 			if (link != NULL &&
-			    ((ent->flags & DIR_ENTRY_FLAG_HARD_LINK) ||
+			    ((ent->flags & SQFS_DIR_ENTRY_FLAG_HARD_LINK) ||
 			     !no_symlink_retarget)) {
 				if (canonicalize_name(link) == 0 &&
 				    !strncmp(link, root_becomes, rootlen) &&

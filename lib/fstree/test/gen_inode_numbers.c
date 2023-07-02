@@ -12,12 +12,10 @@
 
 static tree_node_t *gen_node(fstree_t *fs, const char *path)
 {
-	sqfs_dir_entry_t *ent = dir_entry_create(path);
+	sqfs_dir_entry_t *ent = sqfs_dir_entry_create(path, S_IFDIR | 0755, 0);
 	tree_node_t *ret;
 
 	TEST_NOT_NULL(ent);
-	ent->mode = S_IFDIR | 0755;
-
 	ret = fstree_add_generic(fs, ent, NULL);
 	free(ent);
 	return ret;

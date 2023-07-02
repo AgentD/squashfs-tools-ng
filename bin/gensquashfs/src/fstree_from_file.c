@@ -112,7 +112,7 @@ static const struct callback_t {
 } file_list_hooks[] = {
 	{ "dir", S_IFDIR, 0, false, true, add_generic },
 	{ "slink", S_IFLNK, 0, true, false, add_generic },
-	{ "link", S_IFLNK, DIR_ENTRY_FLAG_HARD_LINK, true, false, add_generic },
+	{ "link", S_IFLNK, SQFS_DIR_ENTRY_FLAG_HARD_LINK, true, false, add_generic },
 	{ "nod", 0, 0, true,  false, add_device },
 	{ "pipe", S_IFIFO, 0, false, false, add_generic },
 	{ "sock", S_IFSOCK, 0, false, false, add_generic },

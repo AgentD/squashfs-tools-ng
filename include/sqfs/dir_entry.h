@@ -1,26 +1,28 @@
-/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* SPDX-License-Identifier: LGPL-3.0-or-later */
 /*
  * dir_entry.h
  *
  * Copyright (C) 2023 David Oberhollenzer <goliath@infraroot.at>
  */
-#ifndef IO_DIR_ENTRY_H
-#define IO_DIR_ENTRY_H
+#ifndef SQFS_DIR_ENTRY_H
+#define SQFS_DIR_ENTRY_H
 
 #include "sqfs/predef.h"
 
 typedef enum {
-	DIR_ENTRY_FLAG_MOUNT_POINT = 0x0001,
+	SQFS_DIR_ENTRY_FLAG_MOUNT_POINT = 0x0001,
 
-	DIR_ENTRY_FLAG_HARD_LINK = 0x0002,
-} DIR_ENTRY_FLAG;
+	SQFS_DIR_ENTRY_FLAG_HARD_LINK = 0x0002,
+
+	SQFS_DIR_ENTRY_FLAG_ALL = 0x0003,
+} SQFS_DIR_ENTRY_FLAG;
 
 /**
  * @struct sqfs_dir_entry_t
  *
  * @brief A directory entry returned by a @ref dir_iterator_t
  */
-typedef struct {
+struct sqfs_dir_entry_t {
 	/**
 	 * @brief Total size of file entries
 	 */
@@ -71,7 +73,7 @@ typedef struct {
 	sqfs_u16 mode;
 
 	/**
-	 * @brief Combination of DIR_ENTRY_FLAG values
+	 * @brief Combination of SQFS_DIR_ENTRY_FLAG values
 	 */
 	sqfs_u16 flags;
 
@@ -82,16 +84,18 @@ typedef struct {
 	 * Windows with encoding-aware APIs, the name is converted to UTF-8.
 	 */
 	char name[];
-} sqfs_dir_entry_t;
+};
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-sqfs_dir_entry_t *dir_entry_create(const char *name);
+SQFS_API sqfs_dir_entry_t *sqfs_dir_entry_create(const char *name,
+						 sqfs_u16 mode,
+						 sqfs_u16 flags);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* IO_DIR_ENTRY_H */
+#endif /* SQFS_DIR_ENTRY_H */

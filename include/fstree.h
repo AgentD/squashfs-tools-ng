@@ -15,7 +15,7 @@
 #include <stdio.h>
 
 #include "sqfs/predef.h"
-#include "io/dir_entry.h"
+#include "sqfs/dir_entry.h"
 #include "compat.h"
 
 typedef struct fstree_defaults_t fstree_defaults_t;

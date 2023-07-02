@@ -102,7 +102,7 @@ static tree_node_t *mknode(fstree_t *fs, tree_node_t *parent, const char *name,
 		ptr = n->name + name_len + 1;
 		strcpy(ptr, extra);
 
-		if (ent->flags & DIR_ENTRY_FLAG_HARD_LINK) {
+		if (ent->flags & SQFS_DIR_ENTRY_FLAG_HARD_LINK) {
 			if (canonicalize_name(ptr)) {
 				free(n);
 				errno = EINVAL;
@@ -113,7 +113,7 @@ static tree_node_t *mknode(fstree_t *fs, tree_node_t *parent, const char *name,
 		ptr = NULL;
 	}
 
-	if (ent->flags & DIR_ENTRY_FLAG_HARD_LINK) {
+	if (ent->flags & SQFS_DIR_ENTRY_FLAG_HARD_LINK) {
 		n->mode = S_IFLNK | 0777;
 		n->flags |= FLAG_LINK_IS_HARD;
 	}
@@ -143,7 +143,7 @@ static tree_node_t *mknode(fstree_t *fs, tree_node_t *parent, const char *name,
 		return NULL;
 	}
 
-	if (ent->flags & DIR_ENTRY_FLAG_HARD_LINK) {
+	if (ent->flags & SQFS_DIR_ENTRY_FLAG_HARD_LINK) {
 		n->next_by_type = fs->links_unresolved;
 		fs->links_unresolved = n;
 	}

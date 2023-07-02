@@ -5,23 +5,26 @@ libfstree_a_SOURCES = include/fstree.h lib/fstree/src/fstree.c \
 noinst_LIBRARIES += libfstree.a
 
 test_mknode_simple_SOURCES = lib/fstree/test/mknode_simple.c
-test_mknode_simple_LDADD = libfstree.a libio.a libutil.a libcompat.a
+test_mknode_simple_LDADD = libfstree.a libsquashfs.la libutil.a libcompat.a
 
 test_mknode_dir_SOURCES = lib/fstree/test/mknode_dir.c
-test_mknode_dir_LDADD = libfstree.a libio.a libutil.a libcompat.a
+test_mknode_dir_LDADD = libfstree.a libsquashfs.la libutil.a libcompat.a
 
 test_gen_inode_numbers_SOURCES = lib/fstree/test/gen_inode_numbers.c
-test_gen_inode_numbers_LDADD = libcommon.a libfstree.a libio.a \
+test_gen_inode_numbers_LDADD = libcommon.a libfstree.a libsquashfs.la \
 			libutil.a libcompat.a
 
 test_add_by_path_SOURCES = lib/fstree/test/add_by_path.c
-test_add_by_path_LDADD = libcommon.a libfstree.a libio.a libutil.a libcompat.a
+test_add_by_path_LDADD = libcommon.a libfstree.a libsquashfs.la \
+			libutil.a libcompat.a
 
 test_get_path_SOURCES = lib/fstree/test/get_path.c
-test_get_path_LDADD = libcommon.a libfstree.a libio.a libutil.a libcompat.a
+test_get_path_LDADD = libcommon.a libfstree.a libsquashfs.la \
+			libutil.a libcompat.a
 
 test_fstree_sort_SOURCES = lib/fstree/test/fstree_sort.c
-test_fstree_sort_LDADD = libcommon.a libfstree.a libio.a libutil.a libcompat.a
+test_fstree_sort_LDADD = libcommon.a libfstree.a libsquashfs.la \
+			libutil.a libcompat.a
 
 FSTREE_TESTS = \
 	test_mknode_simple test_mknode_dir test_gen_inode_numbers \
