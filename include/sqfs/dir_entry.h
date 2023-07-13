@@ -1,14 +1,39 @@
 /* SPDX-License-Identifier: LGPL-3.0-or-later */
 /*
- * dir_entry.h
+ * dir_entry.h - This file is part of libsquashfs
  *
  * Copyright (C) 2023 David Oberhollenzer <goliath@infraroot.at>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #ifndef SQFS_DIR_ENTRY_H
 #define SQFS_DIR_ENTRY_H
 
 #include "sqfs/predef.h"
 
+/**
+ * @file dir_entry.h
+ *
+ * @brief Contains @ref sqfs_dir_entry_t structure representing
+ *        a decoded directory entry.
+ */
+
+/**
+ * @enum SQFS_DIR_ENTRY_FLAG
+ *
+ * @brief Additional flags for a @ref sqfs_dir_entry_t
+ */
 typedef enum {
 	SQFS_DIR_ENTRY_FLAG_MOUNT_POINT = 0x0001,
 
@@ -20,7 +45,7 @@ typedef enum {
 /**
  * @struct sqfs_dir_entry_t
  *
- * @brief A directory entry returned by a @ref dir_iterator_t
+ * @brief A completely decoded directory entry
  */
 struct sqfs_dir_entry_t {
 	/**
@@ -30,45 +55,31 @@ struct sqfs_dir_entry_t {
 
 	/**
 	 * @brief Unix time stamp when the entry was last modified.
-	 *
-	 * If necessary, the OS native time stamp is converted to Unix time.
 	 */
 	sqfs_s64 mtime;
 
 	/**
 	 * @brief Device number where the entry is stored on.
-	 *
-	 * On Windows and other non-Unix OSes, a dummy value is stored here.
 	 */
 	sqfs_u64 dev;
 
 	/**
 	 * @brief Device number for device special files.
-	 *
-	 * On Windows and other non-Unix OSes, a dummy value is stored here.
 	 */
 	sqfs_u64 rdev;
 
 	/**
 	 * @brief ID of the user that owns the entry.
-	 *
-	 * On Windows and other non-Unix OSes, this always reports user 0.
 	 */
 	sqfs_u64 uid;
 
 	/**
 	 * @brief ID of the group that owns the entry.
-	 *
-	 * On Windows and other non-Unix OSes, this always reports group 0.
 	 */
 	sqfs_u64 gid;
 
 	/**
 	 * @brief Unix style permissions and entry type.
-	 *
-	 * On Windows and other non-Unix OSes, this is synthesized from the
-	 * Unix-like file type, default 0755 permissions for directories or
-	 * 0644 for files.
 	 */
 	sqfs_u16 mode;
 
@@ -79,9 +90,6 @@ struct sqfs_dir_entry_t {
 
 	/**
 	 * @brief Name of the entry
-	 *
-	 * On Unix-like OSes, the name is returned as-is. On systems like
-	 * Windows with encoding-aware APIs, the name is converted to UTF-8.
 	 */
 	char name[];
 };
@@ -90,6 +98,20 @@ struct sqfs_dir_entry_t {
 extern "C" {
 #endif
 
+/**
+ * @brief Create an instance of @ref sqfs_dir_entry_t
+ *
+ * @memberof sqfs_dir_entry_t
+ *
+ * The name string is stored inline (flexible array member), the entry has
+ * to be released with @ref sqfs_free
+ *
+ * @param name The name of the entry
+ * @param mode Unix permissions and entry type
+ * @param flags A combination of @ref SQFS_DIR_ENTRY_FLAG flags
+ *
+ * @return A pointer to a directory entry on success, NULL on failure.
+ */
 SQFS_API sqfs_dir_entry_t *sqfs_dir_entry_create(const char *name,
 						 sqfs_u16 mode,
 						 sqfs_u16 flags);
