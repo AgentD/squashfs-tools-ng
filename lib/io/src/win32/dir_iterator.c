@@ -133,11 +133,14 @@ static int dir_iterator_read_xattr(dir_iterator_t *it, sqfs_xattr_t **out)
 	return 0;
 }
 
+static int dir_iterator_init(dir_iterator_win32_t *it);
+
 static int dir_iterator_open_subdir(dir_iterator_t *it, dir_iterator_t **out)
 {
 	const dir_iterator_win32_t *dir = (const dir_iterator_win32_t *)it;
 	dir_iterator_win32_t *sub = NULL;
 	size_t plen, slen, total;
+	int ret;
 
 	*out = NULL;
 
@@ -161,23 +164,33 @@ static int dir_iterator_open_subdir(dir_iterator_t *it, dir_iterator_t **out)
 	sub->path[plen + slen + 1] = '*';
 	sub->path[plen + slen + 2] = '\0';
 
-	sqfs_object_init(sub, dir_iterator_destroy, NULL);
-	((dir_iterator_t *)sub)->next = dir_iterator_next;
-	((dir_iterator_t *)sub)->read_link = dir_iterator_read_link;
-	((dir_iterator_t *)sub)->open_subdir = dir_iterator_open_subdir;
-	((dir_iterator_t *)sub)->ignore_subdir = dir_iterator_ignore_subdir;
-	((dir_iterator_t *)sub)->open_file_ro = dir_iterator_open_file_ro;
-	((dir_iterator_t *)sub)->read_xattr = dir_iterator_read_xattr;
-	sub->is_first = true;
-	sub->state = 0;
-
-	sub->dirhnd = FindFirstFileW(sub->path, &sub->ent);
-	if (sub->dirhnd == INVALID_HANDLE_VALUE) {
+	ret = dir_iterator_init(sub);
+	if (ret != 0) {
 		free(sub);
-		return SQFS_ERROR_IO;
+		sub = NULL;
 	}
 
 	*out = (dir_iterator_t *)sub;
+	return ret;
+}
+
+static int dir_iterator_init(dir_iterator_win32_t *it)
+{
+	sqfs_object_init(it, dir_iterator_destroy, NULL);
+
+	((dir_iterator_t *)it)->next = dir_iterator_next;
+	((dir_iterator_t *)it)->read_link = dir_iterator_read_link;
+	((dir_iterator_t *)it)->open_subdir = dir_iterator_open_subdir;
+	((dir_iterator_t *)it)->ignore_subdir = dir_iterator_ignore_subdir;
+	((dir_iterator_t *)it)->open_file_ro = dir_iterator_open_file_ro;
+	((dir_iterator_t *)it)->read_xattr = dir_iterator_read_xattr;
+	it->is_first = true;
+	it->state = 0;
+
+	it->dirhnd = FindFirstFileW(it->path, &it->ent);
+	if (it->dirhnd == INVALID_HANDLE_VALUE)
+		return SQFS_ERROR_IO;
+
 	return 0;
 }
 
@@ -222,24 +235,10 @@ dir_iterator_t *dir_iterator_create(const char *path)
 
 	/* initialize */
 	memset(it, 0, offsetof(dir_iterator_win32_t, path));
-	sqfs_object_init(it, dir_iterator_destroy, NULL);
-
-	((dir_iterator_t *)it)->next = dir_iterator_next;
-	((dir_iterator_t *)it)->read_link = dir_iterator_read_link;
-	((dir_iterator_t *)it)->open_subdir = dir_iterator_open_subdir;
-	((dir_iterator_t *)it)->ignore_subdir = dir_iterator_ignore_subdir;
-	((dir_iterator_t *)it)->open_file_ro = dir_iterator_open_file_ro;
-	((dir_iterator_t *)it)->read_xattr = dir_iterator_read_xattr;
-	it->is_first = true;
-	it->state = 0;
-
-	/* get the directory handle AND the first entry */
-	it->dirhnd = FindFirstFileW(it->path, &it->ent);
-
-	if (it->dirhnd == INVALID_HANDLE_VALUE) {
+	if (dir_iterator_init(it) != 0) {
 		w32_perror(path);
 		free(it);
-		return NULL;
+		it = NULL;
 	}
 
 	return (dir_iterator_t *)it;

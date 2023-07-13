@@ -140,10 +140,12 @@ static int dir_read_xattr(dir_iterator_t *it, sqfs_xattr_t **out)
 	return 0;
 }
 
+static int create_iterator(dir_iterator_t **out, DIR *dir);
+
 static int dir_open_subdir(dir_iterator_t *base, dir_iterator_t **out)
 {
 	const unix_dir_iterator_t *it = (const unix_dir_iterator_t *)base;
-	unix_dir_iterator_t *sub = NULL;
+	DIR *dir;
 	int fd;
 
 	*out = NULL;
@@ -161,59 +163,34 @@ static int dir_open_subdir(dir_iterator_t *base, dir_iterator_t **out)
 		return SQFS_ERROR_IO;
 	}
 
-	sub = calloc(1, sizeof(*sub));
-	if (sub == NULL)
-		goto fail_alloc;
-
-	sub->dir = fdopendir(fd);
-	if (sub->dir == NULL)
-		goto fail_alloc;
-
-	if (fstat(dirfd(sub->dir), &sub->sb)) {
-		free(sub);
+	dir = fdopendir(fd);
+	if (dir == NULL) {
+		int err = errno;
+		close(fd);
+		errno = err;
 		return SQFS_ERROR_IO;
 	}
 
-	sqfs_object_init(sub, dir_destroy, NULL);
-	sub->device = sub->sb.st_dev;
-	((dir_iterator_t *)sub)->next = dir_next;
-	((dir_iterator_t *)sub)->read_link = dir_read_link;
-	((dir_iterator_t *)sub)->open_subdir = dir_open_subdir;
-	((dir_iterator_t *)sub)->ignore_subdir = dir_ignore_subdir;
-	((dir_iterator_t *)sub)->open_file_ro = dir_open_file_ro;
-	((dir_iterator_t *)sub)->read_xattr = dir_read_xattr;
-
-	*out = (dir_iterator_t *)sub;
-	return 0;
-fail_alloc:
-	free(sub);
-	close(fd);
-	return SQFS_ERROR_ALLOC;
+	return create_iterator(out, dir);
 }
 
-dir_iterator_t *dir_iterator_create(const char *path)
+static int create_iterator(dir_iterator_t **out, DIR *dir)
 {
 	unix_dir_iterator_t *it = calloc(1, sizeof(*it));
 
 	if (it == NULL) {
-		perror(path);
-		return NULL;
+		closedir(dir);
+		return SQFS_ERROR_ALLOC;
 	}
 
-	it->state = 0;
-	it->dir = opendir(path);
+	it->dir = dir;
 
-	if (it->dir == NULL) {
-		perror(path);
+	if (fstat(dirfd(dir), &it->sb)) {
+		int err = errno;
+		closedir(dir);
 		free(it);
-		return NULL;
-	}
-
-	if (fstat(dirfd(it->dir), &it->sb)) {
-		perror(path);
-		closedir(it->dir);
-		free(it);
-		return NULL;
+		errno = err;
+		return SQFS_ERROR_IO;
 	}
 
 	sqfs_object_init(it, dir_destroy, NULL);
@@ -225,5 +202,20 @@ dir_iterator_t *dir_iterator_create(const char *path)
 	((dir_iterator_t *)it)->open_file_ro = dir_open_file_ro;
 	((dir_iterator_t *)it)->read_xattr = dir_read_xattr;
 
-	return (dir_iterator_t *)it;
+	*out = (dir_iterator_t *)it;
+	return 0;
+}
+
+dir_iterator_t *dir_iterator_create(const char *path)
+{
+	dir_iterator_t *out;
+	DIR *dir;
+
+	dir = opendir(path);
+	if (dir == NULL || create_iterator(&out, dir) != 0) {
+		perror(path);
+		return NULL;
+	}
+
+	return out;
 }
