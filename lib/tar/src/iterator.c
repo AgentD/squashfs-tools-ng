@@ -19,7 +19,7 @@
 #include <fnmatch.h>
 
 typedef struct {
-	dir_iterator_t base;
+	sqfs_dir_iterator_t base;
 	tar_header_decoded_t current;
 	sqfs_istream_t *stream;
 	char **excludedirs;
@@ -167,7 +167,7 @@ static void strm_destroy(sqfs_object_t *obj)
 
 /*****************************************************************************/
 
-static int it_next(dir_iterator_t *it, sqfs_dir_entry_t **out)
+static int it_next(sqfs_dir_iterator_t *it, sqfs_dir_entry_t **out)
 {
 	tar_iterator_t *tar = (tar_iterator_t *)it;
 	size_t idx;
@@ -243,7 +243,7 @@ fail:
 	return tar->state;
 }
 
-static int it_read_link(dir_iterator_t *it, char **out)
+static int it_read_link(sqfs_dir_iterator_t *it, char **out)
 {
 	tar_iterator_t *tar = (tar_iterator_t *)it;
 
@@ -258,20 +258,20 @@ static int it_read_link(dir_iterator_t *it, char **out)
 	return (*out == NULL) ? SQFS_ERROR_ALLOC : 0;
 }
 
-static int it_open_subdir(dir_iterator_t *it, dir_iterator_t **out)
+static int it_open_subdir(sqfs_dir_iterator_t *it, sqfs_dir_iterator_t **out)
 {
 	(void)it;
 	*out = NULL;
 	return SQFS_ERROR_UNSUPPORTED;
 }
 
-static void it_ignore_subdir(dir_iterator_t *it)
+static void it_ignore_subdir(sqfs_dir_iterator_t *it)
 {
 	(void)it;
 	/* TODO: skip list */
 }
 
-static int it_open_file_ro(dir_iterator_t *it, sqfs_istream_t **out)
+static int it_open_file_ro(sqfs_dir_iterator_t *it, sqfs_istream_t **out)
 {
 	tar_iterator_t *tar = (tar_iterator_t *)it;
 	tar_istream_t *strm;
@@ -302,7 +302,7 @@ static int it_open_file_ro(dir_iterator_t *it, sqfs_istream_t **out)
 	return 0;
 }
 
-static int it_read_xattr(dir_iterator_t *it, sqfs_xattr_t **out)
+static int it_read_xattr(sqfs_dir_iterator_t *it, sqfs_xattr_t **out)
 {
 	tar_iterator_t *tar = (tar_iterator_t *)it;
 
@@ -359,10 +359,11 @@ static int tar_probe(const sqfs_u8 *data, size_t size)
 	return 0;
 }
 
-dir_iterator_t *tar_open_stream(sqfs_istream_t *strm, tar_iterator_opts *opts)
+sqfs_dir_iterator_t *tar_open_stream(sqfs_istream_t *strm,
+				     tar_iterator_opts *opts)
 {
 	tar_iterator_t *tar = calloc(1, sizeof(*tar));
-	dir_iterator_t *it = (dir_iterator_t *)tar;
+	sqfs_dir_iterator_t *it = (sqfs_dir_iterator_t *)tar;
 	xfrm_stream_t *xfrm = NULL;
 	const sqfs_u8 *ptr;
 	size_t size;

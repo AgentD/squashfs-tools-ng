@@ -31,7 +31,7 @@ static const char *fname = STRVALUE(TESTFNAME);
 int main(int argc, char **argv)
 {
 	sqfs_istream_t *fp, *ti, *ti2;
-	dir_iterator_t *it;
+	sqfs_dir_iterator_t *it;
 	sqfs_dir_entry_t *ent;
 	char buffer[100];
 	sqfs_s32 ret;

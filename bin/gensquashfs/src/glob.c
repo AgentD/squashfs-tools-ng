@@ -69,7 +69,7 @@ int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 	       split_line_t *sep)
 {
 	bool first_type_flag = true;
-	dir_iterator_t *dir = NULL;
+	sqfs_dir_iterator_t *dir = NULL;
 	char *prefix = NULL;
 	dir_tree_cfg_t cfg;
 	tree_node_t *root;

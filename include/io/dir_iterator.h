@@ -11,11 +11,11 @@
 #include "sqfs/predef.h"
 
 /**
- * @interface dir_iterator_t
+ * @interface sqfs_dir_iterator_t
  *
  * @brief An iterator over entries in a filesystem directory.
  */
-typedef struct dir_iterator_t {
+typedef struct sqfs_dir_iterator_t {
 	sqfs_object_t obj;
 
 	/**
@@ -27,7 +27,7 @@ typedef struct dir_iterator_t {
 	 * @return Zero on success, postivie value if the end of the list was
 	 *         reached, negative @ref SQFS_ERROR value on failure.
 	 */
-	int (*next)(struct dir_iterator_t *it, sqfs_dir_entry_t **out);
+	int (*next)(struct sqfs_dir_iterator_t *it, sqfs_dir_entry_t **out);
 
 	/**
 	 * @brief If the last entry was a symlink, extract the target path
@@ -38,22 +38,22 @@ typedef struct dir_iterator_t {
 	 *
 	 * @return Zero on success, negative @ref SQFS_ERROR value on failure.
 	 */
-	int (*read_link)(struct dir_iterator_t *it, char **out);
+	int (*read_link)(struct sqfs_dir_iterator_t *it, char **out);
 
 	/**
 	 * @brief If the last entry was a directory, open it.
 	 *
 	 * If next() returned a directory, this can be used to create a brand
-	 * new dir_iterator_t for it, that is independent of the current one
-	 * and returns the sub-directories entries.
+	 * new sqfs_dir_iterator_t for it, that is independent of the current
+	 * one and returns the sub-directories entries.
 	 *
 	 * @param it A pointer to the iterator itself.
 	 * @param out Returns a pointer to a directory iterator on success.
 	 *
 	 * @return Zero on success, negative @ref SQFS_ERROR value on failure.
 	 */
-	int (*open_subdir)(struct dir_iterator_t *it,
-			   struct dir_iterator_t **out);
+	int (*open_subdir)(struct sqfs_dir_iterator_t *it,
+			   struct sqfs_dir_iterator_t **out);
 
 	/**
 	 * @brief Skip a sub-hierarchy on a stacked iterator
@@ -64,7 +64,7 @@ typedef struct dir_iterator_t {
 	 *
 	 * @param it A pointer to the iterator itself.
 	 */
-	void (*ignore_subdir)(struct dir_iterator_t *it);
+	void (*ignore_subdir)(struct sqfs_dir_iterator_t *it);
 
 	/**
 	 * @brief If the last entry was a regular file, open it.
@@ -77,7 +77,8 @@ typedef struct dir_iterator_t {
 	 *
 	 * @return Zero on success, negative @ref SQFS_ERROR value on failure.
 	 */
-	int (*open_file_ro)(struct dir_iterator_t *it, sqfs_istream_t **out);
+	int (*open_file_ro)(struct sqfs_dir_iterator_t *it,
+			    sqfs_istream_t **out);
 
 	/**
 	 * @brief Read extended attributes associated with the current entry
@@ -87,8 +88,8 @@ typedef struct dir_iterator_t {
 	 *
 	 * @return Zero on success, negative @ref SQFS_ERROR value on failure.
 	 */
-	int (*read_xattr)(struct dir_iterator_t *it, sqfs_xattr_t **out);
-} dir_iterator_t;
+	int (*read_xattr)(struct sqfs_dir_iterator_t *it, sqfs_xattr_t **out);
+} sqfs_dir_iterator_t;
 
 enum {
 	DIR_SCAN_NO_SOCK = 0x0001,
@@ -155,10 +156,10 @@ extern "C" {
  *
  * @param path A path to a directory on the file system.
  *
- * @return A pointer to a dir_iterator_t implementation on success,
+ * @return A pointer to a sqfs_dir_iterator_t implementation on success,
  *         NULL on error (message is printed to stderr).
  */
-SQFS_INTERNAL dir_iterator_t *dir_iterator_create(const char *path);
+SQFS_INTERNAL sqfs_dir_iterator_t *dir_iterator_create(const char *path);
 
 /**
  * @brief Create a stacked, recursive directory tree iterator
@@ -171,12 +172,12 @@ SQFS_INTERNAL dir_iterator_t *dir_iterator_create(const char *path);
  * @param path A path to a directory on the file system.
  * @param cfg A @ref dir_tree_cfg_t filtering configuration.
  *
- * @return A pointer to a dir_iterator_t implementation on success,
+ * @return A pointer to a sqfs_dir_iterator_t implementation on success,
  *         NULL on error (message is printed to stderr).
  */
 SQFS_INTERNAL
-dir_iterator_t *dir_tree_iterator_create(const char *path,
-					 const dir_tree_cfg_t *cfg);
+sqfs_dir_iterator_t *dir_tree_iterator_create(const char *path,
+					      const dir_tree_cfg_t *cfg);
 
 #ifdef __cplusplus
 }

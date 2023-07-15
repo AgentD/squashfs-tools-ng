@@ -112,7 +112,7 @@ int fstree_from_file_stream(fstree_t *fs, sqfs_istream_t *file,
 
   Returns 0 on success, prints to stderr on failure.
  */
-int fstree_from_dir(fstree_t *fs, dir_iterator_t *dir);
+int fstree_from_dir(fstree_t *fs, sqfs_dir_iterator_t *dir);
 
 int fstree_sort_files(fstree_t *fs, sqfs_istream_t *sortfile);
 

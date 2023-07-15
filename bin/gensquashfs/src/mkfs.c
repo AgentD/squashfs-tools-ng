@@ -168,7 +168,7 @@ int main(int argc, char **argv)
 	}
 
 	if (opt.infile == NULL) {
-		dir_iterator_t *dir = NULL;
+		sqfs_dir_iterator_t *dir = NULL;
 		dir_tree_cfg_t cfg;
 		int ret;
 

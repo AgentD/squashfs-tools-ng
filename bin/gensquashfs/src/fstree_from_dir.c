@@ -6,7 +6,7 @@
  */
 #include "mkfs.h"
 
-int fstree_from_dir(fstree_t *fs, dir_iterator_t *dir)
+int fstree_from_dir(fstree_t *fs, sqfs_dir_iterator_t *dir)
 {
 	for (;;) {
 		sqfs_dir_entry_t *ent = NULL;

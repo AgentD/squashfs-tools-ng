@@ -6,7 +6,7 @@
  */
 #include "tar2sqfs.h"
 
-static int write_file(sqfs_writer_t *sqfs, dir_iterator_t *it,
+static int write_file(sqfs_writer_t *sqfs, sqfs_dir_iterator_t *it,
 		      const sqfs_dir_entry_t *ent, tree_node_t *n)
 {
 	int flags = 0, ret = 0;
@@ -40,7 +40,7 @@ static int write_file(sqfs_writer_t *sqfs, dir_iterator_t *it,
 }
 
 static int copy_xattr(sqfs_writer_t *sqfs, const char *filename,
-		      tree_node_t *node, dir_iterator_t *it)
+		      tree_node_t *node, sqfs_dir_iterator_t *it)
 {
 	sqfs_xattr_t *xattr, *list;
 	int ret;
@@ -91,8 +91,10 @@ fail:
 	return -1;
 }
 
-static int create_node_and_repack_data(sqfs_writer_t *sqfs, dir_iterator_t *it,
-				       const sqfs_dir_entry_t *ent, const char *link)
+static int create_node_and_repack_data(sqfs_writer_t *sqfs,
+				       sqfs_dir_iterator_t *it,
+				       const sqfs_dir_entry_t *ent,
+				       const char *link)
 {
 	tree_node_t *node;
 
@@ -127,7 +129,7 @@ fail_errno:
 	return -1;
 }
 
-static int set_root_attribs(sqfs_writer_t *sqfs, dir_iterator_t *it,
+static int set_root_attribs(sqfs_writer_t *sqfs, sqfs_dir_iterator_t *it,
 			    const sqfs_dir_entry_t *ent)
 {
 	if ((ent->flags & SQFS_DIR_ENTRY_FLAG_HARD_LINK) || !S_ISDIR(ent->mode)) {
@@ -150,7 +152,7 @@ static int set_root_attribs(sqfs_writer_t *sqfs, dir_iterator_t *it,
 	return 0;
 }
 
-int process_tarball(dir_iterator_t *it, sqfs_writer_t *sqfs)
+int process_tarball(sqfs_dir_iterator_t *it, sqfs_writer_t *sqfs)
 {
 	size_t rootlen = root_becomes == NULL ? 0 : strlen(root_becomes);
 

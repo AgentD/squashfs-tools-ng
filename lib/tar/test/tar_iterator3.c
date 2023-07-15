@@ -14,7 +14,7 @@
 int main(int argc, char **argv)
 {
 	sqfs_istream_t *fp, *ti;
-	dir_iterator_t *it;
+	sqfs_dir_iterator_t *it;
 	char buffer[100];
 	sqfs_dir_entry_t *ent;
 	char *link;

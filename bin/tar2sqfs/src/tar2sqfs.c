@@ -10,7 +10,7 @@ int main(int argc, char **argv)
 {
 	sqfs_istream_t *input_file = NULL;
 	tar_iterator_opts topts = { 0 };
-	dir_iterator_t *tar = NULL;
+	sqfs_dir_iterator_t *tar = NULL;
 	int status = EXIT_FAILURE;
 	sqfs_writer_t sqfs;
 	int ret;

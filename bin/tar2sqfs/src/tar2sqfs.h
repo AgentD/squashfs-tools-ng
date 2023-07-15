@@ -35,6 +35,6 @@ extern size_t num_excludedirs;
 void process_args(int argc, char **argv);
 
 /* process_tarball.c */
-int process_tarball(dir_iterator_t *it, sqfs_writer_t *sqfs);
+int process_tarball(sqfs_dir_iterator_t *it, sqfs_writer_t *sqfs);
 
 #endif /* TAR2SQFS_H */

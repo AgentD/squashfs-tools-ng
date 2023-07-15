@@ -31,7 +31,7 @@ static int compare_files(const void *a, const void *b)
 
 int main(int argc, char **argv)
 {
-	dir_iterator_t *dir, *suba, *subb, *subc, *sub;
+	sqfs_dir_iterator_t *dir, *suba, *subb, *subc, *sub;
 	sqfs_dir_entry_t *dent, *ent[6];
 	sqfs_istream_t *files[3];
 	char buffer[128];

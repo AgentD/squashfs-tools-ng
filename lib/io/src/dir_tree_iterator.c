@@ -14,12 +14,12 @@
 
 typedef struct dir_stack_t {
 	struct dir_stack_t *next;
-	dir_iterator_t *dir;
+	sqfs_dir_iterator_t *dir;
 	char name[];
 } dir_stack_t;
 
 typedef struct {
-	dir_iterator_t base;
+	sqfs_dir_iterator_t base;
 
 	dir_tree_cfg_t cfg;
 	int state;
@@ -37,7 +37,8 @@ static void pop(dir_tree_iterator_t *it)
 	}
 }
 
-static int push(dir_tree_iterator_t *it, const char *name, dir_iterator_t *dir)
+static int push(dir_tree_iterator_t *it, const char *name,
+		sqfs_dir_iterator_t *dir)
 {
 	dir_stack_t *ent = alloc_flex(sizeof(*ent), 1, strlen(name) + 1);
 
@@ -149,10 +150,10 @@ static void destroy(sqfs_object_t *obj)
 	free(it);
 }
 
-static int next(dir_iterator_t *base, sqfs_dir_entry_t **out)
+static int next(sqfs_dir_iterator_t *base, sqfs_dir_entry_t **out)
 {
 	dir_tree_iterator_t *it = (dir_tree_iterator_t *)base;
-	dir_iterator_t *sub;
+	sqfs_dir_iterator_t *sub;
 	sqfs_dir_entry_t *ent;
 	int ret;
 retry:
@@ -241,7 +242,7 @@ fail:
 	return it->state;
 }
 
-static int read_link(dir_iterator_t *base, char **out)
+static int read_link(sqfs_dir_iterator_t *base, char **out)
 {
 	dir_tree_iterator_t *it = (dir_tree_iterator_t *)base;
 
@@ -253,7 +254,7 @@ static int read_link(dir_iterator_t *base, char **out)
 	return it->top->dir->read_link(it->top->dir, out);
 }
 
-static int open_subdir(dir_iterator_t *base, dir_iterator_t **out)
+static int open_subdir(sqfs_dir_iterator_t *base, sqfs_dir_iterator_t **out)
 {
 	dir_tree_iterator_t *it = (dir_tree_iterator_t *)base;
 
@@ -265,14 +266,14 @@ static int open_subdir(dir_iterator_t *base, dir_iterator_t **out)
 	return it->top->dir->open_subdir(it->top->dir, out);
 }
 
-static void ignore_subdir(dir_iterator_t *base)
+static void ignore_subdir(sqfs_dir_iterator_t *base)
 {
 	dir_tree_iterator_t *it = (dir_tree_iterator_t *)base;
 
 	pop(it);
 }
 
-static int open_file_ro(dir_iterator_t *base, sqfs_istream_t **out)
+static int open_file_ro(sqfs_dir_iterator_t *base, sqfs_istream_t **out)
 {
 	dir_tree_iterator_t *it = (dir_tree_iterator_t *)base;
 
@@ -284,7 +285,7 @@ static int open_file_ro(dir_iterator_t *base, sqfs_istream_t **out)
 	return it->top->dir->open_file_ro(it->top->dir, out);
 }
 
-static int read_xattr(dir_iterator_t *base, sqfs_xattr_t **out)
+static int read_xattr(sqfs_dir_iterator_t *base, sqfs_xattr_t **out)
 {
 	dir_tree_iterator_t *it = (dir_tree_iterator_t *)base;
 
@@ -296,11 +297,11 @@ static int read_xattr(dir_iterator_t *base, sqfs_xattr_t **out)
 	return it->top->dir->read_xattr(it->top->dir, out);
 }
 
-dir_iterator_t *dir_tree_iterator_create(const char *path,
-					 const dir_tree_cfg_t *cfg)
+sqfs_dir_iterator_t *dir_tree_iterator_create(const char *path,
+					      const dir_tree_cfg_t *cfg)
 {
 	dir_tree_iterator_t *it = calloc(1, sizeof(*it));
-	dir_iterator_t *dir;
+	sqfs_dir_iterator_t *dir;
 	int ret;
 
 	if (it == NULL) {
@@ -322,14 +323,14 @@ dir_iterator_t *dir_tree_iterator_create(const char *path,
 	}
 
 	sqfs_object_init(it, destroy, NULL);
-	((dir_iterator_t *)it)->next = next;
-	((dir_iterator_t *)it)->read_link = read_link;
-	((dir_iterator_t *)it)->open_subdir = open_subdir;
-	((dir_iterator_t *)it)->ignore_subdir = ignore_subdir;
-	((dir_iterator_t *)it)->open_file_ro = open_file_ro;
-	((dir_iterator_t *)it)->read_xattr = read_xattr;
+	((sqfs_dir_iterator_t *)it)->next = next;
+	((sqfs_dir_iterator_t *)it)->read_link = read_link;
+	((sqfs_dir_iterator_t *)it)->open_subdir = open_subdir;
+	((sqfs_dir_iterator_t *)it)->ignore_subdir = ignore_subdir;
+	((sqfs_dir_iterator_t *)it)->open_file_ro = open_file_ro;
+	((sqfs_dir_iterator_t *)it)->read_xattr = read_xattr;
 
-	return (dir_iterator_t *)it;
+	return (sqfs_dir_iterator_t *)it;
 fail:
 	free(it);
 	return NULL;

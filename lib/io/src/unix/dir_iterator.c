@@ -17,7 +17,7 @@
 #include <errno.h>
 
 typedef struct {
-	dir_iterator_t base;
+	sqfs_dir_iterator_t base;
 
 	struct dirent *ent;
 	struct stat sb;
@@ -34,7 +34,7 @@ static void dir_destroy(sqfs_object_t *obj)
 	free(it);
 }
 
-static int dir_read_link(dir_iterator_t *base, char **out)
+static int dir_read_link(sqfs_dir_iterator_t *base, char **out)
 {
 	unix_dir_iterator_t *it = (unix_dir_iterator_t *)base;
 	ssize_t ret;
@@ -74,7 +74,7 @@ static int dir_read_link(dir_iterator_t *base, char **out)
 	return 0;
 }
 
-static int dir_next(dir_iterator_t *base, sqfs_dir_entry_t **out)
+static int dir_next(sqfs_dir_iterator_t *base, sqfs_dir_entry_t **out)
 {
 	unix_dir_iterator_t *it = (unix_dir_iterator_t *)base;
 
@@ -122,12 +122,12 @@ static int dir_next(dir_iterator_t *base, sqfs_dir_entry_t **out)
 	return it->state;
 }
 
-static void dir_ignore_subdir(dir_iterator_t *it)
+static void dir_ignore_subdir(sqfs_dir_iterator_t *it)
 {
 	(void)it;
 }
 
-static int dir_open_file_ro(dir_iterator_t *base, sqfs_istream_t **out)
+static int dir_open_file_ro(sqfs_dir_iterator_t *base, sqfs_istream_t **out)
 {
 	unix_dir_iterator_t *it = (unix_dir_iterator_t *)base;
 	int fd, ret;
@@ -153,16 +153,16 @@ static int dir_open_file_ro(dir_iterator_t *base, sqfs_istream_t **out)
 	return ret;
 }
 
-static int dir_read_xattr(dir_iterator_t *it, sqfs_xattr_t **out)
+static int dir_read_xattr(sqfs_dir_iterator_t *it, sqfs_xattr_t **out)
 {
 	(void)it;
 	*out = NULL;
 	return 0;
 }
 
-static int create_iterator(dir_iterator_t **out, DIR *dir);
+static int create_iterator(sqfs_dir_iterator_t **out, DIR *dir);
 
-static int dir_open_subdir(dir_iterator_t *base, dir_iterator_t **out)
+static int dir_open_subdir(sqfs_dir_iterator_t *base, sqfs_dir_iterator_t **out)
 {
 	const unix_dir_iterator_t *it = (const unix_dir_iterator_t *)base;
 	DIR *dir;
@@ -194,7 +194,7 @@ static int dir_open_subdir(dir_iterator_t *base, dir_iterator_t **out)
 	return create_iterator(out, dir);
 }
 
-static int create_iterator(dir_iterator_t **out, DIR *dir)
+static int create_iterator(sqfs_dir_iterator_t **out, DIR *dir)
 {
 	unix_dir_iterator_t *it = calloc(1, sizeof(*it));
 
@@ -215,20 +215,20 @@ static int create_iterator(dir_iterator_t **out, DIR *dir)
 
 	sqfs_object_init(it, dir_destroy, NULL);
 	it->device = it->sb.st_dev;
-	((dir_iterator_t *)it)->next = dir_next;
-	((dir_iterator_t *)it)->read_link = dir_read_link;
-	((dir_iterator_t *)it)->open_subdir = dir_open_subdir;
-	((dir_iterator_t *)it)->ignore_subdir = dir_ignore_subdir;
-	((dir_iterator_t *)it)->open_file_ro = dir_open_file_ro;
-	((dir_iterator_t *)it)->read_xattr = dir_read_xattr;
+	((sqfs_dir_iterator_t *)it)->next = dir_next;
+	((sqfs_dir_iterator_t *)it)->read_link = dir_read_link;
+	((sqfs_dir_iterator_t *)it)->open_subdir = dir_open_subdir;
+	((sqfs_dir_iterator_t *)it)->ignore_subdir = dir_ignore_subdir;
+	((sqfs_dir_iterator_t *)it)->open_file_ro = dir_open_file_ro;
+	((sqfs_dir_iterator_t *)it)->read_xattr = dir_read_xattr;
 
-	*out = (dir_iterator_t *)it;
+	*out = (sqfs_dir_iterator_t *)it;
 	return 0;
 }
 
-dir_iterator_t *dir_iterator_create(const char *path)
+sqfs_dir_iterator_t *dir_iterator_create(const char *path)
 {
-	dir_iterator_t *out;
+	sqfs_dir_iterator_t *out;
 	DIR *dir;
 
 	dir = opendir(path);
