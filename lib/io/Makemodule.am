@@ -6,13 +6,6 @@ libio_a_SOURCES = include/io/xfrm.h include/io/std.h \
 libio_a_CFLAGS = $(AM_CFLAGS) $(ZLIB_CFLAGS) $(XZ_CFLAGS)
 libio_a_CFLAGS += $(ZSTD_CFLAGS) $(BZIP2_CFLAGS)
 
-if WINDOWS
-libio_a_SOURCES += lib/io/src/win32/dir_iterator.c
-libio_a_CFLAGS += -DWINVER=0x0600 -D_WIN32_WINNT=0x0600
-else
-libio_a_SOURCES += lib/io/src/unix/dir_iterator.c
-endif
-
 noinst_LIBRARIES += libio.a
 
 LIBIO_TESTS = test_istream_mem test_dir_iterator \

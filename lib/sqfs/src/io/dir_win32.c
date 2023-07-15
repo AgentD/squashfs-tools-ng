@@ -1,12 +1,14 @@
 /* SPDX-License-Identifier: LGPL-3.0-or-later */
 /*
- * dir_iterator.c
+ * dir_win32.c
  *
  * Copyright (C) 2023 David Oberhollenzer <goliath@infraroot.at>
  */
+#define SQFS_BUILDING_DLL
 #include "config.h"
-#include "io/dir_iterator.h"
+
 #include "util/util.h"
+#include "sqfs/dir_entry.h"
 #include "sqfs/error.h"
 #include "sqfs/io.h"
 
@@ -226,8 +228,10 @@ static int dir_iterator_open_subdir(sqfs_dir_iterator_t *it,
 
 	ret = dir_iterator_init(sub);
 	if (ret != 0) {
+		os_error_t err = get_os_error_state();
 		free(sub);
 		sub = NULL;
+		set_os_error_state(err);
 	}
 
 	*out = (sqfs_dir_iterator_t *)sub;
@@ -254,56 +258,65 @@ static int dir_iterator_init(dir_iterator_win32_t *it)
 	return 0;
 }
 
-sqfs_dir_iterator_t *dir_iterator_create(const char *path)
+int sqfs_dir_iterator_create_native(sqfs_dir_iterator_t **out,
+				    const char *path, sqfs_u32 flags)
 {
 	dir_iterator_win32_t *it;
-	size_t len, newlen;
 	WCHAR *wpath = NULL;
 	void *new = NULL;
+	DWORD length;
+	size_t len;
+	int ret;
+
+	*out = NULL;
+	if (flags & (~SQFS_FILE_OPEN_NO_CHARSET_XFRM))
+		return SQFS_ERROR_UNSUPPORTED;
 
 	/* convert path to UTF-16, append "\\*" */
-	wpath = path_to_windows(path);
+	len = strlen(path);
+	while (len > 0 && (path[len - 1] == '/' || path[len - 1] == '\\'))
+		--len;
+
+	length = MultiByteToWideChar(CP_UTF8, 0, path, len, NULL, 0);
+	if (length <= 0)
+		return SQFS_ERROR_ALLOC;
+
+	wpath = calloc(sizeof(wpath[0]), length + 3);
 	if (wpath == NULL)
-		goto fail_alloc;
+		return SQFS_ERROR_ALLOC;
 
-	len = wcslen(wpath);
-	newlen = len + 1;
+	MultiByteToWideChar(CP_UTF8, 0, path, len, wpath, length + 1);
 
-	if (len > 0 && wpath[len - 1] != '\\')
-		newlen += 1;
+	for (DWORD i = 0; i < length; ++i) {
+		if (wpath[i] == '/')
+			wpath[i] = '\\';
+	}
 
-	new = realloc(wpath, sizeof(wpath[0]) * (newlen + 1));
-	if (new == NULL)
-		goto fail_alloc;
-
-	wpath = new;
-
-	if (len > 0 && wpath[len - 1] != '\\')
-		wpath[len++] = '\\';
-
-	wpath[len++] = '*';
-	wpath[len++] = '\0';
+	wpath[length++] = '\\';
+	wpath[length++] = '*';
+	wpath[length++] = '\0';
 
 	/* create the sourrounding iterator structure */
-	new = realloc(wpath, sizeof(*it) + len * sizeof(wpath[0]));
-	if (new == NULL)
-		goto fail_alloc;
+	new = realloc(wpath, sizeof(*it) + length * sizeof(wpath[0]));
+	if (new == NULL) {
+		free(wpath);
+		return SQFS_ERROR_ALLOC;
+	}
 
 	it = new;
 	wpath = NULL;
-	memmove(it->path, new, len * sizeof(wpath[0]));
+	memmove(it->path, new, length * sizeof(wpath[0]));
 
 	/* initialize */
 	memset(it, 0, offsetof(dir_iterator_win32_t, path));
-	if (dir_iterator_init(it) != 0) {
-		w32_perror(path);
+	ret = dir_iterator_init(it);
+	if (ret != 0) {
+		os_error_t err = get_os_error_state();
 		free(it);
 		it = NULL;
+		set_os_error_state(err);
 	}
 
-	return (sqfs_dir_iterator_t *)it;
-fail_alloc:
-	fprintf(stderr, "%s: allocation failure.\n", path);
-	free(wpath);
-	return NULL;
+	*out = (sqfs_dir_iterator_t *)it;
+	return ret;
 }

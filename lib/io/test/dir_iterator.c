@@ -40,7 +40,8 @@ int main(int argc, char **argv)
 	(void)argc; (void)argv;
 
 	/* scan the top level hierarchy */
-	dir = dir_iterator_create(TEST_PATH);
+	ret = sqfs_dir_iterator_create_native(&dir, TEST_PATH, 0);
+	TEST_EQUAL_I(ret, 0);
 	TEST_NOT_NULL(dir);
 
 	ret = dir->next(dir, &ent[0]);
@@ -86,7 +87,8 @@ int main(int argc, char **argv)
 		free(ent[i]);
 
 	/* scan first sub hierarchy */
-	dir = dir_iterator_create(TEST_PATH "/dira");
+	ret = sqfs_dir_iterator_create_native(&dir, TEST_PATH "/dira", 0);
+	TEST_EQUAL_I(ret, 0);
 	TEST_NOT_NULL(dir);
 
 	ret = dir->next(dir, &ent[0]);
@@ -132,7 +134,8 @@ int main(int argc, char **argv)
 		free(ent[i]);
 
 	/* scan second sub hierarchy */
-	dir = dir_iterator_create(TEST_PATH "/dirb");
+	ret = sqfs_dir_iterator_create_native(&dir, TEST_PATH "/dirb", 0);
+	TEST_EQUAL_I(ret, 0);
 	TEST_NOT_NULL(dir);
 
 	ret = dir->next(dir, &ent[0]);
@@ -184,7 +187,8 @@ int main(int argc, char **argv)
 		free(ent[i]);
 
 	/* scan first sub hierarchy */
-	dir = dir_iterator_create(TEST_PATH "/dirc");
+	ret = sqfs_dir_iterator_create_native(&dir, TEST_PATH "/dirc", 0);
+	TEST_EQUAL_I(ret, 0);
 	TEST_NOT_NULL(dir);
 
 	ret = dir->next(dir, &ent[0]);
@@ -234,7 +238,8 @@ int main(int argc, char **argv)
 	subb = NULL;
 	subc = NULL;
 
-	dir = dir_iterator_create(TEST_PATH);
+	ret = sqfs_dir_iterator_create_native(&dir, TEST_PATH, 0);
+	TEST_EQUAL_I(ret, 0);
 	TEST_NOT_NULL(dir);
 
 	for (i = 0; i < 5; ++i) {

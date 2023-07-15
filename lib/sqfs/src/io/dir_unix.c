@@ -1,12 +1,14 @@
 /* SPDX-License-Identifier: LGPL-3.0-or-later */
 /*
- * dir_iterator.c
+ * dir_unix.c
  *
  * Copyright (C) 2023 David Oberhollenzer <goliath@infraroot.at>
  */
+#define SQFS_BUILDING_DLL
 #include "config.h"
-#include "io/dir_iterator.h"
+
 #include "util/util.h"
+#include "sqfs/dir_entry.h"
 #include "sqfs/error.h"
 #include "sqfs/io.h"
 
@@ -226,16 +228,18 @@ static int create_iterator(sqfs_dir_iterator_t **out, DIR *dir)
 	return 0;
 }
 
-sqfs_dir_iterator_t *dir_iterator_create(const char *path)
+int sqfs_dir_iterator_create_native(sqfs_dir_iterator_t **out,
+				    const char *path, sqfs_u32 flags)
 {
-	sqfs_dir_iterator_t *out;
 	DIR *dir;
 
-	dir = opendir(path);
-	if (dir == NULL || create_iterator(&out, dir) != 0) {
-		perror(path);
-		return NULL;
-	}
+	*out = NULL;
+	if (flags & (~SQFS_FILE_OPEN_NO_CHARSET_XFRM))
+		return SQFS_ERROR_UNSUPPORTED;
 
-	return out;
+	dir = opendir(path);
+	if (dir == NULL)
+		return SQFS_ERROR_IO;
+
+	return create_iterator(out, dir);
 }

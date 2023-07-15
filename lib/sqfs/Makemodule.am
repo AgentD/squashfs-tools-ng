@@ -61,13 +61,13 @@ libsquashfs_la_SOURCES += lib/util/src/mempool.c include/util/mempool.h
 endif
 
 if WINDOWS
-libsquashfs_la_SOURCES += lib/sqfs/src/io/win32.c
+libsquashfs_la_SOURCES += lib/sqfs/src/io/win32.c lib/sqfs/src/io/dir_win32.c
 
 libsquashfs_la_CFLAGS += -DWINVER=0x0600 -D_WIN32_WINNT=0x0600
 libsquashfs_la_CFLAGS += -Wc,-static-libgcc
 libsquashfs_la_LDFLAGS += -no-undefined -avoid-version
 else
-libsquashfs_la_SOURCES += lib/sqfs/src/io/unix.c
+libsquashfs_la_SOURCES += lib/sqfs/src/io/unix.c lib/sqfs/src/io/dir_unix.c
 endif
 
 if HAVE_PTHREAD

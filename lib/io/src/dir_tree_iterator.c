@@ -8,6 +8,7 @@
 #include "io/dir_iterator.h"
 #include "util/util.h"
 #include "sqfs/error.h"
+#include "sqfs/io.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -311,9 +312,11 @@ sqfs_dir_iterator_t *dir_tree_iterator_create(const char *path,
 
 	it->cfg = *cfg;
 
-	dir = dir_iterator_create(path);
-	if (dir == NULL)
+	ret = sqfs_dir_iterator_create_native(&dir, path, 0);
+	if (ret) {
+		perror(path);
 		goto fail;
+	}
 
 	ret = push(it, "", dir);
 	dir = sqfs_drop(dir);

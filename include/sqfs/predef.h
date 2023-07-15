@@ -99,6 +99,7 @@ typedef struct sqfs_xattr_t sqfs_xattr_t;
 typedef struct sqfs_istream_t sqfs_istream_t;
 typedef struct sqfs_ostream_t sqfs_ostream_t;
 typedef struct sqfs_dir_entry_t sqfs_dir_entry_t;
+typedef struct sqfs_dir_iterator_t sqfs_dir_iterator_t;
 
 typedef struct sqfs_fragment_t sqfs_fragment_t;
 typedef struct sqfs_dir_header_t sqfs_dir_header_t;
