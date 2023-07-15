@@ -8,6 +8,7 @@
 #include "io/dir_iterator.h"
 #include "util/util.h"
 #include "sqfs/error.h"
+#include "sqfs/io.h"
 
 #include <sys/stat.h>
 #include <stdlib.h>
@@ -126,11 +127,30 @@ static void dir_ignore_subdir(dir_iterator_t *it)
 	(void)it;
 }
 
-static int dir_open_file_ro(dir_iterator_t *it, sqfs_istream_t **out)
+static int dir_open_file_ro(dir_iterator_t *base, sqfs_istream_t **out)
 {
-	(void)it;
+	unix_dir_iterator_t *it = (unix_dir_iterator_t *)base;
+	int fd, ret;
+
 	*out = NULL;
-	return SQFS_ERROR_UNSUPPORTED;
+	if (it->state < 0)
+		return it->state;
+
+	if (it->state > 0 || it->ent == NULL)
+		return SQFS_ERROR_NO_ENTRY;
+
+	fd = openat(dirfd(it->dir), it->ent->d_name, O_RDONLY);
+	if (fd < 0)
+		return SQFS_ERROR_IO;
+
+	ret = sqfs_istream_open_handle(out, it->ent->d_name,
+				       fd, SQFS_FILE_OPEN_READ_ONLY);
+	if (ret != 0) {
+		int err = errno;
+		close(fd);
+		errno = err;
+	}
+	return ret;
 }
 
 static int dir_read_xattr(dir_iterator_t *it, sqfs_xattr_t **out)

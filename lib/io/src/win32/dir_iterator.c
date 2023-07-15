@@ -8,6 +8,7 @@
 #include "io/dir_iterator.h"
 #include "util/util.h"
 #include "sqfs/error.h"
+#include "sqfs/io.h"
 
 #include <windows.h>
 #include <stdlib.h>
@@ -121,9 +122,66 @@ static void dir_iterator_ignore_subdir(dir_iterator_t *it)
 
 static int dir_iterator_open_file_ro(dir_iterator_t *it, sqfs_istream_t **out)
 {
-	(void)it;
+	dir_iterator_win32_t *dir = (dir_iterator_win32_t *)it;
+	size_t plen, slen;
+	os_error_t err;
+	WCHAR *str16;
+	DWORD length;
+	HANDLE hnd;
+	char *str8;
+	int ret;
+
 	*out = NULL;
-	return SQFS_ERROR_UNSUPPORTED;
+
+	if (dir->state != 0)
+		return (dir->state > 0) ? SQFS_ERROR_NO_ENTRY : dir->state;
+
+	plen = wcslen(dir->path) - 1;
+	slen = wcslen(dir->ent.cFileName);
+
+	str16 = calloc(plen + slen + 1, sizeof(WCHAR));
+	if (str16 == NULL)
+		return SQFS_ERROR_ALLOC;
+
+	memcpy(str16,        dir->path,          plen * sizeof(WCHAR));
+	memcpy(str16 + plen, dir->ent.cFileName, slen * sizeof(WCHAR));
+
+	hnd = CreateFileW(str16, GENERIC_READ, FILE_SHARE_READ, NULL,
+			  OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,
+			  NULL);
+
+	err = get_os_error_state();
+	free(str16);
+	set_os_error_state(err);
+
+	if (hnd == INVALID_HANDLE_VALUE)
+		return SQFS_ERROR_IO;
+
+	length = WideCharToMultiByte(CP_UTF8, 0, dir->ent.cFileName,
+				     -1, NULL, 0, NULL, NULL);
+	if (length <= 0) {
+		CloseHandle(hnd);
+		return SQFS_ERROR_ALLOC;
+	}
+
+	str8 = calloc(1, length + 1);
+	if (str8 == NULL) {
+		CloseHandle(hnd);
+		return SQFS_ERROR_ALLOC;
+	}
+
+	WideCharToMultiByte(CP_UTF8, 0, dir->ent.cFileName, -1, str8,
+			    length + 1, NULL, NULL);
+
+	ret = sqfs_istream_open_handle(out, str8, hnd,
+				       SQFS_FILE_OPEN_READ_ONLY);
+	err = get_os_error_state();
+	free(str8);
+	if (ret != 0)
+		CloseHandle(hnd);
+	set_os_error_state(err);
+
+	return ret;
 }
 
 static int dir_iterator_read_xattr(dir_iterator_t *it, sqfs_xattr_t **out)
