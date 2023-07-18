@@ -606,6 +606,23 @@ SQFS_API int sqfs_dir_iterator_create_native(sqfs_dir_iterator_t **out,
 					     const char *path,
 					     sqfs_u32 flags);
 
+/**
+ * @brief Construct a recursive directory iterator
+ *
+ * @memberof sqfs_dir_iterator_t
+ *
+ * The recursive directory iterator automatcally enters sub directories
+ * and adds the parent path as prefix to the entries. The "." and ".."
+ * entries are filtered out.
+ *
+ * @param out Returns a pointer to a recursive directory iterator
+ * @param base The root directory iterator used as base
+ *
+ * @return Zero on success, an @ref SQFS_ERROR code on failure.
+ */
+SQFS_API int sqfs_dir_iterator_create_recursive(sqfs_dir_iterator_t **out,
+						sqfs_dir_iterator_t *base);
+
 #ifdef __cplusplus
 }
 #endif

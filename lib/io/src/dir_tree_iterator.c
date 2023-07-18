@@ -13,52 +13,17 @@
 #include <stdlib.h>
 #include <string.h>
 
-typedef struct dir_stack_t {
-	struct dir_stack_t *next;
-	sqfs_dir_iterator_t *dir;
-	char name[];
-} dir_stack_t;
-
 typedef struct {
 	sqfs_dir_iterator_t base;
 
 	dir_tree_cfg_t cfg;
 	int state;
-	dir_stack_t *top;
+	sqfs_dir_iterator_t *rec;
 } dir_tree_iterator_t;
-
-static void pop(dir_tree_iterator_t *it)
-{
-	if (it->top != NULL) {
-		dir_stack_t *ent = it->top;
-		it->top = it->top->next;
-
-		sqfs_drop(ent->dir);
-		free(ent);
-	}
-}
-
-static int push(dir_tree_iterator_t *it, const char *name,
-		sqfs_dir_iterator_t *dir)
-{
-	dir_stack_t *ent = alloc_flex(sizeof(*ent), 1, strlen(name) + 1);
-
-	if (ent == NULL)
-		return SQFS_ERROR_ALLOC;
-
-	strcpy(ent->name, name);
-	ent->dir = sqfs_grab(dir);
-	ent->next = it->top;
-	it->top = ent;
-	return 0;
-}
 
 static bool should_skip(const dir_tree_iterator_t *dir, const sqfs_dir_entry_t *ent)
 {
 	unsigned int type_mask;
-
-	if (!strcmp(ent->name, ".") || !strcmp(ent->name, ".."))
-		return true;
 
 	if ((dir->cfg.flags & DIR_SCAN_ONE_FILESYSTEM)) {
 		if (ent->flags & SQFS_DIR_ENTRY_FLAG_MOUNT_POINT)
@@ -80,20 +45,11 @@ static bool should_skip(const dir_tree_iterator_t *dir, const sqfs_dir_entry_t *
 
 static sqfs_dir_entry_t *expand_path(const dir_tree_iterator_t *it, sqfs_dir_entry_t *ent)
 {
-	size_t slen = strlen(ent->name) + 1, plen = 0;
-	dir_stack_t *sit;
-	char *dst;
-
-	for (sit = it->top; sit != NULL; sit = sit->next) {
-		if (sit->name[0] != '\0')
-			plen += strlen(sit->name) + 1;
-	}
-
-	if (it->cfg.prefix != NULL && it->cfg.prefix[0] != '\0')
-		plen += strlen(it->cfg.prefix) + 1;
-
-	if (plen > 0) {
+	if (it->cfg.prefix != NULL && it->cfg.prefix[0] != '\0') {
+		size_t plen = strlen(it->cfg.prefix) + 1;
+		size_t slen = strlen(ent->name) + 1;
 		void *new = realloc(ent, sizeof(*ent) + plen + slen);
+
 		if (new == NULL) {
 			free(ent);
 			return NULL;
@@ -101,22 +57,9 @@ static sqfs_dir_entry_t *expand_path(const dir_tree_iterator_t *it, sqfs_dir_ent
 
 		ent = new;
 		memmove(ent->name + plen, ent->name, slen);
-		dst = ent->name + plen;
 
-		for (sit = it->top; sit != NULL; sit = sit->next) {
-			size_t len = strlen(sit->name);
-			if (len > 0) {
-				*(--dst) = '/';
-				dst -= len;
-				memcpy(dst, sit->name, len);
-			}
-		}
-
-		if (it->cfg.prefix != NULL && it->cfg.prefix[0] != '\0') {
-			size_t len = strlen(it->cfg.prefix);
-			memcpy(ent->name, it->cfg.prefix, len);
-			ent->name[len] = '/';
-		}
+		memcpy(ent->name, it->cfg.prefix, plen - 1);
+		ent->name[plen - 1] = '/';
 	}
 
 	return ent;
@@ -145,48 +88,36 @@ static void destroy(sqfs_object_t *obj)
 {
 	dir_tree_iterator_t *it = (dir_tree_iterator_t *)obj;
 
-	while (it->top != NULL)
-		pop(it);
-
+	sqfs_drop(it->rec);
 	free(it);
 }
 
 static int next(sqfs_dir_iterator_t *base, sqfs_dir_entry_t **out)
 {
 	dir_tree_iterator_t *it = (dir_tree_iterator_t *)base;
-	sqfs_dir_iterator_t *sub;
 	sqfs_dir_entry_t *ent;
 	int ret;
+
+	if (it->state)
+		return it->state;
 retry:
 	*out = NULL;
-	sub = NULL;
 	ent = NULL;
 
-	if (it->state != 0)
-		return it->state;
-
 	for (;;) {
-		if (it->top == NULL) {
-			ret = 1;
-			goto fail;
+		ret = it->rec->next(it->rec, &ent);
+		if (ret != 0) {
+			it->state = ret;
+			return ret;
 		}
 
-		ret = it->top->dir->next(it->top->dir, &ent);
-		if (ret < 0)
-			goto fail;
+		if (!should_skip(it, ent))
+			break;
 
-		if (ret > 0) {
-			pop(it);
-			continue;
-		}
-
-		if (should_skip(it, ent)) {
-			free(ent);
-			ent = NULL;
-			continue;
-		}
-
-		break;
+		if (S_ISDIR(ent->mode))
+			it->rec->ignore_subdir(it->rec);
+		free(ent);
+		ent = NULL;
 	}
 
 	ent = expand_path(it, ent);
@@ -198,19 +129,8 @@ retry:
 	apply_changes(it, ent);
 
 	if (S_ISDIR(ent->mode)) {
-		if (!(it->cfg.flags & DIR_SCAN_NO_RECURSION)) {
-			const char *name = strrchr(ent->name, '/');
-			name = (name == NULL) ? ent->name : (name + 1);
-
-			ret = it->top->dir->open_subdir(it->top->dir, &sub);
-			if (ret != 0)
-				goto fail;
-
-			ret = push(it, name, sub);
-			sqfs_drop(sub);
-			if (ret != 0)
-				goto fail;
-		}
+		if (it->cfg.flags & DIR_SCAN_NO_RECURSION)
+			it->rec->ignore_subdir(it->rec);
 
 		if (it->cfg.flags & DIR_SCAN_NO_DIR) {
 			free(ent);
@@ -237,65 +157,54 @@ retry:
 
 	*out = ent;
 	return it->state;
-fail:
-	free(ent);
-	it->state = ret;
-	return it->state;
 }
 
 static int read_link(sqfs_dir_iterator_t *base, char **out)
 {
 	dir_tree_iterator_t *it = (dir_tree_iterator_t *)base;
 
-	if (it->top == NULL) {
-		*out = NULL;
-		return SQFS_ERROR_NO_ENTRY;
-	}
+	if (it->state)
+		return it->state;
 
-	return it->top->dir->read_link(it->top->dir, out);
+	return it->rec->read_link(it->rec, out);
 }
 
 static int open_subdir(sqfs_dir_iterator_t *base, sqfs_dir_iterator_t **out)
 {
 	dir_tree_iterator_t *it = (dir_tree_iterator_t *)base;
 
-	if (it->top == NULL) {
-		*out = NULL;
-		return SQFS_ERROR_NO_ENTRY;
-	}
+	if (it->state)
+		return it->state;
 
-	return it->top->dir->open_subdir(it->top->dir, out);
+	return it->rec->open_subdir(it->rec, out);
 }
 
 static void ignore_subdir(sqfs_dir_iterator_t *base)
 {
 	dir_tree_iterator_t *it = (dir_tree_iterator_t *)base;
 
-	pop(it);
+	if (it->state == 0)
+		it->rec->ignore_subdir(it->rec);
 }
 
 static int open_file_ro(sqfs_dir_iterator_t *base, sqfs_istream_t **out)
 {
 	dir_tree_iterator_t *it = (dir_tree_iterator_t *)base;
 
-	if (it->top == NULL) {
-		*out = NULL;
-		return SQFS_ERROR_NO_ENTRY;
-	}
+	if (it->state)
+		return it->state;
 
-	return it->top->dir->open_file_ro(it->top->dir, out);
+	return it->rec->open_file_ro(it->rec, out);
 }
 
 static int read_xattr(sqfs_dir_iterator_t *base, sqfs_xattr_t **out)
 {
 	dir_tree_iterator_t *it = (dir_tree_iterator_t *)base;
 
-	if (it->top == NULL) {
-		*out = NULL;
-		return SQFS_ERROR_NO_ENTRY;
-	}
+	if (it->state)
+		return it->state;
 
-	return it->top->dir->read_xattr(it->top->dir, out);
+	return it->rec->read_xattr(it->rec, out);
 }
 
 sqfs_dir_iterator_t *dir_tree_iterator_create(const char *path,
@@ -318,9 +227,9 @@ sqfs_dir_iterator_t *dir_tree_iterator_create(const char *path,
 		goto fail;
 	}
 
-	ret = push(it, "", dir);
-	dir = sqfs_drop(dir);
-	if (ret != 0) {
+	ret = sqfs_dir_iterator_create_recursive(&it->rec, dir);
+	sqfs_drop(dir);
+	if (ret) {
 		fprintf(stderr, "%s: out of memory\n", path);
 		goto fail;
 	}
