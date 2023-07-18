@@ -137,6 +137,7 @@ static int fill_files(sqfs_data_reader_t *data, int flags)
 {
 	int ret, openflags;
 	sqfs_ostream_t *fp;
+	sqfs_istream_t *in;
 	size_t i;
 
 	openflags = SQFS_FILE_OPEN_OVERWRITE;
@@ -154,8 +155,19 @@ static int fill_files(sqfs_data_reader_t *data, int flags)
 		if (!(flags & UNPACK_QUIET))
 			printf("unpacking %s\n", files[i].path);
 
-		ret = sqfs_data_reader_dump(files[i].path, data, files[i].inode,
-					    fp, block_size);
+		ret = sqfs_data_reader_create_stream(data, files[i].inode,
+						     files[i].path, &in);
+		if (ret) {
+			sqfs_perror(files[i].path, NULL, ret);
+			return -1;
+		}
+
+		do {
+			ret = sqfs_istream_splice(in, fp, block_size);
+		} while (ret > 0);
+
+		sqfs_drop(in);
+
 		if (ret == 0)
 			ret = fp->flush(fp);
 

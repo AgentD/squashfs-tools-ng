@@ -208,11 +208,13 @@ int main(int argc, char **argv)
 		break;
 	case OP_CAT: {
 		sqfs_ostream_t *fp;
+		sqfs_istream_t *in;
 		int ret;
 
-		if (!S_ISREG(n->inode->base.mode)) {
-			fprintf(stderr, "/%s: not a regular file\n",
-				opt.cmdpath);
+		ret = sqfs_data_reader_create_stream(data, n->inode,
+						     opt.cmdpath, &in);
+		if (ret) {
+			sqfs_perror(opt.cmdpath, NULL, ret);
 			goto out;
 		}
 
@@ -222,8 +224,13 @@ int main(int argc, char **argv)
 			goto out;
 		}
 
-		ret = sqfs_data_reader_dump(opt.cmdpath, data, n->inode,
-					    fp, super.block_size);
+		do {
+			ret = sqfs_istream_splice(in, fp, super.block_size);
+			if (ret < 0)
+				sqfs_perror(opt.cmdpath, "splicing data", ret);
+		} while (ret > 0);
+
+		sqfs_drop(in);
 		sqfs_drop(fp);
 		if (ret)
 			goto out;

@@ -11,6 +11,7 @@ static int extract(sqfs_data_reader_t *data, const sqfs_inode_generic_t *inode,
 {
 	char *ptr, *temp;
 	sqfs_ostream_t *fp;
+	sqfs_istream_t *in;
 	int ret;
 
 	temp = alloca(strlen(prefix) + strlen(path) + 2);
@@ -28,12 +29,23 @@ static int extract(sqfs_data_reader_t *data, const sqfs_inode_generic_t *inode,
 		return -1;
 	}
 
-	if (sqfs_data_reader_dump(path, data, inode, fp, block_size)) {
+	ret = sqfs_data_reader_create_stream(data, inode, path, &in);
+	if (ret) {
 		sqfs_drop(fp);
 		return -1;
 	}
 
-	ret = fp->flush(fp);
+	do {
+		ret = sqfs_istream_splice(in, fp, block_size);
+		if (ret < 0)
+			sqfs_perror(path, "splicing data", ret);
+	} while (ret > 0);
+
+	sqfs_drop(in);
+
+	if (ret == 0)
+		ret = fp->flush(fp);
+
 	if (ret) {
 		sqfs_perror(fp->get_filename(fp), NULL, ret);
 		sqfs_drop(fp);

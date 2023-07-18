@@ -372,3 +372,200 @@ sqfs_s32 sqfs_data_reader_read(sqfs_data_reader_t *data,
 
 	return total;
 }
+
+/*****************************************************************************/
+
+typedef struct {
+	sqfs_istream_t base;
+
+	sqfs_data_reader_t *rd;
+	const char *filename;
+	const sqfs_u32 *blocks;
+
+	sqfs_u8 *buffer;
+	size_t buf_used;
+	size_t buf_off;
+
+	sqfs_u64 filesz;
+	sqfs_u64 disk_offset;
+
+	sqfs_u32 frag_idx;
+	sqfs_u32 frag_off;
+
+	sqfs_u32 blk_idx;
+	sqfs_u32 blk_count;
+
+	sqfs_u32 inodata[];
+} data_reader_istream_t;
+
+static int dr_stream_get_buffered_data(sqfs_istream_t *base,
+				       const sqfs_u8 **out,
+				       size_t *size, size_t want)
+{
+	data_reader_istream_t *stream = (data_reader_istream_t *)base;
+	sqfs_data_reader_t *rd = stream->rd;
+	int ret;
+	(void)want;
+
+	if (stream->buf_off < stream->buf_used) {
+		*out = stream->buffer + stream->buf_off;
+		*size = stream->buf_used - stream->buf_off;
+		return 0;
+	}
+
+	if (stream->filesz == 0) {
+		ret = 1;
+		goto fail;
+	}
+
+	stream->buf_off = 0;
+	stream->buf_used = rd->block_size;
+	if (stream->filesz < (sqfs_u64)stream->buf_used)
+		stream->buf_used = stream->filesz;
+
+	if (stream->blk_idx < stream->blk_count) {
+		sqfs_u32 blkword = stream->blocks[stream->blk_idx++];
+		sqfs_u32 disksz = SQFS_ON_DISK_BLOCK_SIZE(blkword);
+
+		if (disksz == 0) {
+			memset(stream->buffer, 0, stream->buf_used);
+		} else if (SQFS_IS_BLOCK_COMPRESSED(blkword)) {
+			ret = rd->file->read_at(rd->file, stream->disk_offset,
+						rd->scratch, disksz);
+			if (ret)
+				goto fail;
+
+			ret = rd->cmp->do_block(rd->cmp, rd->scratch, disksz,
+						stream->buffer,
+						stream->buf_used);
+			if (ret <= 0) {
+				ret = ret < 0 ? ret : SQFS_ERROR_OVERFLOW;
+				goto fail;
+			}
+
+			if ((size_t)ret < stream->buf_used) {
+				memset(stream->buffer + ret, 0,
+				       stream->buf_used - ret);
+			}
+		} else {
+			ret = rd->file->read_at(rd->file, stream->disk_offset,
+						stream->buffer, disksz);
+			if (ret)
+				goto fail;
+			if (disksz < stream->buf_used) {
+				memset(stream->buffer + disksz, 0,
+				       stream->buf_used - disksz);
+			}
+		}
+
+		stream->disk_offset += disksz;
+	} else {
+		ret = precache_fragment_block(rd, stream->frag_idx);
+		if (ret)
+			return ret;
+
+		if (rd->frag_blk_size < stream->frag_off ||
+		    (rd->frag_blk_size - stream->frag_off) < stream->buf_used) {
+			ret = SQFS_ERROR_CORRUPTED;
+			goto fail;
+		}
+
+		memcpy(stream->buffer, rd->frag_block + stream->frag_off,
+		       stream->buf_used);
+	}
+
+	stream->filesz -= stream->buf_used;
+	*out = stream->buffer;
+	*size = stream->buf_used;
+	return 0;
+fail:
+	free(stream->buffer);
+	stream->buffer = NULL;
+	stream->buf_used = 0;
+	stream->buf_off = 0;
+	stream->filesz = 0;
+	*out = NULL;
+	*size = 0;
+	return ret;
+}
+
+static void dr_stream_advance_buffer(sqfs_istream_t *base, size_t count)
+{
+	data_reader_istream_t *stream = (data_reader_istream_t *)base;
+	size_t diff = stream->buf_used - stream->buf_off;
+
+	stream->buf_off += (diff < count ? diff : count);
+}
+
+static const char *dr_stream_get_filename(sqfs_istream_t *base)
+{
+	return ((data_reader_istream_t *)base)->filename;
+}
+
+static void dr_stream_destroy(sqfs_object_t *obj)
+{
+	data_reader_istream_t *stream = (data_reader_istream_t *)obj;
+
+	sqfs_drop(stream->rd);
+	free(stream->buffer);
+	free(stream);
+}
+
+int sqfs_data_reader_create_stream(sqfs_data_reader_t *data,
+				   const sqfs_inode_generic_t *inode,
+				   const char *filename, sqfs_istream_t **out)
+{
+	data_reader_istream_t *stream;
+	size_t ino_sz, namelen, sz;
+	sqfs_u64 filesz;
+	char *nameptr;
+	int ret;
+
+	*out = NULL;
+
+	ret = sqfs_inode_get_file_size(inode, &filesz);
+	if (ret != 0)
+		return ret;
+
+	ino_sz = inode->payload_bytes_used;
+	namelen = strlen(filename) + 1;
+
+	if (SZ_ADD_OV(ino_sz, namelen, &sz))
+		return SQFS_ERROR_ALLOC;
+	if (SZ_ADD_OV(sz, sizeof(*stream), &sz))
+		return SQFS_ERROR_ALLOC;
+
+	stream = calloc(1, sz);
+	if (stream == NULL)
+		return SQFS_ERROR_ALLOC;
+
+	stream->buffer = malloc(data->block_size);
+	if (stream->buffer == NULL) {
+		free(stream);
+		return SQFS_ERROR_ALLOC;
+	}
+
+	sqfs_object_init(stream, dr_stream_destroy, NULL);
+
+	memcpy(stream->inodata, inode->extra, ino_sz);
+	stream->blocks = stream->inodata;
+	stream->blk_count = ino_sz / sizeof(stream->blocks[0]);
+	stream->filesz = filesz;
+
+	nameptr = (char *)stream->inodata + ino_sz;
+	memcpy(nameptr, filename, namelen);
+	stream->filename = nameptr;
+
+	sqfs_inode_get_file_block_start(inode, &stream->disk_offset);
+	sqfs_inode_get_frag_location(inode, &stream->frag_idx,
+				     &stream->frag_off);
+	stream->rd = sqfs_grab(data);
+
+	((sqfs_istream_t *)stream)->advance_buffer = dr_stream_advance_buffer;
+	((sqfs_istream_t *)stream)->get_filename = dr_stream_get_filename;
+	((sqfs_istream_t *)stream)->get_buffered_data =
+		dr_stream_get_buffered_data;
+
+	*out = (sqfs_istream_t *)stream;
+	return 0;
+}

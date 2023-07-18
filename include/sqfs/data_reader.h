@@ -145,6 +145,27 @@ SQFS_API sqfs_s32 sqfs_data_reader_read(sqfs_data_reader_t *data,
 					sqfs_u64 offset, void *buffer,
 					sqfs_u32 size);
 
+/**
+ * @brief Create an @ref sqfs_istream_t implementation for a squashfs file
+ *
+ * @memberof sqfs_data_reader_t
+ *
+ * This function creates a simple file stream implementation that internally
+ * reads data from a file in a SquashFS image. The reader is grabbed, the inode
+ * and filename are copied internally and not needed after creation.
+ *
+ * @param data A pointer to a data reader object.
+ * @param inode A pointer to the inode describing the file.
+ * @param filename A file name that the stream should return when asked.
+ * @param out Returns a pointer to a stream on success, NULL on failure.
+ *
+ * @return Zero on success, a negative @ref SQFS_ERROR value on failure.
+ */
+SQFS_API int sqfs_data_reader_create_stream(sqfs_data_reader_t *data,
+					    const sqfs_inode_generic_t *inode,
+					    const char *filename,
+					    sqfs_istream_t **out);
+
 #ifdef __cplusplus
 }
 #endif

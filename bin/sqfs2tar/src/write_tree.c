@@ -157,13 +157,26 @@ static int write_tree_dfs(const sqfs_tree_node_t *n)
 	}
 
 	if (S_ISREG(sb.st_mode)) {
-		if (sqfs_data_reader_dump(name, data, n->inode, out_file,
-					  super.block_size)) {
+		sqfs_istream_t *in;
+		int ret;
+
+		ret = sqfs_data_reader_create_stream(data, n->inode, name, &in);
+		if (ret) {
+			sqfs_perror(name, NULL, ret);
 			sqfs_free(name);
 			return -1;
 		}
 
-		ret = padd_file(out_file, sb.st_size);
+		do {
+			ret = sqfs_istream_splice(in, out_file,
+						  super.block_size);
+		} while (ret > 0);
+
+		sqfs_drop(in);
+
+		if (ret == 0)
+			ret = padd_file(out_file, sb.st_size);
+
 		if (ret) {
 			sqfs_perror(name, NULL, ret);
 			sqfs_free(name);

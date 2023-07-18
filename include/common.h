@@ -33,10 +33,6 @@ typedef struct sqfs_hard_link_t {
 	char *target;
 } sqfs_hard_link_t;
 
-int sqfs_data_reader_dump(const char *name, sqfs_data_reader_t *data,
-			  const sqfs_inode_generic_t *inode,
-			  sqfs_ostream_t *fp, size_t block_size);
-
 int write_data_from_file(const char *filename, sqfs_block_processor_t *data,
 			 sqfs_inode_generic_t **inode,
 			 sqfs_file_t *file, int flags);
