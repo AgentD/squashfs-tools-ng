@@ -114,6 +114,7 @@ static int dir_next(sqfs_dir_iterator_t *base, sqfs_dir_entry_t **out)
 	(*out)->rdev = it->sb.st_rdev;
 	(*out)->uid = it->sb.st_uid;
 	(*out)->gid = it->sb.st_gid;
+	(*out)->inode = it->sb.st_ino;
 
 	if (S_ISREG(it->sb.st_mode))
 		(*out)->size = it->sb.st_size;

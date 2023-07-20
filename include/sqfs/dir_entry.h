@@ -69,6 +69,11 @@ struct sqfs_dir_entry_t {
 	sqfs_u64 rdev;
 
 	/**
+	 * @brief Device and filesystem specific inode number.
+	 */
+	sqfs_u64 inode;
+
+	/**
 	 * @brief ID of the user that owns the entry.
 	 */
 	sqfs_u64 uid;
