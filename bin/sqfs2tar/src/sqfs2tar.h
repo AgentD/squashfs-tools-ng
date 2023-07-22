@@ -38,15 +38,7 @@ extern const char *filename;
 
 void process_args(int argc, char **argv);
 
-/* tar2sqfs.c */
-extern sqfs_xattr_reader_t *xr;
-extern sqfs_data_reader_t *data;
-extern sqfs_super_t super;
-extern sqfs_ostream_t *out_file;
-
-char *assemble_tar_path(char *name, bool is_dir);
-
-/* write_tree.c */
-int write_tree(const sqfs_tree_node_t *n);
+/* iterator.c */
+sqfs_dir_iterator_t *tar_compat_iterator_create(const char *filename);
 
 #endif /* SQFS2TAR_H */

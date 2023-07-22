@@ -1,5 +1,5 @@
 sqfs2tar_SOURCES = bin/sqfs2tar/src/sqfs2tar.c bin/sqfs2tar/src/sqfs2tar.h \
-	bin/sqfs2tar/src/options.c bin/sqfs2tar/src/write_tree.c
+	bin/sqfs2tar/src/options.c bin/sqfs2tar/src/iterator.c
 sqfs2tar_CFLAGS = $(AM_CFLAGS) $(PTHREAD_CFLAGS)
 sqfs2tar_LDADD = libcommon.a libutil.a libtar.a libio.a libsquashfs.la
 sqfs2tar_LDADD += libxfrm.a libcompat.a libfstree.a

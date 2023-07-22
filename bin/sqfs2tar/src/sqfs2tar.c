@@ -6,56 +6,7 @@
  */
 #include "sqfs2tar.h"
 
-sqfs_xattr_reader_t *xr;
-sqfs_data_reader_t *data;
-sqfs_super_t super;
-sqfs_ostream_t *out_file = NULL;
-
-static sqfs_file_t *file;
-
-char *assemble_tar_path(char *name, bool is_dir)
-{
-	size_t len, new_len;
-	char *temp;
-	(void)is_dir;
-
-	if (root_becomes == NULL && !is_dir)
-		return name;
-
-	new_len = strlen(name);
-	if (root_becomes != NULL)
-		new_len += strlen(root_becomes) + 1;
-	if (is_dir)
-		new_len += 1;
-
-	temp = realloc(name, new_len + 1);
-	if (temp == NULL) {
-		perror("assembling tar entry filename");
-		free(name);
-		return NULL;
-	}
-
-	name = temp;
-
-	if (root_becomes != NULL) {
-		len = strlen(root_becomes);
-
-		memmove(name + len + 1, name, strlen(name) + 1);
-		memcpy(name, root_becomes, len);
-		name[len] = '/';
-	}
-
-	if (is_dir) {
-		len = strlen(name);
-
-		if (len == 0 || name[len - 1] != '/') {
-			name[len++] = '/';
-			name[len] = '\0';
-		}
-	}
-
-	return name;
-}
+static sqfs_ostream_t *out_file = NULL;
 
 static int terminate_archive(void)
 {
@@ -66,53 +17,85 @@ static int terminate_archive(void)
 	return out_file->append(out_file, buffer, sizeof(buffer));
 }
 
-static sqfs_tree_node_t *tree_merge(sqfs_tree_node_t *lhs,
-				    sqfs_tree_node_t *rhs)
+static int write_file_data(sqfs_dir_iterator_t *it, const sqfs_dir_entry_t *ent)
 {
-	sqfs_tree_node_t *head = NULL, **next_ptr = &head;
-	sqfs_tree_node_t *it, *l, *r;
-	int diff;
+	sqfs_istream_t *in;
+	int ret;
 
-	while (lhs->children != NULL && rhs->children != NULL) {
-		diff = strcmp((const char *)lhs->children->name,
-			      (const char *)rhs->children->name);
+	ret = it->open_file_ro(it, &in);
+	if (ret)
+		return ret;
 
-		if (diff < 0) {
-			it = lhs->children;
-			lhs->children = lhs->children->next;
-		} else if (diff > 0) {
-			it = rhs->children;
-			rhs->children = rhs->children->next;
-		} else {
-			l = lhs->children;
-			lhs->children = lhs->children->next;
+	do {
+		ret = sqfs_istream_splice(in, out_file,
+					  SQFS_DEFAULT_BLOCK_SIZE);
+	} while (ret > 0);
 
-			r = rhs->children;
-			rhs->children = rhs->children->next;
+	in = sqfs_drop(in);
 
-			it = tree_merge(l, r);
+	if (ret == 0)
+		ret = padd_file(out_file, ent->size);
+
+	return ret;
+}
+
+static int write_entry(sqfs_dir_iterator_t *it, const sqfs_dir_entry_t *ent)
+{
+	static unsigned int record_counter;
+	sqfs_xattr_t *xattr = NULL;
+	char *target = NULL;
+	struct stat sb;
+	int ret;
+
+	if (S_ISLNK(ent->mode) ||
+	    (ent->flags & SQFS_DIR_ENTRY_FLAG_HARD_LINK)) {
+		ret = it->read_link(it, &target);
+
+		if (ret != 0) {
+			sqfs_perror(ent->name, "reading link target", ret);
+			return ret;
 		}
-
-		*next_ptr = it;
-		next_ptr = &it->next;
 	}
 
-	it = (lhs->children != NULL ? lhs->children : rhs->children);
-	*next_ptr = it;
+	ret = it->read_xattr(it, &xattr);
+	if (ret != 0) {
+		sqfs_perror(ent->name, "reading xattr data", ret);
+		sqfs_free(target);
+		return ret;
+	}
 
-	sqfs_dir_tree_destroy(rhs);
-	lhs->children = head;
-	return lhs;
+	memset(&sb, 0, sizeof(sb));
+	sb.st_mode = ent->mode;
+	sb.st_uid = ent->uid;
+	sb.st_gid = ent->gid;
+	sb.st_mtime = ent->mtime;
+	sb.st_rdev = ent->rdev;
+	sb.st_size = ent->size;
+
+	if (ent->flags & SQFS_DIR_ENTRY_FLAG_HARD_LINK) {
+		ret = write_hard_link(out_file, &sb, ent->name, target,
+				      record_counter++);
+		if (ret)
+			sqfs_perror(ent->name, "writing tar hard link", ret);
+	} else {
+		ret = write_tar_header(out_file, &sb, ent->name, target,
+				       xattr, record_counter++);
+		if (ret)
+			sqfs_perror(ent->name, "writing tar header", ret);
+	}
+
+	if (S_ISREG(ent->mode) && ret == 0)
+		ret = write_file_data(it, ent);
+
+	sqfs_xattr_list_free(xattr);
+	sqfs_free(target);
+	return ret;
 }
 
 int main(int argc, char **argv)
 {
-	sqfs_tree_node_t *root = NULL, *subtree = NULL;
-	int flags, ret, status = EXIT_FAILURE;
-	sqfs_compressor_t *cmp = NULL;
-	sqfs_id_table_t *idtbl = NULL;
-	sqfs_dir_reader_t *dr = NULL;
-	sqfs_compressor_config_t cfg;
+	int ret, status = EXIT_FAILURE;
+	sqfs_dir_iterator_t *it = NULL;
 	size_t i;
 
 	process_args(argc, argv);
@@ -139,116 +122,58 @@ int main(int argc, char **argv)
 			goto out;
 	}
 
-	ret = sqfs_file_open(&file, filename, SQFS_FILE_OPEN_READ_ONLY);
-	if (ret) {
-		sqfs_perror(filename, "open", ret);
+	it = tar_compat_iterator_create(filename);
+	if (it == NULL)
 		goto out;
-	}
 
-	ret = sqfs_super_read(&super, file);
-	if (ret) {
-		sqfs_perror(filename, "reading super block", ret);
-		goto out;
-	}
+	if (!no_links) {
+		sqfs_dir_iterator_t *hl;
 
-	sqfs_compressor_config_init(&cfg, super.compression_id,
-				    super.block_size,
-				    SQFS_COMP_FLAG_UNCOMPRESS);
+		ret = sqfs_hard_link_filter_create(&hl, it);
+		it = sqfs_drop(it);
 
-	ret = sqfs_compressor_create(&cfg, &cmp);
-
-#ifdef WITH_LZO
-	if (super.compression_id == SQFS_COMP_LZO && ret != 0)
-		ret = lzo_compressor_create(&cfg, &cmp);
-#endif
-
-	if (ret != 0) {
-		sqfs_perror(filename, "creating compressor", ret);
-		goto out;
-	}
-
-	idtbl = sqfs_id_table_create(0);
-
-	if (idtbl == NULL) {
-		perror("creating ID table");
-		goto out;
-	}
-
-	ret = sqfs_id_table_read(idtbl, file, &super, cmp);
-	if (ret) {
-		sqfs_perror(filename, "loading ID table", ret);
-		goto out;
-	}
-
-	data = sqfs_data_reader_create(file, super.block_size, cmp, 0);
-	if (data == NULL) {
-		sqfs_perror(filename, "creating data reader",
-			    SQFS_ERROR_ALLOC);
-		goto out;
-	}
-
-	ret = sqfs_data_reader_load_fragment_table(data, &super);
-	if (ret) {
-		sqfs_perror(filename, "loading fragment table", ret);
-		goto out;
-	}
-
-	dr = sqfs_dir_reader_create(&super, cmp, file, 0);
-	if (dr == NULL) {
-		sqfs_perror(filename, "creating dir reader",
-			    SQFS_ERROR_ALLOC);
-		goto out;
-	}
-
-	if (!no_xattr && !(super.flags & SQFS_FLAG_NO_XATTRS)) {
-		xr = sqfs_xattr_reader_create(0);
-		if (xr == NULL) {
-			sqfs_perror(filename, "creating xattr reader",
-				    SQFS_ERROR_ALLOC);
+		if (ret != 0) {
+			sqfs_perror(filename, "creating hard link filter", ret);
 			goto out;
 		}
 
-		ret = sqfs_xattr_reader_load(xr, &super, file, cmp);
-		if (ret) {
-			sqfs_perror(filename, "loading xattr table", ret);
-			goto out;
-		}
+		it = hl;
 	}
 
-	if (num_subdirs == 0) {
-		ret = sqfs_dir_reader_get_full_hierarchy(dr, idtbl, NULL,
-							 0, &root);
-		if (ret) {
-			sqfs_perror(filename, "loading filesystem tree", ret);
+	for (;;) {
+		sqfs_dir_entry_t *ent;
+
+		ret = it->next(it, &ent);
+		if (ret > 0)
+			break;
+		if (ret < 0) {
+			sqfs_perror(filename, "reading directory entry", ret);
 			goto out;
 		}
-	} else {
-		flags = 0;
 
-		if (keep_as_dir || num_subdirs > 1)
-			flags = SQFS_TREE_STORE_PARENTS;
-
-		for (i = 0; i < num_subdirs; ++i) {
-			ret = sqfs_dir_reader_get_full_hierarchy(dr, idtbl,
-								 subdirs[i],
-								 flags,
-								 &subtree);
-			if (ret) {
-				sqfs_perror(subdirs[i], "loading filesystem "
-					    "tree", ret);
+		ret = write_entry(it, ent);
+		if (ret == SQFS_ERROR_UNSUPPORTED) {
+			fprintf(stderr, "WARNING: %s: unsupported file type\n",
+				ent->name);
+			if (dont_skip) {
+				fputs("Not allowed to skip files, aborting!\n",
+				      stderr);
+				sqfs_free(ent);
 				goto out;
 			}
-
-			if (root == NULL) {
-				root = subtree;
-			} else {
-				root = tree_merge(root, subtree);
-			}
+			fprintf(stderr, "Skipping %s\n", ent->name);
+			sqfs_free(ent);
+			continue;
 		}
-	}
 
-	if (write_tree(root))
-		goto out;
+		if (ret) {
+			sqfs_perror(ent->name, NULL, ret);
+			sqfs_free(ent);
+			goto out;
+		}
+
+		sqfs_free(ent);
+	}
 
 	if (terminate_archive())
 		goto out;
@@ -261,13 +186,7 @@ int main(int argc, char **argv)
 
 	status = EXIT_SUCCESS;
 out:
-	sqfs_dir_tree_destroy(root);
-	sqfs_drop(xr);
-	sqfs_drop(dr);
-	sqfs_drop(data);
-	sqfs_drop(idtbl);
-	sqfs_drop(cmp);
-	sqfs_drop(file);
+	sqfs_drop(it);
 	sqfs_drop(out_file);
 	for (i = 0; i < num_subdirs; ++i)
 		free(subdirs[i]);

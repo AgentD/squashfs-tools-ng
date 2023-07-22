@@ -28,16 +28,7 @@
 
 #include <stddef.h>
 
-typedef struct sqfs_hard_link_t {
-	struct sqfs_hard_link_t *next;
-	sqfs_u32 inode_number;
-	char *target;
-} sqfs_hard_link_t;
-
 void sqfs_perror(const char *file, const char *action, int error_code);
-
-int sqfs_tree_find_hard_links(const sqfs_tree_node_t *root,
-			      sqfs_hard_link_t **out);
 
 /* A common implementation of the '--version' command line flag. */
 void print_version(const char *progname);
