@@ -653,6 +653,26 @@ SQFS_API int sqfs_dir_iterator_create_native(sqfs_dir_iterator_t **out,
 SQFS_API int sqfs_dir_iterator_create_recursive(sqfs_dir_iterator_t **out,
 						sqfs_dir_iterator_t *base);
 
+/**
+ * @brief Construct a directory iterator that detects hard links
+ *
+ * @memberof sqfs_dir_iterator_t
+ *
+ * This creates a directory iterator implementation that returns entries from
+ * a wrapped iterator, but detects and filters hard links using the device and
+ * inode numbers from the entries. If an entry is observed with the same values
+ * than a previous entry, the entry is changed into a link with
+ * the @ref SQFS_DIR_ENTRY_FLAG_HARD_LINK flags set and asking for the link
+ * target returns the previously seen entry name.
+ *
+ * @param out Returns a pointer to the hard link filter iterator
+ * @param base The directory iterator to wrap internally
+ *
+ * @return Zero on success, an @ref SQFS_ERROR code on failure.
+ */
+SQFS_API int sqfs_hard_link_filter_create(sqfs_dir_iterator_t **out,
+					  sqfs_dir_iterator_t *base);
+
 #ifdef __cplusplus
 }
 #endif
