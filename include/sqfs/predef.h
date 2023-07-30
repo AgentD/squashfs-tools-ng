@@ -186,9 +186,13 @@ static SQFS_INLINE void *sqfs_drop(void *obj)
  */
 static SQFS_INLINE void *sqfs_copy(const void *obj)
 {
-	if (((const sqfs_object_t *)obj)->copy != NULL) {
-		return ((const sqfs_object_t *)obj)->
-			copy((const sqfs_object_t *)obj);
+	const sqfs_object_t *orig = (const sqfs_object_t *)obj;
+
+	if (orig->copy != NULL) {
+		sqfs_object_t *copy = orig->copy(orig);
+		if (copy != NULL)
+			copy->refcount = 1;
+		return copy;
 	}
 
 	return NULL;
