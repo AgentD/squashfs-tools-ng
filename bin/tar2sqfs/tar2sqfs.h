@@ -29,6 +29,8 @@ extern bool no_tail_pack;
 extern bool no_symlink_retarget;
 extern sqfs_writer_cfg_t cfg;
 extern char *root_becomes;
+extern char **excludedirs;
+extern size_t num_excludedirs;
 
 void process_args(int argc, char **argv);
 

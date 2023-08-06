@@ -22,13 +22,14 @@ static struct option long_opts[] = {
 	{ "no-symlink-retarget", no_argument, NULL, 'S' },
 	{ "no-tail-packing", no_argument, NULL, 'T' },
 	{ "force", no_argument, NULL, 'f' },
+	{ "exclude-dir", required_argument, NULL, 'E' },
 	{ "quiet", no_argument, NULL, 'q' },
 	{ "help", no_argument, NULL, 'h' },
 	{ "version", no_argument, NULL, 'V' },
 	{ NULL, 0, NULL, 0 },
 };
 
-static const char *short_opts = "r:c:b:B:d:X:j:Q:sxekfqSThV";
+static const char *short_opts = "r:c:b:B:d:X:j:Q:sxekfqE:SThV";
 
 static const char *usagestr =
 "Usage: tar2sqfs [OPTIONS...] <sqfsfile>\n"
@@ -79,6 +80,7 @@ static const char *usagestr =
 "  --exportable, -e            Generate an export table for NFS support.\n"
 "  --no-tail-packing, -T       Do not perform tail end packing on files that\n"
 "                              are larger than block size.\n"
+"  --exclude-dir, -E <glob>    Skip tar entry if glob matches.\n"
 "  --force, -f                 Overwrite the output file if it exists.\n"
 "  --quiet, -q                 Do not print out progress reports.\n"
 "  --help, -h                  Print help text and exit.\n"
@@ -91,6 +93,9 @@ bool no_tail_pack = false;
 bool no_symlink_retarget = false;
 sqfs_writer_cfg_t cfg;
 char *root_becomes = NULL;
+char **excludedirs = NULL;
+size_t num_excludedirs = 0;
+static size_t max_excludedirs = 0;
 
 static void input_compressor_print_available(void)
 {
@@ -114,8 +119,10 @@ static void input_compressor_print_available(void)
 
 void process_args(int argc, char **argv)
 {
+	size_t idx, new_count;
 	bool have_compressor;
 	int i, ret;
+	char **new;
 
 	sqfs_writer_cfg_init(&cfg);
 
@@ -134,18 +141,18 @@ void process_args(int argc, char **argv)
 		case 'b':
 			if (parse_size("Block size", &cfg.block_size,
 				       optarg, 0)) {
-				exit(EXIT_FAILURE);
+				goto fail;
 			}
 			break;
 		case 'B':
 			if (parse_size("Device block size", &cfg.devblksize,
 				       optarg, 0)) {
-				exit(EXIT_FAILURE);
+				goto fail;
 			}
 			if (cfg.devblksize < 1024) {
 				fputs("Device block size must be at "
 				      "least 1024\n", stderr);
-				exit(EXIT_FAILURE);
+				goto fail;
 			}
 			break;
 		case 'c':
@@ -163,7 +170,7 @@ void process_args(int argc, char **argv)
 			if (!have_compressor) {
 				fprintf(stderr, "Unsupported compressor '%s'\n",
 					optarg);
-				exit(EXIT_FAILURE);
+				goto fail;
 			}
 
 			cfg.comp_id = ret;
@@ -191,7 +198,7 @@ void process_args(int argc, char **argv)
 			root_becomes = strdup(optarg);
 			if (root_becomes == NULL) {
 				perror("copying root directory name");
-				exit(EXIT_FAILURE);
+				goto fail;
 			}
 
 			if (canonicalize_name(root_becomes) != 0 ||
@@ -214,15 +221,39 @@ void process_args(int argc, char **argv)
 		case 'q':
 			cfg.quiet = true;
 			break;
+		case 'E':
+			if (num_excludedirs == max_excludedirs) {
+				new_count = max_excludedirs ? max_excludedirs * 2 : 16;
+				new = realloc(excludedirs,
+					      new_count * sizeof(excludedirs[0]));
+				if (new == NULL)
+					goto fail_errno;
+
+				max_excludedirs = new_count;
+				excludedirs = new;
+			}
+
+			excludedirs[num_excludedirs] = strdup(optarg);
+			if (excludedirs[num_excludedirs] == NULL)
+				goto fail_errno;
+
+			if (canonicalize_name(excludedirs[num_excludedirs])) {
+				perror(optarg);
+				goto fail;
+			}
+
+			++num_excludedirs;
+			break;
+
 		case 'h':
 			printf(usagestr, SQFS_DEFAULT_BLOCK_SIZE,
 			       SQFS_DEVBLK_SIZE);
 			compressor_print_available();
 			input_compressor_print_available();
-			exit(EXIT_SUCCESS);
+			goto out_success;
 		case 'V':
 			print_version("tar2sqfs");
-			exit(EXIT_SUCCESS);
+			goto out_success;
 		default:
 			goto fail_arg;
 		}
@@ -251,7 +282,22 @@ void process_args(int argc, char **argv)
 		goto fail_arg;
 	}
 	return;
+fail_errno:
+	perror("parsing options");
+	goto fail;
 fail_arg:
-	fputs("Try `tar2sqfs --help' for more information.\n", stderr);
-	exit(EXIT_FAILURE);
+	fputs("Try `tar2sqfsr --help' for more information.\n", stderr);
+	goto fail;
+fail:
+	ret = EXIT_FAILURE;
+	goto out_exit;
+out_success:
+	ret = EXIT_SUCCESS;
+	goto out_exit;
+out_exit:
+	for (idx = 0; idx < num_excludedirs; ++idx)
+		free(excludedirs[idx]);
+	free(root_becomes);
+	free(excludedirs);
+	exit(ret);
 }
