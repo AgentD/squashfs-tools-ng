@@ -16,11 +16,14 @@
 #include <string.h>
 #include <assert.h>
 #include <stdbool.h>
+#include <fnmatch.h>
 
 typedef struct {
 	dir_iterator_t base;
 	tar_header_decoded_t current;
 	sqfs_istream_t *stream;
+	char **excludedirs;
+	size_t num_excludedirs;
 	int state;
 
 	/* File I/O wrapper related */
@@ -167,6 +170,7 @@ static void strm_destroy(sqfs_object_t *obj)
 static int it_next(dir_iterator_t *it, sqfs_dir_entry_t **out)
 {
 	tar_iterator_t *tar = (tar_iterator_t *)it;
+	size_t idx;
 	int ret;
 
 	*out = NULL;
@@ -207,6 +211,11 @@ retry:
 	if (canonicalize_name(tar->current.name) != 0) {
 		tar->state = SQFS_ERROR_CORRUPTED;
 		return tar->state;
+	}
+
+	for (idx = 0; idx < tar->num_excludedirs; idx++) {
+		if (fnmatch(tar->excludedirs[idx], tar->current.name, 0) == 0)
+			goto retry;
 	}
 
 	*out = sqfs_dir_entry_create(tar->current.name, tar->current.mode, 0);
@@ -350,7 +359,7 @@ static int tar_probe(const sqfs_u8 *data, size_t size)
 	return 0;
 }
 
-dir_iterator_t *tar_open_stream(sqfs_istream_t *strm)
+dir_iterator_t *tar_open_stream(sqfs_istream_t *strm, tar_iterator_opts *opts)
 {
 	tar_iterator_t *tar = calloc(1, sizeof(*tar));
 	dir_iterator_t *it = (dir_iterator_t *)tar;
@@ -369,6 +378,11 @@ dir_iterator_t *tar_open_stream(sqfs_istream_t *strm)
 	it->ignore_subdir = it_ignore_subdir;
 	it->open_file_ro = it_open_file_ro;
 	it->read_xattr = it_read_xattr;
+
+	if (opts) {
+		tar->excludedirs = opts->excludedirs;
+		tar->num_excludedirs = opts->num_excludedirs;
+	}
 
 	/* proble if the stream is compressed */
 	ret = strm->get_buffered_data(strm, &ptr, &size,

@@ -8,9 +8,10 @@
 
 int main(int argc, char **argv)
 {
-	int status = EXIT_FAILURE;
 	sqfs_istream_t *input_file = NULL;
+	tar_iterator_opts topts = { 0 };
 	dir_iterator_t *tar = NULL;
+	int status = EXIT_FAILURE;
 	sqfs_writer_t sqfs;
 	int ret;
 
@@ -22,7 +23,10 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	tar = tar_open_stream(input_file);
+	topts.excludedirs = excludedirs;
+	topts.num_excludedirs = num_excludedirs;
+
+	tar = tar_open_stream(input_file, &topts);
 	sqfs_drop(input_file);
 	if (tar == NULL) {
 		fputs("Creating tar stream: out-of-memory\n", stderr);

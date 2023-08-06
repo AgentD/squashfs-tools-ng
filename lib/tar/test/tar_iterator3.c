@@ -28,7 +28,7 @@ int main(int argc, char **argv)
 	TEST_EQUAL_I(ret, 0);
 	TEST_NOT_NULL(fp);
 	TEST_EQUAL_UI(((sqfs_object_t *)fp)->refcount, 1);
-	it = tar_open_stream(fp);
+	it = tar_open_stream(fp, NULL);
 	TEST_NOT_NULL(it);
 	TEST_EQUAL_UI(((sqfs_object_t *)fp)->refcount, 2);
 	TEST_EQUAL_UI(((sqfs_object_t *)it)->refcount, 1);

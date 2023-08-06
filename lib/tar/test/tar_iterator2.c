@@ -57,7 +57,7 @@ int main(int argc, char **argv)
 				      0);
 	TEST_EQUAL_I(iret, 0);
 	TEST_NOT_NULL(fp);
-	it = tar_open_stream(fp);
+	it = tar_open_stream(fp, NULL);
 	TEST_NOT_NULL(it);
 	sqfs_drop(fp);
 
