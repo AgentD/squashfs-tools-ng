@@ -39,6 +39,11 @@ typedef struct {
 	sqfs_s64 mtime;
 } tar_header_decoded_t;
 
+typedef struct {
+	char **excludedirs;
+	size_t num_excludedirs;
+} tar_iterator_opts;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -63,7 +68,7 @@ int read_header(sqfs_istream_t *fp, tar_header_decoded_t *out);
 
 void clear_header(tar_header_decoded_t *hdr);
 
-dir_iterator_t *tar_open_stream(sqfs_istream_t *stream);
+dir_iterator_t *tar_open_stream(sqfs_istream_t *stream, tar_iterator_opts *opts);
 
 /*
   Write zero bytes to an output file to padd it to the tar record size.
