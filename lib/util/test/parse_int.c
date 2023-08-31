@@ -74,5 +74,46 @@ int main(int argc, char **argv)
 	ret = parse_int("-1234", -1, NULL, -1000, 1000, &s_out);
 	TEST_EQUAL_I(ret, SQFS_ERROR_OUT_OF_BOUNDS);
 
+	/**** octal version *****/
+
+	/* must begin with a digit */
+	ret = parse_uint_oct("a1234", -1, &diff, 0, 0, &out);
+	TEST_EQUAL_I(ret, SQFS_ERROR_CORRUPTED);
+
+	/* can end with a non-digit... */
+	ret = parse_uint_oct("1234a", -1, &diff, 0, 0, &out);
+	TEST_EQUAL_I(ret, 0);
+	TEST_EQUAL_UI(out, 01234);
+	TEST_EQUAL_UI(diff, 4);
+
+	/* ...unless diff is NULL */
+	ret = parse_uint_oct("1234a", -1, NULL, 0, 0, &out);
+	TEST_EQUAL_I(ret, SQFS_ERROR_CORRUPTED);
+
+	/* numeric overflow is cought */
+	ret = parse_uint_oct("2000000000000000000000", -1, NULL, 0, 0, &out);
+	TEST_EQUAL_I(ret, SQFS_ERROR_OVERFLOW);
+
+	/* buffer length is adherered to */
+	ret = parse_uint_oct("2000000000000000000000", 5, NULL, 0, 0, &out);
+	TEST_EQUAL_I(ret, 0);
+	TEST_EQUAL_UI(out, 020000);
+
+	ret = parse_uint_oct("2000000000000000000000", 5, &diff, 0, 0, &out);
+	TEST_EQUAL_I(ret, 0);
+	TEST_EQUAL_UI(diff, 5);
+	TEST_EQUAL_UI(out, 020000);
+
+	/* if vmin/vmax differ, check the range */
+	ret = parse_uint_oct("1234", -1, NULL, 0, 01000, &out);
+	TEST_EQUAL_I(ret, SQFS_ERROR_OUT_OF_BOUNDS);
+
+	ret = parse_uint_oct("1234", -1, NULL, 0, 02000, &out);
+	TEST_EQUAL_I(ret, 0);
+	TEST_EQUAL_UI(out, 01234);
+
+	ret = parse_uint_oct("1234", -1, NULL, 02000, 03000, &out);
+	TEST_EQUAL_I(ret, SQFS_ERROR_OUT_OF_BOUNDS);
+
 	return EXIT_SUCCESS;
 }

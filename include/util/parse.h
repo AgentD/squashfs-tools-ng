@@ -66,11 +66,49 @@ SQFS_INTERNAL void trim(char *buffer);
 SQFS_INTERNAL int istream_get_line(sqfs_istream_t *strm, char **out,
 				   size_t *line_num, int flags);
 
+/**
+ * @brief Parse an unsigned decimal integer from a string
+ *
+ * The function expects to find at least one decimal digit, and stops parsing
+ * if it finds something that is not a digit. If diff is NULL, it requires that
+ * the entire string was consumed (either length exhausted or a null-byte was
+ * found), otherwise it returns success.
+ *
+ * Altough numeric overflow is checked for while parsing, the result is only
+ * tested against vmin and vmax, if vmin is less than vmax. Setting them to
+ * the same value disables the range check.
+ *
+ * @param in A pointer to a string to parse
+ * @param len The maximum number of characters to read
+ * @param diff If not NULL, returns the number of characters successfully read
+ * @param vmin A lower bound. If the parsed value is below this, return an error
+ * @param vmax An upper bound. If the value is above this, return an error
+ * @param out If not NULL, returns the result value
+ *
+ * @return Zero on success, @ref SQFS_ERROR_OVERFLOW on numeric overflow,
+ *         @ref SQFS_ERROR_OUT_OF_BOUNDS if the range check failed,
+ *         @ref SQFS_ERROR_CORRUPTED if the string is not a number.
+ */
+SQFS_INTERNAL int parse_uint(const char *in, size_t len, size_t *diff,
+			     sqfs_u64 vmin, sqfs_u64 vmax, sqfs_u64 *out);
+
+/**
+ * @brief A variant of @ref parse_uint that can parse signed numbers
+ *
+ * The function internally uses @ref parse_uint, but allows an optional
+ * sign prefix and flips the result if it is negative. Range checking
+ * can also be performed using negative bounds.
+ *
+ * Arguments and return values are the same as for @ref parse_uint, but signed.
+ */
 SQFS_INTERNAL int parse_int(const char *in, size_t len, size_t *diff,
 			    sqfs_s64 vmin, sqfs_s64 vmax, sqfs_s64 *out);
 
-SQFS_INTERNAL int parse_uint(const char *in, size_t len, size_t *diff,
-			     sqfs_u64 vmin, sqfs_u64 vmax, sqfs_u64 *out);
+/**
+ * @brief Same as @ref parse_uint, but expects octal instead of decimal
+ */
+SQFS_INTERNAL int parse_uint_oct(const char *in, size_t len, size_t *diff,
+				 sqfs_u64 vmin, sqfs_u64 vmax, sqfs_u64 *out);
 
 /**
  * @brief Split a line of special character separated tokens

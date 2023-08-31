@@ -11,8 +11,8 @@
 
 #include <ctype.h>
 
-int parse_uint(const char *in, size_t len, size_t *diff,
-	       sqfs_u64 vmin, sqfs_u64 vmax, sqfs_u64 *out)
+static int parse(const char *in, size_t len, size_t *diff,
+		 sqfs_u64 base, sqfs_u64 vmin, sqfs_u64 vmax, sqfs_u64 *out)
 {
 	/* init result */
 	if (diff != NULL)
@@ -25,25 +25,28 @@ int parse_uint(const char *in, size_t len, size_t *diff,
 
 	/* parse sequence */
 	while (len > 0 && isdigit(*in)) {
-		sqfs_u64 x = *(in++) - '0';
-		--len;
+		sqfs_u64 x = *in - '0';
+		if (x >= base)
+			break;
 
-		if (diff != NULL)
-			++(*diff);
-
-		if ((*out) >= (0xFFFFFFFFFFFFFFFFULL / 10ULL))
+		if ((*out) >= (0xFFFFFFFFFFFFFFFFULL / base))
 			return SQFS_ERROR_OVERFLOW;
 
-		(*out) *= 10;
+		(*out) *= base;
 
 		if ((*out) > (0xFFFFFFFFFFFFFFFFULL - x))
 			return SQFS_ERROR_OVERFLOW;
 
 		(*out) += x;
+
+		--len;
+		++in;
+		if (diff != NULL)
+			++(*diff);
 	}
 
 	/* range check */
-	if ((vmin != vmax) && ((*out < vmin) || (*out > vmax)))
+	if ((vmin < vmax) && ((*out < vmin) || (*out > vmax)))
 		return SQFS_ERROR_OUT_OF_BOUNDS;
 
 	/* if diff is not used, entire  must have been processed */
@@ -53,6 +56,17 @@ int parse_uint(const char *in, size_t len, size_t *diff,
 	return 0;
 }
 
+int parse_uint(const char *in, size_t len, size_t *diff,
+	       sqfs_u64 vmin, sqfs_u64 vmax, sqfs_u64 *out)
+{
+	return parse(in, len, diff, 10, vmin, vmax, out);
+}
+
+int parse_uint_oct(const char *in, size_t len, size_t *diff,
+		   sqfs_u64 vmin, sqfs_u64 vmax, sqfs_u64 *out)
+{
+	return parse(in, len, diff, 8, vmin, vmax, out);
+}
 
 int parse_int(const char *in, size_t len, size_t *diff,
 	      sqfs_s64 vmin, sqfs_s64 vmax, sqfs_s64 *out)
@@ -82,7 +96,7 @@ int parse_int(const char *in, size_t len, size_t *diff,
 		*out = (sqfs_s64)temp;
 	}
 
-	if (vmin != vmax && ((*out < vmin) || (*out > vmax)))
+	if ((vmin < vmax) && ((*out < vmin) || (*out > vmax)))
 		return SQFS_ERROR_OUT_OF_BOUNDS;
 
 	return 0;
