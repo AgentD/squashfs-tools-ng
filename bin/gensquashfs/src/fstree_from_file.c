@@ -6,28 +6,6 @@
  */
 #include "mkfs.h"
 
-static int read_u32(const char *str, sqfs_u32 *out, sqfs_u32 base)
-{
-	*out = 0;
-
-	if (!isdigit(*str))
-		return -1;
-
-	while (isdigit(*str)) {
-		sqfs_u32 x = *(str++) - '0';
-
-		if (x >= base || (*out) > (0xFFFFFFFF - x) / base)
-			return -1;
-
-		(*out) = (*out) * base + x;
-	}
-
-	if (*str != '\0')
-		return -1;
-
-	return 0;
-}
-
 static int add_generic(fstree_t *fs, const char *filename, size_t line_num,
 		       sqfs_dir_entry_t *ent, split_line_t *line)
 {
@@ -53,7 +31,7 @@ fail:
 static int add_device(fstree_t *fs, const char *filename, size_t line_num,
 		      sqfs_dir_entry_t *ent, split_line_t *line)
 {
-	sqfs_u32 maj, min;
+	sqfs_u64 maj, min;
 
 	if (line->count != 3)
 		goto fail_args;
@@ -66,9 +44,9 @@ static int add_device(fstree_t *fs, const char *filename, size_t line_num,
 		goto fail_type;
 	}
 
-	if (read_u32(line->args[1], &maj, 10))
+	if (parse_uint(line->args[1], -1, NULL, 0, 0x0FFFFFFFF, &maj))
 		goto fail_num;
-	if (read_u32(line->args[2], &min, 10))
+	if (parse_uint(line->args[2], -1, NULL, 0, 0x0FFFFFFFF, &min))
 		goto fail_num;
 
 	ent->rdev = makedev(maj, min);
@@ -126,7 +104,7 @@ static int handle_line(fstree_t *fs, const char *filename, size_t line_num,
 {
 	const struct callback_t *cb = NULL;
 	unsigned int glob_flags = 0;
-	sqfs_u32 uid, gid, mode;
+	sqfs_u64 uid, gid, mode;
 	sqfs_dir_entry_t *ent = NULL;
 	const char *msg = NULL;
 	bool is_glob = false;
@@ -162,7 +140,7 @@ static int handle_line(fstree_t *fs, const char *filename, size_t line_num,
 		mode = 0;
 		glob_flags |= DIR_SCAN_KEEP_MODE;
 	} else {
-		if (read_u32(line->args[2], &mode, 8) || mode > 07777)
+		if (parse_uint_oct(line->args[2], -1, NULL, 0, 07777, &mode))
 			goto fail_mode;
 	}
 
@@ -170,7 +148,7 @@ static int handle_line(fstree_t *fs, const char *filename, size_t line_num,
 		uid = 0;
 		glob_flags |= DIR_SCAN_KEEP_UID;
 	} else {
-		if (read_u32(line->args[3], &uid, 10))
+		if (parse_uint(line->args[3], -1, NULL, 0, 0x0FFFFFFFF, &uid))
 			goto fail_uid_gid;
 	}
 
@@ -178,7 +156,7 @@ static int handle_line(fstree_t *fs, const char *filename, size_t line_num,
 		gid = 0;
 		glob_flags |= DIR_SCAN_KEEP_GID;
 	} else {
-		if (read_u32(line->args[4], &gid, 10))
+		if (parse_uint(line->args[4], -1, NULL, 0, 0x0FFFFFFFF, &gid))
 			goto fail_uid_gid;
 	}
 
