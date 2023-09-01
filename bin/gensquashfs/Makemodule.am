@@ -38,6 +38,16 @@ test_fstree_from_file_CPPFLAGS += -I$(top_srcdir)/bin/gensquashfs/src
 test_fstree_from_file_LDADD = libio.a libsquashfs.la libcommon.a libfstree.a \
 			libutil.a libcompat.a
 
+test_fstree_from_file2_SOURCES = bin/gensquashfs/test/fstree_from_file2.c \
+				bin/gensquashfs/src/fstree_from_file.c \
+				bin/gensquashfs/src/fstree_from_dir.c \
+				bin/gensquashfs/src/glob.c \
+				bin/gensquashfs/src/mkfs.h
+test_fstree_from_file2_CPPFLAGS = $(AM_CPPFLAGS)
+test_fstree_from_file2_CPPFLAGS += -I$(top_srcdir)/bin/gensquashfs/src
+test_fstree_from_file2_LDADD = libio.a libsquashfs.la libcommon.a libfstree.a \
+			libutil.a libcompat.a
+
 test_fstree_glob1_SOURCES = bin/gensquashfs/test/fstree_glob1.c \
 				bin/gensquashfs/src/fstree_from_file.c \
 				bin/gensquashfs/src/fstree_from_dir.c \
@@ -68,7 +78,7 @@ fstree_fuzz_LDADD = libio.a libsquashfs.la libcommon.a libfstree.a \
 		libutil.a libcompat.a
 
 GENSQUASHFS_TESTS = \
-	test_filemap_xattr test_fstree_from_file \
+	test_filemap_xattr test_fstree_from_file test_fstree_from_file2 \
 	test_fstree_glob1 test_sort_file
 
 noinst_PROGRAMS += fstree_fuzz
