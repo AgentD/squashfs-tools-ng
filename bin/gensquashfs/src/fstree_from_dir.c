@@ -24,8 +24,8 @@ int fstree_from_dir(fstree_t *fs, sqfs_dir_iterator_t *dir)
 		if (S_ISLNK(ent->mode)) {
 			ret = dir->read_link(dir, &extra);
 			if (ret) {
-				free(ent);
 				sqfs_perror("readlink", ent->name, ret);
+				free(ent);
 				return -1;
 			}
 		}
