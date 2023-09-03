@@ -159,6 +159,7 @@ static int fill_files(sqfs_data_reader_t *data, int flags)
 						     files[i].path, &in);
 		if (ret) {
 			sqfs_perror(files[i].path, NULL, ret);
+			sqfs_drop(fp);
 			return -1;
 		}
 

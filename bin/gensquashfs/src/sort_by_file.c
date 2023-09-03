@@ -138,6 +138,7 @@ static int decode_flags(const char *filename, size_t line_no, bool *do_glob,
 	if (!isspace(*end)) {
 		fprintf(stderr, "%s: " PRI_SZ ": Expected `<space> <filename>` "
 			"after flag list.\n", filename, line_no);
+		free(sep);
 		return -1;
 	}
 
