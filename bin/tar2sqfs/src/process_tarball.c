@@ -224,8 +224,6 @@ int process_tarball(sqfs_dir_iterator_t *it, sqfs_writer_t *sqfs)
 
 		if (is_root) {
 			ret = set_root_attribs(sqfs, it, ent);
-		} else if (skip) {
-			ret = dont_skip ? -1 : 0;
 		} else {
 			ret = create_node_and_repack_data(sqfs, it, ent, link);
 		}

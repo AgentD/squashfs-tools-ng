@@ -191,7 +191,7 @@ fail_alloc:
 	return -1;
 fail_root:
 	fprintf(stderr, "%s: " PRI_SZ ": cannot use / as argument for %s.\n",
-		filename, line_num, is_glob ? "glob" : cb->keyword);
+		filename, line_num, cb->keyword);
 	return -1;
 fail_no_extra:
 	fprintf(stderr, "%s: " PRI_SZ ": missing argument for %s.\n",

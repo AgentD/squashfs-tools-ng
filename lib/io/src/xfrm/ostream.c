@@ -51,13 +51,6 @@ static int flush_inbuf(ostream_xfrm_t *xfrm, bool finish)
 			break;
 	}
 
-	if (off_out > 0) {
-		ret = xfrm->wrapped->append(xfrm->wrapped,
-					    xfrm->outbuf, off_out);
-		if (ret)
-			return ret;
-	}
-
 	if (off_in < avail_in) {
 		memmove(xfrm->inbuf, xfrm->inbuf + off_in, avail_in - off_in);
 		xfrm->inbuf_used -= off_in;
