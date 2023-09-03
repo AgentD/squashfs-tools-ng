@@ -18,10 +18,12 @@ static int extract(sqfs_data_reader_t *data, const sqfs_inode_generic_t *inode,
 	sprintf(temp, "%s/%s", prefix, path);
 
 	ptr = strrchr(temp, '/');
-	*ptr = '\0';
-	if (mkdir_p(temp))
-		return -1;
-	*ptr = '/';
+	if (ptr != NULL) {
+		*ptr = '\0';
+		if (mkdir_p(temp))
+			return -1;
+		*ptr = '/';
+	}
 
 	ret = sqfs_ostream_open_file(&fp, temp, SQFS_FILE_OPEN_OVERWRITE);
 	if (ret) {
