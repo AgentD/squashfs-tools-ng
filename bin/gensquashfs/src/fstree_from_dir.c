@@ -21,15 +21,6 @@ int fstree_from_dir(fstree_t *fs, sqfs_dir_iterator_t *dir)
 			return -1;
 		}
 
-		n = fstree_get_node_by_path(fs, fs->root, ent->name,
-					    false, true);
-		if (n == NULL) {
-			if (S_ISDIR(ent->mode))
-				dir->ignore_subdir(dir);
-			free(ent);
-			continue;
-		}
-
 		if (S_ISLNK(ent->mode)) {
 			ret = dir->read_link(dir, &extra);
 			if (ret) {

@@ -63,6 +63,82 @@ static bool set_scan_flag(const char *arg, dir_tree_cfg_t *cfg)
 	return false;
 }
 
+static int scan_directory(fstree_t *fs, sqfs_dir_iterator_t *dir,
+			  size_t prefix_len, const char *file_prefix)
+{
+	for (;;) {
+		sqfs_dir_entry_t *ent = NULL;
+		tree_node_t *n = NULL;
+		char *extra = NULL;
+
+		int ret = dir->next(dir, &ent);
+		if (ret > 0)
+			break;
+		if (ret < 0) {
+			sqfs_perror("readdir", NULL, ret);
+			return -1;
+		}
+
+		n = fstree_get_node_by_path(fs, fs->root, ent->name,
+					    false, true);
+		if (n == NULL) {
+			if (S_ISDIR(ent->mode))
+				dir->ignore_subdir(dir);
+			free(ent);
+			continue;
+		}
+
+		if (S_ISLNK(ent->mode)) {
+			ret = dir->read_link(dir, &extra);
+			if (ret) {
+				free(ent);
+				sqfs_perror("readlink", ent->name, ret);
+				return -1;
+			}
+		} else if (S_ISREG(ent->mode)) {
+			const char *src;
+
+			/* skip the prefix, get the name actually
+			   returned by the nested iterator */
+			src = ent->name + prefix_len;
+			while (*src == '/')
+				++src;
+
+			/* reconstruct base path relative file path */
+			if (file_prefix == NULL) {
+				extra = strdup(src);
+			} else {
+				size_t fxlen = strlen(file_prefix) + 1;
+				size_t srclen = strlen(src) + 1;
+
+				extra = malloc(fxlen + srclen);
+				if (extra != NULL) {
+					memcpy(extra, file_prefix, fxlen);
+					memcpy(extra + fxlen, src, srclen);
+					extra[fxlen - 1] = '/';
+				}
+			}
+
+			if (extra == NULL) {
+				free(ent);
+				fputs("out-of-memory\n", stderr);
+				return -1;
+			}
+		}
+
+		n = fstree_add_generic(fs, ent, extra);
+		free(extra);
+		free(ent);
+
+		if (n == NULL) {
+			perror("creating tree node");
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
 int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 	       const sqfs_dir_entry_t *ent,
 	       const char *basepath, unsigned int glob_flags,
@@ -70,6 +146,7 @@ int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 {
 	bool first_type_flag = true;
 	sqfs_dir_iterator_t *dir = NULL;
+	const char *file_prefix = NULL;
 	char *prefix = NULL;
 	dir_tree_cfg_t cfg;
 	tree_node_t *root;
@@ -155,12 +232,14 @@ int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 
 		dir = dir_tree_iterator_create(temp, &cfg);
 		free(temp);
+
+		file_prefix = sep->args[0];
 	}
 
 	if (dir == NULL)
 		goto fail;
 
-	ret = fstree_from_dir(fs, dir);
+	ret = scan_directory(fs, dir, strlen(cfg.prefix), file_prefix);
 	sqfs_drop(dir);
 
 	free(prefix);
