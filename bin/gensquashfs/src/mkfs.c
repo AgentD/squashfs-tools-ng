@@ -6,13 +6,56 @@
  */
 #include "mkfs.h"
 
+static int pack_file(sqfs_block_processor_t *data,
+		     const char *path, tree_node_t *n, const options_t *opt)
+{
+	sqfs_ostream_t *out = NULL;
+	sqfs_istream_t *in = NULL;
+	sqfs_file_handle_t hnd;
+	sqfs_u64 filesize;
+	int ret, flags;
+
+	ret = sqfs_native_file_open(&hnd, path, SQFS_FILE_OPEN_READ_ONLY);
+	if (ret)
+		goto done;
+
+	ret = sqfs_native_file_get_size(hnd, &filesize);
+	if (ret)
+		goto done;
+
+	ret = sqfs_istream_open_handle(&in, path, hnd, 0);
+	if (ret)
+		goto done;
+
+	flags = n->data.file.flags;
+	if (opt->no_tail_packing && filesize > opt->cfg.block_size)
+		flags |= SQFS_BLK_DONT_FRAGMENT;
+
+	ret = sqfs_block_processor_create_ostream(&out, path, data,
+						  &(n->data.file.inode), flags);
+	if (ret)
+		goto done;
+
+	do {
+		ret = sqfs_istream_splice(in, out, opt->cfg.block_size);
+	} while (ret > 0);
+
+	if (ret == 0)
+		ret = out->flush(out);
+done:
+	if (ret)
+		sqfs_perror(path, NULL, ret);
+	if (in == NULL)
+		sqfs_native_file_close(hnd);
+	sqfs_drop(out);
+	sqfs_drop(in);
+	return ret;
+}
+
 static int pack_files(sqfs_block_processor_t *data, fstree_t *fs,
 		      options_t *opt)
 {
-	sqfs_u64 filesize;
-	sqfs_file_t *file;
 	tree_node_t *node;
-	int flags;
 	int ret;
 
 	if (opt->packdir != NULL && chdir(opt->packdir) != 0) {
@@ -40,22 +83,7 @@ static int pack_files(sqfs_block_processor_t *data, fstree_t *fs,
 		if (!opt->cfg.quiet)
 			printf("packing %s\n", path);
 
-		ret = sqfs_file_open(&file, path, SQFS_FILE_OPEN_READ_ONLY);
-		if (ret) {
-			sqfs_perror(path, "open", ret);
-			free(node_path);
-			return -1;
-		}
-
-		flags = node->data.file.flags;
-		filesize = file->get_size(file);
-
-		if (opt->no_tail_packing && filesize > opt->cfg.block_size)
-			flags |= SQFS_BLK_DONT_FRAGMENT;
-
-		ret = write_data_from_file(path, data, &(node->data.file.inode),
-					   file, flags);
-		sqfs_drop(file);
+		ret = pack_file(data, path, node, opt);
 		free(node_path);
 
 		if (ret)

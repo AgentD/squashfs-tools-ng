@@ -1,8 +1,7 @@
 libcommon_a_SOURCES = include/common.h include/simple_writer.h \
 	include/compress_cli.h \
 	lib/common/src/hardlink.c lib/common/src/print_version.c \
-	lib/common/src/compress.c \
-	lib/common/src/comp_opt.c lib/common/src/data_writer.c \
+	lib/common/src/compress.c lib/common/src/comp_opt.c \
 	lib/common/src/parse_size.c lib/common/src/print_size.c \
 	lib/common/src/writer/init.c lib/common/src/writer/cleanup.c \
 	lib/common/src/writer/serialize_fstree.c lib/common/src/writer/finish.c\

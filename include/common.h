@@ -33,10 +33,6 @@ typedef struct sqfs_hard_link_t {
 	char *target;
 } sqfs_hard_link_t;
 
-int write_data_from_file(const char *filename, sqfs_block_processor_t *data,
-			 sqfs_inode_generic_t **inode,
-			 sqfs_file_t *file, int flags);
-
 void sqfs_perror(const char *file, const char *action, int error_code);
 
 int sqfs_tree_find_hard_links(const sqfs_tree_node_t *root,
