@@ -229,9 +229,15 @@ sqfs_dir_iterator_t *dir_tree_iterator_create(const char *path,
 
 	ret = sqfs_dir_iterator_create_recursive(&it->rec, dir);
 	sqfs_drop(dir);
-	if (ret) {
-		fprintf(stderr, "%s: out of memory\n", path);
-		goto fail;
+	if (ret)
+		goto fail_oom;
+
+	if (!(cfg->flags & DIR_SCAN_NO_HARDLINKS)) {
+		ret = sqfs_hard_link_filter_create(&dir, it->rec);
+		sqfs_drop(it->rec);
+		it->rec = dir;
+		if (ret)
+			goto fail_oom;
 	}
 
 	sqfs_object_init(it, destroy, NULL);
@@ -243,6 +249,8 @@ sqfs_dir_iterator_t *dir_tree_iterator_create(const char *path,
 	((sqfs_dir_iterator_t *)it)->read_xattr = read_xattr;
 
 	return (sqfs_dir_iterator_t *)it;
+fail_oom:
+	fprintf(stderr, "%s: out of memory\n", path);
 fail:
 	free(it);
 	return NULL;

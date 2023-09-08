@@ -47,6 +47,7 @@ static const struct {
 	{ "-mount", DIR_SCAN_ONE_FILESYSTEM },
 	{ "-keeptime", DIR_SCAN_KEEP_TIME },
 	{ "-nonrecursive", DIR_SCAN_NO_RECURSION },
+	{ "-nohardlinks", DIR_SCAN_NO_HARDLINKS },
 };
 
 static bool set_scan_flag(const char *arg, dir_tree_cfg_t *cfg)
@@ -175,6 +176,10 @@ int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 	cfg.def_mode = ent->mode;
 	cfg.prefix = prefix;
 	cfg.flags = glob_flags;
+
+#if defined(_WIN32) || defined(__WINDOWS__)
+	cfg.flags |= DIR_SCAN_NO_HARDLINKS;
+#endif
 
 	while (sep->count != 0) {
 		if (sep->args[0][0] != '-')

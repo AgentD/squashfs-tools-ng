@@ -35,6 +35,7 @@ static struct option long_opts[] = {
 #ifdef WITH_SELINUX
 	{ "selinux", required_argument, NULL, 's' },
 #endif
+	{ "no-hard-links", no_argument, NULL, 'H' },
 	{ "xattr-file", required_argument, NULL, 'A' },
 	{ "sort-file", required_argument, NULL, 'S' },
 	{ "version", no_argument, NULL, 'V' },
@@ -42,7 +43,7 @@ static struct option long_opts[] = {
 	{ NULL, 0, NULL, 0 },
 };
 
-static const char *short_opts = "F:D:X:c:b:B:d:u:g:j:Q:S:A:kxoefqThV"
+static const char *short_opts = "HF:D:X:c:b:B:d:u:g:j:Q:S:A:kxoefqThV"
 #ifdef WITH_SELINUX
 "s:"
 #endif
@@ -123,6 +124,10 @@ const char *extra_options =
 "  --exportable, -e            Generate an export table for NFS support.\n"
 "  --no-tail-packing, -T       Do not perform tail end packing on files that\n"
 "                              are larger than block size.\n"
+#if !defined(_WIN32) && !defined(__WINDOWS__)
+"  --no-hard-links, -H         When scanning a directory, do not attempt to\n"
+"                              detect hard links.\n"
+#endif
 "  --force, -f                 Overwrite the output file if it exists.\n"
 "  --quiet, -q                 Do not print out progress reports.\n"
 "  --help, -h                  Print help text and exit.\n"
@@ -222,6 +227,9 @@ void process_command_line(options_t *opt, int argc, char **argv)
 			break;
 		case 'T':
 			opt->no_tail_packing = true;
+			break;
+		case 'H':
+			opt->dirscan_flags |= DIR_SCAN_NO_HARDLINKS;
 			break;
 		case 'c':
 			have_compressor = true;
@@ -331,6 +339,10 @@ void process_command_line(options_t *opt, int argc, char **argv)
 			goto fail_arg;
 		}
 	}
+
+#if defined(_WIN32) || defined(__WINDOWS__)
+	opt->dirscan_flags |= DIR_SCAN_NO_HARDLINKS;
+#endif
 
 	if (opt->cfg.num_jobs < 1)
 		opt->cfg.num_jobs = 1;
