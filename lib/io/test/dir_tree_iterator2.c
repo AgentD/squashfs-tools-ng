@@ -31,7 +31,7 @@ int main(int argc, char **argv)
 
 	/********** without files **********/
 	memset(&cfg, 0, sizeof(cfg));
-	cfg.flags |= DIR_SCAN_NO_FILE;
+	cfg.flags |= DIR_SCAN_NO_FILE | DIR_SCAN_NO_HARDLINKS;
 
 	dir = dir_tree_iterator_create(TEST_PATH, &cfg);
 	TEST_NOT_NULL(dir);
@@ -69,7 +69,7 @@ int main(int argc, char **argv)
 
 	/********** recursive but without dirs **********/
 	memset(&cfg, 0, sizeof(cfg));
-	cfg.flags |= DIR_SCAN_NO_DIR;
+	cfg.flags |= DIR_SCAN_NO_DIR | DIR_SCAN_NO_HARDLINKS;
 
 	dir = dir_tree_iterator_create(TEST_PATH, &cfg);
 	TEST_NOT_NULL(dir);
@@ -123,7 +123,7 @@ int main(int argc, char **argv)
 
 	/********** non-recursive **********/
 	memset(&cfg, 0, sizeof(cfg));
-	cfg.flags |= DIR_SCAN_NO_RECURSION;
+	cfg.flags |= DIR_SCAN_NO_RECURSION | DIR_SCAN_NO_HARDLINKS;
 
 	dir = dir_tree_iterator_create(TEST_PATH, &cfg);
 	TEST_NOT_NULL(dir);
@@ -160,6 +160,7 @@ int main(int argc, char **argv)
 	/********** with prefix inserted **********/
 	memset(&cfg, 0, sizeof(cfg));
 	cfg.prefix = "foobar";
+	cfg.flags = DIR_SCAN_NO_HARDLINKS;
 
 	dir = dir_tree_iterator_create(TEST_PATH, &cfg);
 	TEST_NOT_NULL(dir);

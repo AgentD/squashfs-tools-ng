@@ -32,6 +32,7 @@ int main(int argc, char **argv)
 	/********** match name **********/
 	memset(&cfg, 0, sizeof(cfg));
 	cfg.name_pattern = "file_x*";
+	cfg.flags = DIR_SCAN_NO_HARDLINKS;
 
 	dir = dir_tree_iterator_create(TEST_PATH, &cfg);
 	TEST_NOT_NULL(dir);
@@ -68,7 +69,7 @@ int main(int argc, char **argv)
 	/********** match path **********/
 	memset(&cfg, 0, sizeof(cfg));
 	cfg.name_pattern = "dir*/file_*0";
-	cfg.flags |= DIR_SCAN_MATCH_FULL_PATH;
+	cfg.flags |= DIR_SCAN_MATCH_FULL_PATH | DIR_SCAN_NO_HARDLINKS;
 
 	dir = dir_tree_iterator_create(TEST_PATH, &cfg);
 	TEST_NOT_NULL(dir);

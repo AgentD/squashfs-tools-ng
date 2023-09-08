@@ -33,6 +33,7 @@ int main(int argc, char **argv)
 	cfg.def_mtime = 1337;
 	cfg.def_uid = 42;
 	cfg.def_gid = 23;
+	cfg.flags = DIR_SCAN_NO_HARDLINKS;
 
 	dir = dir_tree_iterator_create(TEST_PATH, &cfg);
 	TEST_NOT_NULL(dir);
