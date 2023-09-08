@@ -1,8 +1,44 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+### Added
+- libsquashfs: Add a helper function to initialize objects
+- libsquashfs: Add `sqfs_xattr_t` and helpers, for handling combined,
+  decoded key-value pairs
+- libsquashfs: `sqfs_xattr_reader_t` and `sqfs_xattr_writer_t` functions
+  for handling `sqfs_xattr_t` directly
+- libsquashfs: `sqfs_istream_t` and `sqfs_ostream_t` stream I/O interfaces,
+  cleaned up and moved from internal helper libraries into libsquashfs,
+  along with native implementations used by tools.
+- libsquashfs: Add a `get_filename` method to `sqfs_file_t`
+- libsquashfs: Add native file handle type and I/O wrappers, used internally
+  by native file implementations.
+- libsquashfs: Add `sqfs_dir_iterator_t` interface, Windows & Unix native
+  implementations, stacked recursive implementation for tools
+- libsquashfs: Add a data reader based `sqfs_istream_t` implementation
+- Tools: collect and print statistics about the kind of files we are packing
+- tar2sqfs: Add option to exclude files
+
+### Fixed
+- Fix broken C++ guard in rbtree.h
+- documentation: Compressor ID enumerator
+- rdsquashfs: improve unpacking error message on Windows
+- gensquashfs: sort by file breaking up the directory list
+- Win32: Fix fstree defaults in Windows version of `fstree_from_dir`
+- Win32: Fix fstree CLI mtime range check
+
+### Changed
+- libsquashfs: add a threshold for extended directory inodes with index
+- libsquashfs: Make `sqfs_object_t` to reference counted
+- Internal cleanups and restructuring
+
+### Removed
+- Build system: Remove without-tools feature switch
+- libsquashfs: remove the default block writer alignment feature
 
 ## [1.2.0] - 2022-12-03
 ### Added
@@ -521,6 +557,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Insert abstraction layers and split generic code off into support libraries
 
+[unreleased]: https://github.com/AgentD/squashfs-tools-ng/compare/v1.2.0...HEAD
 [1.2.0]: https://github.com/AgentD/squashfs-tools-ng/compare/v1.1.4...v1.2.0
 [1.1.4]: https://github.com/AgentD/squashfs-tools-ng/compare/v1.1.3...v1.1.4
 [1.1.3]: https://github.com/AgentD/squashfs-tools-ng/compare/v1.1.2...v1.1.3
