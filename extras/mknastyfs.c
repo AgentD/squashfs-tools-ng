@@ -66,8 +66,7 @@ int main(int argc, char **argv)
 	(void)argc; (void)argv;
 
 	/* get a file object referring to our destination file */
-	file = sqfs_open_file("nasty.sqfs", 0);
-	if (file == NULL) {
+	if (sqfs_file_open(&file, "nasty.sqfs", 0)) {
 		fputs("Error opening output file.\n", stderr);
 		return EXIT_FAILURE;
 	}

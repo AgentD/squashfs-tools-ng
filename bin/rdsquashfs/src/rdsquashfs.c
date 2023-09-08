@@ -114,9 +114,9 @@ int main(int argc, char **argv)
 
 	process_command_line(&opt, argc, argv);
 
-	file = sqfs_open_file(opt.image_name, SQFS_FILE_OPEN_READ_ONLY);
-	if (file == NULL) {
-		perror(opt.image_name);
+	ret = sqfs_file_open(&file, opt.image_name, SQFS_FILE_OPEN_READ_ONLY);
+	if (ret) {
+		sqfs_perror(opt.image_name, "open", ret);
 		goto out;
 	}
 

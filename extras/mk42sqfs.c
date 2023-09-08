@@ -71,8 +71,7 @@ int main(int argc, char **argv)
 	(void)argc; (void)argv;
 
 	/* get a file object referring to our destination file */
-	file = sqfs_open_file("42.sqfs", SQFS_FILE_OPEN_OVERWRITE);
-	if (file == NULL) {
+	if (sqfs_file_open(&file, "42.sqfs", SQFS_FILE_OPEN_OVERWRITE)) {
 		fputs("Error opening output file.\n", stderr);
 		return EXIT_FAILURE;
 	}

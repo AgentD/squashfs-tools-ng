@@ -43,9 +43,9 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	file = sqfs_open_file(argv[1], SQFS_FILE_OPEN_READ_ONLY);
-	if (file == NULL) {
-		perror(argv[1]);
+	ret = sqfs_file_open(&file, argv[1], SQFS_FILE_OPEN_READ_ONLY);
+	if (ret) {
+		fprintf(stderr, "%s: error opening file.\n", argv[1]);
 		return EXIT_FAILURE;
 	}
 

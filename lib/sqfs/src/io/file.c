@@ -13,29 +13,14 @@
 
 #include <stdlib.h>
 #include <string.h>
-
-#if defined(_WIN32) || defined(__WINDOWS__)
-static int get_file_size(HANDLE fd, sqfs_u64 *out)
-{
-	LARGE_INTEGER size;
-	if (!GetFileSizeEx(fd, &size))
-		return -1;
-	*out = size.QuadPart;
-	return 0;
-}
-#else
-#include <sys/stat.h>
-#include <unistd.h>
 #include <errno.h>
 
-static int get_file_size(int fd, sqfs_u64 *out)
-{
-	struct stat sb;
-	if (fstat(fd, &sb))
-		return -1;
-	*out = sb.st_size;
-	return 0;
-}
+#if !defined(_WIN32) && !defined(__WINDOWS__)
+#include <unistd.h>
+
+#define ERROR_NOT_ENOUGH_MEMORY ENOMEM
+#define ERROR_NOT_SUPPORTED ENOTSUP
+#define SetLastError(x) errno = (x)
 #endif
 
 typedef struct {
@@ -64,11 +49,7 @@ static sqfs_object_t *stdio_copy(const sqfs_object_t *base)
 	size_t size;
 
 	if (!file->readonly) {
-#if defined(_WIN32) || defined(__WINDOWS__)
 		SetLastError(ERROR_NOT_SUPPORTED);
-#else
-		errno = ENOTSUP;
-#endif
 		return NULL;
 	}
 
@@ -232,13 +213,16 @@ static const char *stdio_get_filename(sqfs_file_t *file)
 	return ((sqfs_file_stdio_t *)file)->name;
 }
 
-sqfs_file_t *sqfs_open_file(const char *filename, sqfs_u32 flags)
+int sqfs_file_open_handle(sqfs_file_t **out, const char *filename,
+			  sqfs_file_handle_t fd, sqfs_u32 flags)
 {
-	bool file_opened = false;
 	sqfs_file_stdio_t *file;
 	size_t size, namelen;
 	sqfs_file_t *base;
 	os_error_t err;
+	int ret;
+
+	*out = NULL;
 
 	namelen = strlen(filename);
 	size = sizeof(*file) + 1;
@@ -254,12 +238,15 @@ sqfs_file_t *sqfs_open_file(const char *filename, sqfs_u32 flags)
 	sqfs_object_init(file, stdio_destroy, stdio_copy);
 	memcpy(file->name, filename, namelen);
 
-	if (sqfs_native_file_open(&file->fd, filename, flags))
-		goto fail;
+	ret = sqfs_native_file_get_size(fd, &file->size);
+	if (ret)
+		goto fail_free;
 
-	file_opened = true;
-	if (get_file_size(file->fd, &file->size))
-		goto fail;
+	ret = sqfs_native_file_duplicate(fd, &file->fd);
+	if (ret)
+		goto fail_free;
+
+	sqfs_native_file_close(fd);
 
 	file->readonly = (flags & SQFS_FILE_OPEN_READ_ONLY) != 0;
 
@@ -268,19 +255,37 @@ sqfs_file_t *sqfs_open_file(const char *filename, sqfs_u32 flags)
 	base->get_size = stdio_get_size;
 	base->truncate = stdio_truncate;
 	base->get_filename = stdio_get_filename;
-	return base;
-fail:
+
+	*out = base;
+	return 0;
+fail_free:
 	err = get_os_error_state();
-	if (file_opened)
-		sqfs_native_file_close(file->fd);
 	free(file);
 	set_os_error_state(err);
-	return NULL;
+	return ret;
 fail_no_mem:
-#if defined(_WIN32) || defined(__WINDOWS__)
 	SetLastError(ERROR_NOT_ENOUGH_MEMORY);
-#else
-	errno = ENOMEM;
-#endif
-	return NULL;
+	return SQFS_ERROR_ALLOC;
+}
+
+int sqfs_file_open(sqfs_file_t **out, const char *filename, sqfs_u32 flags)
+{
+	sqfs_file_handle_t fd;
+	int ret;
+
+	ret = sqfs_native_file_open(&fd, filename, flags);
+	if (ret) {
+		*out = NULL;
+		return ret;
+	}
+
+	ret = sqfs_file_open_handle(out, filename, fd, flags);
+	if (ret) {
+		os_error_t err = get_os_error_state();
+		sqfs_native_file_close(fd);
+		set_os_error_state(err);
+		return ret;
+	}
+
+	return 0;
 }

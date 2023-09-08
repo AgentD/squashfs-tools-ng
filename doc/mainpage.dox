@@ -10,7 +10,7 @@
  *
  * All disk I/O is abstracted away through the \ref sqfs_file_t interface. A
  * reference implementation that uses native file I/O can be instatiated
- * using @ref sqfs_open_file. Providing a custom implementation allows reading
+ * using @ref sqfs_file_open. Providing a custom implementation allows reading
  * or writing SquashFS images to something other than regular files, embedding
  * SquashFS in a custom container format or applying custom transformations on
  * the raw byte level.

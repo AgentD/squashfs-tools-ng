@@ -10,6 +10,7 @@
 #include "sqfs/io.h"
 #include "sqfs/error.h"
 
+#include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -83,5 +84,18 @@ int sqfs_native_file_seek(sqfs_file_handle_t fd,
 		}
 	}
 
+	return 0;
+}
+
+int sqfs_native_file_get_size(sqfs_file_handle_t hnd, sqfs_u64 *out)
+{
+	struct stat sb;
+
+	if (fstat(hnd, &sb)) {
+		*out = 0;
+		return SQFS_ERROR_IO;
+	}
+
+	*out = sb.st_size;
 	return 0;
 }

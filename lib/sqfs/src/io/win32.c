@@ -118,3 +118,16 @@ int sqfs_native_file_seek(sqfs_file_handle_t fd,
 
 	return 0;
 }
+
+int sqfs_native_file_get_size(sqfs_file_handle_t hnd, sqfs_u64 *out)
+{
+	LARGE_INTEGER size;
+
+	if (!GetFileSizeEx(hnd, &size)) {
+		*out = 0;
+		return SQFS_ERROR_IO;
+	}
+
+	*out = size.QuadPart;
+	return 0;
+}

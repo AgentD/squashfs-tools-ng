@@ -27,7 +27,7 @@
  *
  * @brief Contains low-level interfaces for abstracting file I/O
  *
- * The @ref sqfs_file_t interface abstracts I/O on a random-acces sread/write
+ * The @ref sqfs_file_t interface abstracts I/O on a random-acces read/write
  * file, @ref sqfs_ostream_t represents a buffered, sequential, append only
  * data stream, @ref sqfs_istream_t represents a buffered, sequential, read only
  * data stream.
@@ -50,7 +50,7 @@ typedef int sqfs_file_handle_t;
 /**
  * @enum SQFS_FILE_OPEN_FLAGS
  *
- * @brief Flags for @ref sqfs_open_file
+ * @brief Flags for file I/O related data structures and functions
  */
 typedef enum {
 	/**
@@ -91,9 +91,8 @@ typedef enum {
 	/**
 	 * @brief Do not use sparse file I/O APIs, always fill in zero bytes
 	 *
-	 * This flag currently has no effect on @ref sqfs_open_file, it changes
-	 * the behavior of @ref sqfs_ostream_open_file and
-	 * @ref sqfs_ostream_open_handle.
+	 * This flag currently has no effect on @ref sqfs_file_t, it changes
+	 * the behavior of @ref sqfs_ostream_t when appending sparse data.
 	 */
 	SQFS_FILE_OPEN_NO_SPARSE = 0x08,
 
@@ -439,23 +438,54 @@ SQFS_API int sqfs_native_file_seek(sqfs_file_handle_t hnd,
 				   sqfs_s64 offset, sqfs_u32 flags);
 
 /**
+ * @brief Try to query the current on-disk size from a native file handle
+ *
+ * @param hnd A native OS file handle
+ * @param out Returns the file size on success
+ *
+ * @return Zero on success, a negative @ref SQFS_ERROR code on failure.
+ */
+SQFS_API int sqfs_native_file_get_size(sqfs_file_handle_t hnd, sqfs_u64 *out);
+
+/**
  * @brief Open a file through the operating systems filesystem API
+ *
+ * @memberof sqfs_file_t
+ *
+ * This function basically combines @ref sqfs_native_file_open
+ * and @ref sqfs_file_open_handle to conveniently open a file object in
+ * one operation
+ *
+ * @param out Returns a pointer to an @ref sqfs_file_t on success.
+ * @param filename The name of the file to open.
+ * @param flags A set of @ref SQFS_FILE_OPEN_FLAGS.
+ *
+ * @return Zero on success, a negative @ref SQFS_ERROR code on failure.
+ */
+SQFS_API int sqfs_file_open(sqfs_file_t **out, const char *filename,
+			    sqfs_u32 flags);
+
+/**
+ * @brief Create an @ref sqfs_file_t implementation from a native file handle
+ *
+ * @memberof sqfs_file_t
  *
  * This function internally creates an instance of a reference implementation
  * of the @ref sqfs_file_t interface that uses the operating systems native
  * API for file I/O.
  *
- * On Unix-like systems, if the open call fails, this function makes sure to
- * preserves the value in errno indicating the underlying problem. Similarly,
- * on Windows, the implementation tries to preserve the GetLastError value.
+ * It takes up ownership of the file handle and takes care of cleaning it up.
+ * On failure, the handle remains usable, and ownership remains with the caller.
  *
- * @param filename The name of the file to open.
- * @param flags A set of @ref SQFS_FILE_OPEN_FLAGS.
+ * @param out Returns a pointer to a file object on success.
+ * @param filename The name to associate with the handle.
+ * @param fd A native file handle.
+ * @param flags A combination of @ref SQFS_FILE_OPEN_FLAGS flags.
  *
- * @return A pointer to a file object on success, NULL on allocation failure,
- *         failure to open the file or if an unknown flag was set.
+ * @return Zero on success, a negative @ref SQFS_ERROR number on failure
  */
-SQFS_API sqfs_file_t *sqfs_open_file(const char *filename, sqfs_u32 flags);
+SQFS_API int sqfs_file_open_handle(sqfs_file_t **out, const char *filename,
+				   sqfs_file_handle_t fd, sqfs_u32 flags);
 
 /**
  * @brief Create an input stream for an OS native file handle.

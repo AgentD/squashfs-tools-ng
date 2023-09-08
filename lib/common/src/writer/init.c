@@ -57,9 +57,9 @@ int sqfs_writer_init(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *wrcfg)
 		return -1;
 	}
 
-	sqfs->outfile = sqfs_open_file(wrcfg->filename, wrcfg->outmode);
-	if (sqfs->outfile == NULL) {
-		perror(wrcfg->filename);
+	ret = sqfs_file_open(&sqfs->outfile, wrcfg->filename, wrcfg->outmode);
+	if (ret) {
+		sqfs_perror(wrcfg->filename, "open", ret);
 		return -1;
 	}
 

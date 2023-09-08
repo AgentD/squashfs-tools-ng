@@ -22,9 +22,9 @@ static int open_sfqs(sqfs_state_t *state, const char *path)
 
 	memset(state, 0, sizeof(*state));
 
-	state->file = sqfs_open_file(path, SQFS_FILE_OPEN_READ_ONLY);
+	ret = sqfs_file_open(&state->file, path, SQFS_FILE_OPEN_READ_ONLY);
 	if (state->file == NULL) {
-		perror(path);
+		sqfs_perror(path, "open", ret);
 		return -1;
 	}
 

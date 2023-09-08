@@ -139,9 +139,9 @@ int main(int argc, char **argv)
 			goto out;
 	}
 
-	file = sqfs_open_file(filename, SQFS_FILE_OPEN_READ_ONLY);
-	if (file == NULL) {
-		perror(filename);
+	ret = sqfs_file_open(&file, filename, SQFS_FILE_OPEN_READ_ONLY);
+	if (ret) {
+		sqfs_perror(filename, "open", ret);
 		goto out;
 	}
 

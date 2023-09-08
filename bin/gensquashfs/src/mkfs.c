@@ -40,9 +40,9 @@ static int pack_files(sqfs_block_processor_t *data, fstree_t *fs,
 		if (!opt->cfg.quiet)
 			printf("packing %s\n", path);
 
-		file = sqfs_open_file(path, SQFS_FILE_OPEN_READ_ONLY);
-		if (file == NULL) {
-			perror(path);
+		ret = sqfs_file_open(&file, path, SQFS_FILE_OPEN_READ_ONLY);
+		if (ret) {
+			sqfs_perror(path, "open", ret);
 			free(node_path);
 			return -1;
 		}
