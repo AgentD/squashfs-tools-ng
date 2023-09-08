@@ -11,12 +11,12 @@
 #include "sqfs/xattr.h"
 #include "util/util.h"
 #include "io/xfrm.h"
+#include "compat.h"
 
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include <stdbool.h>
-#include <fnmatch.h>
 
 typedef struct {
 	sqfs_dir_iterator_t base;
