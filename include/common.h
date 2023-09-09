@@ -21,6 +21,7 @@
 
 #include "simple_writer.h"
 #include "compress_cli.h"
+#include "dir_tree.h"
 #include "io/std.h"
 #include "compat.h"
 #include "fstree.h"

@@ -1,14 +1,31 @@
-/* SPDX-License-Identifier: LGPL-3.0-or-later */
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /*
- * get_path.c
+ * dir_tree.c
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
-#define SQFS_BUILDING_DLL
-#include "internal.h"
+#include "common.h"
 
 #include <string.h>
 #include <stdlib.h>
+
+void sqfs_dir_tree_destroy(sqfs_tree_node_t *root)
+{
+	sqfs_tree_node_t *it;
+
+	if (!root)
+		return;
+
+	while (root->children != NULL) {
+		it = root->children;
+		root->children = it->next;
+
+		sqfs_dir_tree_destroy(it);
+	}
+
+	free(root->inode);
+	free(root);
+}
 
 int sqfs_tree_node_get_path(const sqfs_tree_node_t *node, char **out)
 {

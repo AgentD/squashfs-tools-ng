@@ -19,7 +19,6 @@ libsquashfs_la_SOURCES = $(LIBSQFS_HEARDS) lib/sqfs/src/id_table.c \
 	lib/sqfs/src/dir_writer.c lib/sqfs/src/xattr/xattr_reader.c \
 	lib/sqfs/src/read_table.c lib/sqfs/src/comp/compressor.c \
 	lib/sqfs/src/comp/internal.h lib/sqfs/src/dir_reader/dir_reader.c \
-	lib/sqfs/src/dir_reader/read_tree.c lib/sqfs/src/dir_reader/get_path.c \
 	lib/sqfs/src/dir_reader/internal.h lib/sqfs/src/inode.c \
 	lib/sqfs/src/xattr/xattr_writer.c \
 	lib/sqfs/src/xattr/xattr_writer_flush.c \
@@ -125,9 +124,6 @@ test_xattr_writer_LDADD = libsquashfs.la libcompat.a
 xattr_benchmark_SOURCES = lib/sqfs/test/xattr_benchmark.c
 xattr_benchmark_LDADD = libcommon.a libsquashfs.la libcompat.a
 
-test_get_node_path_SOURCES = lib/sqfs/test/get_node_path.c
-test_get_node_path_LDADD = libcommon.a libsquashfs.la libcompat.a
-
 test_istream_read_SOURCES = lib/sqfs/test/istream_read.c
 test_istream_read_LDADD = libio.a libsquashfs.la libutil.a libcompat.a
 
@@ -144,7 +140,7 @@ test_hl_dir_SOURCES = lib/sqfs/test/hl_dir.c
 test_hl_dir_LDADD = libsquashfs.la libio.a libutil.a libcompat.a
 
 LIBSQFS_TESTS = \
-	test_abi test_xattr test_table test_xattr_writer test_get_node_path \
+	test_abi test_xattr test_table test_xattr_writer \
 	test_istream_read test_istream_skip test_stream_splice test_rec_dir \
 	test_hl_dir
 noinst_PROGRAMS += xattr_benchmark

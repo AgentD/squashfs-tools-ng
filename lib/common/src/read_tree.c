@@ -1,11 +1,14 @@
-/* SPDX-License-Identifier: LGPL-3.0-or-later */
+/* SPDX-License-Identifier: GPL-3.0-or-later */
 /*
  * read_tree.c
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
-#define SQFS_BUILDING_DLL
-#include "internal.h"
+#include "util/util.h"
+#include "common.h"
+
+#include <string.h>
+#include <stdlib.h>
 
 static int should_skip(int type, unsigned int flags)
 {
@@ -161,24 +164,6 @@ static int resolve_ids(sqfs_tree_node_t *root, const sqfs_id_table_t *idtbl)
 
 	return sqfs_id_table_index_to_id(idtbl, root->inode->base.gid_idx,
 					 &root->gid);
-}
-
-void sqfs_dir_tree_destroy(sqfs_tree_node_t *root)
-{
-	sqfs_tree_node_t *it;
-
-	if (!root)
-		return;
-
-	while (root->children != NULL) {
-		it = root->children;
-		root->children = it->next;
-
-		sqfs_dir_tree_destroy(it);
-	}
-
-	free(root->inode);
-	free(root);
 }
 
 int sqfs_dir_reader_get_full_hierarchy(sqfs_dir_reader_t *rd,

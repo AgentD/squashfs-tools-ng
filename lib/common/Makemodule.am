@@ -1,11 +1,12 @@
 libcommon_a_SOURCES = include/common.h include/simple_writer.h \
-	include/compress_cli.h \
+	include/compress_cli.h include/dir_tree.h \
 	lib/common/src/hardlink.c lib/common/src/print_version.c \
 	lib/common/src/compress.c lib/common/src/comp_opt.c \
 	lib/common/src/parse_size.c lib/common/src/print_size.c \
 	lib/common/src/writer/init.c lib/common/src/writer/cleanup.c \
 	lib/common/src/writer/serialize_fstree.c lib/common/src/writer/finish.c\
-	lib/common/src/fstree_cli.c lib/common/src/perror.c
+	lib/common/src/fstree_cli.c lib/common/src/perror.c \
+	lib/common/src/dir_tree.c lib/common/src/read_tree.c
 libcommon_a_CFLAGS = $(AM_CFLAGS) $(LZO_CFLAGS)
 
 if WITH_LZO
@@ -17,8 +18,11 @@ noinst_LIBRARIES += libcommon.a
 test_fstree_cli_SOURCES = lib/common/test/fstree_cli.c
 test_fstree_cli_LDADD = libcommon.a libio.a libutil.a libcompat.a
 
+test_get_node_path_SOURCES = lib/common/test/get_node_path.c
+test_get_node_path_LDADD = libcommon.a libsquashfs.la libcompat.a
+
 LIBCOMMON_TESTS = \
-	test_fstree_cli
+	test_fstree_cli test_get_node_path
 
 check_PROGRAMS += $(LIBCOMMON_TESTS)
 TESTS += $(LIBCOMMON_TESTS)

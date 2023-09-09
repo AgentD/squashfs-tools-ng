@@ -10,6 +10,7 @@
 
 #include "sqfs/dir_reader.h"
 #include "sqfs/error.h"
+#include "dir_tree.h"
 
 int main(int argc, char **argv)
 {
