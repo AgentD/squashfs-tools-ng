@@ -1,11 +1,49 @@
 /* SPDX-License-Identifier: LGPL-3.0-or-later */
 /*
- * fs_reader.c
+ * dir_reader.c
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
 #define SQFS_BUILDING_DLL
-#include "internal.h"
+#include "sqfs/meta_reader.h"
+#include "sqfs/dir_reader.h"
+#include "sqfs/compressor.h"
+#include "sqfs/id_table.h"
+#include "sqfs/super.h"
+#include "sqfs/inode.h"
+#include "sqfs/error.h"
+#include "sqfs/dir.h"
+#include "util/rbtree.h"
+#include "util/util.h"
+
+#include <string.h>
+#include <stdlib.h>
+
+enum {
+	DIR_STATE_NONE = 0,
+	DIR_STATE_OPENED = 1,
+	DIR_STATE_DOT = 2,
+	DIR_STATE_ENTRIES = 3,
+};
+
+struct sqfs_dir_reader_t {
+	sqfs_object_t base;
+
+	sqfs_meta_reader_t *meta_dir;
+	sqfs_meta_reader_t *meta_inode;
+	sqfs_super_t super;
+
+	sqfs_readdir_state_t it;
+
+	sqfs_u32 flags;
+
+	int start_state;
+	int state;
+	sqfs_u64 parent_ref;
+	sqfs_u64 cur_ref;
+	sqfs_u64 ent_ref;
+	rbtree_t dcache;
+};
 
 static int inode_copy(const sqfs_inode_generic_t *inode,
 		      sqfs_inode_generic_t **out)
