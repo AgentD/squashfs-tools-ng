@@ -673,6 +673,30 @@ SQFS_API int sqfs_dir_iterator_create_recursive(sqfs_dir_iterator_t **out,
 SQFS_API int sqfs_hard_link_filter_create(sqfs_dir_iterator_t **out,
 					  sqfs_dir_iterator_t *base);
 
+/**
+ * @brief Create a directory iterator
+ *
+ * @memberof sqfs_dir_iterator_t
+ *
+ * @param rd A pointer to a directory reader
+ * @param id A pointer to an ID table
+ * @param data An optional pointer to a data reader. If this is NULL, the
+ *             iterator cannot open files.
+ * @param xattr An optional pointer to an xattr reader. If this is NULL, the
+ *              iterator will pretend that entries do not have extended
+ *              attibutes.
+ * @param inode A pointer to a directory inode to open.
+ * @param out Returns a pointer to a iterator implementation on success.
+ *
+ * @return Zero on success, an @ref SQFS_ERROR code on failure.
+ */
+SQFS_API int sqfs_dir_iterator_create(sqfs_dir_reader_t *rd,
+				      sqfs_id_table_t *id,
+				      sqfs_data_reader_t *data,
+				      sqfs_xattr_reader_t *xattr,
+				      const sqfs_inode_generic_t *inode,
+				      sqfs_dir_iterator_t **out);
+
 #ifdef __cplusplus
 }
 #endif

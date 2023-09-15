@@ -19,7 +19,7 @@ libsquashfs_la_SOURCES = $(LIBSQFS_HEARDS) lib/sqfs/src/id_table.c \
 	lib/sqfs/src/dir_writer.c lib/sqfs/src/xattr/xattr_reader.c \
 	lib/sqfs/src/read_table.c lib/sqfs/src/comp/compressor.c \
 	lib/sqfs/src/comp/internal.h lib/sqfs/src/dir_reader.c \
-	lib/sqfs/src/inode.c \
+	lib/sqfs/src/inode.c lib/sqfs/src/dir_iterator.c \
 	lib/sqfs/src/xattr/xattr_writer.c \
 	lib/sqfs/src/xattr/xattr_writer_flush.c \
 	lib/sqfs/src/xattr/xattr_writer_record.c \

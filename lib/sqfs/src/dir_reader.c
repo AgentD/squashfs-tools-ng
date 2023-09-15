@@ -7,8 +7,6 @@
 #define SQFS_BUILDING_DLL
 #include "sqfs/meta_reader.h"
 #include "sqfs/dir_reader.h"
-#include "sqfs/compressor.h"
-#include "sqfs/id_table.h"
 #include "sqfs/super.h"
 #include "sqfs/inode.h"
 #include "sqfs/error.h"
