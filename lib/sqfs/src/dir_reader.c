@@ -36,8 +36,6 @@ struct sqfs_dir_reader_t {
 	sqfs_u32 flags;
 
 	rbtree_t dcache;
-
-	sqfs_dir_reader_state_t state;
 };
 
 static int dcache_key_compare(const void *ctx, const void *l, const void *r)
@@ -189,6 +187,7 @@ fail_dcache:
 
 int sqfs_dir_reader_open_dir(sqfs_dir_reader_t *rd,
 			     const sqfs_inode_generic_t *inode,
+			     sqfs_dir_reader_state_t *state,
 			     sqfs_u32 flags)
 {
 	sqfs_u32 parent;
@@ -197,7 +196,9 @@ int sqfs_dir_reader_open_dir(sqfs_dir_reader_t *rd,
 	if (flags & (~SQFS_DIR_OPEN_ALL_FLAGS))
 		return SQFS_ERROR_UNSUPPORTED;
 
-	ret = sqfs_readdir_state_init(&rd->state.cursor, &rd->super, inode);
+	memset(state, 0, sizeof(*state));
+
+	ret = sqfs_readdir_state_init(&state->cursor, &rd->super, inode);
 	if (ret)
 		return ret;
 
@@ -209,21 +210,21 @@ int sqfs_dir_reader_open_dir(sqfs_dir_reader_t *rd,
 			parent = inode->data.dir.parent_inode;
 		}
 
-		if (dcache_find(rd, inode->base.inode_number, &rd->state.cur_ref))
+		if (dcache_find(rd, inode->base.inode_number, &state->cur_ref))
 			return SQFS_ERROR_NO_ENTRY;
 
-		if (rd->state.cur_ref == rd->super.root_inode_ref) {
-			rd->state.parent_ref = rd->state.cur_ref;
-		} else if (dcache_find(rd, parent, &rd->state.parent_ref)) {
+		if (state->cur_ref == rd->super.root_inode_ref) {
+			state->parent_ref = state->cur_ref;
+		} else if (dcache_find(rd, parent, &state->parent_ref)) {
 			return SQFS_ERROR_NO_ENTRY;
 		}
 
-		rd->state.state = DIR_STATE_OPENED;
+		state->state = DIR_STATE_OPENED;
 	} else {
-		rd->state.state = DIR_STATE_ENTRIES;
+		state->state = DIR_STATE_ENTRIES;
 	}
 
-	rd->state.start_state = rd->state.state;
+	state->start_state = state->state;
 	return 0;
 }
 
@@ -245,23 +246,24 @@ static int mk_dummy_entry(const char *str, sqfs_dir_node_t **out)
 	return 0;
 }
 
-int sqfs_dir_reader_read(sqfs_dir_reader_t *rd, sqfs_dir_node_t **out)
+int sqfs_dir_reader_read(sqfs_dir_reader_t *rd, sqfs_dir_reader_state_t *state,
+			 sqfs_dir_node_t **out)
 {
 	int err;
 
-	switch (rd->state.state) {
+	switch (state->state) {
 	case DIR_STATE_OPENED:
 		err = mk_dummy_entry(".", out);
 		if (err == 0) {
-			rd->state.state = DIR_STATE_DOT;
-			rd->state.ent_ref = rd->state.cur_ref;
+			state->state = DIR_STATE_DOT;
+			state->ent_ref = state->cur_ref;
 		}
 		return err;
 	case DIR_STATE_DOT:
 		err = mk_dummy_entry("..", out);
 		if (err == 0) {
-			rd->state.state = DIR_STATE_ENTRIES;
-			rd->state.ent_ref = rd->state.parent_ref;
+			state->state = DIR_STATE_ENTRIES;
+			state->ent_ref = state->parent_ref;
 		}
 		return err;
 	case DIR_STATE_ENTRIES:
@@ -270,35 +272,25 @@ int sqfs_dir_reader_read(sqfs_dir_reader_t *rd, sqfs_dir_node_t **out)
 		return SQFS_ERROR_SEQUENCE;
 	}
 
-	return sqfs_meta_reader_readdir(rd->meta_dir, &rd->state.cursor,
-					out, NULL, &rd->state.ent_ref);
+	return sqfs_meta_reader_readdir(rd->meta_dir, &state->cursor,
+					out, NULL, &state->ent_ref);
 }
 
-int sqfs_dir_reader_get_inode(sqfs_dir_reader_t *rd,
+int sqfs_dir_reader_get_inode(sqfs_dir_reader_t *rd, sqfs_u64 ref,
 			      sqfs_inode_generic_t **inode)
 {
 	int ret;
 
 	ret = sqfs_meta_reader_read_inode(rd->meta_inode, &rd->super,
-					  rd->state.ent_ref >> 16,
-					  rd->state.ent_ref & 0x0FFFF, inode);
+					  ref >> 16, ref & 0x0FFFF, inode);
 	if (ret != 0)
 		return ret;
 
-	return dcache_add(rd, *inode, rd->state.ent_ref);
+	return dcache_add(rd, *inode, ref);
 }
 
 int sqfs_dir_reader_get_root_inode(sqfs_dir_reader_t *rd,
 				   sqfs_inode_generic_t **inode)
 {
-	sqfs_u64 block_start = rd->super.root_inode_ref >> 16;
-	sqfs_u16 offset = rd->super.root_inode_ref & 0xFFFF;
-	int ret;
-
-	ret = sqfs_meta_reader_read_inode(rd->meta_inode, &rd->super,
-					  block_start, offset, inode);
-	if (ret != 0)
-		return ret;
-
-	return dcache_add(rd, *inode, rd->super.root_inode_ref);
+	return sqfs_dir_reader_get_inode(rd, rd->super.root_inode_ref, inode);
 }

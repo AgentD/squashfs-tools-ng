@@ -204,6 +204,7 @@ SQFS_API sqfs_dir_reader_t *sqfs_dir_reader_create(const sqfs_super_t *super,
  */
 SQFS_API int sqfs_dir_reader_open_dir(sqfs_dir_reader_t *rd,
 				      const sqfs_inode_generic_t *inode,
+				      sqfs_dir_reader_state_t *state,
 				      sqfs_u32 flags);
 
 /**
@@ -217,9 +218,6 @@ SQFS_API int sqfs_dir_reader_open_dir(sqfs_dir_reader_t *rd,
  * because the end of the listing was reached. A negative value indicates an
  * error.
  *
- * After calling this function, you can use @ref sqfs_dir_reader_get_inode to
- * read the full inode structure that the current entry referes to.
- *
  * @param rd A pointer to a directory reader.
  * @param out Returns a pointer to a directory entry on success that can be
  *            freed with a single @ref sqfs_free call.
@@ -228,20 +226,22 @@ SQFS_API int sqfs_dir_reader_open_dir(sqfs_dir_reader_t *rd,
  *         number if the end of the current directory listing has been reached.
  */
 SQFS_API int sqfs_dir_reader_read(sqfs_dir_reader_t *rd,
+				  sqfs_dir_reader_state_t *state,
 				  sqfs_dir_node_t **out);
 
 /**
- * @brief Read the inode that the current directory entry points to.
+ * @brief Resolve and deserialize an inode using an inode reference
  *
  * @memberof sqfs_dir_reader_t
  *
  * @param rd A pointer to a directory reader.
+ * @param ref An inode reference.
  * @param out Returns a pointer to a generic inode that can be freed with a
  *            single @ref sqfs_free call.
  *
  * @return Zero on success, an @ref SQFS_ERROR value on failure.
  */
-SQFS_API int sqfs_dir_reader_get_inode(sqfs_dir_reader_t *rd,
+SQFS_API int sqfs_dir_reader_get_inode(sqfs_dir_reader_t *rd, sqfs_u64 ref,
 				       sqfs_inode_generic_t **inode);
 
 /**
