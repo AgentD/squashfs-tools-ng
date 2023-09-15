@@ -54,30 +54,13 @@
  * @brief Encapsulates state for simple directory reading
  */
 struct sqfs_readdir_state_t {
-	struct {
-		sqfs_u64 block;
-		size_t offset;
-		size_t size;
-	} init, current;
-
-	size_t entries;
-
-	sqfs_u32 inum_base;
 	sqfs_u64 inode_block;
+	sqfs_u64 block;
+	size_t offset;
+	size_t size;
+	size_t entries;
+	sqfs_u32 inum_base;
 };
-
-/**
- * @brief Rewind a directory state object back to its starting location
- *
- * @memberof sqfs_readdir_state_t
- *
- * @param it A pointer to the directory state.
- */
-static SQFS_INLINE void sqfs_readdir_state_reset(sqfs_readdir_state_t *s)
-{
-	s->current = s->init;
-	s->entries = 0;
-}
 
 #ifdef __cplusplus
 extern "C" {

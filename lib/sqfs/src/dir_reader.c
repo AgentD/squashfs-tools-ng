@@ -210,11 +210,11 @@ int sqfs_dir_reader_open_dir(sqfs_dir_reader_t *rd,
 			parent = inode->data.dir.parent_inode;
 		}
 
-		if (dcache_find(rd, inode->base.inode_number, &state->cur_ref))
+		if (dcache_find(rd, inode->base.inode_number, &state->dir_ref))
 			return SQFS_ERROR_NO_ENTRY;
 
-		if (state->cur_ref == rd->super.root_inode_ref) {
-			state->parent_ref = state->cur_ref;
+		if (state->dir_ref == rd->super.root_inode_ref) {
+			state->parent_ref = state->dir_ref;
 		} else if (dcache_find(rd, parent, &state->parent_ref)) {
 			return SQFS_ERROR_NO_ENTRY;
 		}
@@ -224,7 +224,6 @@ int sqfs_dir_reader_open_dir(sqfs_dir_reader_t *rd,
 		state->state = DIR_STATE_ENTRIES;
 	}
 
-	state->start_state = state->state;
 	return 0;
 }
 
@@ -256,7 +255,7 @@ int sqfs_dir_reader_read(sqfs_dir_reader_t *rd, sqfs_dir_reader_state_t *state,
 		err = mk_dummy_entry(".", out);
 		if (err == 0) {
 			state->state = DIR_STATE_DOT;
-			state->ent_ref = state->cur_ref;
+			state->ent_ref = state->dir_ref;
 		}
 		return err;
 	case DIR_STATE_DOT:

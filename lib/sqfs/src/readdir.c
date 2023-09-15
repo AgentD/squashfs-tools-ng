@@ -73,19 +73,18 @@ int sqfs_readdir_state_init(sqfs_readdir_state_t *s, const sqfs_super_t *super,
 	memset(s, 0, sizeof(*s));
 
 	if (inode->base.type == SQFS_INODE_DIR) {
-		s->init.block = inode->data.dir.start_block;
-		s->init.offset = inode->data.dir.offset;
-		s->init.size = inode->data.dir.size;
+		s->block = inode->data.dir.start_block;
+		s->offset = inode->data.dir.offset;
+		s->size = inode->data.dir.size;
 	} else if (inode->base.type == SQFS_INODE_EXT_DIR) {
-		s->init.block = inode->data.dir_ext.start_block;
-		s->init.offset = inode->data.dir_ext.offset;
-		s->init.size = inode->data.dir_ext.size;
+		s->block = inode->data.dir_ext.start_block;
+		s->offset = inode->data.dir_ext.offset;
+		s->size = inode->data.dir_ext.size;
 	} else {
 		return SQFS_ERROR_NOT_DIR;
 	}
 
-	s->init.block += super->directory_table_start;
-	s->current = s->init;
+	s->block += super->directory_table_start;
 	return 0;
 }
 
@@ -99,11 +98,10 @@ int sqfs_meta_reader_readdir(sqfs_meta_reader_t *m, sqfs_readdir_state_t *it,
 	if (it->entries == 0) {
 		sqfs_dir_header_t hdr;
 
-		if (it->current.size <= sizeof(hdr))
+		if (it->size <= sizeof(hdr))
 			goto out_eof;
 
-		ret = sqfs_meta_reader_seek(m, it->current.block,
-					    it->current.offset);
+		ret = sqfs_meta_reader_seek(m, it->block, it->offset);
 		if (ret != 0)
 			return ret;
 
@@ -111,19 +109,18 @@ int sqfs_meta_reader_readdir(sqfs_meta_reader_t *m, sqfs_readdir_state_t *it,
 		if (ret != 0)
 			return ret;
 
-		sqfs_meta_reader_get_position(m, &it->current.block,
-					      &it->current.offset);
+		sqfs_meta_reader_get_position(m, &it->block, &it->offset);
 
-		it->current.size -= sizeof(hdr);
+		it->size -= sizeof(hdr);
 		it->entries = hdr.count + 1;
 		it->inum_base = hdr.inode_number;
 		it->inode_block = hdr.start_block;
 	}
 
-	if (it->current.size <= sizeof(**ent))
+	if (it->size <= sizeof(**ent))
 		goto out_eof;
 
-	ret = sqfs_meta_reader_seek(m, it->current.block, it->current.offset);
+	ret = sqfs_meta_reader_seek(m, it->block, it->offset);
 	if (ret != 0)
 		return ret;
 
@@ -131,18 +128,17 @@ int sqfs_meta_reader_readdir(sqfs_meta_reader_t *m, sqfs_readdir_state_t *it,
 	if (ret)
 		return ret;
 
-	sqfs_meta_reader_get_position(m, &it->current.block,
-				      &it->current.offset);
+	sqfs_meta_reader_get_position(m, &it->block, &it->offset);
 
-	it->current.size -= sizeof(**ent);
+	it->size -= sizeof(**ent);
 	it->entries -= 1;
 
 	count = (*ent)->size + 1;
 
-	if (count >= it->current.size) {
-		it->current.size = 0;
+	if (count >= it->size) {
+		it->size = 0;
 	} else {
-		it->current.size -= count;
+		it->size -= count;
 	}
 
 	if (inum != NULL)
@@ -155,7 +151,7 @@ int sqfs_meta_reader_readdir(sqfs_meta_reader_t *m, sqfs_readdir_state_t *it,
 
 	return 0;
 out_eof:
-	it->current.size = 0;
+	it->size = 0;
 	it->entries = 0;
 	return 1;
 }

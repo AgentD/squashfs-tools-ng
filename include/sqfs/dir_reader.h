@@ -128,7 +128,7 @@ struct sqfs_dir_reader_state_t {
 	 * the @ref SQFS_DIR_READER_DOT_ENTRIES flag and the behavior was
 	 * not disabled when opening the directory.
 	 */
-	sqfs_u64 cur_ref;
+	sqfs_u64 dir_ref;
 
 	/**
 	 * @brief A reference to the current entries inode
@@ -142,11 +142,6 @@ struct sqfs_dir_reader_state_t {
 	 * @brief An opaque, internal state value
 	 */
 	sqfs_u8 state;
-
-	/**
-	 * @brief A backup of `state` to reset the state if requested
-	 */
-	sqfs_u8 start_state;
 };
 
 #ifdef __cplusplus
