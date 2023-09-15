@@ -21,6 +21,7 @@
 #define SQFS_DIR_READER_H
 
 #include "sqfs/predef.h"
+#include "sqfs/meta_reader.h"
 
 /**
  * @file dir_reader.h
@@ -96,6 +97,57 @@ typedef enum {
 
 	SQFS_DIR_OPEN_ALL_FLAGS = 0x00000001,
 } SQFS_DIR_OPEN_FLAGS;
+
+/**
+ * @brief sqfs_dir_reader_state_t
+ *
+ * @extends sqfs_readdir_state_t
+ *
+ * A meta data cursor for reading a directory, but with additional data
+ * for the @ref sqfs_dir_reader_t, e.g. for resolving inodes.
+ */
+struct sqfs_dir_reader_state_t {
+	/**
+	 * @brief Base cursor structure for the directory meta data
+	 */
+	sqfs_readdir_state_t cursor;
+
+	/**
+	 * @brief An inode reference to the parent inode of the directory
+	 *
+	 * This is only available if the reader was created with
+	 * the @ref SQFS_DIR_READER_DOT_ENTRIES flag and the behavior was
+	 * not disabled when opening the directory.
+	 */
+	sqfs_u64 parent_ref;
+
+	/**
+	 * @brief A reference to the inode of the directory itself
+	 *
+	 * This is only available if the reader was created with
+	 * the @ref SQFS_DIR_READER_DOT_ENTRIES flag and the behavior was
+	 * not disabled when opening the directory.
+	 */
+	sqfs_u64 cur_ref;
+
+	/**
+	 * @brief A reference to the current entries inode
+	 *
+	 * After a successfull call to @ref sqfs_dir_reader_read, this contains
+	 * a reference to the inode coresponding to the returned entry.
+	 */
+	sqfs_u64 ent_ref;
+
+	/**
+	 * @brief An opaque, internal state value
+	 */
+	sqfs_u8 state;
+
+	/**
+	 * @brief A backup of `state` to reset the state if requested
+	 */
+	sqfs_u8 start_state;
+};
 
 #ifdef __cplusplus
 extern "C" {

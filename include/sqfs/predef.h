@@ -80,6 +80,7 @@ typedef struct sqfs_compressor_config_t sqfs_compressor_config_t;
 typedef struct sqfs_compressor_t sqfs_compressor_t;
 typedef struct sqfs_dir_writer_t sqfs_dir_writer_t;
 typedef struct sqfs_dir_reader_t sqfs_dir_reader_t;
+typedef struct sqfs_dir_reader_state_t sqfs_dir_reader_state_t;
 typedef struct sqfs_id_table_t sqfs_id_table_t;
 typedef struct sqfs_meta_reader_t sqfs_meta_reader_t;
 typedef struct sqfs_meta_writer_t sqfs_meta_writer_t;
