@@ -166,19 +166,6 @@ SQFS_API int sqfs_dir_reader_open_dir(sqfs_dir_reader_t *rd,
 SQFS_API int sqfs_dir_reader_rewind(sqfs_dir_reader_t *rd);
 
 /**
- * @brief Seek through the current directory listing to locate an
- *        entry by name.
- *
- * @memberof sqfs_dir_reader_t
- *
- * @param rd A pointer to a directory reader.
- * @param name The name of the entry to find.
- *
- * @return Zero on success, an @ref SQFS_ERROR value on failure.
- */
-SQFS_API int sqfs_dir_reader_find(sqfs_dir_reader_t *rd, const char *name);
-
-/**
  * @brief Read a directory entry and advance the internal position indicator
  *        to the next one.
  *

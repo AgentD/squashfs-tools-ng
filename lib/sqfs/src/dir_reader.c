@@ -301,29 +301,6 @@ int sqfs_dir_reader_rewind(sqfs_dir_reader_t *rd)
 	return 0;
 }
 
-int sqfs_dir_reader_find(sqfs_dir_reader_t *rd, const char *name)
-{
-	sqfs_dir_node_t *ent;
-	int ret;
-
-	ret = sqfs_dir_reader_rewind(rd);
-	if (ret != 0)
-		return ret;
-
-	do {
-		ret = sqfs_dir_reader_read(rd, &ent);
-		if (ret < 0)
-			return ret;
-		if (ret > 0)
-			return SQFS_ERROR_NO_ENTRY;
-
-		ret = strcmp((const char *)ent->name, name);
-		free(ent);
-	} while (ret < 0);
-
-	return ret == 0 ? 0 : SQFS_ERROR_NO_ENTRY;
-}
-
 int sqfs_dir_reader_get_inode(sqfs_dir_reader_t *rd,
 			      sqfs_inode_generic_t **inode)
 {
@@ -351,6 +328,25 @@ int sqfs_dir_reader_get_root_inode(sqfs_dir_reader_t *rd,
 		return ret;
 
 	return dcache_add(rd, *inode, rd->super.root_inode_ref);
+}
+
+static int find_entry(sqfs_dir_reader_t *rd, const char *name)
+{
+	sqfs_dir_node_t *ent;
+	int ret;
+
+	do {
+		ret = sqfs_dir_reader_read(rd, &ent);
+		if (ret < 0)
+			return ret;
+		if (ret > 0)
+			return SQFS_ERROR_NO_ENTRY;
+
+		ret = strcmp((const char *)ent->name, name);
+		free(ent);
+	} while (ret < 0);
+
+	return ret == 0 ? 0 : SQFS_ERROR_NO_ENTRY;
 }
 
 int sqfs_dir_reader_find_by_path(sqfs_dir_reader_t *rd,
@@ -389,7 +385,7 @@ int sqfs_dir_reader_find_by_path(sqfs_dir_reader_t *rd,
 		if (name == NULL)
 			return SQFS_ERROR_ALLOC;
 
-		ret = sqfs_dir_reader_find(rd, name);
+		ret = find_entry(rd, name);
 		free(name);
 		if (ret)
 			return ret;
