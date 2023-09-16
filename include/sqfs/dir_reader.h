@@ -253,6 +253,26 @@ SQFS_API int sqfs_dir_reader_get_inode(sqfs_dir_reader_t *rd, sqfs_u64 ref,
 SQFS_API int sqfs_dir_reader_get_root_inode(sqfs_dir_reader_t *rd,
 					    sqfs_inode_generic_t **inode);
 
+/**
+ * @brief Try to lookup a cached inode number
+ *
+ * @memberof sqfs_dir_reader_t
+ *
+ * If the inode reader was created with the @ref SQFS_DIR_READER_DOT_ENTRIES
+ * flag, it maintains an internal cache of all directory inodes that it has
+ * seen while traversing the filesystem. The cache maps inode numbers to
+ * inode references. This is used to lookup the parent inode of directory.
+ * This function can be used to query the cache directly.
+ *
+ * @param rd A pointer to a directory reader.
+ * @param inode An inode number.
+ * @param ref Retrns an inode reference on success.
+ *
+ * @return Zero on success, @ref SQFS_ERROR_NO_ENTRY if the inode is unknown
+ */
+SQFS_API int sqfs_dir_reader_resolve_inum(sqfs_dir_reader_t *rd,
+					  sqfs_u32 inode, sqfs_u64 *ref);
+
 #ifdef __cplusplus
 }
 #endif
