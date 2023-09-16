@@ -9,9 +9,9 @@
 #include "sqfs/dir_reader.h"
 #include "sqfs/id_table.h"
 #include "sqfs/inode.h"
+#include "sqfs/block.h"
 #include "sqfs/super.h"
 #include "sqfs/error.h"
-#include "sqfs/block.h"
 #include "sqfs/dir.h"
 #include "sqfs/io.h"
 #include "compat.h"
@@ -27,35 +27,79 @@
 
 static sqfs_dir_reader_t *dr;
 static sqfs_super_t super;
-static sqfs_inode_generic_t *working_dir;
 static sqfs_id_table_t *idtbl;
 static sqfs_data_reader_t *data;
+static sqfs_u64 working_dir;
+
+static int resolve_ref(const char *path, sqfs_u64 *out)
+{
+	sqfs_dir_reader_state_t state;
+	sqfs_inode_generic_t *inode;
+	sqfs_dir_node_t *ent;
+	const char *end;
+	sqfs_u64 ref;
+	size_t len;
+	int ret;
+
+	ref = *path == '/' ? super.root_inode_ref : working_dir;
+
+	while (path != NULL && *path != '\0') {
+		if (*path == '/') {
+			while (*path == '/')
+				++path;
+			continue;
+		}
+
+		end = strchr(path, '/');
+		len = (end == NULL) ? strlen(path) : (size_t)(end - path);
+
+		ret = sqfs_dir_reader_get_inode(dr, ref, &inode);
+		if (ret != 0)
+			return ret;
+
+		ret = sqfs_dir_reader_open_dir(dr, inode, &state, 0);
+		sqfs_free(inode);
+
+		if (ret != 0)
+			return ret;
+
+		do {
+			ret = sqfs_dir_reader_read(dr, &state, &ent);
+			if (ret < 0)
+				return ret;
+			if (ret > 0)
+				return 1;
+
+			ret = strncmp((const char *)ent->name, path, len);
+			free(ent);
+			if (ret == 0 && ent->name[len] != '\0')
+				return 1;
+		} while (ret != 0);
+
+		ref = state.ent_ref;
+		path = end;
+	}
+
+	*out = ref;
+	return 0;
+}
 
 /*****************************************************************************/
 
 static void change_directory(const char *dirname)
 {
-	sqfs_inode_generic_t *inode;
 	int ret;
 
-	if (dirname == NULL || *dirname == '/') {
-		free(working_dir);
-		working_dir = NULL;
-
-		sqfs_dir_reader_get_root_inode(dr, &working_dir);
+	if (dirname == NULL) {
+		working_dir = super.root_inode_ref;
+		return;
 	}
 
-	if (dirname != NULL) {
-		ret = sqfs_dir_reader_find_by_path(dr, working_dir,
-						   dirname, &inode);
-		if (ret != 0) {
-			printf("Error resolving '%s', error code %d\n",
-			       dirname, ret);
-			return;
-		}
-
-		free(working_dir);
-		working_dir = inode;
+	ret = resolve_ref(dirname, &working_dir);
+	if (ret < 0) {
+		fprintf(stderr, "%s: error resolving path: %d\n", dirname, ret);
+	} else if (ret > 0) {
+		fprintf(stderr, "%s: no such file or directory\n", dirname);
 	}
 }
 
@@ -63,50 +107,42 @@ static void change_directory(const char *dirname)
 
 static void list_directory(const char *dirname)
 {
-	sqfs_inode_generic_t *root, *inode;
+	sqfs_dir_reader_state_t state, init_state;
 	size_t i, max_len, len, col_count;
+	sqfs_inode_generic_t *inode;
 	sqfs_dir_node_t *ent;
+	sqfs_u64 ref;
 	int ret;
 
 	/* Get the directory inode we want to dump and open the directory */
 	if (dirname == NULL) {
-		ret = sqfs_dir_reader_open_dir(dr, working_dir, 0);
-		if (ret)
-			goto fail_open;
-	} else if (*dirname == '/') {
-		sqfs_dir_reader_get_root_inode(dr, &root);
-
-		ret = sqfs_dir_reader_find_by_path(dr, root, dirname, &inode);
-		sqfs_free(root);
-		if (ret)
-			goto fail_resolve;
-
-		ret = sqfs_dir_reader_open_dir(dr, inode, 0);
-		sqfs_free(inode);
-		if (ret)
-			goto fail_open;
+		ref = working_dir;
 	} else {
-		ret = sqfs_dir_reader_find_by_path(dr, working_dir,
-						   dirname, &inode);
-		if (ret)
+		ret = resolve_ref(dirname, &ref);
+		if (ret < 0)
 			goto fail_resolve;
-
-		ret = sqfs_dir_reader_open_dir(dr, inode, 0);
-		sqfs_free(inode);
-		if (ret)
-			goto fail_open;
+		if (ret > 0)
+			goto fail_no_ent;
 	}
 
+	ret = sqfs_dir_reader_get_inode(dr, ref, &inode);
+	if (ret)
+		goto fail_open;
+
+	ret = sqfs_dir_reader_open_dir(dr, inode, &state, 0);
+	sqfs_free(inode);
+	if (ret)
+		goto fail_open;
+
 	/* first pass over the directory to figure out column count/length */
+	init_state = state;
+
 	for (max_len = 0; ; max_len = len > max_len ? len : max_len) {
-		ret = sqfs_dir_reader_read(dr, &ent);
+		ret = sqfs_dir_reader_read(dr, &state, &ent);
 		if (ret > 0)
 			break;
-
-		if (ret < 0) {
-			fputs("Error while reading directory list\n", stderr);
-			break;
-		}
+		if (ret < 0)
+			goto fail_read;
 
 		len = ent->size + 1;
 		sqfs_free(ent);
@@ -116,18 +152,15 @@ static void list_directory(const char *dirname)
 	col_count = col_count < 1 ? 1 : col_count;
 	i = 0;
 
-	/* second pass for printing directory contents */
-	sqfs_dir_reader_rewind(dr);
+	state = init_state;
 
+	/* second pass for printing directory contents */
 	for (;;) {
-		ret = sqfs_dir_reader_read(dr, &ent);
+		ret = sqfs_dir_reader_read(dr, &state, &ent);
 		if (ret > 0)
 			break;
-
-		if (ret < 0) {
-			fputs("Error while reading directory list\n", stderr);
-			break;
-		}
+		if (ret < 0)
+			goto fail_read;
 
 		/* entries always use basic types only */
 		switch (ent->type) {
@@ -174,11 +207,17 @@ static void list_directory(const char *dirname)
 		fputc('\n', stdout);
 
 	return;
+fail_read:
+	fputs("Error while reading directory list\n", stderr);
+	return;
 fail_open:
 	printf("Error opening '%s', error code %d\n", dirname, ret);
 	return;
 fail_resolve:
 	printf("Error resolving '%s', error code %d\n", dirname, ret);
+	return;
+fail_no_ent:
+	fprintf(stderr, "%s: no such file or directory\n", dirname);
 	return;
 }
 
@@ -221,13 +260,14 @@ static void mode_to_str(sqfs_u16 mode, char *p)
 
 static void stat_cmd(const char *filename)
 {
-	sqfs_inode_generic_t *inode, *root;
+	sqfs_inode_generic_t *inode;
 	sqfs_dir_index_t *idx;
 	sqfs_u32 uid, gid;
 	const char *type;
 	char buffer[64];
 	time_t timeval;
 	struct tm *tm;
+	sqfs_u64 ref;
 	size_t i;
 	int ret;
 
@@ -237,18 +277,13 @@ static void stat_cmd(const char *filename)
 		return;
 	}
 
-	if (*filename == '/') {
-		sqfs_dir_reader_get_root_inode(dr, &root);
-		ret = sqfs_dir_reader_find_by_path(dr, root, filename, &inode);
-		sqfs_free(root);
-		if (ret)
-			goto fail_resolve;
-	} else {
-		ret = sqfs_dir_reader_find_by_path(dr, working_dir,
-						   filename, &inode);
-		if (ret)
-			goto fail_resolve;
-	}
+	ret = resolve_ref(filename, &ref);
+	if (ret)
+		goto fail_resolve;
+
+	ret = sqfs_dir_reader_get_inode(dr, ref, &inode);
+	if (ret)
+		goto fail_resolve;
 
 	/* some basic information */
 	switch (inode->base.type) {
@@ -431,10 +466,10 @@ fail_resolve:
 
 static void cat_cmd(const char *filename)
 {
-	sqfs_inode_generic_t *inode, *root;
-	sqfs_u64 offset = 0;
+	sqfs_inode_generic_t *inode;
+	sqfs_istream_t *stream;
 	char buffer[512];
-	sqfs_s32 diff;
+	sqfs_u64 ref;
 	int ret;
 
 	/* get the inode of the file */
@@ -443,17 +478,23 @@ static void cat_cmd(const char *filename)
 		return;
 	}
 
-	if (*filename == '/') {
-		sqfs_dir_reader_get_root_inode(dr, &root);
-		ret = sqfs_dir_reader_find_by_path(dr, root, filename, &inode);
-		sqfs_free(root);
-	} else {
-		ret = sqfs_dir_reader_find_by_path(dr, working_dir,
-						   filename, &inode);
-	}
-
+	ret = resolve_ref(filename, &ref);
 	if (ret) {
 		printf("Error resolving '%s', error code %d\n", filename, ret);
+		return;
+	}
+
+	ret = sqfs_dir_reader_get_inode(dr, ref, &inode);
+	if (ret) {
+		printf("Error reading inode for '%s', error code %d\n",
+		       filename, ret);
+		return;
+	}
+
+	ret = sqfs_data_reader_create_stream(data, inode, filename, &stream);
+	sqfs_free(inode);
+	if (ret) {
+		printf("Opening file '%s', error code %d\n", filename, ret);
 		return;
 	}
 
@@ -462,21 +503,19 @@ static void cat_cmd(const char *filename)
 	 * or fragment access.
 	 */
 	for (;;) {
-		diff = sqfs_data_reader_read(data, inode, offset, buffer,
-					     sizeof(buffer));
-		if (diff == 0)
+		ret = sqfs_istream_read(stream, buffer, sizeof(buffer));
+		if (ret == 0)
 			break;
-		if (diff < 0) {
+		if (ret < 0) {
 			printf("Error reading from file '%s', error code %d\n",
-			       filename, diff);
+			       filename, ret);
 			break;
 		}
 
-		fwrite(buffer, 1, diff, stdout);
-		offset += diff;
+		fwrite(buffer, 1, ret, stdout);
 	}
 
-	sqfs_free(inode);
+	sqfs_drop(stream);
 }
 
 /*****************************************************************************/
@@ -518,6 +557,8 @@ int main(int argc, char **argv)
 		goto out_fd;
 	}
 
+	working_dir = super.root_inode_ref;
+
 	sqfs_compressor_config_init(&cfg, super.compression_id,
 				    super.block_size,
 				    SQFS_COMP_FLAG_UNCOMPRESS);
@@ -548,11 +589,6 @@ int main(int argc, char **argv)
 		fprintf(stderr, "%s: error creating directory reader.\n",
 			argv[1]);
 		goto out_id;
-	}
-
-	if (sqfs_dir_reader_get_root_inode(dr, &working_dir)) {
-		fprintf(stderr, "%s: error reading root inode.\n", argv[1]);
-		goto out_dir;
 	}
 
 	/* create a data reader */
@@ -613,8 +649,6 @@ int main(int argc, char **argv)
 out:
 	sqfs_drop(data);
 out_dir:
-	if (working_dir != NULL)
-		free(working_dir);
 	sqfs_drop(dr);
 out_id:
 	sqfs_drop(idtbl);

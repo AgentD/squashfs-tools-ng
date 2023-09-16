@@ -6,6 +6,7 @@
  */
 #include "sqfs/compressor.h"
 #include "sqfs/dir_reader.h"
+#include "sqfs/dir_entry.h"
 #include "sqfs/id_table.h"
 #include "sqfs/inode.h"
 #include "sqfs/super.h"
@@ -16,52 +17,114 @@
 #include <errno.h>
 #include <stdio.h>
 
-static void write_tree_dfs(const sqfs_tree_node_t *n)
+static int count_entries(sqfs_dir_iterator_t *it, unsigned int *out)
 {
-	const sqfs_tree_node_t *p;
-	unsigned int mask, level;
-	int i;
+	sqfs_dir_entry_t *ent;
+	int ret;
 
-	for (n = n->children; n != NULL; n = n->next) {
-		level = 0;
-		mask = 0;
+	*out = 0;
 
-		for (p = n->parent; p->parent != NULL; p = p->parent) {
-			if (p->next != NULL)
-				mask |= 1 << level;
-			++level;
+	for (;;) {
+		ret = it->next(it, &ent);
+		if (ret < 0) {
+			*out = 0;
+			return -1;
 		}
+		if (ret > 0)
+			break;
 
-		for (i = level - 1; i >= 0; --i)
+		*out += 1;
+		free(ent);
+	}
+
+	return 0;
+}
+
+static void write_tree_dfs(sqfs_dir_iterator_t *it,
+			   unsigned int mask, unsigned int level,
+			   unsigned int count)
+{
+	sqfs_dir_entry_t *ent;
+	unsigned int i;
+	sqfs_u16 type;
+
+	while (count--) {
+		for (i = 0; i < level; ++i)
 			fputs(mask & (1 << i) ? "│  " : "   ", stdout);
 
-		fputs(n->next == NULL ? "└─ " : "├─ ", stdout);
-		fputs((const char *)n->name, stdout);
+		if (it->next(it, &ent) != 0)
+			break;
 
-		if (n->inode->base.type == SQFS_INODE_SLINK) {
-			printf(" ⭢ %.*s",
-			       (int)n->inode->data.slink.target_size,
-			       (const char *)n->inode->extra);
-		} else if (n->inode->base.type == SQFS_INODE_EXT_SLINK) {
-			printf(" ⭢ %.*s",
-			       (int)n->inode->data.slink_ext.target_size,
-			       (const char *)n->inode->extra);
+		fputs(count == 0 ? "└─ " : "├─ ", stdout);
+		fputs(ent->name, stdout);
+
+		type = ent->mode & SQFS_INODE_MODE_MASK;
+		free(ent);
+
+		if (type == SQFS_INODE_MODE_LNK) {
+			char *target;
+
+			if (it->read_link(it, &target) == 0)
+				printf(" ⭢ %s", target);
+
+			free(target);
 		}
 
 		fputc('\n', stdout);
-		write_tree_dfs(n);
+
+		if (type == SQFS_INODE_MODE_DIR) {
+			sqfs_dir_iterator_t *sub;
+			unsigned int sub_count;
+
+			it->open_subdir(it, &sub);
+			count_entries(sub, &sub_count);
+			sub = sqfs_drop(sub);
+
+			it->open_subdir(it, &sub);
+			write_tree_dfs(sub,
+				       mask | (count > 0 ? (1 << level) : 0),
+				       level + 1, sub_count);
+			sqfs_drop(sub);
+		}
 	}
+}
+
+static sqfs_dir_iterator_t *create_root_iterator(sqfs_dir_reader_t *dr,
+						 sqfs_id_table_t *idtbl,
+						 const char *filename)
+{
+	sqfs_inode_generic_t *iroot;
+	sqfs_dir_iterator_t *it;
+	int ret;
+
+	if (sqfs_dir_reader_get_root_inode(dr, &iroot)) {
+		fprintf(stderr, "%s: error reading root inode.\n",
+			filename);
+		return NULL;
+	}
+
+	ret = sqfs_dir_iterator_create(dr, idtbl, NULL, NULL, iroot, &it);
+	free(iroot);
+
+	if (ret) {
+		fprintf(stderr, "%s: error creating root iterator.\n",
+			filename);
+		return NULL;
+	}
+
+	return it;
 }
 
 int main(int argc, char **argv)
 {
 	int ret, status = EXIT_FAILURE;
+	sqfs_dir_iterator_t *it = NULL;
+	sqfs_compressor_t *cmp = NULL;
+	sqfs_id_table_t *idtbl = NULL;
+	sqfs_dir_reader_t *dr = NULL;
 	sqfs_compressor_config_t cfg;
-	sqfs_compressor_t *cmp;
-	sqfs_tree_node_t *root = NULL;
-	sqfs_id_table_t *idtbl;
-	sqfs_dir_reader_t *dr;
-	sqfs_file_t *file;
+	sqfs_file_t *file = NULL;
+	unsigned int root_count;
 	sqfs_super_t super;
 
 	/* open the SquashFS file we want to read */
@@ -79,7 +142,7 @@ int main(int argc, char **argv)
 	   process the compressor options */
 	if (sqfs_super_read(&super, file)) {
 		fprintf(stderr, "%s: error reading super block.\n", argv[1]);
-		goto out_fd;
+		goto out;
 	}
 
 	sqfs_compressor_config_init(&cfg, super.compression_id,
@@ -90,50 +153,57 @@ int main(int argc, char **argv)
 	if (ret != 0) {
 		fprintf(stderr, "%s: error creating compressor: %d.\n",
 			argv[1], ret);
-		goto out_fd;
+		goto out;
 	}
 
 	/* Create and read the UID/GID mapping table */
 	idtbl = sqfs_id_table_create(0);
 	if (idtbl == NULL) {
 		fputs("Error creating ID table.\n", stderr);
-		goto out_cmp;
+		goto out;
 	}
 
 	if (sqfs_id_table_read(idtbl, file, &super, cmp)) {
 		fprintf(stderr, "%s: error loading ID table.\n", argv[1]);
-		goto out_id;
+		goto out;
 	}
 
-	/* create a directory reader and scan the entire directory hiearchy */
+	/* create a directory reader */
 	dr = sqfs_dir_reader_create(&super, cmp, file, 0);
 	if (dr == NULL) {
 		fprintf(stderr, "%s: error creating directory reader.\n",
 			argv[1]);
-		goto out_id;
+		goto out;
 	}
 
-	if (sqfs_dir_reader_get_full_hierarchy(dr, idtbl, NULL, 0, &root)) {
-		fprintf(stderr, "%s: error loading directory tree.\n",
+	/* create a directory iterator for the root inode */
+	it = create_root_iterator(dr, idtbl, argv[1]);
+	if (it == NULL)
+		goto out;
+
+	if (count_entries(it, &root_count)) {
+		fprintf(stderr, "%s: error counting root iterator entries.\n",
 			argv[1]);
 		goto out;
 	}
 
+	it = sqfs_drop(it);
+
+	it = create_root_iterator(dr, idtbl, argv[1]);
+	if (it == NULL)
+		goto out;
+
 	/* fancy print the hierarchy */
 	printf("/\n");
-	write_tree_dfs(root);
+	write_tree_dfs(it, 0, 0, root_count);
 
 	/* cleanup */
 	status = EXIT_SUCCESS;
 out:
-	if (root != NULL)
-		sqfs_dir_tree_destroy(root);
+	sqfs_drop(it);
 	sqfs_drop(dr);
-out_id:
 	sqfs_drop(idtbl);
-out_cmp:
 	sqfs_drop(cmp);
-out_fd:
 	sqfs_drop(file);
 	return status;
 }

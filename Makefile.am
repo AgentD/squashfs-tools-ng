@@ -40,7 +40,7 @@ include bin/sqfs2tar/Makemodule.am
 include bin/sqfsdiff/Makemodule.am
 include bin/tar2sqfs/Makemodule.am
 
-#include extras/Makemodule.am
+include extras/Makemodule.am
 
 if HAVE_DOXYGEN
 @DX_RULES@

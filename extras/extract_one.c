@@ -8,35 +8,82 @@
 #include "sqfs/compressor.h"
 #include "sqfs/data_reader.h"
 #include "sqfs/dir_reader.h"
+#include "sqfs/dir_entry.h"
 #include "sqfs/error.h"
 #include "sqfs/id_table.h"
 #include "sqfs/io.h"
 #include "sqfs/inode.h"
 #include "sqfs/super.h"
-#include "sqfs/xattr_reader.h"
 
 #include <string.h>
 #include <stdlib.h>
-#include <errno.h>
 #include <stdio.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
+
+static int find_file(sqfs_dir_iterator_t *it, const char *path,
+		     sqfs_istream_t **out)
+{
+	const char *end = strchr(path, '/');
+	size_t len = end == NULL ? strlen(path) : (size_t)(end - path);
+
+	for (;;) {
+		sqfs_dir_entry_t *ent;
+		int ret;
+
+		ret = it->next(it, &ent);
+		if (ret < 0) {
+			fputs("error reading directory entry\n", stderr);
+			return -1;
+		}
+
+		if (ret > 0) {
+			fputs("entry not found\n", stderr);
+			return -1;
+		}
+
+		if (strncmp(ent->name, path, len) != 0 ||
+		    ent->name[len] != '\0') {
+			free(ent);
+			continue;
+		}
+
+		if (end == NULL) {
+			ret = it->open_file_ro(it, out);
+			if (ret) {
+				fprintf(stderr, "%s: error opening file %d\n",
+					ent->name, ret);
+			}
+		} else {
+			sqfs_dir_iterator_t *sub;
+
+			ret = it->open_subdir(it, &sub);
+			if (ret != 0) {
+				fprintf(stderr, "%s: error opening subdir\n",
+					ent->name);
+			} else {
+				ret = find_file(sub, end + 1, out);
+				sqfs_drop(sub);
+			}
+		}
+
+		free(ent);
+		return ret;
+	}
+}
 
 int main(int argc, char **argv)
 {
-	sqfs_xattr_reader_t *xattr = NULL;
+	sqfs_inode_generic_t *iroot = NULL;
 	sqfs_data_reader_t *data = NULL;
 	sqfs_dir_reader_t *dirrd = NULL;
 	sqfs_compressor_t *cmp = NULL;
 	sqfs_id_table_t *idtbl = NULL;
-	sqfs_tree_node_t *n = NULL;
 	sqfs_file_t *file = NULL;
-	sqfs_u8 *p, *output = NULL;
+	sqfs_dir_iterator_t *it = NULL;
 	sqfs_compressor_config_t cfg;
 	sqfs_super_t super;
-	sqfs_u64 file_size;
 	int status = EXIT_FAILURE, ret;
+	sqfs_istream_t *is = NULL;
+	char buffer[512];
 
 	if (argc != 3) {
 		fputs("Usage: extract_one <squashfs-file> <source-file-path>\n", stderr);
@@ -56,27 +103,13 @@ int main(int argc, char **argv)
 	}
 
 	sqfs_compressor_config_init(&cfg, super.compression_id,
-								super.block_size,
-								SQFS_COMP_FLAG_UNCOMPRESS);
+				    super.block_size,
+				    SQFS_COMP_FLAG_UNCOMPRESS);
 
 	ret = sqfs_compressor_create(&cfg, &cmp);
 	if (ret != 0) {
 		fprintf(stderr, "%s: error creating compressor: %d.\n", argv[1], ret);
 		goto out;
-	}
-
-	if (!(super.flags & SQFS_FLAG_NO_XATTRS)) {
-		xattr = sqfs_xattr_reader_create(0);
-		if (xattr == NULL) {
-			fprintf(stderr, "%s: error creating xattr reader: %d.\n", argv[1], SQFS_ERROR_ALLOC);
-			goto out;
-		}
-
-		ret = sqfs_xattr_reader_load(xattr, &super, file, cmp);
-		if (ret) {
-			fprintf(stderr, "%s: error loading xattr reader: %d.\n", argv[1], ret);
-			goto out;
-		}
 	}
 
 	idtbl = sqfs_id_table_create(0);
@@ -109,69 +142,43 @@ int main(int argc, char **argv)
 		goto out;
 	}
 
-	ret = sqfs_dir_reader_get_full_hierarchy(dirrd, idtbl, argv[2], 0, &n);
+	if (sqfs_dir_reader_get_root_inode(dirrd, &iroot)) {
+		fprintf(stderr, "%s: error reading root inode.\n", argv[1]);
+		goto out;
+	}
+
+	ret = sqfs_dir_iterator_create(dirrd, idtbl, data, NULL, iroot, &it);
+	free(iroot);
+
 	if (ret) {
-		fprintf(stderr, "%s: error reading filesystem hierarchy: %d.\n", argv[1], ret);
+		fprintf(stderr, "%s: error creating root iterator.\n",
+			argv[2]);
 		goto out;
 	}
 
-	if (!S_ISREG(n->inode->base.mode)) {
-		fprintf(stderr, "/%s is not a file\n", argv[2]);
+	if (find_file(it, argv[2], &is))
 		goto out;
-	}
 
-	sqfs_inode_get_file_size(n->inode, &file_size);
-
-	output = p = malloc(file_size);
-	if (output == NULL) {
-		fprintf(stderr, "malloc failed: %d\n", errno);
-		goto out;
-	}
-
-	for (size_t i = 0; i < sqfs_inode_get_file_block_count(n->inode); ++i) {
-		size_t chunk_size, read = (file_size < super.block_size) ? file_size : super.block_size;
-		sqfs_u8 *chunk;
-
-		ret = sqfs_data_reader_get_block(data, n->inode, i, &chunk_size, &chunk);
-		if (ret) {
-			fprintf(stderr, "reading data block: %d\n", ret);
+	for (;;) {
+		ret = sqfs_istream_read(is, buffer, sizeof(buffer));
+		if (ret < 0) {
+			fprintf(stderr, "%s: read error!\n", argv[2]);
 			goto out;
 		}
+		if (ret == 0)
+			break;
 
-		memcpy(p, chunk, chunk_size);
-		p += chunk_size;
-		free(chunk);
-
-		file_size -= read;
+		fwrite(buffer, 1, ret, stdout);
 	}
-
-	if (file_size > 0) {
-		size_t chunk_size;
-		sqfs_u8 *chunk;
-
-		ret = sqfs_data_reader_get_fragment(data, n->inode, &chunk_size, &chunk);
-		if (ret) {
-			fprintf(stderr, "reading fragment block: %d\n", ret);
-			goto out;
-		}
-
-		memcpy(p, chunk, chunk_size);
-		free(chunk);
-	}
-
-	/* for example simplicity, assume this is a text file */
-	fprintf(stdout, "%s\n", (char *)output);
 
 	status = EXIT_SUCCESS;
 out:
-	sqfs_dir_tree_destroy(n);
+	sqfs_drop(is);
+	sqfs_drop(it);
 	sqfs_drop(data);
 	sqfs_drop(dirrd);
 	sqfs_drop(idtbl);
-	sqfs_drop(xattr);
 	sqfs_drop(cmp);
 	sqfs_drop(file);
-	free(output);
-
 	return status;
 }
