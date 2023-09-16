@@ -30,6 +30,7 @@ static sqfs_super_t super;
 static sqfs_id_table_t *idtbl;
 static sqfs_data_reader_t *data;
 static sqfs_u64 working_dir;
+static char *prompt;
 
 static int resolve_ref(const char *path, sqfs_u64 *out)
 {
@@ -84,23 +85,165 @@ static int resolve_ref(const char *path, sqfs_u64 *out)
 	return 0;
 }
 
+static char *add_prefix(const char *pfx, size_t pfxlen, char *path)
+{
+	size_t len;
+	char *out;
+
+	if (path == NULL) {
+		out = calloc(1, pfxlen + 1);
+		if (out == NULL)
+			goto fail;
+		memcpy(out, pfx, pfxlen);
+	} else {
+		len = strlen(path) + 1;
+		out = realloc(path, pfxlen + 1 + len);
+		if (out == NULL)
+			goto fail;
+
+		memmove(out + pfxlen + 1, out, len);
+		memcpy(out, pfx, pfxlen);
+		out[pfxlen] = '/';
+	}
+
+	return out;
+fail:
+	fputs("out-of-memory\n", stderr);
+	free(path);
+	return NULL;
+}
+
+static char *full_path(void)
+{
+	sqfs_inode_generic_t *inode = NULL, *pnode = NULL;
+	sqfs_dir_node_t *ent = NULL;
+	char *path = NULL;
+	sqfs_u64 iref = working_dir;
+	int ret;
+
+	if (iref == super.root_inode_ref)
+		return strdup("/");
+
+	ret = sqfs_dir_reader_get_inode(dr, iref, &inode);
+	if (ret) {
+		fprintf(stderr, "Loading inode: %d\n", ret);
+		return NULL;
+	}
+
+	while (iref != super.root_inode_ref) {
+		sqfs_dir_reader_state_t state;
+		sqfs_u32 parent;
+		sqfs_u64 pref;
+
+		if (inode->base.type == SQFS_INODE_DIR) {
+			parent = inode->data.dir.parent_inode;
+		} else if (inode->base.type == SQFS_INODE_EXT_DIR) {
+			parent = inode->data.dir_ext.parent_inode;
+		} else {
+			fputs("Inode not a directory??\n", stderr);
+			goto fail;
+		}
+
+		ret = sqfs_dir_reader_resolve_inum(dr, parent, &pref);
+		if (ret) {
+			fputs("Parent inode not cached!\n", stderr);
+			goto fail;
+		}
+
+		ret = sqfs_dir_reader_get_inode(dr, pref, &pnode);
+		if (ret) {
+			fprintf(stderr, "Error loading parent inode: %d\n",
+				ret);
+			goto fail;
+		}
+
+		ret = sqfs_dir_reader_open_dir(dr, pnode, &state, 0);
+		if (ret) {
+			fprintf(stderr, "Error opening parent dir: %d\n",
+				ret);
+			goto fail;
+		}
+
+		do {
+			sqfs_free(ent);
+			ret = sqfs_dir_reader_read(dr, &state, &ent);
+		} while (ret == 0 && state.ent_ref != iref);
+
+		if (ret) {
+			fprintf(stderr, "Error finding entry in dir: %d\n",
+				ret);
+			goto fail;
+		}
+
+		path = add_prefix((const char *)ent->name, ent->size + 1, path);
+		if (path == NULL)
+			goto fail;
+
+		sqfs_free(ent);
+		sqfs_free(inode);
+		inode = pnode;
+		pnode = NULL;
+		ent = NULL;
+		iref = pref;
+	}
+
+	path = add_prefix("", 0, path);
+	if (path == NULL)
+		goto fail;
+
+	sqfs_free(inode);
+	return path;
+fail:
+	sqfs_free(inode);
+	sqfs_free(pnode);
+	sqfs_free(ent);
+	free(path);
+	return NULL;
+}
+
 /*****************************************************************************/
 
 static void change_directory(const char *dirname)
 {
+	char *path, *str;
+	const char *end;
+	size_t len;
 	int ret;
 
 	if (dirname == NULL) {
 		working_dir = super.root_inode_ref;
+	} else {
+		ret = resolve_ref(dirname, &working_dir);
+		if (ret < 0) {
+			fprintf(stderr, "%s: error resolving path: %d\n",
+				dirname, ret);
+		} else if (ret > 0) {
+			fprintf(stderr, "%s: no such file or directory\n",
+				dirname);
+		}
+	}
+
+	path = full_path();
+	if (path == NULL)
+		return;
+
+	end = strrchr(path, '/');
+	end = end == NULL ? path : (end + 1);
+	len = strlen(end);
+
+	str = calloc(1, len + 3);
+	if (str == NULL) {
+		free(path);
 		return;
 	}
 
-	ret = resolve_ref(dirname, &working_dir);
-	if (ret < 0) {
-		fprintf(stderr, "%s: error resolving path: %d\n", dirname, ret);
-	} else if (ret > 0) {
-		fprintf(stderr, "%s: no such file or directory\n", dirname);
-	}
+	memcpy(str, end, len);
+	str[len] = '$';
+	str[len + 1] = ' ';
+
+	free(prompt);
+	free(path);
+	prompt = str;
 }
 
 /*****************************************************************************/
@@ -520,6 +663,20 @@ static void cat_cmd(const char *filename)
 
 /*****************************************************************************/
 
+static void pwd_cmd(const char *filename)
+{
+	(void)filename;
+	char *path;
+
+	path = full_path();
+	if (path != NULL) {
+		printf("%s\n", path);
+		free(path);
+	}
+}
+
+/*****************************************************************************/
+
 static const struct {
 	const char *cmd;
 	void (*handler)(const char *arg);
@@ -528,6 +685,7 @@ static const struct {
 	{ "cd", change_directory },
 	{ "stat", stat_cmd },
 	{ "cat", cat_cmd },
+	{ "pwd", pwd_cmd },
 };
 
 int main(int argc, char **argv)
@@ -607,9 +765,15 @@ int main(int argc, char **argv)
 	}
 
 	/* main readline loop */
+	prompt = strdup("$ ");
+	if (prompt == NULL) {
+		fputs("out-of-memory\n", stderr);
+		goto out;
+	}
+
 	for (;;) {
 		free(buffer);
-		buffer = readline("$ ");
+		buffer = readline(prompt);
 
 		if (buffer == NULL)
 			goto out;
@@ -647,6 +811,7 @@ int main(int argc, char **argv)
 	status = EXIT_SUCCESS;
 	free(buffer);
 out:
+	free(prompt);
 	sqfs_drop(data);
 out_dir:
 	sqfs_drop(dr);
