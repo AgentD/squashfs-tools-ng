@@ -41,6 +41,9 @@ static void write_number(char *dst, sqfs_u64 value, int digits)
 	for (i = 0; i < (digits - 1); ++i)
 		mask = (mask << 3) | 7;
 
+	if (digits < 0 || (size_t)digits >= sizeof(buffer))
+		digits = sizeof(buffer) - 1;
+
 	if (value <= mask) {
 		sprintf(buffer, "%0*lo ", digits - 1, (unsigned long)value);
 		memcpy(dst, buffer, digits);
@@ -64,36 +67,36 @@ static void write_number_signed(char *dst, sqfs_s64 value, int digits)
 	}
 }
 
-static int write_header(sqfs_ostream_t *fp, const struct stat *sb,
+static int write_header(sqfs_ostream_t *fp, const sqfs_dir_entry_t *ent,
 			const char *name, const char *slink_target, int type)
 {
 	int maj = 0, min = 0;
 	sqfs_u64 size = 0;
 	tar_header_t hdr;
 
-	if (S_ISCHR(sb->st_mode) || S_ISBLK(sb->st_mode)) {
-		maj = major(sb->st_rdev);
-		min = minor(sb->st_rdev);
+	if (S_ISCHR(ent->mode) || S_ISBLK(ent->mode)) {
+		maj = major(ent->rdev);
+		min = minor(ent->rdev);
 	}
 
-	if (S_ISREG(sb->st_mode))
-		size = sb->st_size;
+	if (S_ISREG(ent->mode))
+		size = ent->size;
 
 	memset(&hdr, 0, sizeof(hdr));
 
 	strncpy(hdr.name, name, sizeof(hdr.name) - 1);
-	write_number(hdr.mode, sb->st_mode & ~S_IFMT, sizeof(hdr.mode));
-	write_number(hdr.uid, sb->st_uid, sizeof(hdr.uid));
-	write_number(hdr.gid, sb->st_gid, sizeof(hdr.gid));
+	write_number(hdr.mode, ent->mode & ~S_IFMT, sizeof(hdr.mode));
+	write_number(hdr.uid, ent->uid, sizeof(hdr.uid));
+	write_number(hdr.gid, ent->gid, sizeof(hdr.gid));
 	write_number(hdr.size, size, sizeof(hdr.size));
-	write_number_signed(hdr.mtime, sb->st_mtime, sizeof(hdr.mtime));
+	write_number_signed(hdr.mtime, ent->mtime, sizeof(hdr.mtime));
 	hdr.typeflag = type;
 	if (slink_target != NULL)
-		memcpy(hdr.linkname, slink_target, sb->st_size);
+		memcpy(hdr.linkname, slink_target, ent->size);
 	memcpy(hdr.magic, TAR_MAGIC_OLD, sizeof(hdr.magic));
 	memcpy(hdr.version, TAR_VERSION_OLD, sizeof(hdr.version));
-	sprintf(hdr.uname, "%u", sb->st_uid);
-	sprintf(hdr.gname, "%u", sb->st_gid);
+	sprintf(hdr.uname, "%lu", (unsigned long)ent->uid);
+	sprintf(hdr.gname, "%lu", (unsigned long)ent->gid);
 	write_number(hdr.devmajor, maj, sizeof(hdr.devmajor));
 	write_number(hdr.devminor, min, sizeof(hdr.devminor));
 
@@ -102,18 +105,18 @@ static int write_header(sqfs_ostream_t *fp, const struct stat *sb,
 	return fp->append(fp, &hdr, sizeof(hdr));
 }
 
-static int write_ext_header(sqfs_ostream_t *fp, const struct stat *orig,
+static int write_ext_header(sqfs_ostream_t *fp, const sqfs_dir_entry_t *orig,
 			    const char *payload, size_t payload_len,
 			    int type, const char *name)
 {
-	struct stat sb;
+	sqfs_dir_entry_t ent;
 	int ret;
 
-	sb = *orig;
-	sb.st_mode = S_IFREG | 0644;
-	sb.st_size = payload_len;
+	ent = *orig;
+	ent.mode = S_IFREG | 0644;
+	ent.size = payload_len;
 
-	ret = write_header(fp, &sb, name, NULL, type);
+	ret = write_header(fp, &ent, name, NULL, type);
 	if (ret)
 		return ret;
 
@@ -148,7 +151,7 @@ static size_t prefix_digit_len(size_t len)
 	return ndigit;
 }
 
-static int write_schily_xattr(sqfs_ostream_t *fp, const struct stat *orig,
+static int write_schily_xattr(sqfs_ostream_t *fp, const sqfs_dir_entry_t *orig,
 			      const char *name, const sqfs_xattr_t *xattr)
 {
 	static const char *prefix = "SCHILY.xattr.";
@@ -184,63 +187,10 @@ static int write_schily_xattr(sqfs_ostream_t *fp, const struct stat *orig,
 	return ret;
 }
 
-int write_tar_header(sqfs_ostream_t *fp,
-		     const struct stat *sb, const char *name,
-		     const char *slink_target, const sqfs_xattr_t *xattr,
-		     unsigned int counter)
+static int write_hard_link(sqfs_ostream_t *fp, const sqfs_dir_entry_t *ent,
+			   const char *target, unsigned int counter)
 {
-	char buffer[64];
-	int type, ret;
-
-	if (xattr != NULL) {
-		sprintf(buffer, "pax/xattr%u", counter);
-
-		ret = write_schily_xattr(fp, sb, buffer, xattr);
-		if (ret)
-			return ret;
-	}
-
-	if (!S_ISLNK(sb->st_mode))
-		slink_target = NULL;
-
-	if (S_ISLNK(sb->st_mode) && sb->st_size >= 100) {
-		sprintf(buffer, "gnu/target%u", counter);
-		ret = write_ext_header(fp, sb, slink_target, sb->st_size,
-				       TAR_TYPE_GNU_SLINK, buffer);
-		if (ret)
-			return ret;
-		slink_target = NULL;
-	}
-
-	if (strlen(name) >= 100) {
-		sprintf(buffer, "gnu/name%u", counter);
-
-		ret = write_ext_header(fp, sb, name, strlen(name),
-				       TAR_TYPE_GNU_PATH, buffer);
-		if (ret)
-			return ret;
-
-		sprintf(buffer, "gnu/data%u", counter);
-		name = buffer;
-	}
-
-	switch (sb->st_mode & S_IFMT) {
-	case S_IFCHR: type = TAR_TYPE_CHARDEV; break;
-	case S_IFBLK: type = TAR_TYPE_BLOCKDEV; break;
-	case S_IFLNK: type = TAR_TYPE_SLINK; break;
-	case S_IFREG: type = TAR_TYPE_FILE; break;
-	case S_IFDIR: type = TAR_TYPE_DIR; break;
-	case S_IFIFO: type = TAR_TYPE_FIFO; break;
-	default:
-		return SQFS_ERROR_UNSUPPORTED;
-	}
-
-	return write_header(fp, sb, name, slink_target, type);
-}
-
-int write_hard_link(sqfs_ostream_t *fp, const struct stat *sb, const char *name,
-		    const char *target, unsigned int counter)
-{
+	const char *name = ent->name;
 	tar_header_t hdr;
 	char buffer[64];
 	size_t len;
@@ -251,7 +201,7 @@ int write_hard_link(sqfs_ostream_t *fp, const struct stat *sb, const char *name,
 	len = strlen(target);
 	if (len >= 100) {
 		sprintf(buffer, "gnu/target%u", counter);
-		ret = write_ext_header(fp, sb, target, len,
+		ret = write_ext_header(fp, ent, target, len,
 				       TAR_TYPE_GNU_SLINK, buffer);
 		if (ret)
 			return ret;
@@ -263,7 +213,7 @@ int write_hard_link(sqfs_ostream_t *fp, const struct stat *sb, const char *name,
 	len = strlen(name);
 	if (len >= 100) {
 		sprintf(buffer, "gnu/name%u", counter);
-		ret = write_ext_header(fp, sb, name, len,
+		ret = write_ext_header(fp, ent, name, len,
 				       TAR_TYPE_GNU_PATH, buffer);
 		if (ret)
 			return ret;
@@ -272,19 +222,76 @@ int write_hard_link(sqfs_ostream_t *fp, const struct stat *sb, const char *name,
 		memcpy(hdr.name, name, len);
 	}
 
-	write_number(hdr.mode, sb->st_mode & ~S_IFMT, sizeof(hdr.mode));
-	write_number(hdr.uid, sb->st_uid, sizeof(hdr.uid));
-	write_number(hdr.gid, sb->st_gid, sizeof(hdr.gid));
+	write_number(hdr.mode, ent->mode & ~S_IFMT, sizeof(hdr.mode));
+	write_number(hdr.uid, ent->uid, sizeof(hdr.uid));
+	write_number(hdr.gid, ent->gid, sizeof(hdr.gid));
 	write_number(hdr.size, 0, sizeof(hdr.size));
-	write_number_signed(hdr.mtime, sb->st_mtime, sizeof(hdr.mtime));
+	write_number_signed(hdr.mtime, ent->mtime, sizeof(hdr.mtime));
 	hdr.typeflag = TAR_TYPE_LINK;
 	memcpy(hdr.magic, TAR_MAGIC_OLD, sizeof(hdr.magic));
 	memcpy(hdr.version, TAR_VERSION_OLD, sizeof(hdr.version));
-	sprintf(hdr.uname, "%u", sb->st_uid);
-	sprintf(hdr.gname, "%u", sb->st_gid);
+	sprintf(hdr.uname, "%lu", (unsigned long)ent->uid);
+	sprintf(hdr.gname, "%lu", (unsigned long)ent->gid);
 	write_number(hdr.devmajor, 0, sizeof(hdr.devmajor));
 	write_number(hdr.devminor, 0, sizeof(hdr.devminor));
 
 	update_checksum(&hdr);
 	return fp->append(fp, &hdr, sizeof(hdr));
+}
+
+int write_tar_header(sqfs_ostream_t *fp, const sqfs_dir_entry_t *ent,
+		     const char *slink_target, const sqfs_xattr_t *xattr,
+		     unsigned int counter)
+{
+	const char *name = ent->name;
+	char buffer[64];
+	int type, ret;
+
+	if (ent->flags & SQFS_DIR_ENTRY_FLAG_HARD_LINK)
+		return write_hard_link(fp, ent, slink_target, counter);
+
+	if (xattr != NULL) {
+		sprintf(buffer, "pax/xattr%u", counter);
+
+		ret = write_schily_xattr(fp, ent, buffer, xattr);
+		if (ret)
+			return ret;
+	}
+
+	if (!S_ISLNK(ent->mode))
+		slink_target = NULL;
+
+	if (S_ISLNK(ent->mode) && ent->size >= 100) {
+		sprintf(buffer, "gnu/target%u", counter);
+		ret = write_ext_header(fp, ent, slink_target, ent->size,
+				       TAR_TYPE_GNU_SLINK, buffer);
+		if (ret)
+			return ret;
+		slink_target = NULL;
+	}
+
+	if (strlen(name) >= 100) {
+		sprintf(buffer, "gnu/name%u", counter);
+
+		ret = write_ext_header(fp, ent, name, strlen(name),
+				       TAR_TYPE_GNU_PATH, buffer);
+		if (ret)
+			return ret;
+
+		sprintf(buffer, "gnu/data%u", counter);
+		name = buffer;
+	}
+
+	switch (ent->mode & S_IFMT) {
+	case S_IFCHR: type = TAR_TYPE_CHARDEV; break;
+	case S_IFBLK: type = TAR_TYPE_BLOCKDEV; break;
+	case S_IFLNK: type = TAR_TYPE_SLINK; break;
+	case S_IFREG: type = TAR_TYPE_FILE; break;
+	case S_IFDIR: type = TAR_TYPE_DIR; break;
+	case S_IFIFO: type = TAR_TYPE_FIFO; break;
+	default:
+		return SQFS_ERROR_UNSUPPORTED;
+	}
+
+	return write_header(fp, ent, name, slink_target, type);
 }

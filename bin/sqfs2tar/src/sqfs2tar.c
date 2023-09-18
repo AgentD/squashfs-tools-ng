@@ -44,7 +44,6 @@ static int write_entry(sqfs_dir_iterator_t *it, const sqfs_dir_entry_t *ent)
 	static unsigned int record_counter;
 	sqfs_xattr_t *xattr = NULL;
 	char *target = NULL;
-	struct stat sb;
 	int ret;
 
 	if (S_ISLNK(ent->mode) ||
@@ -64,25 +63,9 @@ static int write_entry(sqfs_dir_iterator_t *it, const sqfs_dir_entry_t *ent)
 		return ret;
 	}
 
-	memset(&sb, 0, sizeof(sb));
-	sb.st_mode = ent->mode;
-	sb.st_uid = ent->uid;
-	sb.st_gid = ent->gid;
-	sb.st_mtime = ent->mtime;
-	sb.st_rdev = ent->rdev;
-	sb.st_size = ent->size;
-
-	if (ent->flags & SQFS_DIR_ENTRY_FLAG_HARD_LINK) {
-		ret = write_hard_link(out_file, &sb, ent->name, target,
-				      record_counter++);
-		if (ret)
-			sqfs_perror(ent->name, "writing tar hard link", ret);
-	} else {
-		ret = write_tar_header(out_file, &sb, ent->name, target,
-				       xattr, record_counter++);
-		if (ret)
-			sqfs_perror(ent->name, "writing tar header", ret);
-	}
+	ret = write_tar_header(out_file, ent, target, xattr, record_counter++);
+	if (ret)
+		sqfs_perror(ent->name, "writing tar header", ret);
 
 	if (S_ISREG(ent->mode) && ret == 0)
 		ret = write_file_data(it, ent);

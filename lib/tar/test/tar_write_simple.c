@@ -11,6 +11,35 @@
 #include "sqfs/xattr.h"
 #include "compat.h"
 
+static void hex_dump(const sqfs_u8 *data, size_t size)
+{
+	for (size_t i = 0; i < size; ++i) {
+		int hi = (data[i] >> 4) & 0x0F;
+		int lo =  data[i]       & 0x0F;
+
+		hi = (hi >= 0x0a) ? ('a' + (hi - 0x0a)) : ('0' + hi);
+		lo = (lo >= 0x0a) ? ('a' + (lo - 0x0a)) : ('0' + lo);
+
+		fprintf(stderr, "%c%c", hi, lo);
+
+		if ((i % 16) == 15) {
+			fputs(" | ", stderr);
+
+			for (size_t j = i - 15; j <= i; ++j) {
+				if (data[j] >= 0x20 && data[j] <= 0x7f) {
+					fputc(data[j], stderr);
+				} else {
+					fputc('.', stderr);
+				}
+			}
+
+			fputc('\n', stderr);
+		} else {
+			fputc(' ', stderr);
+		}
+	}
+}
+
 /*****************************************************************************/
 
 static int buffer_append(sqfs_ostream_t *strm, const void *data, size_t size);
@@ -77,67 +106,95 @@ static sqfs_xattr_t *mkxattr_chain(void)
 
 int main(int argc, char **argv)
 {
+	sqfs_dir_entry_t *ent;
 	sqfs_xattr_t *xattr;
 	sqfs_istream_t *fp;
-	struct stat sb;
 	int ret;
 	(void)argc; (void)argv;
 
 	/* genereate some archive contents */
-	memset(&sb, 0, sizeof(sb));
-	sb.st_mode = S_IFDIR | 0755;
-	sb.st_mtime = TIME_STAMP;
-	ret = write_tar_header(&mem_stream, &sb, "dev/", NULL, NULL, 0);
+	ent = sqfs_dir_entry_create("dev/", S_IFDIR | 0755, 0);
+	TEST_NOT_NULL(ent);
+	ent->mtime = TIME_STAMP;
+	ret = write_tar_header(&mem_stream, ent, NULL, NULL, 0);
+	sqfs_free(ent);
 	TEST_EQUAL_I(ret, 0);
 
 	/* device files */
-	sb.st_mode = S_IFCHR | 0620;
-	sb.st_gid = 5;
-	sb.st_rdev = makedev(4, 0);
-	ret = write_tar_header(&mem_stream, &sb, "dev/tty0", NULL, NULL, 1);
+	ent = sqfs_dir_entry_create("dev/tty0", S_IFCHR | 0620, 0);
+	TEST_NOT_NULL(ent);
+	ent->mtime = TIME_STAMP;
+	ent->gid = 5;
+	ent->rdev = makedev(4, 0);
+	ret = write_tar_header(&mem_stream, ent, NULL, NULL, 1);
+	sqfs_free(ent);
 	TEST_EQUAL_I(ret, 0);
 
-	sb.st_rdev = makedev(4, 1);
-	ret = write_tar_header(&mem_stream, &sb, "dev/tty1", NULL, NULL, 2);
+	ent = sqfs_dir_entry_create("dev/tty1", S_IFCHR | 0620, 0);
+	TEST_NOT_NULL(ent);
+	ent->mtime = TIME_STAMP;
+	ent->gid = 5;
+	ent->rdev = makedev(4, 1);
+	ret = write_tar_header(&mem_stream, ent, NULL, NULL, 2);
+	sqfs_free(ent);
 	TEST_EQUAL_I(ret, 0);
 
-	sb.st_rdev = makedev(4, 2);
-	ret = write_tar_header(&mem_stream, &sb, "dev/tty2", NULL, NULL, 3);
+	ent = sqfs_dir_entry_create("dev/tty2", S_IFCHR | 0620, 0);
+	TEST_NOT_NULL(ent);
+	ent->mtime = TIME_STAMP;
+	ent->gid = 5;
+	ent->rdev = makedev(4, 2);
+	ret = write_tar_header(&mem_stream, ent, NULL, NULL, 3);
+	sqfs_free(ent);
 	TEST_EQUAL_I(ret, 0);
 
-	memset(&sb, 0, sizeof(sb));
-	sb.st_mode = S_IFDIR | 0755;
-	sb.st_mtime = TIME_STAMP;
-	ret = write_tar_header(&mem_stream, &sb, "usr/", NULL, NULL, 4);
+	ent = sqfs_dir_entry_create("usr/", S_IFDIR | 0755, 0);
+	TEST_NOT_NULL(ent);
+	ent->mtime = TIME_STAMP;
+	ret = write_tar_header(&mem_stream, ent, NULL, NULL, 4);
+	sqfs_free(ent);
 	TEST_EQUAL_I(ret, 0);
 
-	ret = write_tar_header(&mem_stream, &sb, "usr/bin/", NULL, NULL, 5);
+	ent = sqfs_dir_entry_create("usr/bin/", S_IFDIR | 0755, 0);
+	TEST_NOT_NULL(ent);
+	ent->mtime = TIME_STAMP;
+	ret = write_tar_header(&mem_stream, ent, NULL, NULL, 5);
+	sqfs_free(ent);
 	TEST_EQUAL_I(ret, 0);
 
 	/* sym link */
-	sb.st_mode = S_IFLNK | 0777;
-	sb.st_size = 7;
-	ret = write_tar_header(&mem_stream, &sb, "bin", "usr/bin", NULL, 6);
+	ent = sqfs_dir_entry_create("bin", S_IFLNK | 0777, 0);
+	TEST_NOT_NULL(ent);
+	ent->mtime = TIME_STAMP;
+	ent->size = 7;
+	ret = write_tar_header(&mem_stream, ent, "usr/bin", NULL, 6);
+	sqfs_free(ent);
 	TEST_EQUAL_I(ret, 0);
 
-	memset(&sb, 0, sizeof(sb));
-	sb.st_mode = S_IFDIR | 0755;
-	sb.st_mtime = TIME_STAMP;
-	ret = write_tar_header(&mem_stream, &sb, "home/", NULL, NULL, 7);
+	ent = sqfs_dir_entry_create("home/", S_IFDIR | 0755, 0);
+	TEST_NOT_NULL(ent);
+	ent->mtime = TIME_STAMP;
+	ret = write_tar_header(&mem_stream, ent, NULL, NULL, 7);
+	sqfs_free(ent);
 	TEST_EQUAL_I(ret, 0);
 
-	sb.st_mode = S_IFDIR | 0750;
-	sb.st_uid = 1000;
-	sb.st_gid = 1000;
-	ret = write_tar_header(&mem_stream, &sb, "home/goliath/",
-			       NULL, NULL, 8);
+	ent = sqfs_dir_entry_create("home/goliath/", S_IFDIR | 0750, 0);
+	TEST_NOT_NULL(ent);
+	ent->uid = 1000;
+	ent->gid = 1000;
+	ent->mtime = TIME_STAMP;
+	ret = write_tar_header(&mem_stream, ent, NULL, NULL, 8);
+	sqfs_free(ent);
 	TEST_EQUAL_I(ret, 0);
 
 	/* regular file with actual content */
-	sb.st_mode = S_IFREG | 0644;
-	sb.st_size = 14;
-	ret = write_tar_header(&mem_stream, &sb, "home/goliath/hello.txt",
-			       NULL, NULL, 9);
+	ent = sqfs_dir_entry_create("home/goliath/hello.txt", S_IFREG | 0644, 0);
+	TEST_NOT_NULL(ent);
+	ent->uid = 1000;
+	ent->gid = 1000;
+	ent->mtime = TIME_STAMP;
+	ent->size = 14;
+	ret = write_tar_header(&mem_stream, ent, NULL, NULL, 9);
 	TEST_EQUAL_I(ret, 0);
 
 	ret = mem_stream.append(&mem_stream, "Hello, World!\n", 14);
@@ -146,17 +203,24 @@ int main(int argc, char **argv)
 	TEST_EQUAL_I(ret, 0);
 
 	/* hard link */
-	ret = write_hard_link(&mem_stream, &sb, "home/goliath/world.txt",
-			      "home/goliath/hello.txt", 10);
+	strcpy(ent->name, "home/goliath/world.txt");
+	ent->size = 22;
+	ent->flags = SQFS_DIR_ENTRY_FLAG_HARD_LINK;
+	ret = write_tar_header(&mem_stream, ent, "home/goliath/hello.txt",
+			       NULL, 10);
 	TEST_EQUAL_I(ret, 0);
 
 	/* something with xattrs */
+	strcpy(ent->name, "home/goliath/test.exe");
+	ent->flags = 0;
+	ent->mode = S_IFREG | 0750;
+	ent->size = 4;
+
 	xattr = mkxattr_chain();
-	sb.st_mode = S_IFREG | 0750;
-	sb.st_size = 4;
-	ret = write_tar_header(&mem_stream, &sb, "home/goliath/test.exe",
-			       NULL, xattr, 11);
+
+	ret = write_tar_header(&mem_stream, ent, NULL, xattr, 11);
 	TEST_EQUAL_I(ret, 0);
+	sqfs_free(ent);
 	sqfs_xattr_list_free(xattr);
 
 	ret = mem_stream.append(&mem_stream, ":-)\n", 4);
@@ -165,15 +229,16 @@ int main(int argc, char **argv)
 	TEST_EQUAL_I(ret, 0);
 
 	/* now try something with a long name */
-	memset(&sb, 0, sizeof(sb));
-	sb.st_mode = S_IFREG | 0755;
-	sb.st_mtime = TIME_STAMP;
-	sb.st_size = 42;
-	ret = write_tar_header(&mem_stream, &sb,
-			       "mnt/windows_drive/C/Documents and Settings/"
-			       "Joe Random User/My Documents/My Evil Plans/"
-			       "file format nonsense/really long name.doc",
-			       NULL, NULL, 12);
+	ent = sqfs_dir_entry_create("mnt/windows_drive/C/Documents and Settings/"
+				    "Joe Random User/My Documents/My Evil Plans/"
+				    "file format nonsense/really long name.doc",
+				    S_IFREG | 0755, 0);
+	TEST_NOT_NULL(ent);
+	ent->mtime = TIME_STAMP;
+	ent->size = 42;
+
+	ret = write_tar_header(&mem_stream, ent, NULL, NULL, 12);
+	sqfs_free(ent);
 	TEST_EQUAL_I(ret, 0);
 
 	ret = mem_stream.append(&mem_stream,
@@ -184,7 +249,6 @@ int main(int argc, char **argv)
 	TEST_EQUAL_I(ret, 0);
 
 	/* compare with reference */
-	TEST_EQUAL_UI(wr_offset, sizeof(wr_buffer));
 	TEST_EQUAL_UI(sizeof(rd_buffer), sizeof(wr_buffer));
 
 	ret = sqfs_istream_open_file(&fp,
@@ -202,7 +266,29 @@ int main(int argc, char **argv)
 
 	sqfs_drop(fp);
 
-	ret = memcmp(wr_buffer, rd_buffer, sizeof(rd_buffer));
-	TEST_EQUAL_I(ret, 0);
-	return EXIT_SUCCESS;
+	if (wr_offset != sizeof(wr_buffer)) {
+		fprintf(stderr, "Result data size should be: %u, "
+			"but actually is: %u\n", (unsigned int)wr_offset,
+			(unsigned int)sizeof(wr_buffer));
+		ret = -1;
+	}
+
+	for (size_t i = 0; i < wr_offset; i += 512) {
+		size_t diff = (wr_offset - i) > 512 ? 512 : (wr_offset - i);
+
+		if (memcmp(wr_buffer + i, rd_buffer + i, diff) != 0) {
+			fprintf(stderr, "Difference at offset %u:\n",
+				(unsigned int)i);
+
+			fputs("Reference:\n", stderr);
+			hex_dump(rd_buffer + i, diff);
+
+			fputs("Result:\n", stderr);
+			hex_dump(wr_buffer + i, diff);
+			ret = -1;
+			break;
+		}
+	}
+
+	return ret == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
 }

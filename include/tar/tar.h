@@ -55,13 +55,9 @@ extern "C" {
   The counter is an incremental record counter used if additional
   headers need to be generated.
 */
-int write_tar_header(sqfs_ostream_t *fp,
-		     const struct stat *sb, const char *name,
-		     const char *slink_target, const sqfs_xattr_t *xattr,
+int write_tar_header(sqfs_ostream_t *fp, const sqfs_dir_entry_t *ent,
+		     const char *link_target, const sqfs_xattr_t *xattr,
 		     unsigned int counter);
-
-int write_hard_link(sqfs_ostream_t *fp, const struct stat *sb, const char *name,
-		    const char *target, unsigned int counter);
 
 /* round up to block size and skip the entire entry */
 int read_header(sqfs_istream_t *fp, tar_header_decoded_t *out);

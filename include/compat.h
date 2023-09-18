@@ -142,22 +142,6 @@ static inline int _sz_mul_overflow(size_t a, size_t b, size_t *res)
 #define S_IWOTH SQFS_INODE_OTHERS_W
 #define S_IXOTH SQFS_INODE_OTHERS_X
 
-struct stat {
-	sqfs_u32 st_dev;
-	sqfs_u32 st_ino;
-	sqfs_u16 st_mode;
-	sqfs_u16 st_nlink;
-	sqfs_u32 st_uid;
-	sqfs_u32 st_gid;
-	sqfs_u32 st_rdev;
-	sqfs_u64 st_size;
-	sqfs_u32 st_blksize;
-	sqfs_u32 st_blocks;
-	sqfs_u64 st_atime;
-	sqfs_u64 st_mtime;
-	sqfs_u64 st_ctime;
-};
-
 /* lifted from musl libc */
 #define major(x) \
 	((unsigned)( (((x)>>31>>1) & 0xfffff000) | (((x)>>8) & 0x00000fff) ))
