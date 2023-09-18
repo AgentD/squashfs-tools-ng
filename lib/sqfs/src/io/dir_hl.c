@@ -134,6 +134,7 @@ static int next(sqfs_dir_iterator_t *base, sqfs_dir_entry_t **out)
 			*out = NULL;
 		}
 	} else {
+		(*out)->size = strlen(it->link_target);
 		(*out)->mode = SQFS_INODE_MODE_LNK | 0777;
 		(*out)->flags |= SQFS_DIR_ENTRY_FLAG_HARD_LINK;
 	}
