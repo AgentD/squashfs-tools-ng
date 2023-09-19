@@ -7,6 +7,8 @@
 #define SQFS_BUILDING_DLL
 #include "config.h"
 
+#include "sqfs/dir_entry.h"
+#include "sqfs/id_table.h"
 #include "sqfs/inode.h"
 #include "sqfs/error.h"
 #include "sqfs/dir.h"
@@ -376,5 +378,65 @@ int sqfs_inode_unpack_dir_index_entry(const sqfs_inode_generic_t *inode,
 
 	memcpy(*out, &ent, sizeof(ent));
 	memcpy((*out)->name, ptr + offset + sizeof(ent), ent.size + 1);
+	return 0;
+}
+
+int sqfs_dir_entry_from_inode(const char *name, size_t len,
+			      const sqfs_inode_generic_t *inode,
+			      const sqfs_id_table_t *idtbl,
+			      sqfs_dir_entry_t **out)
+{
+	sqfs_dir_entry_t *ent;
+	sqfs_u32 uid, gid;
+
+	if (sqfs_id_table_index_to_id(idtbl, inode->base.uid_idx, &uid))
+		return SQFS_ERROR_CORRUPTED;
+
+	if (sqfs_id_table_index_to_id(idtbl, inode->base.gid_idx, &gid))
+		return SQFS_ERROR_CORRUPTED;
+
+	len = len > 0 ? strnlen(name, len) : strlen(name);
+	ent = alloc_flex(sizeof(*ent), 1, len + 1);
+	if (ent == NULL)
+		return SQFS_ERROR_ALLOC;
+
+	memcpy(ent->name, name, len);
+	ent->mode = inode->base.mode;
+	ent->mtime = inode->base.mod_time;
+	ent->uid = uid;
+	ent->gid = gid;
+
+	switch (inode->base.type) {
+	case SQFS_INODE_BDEV:
+	case SQFS_INODE_CDEV:
+		ent->rdev = inode->data.dev.devno;
+		break;
+	case SQFS_INODE_EXT_BDEV:
+	case SQFS_INODE_EXT_CDEV:
+		ent->rdev = inode->data.dev_ext.devno;
+		break;
+	case SQFS_INODE_FILE:
+		ent->size = inode->data.file.file_size;
+		break;
+	case SQFS_INODE_EXT_FILE:
+		ent->size = inode->data.file_ext.file_size;
+		break;
+	case SQFS_INODE_DIR:
+		ent->size = inode->data.dir.size;
+		break;
+	case SQFS_INODE_EXT_DIR:
+		ent->size = inode->data.dir_ext.size;
+		break;
+	case SQFS_INODE_SLINK:
+		ent->size = inode->data.slink.target_size;
+		break;
+	case SQFS_INODE_EXT_SLINK:
+		ent->size = inode->data.slink_ext.target_size;
+		break;
+	default:
+		break;
+	}
+
+	*out = ent;
 	return 0;
 }

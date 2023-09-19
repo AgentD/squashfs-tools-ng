@@ -39,7 +39,6 @@ static int it_next(sqfs_dir_iterator_t *base, sqfs_dir_entry_t **out)
 {
 	iterator_t *it = (iterator_t *)base;
 	sqfs_dir_entry_t *ent = NULL;
-	sqfs_u32 uid, gid;
 	int ret;
 
 	sqfs_free(it->inode);
@@ -55,65 +54,14 @@ static int it_next(sqfs_dir_iterator_t *base, sqfs_dir_entry_t **out)
 	if (ret != 0)
 		goto fail;
 
-	ret = SQFS_ERROR_ALLOC;
-	ent = alloc_flex(sizeof(*ent), 1, it->dent->size + 2);
-	if (ent == NULL)
+	ret = sqfs_dir_entry_from_inode((const char *)it->dent->name,
+					it->dent->size + 1, it->inode,
+					it->id, &ent);
+	if (ret)
 		goto fail;
 
-	ret = SQFS_ERROR_CORRUPTED;
-	if (sqfs_id_table_index_to_id(it->id, it->inode->base.uid_idx, &uid))
-		goto fail;
-
-	if (sqfs_id_table_index_to_id(it->id, it->inode->base.gid_idx, &gid))
-		goto fail;
-
-	memcpy(ent->name, it->dent->name, it->dent->size + 1);
-
-	ent->mode = it->inode->base.mode;
-	ent->mtime = it->inode->base.mod_time;
-	ent->uid = uid;
-	ent->gid = gid;
 	ent->inode = it->state.ent_ref;
-	it->xattr_idx = 0xFFFFFFFF;
-
-	switch (it->inode->base.type) {
-	case SQFS_INODE_BDEV:
-	case SQFS_INODE_CDEV:
-		ent->rdev = it->inode->data.dev.devno;
-		break;
-	case SQFS_INODE_EXT_BDEV:
-	case SQFS_INODE_EXT_CDEV:
-		ent->rdev = it->inode->data.dev_ext.devno;
-		it->xattr_idx = it->inode->data.dev_ext.xattr_idx;
-		break;
-	case SQFS_INODE_FILE:
-		ent->size = it->inode->data.file.file_size;
-		break;
-	case SQFS_INODE_EXT_FILE:
-		ent->size = it->inode->data.file_ext.file_size;
-		it->xattr_idx = it->inode->data.file_ext.xattr_idx;
-		break;
-	case SQFS_INODE_DIR:
-		ent->size = it->inode->data.dir.size;
-		break;
-	case SQFS_INODE_EXT_DIR:
-		ent->size = it->inode->data.dir_ext.size;
-		it->xattr_idx = it->inode->data.dir_ext.xattr_idx;
-		break;
-	case SQFS_INODE_SLINK:
-		ent->size = it->inode->data.slink.target_size;
-		break;
-	case SQFS_INODE_EXT_SLINK:
-		ent->size = it->inode->data.slink_ext.target_size;
-		it->xattr_idx = it->inode->data.slink_ext.xattr_idx;
-		break;
-	case SQFS_INODE_EXT_FIFO:
-	case SQFS_INODE_EXT_SOCKET:
-		it->xattr_idx = it->inode->data.ipc_ext.xattr_idx;
-		break;
-	default:
-		break;
-	}
+	sqfs_inode_get_xattr_index(it->inode, &it->xattr_idx);
 
 	*out = ent;
 	return 0;

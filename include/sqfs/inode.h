@@ -741,6 +741,23 @@ int sqfs_inode_unpack_dir_index_entry(const sqfs_inode_generic_t *inode,
 				      sqfs_dir_index_t **out,
 				      size_t index);
 
+/**
+ * @brief Create a directory entry from an inode
+ *
+ * @param name The file name or path to store in the directory entry
+ * @param len The lengh of the file name, or 0 to use strlen internally
+ * @param inode The inode from which to use the data
+ * @param idtbl An ID table to use for resolving the inodes uid & gid
+ * @param out Returns a pointer to a @ref sqfs_dir_entry_t on success
+ *
+ * @return Zero on success, a negative @ref SQFS_ERROR value on failure
+ */
+SQFS_API
+int sqfs_dir_entry_from_inode(const char *name, size_t len,
+			      const sqfs_inode_generic_t *inode,
+			      const sqfs_id_table_t *idtbl,
+			      sqfs_dir_entry_t **out);
+
 #ifdef __cplusplus
 }
 #endif
