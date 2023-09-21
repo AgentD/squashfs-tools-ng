@@ -23,8 +23,8 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	topts.excludedirs = excludedirs;
-	topts.num_excludedirs = num_excludedirs;
+	topts.excludedirs = excludedirs.strings;
+	topts.num_excludedirs = excludedirs.count;
 
 	tar = tar_open_stream(input_file, &topts);
 	sqfs_drop(input_file);

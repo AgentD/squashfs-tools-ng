@@ -70,19 +70,15 @@ bool no_xattr = false;
 bool no_links = false;
 
 char *root_becomes = NULL;
-char **subdirs = NULL;
-size_t num_subdirs = 0;
-static size_t max_subdirs = 0;
+strlist_t subdirs = { 0, 0, 0 };
 int compressor = 0;
 
 const char *filename = NULL;
 
 void process_args(int argc, char **argv)
 {
-	size_t idx, new_count;
 	const char *name;
 	int i, ret;
-	char **new;
 
 	for (;;) {
 		i = getopt_long(argc, argv, short_opts, long_opts, NULL);
@@ -99,27 +95,10 @@ void process_args(int argc, char **argv)
 			}
 			break;
 		case 'd':
-			if (num_subdirs == max_subdirs) {
-				new_count = max_subdirs ? max_subdirs * 2 : 16;
-				new = realloc(subdirs,
-					      new_count * sizeof(subdirs[0]));
-				if (new == NULL)
-					goto fail_errno;
-
-				max_subdirs = new_count;
-				subdirs = new;
-			}
-
-			subdirs[num_subdirs] = strdup(optarg);
-			if (subdirs[num_subdirs] == NULL)
-				goto fail_errno;
-
-			if (canonicalize_name(subdirs[num_subdirs])) {
-				perror(optarg);
+			if (strlist_append(&subdirs, optarg)) {
+				fputs("out-of-memory\n", stderr);
 				goto fail;
 			}
-
-			++num_subdirs;
 			break;
 		case 'r':
 			free(root_becomes);
@@ -175,6 +154,14 @@ void process_args(int argc, char **argv)
 		}
 	}
 
+	for (size_t idx = 0; idx < subdirs.count; ++idx) {
+		if (canonicalize_name(subdirs.strings[idx])) {
+			fprintf(stderr, "Invalid name `%s`\n",
+				subdirs.strings[idx]);
+			goto fail;
+		}
+	}
+
 	if (optind >= argc) {
 		fputs("Missing argument: squashfs image\n", stderr);
 		goto fail_arg;
@@ -187,7 +174,7 @@ void process_args(int argc, char **argv)
 		goto fail_arg;
 	}
 
-	if (num_subdirs > 1)
+	if (subdirs.count > 1)
 		keep_as_dir = true;
 
 	return;
@@ -204,9 +191,7 @@ out_success:
 	ret = EXIT_SUCCESS;
 	goto out_exit;
 out_exit:
-	for (idx = 0; idx < num_subdirs; ++idx)
-		free(subdirs[idx]);
+	strlist_cleanup(&subdirs);
 	free(root_becomes);
-	free(subdirs);
 	exit(ret);
 }

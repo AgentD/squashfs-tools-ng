@@ -11,6 +11,7 @@
 #include "common.h"
 
 #include "util/util.h"
+#include "util/strlist.h"
 #include "tar/tar.h"
 #include "xfrm/compress.h"
 #include "io/xfrm.h"
@@ -30,8 +31,7 @@ extern bool no_xattr;
 extern bool no_links;
 
 extern char *root_becomes;
-extern char **subdirs;
-extern size_t num_subdirs;
+extern strlist_t subdirs;
 extern int compressor;
 
 extern const char *filename;

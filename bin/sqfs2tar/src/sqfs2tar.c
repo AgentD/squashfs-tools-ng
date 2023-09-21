@@ -171,9 +171,7 @@ int main(int argc, char **argv)
 out:
 	sqfs_drop(it);
 	sqfs_drop(out_file);
-	for (i = 0; i < num_subdirs; ++i)
-		free(subdirs[i]);
-	free(subdirs);
+	strlist_cleanup(&subdirs);
 	free(root_becomes);
 	return status;
 }

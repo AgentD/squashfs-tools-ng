@@ -12,6 +12,7 @@
 #include "compat.h"
 
 #include "util/util.h"
+#include "util/strlist.h"
 #include "tar/tar.h"
 #include "tar/format.h"
 #include "xfrm/compress.h"
@@ -29,8 +30,7 @@ extern bool no_tail_pack;
 extern bool no_symlink_retarget;
 extern sqfs_writer_cfg_t cfg;
 extern char *root_becomes;
-extern char **excludedirs;
-extern size_t num_excludedirs;
+extern strlist_t excludedirs;
 
 void process_args(int argc, char **argv);
 

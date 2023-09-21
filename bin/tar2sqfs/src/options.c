@@ -93,9 +93,7 @@ bool no_tail_pack = false;
 bool no_symlink_retarget = false;
 sqfs_writer_cfg_t cfg;
 char *root_becomes = NULL;
-char **excludedirs = NULL;
-size_t num_excludedirs = 0;
-static size_t max_excludedirs = 0;
+strlist_t excludedirs = { 0, 0, 0 };
 
 static void input_compressor_print_available(void)
 {
@@ -119,10 +117,8 @@ static void input_compressor_print_available(void)
 
 void process_args(int argc, char **argv)
 {
-	size_t idx, new_count;
 	bool have_compressor;
 	int i, ret;
-	char **new;
 
 	sqfs_writer_cfg_init(&cfg);
 
@@ -222,29 +218,11 @@ void process_args(int argc, char **argv)
 			cfg.quiet = true;
 			break;
 		case 'E':
-			if (num_excludedirs == max_excludedirs) {
-				new_count = max_excludedirs ? max_excludedirs * 2 : 16;
-				new = realloc(excludedirs,
-					      new_count * sizeof(excludedirs[0]));
-				if (new == NULL)
-					goto fail_errno;
-
-				max_excludedirs = new_count;
-				excludedirs = new;
-			}
-
-			excludedirs[num_excludedirs] = strdup(optarg);
-			if (excludedirs[num_excludedirs] == NULL)
-				goto fail_errno;
-
-			if (canonicalize_name(excludedirs[num_excludedirs])) {
-				perror(optarg);
+			if (strlist_append(&excludedirs, optarg)) {
+				fputs("out-of-memory\n", stderr);
 				goto fail;
 			}
-
-			++num_excludedirs;
 			break;
-
 		case 'h':
 			printf(usagestr, SQFS_DEFAULT_BLOCK_SIZE,
 			       SQFS_DEVBLK_SIZE);
@@ -256,6 +234,14 @@ void process_args(int argc, char **argv)
 			goto out_success;
 		default:
 			goto fail_arg;
+		}
+	}
+
+	for (size_t idx = 0; idx < excludedirs.count; ++idx) {
+		if (canonicalize_name(excludedirs.strings[idx])) {
+			fprintf(stderr, "Invalid name `%s`\n",
+				excludedirs.strings[idx]);
+			goto fail;
 		}
 	}
 
@@ -282,9 +268,6 @@ void process_args(int argc, char **argv)
 		goto fail_arg;
 	}
 	return;
-fail_errno:
-	perror("parsing options");
-	goto fail;
 fail_arg:
 	fputs("Try `tar2sqfsr --help' for more information.\n", stderr);
 	goto fail;
@@ -295,9 +278,7 @@ out_success:
 	ret = EXIT_SUCCESS;
 	goto out_exit;
 out_exit:
-	for (idx = 0; idx < num_excludedirs; ++idx)
-		free(excludedirs[idx]);
+	strlist_cleanup(&excludedirs);
 	free(root_becomes);
-	free(excludedirs);
 	exit(ret);
 }

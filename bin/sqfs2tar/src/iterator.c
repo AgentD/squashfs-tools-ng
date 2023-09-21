@@ -56,21 +56,21 @@ static bool keep_entry(const sqfs_dir_entry_t *ent)
 {
 	size_t nlen;
 
-	if (num_subdirs == 0)
+	if (subdirs.count == 0)
 		return true;
 
 	nlen = strlen(ent->name);
 
-	for (size_t i = 0; i < num_subdirs; ++i) {
-		size_t plen = strlen(subdirs[i]);
+	for (size_t i = 0; i < subdirs.count; ++i) {
+		size_t plen = strlen(subdirs.strings[i]);
 
 		if (nlen <= plen) {
-			if ((nlen == plen || subdirs[i][nlen] == '/') &&
-			    strncmp(subdirs[i], ent->name, nlen) == 0) {
+			if ((nlen == plen || subdirs.strings[i][nlen] == '/') &&
+			    strncmp(subdirs.strings[i], ent->name, nlen) == 0) {
 				return true;
 			}
 		} else if (ent->name[plen] == '/' &&
-			   strncmp(subdirs[i], ent->name, plen) == 0) {
+			   strncmp(subdirs.strings[i], ent->name, plen) == 0) {
 			return true;
 		}
 	}
@@ -124,8 +124,8 @@ static int next(sqfs_dir_iterator_t *base, sqfs_dir_entry_t **out)
 
 		if (keep_entry(ent)) {
 			/* XXX: skip the entry, but we MUST recurse here! */
-			if (num_subdirs == 1 && !keep_as_dir &&
-			    strlen(ent->name) <= strlen(subdirs[0])) {
+			if (subdirs.count == 1 && !keep_as_dir &&
+			    strlen(ent->name) <= strlen(subdirs.strings[0])) {
 				sqfs_free(ent);
 				continue;
 			}
@@ -138,8 +138,8 @@ static int next(sqfs_dir_iterator_t *base, sqfs_dir_entry_t **out)
 		sqfs_free(ent);
 	}
 
-	if (num_subdirs == 1 && !keep_as_dir) {
-		size_t plen = strlen(subdirs[0]) + 1;
+	if (subdirs.count == 1 && !keep_as_dir) {
+		size_t plen = strlen(subdirs.strings[0]) + 1;
 
 		memmove(ent->name, ent->name + plen,
 			strlen(ent->name + plen) + 1);
