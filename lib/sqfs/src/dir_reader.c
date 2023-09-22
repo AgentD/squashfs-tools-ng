@@ -296,3 +296,78 @@ int sqfs_dir_reader_resolve_inum(sqfs_dir_reader_t *rd,
 	*ref = *((sqfs_u64 *)rbtree_node_value(node));
 	return 0;
 }
+
+int sqfs_dir_reader_resolve_path(sqfs_dir_reader_t *rd, const char *path,
+				 const sqfs_inode_generic_t *root,
+				 sqfs_u64 *out)
+{
+	bool is_first = true;
+
+	while (path != NULL && *path != '\0') {
+		sqfs_dir_reader_state_t state;
+		int ret;
+
+		if (*path == '/') {
+			while (*path == '/')
+				++path;
+			continue;
+		}
+
+		if (is_first && root != NULL) {
+			ret = sqfs_dir_reader_open_dir(rd, root, &state, 0);
+		} else {
+			sqfs_inode_generic_t *inode = NULL;
+
+			if (is_first)
+				*out = rd->super.root_inode_ref;
+
+			ret = sqfs_dir_reader_get_inode(rd, *out, &inode);
+			if (ret == 0) {
+				ret = sqfs_dir_reader_open_dir(rd, inode,
+							       &state, 0);
+			}
+
+			sqfs_free(inode);
+		}
+
+		is_first = false;
+		if (ret != 0)
+			return ret;
+
+		for (;;) {
+			sqfs_dir_node_t *ent;
+			size_t len;
+
+			ret = sqfs_dir_reader_read(rd, &state, &ent);
+			if (ret < 0)
+				return ret;
+			if (ret > 0)
+				return SQFS_ERROR_NO_ENTRY;
+
+			len = ent->size + 1;
+			ret = strncmp((const char *)ent->name, path, len);
+			sqfs_free(ent);
+
+			if (ret == 0 &&
+			    (path[len] == '/' || path[len] == '\0')) {
+				path += len;
+				break;
+			}
+		}
+
+		*out = state.ent_ref;
+	}
+
+	if (is_first) {
+		if (root == NULL) {
+			*out = rd->super.root_inode_ref;
+			return 0;
+		}
+
+		return sqfs_dir_reader_resolve_inum(rd,
+						    root->base.inode_number,
+						    out);
+	}
+
+	return 0;
+}

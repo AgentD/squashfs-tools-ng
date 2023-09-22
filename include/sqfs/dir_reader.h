@@ -273,6 +273,23 @@ SQFS_API int sqfs_dir_reader_get_root_inode(sqfs_dir_reader_t *rd,
 SQFS_API int sqfs_dir_reader_resolve_inum(sqfs_dir_reader_t *rd,
 					  sqfs_u32 inode, sqfs_u64 *ref);
 
+/**
+ * @brief Try to resole a path into an inode reference
+ *
+ * @memberof sqfs_dir_reader_t
+ *
+ * @param rd A pointer to a directory reader.
+ * @param path A path to resolve, NULL is interpreted as empty path.
+ * @param root A directory inode to start from or NULL for the filesystem root.
+ * @param out Retrns an inode reference on success.
+ *
+ * @return Zero on success, a negative @ref SQFS_ERROR number on failure.
+ */
+SQFS_API int sqfs_dir_reader_resolve_path(sqfs_dir_reader_t *rd,
+					  const char *path,
+					  const sqfs_inode_generic_t *root,
+					  sqfs_u64 *out);
+
 #ifdef __cplusplus
 }
 #endif

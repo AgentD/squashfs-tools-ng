@@ -34,55 +34,22 @@ static char *prompt;
 
 static int resolve_ref(const char *path, sqfs_u64 *out)
 {
-	sqfs_dir_reader_state_t state;
 	sqfs_inode_generic_t *inode;
-	sqfs_dir_node_t *ent;
-	const char *end;
 	sqfs_u64 ref;
-	size_t len;
 	int ret;
 
-	ref = *path == '/' ? super.root_inode_ref : working_dir;
+	ref = (*path == '/') ? super.root_inode_ref : working_dir;
 
-	while (path != NULL && *path != '\0') {
-		if (*path == '/') {
-			while (*path == '/')
-				++path;
-			continue;
-		}
-
-		end = strchr(path, '/');
-		len = (end == NULL) ? strlen(path) : (size_t)(end - path);
-
-		ret = sqfs_dir_reader_get_inode(dr, ref, &inode);
-		if (ret != 0)
-			return ret;
-
-		ret = sqfs_dir_reader_open_dir(dr, inode, &state, 0);
+	ret = sqfs_dir_reader_get_inode(dr, ref, &inode);
+	if (ret == 0) {
+		ret = sqfs_dir_reader_resolve_path(dr, path, inode, &ref);
 		sqfs_free(inode);
 
-		if (ret != 0)
-			return ret;
-
-		do {
-			ret = sqfs_dir_reader_read(dr, &state, &ent);
-			if (ret < 0)
-				return ret;
-			if (ret > 0)
-				return 1;
-
-			ret = strncmp((const char *)ent->name, path, len);
-			free(ent);
-			if (ret == 0 && ent->name[len] != '\0')
-				return 1;
-		} while (ret != 0);
-
-		ref = state.ent_ref;
-		path = end;
+		if (ret == 0)
+			*out = ref;
 	}
 
-	*out = ref;
-	return 0;
+	return ret;
 }
 
 static char *add_prefix(const char *pfx, size_t pfxlen, char *path)
