@@ -9,7 +9,6 @@
 #include "sqfs/block.h"
 #include "util/test.h"
 #include "util/util.h"
-#include "io/mem.h"
 #include "mkfs.h"
 
 static const char *listing =

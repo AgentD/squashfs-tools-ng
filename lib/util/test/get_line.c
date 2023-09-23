@@ -5,8 +5,8 @@
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
 #include "util/parse.h"
-#include "io/mem.h"
 #include "util/test.h"
+#include "common.h"
 
 typedef struct {
 	size_t line_num;

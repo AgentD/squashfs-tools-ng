@@ -6,7 +6,8 @@ libcommon_a_SOURCES = include/common.h include/simple_writer.h \
 	lib/common/src/writer/init.c lib/common/src/writer/cleanup.c \
 	lib/common/src/writer/serialize_fstree.c lib/common/src/writer/finish.c\
 	lib/common/src/fstree_cli.c lib/common/src/perror.c \
-	lib/common/src/dir_tree.c lib/common/src/read_tree.c
+	lib/common/src/dir_tree.c lib/common/src/read_tree.c \
+	lib/common/src/stream.c
 libcommon_a_CFLAGS = $(AM_CFLAGS) $(LZO_CFLAGS)
 
 if WITH_LZO
@@ -15,14 +16,18 @@ endif
 
 noinst_LIBRARIES += libcommon.a
 
+test_istream_mem_SOURCES = lib/common/test/istream_mem.c
+test_istream_mem_LDADD = libcommon.a libsquashfs.la libcompat.a
+test_istream_mem_CPPFLAGS = $(AM_CPPFLAGS)
+
 test_fstree_cli_SOURCES = lib/common/test/fstree_cli.c
-test_fstree_cli_LDADD = libcommon.a libio.a libutil.a libcompat.a
+test_fstree_cli_LDADD = libcommon.a libutil.a libcompat.a
 
 test_get_node_path_SOURCES = lib/common/test/get_node_path.c
 test_get_node_path_LDADD = libcommon.a libsquashfs.la libcompat.a
 
 LIBCOMMON_TESTS = \
-	test_fstree_cli test_get_node_path
+	test_istream_mem test_fstree_cli test_get_node_path
 
 check_PROGRAMS += $(LIBCOMMON_TESTS)
 TESTS += $(LIBCOMMON_TESTS)

@@ -5,13 +5,23 @@
  * Copyright (C) 2023 David Oberhollenzer <goliath@infraroot.at>
  */
 #include "config.h"
-#include "io/mem.h"
 #include "compat.h"
+#include "common.h"
 #include "sqfs/io.h"
 
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+
+#if defined(_WIN32) || defined(__WINDOWS__)
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#else
+#include <unistd.h>
+#define STD_INPUT_HANDLE STDIN_FILENO
+#define STD_OUTPUT_HANDLE STDOUT_FILENO
+#define GetStdHandle(hnd) hnd
+#endif
 
 typedef struct {
 	sqfs_istream_t base;
@@ -107,4 +117,19 @@ sqfs_istream_t *istream_memory_create(const char *name, size_t bufsz,
 	strm->advance_buffer = mem_advance_buffer;
 	strm->get_filename = mem_in_get_filename;
 	return strm;
+}
+
+int istream_open_stdin(sqfs_istream_t **out)
+{
+	sqfs_file_handle_t hnd = GetStdHandle(STD_INPUT_HANDLE);
+
+	return sqfs_istream_open_handle(out, "stdin", hnd, 0);
+}
+
+int ostream_open_stdout(sqfs_ostream_t **out)
+{
+	sqfs_file_handle_t hnd = GetStdHandle(STD_OUTPUT_HANDLE);
+
+	return sqfs_ostream_open_handle(out, "stdout", hnd,
+					SQFS_FILE_OPEN_NO_SPARSE);
 }

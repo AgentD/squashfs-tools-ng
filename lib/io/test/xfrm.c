@@ -9,7 +9,7 @@
 #include "util/test.h"
 #include "sqfs/io.h"
 #include "io/xfrm.h"
-#include "io/mem.h"
+#include "common.h"
 
 static const sqfs_u8 blob_in[] = {
 #if defined(DO_XZ)

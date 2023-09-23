@@ -7,7 +7,6 @@
 #include "config.h"
 
 #include "util/test.h"
-#include "io/mem.h"
 #include "mkfs.h"
 
 const char *listing =

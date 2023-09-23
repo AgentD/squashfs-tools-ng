@@ -10,7 +10,6 @@
 #include "config.h"
 #include "compat.h"
 #include "io/xfrm.h"
-#include "io/std.h"
 #include "xfrm/compress.h"
 
 #include <string.h>

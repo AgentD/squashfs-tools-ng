@@ -8,7 +8,7 @@
 
 #include "util/test.h"
 #include "sqfs/io.h"
-#include "io/mem.h"
+#include "common.h"
 
 static const sqfs_u64 end0 = 449;	/* region 1: filled with 'A' */
 static const sqfs_u64 end1 = 521;	/* region 2: filled with 'B' */

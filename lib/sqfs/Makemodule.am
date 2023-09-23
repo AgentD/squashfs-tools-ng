@@ -125,19 +125,19 @@ xattr_benchmark_SOURCES = lib/sqfs/test/xattr_benchmark.c
 xattr_benchmark_LDADD = libcommon.a libsquashfs.la libcompat.a
 
 test_istream_read_SOURCES = lib/sqfs/test/istream_read.c
-test_istream_read_LDADD = libio.a libsquashfs.la libutil.a libcompat.a
+test_istream_read_LDADD = libcommon.a libsquashfs.la libutil.a libcompat.a
 
 test_istream_skip_SOURCES = lib/sqfs/test/istream_skip.c
-test_istream_skip_LDADD = libsquashfs.la libio.a libutil.a libcompat.a
+test_istream_skip_LDADD = libcommon.a libsquashfs.la libutil.a libcompat.a
 
 test_stream_splice_SOURCES = lib/sqfs/test/stream_splice.c
-test_stream_splice_LDADD = libsquashfs.la libio.a libutil.a libcompat.a
+test_stream_splice_LDADD = libcommon.a libsquashfs.la libutil.a libcompat.a
 
 test_rec_dir_SOURCES = lib/sqfs/test/rec_dir.c
-test_rec_dir_LDADD = libsquashfs.la libio.a libutil.a libcompat.a
+test_rec_dir_LDADD = libsquashfs.la libutil.a libcompat.a
 
 test_hl_dir_SOURCES = lib/sqfs/test/hl_dir.c
-test_hl_dir_LDADD = libsquashfs.la libio.a libutil.a libcompat.a
+test_hl_dir_LDADD = libsquashfs.la libutil.a libcompat.a
 
 LIBSQFS_TESTS = \
 	test_abi test_xattr test_table test_xattr_writer \

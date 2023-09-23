@@ -36,7 +36,7 @@ endif
 noinst_LIBRARIES += libutil.a
 
 test_str_table_SOURCES = lib/util/test/str_table.c
-test_str_table_LDADD = libio.a libsquashfs.la libutil.a libcompat.a
+test_str_table_LDADD = libcommon.a libsquashfs.la libutil.a libcompat.a
 test_str_table_CPPFLAGS = $(AM_CPPFLAGS) -DTESTPATH=$(top_srcdir)/lib/util/test
 
 test_rbtree_SOURCES = lib/util/test/rbtree.c
@@ -79,7 +79,7 @@ test_base64_decode_SOURCES = lib/util/test/base64_decode.c
 test_base64_decode_LDADD = libutil.a libcompat.a
 
 test_get_line_SOURCES = lib/util/test/get_line.c
-test_get_line_LDADD = libutil.a libio.a libcompat.a
+test_get_line_LDADD = libcommon.a libsquashfs.la libutil.a libcompat.a
 
 test_split_line_SOURCES = lib/util/test/split_line.c
 test_split_line_LDADD = libutil.a libcompat.a

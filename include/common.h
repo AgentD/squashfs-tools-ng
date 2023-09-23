@@ -22,7 +22,6 @@
 #include "simple_writer.h"
 #include "compress_cli.h"
 #include "dir_tree.h"
-#include "io/std.h"
 #include "compat.h"
 #include "fstree.h"
 
@@ -53,5 +52,12 @@ void print_size(sqfs_u64 size, char *buffer, bool round_to_int);
   -1 on failure. Prints an error message to stderr on failure.
  */
 int parse_fstree_defaults(fstree_defaults_t *out, char *str);
+
+int istream_open_stdin(sqfs_istream_t **out);
+
+int ostream_open_stdout(sqfs_ostream_t **out);
+
+sqfs_istream_t *istream_memory_create(const char *name, size_t bufsz,
+				      const void *data, size_t size);
 
 #endif /* COMMON_H */
