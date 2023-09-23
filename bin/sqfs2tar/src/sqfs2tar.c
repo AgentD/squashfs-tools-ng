@@ -79,7 +79,6 @@ int main(int argc, char **argv)
 {
 	int ret, status = EXIT_FAILURE;
 	sqfs_dir_iterator_t *it = NULL;
-	size_t i;
 
 	process_args(argc, argv);
 

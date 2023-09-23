@@ -157,7 +157,7 @@ int process_tarball(sqfs_dir_iterator_t *it, sqfs_writer_t *sqfs)
 	size_t rootlen = root_becomes == NULL ? 0 : strlen(root_becomes);
 
 	for (;;) {
-		bool skip = false, is_root = false, is_prefixed = true;
+		bool is_root = false, is_prefixed = true;
 		sqfs_dir_entry_t *ent = NULL;
 		char *link = NULL;
 		int ret;
