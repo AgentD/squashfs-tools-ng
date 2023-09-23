@@ -9,6 +9,7 @@
 #include "sqfs/io.h"
 #include "util/test.h"
 #include "sqfs/xattr.h"
+#include "sqfs/dir_entry.h"
 #include "compat.h"
 
 static void hex_dump(const sqfs_u8 *data, size_t size)

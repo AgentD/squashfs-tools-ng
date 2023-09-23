@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: LGPL-3.0-or-later */
 /*
- * dir_iterator.h
+ * dir_tree_iterator.h
  *
  * Copyright (C) 2023 David Oberhollenzer <goliath@infraroot.at>
  */

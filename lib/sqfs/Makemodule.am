@@ -139,11 +139,18 @@ test_rec_dir_LDADD = libsquashfs.la libutil.a libcompat.a
 test_hl_dir_SOURCES = lib/sqfs/test/hl_dir.c
 test_hl_dir_LDADD = libsquashfs.la libutil.a libcompat.a
 
+test_dir_iterator_SOURCES = lib/sqfs/test/dir_iterator.c
+test_dir_iterator_LDADD = libsquashfs.la libutil.a libcompat.a
+test_dir_iterator_CPPFLAGS = $(AM_CPPFLAGS)
+test_dir_iterator_CPPFLAGS += -DTESTPATH=$(top_srcdir)/lib/sqfs/test/testdir
+
 LIBSQFS_TESTS = \
 	test_abi test_xattr test_table test_xattr_writer \
 	test_istream_read test_istream_skip test_stream_splice test_rec_dir \
-	test_hl_dir
+	test_hl_dir test_dir_iterator
 noinst_PROGRAMS += xattr_benchmark
 
 check_PROGRAMS += $(LIBSQFS_TESTS)
 TESTS += $(LIBSQFS_TESTS)
+
+EXTRA_DIST += $(top_srcdir)/lib/sqfs/test/testdir

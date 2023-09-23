@@ -7,7 +7,8 @@ libcommon_a_SOURCES = include/common.h include/simple_writer.h \
 	lib/common/src/writer/serialize_fstree.c lib/common/src/writer/finish.c\
 	lib/common/src/fstree_cli.c lib/common/src/perror.c \
 	lib/common/src/dir_tree.c lib/common/src/read_tree.c \
-	lib/common/src/stream.c
+	lib/common/src/stream.c lib/common/src/dir_tree_iterator.c \
+	include/dir_tree_iterator.h lib/common/src/dir_tree_iterator.c
 libcommon_a_CFLAGS = $(AM_CFLAGS) $(LZO_CFLAGS)
 
 if WITH_LZO
@@ -26,8 +27,24 @@ test_fstree_cli_LDADD = libcommon.a libutil.a libcompat.a
 test_get_node_path_SOURCES = lib/common/test/get_node_path.c
 test_get_node_path_LDADD = libcommon.a libsquashfs.la libcompat.a
 
+test_dir_tree_iterator_SOURCES = lib/common/test/dir_tree_iterator.c
+test_dir_tree_iterator_LDADD = libcommon.a libsquashfs.la libutil.a libcompat.a
+test_dir_tree_iterator_CPPFLAGS = $(AM_CPPFLAGS)
+test_dir_tree_iterator_CPPFLAGS += -DTESTPATH=$(top_srcdir)/lib/sqfs/test/testdir
+
+test_dir_tree_iterator2_SOURCES = lib/common/test/dir_tree_iterator2.c
+test_dir_tree_iterator2_LDADD = libcommon.a libsquashfs.la libutil.a libcompat.a
+test_dir_tree_iterator2_CPPFLAGS = $(AM_CPPFLAGS)
+test_dir_tree_iterator2_CPPFLAGS += -DTESTPATH=$(top_srcdir)/lib/sqfs/test/testdir
+
+test_dir_tree_iterator3_SOURCES = lib/common/test/dir_tree_iterator3.c
+test_dir_tree_iterator3_LDADD = libcommon.a libsquashfs.la libutil.a libcompat.a
+test_dir_tree_iterator3_CPPFLAGS = $(AM_CPPFLAGS)
+test_dir_tree_iterator3_CPPFLAGS += -DTESTPATH=$(top_srcdir)/lib/sqfs/test/testdir
+
 LIBCOMMON_TESTS = \
-	test_istream_mem test_fstree_cli test_get_node_path
+	test_istream_mem test_fstree_cli test_get_node_path \
+	test_dir_tree_iterator test_dir_tree_iterator2 test_dir_tree_iterator3
 
 check_PROGRAMS += $(LIBCOMMON_TESTS)
 TESTS += $(LIBCOMMON_TESTS)

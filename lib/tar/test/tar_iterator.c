@@ -9,6 +9,7 @@
 #include "util/test.h"
 #include "sqfs/error.h"
 #include "sqfs/io.h"
+#include "sqfs/dir_entry.h"
 
 #ifndef TESTUID
 #define TESTUID 1000

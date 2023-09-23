@@ -28,7 +28,6 @@ TESTS =
 include lib/sqfs/Makemodule.am
 include lib/util/Makemodule.am
 include lib/xfrm/Makemodule.am
-include lib/io/Makemodule.am
 
 include lib/fstree/Makemodule.am
 include lib/common/Makemodule.am

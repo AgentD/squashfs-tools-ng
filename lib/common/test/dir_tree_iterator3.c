@@ -6,11 +6,12 @@
  */
 #include "config.h"
 
-#include "io/dir_iterator.h"
+#include "dir_tree_iterator.h"
 #include "sqfs/error.h"
 #include "util/test.h"
 #include "sqfs/io.h"
 #include "compat.h"
+#include "common.h"
 
 static int compare_entries(const void *a, const void *b)
 {

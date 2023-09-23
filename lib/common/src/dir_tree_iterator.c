@@ -5,7 +5,7 @@
  * Copyright (C) 2023 David Oberhollenzer <goliath@infraroot.at>
  */
 #include "config.h"
-#include "io/dir_iterator.h"
+#include "dir_tree_iterator.h"
 #include "util/util.h"
 #include "sqfs/error.h"
 #include "sqfs/io.h"

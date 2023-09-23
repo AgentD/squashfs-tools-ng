@@ -11,7 +11,7 @@
 #include "config.h"
 
 #include "common.h"
-#include "io/dir_iterator.h"
+#include "dir_tree_iterator.h"
 #include "util/util.h"
 #include "util/parse.h"
 

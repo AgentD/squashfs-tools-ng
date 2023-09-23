@@ -12,6 +12,7 @@
 #include "util/util.h"
 #include "xfrm/wrap.h"
 #include "compat.h"
+#include "sqfs/dir_entry.h"
 
 #include <stdlib.h>
 #include <string.h>

@@ -8,6 +8,7 @@
 #include "tar/tar.h"
 #include "util/test.h"
 #include "sqfs/io.h"
+#include "sqfs/dir_entry.h"
 
 static const struct {
 	uint64_t offset;

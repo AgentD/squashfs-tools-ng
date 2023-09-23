@@ -10,6 +10,7 @@
 #include "util/test.h"
 #include "sqfs/error.h"
 #include "sqfs/io.h"
+#include "sqfs/dir_entry.h"
 
 int main(int argc, char **argv)
 {
