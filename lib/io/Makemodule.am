@@ -1,6 +1,5 @@
-libio_a_SOURCES = include/io/xfrm.h include/io/dir_iterator.h \
-	lib/io/src/internal.h lib/io/src/xfrm/ostream.c \
-	lib/io/src/xfrm/istream.c lib/io/src/dir_tree_iterator.c
+libio_a_SOURCES = include/io/dir_iterator.h \
+	lib/io/src/dir_tree_iterator.c
 libio_a_CFLAGS = $(AM_CFLAGS) $(ZLIB_CFLAGS) $(XZ_CFLAGS)
 libio_a_CFLAGS += $(ZSTD_CFLAGS) $(BZIP2_CFLAGS)
 
@@ -28,44 +27,6 @@ test_dir_tree_iterator3_SOURCES = lib/io/test/dir_tree_iterator3.c
 test_dir_tree_iterator3_LDADD = libio.a libsquashfs.la libutil.a libcompat.a
 test_dir_tree_iterator3_CPPFLAGS = $(AM_CPPFLAGS)
 test_dir_tree_iterator3_CPPFLAGS += -DTESTPATH=$(top_srcdir)/lib/io/test/testdir
-
-if WITH_XZ
-test_io_xfrm_xz_SOURCES = lib/io/test/xfrm.c
-test_io_xfrm_xz_LDADD = libcommon.a libsquashfs.la libio.a libxfrm.a \
-	libcompat.a $(XZ_LIBS)
-test_io_xfrm_xz_CPPFLAGS = $(AM_CPPFLAGS) -DDO_XZ=1
-
-LIBIO_TESTS += test_io_xfrm_xz
-endif
-
-if WITH_BZIP2
-test_io_xfrm_bzip2_SOURCES = lib/io/test/xfrm.c
-test_io_xfrm_bzip2_LDADD = libcommon.a libsquashfs.la libio.a libxfrm.a \
-	libcompat.a $(BZIP2_LIBS)
-test_io_xfrm_bzip2_CPPFLAGS = $(AM_CPPFLAGS) -DDO_BZIP2=1
-
-LIBIO_TESTS += test_io_xfrm_bzip2
-endif
-
-if WITH_GZIP
-test_io_xfrm_gzip_SOURCES = lib/io/test/xfrm.c
-test_io_xfrm_gzip_LDADD = libcommon.a libsquashfs.la libio.a libxfrm.a \
-	libcompat.a $(ZLIB_LIBS)
-test_io_xfrm_gzip_CPPFLAGS = $(AM_CPPFLAGS) -DDO_GZIP=1
-
-LIBIO_TESTS += test_io_xfrm_gzip
-endif
-
-if WITH_ZSTD
-if HAVE_ZSTD_STREAM
-test_io_xfrm_zstd_SOURCES = lib/io/test/xfrm.c
-test_io_xfrm_zstd_LDADD = libcommon.a libsquashfs.la libio.a libxfrm.a \
-	libcompat.a $(ZSTD_LIBS)
-test_io_xfrm_zstd_CPPFLAGS = $(AM_CPPFLAGS) -DDO_ZSTD=1
-
-LIBIO_TESTS += test_io_xfrm_zstd
-endif
-endif
 
 check_PROGRAMS += $(LIBIO_TESTS)
 TESTS += $(LIBIO_TESTS)

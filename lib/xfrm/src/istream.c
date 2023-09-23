@@ -4,9 +4,20 @@
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
-#include "../internal.h"
+#include "config.h"
+#include "compat.h"
 #include "sqfs/io.h"
 #include "sqfs/error.h"
+#include "xfrm/compress.h"
+#include "xfrm/wrap.h"
+
+#include <string.h>
+#include <stdlib.h>
+#include <assert.h>
+#include <ctype.h>
+#include <errno.h>
+
+#define BUFSZ (262144)
 
 typedef struct istream_xfrm_t {
 	sqfs_istream_t base;

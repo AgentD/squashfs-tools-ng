@@ -1,11 +1,11 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 /*
- * xfrm.h
+ * wrap.h
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
-#ifndef IO_XFRM_H
-#define IO_XFRM_H
+#ifndef XFRM_WRAP_H
+#define XFRM_WRAP_H
 
 #include "sqfs/predef.h"
 #include "xfrm/stream.h"
@@ -52,4 +52,4 @@ SQFS_INTERNAL sqfs_ostream_t *ostream_xfrm_create(sqfs_ostream_t *strm,
 }
 #endif
 
-#endif /* IO_XFRM_H */
+#endif /* XFRM_WRAP_H */

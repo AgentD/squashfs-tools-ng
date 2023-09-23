@@ -10,7 +10,7 @@
 #include "sqfs/error.h"
 #include "sqfs/xattr.h"
 #include "util/util.h"
-#include "io/xfrm.h"
+#include "xfrm/wrap.h"
 #include "compat.h"
 
 #include <stdlib.h>

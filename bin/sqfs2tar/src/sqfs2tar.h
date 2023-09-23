@@ -14,7 +14,7 @@
 #include "util/strlist.h"
 #include "tar/tar.h"
 #include "xfrm/compress.h"
-#include "io/xfrm.h"
+#include "xfrm/wrap.h"
 
 #include <getopt.h>
 #include <string.h>
