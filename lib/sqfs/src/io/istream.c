@@ -113,11 +113,12 @@ static void file_advance_buffer(sqfs_istream_t *strm, size_t count)
 {
 	file_istream_t *file = (file_istream_t *)strm;
 
-	assert(count <= file->buffer_used);
-
-	file->buffer_offset += count;
-
-	assert(file->buffer_offset <= file->buffer_used);
+	if (count < (file->buffer_used - file->buffer_offset)) {
+		file->buffer_offset += count;
+	} else {
+		file->buffer_offset = 0;
+		file->buffer_used = 0;
+	}
 }
 
 static const char *file_get_filename(sqfs_istream_t *strm)
