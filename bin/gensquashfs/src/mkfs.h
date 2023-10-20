@@ -74,8 +74,8 @@ struct XattrMap {
 
 void process_command_line(options_t *opt, int argc, char **argv);
 
-int xattrs_from_dir(fstree_t *fs, const char *path, void *selinux_handle,
-		    void *xattr_map, sqfs_xattr_writer_t *xwr, bool scan_xattr);
+int apply_xattrs(fstree_t *fs, const char *path, void *selinux_handle,
+		 void *xattr_map, sqfs_xattr_writer_t *xwr, bool scan_xattr);
 
 void *xattr_open_map_file(const char *path);
 

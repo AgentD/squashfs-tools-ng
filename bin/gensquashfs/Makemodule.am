@@ -1,6 +1,6 @@
 gensquashfs_SOURCES = bin/gensquashfs/src/mkfs.c bin/gensquashfs/src/mkfs.h \
 	bin/gensquashfs/src/options.c bin/gensquashfs/src/selinux.c \
-	bin/gensquashfs/src/dirscan_xattr.c bin/gensquashfs/src/filemap_xattr.c\
+	bin/gensquashfs/src/apply_xattr.c bin/gensquashfs/src/filemap_xattr.c\
 	bin/gensquashfs/src/fstree_from_file.c \
 	bin/gensquashfs/src/fstree_from_dir.c \
 	bin/gensquashfs/src/sort_by_file.c bin/gensquashfs/src/glob.c

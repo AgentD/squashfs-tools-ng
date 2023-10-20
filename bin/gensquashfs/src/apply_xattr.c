@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 /*
- * dirscan_xattr.c
+ * apply_xattr.c
  *
  * Copyright (C) 2019 David Oberhollenzer <goliath@infraroot.at>
  */
@@ -207,8 +207,8 @@ out:
 	return ret;
 }
 
-int xattrs_from_dir(fstree_t *fs, const char *path, void *selinux_handle,
-		    void *xattr_map, sqfs_xattr_writer_t *xwr, bool scan_xattr)
+int apply_xattrs(fstree_t *fs, const char *path, void *selinux_handle,
+		 void *xattr_map, sqfs_xattr_writer_t *xwr, bool scan_xattr)
 {
 	if (xwr == NULL)
 		return 0;
