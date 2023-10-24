@@ -141,7 +141,7 @@ int main(int argc, char **argv)
 		if (dir == NULL)
 			goto out;
 
-		ret = fstree_from_dir(&sqfs.fs, dir);
+		ret = scan_directory(&sqfs.fs, dir, 0, NULL);
 		sqfs_drop(dir);
 		if (ret != 0)
 			goto out;

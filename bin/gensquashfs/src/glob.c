@@ -64,8 +64,8 @@ static bool set_scan_flag(const char *arg, dir_tree_cfg_t *cfg)
 	return false;
 }
 
-static int scan_directory(fstree_t *fs, sqfs_dir_iterator_t *dir,
-			  size_t prefix_len, const char *file_prefix)
+int scan_directory(fstree_t *fs, sqfs_dir_iterator_t *dir,
+		   size_t prefix_len, const char *file_prefix)
 {
 	for (;;) {
 		sqfs_dir_entry_t *ent = NULL;
@@ -96,7 +96,8 @@ static int scan_directory(fstree_t *fs, sqfs_dir_iterator_t *dir,
 				free(ent);
 				return -1;
 			}
-		} else if (S_ISREG(ent->mode)) {
+		} else if (S_ISREG(ent->mode) &&
+			   (prefix_len > 0 || file_prefix != NULL)) {
 			const char *src;
 
 			/* skip the prefix, get the name actually

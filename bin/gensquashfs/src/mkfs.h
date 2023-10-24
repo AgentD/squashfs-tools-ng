@@ -104,14 +104,10 @@ int fstree_from_file(fstree_t *fs, const char *filename, const options_t *opt);
 int fstree_from_file_stream(fstree_t *fs, sqfs_istream_t *file,
 			    const options_t *opt);
 
-/*
-  Recursively scan a directory to build a file system tree.
-
-  Returns 0 on success, prints to stderr on failure.
- */
-int fstree_from_dir(fstree_t *fs, sqfs_dir_iterator_t *dir);
-
 int fstree_sort_files(fstree_t *fs, sqfs_istream_t *sortfile);
+
+int scan_directory(fstree_t *fs, sqfs_dir_iterator_t *dir,
+		   size_t prefix_len, const char *file_prefix);
 
 int glob_files(fstree_t *fs, const char *filename, size_t line_num,
 	       const sqfs_dir_entry_t *ent,
