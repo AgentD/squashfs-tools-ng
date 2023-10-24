@@ -56,8 +56,6 @@ typedef struct {
 
 	unsigned int force_uid_value;
 	unsigned int force_gid_value;
-	bool force_uid;
-	bool force_gid;
 
 	bool scan_xattr;
 } options_t;
@@ -101,11 +99,10 @@ void selinux_close_context_file(void *sehnd);
 
   Returns 0 on success.
  */
-int fstree_from_file(fstree_t *fs, const char *filename,
-		     const char *basepath);
+int fstree_from_file(fstree_t *fs, const char *filename, const options_t *opt);
 
 int fstree_from_file_stream(fstree_t *fs, sqfs_istream_t *file,
-			    const char *basepath);
+			    const options_t *opt);
 
 /*
   Recursively scan a directory to build a file system tree.

@@ -22,15 +22,18 @@ int main(int argc, char **argv)
 	fstree_defaults_t fsd;
 	sqfs_istream_t *file;
 	tree_node_t *n;
+	options_t opt;
 	fstree_t fs;
 	(void)argc; (void)argv;
+
+	memset(&opt, 0, sizeof(opt));
 
 	file = istream_memory_create("memfile", 7, listing, strlen(listing));
 	TEST_NOT_NULL(file);
 
 	TEST_ASSERT(parse_fstree_defaults(&fsd, NULL) == 0);
 	TEST_ASSERT(fstree_init(&fs, &fsd) == 0);
-	TEST_ASSERT(fstree_from_file_stream(&fs, file, NULL) == 0);
+	TEST_ASSERT(fstree_from_file_stream(&fs, file, &opt) == 0);
 	sqfs_drop(file);
 
 	fstree_post_process(&fs);

@@ -100,11 +100,11 @@ static const struct callback_t {
 #define NUM_HOOKS (sizeof(file_list_hooks) / sizeof(file_list_hooks[0]))
 
 static int handle_line(fstree_t *fs, const char *filename, size_t line_num,
-		       split_line_t *line, const char *basepath)
+		       split_line_t *line, const options_t *opt)
 {
+	sqfs_u64 uid = 0, gid = 0, mode = 0;
 	const struct callback_t *cb = NULL;
 	unsigned int glob_flags = 0;
-	sqfs_u64 uid, gid, mode;
 	sqfs_dir_entry_t *ent = NULL;
 	const char *msg = NULL;
 	bool is_glob = false;
@@ -137,7 +137,6 @@ static int handle_line(fstree_t *fs, const char *filename, size_t line_num,
 		goto fail_root;
 
 	if (is_glob && !strcmp(line->args[2], "*")) {
-		mode = 0;
 		glob_flags |= DIR_SCAN_KEEP_MODE;
 	} else {
 		if (parse_uint_oct(line->args[2], -1, NULL, 0, 07777, &mode))
@@ -145,20 +144,24 @@ static int handle_line(fstree_t *fs, const char *filename, size_t line_num,
 	}
 
 	if (is_glob && !strcmp(line->args[3], "*")) {
-		uid = 0;
-		glob_flags |= DIR_SCAN_KEEP_UID;
+		glob_flags |= (opt->dirscan_flags & DIR_SCAN_KEEP_UID);
 	} else {
 		if (parse_uint(line->args[3], -1, NULL, 0, 0x0FFFFFFFF, &uid))
 			goto fail_uid_gid;
 	}
 
+	if (!(opt->dirscan_flags & DIR_SCAN_KEEP_UID))
+		uid = opt->force_uid_value;
+
 	if (is_glob && !strcmp(line->args[4], "*")) {
-		gid = 0;
-		glob_flags |= DIR_SCAN_KEEP_GID;
+		glob_flags |= (opt->dirscan_flags & DIR_SCAN_KEEP_GID);
 	} else {
 		if (parse_uint(line->args[4], -1, NULL, 0, 0x0FFFFFFFF, &gid))
 			goto fail_uid_gid;
 	}
+
+	if (!(opt->dirscan_flags & DIR_SCAN_KEEP_GID))
+		gid = opt->force_gid_value;
 
 	if (!is_glob && cb->need_extra && line->count <= 5)
 		goto fail_no_extra;
@@ -178,7 +181,7 @@ static int handle_line(fstree_t *fs, const char *filename, size_t line_num,
 
 	if (is_glob) {
 		ret = glob_files(fs, filename, line_num, ent,
-				 basepath, glob_flags, line);
+				 opt->packdir, glob_flags, line);
 	} else {
 		ret = cb->callback(fs, filename, line_num, ent, line);
 	}
@@ -217,7 +220,7 @@ out_desc:
 }
 
 int fstree_from_file_stream(fstree_t *fs, sqfs_istream_t *fp,
-			    const char *basepath)
+			    const options_t *opt)
 {
 	const char *filename;
 	size_t line_num = 1;
@@ -249,7 +252,7 @@ int fstree_from_file_stream(fstree_t *fs, sqfs_istream_t *fp,
 		default:                         goto fail_split;
 		}
 
-		ret = handle_line(fs, filename, line_num, sep, basepath);
+		ret = handle_line(fs, filename, line_num, sep, opt);
 		free(sep);
 		free(line);
 		++line_num;
@@ -278,7 +281,7 @@ fail_line:
 	return -1;
 }
 
-int fstree_from_file(fstree_t *fs, const char *filename, const char *basepath)
+int fstree_from_file(fstree_t *fs, const char *filename, const options_t *opt)
 {
 	sqfs_istream_t *fp;
 	int ret;
@@ -289,7 +292,7 @@ int fstree_from_file(fstree_t *fs, const char *filename, const char *basepath)
 		return -1;
 	}
 
-	ret = fstree_from_file_stream(fs, fp, basepath);
+	ret = fstree_from_file_stream(fs, fp, opt);
 
 	sqfs_drop(fp);
 	return ret;

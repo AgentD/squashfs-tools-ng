@@ -204,6 +204,8 @@ void process_command_line(options_t *opt, int argc, char **argv)
 
 	memset(opt, 0, sizeof(*opt));
 	sqfs_writer_cfg_init(&opt->cfg);
+	opt->dirscan_flags = DIR_SCAN_KEEP_UID | DIR_SCAN_KEEP_GID |
+		DIR_SCAN_KEEP_MODE;
 
 	for (;;) {
 		i = getopt_long(argc, argv, short_opts, long_opts, NULL);
@@ -214,16 +216,16 @@ void process_command_line(options_t *opt, int argc, char **argv)
 		case ALL_ROOT_OPTION:
 			opt->force_uid_value = 0;
 			opt->force_gid_value = 0;
-			opt->force_uid = true;
-			opt->force_gid = true;
+			opt->dirscan_flags &= ~DIR_SCAN_KEEP_UID;
+			opt->dirscan_flags &= ~DIR_SCAN_KEEP_GID;
 			break;
 		case 'u':
 			opt->force_uid_value = strtol(optarg, NULL, 0);
-			opt->force_uid = true;
+			opt->dirscan_flags &= ~DIR_SCAN_KEEP_UID;
 			break;
 		case 'g':
 			opt->force_gid_value = strtol(optarg, NULL, 0);
-			opt->force_gid = true;
+			opt->dirscan_flags &= ~DIR_SCAN_KEEP_GID;
 			break;
 		case 'T':
 			opt->no_tail_packing = true;

@@ -114,9 +114,12 @@ int main(int argc, char **argv)
 	sqfs_istream_t *memstream;
 	fstree_defaults_t fsd;
 	tree_node_t *n;
+	options_t opt;
 	fstree_t fs;
 	size_t i;
 	(void)argc; (void)argv;
+
+	memset(&opt, 0, sizeof(opt));
 
 	memstream = istream_memory_create("listing.txt", 1024,
 					  listing, strlen(listing));
@@ -124,7 +127,7 @@ int main(int argc, char **argv)
 
 	TEST_ASSERT(parse_fstree_defaults(&fsd, NULL) == 0);
 	TEST_ASSERT(fstree_init(&fs, &fsd) == 0);
-	TEST_ASSERT(fstree_from_file_stream(&fs, memstream, NULL) == 0);
+	TEST_ASSERT(fstree_from_file_stream(&fs, memstream, &opt) == 0);
 	sqfs_drop(memstream);
 
 	fstree_post_process(&fs);

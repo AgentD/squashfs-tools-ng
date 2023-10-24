@@ -93,20 +93,6 @@ static int pack_files(sqfs_block_processor_t *data, fstree_t *fs,
 	return 0;
 }
 
-static void override_owner_dfs(const options_t *opt, tree_node_t *n)
-{
-	if (opt->force_uid)
-		n->uid = opt->force_uid_value;
-
-	if (opt->force_gid)
-		n->gid = opt->force_gid_value;
-
-	if (S_ISDIR(n->mode)) {
-		for (n = n->data.children; n != NULL; n = n->next)
-			override_owner_dfs(opt, n);
-	}
-}
-
 int main(int argc, char **argv)
 {
 	int status = EXIT_FAILURE;
@@ -146,9 +132,10 @@ int main(int argc, char **argv)
 		int ret;
 
 		memset(&cfg, 0, sizeof(cfg));
-		cfg.flags = opt.dirscan_flags | DIR_SCAN_KEEP_UID |
-			DIR_SCAN_KEEP_GID | DIR_SCAN_KEEP_MODE;
 		cfg.def_mtime = sqfs.fs.defaults.mtime;
+		cfg.def_uid = opt.force_uid_value;
+		cfg.def_gid = opt.force_gid_value;
+		cfg.flags = opt.dirscan_flags;
 
 		dir = dir_tree_iterator_create(opt.packdir, &cfg);
 		if (dir == NULL)
@@ -159,12 +146,9 @@ int main(int argc, char **argv)
 		if (ret != 0)
 			goto out;
 	} else {
-		if (fstree_from_file(&sqfs.fs, opt.infile, opt.packdir))
+		if (fstree_from_file(&sqfs.fs, opt.infile, &opt))
 			goto out;
 	}
-
-	if (opt.force_uid || opt.force_gid)
-		override_owner_dfs(&opt, sqfs.fs.root);
 
 	if (fstree_post_process(&sqfs.fs))
 		goto out;

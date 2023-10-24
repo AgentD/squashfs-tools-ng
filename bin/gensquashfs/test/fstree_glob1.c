@@ -269,17 +269,21 @@ static void check_hierarchy(tree_node_t *root, bool subdir, bool recursive)
 int main(int argc, char **argv)
 {
 	fstree_defaults_t fsd;
+	options_t opt;
 	fstree_t fs;
 	int ret;
 	(void)argc; (void)argv;
 
 	TEST_ASSERT(parse_fstree_defaults(&fsd, NULL) == 0);
 
+	memset(&opt, 0, sizeof(opt));
+	opt.packdir = (char *)TEST_PATH;
+
 	/* first test case, directory tree only */
 	ret = fstree_init(&fs, &fsd);
 	TEST_EQUAL_I(ret, 0);
 
-	ret = fstree_from_file(&fs, TEST_PATH "/fstree_glob1.txt", TEST_PATH);
+	ret = fstree_from_file(&fs, TEST_PATH "/fstree_glob1.txt", &opt);
 	TEST_EQUAL_I(ret, 0);
 
 	fstree_post_process(&fs);
@@ -290,7 +294,7 @@ int main(int argc, char **argv)
 	ret = fstree_init(&fs, &fsd);
 	TEST_EQUAL_I(ret, 0);
 
-	ret = fstree_from_file(&fs, TEST_PATH "/fstree_glob2.txt", TEST_PATH);
+	ret = fstree_from_file(&fs, TEST_PATH "/fstree_glob2.txt", &opt);
 	TEST_EQUAL_I(ret, 0);
 
 	fstree_post_process(&fs);
@@ -301,7 +305,7 @@ int main(int argc, char **argv)
 	ret = fstree_init(&fs, &fsd);
 	TEST_EQUAL_I(ret, 0);
 
-	ret = fstree_from_file(&fs, TEST_PATH "/fstree_glob3.txt", TEST_PATH);
+	ret = fstree_from_file(&fs, TEST_PATH "/fstree_glob3.txt", &opt);
 	TEST_EQUAL_I(ret, 0);
 
 	fstree_post_process(&fs);
