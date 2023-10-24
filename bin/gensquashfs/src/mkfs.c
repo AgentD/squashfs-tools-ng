@@ -153,10 +153,8 @@ int main(int argc, char **argv)
 	if (fstree_post_process(&sqfs.fs))
 		goto out;
 
-	if (apply_xattrs(&sqfs.fs, opt.packdir, sehnd, xattrmap,
-			 sqfs.xwr, opt.infile == NULL && opt.scan_xattr)) {
+	if (apply_xattrs(&sqfs.fs, &opt, sehnd, xattrmap, sqfs.xwr))
 		goto out;
-	}
 
 	if (sortfile != NULL) {
 		if (fstree_sort_files(&sqfs.fs, sortfile))

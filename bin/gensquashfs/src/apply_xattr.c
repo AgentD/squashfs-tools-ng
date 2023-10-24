@@ -121,100 +121,77 @@ fail:
 }
 #endif
 
-static int xattr_xcan_dfs(const char *path_prefix, void *selinux_handle,
-			  sqfs_xattr_writer_t *xwr, bool scan_xattr, void *xattr_map,
-			  tree_node_t *node)
+static int apply_dfs(const options_t *opt, sqfs_xattr_writer_t *xwr,
+		     void *sehnd, void *maphnd, tree_node_t *n)
 {
 	char *path = NULL;
 	int ret;
 
 	ret = sqfs_xattr_writer_begin(xwr, 0);
 	if (ret) {
-		sqfs_perror(node->name, "recoding xattr key-value pairs\n",
-			    ret);
+		sqfs_perror(n->name, "recoding xattr key-value pairs\n", ret);
 		return -1;
 	}
 
 #ifdef HAVE_SYS_XATTR_H
-	if (scan_xattr) {
-		path = get_full_path(path_prefix, node);
+	if (opt->infile == NULL && opt->scan_xattr) {
+		path = get_full_path(opt->packdir, n);
 		if (path == NULL)
 			return -1;
 
 		ret = xattr_from_path(xwr, path);
 		free(path);
 		path = NULL;
-		if (ret) {
-			ret = -1;
-			goto out;
-		}
+		if (ret)
+			return -1;
 	}
-#else
-	(void)path_prefix;
 #endif
 
-	if (selinux_handle != NULL || xattr_map != NULL) {
-		path = fstree_get_path(node);
-
+	if (sehnd != NULL || maphnd != NULL) {
+		path = fstree_get_path(n);
 		if (path == NULL) {
 			perror("reconstructing absolute path");
-			ret = -1;
-			goto out;
+			return -1;
 		}
 	}
 
-	if (xattr_map != NULL) {
-		ret = xattr_apply_map_file(path, xattr_map, xwr);
+	if (maphnd != NULL && xattr_apply_map_file(path, maphnd, xwr) != 0)
+		goto fail;
 
-		if (ret) {
-			ret = -1;
-			goto out;
-		}
-	}
+	if (sehnd != NULL && selinux_relable_node(sehnd, xwr, n, path) != 0)
+		goto fail;
 
-	if (selinux_handle != NULL) {
-		ret = selinux_relable_node(selinux_handle, xwr, node, path);
-
-		if (ret) {
-			ret = -1;
-			goto out;
-		}
-	}
-
-	if (sqfs_xattr_writer_end(xwr, &node->xattr_idx)) {
-		sqfs_perror(node->name, "completing xattr key-value pairs",
-			    ret);
-		ret = -1;
-		goto out;
-	}
-
-	if (S_ISDIR(node->mode)) {
-		node = node->data.children;
-
-		while (node != NULL) {
-			if (xattr_xcan_dfs(path_prefix, selinux_handle, xwr,
-					   scan_xattr, xattr_map, node)) {
-				ret = -1;
-				goto out;
-			}
-
-			node = node->next;
-		}
-	}
-
-out:
 	free(path);
-	return ret;
+
+	ret = sqfs_xattr_writer_end(xwr, &n->xattr_idx);
+	if (ret) {
+		sqfs_perror(n->name, "completing xattr key-value pairs", ret);
+		return -1;
+	}
+
+	if (S_ISDIR(n->mode)) {
+		for (n = n->data.children; n != NULL; n = n->next) {
+			if (apply_dfs(opt, xwr, sehnd, maphnd, n))
+				return -1;
+		}
+	}
+
+	return 0;
+fail:
+	free(path);
+	return -1;
 }
 
-int apply_xattrs(fstree_t *fs, const char *path, void *selinux_handle,
-		 void *xattr_map, sqfs_xattr_writer_t *xwr, bool scan_xattr)
+int apply_xattrs(fstree_t *fs, const options_t *opt, void *sehnd,
+		 void *maphnd, sqfs_xattr_writer_t *xwr)
 {
 	if (xwr == NULL)
 		return 0;
 
-	if (selinux_handle == NULL && !scan_xattr && xattr_map == NULL)
+	if (sehnd == NULL && maphnd == NULL &&
+	    !(opt->infile == NULL && opt->scan_xattr)) {
 		return 0;
+	}
 
-	return xattr_xcan_dfs(path, selinux_handle, xwr, scan_xattr, xattr_map, fs->root);
+	return apply_dfs(opt, xwr, sehnd, maphnd, fs->root);
 }
