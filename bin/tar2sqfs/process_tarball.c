@@ -6,6 +6,16 @@
  */
 #include "tar2sqfs.h"
 
+static bool is_excluded(const char *name)
+{
+	for (size_t i = 0; i < num_excludedirs; ++i) {
+		if (fnmatch(excludedirs[i], name, 0) == 0)
+			return true;
+	}
+
+	return false;
+}
+
 static int write_file(istream_t *input_file, sqfs_writer_t *sqfs,
 		      const tar_header_decoded_t *hdr,
 		      file_info_t *fi, sqfs_u64 filesize)
@@ -237,6 +247,11 @@ int process_tarball(istream_t *input_file, sqfs_writer_t *sqfs)
 			fprintf(stderr, "skipping '%s' (invalid name)\n",
 				hdr.name);
 			skip = true;
+		} else if (is_excluded(hdr.name)) {
+			if (skip_entry(input_file, hdr.record_size))
+				goto fail;
+			clear_header(&hdr);
+			continue;
 		} else if (root_becomes != NULL) {
 			if (strncmp(hdr.name, root_becomes, rootlen) == 0) {
 				if (hdr.name[rootlen] == '\0') {
