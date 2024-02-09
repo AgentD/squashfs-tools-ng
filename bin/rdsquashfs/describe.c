@@ -76,7 +76,7 @@ int describe_tree(const sqfs_tree_node_t *root, const char *unpack_root)
 {
 	const sqfs_tree_node_t *n;
 
-	if (!is_filename_sane((const char *)root->name, false)) {
+	if (!is_filename_sane((const char *)root->name)) {
 		fprintf(stderr, "Encountered illegal file name '%s'\n",
 			root->name);
 		return -1;

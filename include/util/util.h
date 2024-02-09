@@ -55,12 +55,8 @@ SQFS_INTERNAL int canonicalize_name(char *filename);
 /*
   Returns true if a given filename is sane, false if it is not (e.g. contains
   slashes or it is equal to '.' or '..').
-
-  If check_os_specific is true, this also checks if the filename contains
-  a character, or is equal to a name, that is black listed on the current OS.
-  E.g. on Windows, a file named "COM0" or "AUX" is a no-no.
  */
-SQFS_INTERNAL bool is_filename_sane(const char *name, bool check_os_specific);
+SQFS_INTERNAL bool is_filename_sane(const char *name);
 
 /*
   If the environment variable SOURCE_DATE_EPOCH is set to a parsable number

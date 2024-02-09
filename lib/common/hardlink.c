@@ -31,7 +31,7 @@ static int map_nodes(rbtree_t *inumtree, sqfs_hard_link_t **out,
 		return 0;
 	}
 
-	if (!is_filename_sane((const char *)n->name, false))
+	if (!is_filename_sane((const char *)n->name))
 		return SQFS_ERROR_CORRUPTED;
 
 	idx = n->inode->base.inode_number;
