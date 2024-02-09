@@ -6,7 +6,7 @@
  */
 #include "rdsquashfs.h"
 
-static int print_name(const sqfs_tree_node_t *n, bool dont_escape)
+static int print_name(const sqfs_tree_node_t *n, bool source_path)
 {
 	char *start, *ptr, *name;
 	int ret;
@@ -23,7 +23,23 @@ static int print_name(const sqfs_tree_node_t *n, bool dont_escape)
 		return -1;
 	}
 
-	if (dont_escape || (strchr(name, ' ') == NULL &&
+#if defined(_WIN32) || defined(__WINDOWS__)
+	if (source_path) {
+		char *fixed = fix_win32_filename(name);
+		sqfs_free(name);
+
+		if (fixed == NULL) {
+			fputs(stderr, "out of memor!\n");
+			return -1;
+		}
+
+		fputs(fixed, stdout);
+		free(fixed);
+		return 0;
+	}
+#endif
+
+	if (source_path || (strchr(name, ' ') == NULL &&
 			    strchr(name, '"') == NULL)) {
 		fputs(name, stdout);
 	} else {

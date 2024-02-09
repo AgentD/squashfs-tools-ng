@@ -73,10 +73,8 @@ static int add_file(const sqfs_tree_node_t *node)
 		new_sz = max_files ? max_files * 2 : 256;
 		new = realloc(files, sizeof(files[0]) * new_sz);
 
-		if (new == NULL) {
-			perror("expanding file list");
-			return -1;
-		}
+		if (new == NULL)
+			goto fail_oom;
 
 		files = new;
 		max_files = new_sz;
@@ -94,10 +92,25 @@ static int add_file(const sqfs_tree_node_t *node)
 		return -1;
 	}
 
+#if defined(_WIN32) || defined(__WINDOWS__)
+	{
+		char *fixed = fix_win32_filename(path);
+		sqfs_free(path);
+
+		if (fixed == NULL)
+			goto fail_oom;
+
+		path = fixed;
+	}
+#endif
+
 	files[num_files].path = path;
 	files[num_files].inode = node->inode;
 	num_files++;
 	return 0;
+fail_oom:
+	fputs(stderr, "add_file: out of memor!\n");
+	return -1;
 }
 
 static void clear_file_list(void)

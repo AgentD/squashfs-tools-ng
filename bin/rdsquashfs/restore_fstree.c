@@ -10,10 +10,18 @@
 static int create_node(const sqfs_tree_node_t *n, const char *name, int flags)
 {
 	WCHAR *wpath;
+	char *fixed;
 	HANDLE fh;
 	(void)flags;
 
-	wpath = path_to_windows(name);
+	fixed = fix_win32_filename(name);
+	if (fixed == NULL) {
+		fputs("create_node: out of memory!\n", stderr);
+		return -1;
+	}
+
+	wpath = path_to_windows(fixed);
+	free(fixed);
 	if (wpath == NULL)
 		return -1;
 
@@ -242,6 +250,19 @@ static int set_attribs(sqfs_xattr_reader_t *xattr,
 
 	ret = canonicalize_name(path);
 	assert(ret == 0);
+
+#if defined(_WIN32) || defined(__WINDOWS__)
+	{
+		char *fixed = fix_win32_filename(path);
+		if (fixed == NULL) {
+			sqfs_perror(path, "fixing Windows path",
+				    SQFS_ERROR_ALLOC);
+			sqfs_free(path);
+			return -1;
+		}
+		path = fixed;
+	}
+#endif
 
 #ifdef HAVE_SYS_XATTR_H
 	if ((flags & UNPACK_SET_XATTR) && xattr != NULL) {
