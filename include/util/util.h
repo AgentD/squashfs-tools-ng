@@ -79,4 +79,6 @@ SQFS_INTERNAL int hex_decode(const char *in, size_t in_sz,
 SQFS_INTERNAL int base64_decode(const char *in, size_t in_len,
 				sqfs_u8 *out, size_t *out_len);
 
+SQFS_INTERNAL char *fix_win32_filename(const char *path);
+
 #endif /* SQFS_UTIL_H */

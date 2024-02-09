@@ -36,9 +36,12 @@ test_hex_decode_LDADD = libutil.a libcompat.a
 test_base64_decode_SOURCES = tests/libutil/base64_decode.c
 test_base64_decode_LDADD = libutil.a libcompat.a
 
+test_fix_win32_filename_SOURCES = tests/libutil/fix_win32_filename.c
+test_fix_win32_filename_LDADD = libutil.a libcompat.a
+
 LIBUTIL_TESTS = \
 	test_str_table test_rbtree test_xxhash test_threadpool test_ismemzero \
-	test_canonicalize_name test_filename_sane \
+	test_canonicalize_name test_filename_sane test_fix_win32_filename \
 	test_sdate_epoch test_hex_decode test_base64_decode
 
 check_PROGRAMS += $(LIBUTIL_TESTS)
