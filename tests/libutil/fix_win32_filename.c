@@ -22,6 +22,10 @@ static const struct {
 	{ "foo/bar/test.LPT1/bla", "foo/bar/test.LPT1_/bla" },
 	{ "C:\\/foo/COM1.bla/bar",
 	  "C\xEF\x80\xBA\xEF\x81\x9c/foo/COM1_.bla/bar" },
+	{ "com1", "com1_" },
+	{ "COM1_", "COM1__" },
+	{ "COM1__", "COM1___" },
+	{ "COM1___", "COM1____" },
 };
 
 int main(int argc, char **argv)

@@ -66,7 +66,15 @@ static const char *bad_names[] = {
 static buffer_t *handle_component(buffer_t *buf, const char *comp, size_t len)
 {
 	for (size_t i = 0; i < sizeof(bad_names) / sizeof(bad_names[0]); ++i) {
-		if (!strncasecmp(comp, bad_names[i], len)) {
+		size_t badlen = strlen(bad_names[i]);
+
+		if (badlen > len || strncasecmp(comp, bad_names[i], badlen))
+			continue;
+
+		while (badlen < len && comp[badlen] == '_')
+			++badlen;
+
+		if (badlen == len) {
 			buf = buffer_append(buf, comp, len);
 			if (buf != NULL)
 				buf = buffer_append(buf, "_", 1);
