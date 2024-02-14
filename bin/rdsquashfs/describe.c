@@ -6,41 +6,34 @@
  */
 #include "rdsquashfs.h"
 
-static int print_name(const sqfs_tree_node_t *n, bool source_path)
+static char *get_name(const sqfs_tree_node_t *n)
 {
-	char *start, *ptr, *name;
+	char *name;
 	int ret;
 
 	ret = sqfs_tree_node_get_path(n, &name);
 	if (ret != 0) {
 		sqfs_perror(NULL, "Recovering file path of tree node", ret);
-		return -1;
+		return NULL;
 	}
 
 	if (canonicalize_name(name) != 0) {
 		fprintf(stderr, "Error sanitizing file path '%s'\n", name);
 		sqfs_free(name);
-		return -1;
+		return NULL;
 	}
 
-#if defined(_WIN32) || defined(__WINDOWS__)
-	if (source_path) {
-		char *fixed = fix_win32_filename(name);
-		sqfs_free(name);
+	return name;
+}
 
-		if (fixed == NULL) {
-			fputs(stderr, "out of memor!\n");
-			return -1;
-		}
+static void print_stub(const char *type, const char *name,
+		       const sqfs_tree_node_t *n)
+{
+	const char *start, *ptr;
 
-		fputs(fixed, stdout);
-		free(fixed);
-		return 0;
-	}
-#endif
+	printf("%s ", type);
 
-	if (source_path || (strchr(name, ' ') == NULL &&
-			    strchr(name, '"') == NULL)) {
+	if (strchr(name, ' ') == NULL && strchr(name, '"') == NULL) {
 		fputs(name, stdout);
 	} else {
 		fputc('"', stdout);
@@ -65,12 +58,6 @@ static int print_name(const sqfs_tree_node_t *n, bool source_path)
 		fputc('"', stdout);
 	}
 
-	sqfs_free(name);
-	return 0;
-}
-
-static void print_perm(const sqfs_tree_node_t *n)
-{
 	printf(" 0%o %u %u", (unsigned int)n->inode->base.mode & (~S_IFMT),
 	       n->uid, n->gid);
 }
@@ -78,13 +65,53 @@ static void print_perm(const sqfs_tree_node_t *n)
 static int print_simple(const char *type, const sqfs_tree_node_t *n,
 			const char *extra)
 {
-	printf("%s ", type);
-	if (print_name(n, false))
+	char *name = get_name(n);
+	if (name == NULL)
 		return -1;
-	print_perm(n);
+	print_stub(type, name, n);
+	sqfs_free(name);
 	if (extra != NULL)
 		printf(" %s", extra);
 	fputc('\n', stdout);
+	return 0;
+}
+
+static int print_file(const sqfs_tree_node_t *n, const char *unpack_root)
+{
+	char *name, *srcpath;
+
+	name = get_name(n);
+	if (name == NULL)
+		return -1;
+
+#if defined(_WIN32) || defined(__WINDOWS__)
+	srcpath = fix_win32_filename(name);
+	if (srcpath == NULL) {
+		fprintf(stderr, "Error sanitizing windows name '%s'\n",
+			name);
+		sqfs_free(name);
+		return -1;
+	}
+
+	if (strcmp(name, srcpath) == 0) {
+		free(srcpath);
+		srcpath = NULL;
+	}
+#else
+	srcpath = NULL;
+#endif
+	print_stub("file", name, n);
+
+	if (unpack_root == NULL && srcpath != NULL) {
+		printf(" %s", srcpath);
+	} else if (unpack_root != NULL) {
+		printf(" %s/%s", unpack_root,
+		       srcpath == NULL ? name : srcpath);
+	}
+
+	fputc('\n', stdout);
+	free(srcpath);
+	sqfs_free(name);
 	return 0;
 }
 
@@ -107,18 +134,7 @@ int describe_tree(const sqfs_tree_node_t *root, const char *unpack_root)
 	case S_IFIFO:
 		return print_simple("pipe", root, NULL);
 	case S_IFREG:
-		if (unpack_root == NULL)
-			return print_simple("file", root, NULL);
-
-		fputs("file ", stdout);
-		if (print_name(root, false))
-			return -1;
-		print_perm(root);
-		printf(" %s/", unpack_root);
-		if (print_name(root, true))
-			return -1;
-		fputc('\n', stdout);
-		break;
+		return print_file(root, unpack_root);
 	case S_IFCHR:
 	case S_IFBLK: {
 		char buffer[32];
