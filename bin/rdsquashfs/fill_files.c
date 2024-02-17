@@ -109,7 +109,7 @@ static int add_file(const sqfs_tree_node_t *node)
 	num_files++;
 	return 0;
 fail_oom:
-	fputs(stderr, "add_file: out of memor!\n");
+	fputs("add_file: out of memory!\n", stderr);
 	return -1;
 }
 
