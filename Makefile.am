@@ -50,7 +50,6 @@ include tests/libtar/Makemodule.am
 include tests/libsqfs/Makemodule.am
 include tests/gensquashfs/Makemodule.am
 include tests/rdsquashfs/Makemodule.am
-include tests/tar2sqfs/Makemodule.am
 
 if HAVE_DOXYGEN
 @DX_RULES@
