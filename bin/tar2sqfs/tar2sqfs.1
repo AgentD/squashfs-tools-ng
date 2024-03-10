@@ -33,6 +33,11 @@ points, this may actually be intended for some use cases.
 This flag allows changing the default behaviour, so only hard links are
 retargeted.
 .TP
+\fB\-\-exclude\fR, \fB\-E\fR <pattern>
+Test paths against a given shell-style globbing pattern and exclude all
+matches, e.g. \fB\-\-exclude boot/*\fR keeps the \fBboot\fR directory in
+the final SquashFS archive, but drops all of its contents.
+.TP
 \fB\-\-compressor\fR, \fB\-c\fR <name>
 Select the compressor to use.
 Run \fBtar2sqfs \-\-help\fR to get a list of all available compressors
