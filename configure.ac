@@ -1,5 +1,5 @@
 AC_PREREQ([2.69])
-AC_INIT([squashfs-tools-ng],[1.2.0],[goliath@infraroot.at],[squashfs-tools-ng])
+AC_INIT([squashfs-tools-ng],[1.3.0],[goliath@infraroot.at],[squashfs-tools-ng])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([foreign dist-xz subdir-objects])
 AM_SILENT_RULES([yes])
@@ -10,7 +10,7 @@ AC_PROG_SED
 AC_SYS_LARGEFILE
 AC_CANONICAL_HOST
 
-AC_SUBST([LIBSQUASHFS_SO_VERSION], [5:0:4])
+AC_SUBST([LIBSQUASHFS_SO_VERSION], [5:1:4])
 
 m4_ifndef([PKG_PROG_PKG_CONFIG],
   [m4_fatal([Could not locate the pkg-config autoconf
