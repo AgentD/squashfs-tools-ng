@@ -908,7 +908,7 @@ The fragment table location in the superblock points to an array of 64 bit
 integers that store the on-disk locations of the metadata blocks containing
 the lookup table.
 
-Each metadata block can store up to 512 entries (`8129 / 16`).
+Each metadata block can store up to 512 entries (`8192 / 16`).
 
 The "unused" field is there for alignment and *SHOULD* be set to 0, however the
 Linux kernel currently ignores this field completely, making it impossible for
