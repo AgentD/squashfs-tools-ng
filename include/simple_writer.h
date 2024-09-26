@@ -54,6 +54,7 @@ typedef struct {
 	bool exportable;
 	bool no_xattr;
 	bool quiet;
+	bool no_pad;
 } sqfs_writer_cfg_t;
 
 #ifdef __cplusplus

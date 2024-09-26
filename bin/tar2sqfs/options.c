@@ -6,7 +6,12 @@
  */
 #include "tar2sqfs.h"
 
+enum {
+	NO_PAD_OPTION = 1,
+};
+
 static struct option long_opts[] = {
+	{ "no-pad", no_argument, NULL, NO_PAD_OPTION },
 	{ "root-becomes", required_argument, NULL, 'r' },
 	{ "compressor", required_argument, NULL, 'c' },
 	{ "block-size", required_argument, NULL, 'b' },
@@ -81,6 +86,7 @@ static const char *usagestr =
 "  --no-tail-packing, -T       Do not perform tail end packing on files that\n"
 "                              are larger than block size.\n"
 "  --exclude-dir, -E <glob>    Skip tar entry if glob matches.\n"
+"  --no-pad                    Do not pad image to device block size.\n"
 "  --force, -f                 Overwrite the output file if it exists.\n"
 "  --quiet, -q                 Do not print out progress reports.\n"
 "  --help, -h                  Print help text and exit.\n"
@@ -132,6 +138,9 @@ void process_args(int argc, char **argv)
 			break;
 
 		switch (i) {
+		case NO_PAD_OPTION:
+			cfg.no_pad = true;
+			break;
 		case 'S':
 			no_symlink_retarget = true;
 			break;

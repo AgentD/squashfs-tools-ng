@@ -164,9 +164,11 @@ int sqfs_writer_finish(sqfs_writer_t *sqfs, const sqfs_writer_cfg_t *cfg)
 		return -1;
 	}
 
-	if (padd_sqfs(sqfs->outfile, sqfs->super.bytes_used,
-		      cfg->devblksize)) {
-		return -1;
+	if (!cfg->no_pad) {
+		if (padd_sqfs(sqfs->outfile, sqfs->super.bytes_used,
+			      cfg->devblksize)) {
+			return -1;
+		}
 	}
 
 	if (!cfg->quiet)

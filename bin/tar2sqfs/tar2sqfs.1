@@ -109,6 +109,10 @@ Generate an export table for NFS support.
 Do not perform tail end packing on files that are larger than the
 specified block size.
 .TP
+\fB\-\-no\-pad\fR
+Do not pad the resulting image to device block size. May result in an image
+that cannot be loop mounted.
+.TP
 \fB\-\-force\fR, \fB\-f\fR
 Overwrite the output file if it exists.
 .TP

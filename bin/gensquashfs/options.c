@@ -8,10 +8,12 @@
 
 enum {
 	ALL_ROOT_OPTION = 1,
+	NO_PAD_OPTION = 2,
 };
 
 static struct option long_opts[] = {
 	{ "all-root", no_argument, NULL, ALL_ROOT_OPTION },
+	{ "no-pad", no_argument, NULL, NO_PAD_OPTION },
 	{ "set-uid", required_argument, NULL, 'u' },
 	{ "set-gid", required_argument, NULL, 'g' },
 	{ "compressor", required_argument, NULL, 'c' },
@@ -123,6 +125,7 @@ const char *extra_options =
 "  --exportable, -e            Generate an export table for NFS support.\n"
 "  --no-tail-packing, -T       Do not perform tail end packing on files that\n"
 "                              are larger than block size.\n"
+"  --no-pad                    Do not pad image to device block size.\n"
 "  --force, -f                 Overwrite the output file if it exists.\n"
 "  --quiet, -q                 Do not print out progress reports.\n"
 "  --help, -h                  Print help text and exit.\n"
@@ -211,6 +214,9 @@ void process_command_line(options_t *opt, int argc, char **argv)
 			opt->force_gid_value = 0;
 			opt->force_uid = true;
 			opt->force_gid = true;
+			break;
+		case NO_PAD_OPTION:
+			opt->cfg.no_pad = true;
 			break;
 		case 'u':
 			opt->force_uid_value = strtol(optarg, NULL, 0);
