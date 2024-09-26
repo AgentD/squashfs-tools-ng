@@ -115,7 +115,7 @@ release_name="squashfs-tools-ng-${new_ver}"
 [ -z "$(git tag -l "$tag_name")" ] || fatal "Tag $tag_name already exists"
 
 # Change the version in the configure.ac
-sed -i -e "s/$old_ver/$new_ver/g" configure.ac
+sed -i -e "s/\[$old_ver\]/\[$new_ver\]/g" configure.ac
 sed -i -e "s/$old_so_ver/$new_so_ver/g" configure.ac
 
 # Commit the change, create new signed tag
