@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.2] - 2024-09-26
+### Fixed
+ - Fix prefix path for file globing (#129)
+ - Missing `--no-pad` option in `gensquashfs`, `sqfs2tar` (#113)
+ - Fix version substitution in release script
+
 ## [1.3.1] - 2024-05-02
 ### Fixed
  - gensquashfs: apply xattr file also when using a pack file (#122)
