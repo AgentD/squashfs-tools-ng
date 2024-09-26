@@ -24,18 +24,21 @@ static void check_hierarchy(tree_node_t *root, bool recursive)
 		TEST_NOT_NULL(m);
 		TEST_STR_EQUAL(m->name, "file_a0");
 		TEST_ASSERT(S_ISREG(m->mode));
+		TEST_STR_EQUAL(m->data.file.input_file, "dira/file_a0");
 		TEST_ASSERT(m->parent == n);
 
 		m = m->next;
 		TEST_NOT_NULL(m);
 		TEST_STR_EQUAL(m->name, "file_a1");
 		TEST_ASSERT(S_ISREG(m->mode));
+		TEST_STR_EQUAL(m->data.file.input_file, "dira/file_a1");
 		TEST_ASSERT(m->parent == n);
 
 		m = m->next;
 		TEST_NOT_NULL(m);
 		TEST_STR_EQUAL(m->name, "file_a2");
 		TEST_ASSERT(S_ISREG(m->mode));
+		TEST_STR_EQUAL(m->data.file.input_file, "dira/file_a2");
 		TEST_ASSERT(m->parent == n);
 
 		m = m->next;
@@ -55,18 +58,21 @@ static void check_hierarchy(tree_node_t *root, bool recursive)
 		TEST_NOT_NULL(m);
 		TEST_STR_EQUAL(m->name, "file_b0");
 		TEST_ASSERT(S_ISREG(m->mode));
+		TEST_STR_EQUAL(m->data.file.input_file, "dirb/file_b0");
 		TEST_ASSERT(m->parent == n);
 
 		m = m->next;
 		TEST_NOT_NULL(m);
 		TEST_STR_EQUAL(m->name, "file_b1");
 		TEST_ASSERT(S_ISREG(m->mode));
+		TEST_STR_EQUAL(m->data.file.input_file, "dirb/file_b1");
 		TEST_ASSERT(m->parent == n);
 
 		m = m->next;
 		TEST_NOT_NULL(m);
 		TEST_STR_EQUAL(m->name, "file_b2");
 		TEST_ASSERT(S_ISREG(m->mode));
+		TEST_STR_EQUAL(m->data.file.input_file, "dirb/file_b2");
 		TEST_ASSERT(m->parent == n);
 
 		m = m->next;
@@ -86,18 +92,21 @@ static void check_hierarchy(tree_node_t *root, bool recursive)
 		TEST_NOT_NULL(m);
 		TEST_STR_EQUAL(m->name, "file_c0");
 		TEST_ASSERT(S_ISREG(m->mode));
+		TEST_STR_EQUAL(m->data.file.input_file, "dirc/file_c0");
 		TEST_ASSERT(m->parent == n);
 
 		m = m->next;
 		TEST_NOT_NULL(m);
 		TEST_STR_EQUAL(m->name, "file_c1");
 		TEST_ASSERT(S_ISREG(m->mode));
+		TEST_STR_EQUAL(m->data.file.input_file, "dirc/file_c1");
 		TEST_ASSERT(m->parent == n);
 
 		m = m->next;
 		TEST_NOT_NULL(m);
 		TEST_STR_EQUAL(m->name, "file_c2");
 		TEST_ASSERT(S_ISREG(m->mode));
+		TEST_STR_EQUAL(m->data.file.input_file, "dirc/file_c2");
 		TEST_ASSERT(m->parent == n);
 
 		m = m->next;

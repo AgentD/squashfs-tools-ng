@@ -41,6 +41,7 @@ static void check_hierarchy(tree_node_t *root, bool subdir, bool recursive)
 		TEST_NOT_NULL(m);
 		TEST_STR_EQUAL(m->name, "gnu.tar");
 		TEST_ASSERT(S_ISREG(m->mode));
+		TEST_STR_EQUAL(m->data.file.input_file, "../libtar/data/file-size/gnu.tar");
 		TEST_ASSERT(m->parent == n);
 
 		m = m->next;
@@ -60,12 +61,14 @@ static void check_hierarchy(tree_node_t *root, bool subdir, bool recursive)
 		TEST_NOT_NULL(m);
 		TEST_STR_EQUAL(m->name, "gnu-g.tar");
 		TEST_ASSERT(S_ISREG(m->mode));
+		TEST_STR_EQUAL(m->data.file.input_file, "../libtar/data/format-acceptance/gnu-g.tar");
 		TEST_ASSERT(m->parent == n);
 
 		m = m->next;
 		TEST_NOT_NULL(m);
 		TEST_STR_EQUAL(m->name, "gnu.tar");
 		TEST_ASSERT(S_ISREG(m->mode));
+		TEST_STR_EQUAL(m->data.file.input_file, "../libtar/data/format-acceptance/gnu.tar");
 		TEST_ASSERT(m->parent == n);
 
 		m = m->next;
@@ -85,6 +88,7 @@ static void check_hierarchy(tree_node_t *root, bool subdir, bool recursive)
 		TEST_NOT_NULL(m);
 		TEST_STR_EQUAL(m->name, "gnu.tar");
 		TEST_ASSERT(S_ISREG(m->mode));
+		TEST_STR_EQUAL(m->data.file.input_file, "../libtar/data/large-mtime/gnu.tar");
 		TEST_ASSERT(m->parent == n);
 
 		m = m->next;
@@ -104,6 +108,7 @@ static void check_hierarchy(tree_node_t *root, bool subdir, bool recursive)
 		TEST_NOT_NULL(m);
 		TEST_STR_EQUAL(m->name, "gnu.tar");
 		TEST_ASSERT(S_ISREG(m->mode));
+		TEST_STR_EQUAL(m->data.file.input_file, "../libtar/data/long-paths/gnu.tar");
 		TEST_ASSERT(m->parent == n);
 
 		m = m->next;
@@ -123,6 +128,7 @@ static void check_hierarchy(tree_node_t *root, bool subdir, bool recursive)
 		TEST_NOT_NULL(m);
 		TEST_STR_EQUAL(m->name, "gnu.tar");
 		TEST_ASSERT(S_ISREG(m->mode));
+		TEST_STR_EQUAL(m->data.file.input_file, "../libtar/data/negative-mtime/gnu.tar");
 		TEST_ASSERT(m->parent == n);
 
 		m = m->next;
@@ -142,30 +148,35 @@ static void check_hierarchy(tree_node_t *root, bool subdir, bool recursive)
 		TEST_NOT_NULL(m);
 		TEST_STR_EQUAL(m->name, "gnu-small.tar");
 		TEST_ASSERT(S_ISREG(m->mode));
+		TEST_STR_EQUAL(m->data.file.input_file, "../libtar/data/sparse-files/gnu-small.tar");
 		TEST_ASSERT(m->parent == n);
 
 		m = m->next;
 		TEST_NOT_NULL(m);
 		TEST_STR_EQUAL(m->name, "gnu.tar");
 		TEST_ASSERT(S_ISREG(m->mode));
+		TEST_STR_EQUAL(m->data.file.input_file, "../libtar/data/sparse-files/gnu.tar");
 		TEST_ASSERT(m->parent == n);
 
 		m = m->next;
 		TEST_NOT_NULL(m);
 		TEST_STR_EQUAL(m->name, "pax-gnu0-0.tar");
 		TEST_ASSERT(S_ISREG(m->mode));
+		TEST_STR_EQUAL(m->data.file.input_file, "../libtar/data/sparse-files/pax-gnu0-0.tar");
 		TEST_ASSERT(m->parent == n);
 
 		m = m->next;
 		TEST_NOT_NULL(m);
 		TEST_STR_EQUAL(m->name, "pax-gnu0-1.tar");
 		TEST_ASSERT(S_ISREG(m->mode));
+		TEST_STR_EQUAL(m->data.file.input_file, "../libtar/data/sparse-files/pax-gnu0-1.tar");
 		TEST_ASSERT(m->parent == n);
 
 		m = m->next;
 		TEST_NOT_NULL(m);
 		TEST_STR_EQUAL(m->name, "pax-gnu1-0.tar");
 		TEST_ASSERT(S_ISREG(m->mode));
+		TEST_STR_EQUAL(m->data.file.input_file, "../libtar/data/sparse-files/pax-gnu1-0.tar");
 		TEST_ASSERT(m->parent == n);
 
 		m = m->next;
@@ -185,6 +196,7 @@ static void check_hierarchy(tree_node_t *root, bool subdir, bool recursive)
 		TEST_NOT_NULL(m);
 		TEST_STR_EQUAL(m->name, "gnu.tar");
 		TEST_ASSERT(S_ISREG(m->mode));
+		TEST_STR_EQUAL(m->data.file.input_file, "../libtar/data/user-group-largenum/gnu.tar");
 		TEST_ASSERT(m->parent == n);
 
 		m = m->next;

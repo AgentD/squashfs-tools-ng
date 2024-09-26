@@ -283,9 +283,10 @@ static void discard_node(tree_node_t *root, tree_node_t *n)
 
 static int populate_dir(int dir_fd, fstree_t *fs, tree_node_t *root,
 			dev_t devstart, scan_node_callback cb,
-			void *user, unsigned int flags)
+			void *user, unsigned int flags, const char *file_prefix)
 {
 	char *extra = NULL;
+	char *prefix = NULL;
 	struct dirent *ent;
 	int ret, childfd;
 	struct stat sb;
@@ -379,6 +380,29 @@ static int populate_dir(int dir_fd, fstree_t *fs, tree_node_t *root,
 			}
 
 			extra[sb.st_size] = '\0';
+		} else if (S_ISREG(sb.st_mode)) {
+			const char *src;
+
+			src = ent->d_name;
+			while (*src == '/')
+				++src;
+
+			/* reconstruct base path relative file path */
+			if (file_prefix == NULL) {
+				extra = strdup(src);
+			} else {
+				size_t fxlen = strlen(file_prefix) + 1;
+				size_t srclen = strlen(src) + 1;
+
+				extra = malloc(fxlen + srclen);
+				if (extra != NULL) {
+					memcpy(extra, file_prefix, fxlen);
+					memcpy(extra + fxlen, src, srclen);
+					extra[fxlen - 1] = '/';
+				} else {
+					goto fail;
+				}
+			}
 		}
 
 		if (!(flags & DIR_SCAN_KEEP_TIME))
@@ -421,10 +445,29 @@ static int populate_dir(int dir_fd, fstree_t *fs, tree_node_t *root,
 				goto fail;
 			}
 
+			if (file_prefix == NULL) {
+				prefix = strdup(n->name);
+			} else {
+				size_t fxlen = strlen(file_prefix) + 1;
+				size_t namelen = strlen(n->name) + 1;
+
+				prefix = calloc(fxlen + namelen, sizeof(char));
+				if (prefix != NULL) {
+					memcpy(prefix, file_prefix, fxlen);
+					memcpy(prefix + fxlen, n->name, namelen);
+					prefix[fxlen - 1] = '/';
+				} else {
+					goto fail;
+				}
+			}
+
 			if (populate_dir(childfd, fs, n, devstart,
-					 cb, user, flags)) {
+					 cb, user, flags, prefix)) {
 				goto fail;
 			}
+
+			free(prefix);
+			prefix = NULL;
 		}
 	}
 
@@ -435,6 +478,7 @@ fail_rdlink:
 fail:
 	closedir(dir);
 	free(extra);
+	free(prefix);
 	return -1;
 }
 
@@ -481,7 +525,7 @@ int fstree_from_subdir(fstree_t *fs, tree_node_t *root,
 		return -1;
 	}
 
-	return populate_dir(fd, fs, root, sb.st_dev, cb, user, flags);
+	return populate_dir(fd, fs, root, sb.st_dev, cb, user, flags, subdir);
 }
 
 int fstree_from_dir(fstree_t *fs, tree_node_t *root,
