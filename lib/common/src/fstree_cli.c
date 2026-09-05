@@ -30,7 +30,7 @@ static const char *defaults[] = {
 
 int parse_fstree_defaults(fstree_defaults_t *sb, char *subopts)
 {
-	char *value;
+	char *value, *tok_start;
 	long lval;
 	int i;
 
@@ -42,7 +42,24 @@ int parse_fstree_defaults(fstree_defaults_t *sb, char *subopts)
 		return 0;
 
 	while (*subopts != '\0') {
+		tok_start = subopts;
 		i = getsubopt(&subopts, (char *const *)defaults, &value);
+
+		/*
+		 * WHY i < 0 is checked before value == NULL: on an
+		 * unrecognized option, POSIX only guarantees
+		 * getsubopt() returns -1, it does not fix *valuep in
+		 * that case. glibc sets it to the token text, but
+		 * macOS/BSD libc sets it to NULL, which used to fall
+		 * into the "Missing value" branch below with i == -1
+		 * and read defaults[-1] out of bounds. tok_start
+		 * (saved before the call) always holds the raw token
+		 * text, matched or not.
+		 */
+		if (i < 0) {
+			fprintf(stderr, "Unknown option '%s'\n", tok_start);
+			return -1;
+		}
 
 		if (value == NULL) {
 			fprintf(stderr, "Missing value for option %s\n",
@@ -88,9 +105,6 @@ int parse_fstree_defaults(fstree_defaults_t *sb, char *subopts)
 			}
 			sb->mtime = lval;
 			break;
-		default:
-			fprintf(stderr, "Unknown option '%s'\n", value);
-			return -1;
 		}
 	}
 	return 0;
