@@ -6,6 +6,7 @@ TARDIR="@abs_top_srcdir@/lib/tar/test/data"
 TARDIR2="@abs_top_srcdir@/bin/tar2sqfs/test"
 SHA512FILE="$TARDIR2/sqfs.sha512"
 TAR2SQFS="@abs_top_builddir@/tar2sqfs"
+RDSQFS="@abs_top_builddir@/rdsquashfs"
 
 if [ ! -f "$TAR2SQFS" -a -f "${TAR2SQFS}.exe" ]; then
 	TAR2SQFS="${TAR2SQFS}.exe"
@@ -26,6 +27,17 @@ imgname="./test_tar/root-becomes.sqfs"
 
 "$TAR2SQFS" --root-becomes foo --defaults mtime=0 \
 	    -c gzip -q "$imgname" < "$filename"
+
+# two .tar.gz files test
+imgname="./test_tar/multiple.tar.gz.sqfs"
+cat "$TARDIR2/test1.tar.gz" "$TARDIR2/test2.tar.gz" | "$TAR2SQFS" --defaults mtime=0 -c gzip -q "$imgname"
+
+# verify both files are present in concatenated archives
+if ! "$RDSQFS" -l / "$imgname" 2>&1 | grep -q "file1.txt" || \
+   ! "$RDSQFS" -l / "$imgname" 2>&1 | grep -q "file2.txt"; then
+	echo "ERROR: Both files not found in $imgname"
+	exit 1
+fi
 
 # verify
 sha512sum -c "$SHA512FILE"
