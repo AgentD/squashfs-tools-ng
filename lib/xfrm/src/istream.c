@@ -75,6 +75,21 @@ static int precache(sqfs_istream_t *base)
 
 		if (mode == XFRM_STREAM_FLUSH_FULL)
 			break;
+
+		if (ret == XFRM_STREAM_END) {
+			size_t buffered_size;
+			const sqfs_u8 *buffered;
+			int has_more;
+
+			has_more = xfrm->wrapped->get_buffered_data(xfrm->wrapped,
+			                                            &buffered,
+			                                            &buffered_size,
+			                                            1);
+			if (has_more == 0 && buffered_size > 0)
+				continue;
+
+			break;
+		}
 	}
 
 	return 0;
