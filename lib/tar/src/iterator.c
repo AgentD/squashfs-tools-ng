@@ -195,6 +195,22 @@ retry:
 
 	clear_header(&(tar->current));
 	ret = read_header(tar->stream, &(tar->current));
+	if (ret > 0) {
+		/* EOF reached - check if there's more data (concatenated archives) */
+		size_t buffered_size;
+		const sqfs_u8 *buffered;
+
+		/* Clear record_size and padding to ensure we don't skip data on retry */
+		tar->record_size = 0;
+		tar->padding = 0;
+
+		ret = tar->stream->get_buffered_data(tar->stream, &buffered,
+	                                     &buffered_size, 0);
+		if (ret == 0 && buffered_size > 0)
+			goto retry;
+
+		return 1;
+	}
 	if (ret != 0)
 		goto fail;
 
